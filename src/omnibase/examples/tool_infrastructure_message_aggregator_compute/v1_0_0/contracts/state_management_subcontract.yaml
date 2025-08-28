@@ -1,0 +1,268 @@
+# Message Aggregator State Management Subcontract - PostgreSQL State Persistence
+# This subcontract defines state management patterns for cross-group coordination
+
+contract_type: "message_aggregator_state_management_subcontract"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  name: "MessageAggregatorStateManagementSubcontract"
+  description: "PostgreSQL-based state management for cross-group message aggregation"
+  author: "ONEX Framework Team"
+  created: "2025-08-21"
+  purpose: "Define robust state persistence and recovery patterns for message aggregation"
+
+business_logic:
+  pattern: "postgresql_state_management"
+  ai_agent:
+    capabilities: ["state_persistence", "recovery_management", "consistency_maintenance"]
+    coordination_patterns: ["event_sourcing", "snapshot_recovery", "distributed_state"]
+    performance_targets:
+      state_write_latency: "<20ms"
+      state_read_latency: "<10ms"
+      recovery_time: "<30s"
+
+# PostgreSQL State Management Strategy
+state_management_strategy:
+  name: "PostgreSQLDistributedStateManagement"
+  description: "High-performance state management using PostgreSQL with JSONB and event sourcing"
+
+  # State storage architecture
+  storage_architecture:
+    primary_storage: "postgresql_jsonb"
+    backup_strategy: "continuous_replication"
+    partitioning: "correlation_id_based"
+    archival_policy: "time_based_archival"
+
+    table_structure:
+      aggregation_requests:
+        columns:
+          - "request_id UUID PRIMARY KEY"
+          - "correlation_id VARCHAR(255) NOT NULL"
+          - "operation_type VARCHAR(50) NOT NULL"
+          - "request_data JSONB NOT NULL"
+          - "status VARCHAR(20) NOT NULL"
+          - "created_at TIMESTAMP DEFAULT NOW()"
+          - "updated_at TIMESTAMP DEFAULT NOW()"
+
+        indexes:
+          - "btree_index_correlation_id"
+          - "gin_index_request_data"
+          - "btree_index_status_created_at"
+
+      aggregation_responses:
+        columns:
+          - "response_id UUID PRIMARY KEY"
+          - "request_id UUID REFERENCES aggregation_requests(request_id)"
+          - "group_id VARCHAR(255) NOT NULL"
+          - "response_data JSONB NOT NULL"
+          - "response_status VARCHAR(20) NOT NULL"
+          - "processing_duration_ms INTEGER"
+          - "created_at TIMESTAMP DEFAULT NOW()"
+
+        indexes:
+          - "btree_index_request_id"
+          - "btree_index_group_id"
+          - "gin_index_response_data"
+
+      aggregation_state_snapshots:
+        columns:
+          - "snapshot_id UUID PRIMARY KEY"
+          - "correlation_id VARCHAR(255) NOT NULL"
+          - "snapshot_data JSONB NOT NULL"
+          - "snapshot_version INTEGER NOT NULL"
+          - "created_at TIMESTAMP DEFAULT NOW()"
+
+        indexes:
+          - "btree_index_correlation_id_version"
+          - "gin_index_snapshot_data"
+
+# State Persistence Patterns
+persistence_patterns:
+  event_sourcing:
+    description: "Event sourcing for complete state reconstruction capability"
+    event_store: "aggregation_requests_and_responses"
+    snapshot_frequency: "every_100_events_or_5_minutes"
+
+    event_sourcing_rules:
+      - "capture_all_state_changes_as_events"
+      - "maintain_event_ordering_per_correlation_id"
+      - "enable_point_in_time_recovery"
+      - "support_event_replay_for_debugging"
+
+  snapshot_recovery:
+    description: "Periodic snapshots for fast recovery"
+    snapshot_strategy: "incremental_snapshots"
+    recovery_optimization: "latest_snapshot_plus_events"
+
+    snapshot_rules:
+      - "create_snapshots_at_operation_boundaries"
+      - "compress_snapshot_data_for_storage_efficiency"
+      - "validate_snapshot_integrity_on_creation"
+      - "enable_snapshot_based_fast_recovery"
+
+  distributed_consistency:
+    description: "Maintain consistency across distributed operations"
+    consistency_model: "eventual_consistency_with_ordering"
+    conflict_resolution: "last_writer_wins_with_timestamps"
+
+    consistency_rules:
+      - "maintain_causal_ordering_of_events"
+      - "detect_and_resolve_state_conflicts"
+      - "provide_read_after_write_consistency"
+      - "support_distributed_transaction_semantics"
+
+# State Operations
+state_operations:
+  persist_operation:
+    operation_type: "atomic_state_persistence"
+    transaction_isolation: "read_committed"
+    retry_policy: "exponential_backoff"
+
+    persistence_steps:
+      - "begin_database_transaction"
+      - "validate_state_data_schema"
+      - "insert_or_update_state_record"
+      - "update_snapshot_if_needed"
+      - "commit_transaction_atomically"
+
+  restore_operation:
+    operation_type: "point_in_time_state_restoration"
+    restoration_strategy: "snapshot_plus_events"
+    consistency_validation: "full_consistency_check"
+
+    restoration_steps:
+      - "identify_latest_valid_snapshot"
+      - "collect_events_since_snapshot"
+      - "reconstruct_state_from_events"
+      - "validate_reconstructed_state"
+      - "return_consistent_state_view"
+
+  cleanup_operation:
+    operation_type: "state_archival_and_cleanup"
+    cleanup_policy: "age_based_with_retention"
+    archival_strategy: "compress_and_move_to_archive"
+
+    cleanup_steps:
+      - "identify_expired_state_records"
+      - "create_archival_snapshots"
+      - "compress_archival_data"
+      - "remove_expired_active_records"
+      - "update_cleanup_metrics"
+
+# State Consistency Management
+consistency_management:
+  read_consistency:
+    read_strategy: "read_from_primary_with_fallback"
+    consistency_level: "read_after_write"
+    stale_read_tolerance: "5_seconds_maximum"
+
+  write_consistency:
+    write_strategy: "synchronous_replication"
+    durability_guarantee: "fsync_before_acknowledgment"
+    conflict_detection: "optimistic_concurrency_control"
+
+  distributed_coordination:
+    coordination_mechanism: "correlation_id_based_ordering"
+    lock_management: "advisory_locks_per_correlation_id"
+    deadlock_prevention: "timeout_based_lock_acquisition"
+
+# Performance Optimization
+performance_optimization:
+  connection_management:
+    state_connection_pool_size: 10
+    connection_timeout: "15s"
+    query_timeout: "10s"
+    prepared_statement_cache: true
+
+  query_optimization:
+    index_usage: "force_index_usage_for_critical_queries"
+    query_planning: "analyze_and_optimize_query_plans"
+    batch_operations: "batch_multiple_state_updates"
+
+  memory_management:
+    state_cache_size: "200mb"
+    cache_eviction: "lru_with_write_behind"
+    memory_pressure_handling: "graceful_cache_reduction"
+
+# Recovery and Reliability
+recovery_mechanisms:
+  automatic_recovery:
+    recovery_triggers: ["connection_loss", "corruption_detection", "consistency_violations"]
+    recovery_strategy: "snapshot_based_recovery_with_event_replay"
+    recovery_validation: "full_state_consistency_verification"
+
+  backup_and_restore:
+    backup_frequency: "continuous_wal_archiving"
+    backup_verification: "periodic_restore_testing"
+    cross_region_replication: "asynchronous_replication"
+
+  disaster_recovery:
+    rpo_target: "1_minute" # Recovery Point Objective
+    rto_target: "5_minutes" # Recovery Time Objective
+    failover_mechanism: "automatic_with_health_monitoring"
+
+# Monitoring and Observability
+monitoring:
+  state_health_metrics:
+    - "message_aggregator.state_write_latency_ms"
+    - "message_aggregator.state_read_latency_ms"
+    - "message_aggregator.state_consistency_violations"
+    - "message_aggregator.recovery_operations_count"
+
+  storage_metrics:
+    - "message_aggregator.state_storage_size_bytes"
+    - "message_aggregator.snapshot_creation_frequency"
+    - "message_aggregator.archival_operations_count"
+    - "message_aggregator.connection_pool_utilization"
+
+  state_events:
+    - "state_persisted"
+    - "state_restored"
+    - "snapshot_created"
+    - "consistency_violation_detected"
+    - "recovery_completed"
+
+# Error Handling
+error_handling:
+  persistence_failures:
+    handling_strategy: "retry_with_exponential_backoff"
+    max_retry_attempts: 3
+    fallback_action: "buffer_in_memory_temporarily"
+
+  consistency_violations:
+    detection_method: "checksum_validation"
+    resolution_strategy: "reconstruct_from_events"
+    escalation_path: "alert_and_manual_intervention"
+
+  recovery_failures:
+    recovery_strategy: "fallback_to_last_known_good_state"
+    data_loss_handling: "minimize_with_event_replay"
+    notification_requirements: "immediate_alert_to_operations"
+
+# Code Generation Targets
+generation_targets:
+  python_runtime:
+    state_management_implementation: true
+    event_sourcing_logic: true
+    recovery_mechanisms: true
+    monitoring_integration: true
+
+  database_schema:
+    table_creation_scripts: true
+    index_optimization: true
+    maintenance_procedures: true
+
+  configuration_management:
+    state_configuration_schema: true
+    recovery_configuration: true
+    performance_tuning_parameters: true
+
+# Integration with Main Contract and Aggregation
+integration:
+  main_contract_field: "state_management_configuration"
+  aggregation_integration: "coordinated_aggregation_state_persistence"
+  mapping_strategy: "direct_embedding"
+  backward_compatibility: true

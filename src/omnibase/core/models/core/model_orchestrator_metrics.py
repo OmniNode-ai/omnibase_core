@@ -1,0 +1,32 @@
+"""
+Orchestrator metrics model.
+"""
+
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+
+class ModelOrchestratorMetrics(BaseModel):
+    """Orchestrator performance metrics."""
+
+    active_workflows: int = Field(0, description="Number of active workflows")
+    completed_workflows: int = Field(0, description="Number of completed workflows")
+    failed_workflows: int = Field(0, description="Number of failed workflows")
+    avg_execution_time_seconds: Optional[float] = Field(
+        None, description="Average execution time"
+    )
+    resource_utilization_percent: Optional[float] = Field(
+        None, description="Resource utilization"
+    )
+
+    def get_total_workflows(self) -> int:
+        """Get total number of workflows."""
+        return self.active_workflows + self.completed_workflows + self.failed_workflows
+
+    def get_success_rate(self) -> float:
+        """Calculate workflow success rate."""
+        total = self.completed_workflows + self.failed_workflows
+        if total == 0:
+            return 0.0
+        return (self.completed_workflows / total) * 100

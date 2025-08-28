@@ -1,0 +1,39 @@
+"""
+Node Information Result Model.
+
+Defines the structured result model for node information operations
+within the ONEX architecture.
+"""
+
+from typing import List, Optional
+
+from pydantic import Field
+
+from omnibase.model.core.model_base_result import ModelBaseResult
+from omnibase.model.core.model_contract_data import ModelContractData
+from omnibase.model.core.model_node_data import ModelNodeData
+
+
+class ModelNodeInfoResult(ModelBaseResult):
+    """
+    Structured result model for node information operations.
+
+    Contains the results of retrieving detailed information
+    about specific ONEX nodes.
+    """
+
+    node_name: str = Field(..., description="Name of the node")
+    node_version: Optional[str] = Field(None, description="Version of the node")
+    node_data: ModelNodeData = Field(
+        default_factory=lambda: ModelNodeData(), description="Node information data"
+    )
+    capabilities: List[str] = Field(
+        default_factory=list, description="Node capabilities"
+    )
+    contract_data: Optional[ModelContractData] = Field(
+        None, description="Node contract information"
+    )
+    response_time_ms: Optional[float] = Field(
+        None, description="Node info retrieval time in milliseconds"
+    )
+    format: str = Field(default="dict", description="Format of the node info output")

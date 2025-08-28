@@ -1,0 +1,73 @@
+"""
+Error summary model to replace dictionary usage for get_error_summary() returns.
+"""
+
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+
+class ModelErrorSummary(BaseModel):
+    """
+    Error summary with typed fields.
+    Replaces dictionary for get_error_summary() returns.
+    """
+
+    # Error identification
+    error_code: str = Field(..., description="Error code")
+    error_type: str = Field(..., description="Error type/category")
+    error_message: str = Field(..., description="Human-readable error message")
+
+    # Error context
+    occurred_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When error occurred"
+    )
+    component: Optional[str] = Field(None, description="Component where error occurred")
+    operation: Optional[str] = Field(None, description="Operation that failed")
+
+    # Error details
+    stack_trace: Optional[str] = Field(None, description="Stack trace if available")
+    inner_errors: Optional[List[Dict[str, str]]] = Field(
+        default_factory=list, description="Nested/inner errors"
+    )
+    context_data: Optional[Dict[str, str]] = Field(
+        default_factory=dict, description="Additional context"
+    )
+
+    # Impact and resolution
+    impact_level: Optional[str] = Field(
+        None, description="Impact level (low/medium/high/critical)"
+    )
+    affected_resources: Optional[List[str]] = Field(
+        default_factory=list, description="Affected resources"
+    )
+    suggested_actions: Optional[List[str]] = Field(
+        default_factory=list, description="Suggested resolution actions"
+    )
+
+    # Tracking
+    error_id: Optional[str] = Field(None, description="Unique error instance ID")
+    correlation_id: Optional[str] = Field(
+        None, description="Correlation ID for tracing"
+    )
+    has_been_reported: bool = Field(False, description="Whether error was reported")
+
+    model_config = ConfigDict()
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for backward compatibility."""
+        return self.dict(exclude_none=True)
+
+    @classmethod
+    def from_dict(cls, data: Optional[dict]) -> Optional["ModelErrorSummary"]:
+        """Create from dictionary for easy migration."""
+        if data is None:
+            return None
+        return cls(**data)
+
+    @field_serializer("occurred_at")
+    def serialize_datetime(self, value):
+        if value and isinstance(value, datetime):
+            return value.isoformat()
+        return value

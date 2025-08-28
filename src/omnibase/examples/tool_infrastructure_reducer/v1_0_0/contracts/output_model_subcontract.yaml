@@ -1,0 +1,109 @@
+# Infrastructure Reducer Output Model Subcontract
+# Output data structures for normalized infrastructure service
+
+name: InfrastructureReducerOutputModel
+model_type: output
+
+models:
+  ModelInfrastructureReducerOutput:
+    description: "Primary output model for infrastructure reducer results"
+    fields:
+      - name: status
+        type: string
+        required: true
+        validation:
+          enum: [success, partial_success, failed, error]
+        description: "Overall operation status"
+
+      - name: operation_type
+        type: string
+        required: true
+        description: "Echo of requested operation type"
+
+      - name: aggregated_result
+        type: dict
+        required: false
+        description: "Aggregated results from adapters"
+
+      - name: adapter_results
+        type: array
+        item_type: dict
+        required: false
+        description: "Individual adapter results"
+
+      - name: error_message
+        type: string
+        required: false
+        description: "Error details if operation failed"
+
+      - name: correlation_id
+        type: string
+        required: false
+        description: "Request correlation ID for tracking"
+
+      - name: execution_time_ms
+        type: integer
+        required: true
+        description: "Total execution time in milliseconds"
+
+      - name: adapter_health_summary
+        type: dict
+        required: false
+        description: "Summary of adapter health states"
+
+  ModelInfrastructureHealthStatus:
+    description: "Infrastructure health aggregation model"
+    fields:
+      - name: overall_status
+        type: string
+        required: true
+        validation:
+          enum: [healthy, degraded, partial, unavailable]
+        description: "Overall infrastructure health"
+
+      - name: adapter_statuses
+        type: dict
+        required: true
+        description: "Health status per adapter"
+
+      - name: external_service_statuses
+        type: dict
+        required: true
+        description: "Health status of external services (Consul, Vault, Kafka)"
+
+      - name: timestamp
+        type: string
+        required: true
+        description: "Health check timestamp"
+
+  ModelInfrastructureMetrics:
+    description: "Infrastructure performance metrics"
+    fields:
+      - name: total_requests
+        type: integer
+        required: true
+        description: "Total requests processed"
+
+      - name: successful_requests
+        type: integer
+        required: true
+        description: "Successfully processed requests"
+
+      - name: average_response_time_ms
+        type: float
+        required: true
+        description: "Average response time in milliseconds"
+
+      - name: adapter_metrics
+        type: dict
+        required: true
+        description: "Per-adapter performance metrics"
+
+validation_rules:
+  - rule: "status_consistency"
+    description: "Ensure status matches result data"
+    applies_to: [ModelInfrastructureReducerOutput]
+
+  - rule: "execution_time_positive"
+    description: "Execution time must be positive"
+    applies_to: [ModelInfrastructureReducerOutput]

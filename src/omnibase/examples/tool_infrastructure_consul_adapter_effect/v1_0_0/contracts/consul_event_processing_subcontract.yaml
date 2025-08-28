@@ -1,0 +1,249 @@
+# Consul Event Processing Subcontract - Event Bus Integration Pattern
+# This subcontract defines event handling patterns for Consul adapter integration with ONEX event bus
+
+contract_type: "consul_event_processing_subcontract"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  name: "ConsulEventProcessingSubcontract"
+  description: "Event bus integration pattern for Consul adapter with ONEX message envelope handling"
+  author: "ONEX Framework Team"
+  created: "2025-08-19"
+  purpose: "Define event processing patterns for bi-directional Consul-ONEX event communication"
+
+business_logic:
+  pattern: "event_bus_integration"
+  ai_agent:
+    capabilities: ["event_envelope_processing", "consul_event_translation", "async_event_handling"]
+    coordination_patterns: ["event_bus_subscriber", "event_bus_publisher"]
+    performance_targets:
+      event_processing_latency: "<10ms"
+      event_throughput: "1000 events/sec"
+      envelope_parsing_time: "<1ms"
+
+# Event Bus Integration Strategy
+event_bus_integration:
+  name: "ConsulEventBusIntegration"
+  description: "Bi-directional event processing between ONEX event bus and Consul operations"
+
+  # Event subscription patterns
+  subscription_patterns:
+    inbound_events:
+      - event_type: "consul_service_register_request"
+        handler: "handle_service_registration_event"
+        envelope_validation: true
+        async_processing: true
+
+      - event_type: "consul_kv_operation_request"
+        handler: "handle_kv_operation_event"
+        envelope_validation: true
+        async_processing: true
+
+      - event_type: "consul_health_check_request"
+        handler: "handle_health_check_event"
+        envelope_validation: true
+        async_processing: false
+
+      - event_type: "consul_acl_operation_request"
+        handler: "handle_acl_operation_event"
+        envelope_validation: true
+        async_processing: true
+
+  # Event publishing patterns
+  publishing_patterns:
+    outbound_events:
+      - event_type: "consul_service_registered"
+        trigger: "service_registration_complete"
+        envelope_format: "standard_onex_envelope"
+        metadata_inclusion: ["service_id", "namespace", "timestamp"]
+
+      - event_type: "consul_kv_operation_complete"
+        trigger: "kv_operation_success"
+        envelope_format: "standard_onex_envelope"
+        metadata_inclusion: ["operation_type", "key_path", "timestamp"]
+
+      - event_type: "consul_health_status_changed"
+        trigger: "health_check_result"
+        envelope_format: "standard_onex_envelope"
+        metadata_inclusion: ["service_id", "old_status", "new_status", "timestamp"]
+
+      - event_type: "consul_operation_failed"
+        trigger: "operation_error"
+        envelope_format: "error_onex_envelope"
+        metadata_inclusion: ["operation_type", "error_code", "error_message", "timestamp"]
+
+# Event Envelope Handling
+envelope_processing:
+  inbound_envelope_handling:
+    validation_steps:
+      - "validate_envelope_structure"
+      - "verify_message_signature"
+      - "check_correlation_id"
+      - "validate_payload_schema"
+
+    parsing_steps:
+      - "extract_operation_type"
+      - "parse_consul_parameters"
+      - "resolve_target_consul_endpoint"
+      - "prepare_consul_api_call"
+
+    error_handling:
+      - "malformed_envelope": "reject_with_error_response"
+      - "invalid_signature": "reject_with_security_alert"
+      - "schema_validation_failed": "reject_with_validation_error"
+      - "missing_correlation_id": "assign_new_correlation_id"
+
+  outbound_envelope_creation:
+    envelope_structure:
+      - "correlation_id": "preserve_from_inbound_or_generate"
+      - "source_service": "consul_adapter"
+      - "target_service": "extracted_from_routing_info"
+      - "event_type": "determined_by_operation_result"
+      - "payload": "consul_operation_result_or_error"
+      - "metadata": "operation_context_and_timing"
+
+    signing_strategy:
+      - "sign_envelope_with_service_key"
+      - "include_timestamp_for_replay_protection"
+      - "add_service_identity_claims"
+
+# Async Processing Patterns
+async_processing:
+  async_handlers:
+    service_registration:
+      pattern: "fire_and_forget_with_callback"
+      timeout_ms: 5000
+      retry_attempts: 3
+      error_strategy: "emit_failure_event"
+
+    kv_operations:
+      pattern: "request_response_async"
+      timeout_ms: 2000
+      retry_attempts: 2
+      error_strategy: "emit_failure_event_with_payload"
+
+    acl_operations:
+      pattern: "secure_async_with_audit"
+      timeout_ms: 10000
+      retry_attempts: 1
+      error_strategy: "emit_security_alert"
+
+  # Synchronous processing for health checks
+  sync_processing:
+    health_checks:
+      pattern: "immediate_response"
+      timeout_ms: 500
+      retry_attempts: 0
+      error_strategy: "return_error_status"
+
+# Event Routing and Filtering
+event_routing:
+  routing_strategy: "content_based_routing"
+
+  routing_rules:
+    - condition: "event_type.startswith('consul_service_')"
+      target_handler: "service_management_handler"
+      priority: "high"
+
+    - condition: "event_type.startswith('consul_kv_')"
+      target_handler: "kv_management_handler"
+      priority: "medium"
+
+    - condition: "event_type.startswith('consul_health_')"
+      target_handler: "health_management_handler"
+      priority: "critical"
+
+    - condition: "event_type.startswith('consul_acl_')"
+      target_handler: "acl_management_handler"
+      priority: "high_security"
+
+  filtering_rules:
+    - filter: "validate_consul_namespace"
+      action: "reject_if_unauthorized_namespace"
+
+    - filter: "check_rate_limits"
+      action: "defer_if_rate_exceeded"
+
+    - filter: "validate_operation_permissions"
+      action: "reject_if_insufficient_permissions"
+
+# Error Handling and Recovery
+error_handling:
+  error_categories:
+    - "envelope_processing_errors"
+    - "consul_api_errors"
+    - "network_connectivity_errors"
+    - "authentication_errors"
+    - "rate_limiting_errors"
+
+  recovery_strategies:
+    envelope_processing_errors:
+      - "emit_validation_error_event"
+      - "log_malformed_envelope_details"
+      - "increment_error_metrics"
+
+    consul_api_errors:
+      - "retry_with_exponential_backoff"
+      - "emit_consul_error_event"
+      - "trigger_health_check"
+
+    network_connectivity_errors:
+      - "activate_circuit_breaker"
+      - "emit_connectivity_alert"
+      - "attempt_consul_reconnection"
+
+# Performance Optimization
+performance_optimization:
+  event_batching:
+    enabled: true
+    batch_size: 50
+    batch_timeout_ms: 100
+    applicable_operations: ["kv_operations", "service_registrations"]
+
+  connection_pooling:
+    consul_connections: 5
+    connection_reuse: true
+    keepalive_interval: 30000
+
+  caching:
+    event_handler_cache: true
+    consul_response_cache: false # Consul data should be fresh
+    envelope_validation_cache: true
+
+# Observability and Monitoring
+observability:
+  metrics:
+    - "consul.events_processed"
+    - "consul.events_published"
+    - "consul.envelope_validation_failures"
+    - "consul.async_processing_latency"
+    - "consul.api_error_rate"
+
+  events_for_monitoring:
+    - "event_processing_started"
+    - "event_processing_completed"
+    - "envelope_validation_failed"
+    - "consul_api_error_occurred"
+    - "async_timeout_exceeded"
+
+# Code Generation Targets
+generation_targets:
+  python_runtime:
+    event_handlers: true
+    envelope_processors: true
+    async_task_managers: true
+    error_recovery_logic: true
+
+  event_schema_validation:
+    inbound_event_schemas: true
+    outbound_event_schemas: true
+    envelope_validation_rules: true
+
+# Integration with Main Contract
+integration:
+  main_contract_field: "event_processing_configuration"
+  mapping_strategy: "event_handler_embedding"
+  backward_compatibility: true

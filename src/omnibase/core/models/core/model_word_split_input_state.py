@@ -1,0 +1,14 @@
+"""
+Input state model for word splitting operations.
+"""
+
+from pydantic import Field
+
+from omnibase.model.core.model_onex_base_state import ModelOnexInputState
+
+
+class ModelWordSplitInputState(ModelOnexInputState):
+    """Input state for word splitting operations."""
+
+    input_string: str = Field(..., description="String to split into words")
+    preserve_acronyms: bool = Field(True, description="Whether to preserve acronyms")
