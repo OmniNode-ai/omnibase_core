@@ -42,6 +42,12 @@
   - MyPy for type checking
   - Pytest for testing with async support
 - ✅ `Makefile` created with development workflows
+- ✅ Pre-commit hooks aligned with parent `omnibase_3` project:
+  - YAML formatting with yamlfmt
+  - File formatting (trailing whitespace, EOF, merge conflicts)
+  - Python formatting (Black + isort) with exact same versions/args
+  - Ruff linting for omnibase-core specific needs
+  - MyPy type checking focused on core framework files
 - ✅ Ready for development environment setup
 
 ## Pending Tasks (Blocked by omnibase-spi)

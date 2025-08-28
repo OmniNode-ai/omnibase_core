@@ -1,0 +1,69 @@
+# ONEX Core Pre-commit Configuration
+# Aligned with omnibase_3 parent project standards
+
+repos:
+  # YAML formatting (matching parent)
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.17.2
+    hooks:
+      - id: yamlfmt
+        args: [--formatter, retain_line_breaks=true]
+
+  # Essential file formatting (matching parent)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-yaml
+      - id: check-toml
+
+  # Python formatting (matching parent exactly)
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        args: [--line-length, "88", --target-version, py311]
+
+  # Python imports (matching parent exactly)  
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: [--profile, black, --line-length, "88"]
+
+  # Ruff linting (omnibase-core specific - lightweight alternative)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+# Local hooks (when pip install -e . is available)
+  - repo: local
+    hooks:
+      # MyPy type checking for core framework only
+      - id: mypy-core
+        name: mypy for omnibase-core
+        entry: mypy
+        language: system
+        types: [python]
+        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary]
+        # Focus on core framework files
+        files: ^src/omnibase/(core|model|enums|exceptions|decorators).*\.py$
+        # Skip examples until fully implemented
+        exclude: ^src/omnibase/examples.*\.py$
+
+# Configuration
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes for omnibase-core
+    
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_schedule: weekly
+  submodules: false

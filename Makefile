@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format type-check clean build
+.PHONY: help install install-dev test lint format type-check clean build pre-commit-install pre-commit-run
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -11,6 +11,13 @@ install: ## Install dependencies
 
 install-dev: ## Install with development dependencies
 	pip install -e .[dev]
+	pip install pre-commit
+
+pre-commit-install: ## Install pre-commit hooks
+	pre-commit install
+
+pre-commit-run: ## Run pre-commit on all files
+	pre-commit run --all-files
 
 test: ## Run tests
 	pytest tests/
@@ -44,4 +51,4 @@ build: clean ## Build package
 
 setup-dev: ## Setup development environment
 	python -m venv venv
-	@echo "Run 'source venv/bin/activate' then 'make install-dev'"
+	@echo "Run 'source venv/bin/activate' then 'make install-dev && make pre-commit-install'"

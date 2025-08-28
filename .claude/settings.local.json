@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)"
     ],
     "deny": [],
     "ask": []
