@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)"
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
+      "Bash(poetry config:*)",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/core/**)"
     ],
     "deny": [],
     "ask": []
