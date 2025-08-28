@@ -1,37 +1,31 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "omnibase-core"
 version = "0.1.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
-authors = [{name = "OmniNode Team", email = "team@omninode.ai"}]
-license = {text = "MIT"}
-requires-python = ">=3.11"
-dependencies = [
-    "omnibase-spi>=0.1.0",
-    "pydantic>=2.0.0",
-    "llama-index>=0.10.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
-]
+authors = ["OmniNode Team <team@omninode.ai>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "omnibase", from = "src"}]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "mypy>=1.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "ruff>=0.1.0",
-]
+[tool.poetry.dependencies]
+python = "^3.11"
+omnibase-spi = {git = "ssh://git@github.com/OmniNode-ai/omnibase-spi.git", tag = "v0.0.1"}
+pydantic = "^2.0.0"
+llama-index = "^0.10.0"
+fastapi = "^0.100.0"
+uvicorn = "^0.20.0"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-dir]
-"" = "src"
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-asyncio = "^0.21.0"
+mypy = "^1.0.0"
+black = "^23.0.0"
+isort = "^5.12.0"
+ruff = "^0.1.0"
 
 [tool.ruff]
 target-version = "py311"
