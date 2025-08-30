@@ -20,7 +20,7 @@ import time
 from datetime import datetime
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -68,7 +68,7 @@ class NodeArchitectureValidator:
             Comprehensive validation results
         """
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Starting 4-node architecture validation",
             {"timestamp": datetime.now().isoformat()},
         )
@@ -95,7 +95,7 @@ class NodeArchitectureValidator:
         summary = self._generate_validation_summary()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "4-node architecture validation completed",
             {
                 "overall_success": summary["overall_success"],

@@ -13,7 +13,7 @@ Following ONEX standards:
 
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.contract_loader import ContractLoader
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
@@ -64,7 +64,7 @@ class ContractService:
         self._contract_loader: ContractLoader | None = None
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "ContractService initialized",
             {
                 "cache_enabled": cache_enabled,
@@ -103,7 +103,7 @@ class ContractService:
                 if cached_contract is not None:
                     self.state.record_cache_hit()
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"Contract loaded from cache: {contract_path}",
                         {"contract_path": contract_path_str, "cache_hit": True},
                     )
@@ -122,7 +122,7 @@ class ContractService:
             self.state.record_load()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Contract loaded successfully: {contract_path}",
                 {
                     "contract_path": contract_path_str,
@@ -136,7 +136,7 @@ class ContractService:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to load contract: {e!s}",
                 {"contract_path": contract_path_str, "error": str(e)},
             )
@@ -166,7 +166,7 @@ class ContractService:
                 if not hasattr(contract, field) or getattr(contract, field) is None:
                     self.state.record_validation(success=False)
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"Contract missing required field: {field}",
                         {
                             "field": field,
@@ -186,7 +186,7 @@ class ContractService:
                     self.extract_version(contract)
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Contract version validation warning: {e!s}",
                         {"node_name": contract.node_name, "error": str(e)},
                     )
@@ -282,7 +282,7 @@ class ContractService:
                 )
                 if evicted_count > 0:
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"Evicted {evicted_count} cache entries to make room",
                         {
                             "evicted_count": evicted_count,
@@ -294,7 +294,7 @@ class ContractService:
             self.state.cache_entries[contract_path_str] = cache_entry
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Contract cached: {contract_path}",
                 {
                     "contract_path": contract_path_str,
@@ -306,7 +306,7 @@ class ContractService:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to cache contract: {e!s}",
                 {"contract_path": str(contract_path), "error": str(e)},
             )
@@ -481,7 +481,7 @@ class ContractService:
                             patterns.append(sub["event_type"])
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract event patterns: {e!s}",
                 {
                     "node_name": getattr(contract, "node_name", "unknown"),
@@ -513,7 +513,7 @@ class ContractService:
             }
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "ContractService health check completed",
                 test_metrics,
             )
@@ -528,7 +528,7 @@ class ContractService:
             }
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"ContractService health check failed: {e!s}",
                 error_result,
             )

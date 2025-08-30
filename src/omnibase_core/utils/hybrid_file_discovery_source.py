@@ -30,7 +30,7 @@ Implements ProtocolFileDiscoverySource.
 
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -89,7 +89,7 @@ class HybridFileDiscoverySource(ProtocolFileDiscoverySource):
                         CoreErrorCode.VALIDATION_FAILED,
                     )
                 emit_log_event_sync(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"[WARNING] Drift detected between filesystem and .tree: {msg}",
                     context=None,
                     node_id="hybrid_file_discovery_source",

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -80,7 +80,7 @@ class ToolManifestDiscovery:
 
         self.base_path = Path(base_path)
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🔍 Tool manifest discovery initialized",
             {"base_path": str(self.base_path)},
         )
@@ -95,7 +95,7 @@ class ToolManifestDiscovery:
         manifests = []
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🔎 Scanning for tool manifests in {self.base_path}",
             {"base_path": str(self.base_path)},
         )
@@ -107,7 +107,7 @@ class ToolManifestDiscovery:
                 manifests.append(manifest)
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"✅ Loaded manifest for {manifest.name}",
                     {
                         "tool_name": manifest.name,
@@ -119,13 +119,13 @@ class ToolManifestDiscovery:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"❌ Failed to load manifest: {manifest_file}",
                     {"manifest_path": str(manifest_file), "error": str(e)},
                 )
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🎯 Discovery complete: found {len(manifests)} tool manifests",
             {"manifest_count": len(manifests)},
         )
@@ -146,7 +146,7 @@ class ToolManifestDiscovery:
         domain_manifests = [m for m in all_manifests if m.domain == domain]
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"📋 Found {len(domain_manifests)} tools in '{domain}' domain",
             {
                 "domain": domain,
@@ -183,7 +183,7 @@ class ToolManifestDiscovery:
                         active_tools.append(manifest)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🚀 Found {len(active_tools)} tools configured for auto-start",
             {
                 "domain": domain,

@@ -11,7 +11,7 @@ state transition capability directly to nodes.
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -67,7 +67,7 @@ class MixinContractStateReducer:
 
             if not tool_paths:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Could not find tool directory for {tool_name}",
                     {"tool_name": tool_name},
                 )
@@ -80,7 +80,7 @@ class MixinContractStateReducer:
 
             if not transitions_path.exists():
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"No state transitions file found: {transitions_path}",
                     {"tool_name": tool_name},
                 )
@@ -126,7 +126,7 @@ class MixinContractStateReducer:
                 transitions.append(transition)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Loaded {len(transitions)} state transitions from contract",
                 {
                     "tool_name": tool_name,
@@ -141,7 +141,7 @@ class MixinContractStateReducer:
         except Exception as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to load state transitions: {e!s}",
                 {"tool_name": tool_name, "error": str(e)},
             )
@@ -165,7 +165,7 @@ class MixinContractStateReducer:
             action_name = getattr(input_state.action, "action_name", "unknown_action")
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Processing action with contract transitions: {action_name}",
                 {
                     "tool_name": tool_name,
@@ -197,7 +197,7 @@ class MixinContractStateReducer:
         except Exception as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error in contract state processing: {e!s}",
                 {"tool_name": tool_name, "error": str(e)},
             )
@@ -226,7 +226,7 @@ class MixinContractStateReducer:
                 self._apply_conditional_transition(transition, input_state)
             else:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Unsupported transition type: {transition.transition_type}",
                     {
                         "tool_name": tool_name,
@@ -235,7 +235,7 @@ class MixinContractStateReducer:
                 )
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to apply transition {transition.name}: {e!s}",
                 {
                     "tool_name": tool_name,
@@ -255,7 +255,7 @@ class MixinContractStateReducer:
         tool_name = getattr(self, "node_name", "unknown_tool")
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Applied simple transition: {transition.name}",
             {
                 "tool_name": tool_name,
@@ -278,7 +278,7 @@ class MixinContractStateReducer:
         target_tool_name = transition.tool_config.tool_name
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Applied tool-based transition: {transition.name} -> {target_tool_name}",
             {
                 "tool_name": tool_name,
@@ -297,7 +297,7 @@ class MixinContractStateReducer:
         tool_name = getattr(self, "node_name", "unknown_tool")
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Applied conditional transition: {transition.name}",
             {
                 "tool_name": tool_name,

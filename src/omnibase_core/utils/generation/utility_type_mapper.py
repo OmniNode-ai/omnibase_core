@@ -7,7 +7,7 @@ Provides consistent type string generation across all ONEX tools.
 
 import re
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -61,12 +61,12 @@ class UtilityTypeMapper:
         # Guard against non-ModelSchema input
         if not isinstance(schema, ModelSchema):
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Expected ModelSchema, got {type(schema)}",
                 {"type": str(type(schema))},
             )
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "EXIT: get_type_string_from_schema - non-ModelSchema",
                 {"result": "Any"},
             )
@@ -94,14 +94,14 @@ class UtilityTypeMapper:
 
         # Handle string with format specifiers
         if schema.schema_type == "string" and schema.format:
-            from omnibase.enums.enum_log_level import LogLevelEnum
+            from omnibase.protocols.types import LogLevel
 
             from omnibase_core.core.core_structured_logging import (
                 emit_log_event_sync as emit_log_event,
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Type mapper checking string with format: {schema.format}",
                 {"schema_type": schema.schema_type, "format": schema.format},
             )
@@ -180,14 +180,14 @@ class UtilityTypeMapper:
         first_value = enum_values[0]
 
         # TRACE: Enum name generation
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_structured_logging import (
             emit_log_event_sync as emit_log_event,
         )
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔍 TRACE: Generating enum name from values",
             {"input_values": enum_values, "first_value": first_value},
         )
@@ -197,7 +197,7 @@ class UtilityTypeMapper:
             clean_value = first_value.replace("-", "_")
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "🔍 TRACE: Processing enum name generation",
                 {"after_hyphen_replacement": clean_value},
             )
@@ -207,7 +207,7 @@ class UtilityTypeMapper:
                 parts = clean_value.split("_")
                 generated_name = "Enum" + "".join(word.capitalize() for word in parts)
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "🔍 TRACE: Snake case enum name generated",
                     {"snake_case_parts": parts, "generated_name": generated_name},
                 )
@@ -215,7 +215,7 @@ class UtilityTypeMapper:
             # Handle single word values
             generated_name = f"Enum{clean_value.capitalize()}"
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "🔍 TRACE: Single word enum name generated",
                 {"generated_name": generated_name},
             )

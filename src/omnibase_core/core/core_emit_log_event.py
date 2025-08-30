@@ -13,7 +13,7 @@ import os
 from datetime import datetime
 from uuid import UUID
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.model.core.model_log_entry import LogModelContext
@@ -21,7 +21,7 @@ from omnibase_core.protocol.protocol_event_bus_types import ProtocolEventBus
 
 
 def emit_log_event(
-    level: LogLevelEnum,
+    level: LogLevel,
     event_type: str,
     message: str,
     correlation_id: UUID,
@@ -73,7 +73,7 @@ def emit_log_event(
 
 
 def emit_log_event_with_new_correlation(
-    level: LogLevelEnum,
+    level: LogLevel,
     event_type: str,
     message: str,
     node_id: str | None = None,
@@ -111,7 +111,7 @@ def emit_log_event_with_new_correlation(
 
 
 def emit_log_event_sync(
-    level: LogLevelEnum,
+    level: LogLevel,
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
@@ -143,7 +143,7 @@ def emit_log_event_sync(
 
 
 async def emit_log_event_async(
-    level: LogLevelEnum,
+    level: LogLevel,
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
@@ -195,7 +195,7 @@ def trace_function_lifecycle(func):
 
         # Log function entry
         emit_log_event(
-            level=LogLevelEnum.TRACE,
+            level=LogLevel.TRACE,
             event_type="function_entry",
             message=f"Entering {function_name}",
             correlation_id=correlation_id,
@@ -216,7 +216,7 @@ def trace_function_lifecycle(func):
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 
             emit_log_event(
-                level=LogLevelEnum.TRACE,
+                level=LogLevel.TRACE,
                 event_type="function_exit",
                 message=f"Exiting {function_name}",
                 correlation_id=correlation_id,
@@ -236,7 +236,7 @@ def trace_function_lifecycle(func):
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 
             emit_log_event(
-                level=LogLevelEnum.TRACE,
+                level=LogLevel.TRACE,
                 event_type="function_exception",
                 message=f"Exception in {function_name}: {e!s}",
                 correlation_id=correlation_id,
@@ -269,7 +269,7 @@ class log_code_block:
         self,
         block_name: str,
         correlation_id: UUID,
-        level: LogLevelEnum = LogLevelEnum.DEBUG,
+        level: LogLevel = LogLevel.DEBUG,
         data: dict[str, str | int | float | bool | None] | None = None,
     ):
         self.block_name = block_name
@@ -318,7 +318,7 @@ class log_code_block:
         else:
             # Exception occurred
             emit_log_event(
-                level=LogLevelEnum.ERROR,
+                level=LogLevel.ERROR,
                 event_type="code_block_exception",
                 message=f"Exception in code block {self.block_name}: {exc_val!s}",
                 correlation_id=self.correlation_id,
@@ -359,7 +359,7 @@ def log_performance_metrics(threshold_ms: int = 1000):
 
             if execution_time_ms > threshold_ms:
                 emit_log_event(
-                    level=LogLevelEnum.WARNING,
+                    level=LogLevel.WARNING,
                     event_type="performance_threshold_exceeded",
                     message=f"Function {function_name} exceeded performance threshold",
                     correlation_id=correlation_id,
@@ -372,7 +372,7 @@ def log_performance_metrics(threshold_ms: int = 1000):
                 )
             else:
                 emit_log_event(
-                    level=LogLevelEnum.DEBUG,
+                    level=LogLevel.DEBUG,
                     event_type="performance_metrics",
                     message=f"Function {function_name} performance metrics",
                     correlation_id=correlation_id,
@@ -582,7 +582,7 @@ def _get_default_event_bus() -> ProtocolEventBus | None:
 
 
 def _route_to_logger_node(
-    level: LogLevelEnum,
+    level: LogLevel,
     event_type: str,
     message: str,
     node_id: str,

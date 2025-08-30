@@ -19,7 +19,7 @@ import os
 import time
 from uuid import UUID
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
@@ -57,7 +57,7 @@ class EventBusService(ProtocolEventBusService):
         self._pattern_cache = {}
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Phase 5: EventBusService initialized",
             {
                 "enable_lifecycle_events": self.config.enable_lifecycle_events,
@@ -89,7 +89,7 @@ class EventBusService(ProtocolEventBusService):
             if event_bus:
                 self._event_bus = event_bus
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "EventBusService: Using provided event bus instance",
                     {
                         "event_bus_type": type(event_bus).__name__,
@@ -103,7 +103,7 @@ class EventBusService(ProtocolEventBusService):
                 if resolved_bus:
                     self._event_bus = resolved_bus
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         "EventBusService: Successfully auto-resolved event bus",
                         {
                             "event_bus_type": type(resolved_bus).__name__,
@@ -124,7 +124,7 @@ class EventBusService(ProtocolEventBusService):
                     },
                 )
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "EventBusService: No event bus available, continuing in CLI-only mode",
                 {
                     "suppress_connection_errors": self.config.suppress_connection_errors,
@@ -169,7 +169,7 @@ class EventBusService(ProtocolEventBusService):
 
         if not self._event_bus:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "EventBusService: No event bus available for NODE_START emission",
                 {
                     "node_id": node_id,
@@ -201,7 +201,7 @@ class EventBusService(ProtocolEventBusService):
             self._event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"EventBusService: Emitted NODE_START for {node_name}",
                 {
                     "node_id": node_id,
@@ -224,7 +224,7 @@ class EventBusService(ProtocolEventBusService):
                     },
                 ) from e
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to emit NODE_START: {e!s}",
                 {
                     "node_id": node_id,
@@ -287,7 +287,7 @@ class EventBusService(ProtocolEventBusService):
             self._event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"EventBusService: Emitted NODE_SUCCESS for {node_name}",
                 {
                     "node_id": node_id,
@@ -311,7 +311,7 @@ class EventBusService(ProtocolEventBusService):
                     },
                 ) from e
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to emit NODE_SUCCESS: {e!s}",
                 {
                     "node_id": node_id,
@@ -376,7 +376,7 @@ class EventBusService(ProtocolEventBusService):
             self._event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Emitted NODE_FAILURE for {node_name}",
                 {
                     "node_id": node_id,
@@ -402,7 +402,7 @@ class EventBusService(ProtocolEventBusService):
                     },
                 ) from e
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to emit NODE_FAILURE: {e!s}",
                 {
                     "node_id": node_id,
@@ -490,7 +490,7 @@ class EventBusService(ProtocolEventBusService):
             self._event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"EventBusService: Published introspection event for {node_name}",
                 {
                     "node_id": node_id,
@@ -515,7 +515,7 @@ class EventBusService(ProtocolEventBusService):
                     },
                 ) from e
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to publish introspection event: {e!s}",
                 {
                     "node_id": node_id,
@@ -549,7 +549,7 @@ class EventBusService(ProtocolEventBusService):
             if self.config.enable_event_caching and cache_key in self._pattern_cache:
                 cached_result = self._pattern_cache[cache_key]
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"EventBusService: Using cached event patterns for {node_name}",
                     {
                         "node_name": node_name,
@@ -572,7 +572,7 @@ class EventBusService(ProtocolEventBusService):
                             if patterns:
                                 patterns_source = "contract"
                                 emit_log_event(
-                                    LogLevelEnum.INFO,
+                                    LogLevel.INFO,
                                     f"EventBusService: Found event patterns in contract for {node_name}",
                                     {
                                         "node_name": node_name,
@@ -582,7 +582,7 @@ class EventBusService(ProtocolEventBusService):
                                 )
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"EventBusService: Failed to parse contract event patterns: {e!s}",
                         {"node_name": node_name},
                     )
@@ -613,7 +613,7 @@ class EventBusService(ProtocolEventBusService):
                     patterns_source = "node_name"
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"EventBusService: Generated event patterns from node name for {node_name}",
                     {
                         "node_name": node_name,
@@ -627,7 +627,7 @@ class EventBusService(ProtocolEventBusService):
                 patterns = self.config.default_event_patterns.copy()
                 patterns_source = "default"
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"EventBusService: Using default event patterns for {node_name}",
                     {
                         "node_name": node_name,
@@ -657,7 +657,7 @@ class EventBusService(ProtocolEventBusService):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to get event patterns for {node_name}: {e!s}",
                 {
                     "node_name": node_name,
@@ -693,7 +693,7 @@ class EventBusService(ProtocolEventBusService):
                 )
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"EventBusService: Created broadcast envelope for {event.event_type}",
                     {
                         "event_type": event.event_type,
@@ -760,7 +760,7 @@ class EventBusService(ProtocolEventBusService):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "EventBusService: Attempting to auto-resolve event bus from environment",
                 {
                     "event_bus_url": event_bus_url,
@@ -777,7 +777,7 @@ class EventBusService(ProtocolEventBusService):
                 # Test connection if validation is enabled
                 if self.validate_event_bus_connection(adapter):
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         "EventBusService: Successfully auto-resolved and validated event bus",
                         {
                             "event_bus_url": event_bus_url,
@@ -786,7 +786,7 @@ class EventBusService(ProtocolEventBusService):
                     )
                     return adapter
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "EventBusService: Event bus connection validation failed",
                     {"event_bus_url": event_bus_url},
                 )
@@ -794,7 +794,7 @@ class EventBusService(ProtocolEventBusService):
 
             except ImportError:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "EventBusService: EventBusAdapter not available for auto-resolution",
                     {"event_bus_url": event_bus_url},
                 )
@@ -802,7 +802,7 @@ class EventBusService(ProtocolEventBusService):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to auto-resolve event bus: {e!s}",
                 {
                     "error_type": type(e).__name__,
@@ -836,13 +836,13 @@ class EventBusService(ProtocolEventBusService):
                     event_bus.subscribe(event_handler, pattern)
                     success_count += 1
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"EventBusService: Subscribed to pattern {pattern}",
                         {"pattern": pattern},
                     )
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"EventBusService: Failed to subscribe to pattern {pattern}: {e!s}",
                         {
                             "pattern": pattern,
@@ -851,7 +851,7 @@ class EventBusService(ProtocolEventBusService):
                     )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"EventBusService: Set up {success_count}/{len(patterns)} event subscriptions",
                 {
                     "success_count": success_count,
@@ -895,13 +895,13 @@ class EventBusService(ProtocolEventBusService):
                     event_bus.unsubscribe(pattern)
                     success_count += 1
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"EventBusService: Unsubscribed from pattern {pattern}",
                         {"pattern": pattern},
                     )
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"EventBusService: Failed to unsubscribe from pattern {pattern}: {e!s}",
                         {
                             "pattern": pattern,
@@ -910,7 +910,7 @@ class EventBusService(ProtocolEventBusService):
                     )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"EventBusService: Cleaned up {success_count}/{len(patterns)} event subscriptions",
                 {
                     "success_count": success_count,
@@ -923,7 +923,7 @@ class EventBusService(ProtocolEventBusService):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Failed to cleanup event subscriptions: {e!s}",
                 {
                     "patterns": patterns,
@@ -954,7 +954,7 @@ class EventBusService(ProtocolEventBusService):
                     # Handle potential exceptions when checking methods on broken event buses
                     if not hasattr(event_bus, method):
                         emit_log_event(
-                            LogLevelEnum.WARNING,
+                            LogLevel.WARNING,
                             f"EventBusService: Event bus missing required method {method}",
                             {
                                 "event_bus_type": type(event_bus).__name__,
@@ -967,7 +967,7 @@ class EventBusService(ProtocolEventBusService):
                     method_obj = getattr(event_bus, method)
                     if not callable(method_obj):
                         emit_log_event(
-                            LogLevelEnum.WARNING,
+                            LogLevel.WARNING,
                             f"EventBusService: Event bus method {method} is not callable",
                             {
                                 "event_bus_type": type(event_bus).__name__,
@@ -984,7 +984,7 @@ class EventBusService(ProtocolEventBusService):
             # For now, basic method presence is sufficient
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "EventBusService: Event bus connection validation passed",
                 {
                     "event_bus_type": type(event_bus).__name__,
@@ -995,7 +995,7 @@ class EventBusService(ProtocolEventBusService):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"EventBusService: Event bus validation failed: {e!s}",
                 {
                     "event_bus_type": type(event_bus).__name__ if event_bus else None,
@@ -1029,7 +1029,7 @@ class EventBusService(ProtocolEventBusService):
             except Exception as e:
                 if attempt == max_retries - 1:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"EventBusService: Failed to publish event after {max_retries} attempts: {e!s}",
                         {
                             "envelope_id": str(envelope.envelope_id),

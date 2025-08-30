@@ -18,7 +18,7 @@ Author: ONEX Framework Team
 import importlib
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
@@ -110,7 +110,7 @@ class ContainerService:
             dep_list = contract_content.dependencies
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"ContainerService: Creating services for {len(dep_list)} dependencies",
                 {
                     "dependency_count": len(dep_list),
@@ -147,7 +147,7 @@ class ContainerService:
                         validation_results[dep_name] = hasattr(container, service_attr)
 
                         emit_log_event(
-                            LogLevelEnum.DEBUG,
+                            LogLevel.DEBUG,
                             f"Registered service: {dep_name}",
                             {
                                 "service_name": dep_name,
@@ -165,7 +165,7 @@ class ContainerService:
                     validation_results[dep_name] = False
 
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Failed to register service: {dep_name}",
                         {
                             "service_name": dep_name,
@@ -211,7 +211,7 @@ class ContainerService:
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"ContainerService: Successfully created container for {node_id}",
                 {
                     "node_id": node_id,
@@ -292,7 +292,7 @@ class ContainerService:
 
             if not class_name:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"No class name found for dependency: {dep_name}",
                     {
                         "dependency_name": dep_name,
@@ -309,7 +309,7 @@ class ContainerService:
             self._service_cache[dep_name] = service_instance
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Created service instance: {dep_name}",
                 {
                     "dependency_name": dep_name,
@@ -324,7 +324,7 @@ class ContainerService:
         except Exception as e:
             dep_name = getattr(dependency, "name", "unknown")
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to create service from dependency: {dep_name}",
                 {
                     "dependency_name": dep_name,
@@ -356,7 +356,7 @@ class ContainerService:
 
             if not service_attrs:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "No services found in container",
                     {"container_type": type(container).__name__},
                 )
@@ -367,14 +367,14 @@ class ContainerService:
                 service = getattr(container, service_attr)
                 if service is None:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Service is None: {service_attr}",
                         {"service_attr": service_attr},
                     )
                     return False
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Container validation passed: {len(service_attrs)} services",
                 {"service_count": len(service_attrs)},
             )
@@ -383,7 +383,7 @@ class ContainerService:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Container validation failed: {e!s}",
                 {"error": str(e)},
             )
@@ -497,7 +497,7 @@ class ContainerService:
                 registry._container.get_node_version = get_node_version
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "Updated container lifecycle with ModelNodeBase reference",
                     {
                         "node_name": getattr(nodebase_ref, "node_name", "unknown"),
@@ -507,7 +507,7 @@ class ContainerService:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to update container lifecycle: {e!s}",
                 {"error": str(e)},
             )

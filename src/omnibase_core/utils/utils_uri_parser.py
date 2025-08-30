@@ -31,7 +31,7 @@ See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for UR
 import re
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -66,7 +66,7 @@ class CanonicalUriParser(ProtocolUriParser):
         """
         if event_bus is not None:
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Parsing ONEX URI: {uri_string}",
                 node_id=_COMPONENT_NAME,
                 event_bus=event_bus,
@@ -80,7 +80,7 @@ class CanonicalUriParser(ProtocolUriParser):
         uri_type, namespace, version_spec = match.groups()
         if event_bus is not None:
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Parsed: Type={uri_type}, Namespace={namespace}, Version={version_spec}",
                 node_id=_COMPONENT_NAME,
                 event_bus=event_bus,

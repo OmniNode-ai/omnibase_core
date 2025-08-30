@@ -32,8 +32,8 @@ import datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
 from omnibase.enums.enum_node_status import EnumNodeStatus
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.core.core_uuid_service import UUIDService
@@ -94,7 +94,7 @@ class MixinNodeLifecycle:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to load node metadata for NODE_ANNOUNCE: {e}",
                 context=context,
             )
@@ -146,7 +146,7 @@ class MixinNodeLifecycle:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Node {node_id} announced on event bus (NODE_ANNOUNCE)",
                 context=context,
             )
@@ -160,7 +160,7 @@ class MixinNodeLifecycle:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to publish NODE_ANNOUNCE: {e}",
                 context=context,
             )
@@ -201,7 +201,7 @@ class MixinNodeLifecycle:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Published shutdown event for node {node_id}",
                 context=context,
             )
@@ -215,7 +215,7 @@ class MixinNodeLifecycle:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to publish shutdown event: {e}",
                 context=context,
             )
@@ -265,7 +265,7 @@ class MixinNodeLifecycle:
 
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to emit NODE_START event: {e}",
                 final_correlation_id,
                 event_type="lifecycle_error",
@@ -319,7 +319,7 @@ class MixinNodeLifecycle:
 
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to emit NODE_SUCCESS event: {e}",
                 final_correlation_id,
                 event_type="lifecycle_error",
@@ -377,7 +377,7 @@ class MixinNodeLifecycle:
 
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to emit NODE_FAILURE event: {e}",
                 final_correlation_id,
                 event_type="lifecycle_error",
@@ -409,7 +409,7 @@ class MixinNodeLifecycle:
                     node_id=node_id,
                 )
                 emit_log_event_sync(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Error during event handler cleanup: {e}",
                     context=context,
                 )

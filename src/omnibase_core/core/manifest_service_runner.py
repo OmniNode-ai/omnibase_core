@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from types import FrameType
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -52,7 +52,7 @@ class ManifestServiceRunner:
         self.introspection_handler = None
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🚀 Manifest Service Runner initialized",
             {"domain": domain or "all", "base_path": str(self.discovery.base_path)},
         )
@@ -65,14 +65,14 @@ class ManifestServiceRunner:
 
         if not active_tools:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "⚠️ No active tools found for startup",
                 {"domain": self.domain or "all"},
             )
             return
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🎯 Starting {len(active_tools)} tools",
             {"tool_count": len(active_tools), "tools": [t.name for t in active_tools]},
         )
@@ -83,7 +83,7 @@ class ManifestServiceRunner:
                 await self._start_tool(manifest)
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"❌ Failed to start {manifest.name}: {e!s}",
                     {
                         "tool_name": manifest.name,
@@ -93,7 +93,7 @@ class ManifestServiceRunner:
                 )
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"✅ Service startup complete. Running {len(self.running_tools)} tools",
             {"running_tools": list(self.running_tools.keys())},
         )
@@ -120,7 +120,7 @@ class ManifestServiceRunner:
 
         if version_info.status != "active":
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"⚠️ Skipping {manifest.name}: version {current_version} is {version_info.status}",
                 {
                     "tool_name": manifest.name,
@@ -131,7 +131,7 @@ class ManifestServiceRunner:
             return
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🔧 Starting {manifest.name} {current_version}",
             {
                 "tool_name": manifest.name,
@@ -192,7 +192,7 @@ class ManifestServiceRunner:
 
             # Log introspection capabilities
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"🔍 Checking introspection capabilities for {manifest.name}",
                 {
                     "tool_name": manifest.name,
@@ -209,7 +209,7 @@ class ManifestServiceRunner:
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"✅ {manifest.name} started successfully",
                 {
                     "tool_name": manifest.name,
@@ -243,7 +243,7 @@ class ManifestServiceRunner:
                 break
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🌐 Connecting {manifest.name} to event bus",
             {"tool_name": manifest.name, "event_bus_url": event_bus_url},
         )
@@ -283,7 +283,7 @@ class ManifestServiceRunner:
             node.start_event_listener()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"🔔 Event listener started for {manifest.name}",
                 {
                     "tool_name": manifest.name,
@@ -297,7 +297,7 @@ class ManifestServiceRunner:
         # Set up signal handlers
         def signal_handler(signum: int, frame: FrameType | None) -> None:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"📡 Received signal {signum}, initiating graceful shutdown",
                 {"signal": signum, "running_tools": len(self.running_tools)},
             )
@@ -312,14 +312,14 @@ class ManifestServiceRunner:
 
             if not self.running_tools:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "⚠️ No tools started, exiting",
                     {"domain": self.domain or "all"},
                 )
                 return
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"🎉 All tools running! Monitoring {len(self.running_tools)} services...",
                 {"tools": list(self.running_tools.keys())},
             )
@@ -331,14 +331,14 @@ class ManifestServiceRunner:
                 # Health check (could be expanded)
                 if len(self.running_tools) == 0:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         "❌ All tools have stopped, exiting",
                         {},
                     )
                     break
 
         except KeyboardInterrupt:
-            emit_log_event(LogLevelEnum.INFO, "⌨️ Keyboard interrupt received", {})
+            emit_log_event(LogLevel.INFO, "⌨️ Keyboard interrupt received", {})
             self.stop_requested = True
 
         finally:
@@ -348,7 +348,7 @@ class ManifestServiceRunner:
         """Set up introspection request handler for the manifest runner."""
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"📡 Setting up introspection handler for {len(self.running_tools)} tools",
             {"running_tools": list(self.running_tools.keys())},
         )
@@ -358,7 +358,7 @@ class ManifestServiceRunner:
             if isinstance(tool_info, dict) and "node" in tool_info:
                 node = tool_info["node"]
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"🔍 Tool {tool_name} introspection status",
                     {
                         "tool_name": tool_name,
@@ -379,7 +379,7 @@ class ManifestServiceRunner:
                 )
             else:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"⚠️ Tool {tool_name} has invalid tool_info structure",
                     {
                         "tool_name": tool_name,
@@ -390,7 +390,7 @@ class ManifestServiceRunner:
     async def _shutdown_all_tools(self) -> None:
         """Gracefully shutdown all running tools."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🛑 Shutting down {len(self.running_tools)} tools",
             {"tools": list(self.running_tools.keys())},
         )
@@ -403,20 +403,20 @@ class ManifestServiceRunner:
                         node.stop_event_listener()
 
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"✅ Stopped {tool_name}",
                         {"tool_name": tool_name},
                     )
                 else:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"⚠️ Cannot stop {tool_name}: invalid tool_info structure",
                         {"tool_name": tool_name},
                     )
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"❌ Error stopping {tool_name}: {e!s}",
                     {"tool_name": tool_name, "error": str(e)},
                 )
@@ -455,7 +455,7 @@ async def main() -> None:
             await runner.run_forever()
 
     except Exception as e:
-        emit_log_event(LogLevelEnum.ERROR, f"❌ Service runner failed: {e!s}")
+        emit_log_event(LogLevel.ERROR, f"❌ Service runner failed: {e!s}")
         sys.exit(SERVICE_ERROR_EXIT_CODE)
 
 

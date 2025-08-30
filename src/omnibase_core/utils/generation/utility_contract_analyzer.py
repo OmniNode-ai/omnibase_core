@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -103,7 +103,7 @@ class UtilityContractAnalyzer:
         cache_key = str(contract_path.resolve())
         if cache_key in self._contract_cache:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Using cached contract for {contract_path}",
                 {"path": str(contract_path)},
             )
@@ -111,7 +111,7 @@ class UtilityContractAnalyzer:
 
         # Load from file
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Loading contract from {contract_path}",
             {"path": str(contract_path)},
         )
@@ -126,7 +126,7 @@ class UtilityContractAnalyzer:
 
             # Compose schemas before creating ModelContractDocument
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🔍 TRACE: Composing external schema references (file reader path)",
                 {"contract_path": str(contract_path)},
             )
@@ -148,7 +148,7 @@ class UtilityContractAnalyzer:
                     contract_data["definitions"] = composed_definitions
 
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"Schema composition completed (file reader path): {original_count} definitions processed",
                         {
                             "original_definitions": original_count,
@@ -159,7 +159,7 @@ class UtilityContractAnalyzer:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Schema composition failed (file reader path): {e}",
                     {
                         "contract_path": str(contract_path),
@@ -176,7 +176,7 @@ class UtilityContractAnalyzer:
 
             # CRITICAL: Compose schemas before creating ModelContractDocument
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🔍 TRACE: Composing external schema references",
                 {"contract_path": str(contract_path)},
             )
@@ -196,7 +196,7 @@ class UtilityContractAnalyzer:
                     if "SemVerModel" in composed_definitions:
                         semver_composed = composed_definitions["SemVerModel"]
                         emit_log_event(
-                            LogLevelEnum.INFO,
+                            LogLevel.INFO,
                             f"DEBUG: SemVerModel after composition - type: {semver_composed.get('type')}, properties: {list(semver_composed.get('properties', {}).keys())}",
                             {
                                 "composed_type": semver_composed.get("type"),
@@ -213,7 +213,7 @@ class UtilityContractAnalyzer:
                     contract_data["definitions"] = composed_definitions
 
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"Schema composition completed: {original_count} definitions processed",
                         {
                             "original_definitions": original_count,
@@ -223,14 +223,14 @@ class UtilityContractAnalyzer:
                     )
                 else:
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "No definitions found in contract - skipping schema composition",
                         {"contract_path": str(contract_path)},
                     )
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Schema composition failed: {e}",
                     {
                         "contract_path": str(contract_path),
@@ -240,7 +240,7 @@ class UtilityContractAnalyzer:
                 )
                 # Continue with original definitions if composition fails
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "Falling back to original definitions due to composition failure",
                     {"contract_path": str(contract_path)},
                 )
@@ -474,7 +474,7 @@ class UtilityContractAnalyzer:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Failed to analyze dependencies for {current}: {e}",
                     {"path": current, "error": str(e)},
                 )

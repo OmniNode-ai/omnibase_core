@@ -9,7 +9,7 @@ import copy
 from pathlib import Path
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -58,7 +58,7 @@ class UtilitySchemaComposer:
         contract_dir = contract_path.parent
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Composing contract definitions from {contract_path}",
             {
                 "contract_path": str(contract_path),
@@ -71,7 +71,7 @@ class UtilitySchemaComposer:
 
         for def_name, def_schema in definitions.items():
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Composing definition: {def_name}",
                 {"definition_name": def_name},
             )
@@ -85,7 +85,7 @@ class UtilitySchemaComposer:
                 composed_definitions[def_name] = composed_schema
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Successfully composed definition: {def_name}",
                     {
                         "definition_name": def_name,
@@ -98,7 +98,7 @@ class UtilitySchemaComposer:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Failed to compose definition: {def_name}",
                     {
                         "definition_name": def_name,
@@ -139,7 +139,7 @@ class UtilitySchemaComposer:
 
         ref_path = schema["$ref"]
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Resolving reference: {ref_path}",
             {"ref_path": ref_path, "context": context_name},
         )
@@ -181,7 +181,7 @@ class UtilitySchemaComposer:
             merged_schema = self._merge_schemas(composed_external, schema)
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Successfully resolved reference: {ref_path}",
                 {
                     "ref_path": ref_path,

@@ -12,7 +12,7 @@ from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -154,7 +154,7 @@ class MixinServiceRegistry:
             self._event_handlers_setup = True
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Starting service registry",
             {
                 "domain_filter": domain_filter,
@@ -220,7 +220,7 @@ class MixinServiceRegistry:
             self.event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Discovery request sent",
                 {"correlation_id": correlation_id},
             )
@@ -271,7 +271,7 @@ class MixinServiceRegistry:
                 self.service_registry[node_id] = entry
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"New tool discovered: {service_name}",
                     {"node_id": node_id, "service_name": service_name},
                 )
@@ -310,7 +310,7 @@ class MixinServiceRegistry:
                 self.service_registry[node_id].set_offline()
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"Tool went offline: {self.service_registry[node_id].service_name}",
                     {"node_id": node_id},
                 )
@@ -365,7 +365,7 @@ class MixinServiceRegistry:
             self.event_bus.publish(envelope)
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Introspection request sent to {node_id}",
                 {"target_node_id": node_id, "correlation_id": correlation_id},
             )
@@ -390,7 +390,7 @@ class MixinServiceRegistry:
                 self.service_registry[node_id].update_introspection(introspection_data)
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Updated introspection data for {node_id}",
                     {
                         "node_id": node_id,
@@ -519,7 +519,7 @@ class MixinServiceRegistry:
 
         if stale_entries:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Marked {len(stale_entries)} stale entries as offline",
                 {"stale_entries": stale_entries},
             )

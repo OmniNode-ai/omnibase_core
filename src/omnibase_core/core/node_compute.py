@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Generic, TypeVar
 from uuid import uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 # Import contract model for compute nodes
 from omnibase_core.core.contracts.model_contract_compute import (
@@ -281,7 +281,7 @@ class NodeCompute(NodeCoreBase):
             contract_model.validate_node_specific_config()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Contract model loaded successfully for NodeCompute",
                 {
                     "contract_type": "ModelContractCompute",
@@ -414,7 +414,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             # Log error but don't stop processing
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
@@ -476,7 +476,7 @@ class NodeCompute(NodeCoreBase):
             # Validate performance threshold for single operations
             if processing_time > self.performance_threshold_ms:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Computation exceeded performance threshold: {processing_time:.2f}ms",
                     {
                         "node_id": self.node_id,
@@ -514,7 +514,7 @@ class NodeCompute(NodeCoreBase):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Computation completed: {input_data.computation_type}",
                 {
                     "node_id": self.node_id,
@@ -643,7 +643,7 @@ class NodeCompute(NodeCoreBase):
         self.computation_registry[computation_type] = computation_func
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Computation registered: {computation_type}",
             {"node_id": self.node_id, "computation_type": computation_type},
         )
@@ -679,7 +679,7 @@ class NodeCompute(NodeCoreBase):
         self.thread_pool = ThreadPoolExecutor(max_workers=self.max_parallel_workers)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeCompute resources initialized",
             {
                 "node_id": self.node_id,
@@ -699,7 +699,7 @@ class NodeCompute(NodeCoreBase):
         self.computation_cache.clear()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeCompute resources cleaned up",
             {"node_id": self.node_id},
         )
@@ -932,7 +932,7 @@ class NodeCompute(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to generate full compute introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
@@ -972,7 +972,7 @@ class NodeCompute(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract all compute operations: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1022,7 +1022,7 @@ class NodeCompute(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract algorithm configuration: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1071,7 +1071,7 @@ class NodeCompute(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get compute resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1091,7 +1091,7 @@ class NodeCompute(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get caching status: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1129,7 +1129,7 @@ class NodeCompute(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get computation metrics: {e!s}",
                 {"node_id": self.node_id},
             )

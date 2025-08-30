@@ -33,7 +33,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.model.core.model_event_type import is_event_equal
@@ -96,7 +96,7 @@ class MixinEventHandler:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Event handlers set up for node {node_id}",
                 context=context,
             )
@@ -176,7 +176,7 @@ class MixinEventHandler:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Handled introspection request for node {node_id}",
                 context=context,
             )
@@ -191,7 +191,7 @@ class MixinEventHandler:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error handling introspection request: {e}",
                 context=context,
             )
@@ -234,7 +234,7 @@ class MixinEventHandler:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Handled discovery request for node {node_id}",
                 context=context,
             )
@@ -249,7 +249,7 @@ class MixinEventHandler:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error handling discovery request: {e}",
                 context=context,
             )
@@ -328,7 +328,7 @@ class MixinEventHandler:
                     node_id=node_id,
                 )
                 emit_log_event_sync(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Event handlers cleaned up for node {node_id}",
                     context=context,
                 )
@@ -342,7 +342,7 @@ class MixinEventHandler:
                     node_id=node_id,
                 )
                 emit_log_event_sync(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Error cleaning up event handlers: {e}",
                     context=context,
                 )

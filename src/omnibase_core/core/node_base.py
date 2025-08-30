@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
@@ -468,7 +468,7 @@ class ModelNodeBase(
         """
         try:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Processing with ModelNodeBase: {self.state.node_name}",
                 {
                     "node_name": self.state.node_name,
@@ -514,7 +514,7 @@ class ModelNodeBase(
         except Exception as e:
             # Convert generic exceptions to ONEX errors
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error in ModelNodeBase processing: {e!s}",
                 {
                     "node_name": self.state.node_name,
@@ -690,7 +690,7 @@ class ModelNodeBase(
         )
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"ModelNodeBase initialized: {self.node_id}",
             event.payload,
         )
@@ -712,7 +712,7 @@ class ModelNodeBase(
         )
 
         emit_log_event(
-            LogLevelEnum.ERROR,
+            LogLevel.ERROR,
             f"ModelNodeBase initialization failed: {error!s}",
             event.payload,
         )

@@ -34,7 +34,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -498,7 +498,7 @@ class MixinNodeService(MixinEventDrivenNode):
             timestamp=datetime.now().isoformat(),
             node_id=getattr(self, "_node_id", "unknown"),
         )
-        emit_log_event_sync(LogLevelEnum.INFO, message, context=context)
+        emit_log_event_sync(LogLevel.INFO, message, context=context)
 
     def _log_warning(self, message: str) -> None:
         """Log warning message with context."""
@@ -509,7 +509,7 @@ class MixinNodeService(MixinEventDrivenNode):
             timestamp=datetime.now().isoformat(),
             node_id=getattr(self, "_node_id", "unknown"),
         )
-        emit_log_event_sync(LogLevelEnum.WARNING, message, context=context)
+        emit_log_event_sync(LogLevel.WARNING, message, context=context)
 
     def _log_error(self, message: str) -> None:
         """Log error message with context."""
@@ -520,4 +520,4 @@ class MixinNodeService(MixinEventDrivenNode):
             timestamp=datetime.now().isoformat(),
             node_id=getattr(self, "_node_id", "unknown"),
         )
-        emit_log_event_sync(LogLevelEnum.ERROR, message, context=context)
+        emit_log_event_sync(LogLevel.ERROR, message, context=context)

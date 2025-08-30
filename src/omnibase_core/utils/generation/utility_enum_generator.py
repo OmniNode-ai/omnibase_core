@@ -9,7 +9,7 @@ import ast
 from dataclasses import dataclass
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -78,13 +78,13 @@ class UtilityEnumGenerator:
 
         if hasattr(contract_data, "definitions") and contract_data.definitions:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Checking {len(contract_data.definitions)} definitions for enums",
                 {"definition_count": len(contract_data.definitions)},
             )
             for def_name, def_schema in contract_data.definitions.items():
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Checking definition '{def_name}' for enum patterns",
                     {
                         "definition_name": def_name,
@@ -169,7 +169,7 @@ class UtilityEnumGenerator:
             enum_classes.append(enum_class)
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Generated enum class {enum_info.name}",
                 {
                     "enum_name": enum_info.name,
@@ -255,7 +255,7 @@ class UtilityEnumGenerator:
                 # Log duplicate found
                 existing = seen_values[values_key]
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Duplicate enum found: {enum_info.name} matches {existing.name}",
                     {
                         "duplicate_name": enum_info.name,
@@ -277,7 +277,7 @@ class UtilityEnumGenerator:
         """Collect enum schemas from a ModelSchema object."""
         if not schema:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Skipping null schema in {source_schema}",
                 {"source_schema": source_schema},
             )
@@ -285,7 +285,7 @@ class UtilityEnumGenerator:
 
         # Log what we're examining
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Examining schema in {source_schema}",
             {
                 "source_schema": source_schema,
@@ -307,7 +307,7 @@ class UtilityEnumGenerator:
 
             # TRACE: Enum discovery in schema
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"🔍 TRACE: Found enum in schema '{source_schema}'",
                 {
                     "original_source": source_schema,
@@ -318,7 +318,7 @@ class UtilityEnumGenerator:
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Found enum '{enum_name}' in {source_schema}",
                 {
                     "enum_name": enum_name,

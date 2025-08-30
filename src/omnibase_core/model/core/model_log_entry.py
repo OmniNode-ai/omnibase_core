@@ -22,7 +22,8 @@
 # === /OmniNode:Metadata ===
 
 
-from omnibase_core.enums import LogLevelEnum
+from omnibase.protocols.types import LogLevel
+
 from omnibase_core.model.core.model_base_error import ModelBaseError
 
 # Import separated models
@@ -34,7 +35,7 @@ class ModelLogEntry(ModelBaseError):
     """Main log entry model."""
 
     message: str
-    level: LogLevelEnum = LogLevelEnum.INFO
+    level: LogLevel = LogLevel.INFO
     context: ModelLogContext
 
 

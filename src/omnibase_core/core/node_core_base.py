@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -171,7 +171,7 @@ class NodeCoreBase(ABC):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"NodeCoreBase initialized: {self.__class__.__name__}",
                 {
                     "node_id": self.node_id,
@@ -236,7 +236,7 @@ class NodeCoreBase(ABC):
             self.state["status"] = "cleaned_up"
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"NodeCoreBase cleanup complete: {self.__class__.__name__}",
                 {
                     "node_id": self.node_id,
@@ -249,7 +249,7 @@ class NodeCoreBase(ABC):
             self.state["status"] = "cleanup_failed"
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Node cleanup failed: {e!s}",
                 {
                     "node_id": self.node_id,
@@ -348,7 +348,7 @@ class NodeCoreBase(ABC):
                         self.version = str(contract_data["version"])
 
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"Contract loaded for {self.__class__.__name__}",
                         {
                             "node_id": self.node_id,
@@ -359,7 +359,7 @@ class NodeCoreBase(ABC):
         except Exception as e:
             # Contract loading failure is not fatal
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Contract loading failed (continuing without): {e!s}",
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
@@ -420,7 +420,7 @@ class NodeCoreBase(ABC):
         except Exception as e:
             # Event emission failure is not fatal
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Event emission failed: {e!s}",
                 {"node_id": self.node_id, "event_type": event_type},
             )

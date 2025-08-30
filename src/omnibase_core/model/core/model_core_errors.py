@@ -639,7 +639,7 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
 
@@ -648,21 +648,21 @@ class CLIAdapter:
         if message:
             if status in (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN):
                 emit_log_event_sync(
-                    level=LogLevelEnum.ERROR,
+                    level=LogLevel.ERROR,
                     message=message,
                     event_type="cli_exit_error",
                     data={"status": status.value, "exit_code": exit_code},
                 )
             elif status == EnumOnexStatus.WARNING:
                 emit_log_event_sync(
-                    level=LogLevelEnum.WARNING,
+                    level=LogLevel.WARNING,
                     message=message,
                     event_type="cli_exit_warning",
                     data={"status": status.value, "exit_code": exit_code},
                 )
             else:
                 emit_log_event_sync(
-                    level=LogLevelEnum.INFO,
+                    level=LogLevel.INFO,
                     message=message,
                     event_type="cli_exit_info",
                     data={"status": status.value, "exit_code": exit_code},
@@ -680,13 +680,13 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
 
         exit_code = error.get_exit_code()
         emit_log_event_sync(
-            level=LogLevelEnum.ERROR,
+            level=LogLevel.ERROR,
             message=str(error),
             event_type="cli_exit_with_error",
             correlation_id=error.correlation_id,

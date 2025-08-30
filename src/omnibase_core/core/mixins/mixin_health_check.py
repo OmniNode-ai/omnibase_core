@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Union
 
 from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -50,7 +50,7 @@ class MixinHealthCheck:
         super().__init__(**kwargs)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinHealthCheck",
             {"mixin_class": self.__class__.__name__},
         )
@@ -76,7 +76,7 @@ class MixinHealthCheck:
             ModelHealthStatus with aggregated health information
         """
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏥 HEALTH_CHECK: Starting health check",
             {"node_class": self.__class__.__name__},
         )
@@ -93,7 +93,7 @@ class MixinHealthCheck:
 
         if not health_checks:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "✅ HEALTH_CHECK: No custom checks, returning base health",
                 {"status": base_health.status.value},
             )
@@ -107,7 +107,7 @@ class MixinHealthCheck:
         for check_func in health_checks:
             try:
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"🔍 Running health check: {check_func.__name__}",
                     {"check_name": check_func.__name__},
                 )
@@ -117,7 +117,7 @@ class MixinHealthCheck:
                 # Handle async checks in sync context
                 if asyncio.iscoroutine(result):
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Async health check called in sync context: {check_func.__name__}",
                         {"check_name": check_func.__name__},
                     )
@@ -144,14 +144,14 @@ class MixinHealthCheck:
                     messages.append(f"{check_func.__name__}: {result.message}")
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"✅ Health check completed: {check_func.__name__}",
                     {"check_name": check_func.__name__, "status": result.status.value},
                 )
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"❌ Health check failed: {check_func.__name__}",
                     {"check_name": check_func.__name__, "error": str(e)},
                 )
@@ -180,7 +180,7 @@ class MixinHealthCheck:
         )
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🏥 HEALTH_CHECK: Health check completed",
             {
                 "node_class": self.__class__.__name__,
@@ -199,7 +199,7 @@ class MixinHealthCheck:
             ModelHealthStatus with aggregated health information
         """
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏥 HEALTH_CHECK_ASYNC: Starting async health check",
             {"node_class": self.__class__.__name__},
         )
@@ -237,7 +237,7 @@ class MixinHealthCheck:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Failed to create health check task: {check_func.__name__}",
                     {"error": str(e)},
                 )
@@ -266,7 +266,7 @@ class MixinHealthCheck:
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Async health check failed: {check_name}",
                     {"error": str(e)},
                 )

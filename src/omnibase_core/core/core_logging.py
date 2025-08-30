@@ -12,7 +12,7 @@ import asyncio
 import threading
 from uuid import UUID
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_uuid_service import UUIDService
 
@@ -24,13 +24,13 @@ _cached_logger = None
 _cache_lock = threading.Lock()
 
 
-def emit_log_event(level: LogLevelEnum, message: str) -> None:
+def emit_log_event(level: LogLevel, message: str) -> None:
     """
     The only logging function you need - simple and clean.
     Registry-resolved logger with automatic correlation ID management.
 
     Args:
-        level: Log level (LogLevelEnum.INFO, LogLevelEnum.ERROR, etc.)
+        level: Log level (LogLevel.INFO, LogLevel.ERROR, etc.)
         message: Log message
     """
     # Get logger from registry (cached for performance)
@@ -104,7 +104,7 @@ def _get_registry_logger():
 
 async def _async_emit_via_logger(
     logger,
-    level: LogLevelEnum,
+    level: LogLevel,
     message: str,
     correlation_id: UUID,
 ) -> None:

@@ -9,11 +9,11 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.enums import EnumLogLevel as LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 
 def emit_log_event_sync(
-    level: LogLevelEnum,
+    level: LogLevel,
     message: str,
     context: dict[str, Any] | None = None,
 ) -> None:
@@ -21,7 +21,7 @@ def emit_log_event_sync(
     Emit a structured log event synchronously.
 
     Args:
-        level: Log level from LogLevelEnum
+        level: Log level from SPI LogLevel
         message: Log message
         context: Optional context dictionary
     """
@@ -35,13 +35,13 @@ def emit_log_event_sync(
         "context": context or {},
     }
 
-    # Map LogLevelEnum to Python logging levels
+    # Map SPI LogLevel to Python logging levels
     python_level = {
-        LogLevelEnum.DEBUG: logging.DEBUG,
-        LogLevelEnum.INFO: logging.INFO,
-        LogLevelEnum.WARNING: logging.WARNING,
-        LogLevelEnum.ERROR: logging.ERROR,
-        LogLevelEnum.CRITICAL: logging.CRITICAL,
+        LogLevel.DEBUG: logging.DEBUG,
+        LogLevel.INFO: logging.INFO,
+        LogLevel.WARNING: logging.WARNING,
+        LogLevel.ERROR: logging.ERROR,
+        LogLevel.CRITICAL: logging.CRITICAL,
     }.get(level, logging.INFO)
 
     logger.log(python_level, json.dumps(log_entry))

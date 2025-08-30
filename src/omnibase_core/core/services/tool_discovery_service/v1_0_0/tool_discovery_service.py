@@ -22,7 +22,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
@@ -95,7 +95,7 @@ class ToolDiscoveryService:
             main_tool_class_name = contract_content.tool_specification.main_tool_class
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"ToolDiscoveryService: Resolving tool {main_tool_class_name}",
                 {
                     "tool_class": main_tool_class_name,
@@ -248,7 +248,7 @@ class ToolDiscoveryService:
         registry_key = self.convert_class_name_to_registry_key(main_tool_class_name)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Resolving tool via registry: {main_tool_class_name} -> {registry_key}",
             {
                 "class_name": main_tool_class_name,
@@ -262,7 +262,7 @@ class ToolDiscoveryService:
             try:
                 available_tools = registry.list_tools()
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Available tools in registry: {available_tools}",
                     {
                         "available_tools": available_tools,
@@ -271,7 +271,7 @@ class ToolDiscoveryService:
                 )
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Failed to list available tools: {e!s}",
                     {"error": str(e)},
                 )
@@ -336,14 +336,14 @@ class ToolDiscoveryService:
             if self._config.enable_module_caching and module_path in self._module_cache:
                 module = self._module_cache[module_path]
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Using cached module: {module_path}",
                     {"module_path": module_path, "cache_hit": True},
                 )
             else:
                 # Import module dynamically
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Importing module: {module_path}",
                     {"module_path": module_path},
                 )
@@ -384,7 +384,7 @@ class ToolDiscoveryService:
                     )
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Successfully discovered tool class: {tool_class_name}",
                 {
                     "module_path": module_path,
@@ -439,14 +439,14 @@ class ToolDiscoveryService:
             cache_key = f"{tool_class.__module__}.{tool_class.__name__}"
             if self._config.cache_tool_instances and cache_key in self._tool_cache:
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Using cached tool instance: {tool_class.__name__}",
                     {"tool_class": tool_class.__name__, "cache_hit": True},
                 )
                 return self._tool_cache[cache_key]
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Instantiating tool with container: {tool_class.__name__}",
                 {
                     "tool_class": tool_class.__name__,
@@ -462,7 +462,7 @@ class ToolDiscoveryService:
                 self._tool_cache[cache_key] = tool_instance
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Successfully instantiated tool: {tool_class.__name__}",
                 {
                     "tool_class": tool_class.__name__,
@@ -520,7 +520,7 @@ class ToolDiscoveryService:
                 module_path = f"omnibase.tools.{node_dir.parts[-3]}.{node_dir.parts[-2]}.{node_dir.parts[-1]}.node"
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Built module path from contract: {module_path}",
                 {
                     "contract_path": str(contract_path),
@@ -598,7 +598,7 @@ class ToolDiscoveryService:
             self._validation_cache[module_path] = True
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Module path validation passed: {module_path}",
                 {
                     "module_path": module_path,
@@ -636,7 +636,7 @@ class ToolDiscoveryService:
         snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Converted class name to registry key: {class_name} -> {snake_case}",
             {"class_name": class_name, "registry_key": snake_case},
         )

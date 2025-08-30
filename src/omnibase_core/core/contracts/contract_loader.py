@@ -12,7 +12,7 @@ Author: ONEX Framework Team
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -292,7 +292,7 @@ class ContractLoader:
         # Phase 0 ModelNodeBase pattern - registry_class completely removed
         # Dependencies will be resolved directly from contract dependencies section
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Using Phase 0 ModelNodeBase pattern - dependencies will be resolved from contract",
             {"contract_path": str(contract_path)},
         )

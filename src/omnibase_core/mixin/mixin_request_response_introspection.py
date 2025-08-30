@@ -8,7 +8,7 @@ Provides the "request-response" half of the hybrid discovery system.
 import contextlib
 import time
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -62,7 +62,7 @@ class MixinRequestResponseIntrospection:
         """Set up subscription to REQUEST_REAL_TIME_INTROSPECTION events."""
         if not hasattr(self, "_event_bus") or self._event_bus is None:
             emit_log_event_sync(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "🔍 INTROSPECTION DEBUG: No event bus available for subscription",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
@@ -81,7 +81,7 @@ class MixinRequestResponseIntrospection:
             )
 
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"🔍 INTROSPECTION: Subscribed to {CoreEventTypes.REQUEST_REAL_TIME_INTROSPECTION}",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
@@ -97,7 +97,7 @@ class MixinRequestResponseIntrospection:
 
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"🔍 INTROSPECTION DEBUG: Failed to set up request-response introspection: {e}",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
@@ -128,7 +128,7 @@ class MixinRequestResponseIntrospection:
         Args:
             envelope_or_event: The envelope or event to handle
         """
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_structured_logging import emit_log_event_sync
 
@@ -139,7 +139,7 @@ class MixinRequestResponseIntrospection:
             event = envelope_or_event
 
         emit_log_event_sync(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🔍 INTROSPECTION: Received introspection request",
             {
                 "event_type": getattr(event, "event_type", "unknown"),
@@ -155,7 +155,7 @@ class MixinRequestResponseIntrospection:
 
         # DEBUG: Event type constant verification
         emit_log_event_sync(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔍 INTROSPECTION DEBUG: Event type verification",
             {
                 "received_event_type": getattr(event, "event_type", "unknown"),
@@ -171,7 +171,7 @@ class MixinRequestResponseIntrospection:
         # Filter for REQUEST_REAL_TIME_INTROSPECTION events only
         if event.event_type != CoreEventTypes.REQUEST_REAL_TIME_INTROSPECTION:
             emit_log_event_sync(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "🔍 INTROSPECTION: Ignoring non-introspection event",
                 {
                     "event_type": event.event_type,
@@ -195,7 +195,7 @@ class MixinRequestResponseIntrospection:
                 request_event = ModelRequestIntrospectionEvent(**event)
             else:
                 emit_log_event_sync(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "🔍 INTROSPECTION: Cannot reconstruct ModelRequestIntrospectionEvent from event",
                     {
                         "event_class": type(event).__name__,
@@ -205,7 +205,7 @@ class MixinRequestResponseIntrospection:
                 return
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
                 {"error": str(e), "event_class": type(event).__name__},
             )
@@ -217,7 +217,7 @@ class MixinRequestResponseIntrospection:
             # Check if this request matches our node characteristics
             if not self._matches_introspection_filters(request_event.filters):
                 emit_log_event_sync(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "🔍 INTROSPECTION: Node does not match filters",
                     {
                         "node_name": getattr(self, "node_name", "unknown"),
@@ -231,7 +231,7 @@ class MixinRequestResponseIntrospection:
                 return
 
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🔍 INTROSPECTION: Node matches filters, preparing response",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
@@ -278,7 +278,7 @@ class MixinRequestResponseIntrospection:
 
             # DEBUG: Response creation logging
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🔍 INTROSPECTION DEBUG: Response object created",
                 {
                     "correlation_id": str(request_event.correlation_id),
@@ -307,7 +307,7 @@ class MixinRequestResponseIntrospection:
             # Publish response
             if hasattr(self, "_event_bus") and self._event_bus:
                 emit_log_event_sync(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "🔍 INTROSPECTION: Publishing response",
                     {
                         "node_name": getattr(self, "node_name", "unknown"),
@@ -329,7 +329,7 @@ class MixinRequestResponseIntrospection:
 
                 # DEBUG: Pre-publication logging
                 emit_log_event_sync(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "🔍 INTROSPECTION DEBUG: About to publish response envelope",
                     {
                         "correlation_id": str(request_event.correlation_id),
@@ -357,7 +357,7 @@ class MixinRequestResponseIntrospection:
 
                 # DEBUG: Post-publication logging
                 emit_log_event_sync(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "🔍 INTROSPECTION DEBUG: Response envelope published",
                     {
                         "correlation_id": str(request_event.correlation_id),
@@ -378,20 +378,20 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 emit_log_event_sync(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "✅ INTROSPECTION: Response published successfully",
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
             else:
                 emit_log_event_sync(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     "❌ INTROSPECTION: No event bus available to publish response",
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
         except Exception as e:
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
@@ -425,7 +425,7 @@ class MixinRequestResponseIntrospection:
 
                     # DEBUG: Error response publication logging
                     emit_log_event_sync(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "🔍 INTROSPECTION DEBUG: Publishing error response envelope",
                         {
                             "correlation_id": str(request_event.correlation_id),
@@ -441,7 +441,7 @@ class MixinRequestResponseIntrospection:
 
                     # DEBUG: Error response publication result
                     emit_log_event_sync(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "🔍 INTROSPECTION DEBUG: Error response envelope published",
                         {
                             "correlation_id": str(request_event.correlation_id),

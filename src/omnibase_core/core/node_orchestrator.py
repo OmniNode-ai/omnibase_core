@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, NamedTuple
 from uuid import uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -434,7 +434,7 @@ class NodeOrchestrator(NodeCoreBase):
             contract_model.validate_node_specific_config()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Contract model loaded successfully for NodeOrchestrator",
                 {
                     "contract_type": "ModelContractOrchestrator",
@@ -567,7 +567,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             # Log error but don't stop processing
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
@@ -656,7 +656,7 @@ class NodeOrchestrator(NodeCoreBase):
                 await self._update_processing_metrics(processing_time, True)
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"Workflow orchestration completed: {input_data.workflow_id}",
                     {
                         "node_id": self.node_id,
@@ -807,7 +807,7 @@ class NodeOrchestrator(NodeCoreBase):
         self.emitted_thunks[workflow_id].append(thunk)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Thunk emitted: {thunk_type.value} -> {target_node_type}",
             {
                 "node_id": self.node_id,
@@ -853,7 +853,7 @@ class NodeOrchestrator(NodeCoreBase):
         self.condition_functions[condition_name] = function
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Condition function registered: {condition_name}",
             {"node_id": self.node_id, "condition_name": condition_name},
         )
@@ -888,7 +888,7 @@ class NodeOrchestrator(NodeCoreBase):
     async def _initialize_node_resources(self) -> None:
         """Initialize orchestrator-specific resources."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeOrchestrator resources initialized",
             {
                 "node_id": self.node_id,
@@ -903,7 +903,7 @@ class NodeOrchestrator(NodeCoreBase):
         for workflow_id in list(self.active_workflows.keys()):
             self.workflow_states[workflow_id] = WorkflowState.CANCELLED
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Cancelled active workflow during cleanup: {workflow_id}",
                 {"node_id": self.node_id, "workflow_id": workflow_id},
             )
@@ -912,7 +912,7 @@ class NodeOrchestrator(NodeCoreBase):
         self.emitted_thunks.clear()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeOrchestrator resources cleaned up",
             {"node_id": self.node_id},
         )
@@ -1008,7 +1008,7 @@ class NodeOrchestrator(NodeCoreBase):
                     all_results,
                 ):
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"Step skipped due to condition: {step.step_name}",
                         {"step_id": step.step_id, "condition": step.condition.value},
                     )
@@ -1599,7 +1599,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to generate full orchestrator introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
@@ -1657,7 +1657,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract all orchestrator operations: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1714,7 +1714,7 @@ class NodeOrchestrator(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract workflow configuration: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1790,7 +1790,7 @@ class NodeOrchestrator(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get orchestration metrics: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1809,7 +1809,7 @@ class NodeOrchestrator(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get orchestrator resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1835,7 +1835,7 @@ class NodeOrchestrator(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get workflow state: {e!s}",
                 {"node_id": self.node_id},
             )

@@ -7,7 +7,7 @@ Writes files to the local filesystem with safety checks.
 import contextlib
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -69,7 +69,7 @@ class UtilityFileSystemWriter:
             file_path.write_text(content, encoding="utf-8")
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"File written successfully: {file_path}",
                 {"path": str(file_path), "size": len(content)},
             )
@@ -78,7 +78,7 @@ class UtilityFileSystemWriter:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to write file: {path}",
                 {"path": str(path), "error": str(e)},
             )
@@ -120,7 +120,7 @@ class UtilityFileSystemWriter:
                 written_paths.append(written_path)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Successfully wrote {len(written_paths)} files",
                 {"count": len(written_paths)},
             )
@@ -134,7 +134,7 @@ class UtilityFileSystemWriter:
                     path.unlink()
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 "Failed to write files atomically",
                 {"error": str(e), "attempted": len(files)},
             )
@@ -162,7 +162,7 @@ class UtilityFileSystemWriter:
             dir_path.mkdir(parents=True, exist_ok=True)
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Directory ensured: {dir_path}",
                 {"path": str(dir_path)},
             )
@@ -171,7 +171,7 @@ class UtilityFileSystemWriter:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to create directory: {path}",
                 {"path": str(path), "error": str(e)},
             )
@@ -199,7 +199,7 @@ class UtilityFileSystemWriter:
             if file_path.exists():
                 file_path.unlink()
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"File deleted: {file_path}",
                     {"path": str(file_path)},
                 )
@@ -209,7 +209,7 @@ class UtilityFileSystemWriter:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to delete file: {path}",
                 {"path": str(path), "error": str(e)},
             )

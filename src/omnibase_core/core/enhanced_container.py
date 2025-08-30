@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.cache.memory_mapped_tool_cache import (
     MemoryMappedToolCache,
@@ -60,7 +60,7 @@ class EnhancedONEXContainer(ONEXContainer):
             self.performance_monitor = PerformanceMonitor(cache=self.tool_cache)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Enhanced ONEX container initialized with performance cache at {cache_directory}",
                 event_type="enhanced_container_init",
             )
@@ -97,7 +97,7 @@ class EnhancedONEXContainer(ONEXContainer):
                 if tool_metadata:
                     cache_hit = True
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"Tool metadata cache hit for {service_name}",
                         event_type="tool_cache_hit",
                     )
@@ -119,7 +119,7 @@ class EnhancedONEXContainer(ONEXContainer):
             # Log slow resolutions
             if resolution_time_ms > 50:  # >50ms is considered slow
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Slow service resolution: {service_name} took {resolution_time_ms:.2f}ms",
                     event_type="slow_service_resolution",
                 )
@@ -140,7 +140,7 @@ class EnhancedONEXContainer(ONEXContainer):
                 )
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Service resolution failed for {service_name}: {e}",
                 event_type="service_resolution_error",
             )
@@ -153,7 +153,7 @@ class EnhancedONEXContainer(ONEXContainer):
             return
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Starting cache warming process",
             event_type="cache_warming_start",
         )
@@ -179,7 +179,7 @@ class EnhancedONEXContainer(ONEXContainer):
                 pass  # Expected for some services
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Cache warming completed: {warmed_count}/{len(common_services)} services warmed",
             event_type="cache_warming_complete",
         )
@@ -215,7 +215,7 @@ class EnhancedONEXContainer(ONEXContainer):
             self.tool_cache.close()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "Enhanced ONEX container closed",
             event_type="enhanced_container_close",
         )

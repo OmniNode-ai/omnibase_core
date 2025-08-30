@@ -458,7 +458,7 @@ class ModelSchema(BaseModel):
                 ]
 
         # Log incoming data for debugging
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_structured_logging import (
             emit_log_event_sync as emit_log_event,
@@ -466,7 +466,7 @@ class ModelSchema(BaseModel):
 
         if data.get("type") == "string" and data.get("format"):
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "ModelSchema.from_dict: parsing string with format",
                 {
                     "type": data.get("type"),

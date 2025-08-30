@@ -8,7 +8,7 @@ enabling tools to be executed via the event bus in the unified execution model.
 import time
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -36,7 +36,7 @@ class MixinToolExecution:
         event = envelope.payload
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🎯 Received tool execution request",
             {
                 "tool_name": self.get_node_name(),
@@ -54,7 +54,7 @@ class MixinToolExecution:
             # Check if this request is for this tool
             if requested_tool != self.get_node_name():
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"🙄 Ignoring execution request for different tool: {requested_tool}",
                     {"my_tool": self.get_node_name(), "requested_tool": requested_tool},
                 )
@@ -79,7 +79,7 @@ class MixinToolExecution:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ Tool execution failed: {e!s}",
                 {
                     "tool_name": self.get_node_name(),
@@ -128,7 +128,7 @@ class MixinToolExecution:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"⚠️ Failed to create typed input state, using dict: {e!s}",
                 {"tool_name": self.get_node_name()},
             )
@@ -164,7 +164,7 @@ class MixinToolExecution:
         """Publish tool execution response event."""
         if not hasattr(self, "event_bus") or not self.event_bus:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "⚠️ No event bus available to publish response",
                 {"tool_name": self.get_node_name()},
             )
@@ -199,7 +199,7 @@ class MixinToolExecution:
 
         if success:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "✅ Published tool execution response",
                 {
                     "tool_name": self.get_node_name(),
@@ -209,7 +209,7 @@ class MixinToolExecution:
             )
         else:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 "❌ Failed to publish tool execution response",
                 {
                     "tool_name": self.get_node_name(),

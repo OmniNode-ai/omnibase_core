@@ -30,7 +30,7 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -195,7 +195,7 @@ class Transaction:
                     rollback_func()
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Rollback operation failed: {e!s}",
                     {"transaction_id": self.transaction_id, "error": str(e)},
                 )
@@ -375,7 +375,7 @@ class NodeEffect(NodeCoreBase):
             contract_model.validate_node_specific_config()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Contract model loaded successfully for NodeEffect",
                 {
                     "contract_type": "ModelContractEffect",
@@ -508,7 +508,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             # Log error but don't stop processing
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
@@ -607,7 +607,7 @@ class NodeEffect(NodeCoreBase):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Effect completed: {input_data.effect_type.value}",
                 {
                     "node_id": self.node_id,
@@ -631,7 +631,7 @@ class NodeEffect(NodeCoreBase):
                     await transaction.rollback()
                 except Exception as rollback_error:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"Transaction rollback failed: {rollback_error!s}",
                         {
                             "node_id": self.node_id,
@@ -805,7 +805,7 @@ class NodeEffect(NodeCoreBase):
     async def _initialize_node_resources(self) -> None:
         """Initialize effect-specific resources."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeEffect resources initialized",
             {
                 "node_id": self.node_id,
@@ -821,13 +821,13 @@ class NodeEffect(NodeCoreBase):
             try:
                 await transaction.rollback()
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Rolled back active transaction during cleanup: {transaction_id}",
                     {"node_id": self.node_id, "transaction_id": transaction_id},
                 )
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Failed to rollback transaction during cleanup: {e!s}",
                     {"node_id": self.node_id, "transaction_id": transaction_id},
                 )
@@ -835,7 +835,7 @@ class NodeEffect(NodeCoreBase):
         self.active_transactions.clear()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeEffect resources cleaned up",
             {"node_id": self.node_id},
         )
@@ -907,7 +907,7 @@ class NodeEffect(NodeCoreBase):
                 await asyncio.sleep(delay_ms / 1000.0)
 
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Effect retry {retry_count}/{input_data.max_retries}: {e!s}",
                     {
                         "node_id": self.node_id,
@@ -1093,7 +1093,7 @@ class NodeEffect(NodeCoreBase):
                 event_bus = self.container.get_service("event_bus")
                 if not event_bus:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         "Event bus not available, skipping event emission",
                         {"event_type": event_type},
                     )
@@ -1108,7 +1108,7 @@ class NodeEffect(NodeCoreBase):
                     )
                     return True
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "Event bus does not support emit_event method",
                     {"event_type": event_type},
                 )
@@ -1116,7 +1116,7 @@ class NodeEffect(NodeCoreBase):
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Event emission failed: {e!s}",
                     {"event_type": event_type, "error": str(e)},
                 )
@@ -1221,7 +1221,7 @@ class NodeEffect(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to generate full effect introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
@@ -1265,7 +1265,7 @@ class NodeEffect(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract all effect operations: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1328,7 +1328,7 @@ class NodeEffect(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract I/O operations configuration: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1388,7 +1388,7 @@ class NodeEffect(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get effect metrics: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1406,7 +1406,7 @@ class NodeEffect(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get effect resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1432,7 +1432,7 @@ class NodeEffect(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get transaction status: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1463,7 +1463,7 @@ class NodeEffect(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get circuit breaker status: {e!s}",
                 {"node_id": self.node_id},
             )

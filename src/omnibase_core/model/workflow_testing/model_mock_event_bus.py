@@ -9,7 +9,7 @@ to replace Dict[str, Any] usage with proper type safety.
 from datetime import datetime
 from uuid import UUID
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, Field
 
 
@@ -45,7 +45,7 @@ class ModelEmittedLog(BaseModel):
     """Model for emitted log data"""
 
     log_id: str = Field(description="Unique log identifier")
-    level: LogLevelEnum = Field(description="Log level")
+    level: LogLevel = Field(description="Log level")
     message: str = Field(description="Log message")
     correlation_id: UUID = Field(description="Correlation ID for tracing")
     timestamp: datetime = Field(description="When the log was emitted")

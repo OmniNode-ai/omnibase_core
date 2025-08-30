@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, TypeVar
 from uuid import uuid4
 
 from dependency_injector import containers, providers
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.common_types import ModelStateValue
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
@@ -300,7 +300,7 @@ class _BaseONEXContainer(containers.DeclarativeContainer):
     # Enhanced logger with monadic patterns
     enhanced_logger = providers.Factory(
         lambda level: _create_enhanced_logger(level),
-        level=LogLevelEnum.INFO,
+        level=LogLevel.INFO,
     )
 
     # === WORKFLOW ORCHESTRATION ===
@@ -485,16 +485,16 @@ class EnhancedONEXContainer:
 # === HELPER FUNCTIONS ===
 
 
-def _create_enhanced_logger(level: LogLevelEnum) -> ProtocolLogger:
+def _create_enhanced_logger(level: LogLevel) -> ProtocolLogger:
     """Create enhanced logger with monadic patterns."""
 
     class EnhancedLogger:
-        def __init__(self, level: LogLevelEnum):
+        def __init__(self, level: LogLevel):
             self.level = level
 
         def emit_log_event_sync(
             self,
-            level: LogLevelEnum,
+            level: LogLevel,
             message: str,
             event_type: str = "generic",
             **kwargs,
@@ -505,7 +505,7 @@ def _create_enhanced_logger(level: LogLevelEnum) -> ProtocolLogger:
 
         async def emit_log_event_async(
             self,
-            level: LogLevelEnum,
+            level: LogLevel,
             message: str,
             event_type: str = "generic",
             **kwargs,
@@ -515,7 +515,7 @@ def _create_enhanced_logger(level: LogLevelEnum) -> ProtocolLogger:
 
         def emit_log_event(
             self,
-            level: LogLevelEnum,
+            level: LogLevel,
             message: str,
             event_type: str = "generic",
             **kwargs,
@@ -524,13 +524,13 @@ def _create_enhanced_logger(level: LogLevelEnum) -> ProtocolLogger:
             self.emit_log_event_sync(level, message, event_type, **kwargs)
 
         def info(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevelEnum.INFO, message, "info")
+            self.emit_log_event_sync(LogLevel.INFO, message, "info")
 
         def warning(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevelEnum.WARNING, message, "warning")
+            self.emit_log_event_sync(LogLevel.WARNING, message, "warning")
 
         def error(self, message: str) -> None:
-            self.emit_log_event_sync(LogLevelEnum.ERROR, message, "error")
+            self.emit_log_event_sync(LogLevel.ERROR, message, "error")
 
     return EnhancedLogger(level)
 

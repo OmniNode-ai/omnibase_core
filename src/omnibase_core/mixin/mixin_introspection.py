@@ -34,7 +34,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -436,7 +436,7 @@ class NodeIntrospectionMixin(ABC):
         try:
             response = cls.get_introspection_response()
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 response.model_dump_json(indent=2),
                 event_type=create_event_type_from_string("INTROSPECTION_RESPONSE"),
                 node_id=cls.get_node_name(),
@@ -453,7 +453,7 @@ class NodeIntrospectionMixin(ABC):
             import json
 
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 json.dumps(error_response, indent=2),
                 event_type=create_event_type_from_string("INTROSPECTION_RESPONSE"),
                 node_id=cls.get_node_name(),

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -135,7 +135,7 @@ class UtilityReferenceResolver:
 
         # Fallback for malformed refs
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             f"Malformed reference: {ref}",
             {"ref": ref},
         )

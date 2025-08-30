@@ -27,7 +27,7 @@ from uuid import uuid4
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.core_structured_logging import (
@@ -106,7 +106,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
         self.average_response_time = 0.0
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"{self.domain.title()} Hub initialized with contract-driven configuration",
             {
                 "domain": self.domain,
@@ -164,7 +164,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             action = input_state.get("action", "health_check")
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Processing {self.domain} hub action: {action}",
                 {"hub_id": self.hub_id, "action": action},
             )
@@ -200,7 +200,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             self._update_response_time_metrics(time.time() - start_time)
 
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error in {self.domain} hub: {e!s}",
                 {"hub_id": self.hub_id, "error": str(e)},
             )
@@ -223,7 +223,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
         self._load_workflows()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"{self.domain.title()} Hub started successfully",
             {
                 "hub_id": self.hub_id,
@@ -308,7 +308,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             self.loaded_tools.update(loaded_tools)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Loaded {len(loaded_tools)} managed tools for {self.domain} domain",
                 {"domain": self.domain, "tools_loaded": len(loaded_tools)},
             )
@@ -326,7 +326,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             self.loaded_workflows.update(workflows)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Loaded {len(workflows)} workflows for {self.domain} domain",
                 {"domain": self.domain, "workflows_loaded": len(workflows)},
             )

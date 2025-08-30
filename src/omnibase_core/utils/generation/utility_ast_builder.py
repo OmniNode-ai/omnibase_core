@@ -7,7 +7,7 @@ Provides consistent AST generation across all ONEX tools.
 
 import ast
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -58,14 +58,14 @@ class UtilityASTBuilder:
         # DEBUG LOGGING: Track where this is being called from
         import traceback
 
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_structured_logging import (
             emit_log_event_sync as emit_log_event,
         )
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"🚨 DEBUG: UtilityASTBuilder.generate_model_class called for: {class_name}",
             {
                 "class_name": class_name,
@@ -102,7 +102,7 @@ class UtilityASTBuilder:
         # If no fields were added, add a pass statement
         if len(body) == 1:  # Only docstring
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"🚨 DEBUG: Adding pass statement to empty model class: {class_name}",
                 {
                     "class_name": class_name,
@@ -140,7 +140,7 @@ class UtilityASTBuilder:
         # Debug logging for datetime fields
         if field_name in ["start_time", "end_time"]:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Creating field definition for {field_name}",
                 {
                     "field_name": field_name,
@@ -156,7 +156,7 @@ class UtilityASTBuilder:
         # Ensure type_annotation is an AST node
         if not isinstance(type_annotation, ast.expr):
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Type annotation is not an AST expr: {type(type_annotation)} for field {field_name}",
                 {"field_name": field_name, "type": str(type(type_annotation))},
             )
@@ -287,14 +287,14 @@ class UtilityASTBuilder:
         # Handle string with format using type mapper if available
         if schema_type == "string" and self.type_mapper:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "AST builder checking string field with type mapper",
                 {"schema_type": schema_type, "format": getattr(schema, "format", None)},
             )
             # Let type mapper handle format detection
             type_str = self.type_mapper.get_type_string_from_schema(schema)
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Type mapper returned: {type_str}",
                 {"type_str": type_str, "is_special": type_str != "str"},
             )
@@ -497,7 +497,7 @@ class UtilityASTBuilder:
             return ast.unparse(node)
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to unparse AST node: {e}",
                 {"node_type": type(node).__name__},
             )

@@ -7,7 +7,7 @@ Handles common registry patterns and protocol enforcement.
 
 from typing import Generic, Protocol, TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -57,7 +57,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         self._registry_validated: bool = False
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinRegistryInjection",
             {
                 "mixin_class": self.__class__.__name__,
@@ -74,7 +74,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
     def registry(self, value: RegistryT | None) -> None:
         """Set and validate the registry."""
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔧 REGISTRY_INJECTION: Setting registry",
             {
                 "node_class": self.__class__.__name__,
@@ -95,7 +95,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
             return
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🔍 REGISTRY_VALIDATION: Starting registry validation",
             {
                 "node_class": self.__class__.__name__,
@@ -115,7 +115,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 f"Registry type: {type(self._registry)}"
             )
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ REGISTRY_VALIDATION: {error_msg}",
                 {
                     "registry_type": type(self._registry).__name__,
@@ -129,7 +129,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         if health_status not in [EnumOnexStatus.SUCCESS, EnumOnexStatus.UNKNOWN]:
             error_msg = f"Registry is not healthy: {health_status}"
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ REGISTRY_VALIDATION: {error_msg}",
                 {
                     "health_status": health_status.value,
@@ -141,7 +141,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         self._registry_validated = True
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "✅ REGISTRY_VALIDATION: Registry validated successfully",
             {
                 "node_class": self.__class__.__name__,
@@ -165,7 +165,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 )
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Registry health check failed: {e}",
                     {"error": str(e)},
                 )
@@ -178,7 +178,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         """Get a service from the registry with validation."""
         if self._registry is None:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "No registry available for service lookup",
                 {"service_name": service_name},
             )
@@ -193,7 +193,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
             try:
                 service = self._registry.get_service(service_name)
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Retrieved service from registry: {service_name}",
                     {
                         "service_name": service_name,
@@ -203,14 +203,14 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 return service
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Failed to get service from registry: {e}",
                     {"service_name": service_name, "error": str(e)},
                 )
                 return None
 
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             "Registry does not support get_service method",
             {"registry_type": type(self._registry).__name__},
         )
@@ -220,7 +220,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         """Register a service with the registry."""
         if self._registry is None:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "No registry available for service registration",
                 {"service_name": service_name},
             )
@@ -235,7 +235,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
             try:
                 self._registry.register_service(service_name, service)
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"Registered service with registry: {service_name}",
                     {
                         "service_name": service_name,
@@ -245,14 +245,14 @@ class MixinRegistryInjection(Generic[RegistryT]):
                 return True
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"Failed to register service: {e}",
                     {"service_name": service_name, "error": str(e)},
                 )
                 return False
 
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             "Registry does not support register_service method",
             {"registry_type": type(self._registry).__name__},
         )

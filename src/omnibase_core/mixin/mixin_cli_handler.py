@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Generic, TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -54,7 +54,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         super().__init__(**kwargs)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinCLIHandler",
             {"mixin_class": self.__class__.__name__},
         )
@@ -148,7 +148,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 # Try parsing as JSON
                 input_data = json.loads(args.input)
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "Parsed input as JSON string",
                     {"size": len(args.input)},
                 )
@@ -183,7 +183,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 try:
                     input_data = json.loads(stdin_data)
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "Parsed input from stdin",
                         {"size": len(stdin_data)},
                     )
@@ -205,7 +205,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             data = json.loads(content)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"Loaded input from file: {path}",
             {"format": path.suffix, "size": len(content)},
         )
@@ -254,7 +254,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             input_data = self.parse_input(args)
             if input_data is None and not args.validate_only:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     "No input provided",
                     {"tool": self.__class__.__name__},
                 )
@@ -269,7 +269,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 # Validate only if requested
                 if args.validate_only:
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         "✅ Input validation successful",
                         {"tool": self.__class__.__name__},
                     )
@@ -277,7 +277,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
                 # Process
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"Processing with {self.__class__.__name__}",
                     {"has_input": True},
                 )
@@ -291,7 +291,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 if args.output:
                     Path(args.output).write_text(output_str)
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"Wrote output to: {args.output}",
                         {"size": len(output_str), "format": args.format},
                     )
@@ -302,7 +302,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         except KeyboardInterrupt:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "Process interrupted by user",
                 {"tool": self.__class__.__name__},
             )
@@ -310,7 +310,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Tool execution failed: {e}",
                 {
                     "tool": self.__class__.__name__,

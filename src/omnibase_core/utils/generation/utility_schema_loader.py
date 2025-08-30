@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -71,14 +71,14 @@ class UtilitySchemaLoader:
         # Check cache first
         if cache_key in self._schema_cache:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Loading schema from cache: {schema_path}",
                 {"schema_path": schema_path, "full_path": str(full_path)},
             )
             return self._schema_cache[cache_key]
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Loading external schema: {schema_path}",
             {"schema_path": schema_path, "full_path": str(full_path)},
         )
@@ -101,7 +101,7 @@ class UtilitySchemaLoader:
             self._schema_cache[cache_key] = schema_data
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Successfully loaded schema: {schema_path}",
                 {
                     "schema_path": schema_path,
@@ -115,7 +115,7 @@ class UtilitySchemaLoader:
 
         except FileNotFoundError:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Schema file not found: {schema_path}",
                 {"schema_path": schema_path, "full_path": str(full_path)},
             )
@@ -123,7 +123,7 @@ class UtilitySchemaLoader:
 
         except yaml.YAMLError as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Invalid YAML in schema file: {schema_path}",
                 {"schema_path": schema_path, "yaml_error": str(e)},
             )
@@ -131,7 +131,7 @@ class UtilitySchemaLoader:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error loading schema file: {schema_path}",
                 {
                     "schema_path": schema_path,
@@ -210,4 +210,4 @@ class UtilitySchemaLoader:
     def clear_cache(self):
         """Clear the schema cache."""
         self._schema_cache.clear()
-        emit_log_event(LogLevelEnum.DEBUG, "Schema cache cleared", {})
+        emit_log_event(LogLevel.DEBUG, "Schema cache cleared", {})

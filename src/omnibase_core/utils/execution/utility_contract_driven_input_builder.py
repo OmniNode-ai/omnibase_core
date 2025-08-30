@@ -8,7 +8,7 @@ following ONEX canonical patterns without hardcoded tool logic.
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -35,7 +35,7 @@ class UtilityContractDrivenInputBuilder:
     def __init__(self):
         """Initialize the input builder."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "UtilityContractDrivenInputBuilder initialized",
             {},
         )
@@ -177,7 +177,7 @@ class UtilityContractDrivenInputBuilder:
                         )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Built input for {tool_name}",
                 {
                     "input_fields": list(input_data.keys()),

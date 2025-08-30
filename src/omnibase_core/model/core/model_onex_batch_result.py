@@ -32,12 +32,12 @@ class ModelOnexBatchResult(BaseModel):
     @classmethod
     def export_schema(cls) -> str:
         """Export the JSONSchema for ModelOnexBatchResult and all submodels."""
-        from omnibase.enums.enum_log_level import LogLevelEnum
+        from omnibase.protocols.types import LogLevel
 
         from omnibase_core.core.core_structured_logging import emit_log_event_sync
 
         emit_log_event_sync(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "export_schema called",
             node_id="model_onex_batch_result",
             event_bus=None,  # Will be injected properly

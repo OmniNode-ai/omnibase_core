@@ -8,7 +8,7 @@ Supports LlamaIndex workflow orchestration for complex operations.
 import json
 from typing import Generic, TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants import constants_contract_fields as cf
 from omnibase_core.core.core_structured_logging import (
@@ -66,7 +66,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         self._workflow_metrics: ModelWorkflowMetrics | None = None
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinHybridExecution",
             {"mixin_class": self.__class__.__name__},
         )
@@ -95,7 +95,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         complexity_score = self._calculate_complexity(input_state)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔍 MODE_SELECTION: Calculating execution mode",
             {"complexity_score": complexity_score, "supported_modes": supported_modes},
         )
@@ -129,7 +129,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             self._execution_mode = self.determine_execution_mode(input_state)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"🚀 HYBRID_EXECUTION: Starting execution in {self._execution_mode} mode",
             {
                 "node_class": self.__class__.__name__,
@@ -147,7 +147,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             return self._execute_orchestrated(input_state)
         # Fallback to direct
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             f"Unknown execution mode '{self._execution_mode}', falling back to direct",
             {"mode": self._execution_mode},
         )
@@ -156,7 +156,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
     def _execute_direct(self, input_state: InputStateT) -> OutputStateT:
         """Execute in direct mode."""
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "⚡ DIRECT_EXECUTION: Starting direct processing",
             {"node_class": self.__class__.__name__},
         )
@@ -165,7 +165,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         result = self.process(input_state)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "✅ DIRECT_EXECUTION: Processing completed",
             {
                 "node_class": self.__class__.__name__,
@@ -178,7 +178,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
     def _execute_workflow(self, input_state: InputStateT) -> OutputStateT:
         """Execute in workflow mode using LlamaIndex."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🔄 WORKFLOW_EXECUTION: Starting workflow processing",
             {"node_class": self.__class__.__name__},
         )
@@ -187,7 +187,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             # Check if workflow creation method exists
             if not hasattr(self, "create_workflow"):
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     "No create_workflow method found, falling back to direct execution",
                     {"node_class": self.__class__.__name__},
                 )
@@ -203,7 +203,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 )
             except ImportError as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"LlamaIndex not available: {e}",
                     {"error": str(e)},
                 )
@@ -236,7 +236,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "✅ WORKFLOW_EXECUTION: Workflow completed successfully",
                 {
                     "node_class": self.__class__.__name__,
@@ -249,7 +249,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",
                 {"node_class": self.__class__.__name__, "error": str(e)},
             )
@@ -259,7 +259,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
     def _execute_orchestrated(self, input_state: InputStateT) -> OutputStateT:
         """Execute in orchestrated mode via Generation Hub."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🎭 ORCHESTRATED_EXECUTION: Starting hub-orchestrated processing",
             {"node_class": self.__class__.__name__},
         )
@@ -267,7 +267,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         # This would integrate with Generation Hub
         # For now, fallback to workflow mode
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             "Orchestrated mode not yet implemented, using workflow mode",
             {"node_class": self.__class__.__name__},
         )
@@ -335,7 +335,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             LlamaIndex Workflow instance or None if not supported
         """
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             f"No workflow implementation provided for {self.__class__.__name__}",
             {"execution_will_fallback": "direct"},
         )

@@ -16,7 +16,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Generic, TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 from pydantic import ValidationError
 
 from omnibase_core.core.core_structured_logging import (
@@ -57,7 +57,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self._event_subscriptions = []
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinEventListener",
             {
                 "mixin_class": self.__class__.__name__,
@@ -71,7 +71,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # This is deferred to allow the concrete class to finish initialization
         if hasattr(self, "event_bus") and self.event_bus:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "⏰ MIXIN_INIT: Scheduling auto-start of event listener",
                 {
                     "node_class": self.__class__.__name__,
@@ -83,7 +83,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             threading.Timer(0.1, self.start_event_listener).start()
         else:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "⏭️ MIXIN_INIT: No event bus available, skipping auto-start",
                 {
                     "node_class": self.__class__.__name__,
@@ -144,7 +144,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         ]
                         if event_types:
                             emit_log_event(
-                                LogLevelEnum.INFO,
+                                LogLevel.INFO,
                                 "📋 EVENT_PATTERNS: Found event_subscriptions in contract",
                                 {
                                     "node_name": self.get_node_name(),
@@ -156,7 +156,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                     # If no event_subscriptions, try legacy pattern derivation
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "📋 EVENT_PATTERNS: No event_subscriptions in contract, using legacy patterns",
                         {"node_name": self.get_node_name()},
                     )
@@ -189,14 +189,14 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             except (ValueError, ValidationError) as e:
                 # FAIL-FAST: Re-raise validation errors immediately to crash the service
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     f"💥 FAIL-FAST: Contract validation failed: {e}",
                     {"node_name": self.get_node_name()},
                 )
                 raise  # Re-raise to crash the service
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Failed to read event patterns from contract: {e}",
                     {"node_name": self.get_node_name()},
                 )
@@ -236,7 +236,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def start_event_listener(self):
         """Start listening for events in a background thread if event bus available."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🔄 EVENT_LISTENER_START: Starting event listener",
             {
                 "node_name": self.get_node_name(),
@@ -249,7 +249,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         if not self.event_bus:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "❌ EVENT_LISTENER_START: No event bus available, running in CLI-only mode",
                 {"node_name": self.get_node_name()},
             )
@@ -257,7 +257,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         if self._event_listener_thread and self._event_listener_thread.is_alive():
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "⚠️ EVENT_LISTENER_START: Event listener already running",
                 {
                     "node_name": self.get_node_name(),
@@ -275,7 +275,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self._event_listener_thread.start()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "✅ EVENT_LISTENER_START: Event listener started successfully",
             {
                 "node_name": self.get_node_name(),
@@ -289,7 +289,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         """Stop the event listener thread."""
         if self._event_listener_thread and self._event_listener_thread.is_alive():
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Stopping event listener",
                 {"node_name": self.get_node_name()},
             )
@@ -302,7 +302,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     self.event_bus.unsubscribe(pattern)
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Failed to unsubscribe from {pattern}: {e}",
                         {"node_name": self.get_node_name()},
                     )
@@ -313,7 +313,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             self._event_listener_thread.join(timeout=5)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Event listener stopped",
                 {"node_name": self.get_node_name()},
             )
@@ -321,7 +321,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def _event_listener_loop(self):
         """Main event listener loop running in background thread."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🚀 EVENT_LISTENER_LOOP: Starting main event listener loop",
             {"node_name": self.get_node_name()},
         )
@@ -331,7 +331,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             patterns = self.get_event_patterns()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "📋 EVENT_LISTENER_LOOP: Subscribing to event patterns",
                 {
                     "node_name": self.get_node_name(),
@@ -343,7 +343,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             # Subscribe to each pattern
             for i, pattern in enumerate(patterns):
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"🔗 EVENT_LISTENER_LOOP: Subscribing to pattern {i+1}/{len(patterns)}",
                     {
                         "node_name": self.get_node_name(),
@@ -354,7 +354,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 handler = self._create_event_handler(pattern)
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"🔗 EVENT_LISTENER_LOOP: Creating handler for pattern {pattern}",
                     {
                         "node_name": self.get_node_name(),
@@ -371,7 +371,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 self._event_subscriptions.append(pattern)
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"✅ EVENT_LISTENER_LOOP: Successfully subscribed to pattern {i+1}/{len(patterns)}",
                     {
                         "node_name": self.get_node_name(),
@@ -382,7 +382,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🎯 EVENT_LISTENER_LOOP: All subscriptions complete, starting event wait loop",
                 {
                     "node_name": self.get_node_name(),
@@ -397,7 +397,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 loop_count += 1
                 if loop_count % 60 == 0:  # Log every minute
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "💓 EVENT_LISTENER_LOOP: Heartbeat - still listening for events",
                         {
                             "node_name": self.get_node_name(),
@@ -408,14 +408,14 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 time.sleep(1)
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "🛑 EVENT_LISTENER_LOOP: Stop event received, ending event listener loop",
                 {"node_name": self.get_node_name(), "total_loops": loop_count},
             )
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"❌ EVENT_LISTENER_LOOP: Critical error in event listener: {e}",
                 {
                     "node_name": self.get_node_name(),
@@ -427,7 +427,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def _create_event_handler(self, pattern: str) -> Callable:
         """Create an event handler for a specific pattern."""
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🎯 CREATE_EVENT_HANDLER: Creating event handler for pattern",
             {"node_name": self.get_node_name(), "pattern": pattern},
         )
@@ -439,7 +439,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 # This is a ModelEventEnvelope
                 event = envelope.payload
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "📨 EVENT_RECEIVED: Received event envelope for processing",
                     {
                         "node_name": self.get_node_name(),
@@ -457,7 +457,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 # Direct event (legacy compatibility)
                 event = envelope
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "📨 EVENT_RECEIVED: Received direct event for processing",
                     {
                         "node_name": self.get_node_name(),
@@ -478,7 +478,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
             if hasattr(self, specific_handler_name):
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     f"🎯 EVENT_ROUTING: Found specific handler {specific_handler_name}",
                     {
                         "node_name": self.get_node_name(),
@@ -492,21 +492,21 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     handler_param = envelope if hasattr(envelope, "payload") else event
                     specific_handler(handler_param)
                     emit_log_event(
-                        LogLevelEnum.INFO,
+                        LogLevel.INFO,
                         f"✅ EVENT_ROUTING: Successfully processed via {specific_handler_name}",
                         {"node_name": self.get_node_name(), "event_type": event_type},
                     )
                     return
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"❌ EVENT_ROUTING: Specific handler {specific_handler_name} failed: {e}",
                         {"node_name": self.get_node_name(), "event_type": event_type},
                     )
                     # Fall through to generic processing
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"🔄 EVENT_ROUTING: Using generic processing for {event_type}",
                 {"node_name": self.get_node_name(), "event_type": event_type},
             )
@@ -514,7 +514,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             try:
                 # Convert event to input state
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "🔄 EVENT_PROCESSING: Converting event to input state",
                     {
                         "node_name": self.get_node_name(),
@@ -526,7 +526,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 input_state = self._event_to_input_state(event)
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "✅ EVENT_PROCESSING: Successfully converted event to input state",
                     {
                         "node_name": self.get_node_name(),
@@ -537,7 +537,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 # Process using tool's process method
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "⚙️ EVENT_PROCESSING: Starting tool processing",
                     {
                         "node_name": self.get_node_name(),
@@ -549,7 +549,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 output_state = self.process(input_state)
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "✅ EVENT_PROCESSING: Tool processing completed successfully",
                     {
                         "node_name": self.get_node_name(),
@@ -560,7 +560,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 # Publish completion event
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "📤 EVENT_PUBLISHING: Publishing completion event",
                     {
                         "node_name": self.get_node_name(),
@@ -572,7 +572,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 self._publish_completion_event(event, output_state)
 
                 emit_log_event(
-                    LogLevelEnum.INFO,
+                    LogLevel.INFO,
                     "🎉 EVENT_COMPLETE: Event processing and publishing completed",
                     {
                         "node_name": self.get_node_name(),
@@ -583,7 +583,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     "❌ EVENT_PROCESSING: Failed to process event",
                     {
                         "node_name": self.get_node_name(),
@@ -612,7 +612,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             Input state for tool's process method
         """
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔍 EVENT_TO_INPUT_STATE: Starting event data conversion",
             {
                 "node_name": self.get_node_name(),
@@ -626,7 +626,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         input_state_class = self._get_input_state_class()
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ EVENT_TO_INPUT_STATE: Retrieved input state class",
             {
                 "node_name": self.get_node_name(),
@@ -640,7 +640,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # Extract data from event
         event_data = event.data
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "📋 EVENT_TO_INPUT_STATE: Extracting data from event",
             {
                 "node_name": self.get_node_name(),
@@ -652,7 +652,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         if hasattr(event_data, "payload") and hasattr(event_data.payload, "data"):
             data = event_data.payload.data
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "📦 EVENT_TO_INPUT_STATE: Using payload.data from event",
                 {
                     "node_name": self.get_node_name(),
@@ -663,7 +663,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         else:
             data = event_data
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "📦 EVENT_TO_INPUT_STATE: Using direct event data",
                 {
                     "node_name": self.get_node_name(),
@@ -676,7 +676,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         if input_state_class:
             try:
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "🏗️ EVENT_TO_INPUT_STATE: Creating input state instance",
                     {
                         "node_name": self.get_node_name(),
@@ -689,7 +689,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 if isinstance(data, dict):
                     result = input_state_class(**data)
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "✅ EVENT_TO_INPUT_STATE: Created input state from dict",
                         {
                             "node_name": self.get_node_name(),
@@ -702,7 +702,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     dict_data = data.model_dump()
                     result = input_state_class(**dict_data)
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
                         {"node_name": self.get_node_name()},
                     )
@@ -711,21 +711,21 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     dict_data = data.dict()
                     result = input_state_class(**dict_data)
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
                         {"node_name": self.get_node_name()},
                     )
                     return result
                 result = input_state_class(data=data)
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
                     {"node_name": self.get_node_name()},
                 )
                 return result
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.ERROR,
+                    LogLevel.ERROR,
                     "❌ EVENT_TO_INPUT_STATE: Failed to create input state from event",
                     {
                         "node_name": self.get_node_name(),
@@ -740,7 +740,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         else:
             # No input state class found - this is a critical error
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 "❌ EVENT_TO_INPUT_STATE: No input state class found",
                 {"node_name": self.get_node_name()},
             )
@@ -771,7 +771,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 models_module = f"{base_module}.models.model_input_state"
 
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Looking for input state in: {models_module}",
                     {"node_name": self.get_node_name()},
                 )
@@ -784,7 +784,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 for attr_name in dir(module):
                     if "InputState" in attr_name and attr_name.startswith("Model"):
                         emit_log_event(
-                            LogLevelEnum.DEBUG,
+                            LogLevel.DEBUG,
                             f"Found input state class: {attr_name}",
                             {"node_name": self.get_node_name()},
                         )
@@ -792,7 +792,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
             except Exception as e:
                 emit_log_event(
-                    LogLevelEnum.WARNING,
+                    LogLevel.WARNING,
                     f"Failed to import input state module: {e}",
                     {"node_name": self.get_node_name(), "module": models_module},
                 )
@@ -806,7 +806,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     ):
         """Publish completion event with results."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "📤 PUBLISH_COMPLETION: Starting completion event publishing",
             {
                 "node_name": self.get_node_name(),
@@ -820,7 +820,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         completion_event_type = self.get_completion_event_type(input_event.event_type)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🔄 PUBLISH_COMPLETION: Determined completion event type",
             {
                 "node_name": self.get_node_name(),
@@ -838,7 +838,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         }
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "📋 PUBLISH_COMPLETION: Created base completion data",
             {
                 "node_name": self.get_node_name(),
@@ -849,7 +849,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         # Add output state data
         if output_state:
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 "📦 PUBLISH_COMPLETION: Adding output state to completion data",
                 {
                     "node_name": self.get_node_name(),
@@ -862,28 +862,28 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             if hasattr(output_state, "model_dump"):
                 completion_data["result"] = output_state.model_dump()
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "✅ PUBLISH_COMPLETION: Added output state via model_dump",
                     {"node_name": self.get_node_name()},
                 )
             elif hasattr(output_state, "dict"):
                 completion_data["result"] = output_state.dict()
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "✅ PUBLISH_COMPLETION: Added output state via dict method",
                     {"node_name": self.get_node_name()},
                 )
             else:
                 completion_data["result"] = str(output_state)
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     "✅ PUBLISH_COMPLETION: Added output state as string",
                     {"node_name": self.get_node_name()},
                 )
 
         # Create completion event
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ PUBLISH_COMPLETION: Creating completion event object",
             {
                 "node_name": self.get_node_name(),
@@ -901,7 +901,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "✅ PUBLISH_COMPLETION: Completion event object created",
             {
                 "node_name": self.get_node_name(),
@@ -912,7 +912,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         # Publish
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🚀 PUBLISH_COMPLETION: Publishing completion event to event bus",
             {
                 "node_name": self.get_node_name(),
@@ -925,7 +925,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self.event_bus.publish_event(completion_event)
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "🎉 PUBLISH_COMPLETION: Successfully published completion event",
             {
                 "node_name": self.get_node_name(),
@@ -962,7 +962,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         self.event_bus.publish_event(error_event)
 
         emit_log_event(
-            LogLevelEnum.ERROR,
+            LogLevel.ERROR,
             f"Published error event: {completion_event_type}",
             {
                 "node_name": self.get_node_name(),

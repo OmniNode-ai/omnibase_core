@@ -31,7 +31,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
@@ -119,7 +119,7 @@ class MixinIntrospectionPublisher:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Published introspection event for node {node_id}",
                 context=context,
             )
@@ -134,7 +134,7 @@ class MixinIntrospectionPublisher:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"💥 FAIL-FAST: Introspection validation failed: {e}",
                 context=context,
             )
@@ -149,7 +149,7 @@ class MixinIntrospectionPublisher:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"💥 FAIL-FAST: Failed to publish introspection event: {e}",
                 context=context,
             )
@@ -189,7 +189,7 @@ class MixinIntrospectionPublisher:
                 node_id=node_id,
             )
             emit_log_event_sync(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to gather full introspection data, using fallback: {e}",
                 context=context,
             )
@@ -458,7 +458,7 @@ class MixinIntrospectionPublisher:
                         node_id=node_id,
                     )
                     emit_log_event_sync(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         f"Failed to publish event after {max_retries} attempts: {e}",
                         context=context,
                     )

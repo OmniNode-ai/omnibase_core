@@ -11,7 +11,7 @@ registry-centric architecture pattern.
 
 from typing import Any, TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 # Type variable for protocol types
 T = TypeVar("T")
@@ -99,7 +99,7 @@ def get_logging_service() -> Any:
 
 
 def emit_log_event(
-    level: LogLevelEnum,
+    level: LogLevel,
     event_type: str,
     message: str,
     **kwargs,
@@ -121,7 +121,7 @@ def emit_log_event(
 
 
 def emit_log_event_sync(
-    level: LogLevelEnum,
+    level: LogLevel,
     message: str,
     event_type: str = "generic",
     **kwargs,
@@ -206,7 +206,7 @@ def _get_minimal_logging_service() -> Any:
     class MinimalLoggingService:
         @staticmethod
         def emit_log_event(
-            level: LogLevelEnum,
+            level: LogLevel,
             event_type: str,
             message: str,
             **kwargs: Any,
@@ -215,7 +215,7 @@ def _get_minimal_logging_service() -> Any:
 
         @staticmethod
         def emit_log_event_sync(
-            level: LogLevelEnum,
+            level: LogLevel,
             message: str,
             event_type: str = "generic",
             **kwargs: Any,
@@ -224,7 +224,7 @@ def _get_minimal_logging_service() -> Any:
 
         @staticmethod
         async def emit_log_event_async(
-            level: LogLevelEnum,
+            level: LogLevel,
             message: str,
             event_type: str = "generic",
             **kwargs: Any,

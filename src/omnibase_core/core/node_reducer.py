@@ -30,7 +30,7 @@ from typing import (
 )
 from uuid import uuid4
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -425,7 +425,7 @@ class NodeReducer(NodeCoreBase):
                                     ref_data = validated_fsm.model_dump()
 
                                     emit_log_event(
-                                        LogLevelEnum.INFO,
+                                        LogLevel.INFO,
                                         "FSM subcontract validated successfully",
                                         {
                                             "fsm_file": ref_file,
@@ -467,7 +467,7 @@ class NodeReducer(NodeCoreBase):
                     return data
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.ERROR,
+                        LogLevel.ERROR,
                         "Failed to resolve contract reference",
                         {
                             "ref_path": ref_path,
@@ -556,7 +556,7 @@ class NodeReducer(NodeCoreBase):
 
                     except ImportError as ie:
                         emit_log_event(
-                            LogLevelEnum.WARNING,
+                            LogLevel.WARNING,
                             "Could not import FSM models for validation",
                             {
                                 "ref_file": ref_file,
@@ -566,7 +566,7 @@ class NodeReducer(NodeCoreBase):
                         )
                     except Exception as ve:
                         emit_log_event(
-                            LogLevelEnum.ERROR,
+                            LogLevel.ERROR,
                             "FSM data validation failed",
                             {
                                 "ref_file": ref_file,
@@ -580,7 +580,7 @@ class NodeReducer(NodeCoreBase):
                             sys.path.remove(str(tool_dir))
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 "Error during FSM validation setup",
                 {"ref_file": ref_file, "error": str(e), "error_type": type(e).__name__},
             )
@@ -636,7 +636,7 @@ class NodeReducer(NodeCoreBase):
             contract_model.validate_node_specific_config()
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Contract model loaded successfully for NodeReducer",
                 {
                     "contract_type": "ModelContractReducer",
@@ -742,7 +742,7 @@ class NodeReducer(NodeCoreBase):
             )
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 f"Reduction completed: {input_data.reduction_type.value}",
                 {
                     "node_id": self.node_id,
@@ -925,7 +925,7 @@ class NodeReducer(NodeCoreBase):
         self.reduction_functions[reduction_type] = function
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             f"Reduction function registered: {reduction_type.value}",
             {"node_id": self.node_id, "reduction_type": reduction_type.value},
         )
@@ -952,7 +952,7 @@ class NodeReducer(NodeCoreBase):
     async def _initialize_node_resources(self) -> None:
         """Initialize reducer-specific resources."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeReducer resources initialized",
             {
                 "node_id": self.node_id,
@@ -967,7 +967,7 @@ class NodeReducer(NodeCoreBase):
         self.active_windows.clear()
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "NodeReducer resources cleaned up",
             {"node_id": self.node_id},
         )
@@ -1583,7 +1583,7 @@ class NodeReducer(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to generate full reducer introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
@@ -1623,7 +1623,7 @@ class NodeReducer(NodeCoreBase):
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract all reducer operations: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1685,7 +1685,7 @@ class NodeReducer(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract reduction configuration: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1714,7 +1714,7 @@ class NodeReducer(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to extract aggregation configuration: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1755,7 +1755,7 @@ class NodeReducer(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get reduction metrics: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1777,7 +1777,7 @@ class NodeReducer(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get reducer resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
@@ -1797,7 +1797,7 @@ class NodeReducer(NodeCoreBase):
             }
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 f"Failed to get streaming status: {e!s}",
                 {"node_id": self.node_id},
             )

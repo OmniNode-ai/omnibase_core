@@ -8,7 +8,7 @@ Eliminates boilerplate code for reading node.onex.yaml and tool contracts.
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants import constants_contract_fields as cf
 from omnibase_core.core.core_structured_logging import (
@@ -52,7 +52,7 @@ class MixinContractMetadata:
     def _load_metadata(self) -> None:
         """Load metadata from node.onex.yaml and contract files."""
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Loading contract metadata",
             {"mixin_class": self.__class__.__name__},
         )
@@ -77,7 +77,7 @@ class MixinContractMetadata:
             metadata_path = parent / "node.onex.yaml"
             if metadata_path.exists():
                 emit_log_event(
-                    LogLevelEnum.DEBUG,
+                    LogLevel.DEBUG,
                     f"Found node.onex.yaml at: {metadata_path}",
                     {"path": str(metadata_path)},
                 )
@@ -88,7 +88,7 @@ class MixinContractMetadata:
                 break
 
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             "Could not find node.onex.yaml",
             {"search_from": str(current_file)},
         )
@@ -106,7 +106,7 @@ class MixinContractMetadata:
                 # Find first YAML file in contracts
                 for yaml_file in contracts_dir.glob("*.yaml"):
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         f"Found contract at: {yaml_file}",
                         {"path": str(yaml_file)},
                     )
@@ -117,7 +117,7 @@ class MixinContractMetadata:
                 break
 
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             "Could not find contract YAML",
             {"search_from": str(current_file)},
         )
@@ -139,14 +139,14 @@ class MixinContractMetadata:
                 self._node_version = data[cf.VERSION]
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "✅ Loaded node metadata",
                 {"node_name": self._node_name, "version": self._node_version},
             )
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to load node metadata: {e}",
                 {"path": str(path), "error": str(e)},
             )
@@ -169,14 +169,14 @@ class MixinContractMetadata:
                     self._node_version = self._contract_data[cf.NODE_VERSION]
 
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "✅ Loaded contract data",
                 {"node_name": self._node_name, "tool_type": self._tool_type},
             )
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to load contract: {e}",
                 {"path": str(path), "error": str(e)},
             )

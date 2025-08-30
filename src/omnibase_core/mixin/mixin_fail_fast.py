@@ -12,7 +12,7 @@ from datetime import datetime
 from functools import wraps
 from typing import TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
@@ -109,7 +109,7 @@ class MixinFailFast:
         super().__init__(**kwargs)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing MixinFailFast",
             {"mixin_class": self.__class__.__name__},
         )
@@ -351,7 +351,7 @@ class MixinFailFast:
         """
         # Log the error
         emit_log_event(
-            LogLevelEnum.ERROR,
+            LogLevel.ERROR,
             f"💥 FAIL_FAST: {message}",
             {"node_class": self.__class__.__name__, **details},
         )
@@ -395,7 +395,7 @@ class MixinFailFast:
         # Other errors might be recoverable - let caller decide
         else:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Error in {context}: {error!s}",
                 {
                     "node_class": self.__class__.__name__,

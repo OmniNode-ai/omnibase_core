@@ -7,7 +7,7 @@ Provides fallback strategies and service caching for ONEX container.
 
 from typing import TypeVar
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.decorators import allow_dict_str_any
@@ -75,7 +75,7 @@ class ServiceDiscoveryManager:
                     return service
         except Exception as e:
             self.logger.emit_log_event_sync(
-                level=LogLevelEnum.WARNING,
+                level=LogLevel.WARNING,
                 message=f"Consul service discovery failed for {service_name}: {e}",
                 event_type="service_discovery_failed",
             )

@@ -7,7 +7,7 @@ to monitor and debug service discovery interactions.
 
 import logging
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -49,7 +49,7 @@ class MixinDebugDiscoveryLogging:
             context.update(additional_context)
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"🔍 {node_name.upper()} DEBUG: Setting up discovery event monitoring",
             context,
         )
@@ -70,7 +70,7 @@ class MixinDebugDiscoveryLogging:
             )
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"🔍 {node_name.upper()} DEBUG: Wrapped introspection handler with debug logging",
                 {"node_name": node_name},
             )
@@ -94,7 +94,7 @@ class MixinDebugDiscoveryLogging:
             envelope_id = "direct_event"
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             f"🔍 {node_name.upper()} DEBUG: Received discovery event",
             {
                 "node_name": node_name,
@@ -114,7 +114,7 @@ class MixinDebugDiscoveryLogging:
             result = self._original_handle_introspection_request(envelope_or_event)
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"🔍 {node_name.upper()} DEBUG: Introspection handler completed successfully",
                 {
                     "node_name": node_name,
@@ -127,7 +127,7 @@ class MixinDebugDiscoveryLogging:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"🔍 {node_name.upper()} DEBUG: Introspection handler failed",
                 {
                     "node_name": node_name,

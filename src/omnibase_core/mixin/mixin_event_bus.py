@@ -21,7 +21,7 @@ from typing import (
     runtime_checkable,
 )
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
@@ -68,7 +68,7 @@ class LogEmitter(Protocol):
 
     def emit_log_event(
         self,
-        level: LogLevelEnum,
+        level: LogLevel,
         message: str,
         data: "ModelLogData",
     ) -> None: ...
@@ -174,7 +174,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         self.event_subscriptions = []
 
         emit_log_event(
-            LogLevelEnum.DEBUG,
+            LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing unified MixinEventBus",
             ModelLogData(node_name=self.node_name),
         )
@@ -625,7 +625,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def _log_info(self, msg: str, pattern: str) -> None:
         """Log info message with pattern."""
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             msg,
             ModelLogData(pattern=pattern, node_name=self.get_node_name()),
         )
@@ -633,7 +633,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def _log_warn(self, msg: str, pattern: str) -> None:
         """Log warning message with pattern."""
         emit_log_event(
-            LogLevelEnum.WARNING,
+            LogLevel.WARNING,
             msg,
             ModelLogData(pattern=pattern, node_name=self.get_node_name()),
         )
@@ -646,7 +646,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     ) -> None:
         """Log error message with pattern and optional error details."""
         emit_log_event(
-            LogLevelEnum.ERROR,
+            LogLevel.ERROR,
             msg,
             ModelLogData(
                 pattern=pattern,

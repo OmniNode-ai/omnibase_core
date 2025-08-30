@@ -30,7 +30,7 @@ Implements ProtocolFileDiscoverySource.
 from pathlib import Path
 
 import yaml
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.model.core.model_onex_message_result import ModelOnexMessage
 from omnibase_core.model.core.model_tree_sync_result import (
@@ -84,7 +84,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
             messages.append(
                 ModelOnexMessage(
                     summary=f"Extra files on disk: {sorted(str(f) for f in extra_files)}",
-                    level=LogLevelEnum.WARNING,
+                    level=LogLevel.WARNING,
                     file=None,
                     line=None,
                     details=None,
@@ -98,7 +98,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
             messages.append(
                 ModelOnexMessage(
                     summary=f"Missing files in .tree: {sorted(str(f) for f in missing_files)}",
-                    level=LogLevelEnum.WARNING,
+                    level=LogLevel.WARNING,
                     file=None,
                     line=None,
                     details=None,

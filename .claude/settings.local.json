@@ -18,7 +18,19 @@
       "mcp__serena__execute_shell_command",
       "mcp__serena__replace_regex",
       "mcp__serena__find_file",
-      "mcp__serena__create_text_file"
+      "mcp__serena__create_text_file",
+      "mcp__archon__list_projects",
+      "mcp__archon__create_project",
+      "mcp__archon__get_project",
+      "mcp__archon__create_task",
+      "mcp__archon__get_task",
+      "mcp__archon__update_task",
+      "mcp__archon__perform_rag_query",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/tools/infrastructure/**)",
+      "mcp__archon__create_document",
+      "mcp__archon__session_info",
+      "mcp__archon__health_check",
+      "Read(/Users/jonah/.claude/agents/**)"
     ],
     "deny": [],
     "ask": []

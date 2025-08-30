@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Protocol, Union
 
-from omnibase.enums.enum_log_level import LogLevelEnum
+from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
@@ -88,7 +88,7 @@ class CliService:
         self._operation_start_time = None
 
         emit_log_event(
-            LogLevelEnum.INFO,
+            LogLevel.INFO,
             "CLI Service initialized",
             {
                 "health_check_enabled": self._config.enable_health_check_flag,
@@ -117,7 +117,7 @@ class CliService:
                 args = sys.argv[1:]  # Skip script name
 
             emit_log_event(
-                LogLevelEnum.DEBUG,
+                LogLevel.DEBUG,
                 f"Parsing CLI arguments: {args}",
                 {"arg_count": len(args)},
             )
@@ -308,7 +308,7 @@ class CliService:
 
         try:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Executing health check",
                 {"tool_type": type(tool_instance).__name__},
             )
@@ -423,7 +423,7 @@ class CliService:
 
         try:
             emit_log_event(
-                LogLevelEnum.INFO,
+                LogLevel.INFO,
                 "Executing introspection",
                 {
                     "tool_type": type(tool_instance).__name__,
@@ -440,13 +440,13 @@ class CliService:
                     comprehensive_data = tool_instance.get_introspection_data()
                     introspection_data.update(comprehensive_data)
                     emit_log_event(
-                        LogLevelEnum.DEBUG,
+                        LogLevel.DEBUG,
                         "Retrieved comprehensive introspection data",
                         {"data_sections": list(comprehensive_data.keys())},
                     )
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Failed to get comprehensive introspection data: {e!s}, using fallback",
                         {"tool_type": type(tool_instance).__name__, "error": str(e)},
                     )
@@ -548,7 +548,7 @@ class CliService:
                 return result_instance
             # Fallback to simple dictionary
             emit_log_event(
-                LogLevelEnum.WARNING,
+                LogLevel.WARNING,
                 "Tool does not provide input state class, using dict",
                 {"tool_type": type(tool_instance).__name__},
             )
@@ -556,7 +556,7 @@ class CliService:
 
         except Exception as e:
             emit_log_event(
-                LogLevelEnum.ERROR,
+                LogLevel.ERROR,
                 f"Failed to convert CLI args to input state: {e!s}",
                 {
                     "tool_type": type(tool_instance).__name__,
@@ -638,7 +638,7 @@ class CliService:
                                         )
                 except Exception as e:
                     emit_log_event(
-                        LogLevelEnum.WARNING,
+                        LogLevel.WARNING,
                         f"Failed to parse contract CLI interface: {e!s}",
                         {"contract_path": str(contract_path)},
                     )
@@ -665,7 +665,7 @@ class CliService:
             ModelCliResult: Error result with appropriate exit code
         """
         emit_log_event(
-            LogLevelEnum.ERROR,
+            LogLevel.ERROR,
             f"CLI error in {operation}: {error!s}",
             {
                 "operation": operation,
