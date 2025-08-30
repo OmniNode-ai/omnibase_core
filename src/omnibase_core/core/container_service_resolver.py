@@ -87,8 +87,22 @@ def create_get_service_method(
                     health_status="healthy",
                 )
             if protocol_name == "ProtocolVaultClient":
-                # TODO: Implement vault client resolution
-                pass
+                # Vault client resolution following the same pattern as consul client
+                # Assumes container has a vault_client() method available
+                if hasattr(self, "vault_client"):
+                    self.vault_client()
+                    return ModelService(
+                        service_id="vault_client",
+                        service_name="vault_client",
+                        service_type="vault_client",
+                        protocol_name=protocol_name,
+                        health_status="healthy",
+                    )
+                else:
+                    raise OnexError(
+                        f"Vault client not available in container: {protocol_name}",
+                        CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+                    )
 
         # Handle generation tool registries with registry pattern
         if service_name:
