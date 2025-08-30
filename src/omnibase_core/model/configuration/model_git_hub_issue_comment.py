@@ -3,7 +3,6 @@ GitHubIssueComment model.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,5 +16,5 @@ class ModelGitHubIssueComment(BaseModel):
     url: str = Field(..., description="Comment API URL")
     user: ModelGitHubUser = Field(..., description="Comment author")
     created_at: datetime = Field(..., description="Creation timestamp")
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
     body: str = Field(..., description="Comment text")

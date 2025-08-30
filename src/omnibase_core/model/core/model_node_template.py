@@ -29,7 +29,6 @@ This module provides structured configuration for node template generation,
 including template metadata, file mappings, and generation options.
 """
 
-from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -43,23 +42,26 @@ class ModelNodeTemplateConfig(BaseModel):
     """
 
     template_version: str = Field(
-        description="Version of the template system being used"
+        description="Version of the template system being used",
     )
     node_name: str = Field(description="Name of the node to generate")
     namespace_prefix: str = Field(
-        default="omnibase.nodes", description="Namespace prefix for the generated node"
+        default="omnibase.nodes",
+        description="Namespace prefix for the generated node",
     )
     default_lifecycle: str = Field(
-        default="active", description="Default lifecycle state for generated nodes"
+        default="active",
+        description="Default lifecycle state for generated nodes",
     )
     default_author: str = Field(
-        default="OmniNode Team", description="Default author for generated nodes"
+        default="OmniNode Team",
+        description="Default author for generated nodes",
     )
-    template_files: Dict[str, str] = Field(
-        description="Mapping of template source files to destination paths"
+    template_files: dict[str, str] = Field(
+        description="Mapping of template source files to destination paths",
     )
-    generated_files: List[str] = Field(
-        description="List of files that will be generated from templates"
+    generated_files: list[str] = Field(
+        description="List of files that will be generated from templates",
     )
 
     model_config = ConfigDict(
@@ -81,6 +83,6 @@ class ModelNodeTemplateConfig(BaseModel):
                     "node.onex.yaml",
                     ".onexignore",
                 ],
-            }
+            },
         },
     )

@@ -2,14 +2,14 @@
 Request configuration model.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.configuration.model_request_auth import \
-    ModelRequestAuth
-from omnibase_core.model.configuration.model_request_retry_config import \
-    ModelRequestRetryConfig
+from omnibase_core.model.configuration.model_request_auth import ModelRequestAuth
+from omnibase_core.model.configuration.model_request_retry_config import (
+    ModelRequestRetryConfig,
+)
 
 # Backward compatibility aliases
 RequestAuth = ModelRequestAuth
@@ -27,19 +27,21 @@ class ModelRequestConfig(BaseModel):
     url: str = Field(..., description="Request URL")
 
     # Headers and parameters
-    headers: Dict[str, str] = Field(default_factory=dict, description="Request headers")
-    params: Dict[str, Union[str, List[str]]] = Field(
-        default_factory=dict, description="Query parameters"
+    headers: dict[str, str] = Field(default_factory=dict, description="Request headers")
+    params: dict[str, str | list[str]] = Field(
+        default_factory=dict,
+        description="Query parameters",
     )
 
     # Body data
-    json_data: Optional[Dict[str, Any]] = Field(None, description="JSON body data")
-    form_data: Optional[Dict[str, str]] = Field(None, description="Form data")
-    files: Optional[Dict[str, str]] = Field(None, description="File paths to upload")
+    json_data: dict[str, Any] | None = Field(None, description="JSON body data")
+    form_data: dict[str, str] | None = Field(None, description="Form data")
+    files: dict[str, str] | None = Field(None, description="File paths to upload")
 
     # Authentication
-    auth: Optional[ModelRequestAuth] = Field(
-        None, description="Authentication configuration"
+    auth: ModelRequestAuth | None = Field(
+        None,
+        description="Authentication configuration",
     )
 
     # Timeouts
@@ -48,15 +50,16 @@ class ModelRequestConfig(BaseModel):
 
     # SSL/TLS
     verify_ssl: bool = Field(True, description="Verify SSL certificates")
-    ssl_cert: Optional[str] = Field(None, description="SSL client certificate path")
-    ssl_key: Optional[str] = Field(None, description="SSL client key path")
+    ssl_cert: str | None = Field(None, description="SSL client certificate path")
+    ssl_key: str | None = Field(None, description="SSL client key path")
 
     # Proxy
-    proxies: Optional[Dict[str, str]] = Field(None, description="Proxy configuration")
+    proxies: dict[str, str] | None = Field(None, description="Proxy configuration")
 
     # Retry configuration
-    retry_config: Optional[ModelRequestRetryConfig] = Field(
-        None, description="Retry configuration"
+    retry_config: ModelRequestRetryConfig | None = Field(
+        None,
+        description="Retry configuration",
     )
 
     # Advanced options
@@ -66,7 +69,7 @@ class ModelRequestConfig(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         data = self.dict(exclude_none=True)
         # Flatten auth if present
@@ -79,6 +82,6 @@ class ModelRequestConfig(BaseModel):
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelRequestConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelRequestConfig":
         """Create from dictionary for easy migration."""
         return cls(**data)

@@ -4,7 +4,7 @@ CLI command model for strongly typed CLI interface representation.
 Provides structured representation of CLI commands with proper validation.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,14 +16,17 @@ class ModelCliCommand(BaseModel):
 
     name: str = Field(..., description="Command name (e.g., 'info', 'health')")
     description: str = Field(..., description="Command description")
-    args: Optional[List[str]] = Field(
-        default_factory=list, description="Command arguments"
+    args: list[str] | None = Field(
+        default_factory=list,
+        description="Command arguments",
     )
-    options: Optional[List[ModelCliOption]] = Field(
-        default_factory=list, description="Command options/flags"
+    options: list[ModelCliOption] | None = Field(
+        default_factory=list,
+        description="Command options/flags",
     )
-    examples: Optional[List[str]] = Field(
-        default_factory=list, description="Usage examples"
+    examples: list[str] | None = Field(
+        default_factory=list,
+        description="Usage examples",
     )
 
     @field_validator("name")
@@ -31,10 +34,12 @@ class ModelCliCommand(BaseModel):
     def validate_name(cls, v):
         """Validate command name format."""
         if not v or not isinstance(v, str):
-            raise ValueError("Command name must be a non-empty string")
+            msg = "Command name must be a non-empty string"
+            raise ValueError(msg)
         if not v.replace("_", "").replace("-", "").isalnum():
+            msg = "Command name must contain only alphanumeric characters, hyphens, and underscores"
             raise ValueError(
-                "Command name must contain only alphanumeric characters, hyphens, and underscores"
+                msg,
             )
         return v.lower()
 
@@ -43,11 +48,12 @@ class ModelCliCommand(BaseModel):
     def validate_description(cls, v):
         """Validate command description."""
         if not v or not isinstance(v, str):
-            raise ValueError("Command description must be a non-empty string")
+            msg = "Command description must be a non-empty string"
+            raise ValueError(msg)
         return v
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelCliCommand":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCliCommand":
         """Create from dictionary data."""
         if isinstance(data, str):
             # Handle legacy string format
@@ -59,9 +65,7 @@ class ModelCliCommand(BaseModel):
         # Process options - handle both string and object formats
         options = []
         for option_data in data.get("options", []):
-            if isinstance(option_data, str):
-                options.append(ModelCliOption.from_dict(option_data))
-            elif isinstance(option_data, dict):
+            if isinstance(option_data, str | dict):
                 options.append(ModelCliOption.from_dict(option_data))
 
         return cls(
@@ -72,6 +76,6 @@ class ModelCliCommand(BaseModel):
             examples=data.get("examples", []),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         return self.model_dump(exclude_none=True)

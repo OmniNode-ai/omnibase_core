@@ -5,7 +5,7 @@ FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
 Dedicated subcontract model for finite state machine functionality providing:
 - State definitions with entry/exit actions and validation rules
 - Transition specifications with conditions, actions, and rollback
-- Operation definitions with permissions and atomic guarantees  
+- Operation definitions with permissions and atomic guarantees
 - FSM configuration and management settings
 - State lifecycle and transition validation
 
@@ -15,7 +15,7 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -37,39 +37,50 @@ class ModelFSMStateDefinition(BaseModel):
     )
 
     description: str = Field(
-        ..., description="Human-readable state description", min_length=1
+        ...,
+        description="Human-readable state description",
+        min_length=1,
     )
 
     is_terminal: bool = Field(
-        default=False, description="Whether this is a terminal/final state"
+        default=False,
+        description="Whether this is a terminal/final state",
     )
 
     is_recoverable: bool = Field(
-        default=True, description="Whether recovery is possible from this state"
+        default=True,
+        description="Whether recovery is possible from this state",
     )
 
-    timeout_ms: Optional[int] = Field(
-        default=None, description="Maximum time allowed in this state", ge=1
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Maximum time allowed in this state",
+        ge=1,
     )
 
-    entry_actions: List[str] = Field(
-        default_factory=list, description="Actions to execute on state entry"
+    entry_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions to execute on state entry",
     )
 
-    exit_actions: List[str] = Field(
-        default_factory=list, description="Actions to execute on state exit"
+    exit_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions to execute on state exit",
     )
 
-    required_data: List[str] = Field(
-        default_factory=list, description="Required data fields for this state"
+    required_data: list[str] = Field(
+        default_factory=list,
+        description="Required data fields for this state",
     )
 
-    optional_data: List[str] = Field(
-        default_factory=list, description="Optional data fields for this state"
+    optional_data: list[str] = Field(
+        default_factory=list,
+        description="Optional data fields for this state",
     )
 
-    validation_rules: List[str] = Field(
-        default_factory=list, description="Validation rules for state data"
+    validation_rules: list[str] = Field(
+        default_factory=list,
+        description="Validation rules for state data",
     )
 
 
@@ -82,7 +93,9 @@ class ModelFSMTransitionCondition(BaseModel):
     """
 
     condition_name: str = Field(
-        ..., description="Unique name for the condition", min_length=1
+        ...,
+        description="Unique name for the condition",
+        min_length=1,
     )
 
     condition_type: str = Field(
@@ -92,23 +105,31 @@ class ModelFSMTransitionCondition(BaseModel):
     )
 
     expression: str = Field(
-        ..., description="Condition expression or rule", min_length=1
+        ...,
+        description="Condition expression or rule",
+        min_length=1,
     )
 
     required: bool = Field(
-        default=True, description="Whether this condition is required for transition"
+        default=True,
+        description="Whether this condition is required for transition",
     )
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if condition fails"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if condition fails",
     )
 
     retry_count: int = Field(
-        default=0, description="Number of retries for failed conditions", ge=0
+        default=0,
+        description="Number of retries for failed conditions",
+        ge=0,
     )
 
-    timeout_ms: Optional[int] = Field(
-        default=None, description="Timeout for condition evaluation", ge=1
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Timeout for condition evaluation",
+        ge=1,
     )
 
 
@@ -121,7 +142,9 @@ class ModelFSMTransitionAction(BaseModel):
     """
 
     action_name: str = Field(
-        ..., description="Unique name for the action", min_length=1
+        ...,
+        description="Unique name for the action",
+        min_length=1,
     )
 
     action_type: str = Field(
@@ -130,24 +153,31 @@ class ModelFSMTransitionAction(BaseModel):
         min_length=1,
     )
 
-    action_config: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
-        default_factory=dict, description="Configuration parameters for the action"
+    action_config: dict[str, str | int | float | bool | list[str]] = Field(
+        default_factory=dict,
+        description="Configuration parameters for the action",
     )
 
     execution_order: int = Field(
-        default=1, description="Order of execution relative to other actions", ge=1
+        default=1,
+        description="Order of execution relative to other actions",
+        ge=1,
     )
 
     is_critical: bool = Field(
-        default=False, description="Whether action failure should abort transition"
+        default=False,
+        description="Whether action failure should abort transition",
     )
 
-    rollback_action: Optional[str] = Field(
-        default=None, description="Action to execute if rollback is needed"
+    rollback_action: str | None = Field(
+        default=None,
+        description="Action to execute if rollback is needed",
     )
 
-    timeout_ms: Optional[int] = Field(
-        default=None, description="Timeout for action execution", ge=1
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Timeout for action execution",
+        ge=1,
     )
 
 
@@ -160,7 +190,9 @@ class ModelFSMStateTransition(BaseModel):
     """
 
     transition_name: str = Field(
-        ..., description="Unique name for the transition", min_length=1
+        ...,
+        description="Unique name for the transition",
+        min_length=1,
     )
 
     from_state: str = Field(..., description="Source state name", min_length=1)
@@ -168,39 +200,52 @@ class ModelFSMStateTransition(BaseModel):
     to_state: str = Field(..., description="Target state name", min_length=1)
 
     trigger: str = Field(
-        ..., description="Event or condition that triggers transition", min_length=1
+        ...,
+        description="Event or condition that triggers transition",
+        min_length=1,
     )
 
     priority: int = Field(
-        default=1, description="Priority for conflict resolution", ge=1
+        default=1,
+        description="Priority for conflict resolution",
+        ge=1,
     )
 
-    conditions: List[ModelFSMTransitionCondition] = Field(
-        default_factory=list, description="Conditions that must be met for transition"
+    conditions: list[ModelFSMTransitionCondition] = Field(
+        default_factory=list,
+        description="Conditions that must be met for transition",
     )
 
-    actions: List[ModelFSMTransitionAction] = Field(
-        default_factory=list, description="Actions to execute during transition"
+    actions: list[ModelFSMTransitionAction] = Field(
+        default_factory=list,
+        description="Actions to execute during transition",
     )
 
-    rollback_transitions: List[str] = Field(
-        default_factory=list, description="Available rollback transition names"
+    rollback_transitions: list[str] = Field(
+        default_factory=list,
+        description="Available rollback transition names",
     )
 
     is_atomic: bool = Field(
-        default=True, description="Whether transition must complete atomically"
+        default=True,
+        description="Whether transition must complete atomically",
     )
 
     retry_enabled: bool = Field(
-        default=False, description="Whether failed transitions can be retried"
+        default=False,
+        description="Whether failed transitions can be retried",
     )
 
     max_retries: int = Field(
-        default=0, description="Maximum number of retry attempts", ge=0
+        default=0,
+        description="Maximum number of retry attempts",
+        ge=0,
     )
 
     retry_delay_ms: int = Field(
-        default=1000, description="Delay between retry attempts", ge=0
+        default=1000,
+        description="Delay between retry attempts",
+        ge=0,
     )
 
 
@@ -213,7 +258,9 @@ class ModelFSMOperation(BaseModel):
     """
 
     operation_name: str = Field(
-        ..., description="Unique name for the operation", min_length=1
+        ...,
+        description="Unique name for the operation",
+        min_length=1,
     )
 
     operation_type: str = Field(
@@ -223,39 +270,50 @@ class ModelFSMOperation(BaseModel):
     )
 
     description: str = Field(
-        ..., description="Human-readable operation description", min_length=1
+        ...,
+        description="Human-readable operation description",
+        min_length=1,
     )
 
     requires_atomic_execution: bool = Field(
-        default=True, description="Whether operation requires atomic execution"
+        default=True,
+        description="Whether operation requires atomic execution",
     )
 
     supports_rollback: bool = Field(
-        default=True, description="Whether operation supports rollback"
+        default=True,
+        description="Whether operation supports rollback",
     )
 
-    allowed_from_states: List[str] = Field(
-        default_factory=list, description="States from which operation is allowed"
+    allowed_from_states: list[str] = Field(
+        default_factory=list,
+        description="States from which operation is allowed",
     )
 
-    blocked_from_states: List[str] = Field(
-        default_factory=list, description="States from which operation is blocked"
+    blocked_from_states: list[str] = Field(
+        default_factory=list,
+        description="States from which operation is blocked",
     )
 
-    required_permissions: List[str] = Field(
-        default_factory=list, description="Required permissions for operation"
+    required_permissions: list[str] = Field(
+        default_factory=list,
+        description="Required permissions for operation",
     )
 
-    side_effects: List[str] = Field(
-        default_factory=list, description="Known side effects of the operation"
+    side_effects: list[str] = Field(
+        default_factory=list,
+        description="Known side effects of the operation",
     )
 
     performance_impact: str = Field(
-        default="low", description="Performance impact level (low, medium, high)"
+        default="low",
+        description="Performance impact level (low, medium, high)",
     )
 
-    timeout_ms: Optional[int] = Field(
-        default=None, description="Maximum execution time for operation", ge=1
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Maximum execution time for operation",
+        ge=1,
     )
 
 
@@ -272,63 +330,85 @@ class ModelFSMSubcontract(BaseModel):
 
     # Core FSM identification
     state_machine_name: str = Field(
-        ..., description="Unique name for the state machine", min_length=1
+        ...,
+        description="Unique name for the state machine",
+        min_length=1,
     )
 
     state_machine_version: str = Field(
-        ..., description="Version of the state machine definition", min_length=1
+        ...,
+        description="Version of the state machine definition",
+        min_length=1,
     )
 
     description: str = Field(
-        ..., description="Human-readable state machine description", min_length=1
+        ...,
+        description="Human-readable state machine description",
+        min_length=1,
     )
 
     # State definitions
-    states: List[ModelFSMStateDefinition] = Field(
-        ..., description="All available states in the system", min_length=1
+    states: list[ModelFSMStateDefinition] = Field(
+        ...,
+        description="All available states in the system",
+        min_length=1,
     )
 
     initial_state: str = Field(
-        ..., description="Name of the initial state", min_length=1
+        ...,
+        description="Name of the initial state",
+        min_length=1,
     )
 
-    terminal_states: List[str] = Field(
-        default_factory=list, description="Names of terminal/final states"
+    terminal_states: list[str] = Field(
+        default_factory=list,
+        description="Names of terminal/final states",
     )
 
-    error_states: List[str] = Field(
-        default_factory=list, description="Names of error/failure states"
+    error_states: list[str] = Field(
+        default_factory=list,
+        description="Names of error/failure states",
     )
 
     # Transition specifications
-    transitions: List[ModelFSMStateTransition] = Field(
-        ..., description="All valid state transitions", min_length=1
+    transitions: list[ModelFSMStateTransition] = Field(
+        ...,
+        description="All valid state transitions",
+        min_length=1,
     )
 
     # Operation definitions
-    operations: List[ModelFSMOperation] = Field(
-        default_factory=list, description="Available transition operations"
+    operations: list[ModelFSMOperation] = Field(
+        default_factory=list,
+        description="Available transition operations",
     )
 
     # FSM persistence and recovery
     persistence_enabled: bool = Field(
-        default=True, description="Whether state persistence is enabled"
+        default=True,
+        description="Whether state persistence is enabled",
     )
 
     checkpoint_interval_ms: int = Field(
-        default=30000, description="Interval for automatic checkpoints", ge=1000
+        default=30000,
+        description="Interval for automatic checkpoints",
+        ge=1000,
     )
 
     max_checkpoints: int = Field(
-        default=10, description="Maximum number of checkpoints to retain", ge=1
+        default=10,
+        description="Maximum number of checkpoints to retain",
+        ge=1,
     )
 
     recovery_enabled: bool = Field(
-        default=True, description="Whether automatic recovery is enabled"
+        default=True,
+        description="Whether automatic recovery is enabled",
     )
 
     rollback_enabled: bool = Field(
-        default=True, description="Whether rollback operations are enabled"
+        default=True,
+        description="Whether rollback operations are enabled",
     )
 
     # Conflict resolution
@@ -338,71 +418,85 @@ class ModelFSMSubcontract(BaseModel):
     )
 
     concurrent_transitions_allowed: bool = Field(
-        default=False, description="Whether concurrent transitions are allowed"
+        default=False,
+        description="Whether concurrent transitions are allowed",
     )
 
     transition_timeout_ms: int = Field(
-        default=5000, description="Default timeout for transitions", ge=1
+        default=5000,
+        description="Default timeout for transitions",
+        ge=1,
     )
 
     # Validation and monitoring
     strict_validation_enabled: bool = Field(
-        default=True, description="Whether strict state validation is enabled"
+        default=True,
+        description="Whether strict state validation is enabled",
     )
 
     state_monitoring_enabled: bool = Field(
-        default=True, description="Whether state monitoring/metrics are enabled"
+        default=True,
+        description="Whether state monitoring/metrics are enabled",
     )
 
     event_logging_enabled: bool = Field(
-        default=True, description="Whether state transition events are logged"
+        default=True,
+        description="Whether state transition events are logged",
     )
 
     @field_validator("states")
     @classmethod
     def validate_initial_state_exists(
-        cls, v: List[ModelFSMStateDefinition], values: Any
-    ) -> List[ModelFSMStateDefinition]:
+        cls,
+        v: list[ModelFSMStateDefinition],
+        values: Any,
+    ) -> list[ModelFSMStateDefinition]:
         """Validate that initial state is defined in states list."""
         if hasattr(values, "data") and "initial_state" in values.data:
             state_names = [state.state_name for state in v]
             if values.data["initial_state"] not in state_names:
+                msg = f"Initial state '{values.data['initial_state']}' not found in states list"
                 raise ValueError(
-                    f"Initial state '{values.data['initial_state']}' not found in states list"
+                    msg,
                 )
         return v
 
     @field_validator("terminal_states", "error_states")
     @classmethod
-    def validate_special_states_exist(cls, v: List[str], values: Any) -> List[str]:
+    def validate_special_states_exist(cls, v: list[str], values: Any) -> list[str]:
         """Validate that terminal and error states are defined in states list."""
         if hasattr(values, "data") and "states" in values.data and v:
             state_names = [state.state_name for state in values.data["states"]]
             for state_name in v:
                 if state_name not in state_names:
-                    raise ValueError(f"State '{state_name}' not found in states list")
+                    msg = f"State '{state_name}' not found in states list"
+                    raise ValueError(msg)
         return v
 
     @field_validator("transitions")
     @classmethod
     def validate_transition_states_exist(
-        cls, v: List[ModelFSMStateTransition], values: Any
-    ) -> List[ModelFSMStateTransition]:
+        cls,
+        v: list[ModelFSMStateTransition],
+        values: Any,
+    ) -> list[ModelFSMStateTransition]:
         """Validate that all transition source and target states exist."""
         if hasattr(values, "data") and "states" in values.data:
             state_names = [state.state_name for state in values.data["states"]]
             # Add wildcard state to supported states for global transitions
-            state_names_with_wildcard = state_names + ["*"]
+            state_names_with_wildcard = [*state_names, "*"]
 
             for transition in v:
                 # Support wildcard transitions (from_state: '*')
                 if transition.from_state not in state_names_with_wildcard:
+                    msg = f"Transition from_state '{transition.from_state}' not found in states list"
                     raise ValueError(
-                        f"Transition from_state '{transition.from_state}' not found in states list"
+                        msg,
                     )
                 if transition.to_state not in state_names:
+                    msg = f"Transition to_state '{transition.to_state}' not found in states list"
                     raise ValueError(
-                        f"Transition to_state '{transition.to_state}' not found in states list"
+                        msg,
                     )
         return v
 

@@ -55,7 +55,9 @@ class CanonicalUriParser(ProtocolUriParser):
     """
 
     async def parse(
-        self, uri_string: str, event_bus: ProtocolEventBus = None
+        self,
+        uri_string: str,
+        event_bus: ProtocolEventBus = None,
     ) -> ModelOnexUri:
         """
         Parse a canonical ONEX URI of the form <type>://<namespace>@<version_spec>.

@@ -4,7 +4,6 @@ This module defines the Hub self-registration event for Consul service registry.
 """
 
 from datetime import datetime
-from typing import Dict, List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,30 +22,37 @@ class ModelHubRegistrationEvent(BaseModel):
     consul_service_id: str = Field(..., description="Consul service ID")
     consul_port: int = Field(..., description="Hub service port")
     consul_health_endpoint: str = Field("/health", description="Health check endpoint")
-    consul_tags: List[str] = Field(
-        default_factory=list, description="Consul service tags"
+    consul_tags: list[str] = Field(
+        default_factory=list,
+        description="Consul service tags",
     )
-    consul_meta: Dict[str, str] = Field(
-        default_factory=dict, description="Consul service metadata"
+    consul_meta: dict[str, str] = Field(
+        default_factory=dict,
+        description="Consul service metadata",
     )
 
     # Registration Details
     registration_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Registration timestamp"
+        default_factory=datetime.utcnow,
+        description="Registration timestamp",
     )
     registration_required: bool = Field(
-        True, description="Whether registration is required"
+        True,
+        description="Whether registration is required",
     )
     auto_deregister_on_shutdown: bool = Field(
-        True, description="Auto-deregister on shutdown"
+        True,
+        description="Auto-deregister on shutdown",
     )
 
     # Event Registry Integration
     event_registry_enabled: bool = Field(
-        True, description="Whether Event Registry is enabled"
+        True,
+        description="Whether Event Registry is enabled",
     )
     container_adapter_coordination: bool = Field(
-        True, description="Container Adapter coordination enabled"
+        True,
+        description="Container Adapter coordination enabled",
     )
 
     model_config = ConfigDict(extra="forbid")

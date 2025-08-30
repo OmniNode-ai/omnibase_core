@@ -8,15 +8,16 @@ performance monitoring, and operational insights for ONEX registry tools.
 import re
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
     from omnibase_core.model.core.model_generic_properties import (
-        ModelErrorSummary, ModelGenericProperties)
-    from omnibase_core.model.core.model_monitoring_metrics import \
-        ModelMonitoringMetrics
+        ModelErrorSummary,
+        ModelGenericProperties,
+    )
+    from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
 
 
 class ToolHealthStatus(str, Enum):
@@ -59,57 +60,78 @@ class ModelToolHealth(BaseModel):
     """
 
     tool_name: str = Field(
-        ..., description="Name of the tool", min_length=1, max_length=100
+        ...,
+        description="Name of the tool",
+        min_length=1,
+        max_length=100,
     )
 
     status: ToolHealthStatus = Field(
-        ..., description="Current health status of the tool"
+        ...,
+        description="Current health status of the tool",
     )
 
     tool_type: ToolType = Field(..., description="Type/category of the tool")
 
     is_callable: bool = Field(
-        ..., description="Whether the tool can be invoked successfully"
+        ...,
+        description="Whether the tool can be invoked successfully",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Detailed error message if tool is unhealthy", max_length=1000
+    error_message: str | None = Field(
+        None,
+        description="Detailed error message if tool is unhealthy",
+        max_length=1000,
     )
 
-    error_code: Optional[str] = Field(
-        None, description="Specific error code for programmatic handling", max_length=50
+    error_code: str | None = Field(
+        None,
+        description="Specific error code for programmatic handling",
+        max_length=50,
     )
 
-    last_check_time: Optional[str] = Field(
-        default=None, description="ISO timestamp of last health check"
+    last_check_time: str | None = Field(
+        default=None,
+        description="ISO timestamp of last health check",
     )
 
-    response_time_ms: Optional[int] = Field(
-        default=None, description="Response time in milliseconds for health check", ge=0
+    response_time_ms: int | None = Field(
+        default=None,
+        description="Response time in milliseconds for health check",
+        ge=0,
     )
 
-    consecutive_failures: Optional[int] = Field(
-        default=0, description="Number of consecutive health check failures", ge=0
+    consecutive_failures: int | None = Field(
+        default=0,
+        description="Number of consecutive health check failures",
+        ge=0,
     )
 
-    uptime_seconds: Optional[int] = Field(
-        default=None, description="Tool uptime in seconds", ge=0
+    uptime_seconds: int | None = Field(
+        default=None,
+        description="Tool uptime in seconds",
+        ge=0,
     )
 
-    version: Optional[str] = Field(
-        default=None, description="Tool version if available", max_length=50
+    version: str | None = Field(
+        default=None,
+        description="Tool version if available",
+        max_length=50,
     )
 
     configuration: Optional["ModelGenericProperties"] = Field(
-        None, description="Tool configuration summary"
+        None,
+        description="Tool configuration summary",
     )
 
     metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None, description="Performance and operational metrics"
+        None,
+        description="Performance and operational metrics",
     )
 
-    dependencies: Optional[List[str]] = Field(
-        default_factory=list, description="List of tool dependencies"
+    dependencies: list[str] | None = Field(
+        default_factory=list,
+        description="List of tool dependencies",
     )
 
     @field_validator("tool_name")
@@ -117,21 +139,23 @@ class ModelToolHealth(BaseModel):
     def validate_tool_name(cls, v: str) -> str:
         """Validate tool name format."""
         if not v or not v.strip():
-            raise ValueError("tool_name cannot be empty or whitespace")
+            msg = "tool_name cannot be empty or whitespace"
+            raise ValueError(msg)
 
         v = v.strip()
 
         # Check for valid tool name pattern (alphanumeric, underscores, hyphens)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_\-]*$", v):
+            msg = "tool_name must start with letter and contain only alphanumeric, underscore, and hyphen characters"
             raise ValueError(
-                "tool_name must start with letter and contain only alphanumeric, underscore, and hyphen characters"
+                msg,
             )
 
         return v
 
     @field_validator("error_code")
     @classmethod
-    def validate_error_code(cls, v: Optional[str]) -> Optional[str]:
+    def validate_error_code(cls, v: str | None) -> str | None:
         """Validate error code format."""
         if v is None:
             return v
@@ -142,15 +166,16 @@ class ModelToolHealth(BaseModel):
 
         # Basic format validation (alphanumeric with underscores)
         if not re.match(r"^[A-Z0-9_]+$", v):
+            msg = "error_code must contain only uppercase letters, numbers, and underscores"
             raise ValueError(
-                "error_code must contain only uppercase letters, numbers, and underscores"
+                msg,
             )
 
         return v
 
     @field_validator("last_check_time")
     @classmethod
-    def validate_last_check_time(cls, v: Optional[str]) -> Optional[str]:
+    def validate_last_check_time(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return v
@@ -159,7 +184,8 @@ class ModelToolHealth(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("last_check_time must be a valid ISO timestamp")
+            msg = "last_check_time must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Health Status Analysis ===
 
@@ -187,14 +213,13 @@ class ModelToolHealth(BaseModel):
         """Get human-readable severity level."""
         if self.status == ToolHealthStatus.ERROR:
             return "critical"
-        elif self.status == ToolHealthStatus.UNAVAILABLE:
+        if self.status == ToolHealthStatus.UNAVAILABLE:
             return "high"
-        elif self.status == ToolHealthStatus.DEGRADED:
+        if self.status == ToolHealthStatus.DEGRADED:
             return "medium"
-        elif self.requires_attention():
+        if self.requires_attention():
             return "low"
-        else:
-            return "info"
+        return "info"
 
     # === Performance Analysis ===
 
@@ -205,14 +230,13 @@ class ModelToolHealth(BaseModel):
 
         if self.response_time_ms < 50:
             return "excellent"
-        elif self.response_time_ms < 200:
+        if self.response_time_ms < 200:
             return "good"
-        elif self.response_time_ms < 1000:
+        if self.response_time_ms < 1000:
             return "acceptable"
-        elif self.response_time_ms < 5000:
+        if self.response_time_ms < 5000:
             return "slow"
-        else:
-            return "very_slow"
+        return "very_slow"
 
     def is_performance_concerning(self) -> bool:
         """Check if performance metrics indicate potential issues."""
@@ -225,9 +249,8 @@ class ModelToolHealth(BaseModel):
 
         if self.response_time_ms < 1000:
             return f"{self.response_time_ms}ms"
-        else:
-            seconds = self.response_time_ms / 1000
-            return f"{seconds:.2f}s"
+        seconds = self.response_time_ms / 1000
+        return f"{seconds:.2f}s"
 
     def get_uptime_human(self) -> str:
         """Get human-readable uptime."""
@@ -236,21 +259,23 @@ class ModelToolHealth(BaseModel):
 
         if self.uptime_seconds < 60:
             return f"{self.uptime_seconds}s"
-        elif self.uptime_seconds < 3600:
+        if self.uptime_seconds < 3600:
             minutes = self.uptime_seconds // 60
             return f"{minutes}m"
-        elif self.uptime_seconds < 86400:
+        if self.uptime_seconds < 86400:
             hours = self.uptime_seconds // 3600
             return f"{hours}h"
-        else:
-            days = self.uptime_seconds // 86400
-            return f"{days}d"
+        days = self.uptime_seconds // 86400
+        return f"{days}d"
 
     # === Factory Methods ===
 
     @classmethod
     def create_healthy(
-        cls, tool_name: str, tool_type: str = "utility", response_time_ms: int = 50
+        cls,
+        tool_name: str,
+        tool_type: str = "utility",
+        response_time_ms: int = 50,
     ) -> "ModelToolHealth":
         """Create a healthy tool health status."""
         return cls(
@@ -269,7 +294,7 @@ class ModelToolHealth(BaseModel):
         tool_name: str,
         error_message: str,
         tool_type: str = "utility",
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         consecutive_failures: int = 1,
     ) -> "ModelToolHealth":
         """Create an error tool health status."""
@@ -311,12 +336,11 @@ class ModelToolHealth(BaseModel):
         """Get availability category based on consecutive failures."""
         if not self.consecutive_failures:
             return "highly_available"
-        elif self.consecutive_failures < 2:
+        if self.consecutive_failures < 2:
             return "available"
-        elif self.consecutive_failures < 5:
+        if self.consecutive_failures < 5:
             return "unstable"
-        else:
-            return "unavailable"
+        return "unavailable"
 
     # === Error Analysis ===
 
@@ -325,8 +349,7 @@ class ModelToolHealth(BaseModel):
         if not self.is_unhealthy() and not self.error_message:
             return None
 
-        from omnibase_core.model.core.model_generic_properties import \
-            ModelErrorSummary
+        from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
 
         return ModelErrorSummary(
             error_code=self.error_code or "TOOL_ERROR",
@@ -340,33 +363,33 @@ class ModelToolHealth(BaseModel):
             },
         )
 
-    def get_recovery_recommendations(self) -> List[str]:
+    def get_recovery_recommendations(self) -> list[str]:
         """Get recovery recommendations based on error patterns."""
         recommendations = []
 
         if self.status == ToolHealthStatus.ERROR:
             recommendations.append(
-                "Investigate error logs and restart tool if necessary"
+                "Investigate error logs and restart tool if necessary",
             )
 
         if self.consecutive_failures and self.consecutive_failures >= 3:
             recommendations.append(
-                "Tool has multiple consecutive failures - check dependencies and configuration"
+                "Tool has multiple consecutive failures - check dependencies and configuration",
             )
 
         if self.is_performance_concerning():
             recommendations.append(
-                "Performance issues detected - check resource usage and optimize"
+                "Performance issues detected - check resource usage and optimize",
             )
 
         if not self.is_callable:
             recommendations.append(
-                "Tool is not callable - verify implementation and dependencies"
+                "Tool is not callable - verify implementation and dependencies",
             )
 
         if self.error_code:
             recommendations.append(
-                f"Check documentation for error code: {self.error_code}"
+                f"Check documentation for error code: {self.error_code}",
             )
 
         return recommendations
@@ -376,7 +399,9 @@ class ModelToolHealth(BaseModel):
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
         from omnibase_core.model.core.model_monitoring_metrics import (
-            MetricValue, ModelMonitoringMetrics)
+            MetricValue,
+            ModelMonitoringMetrics,
+        )
 
         health_score = (
             100.0 if self.is_healthy() else 50.0 if self.is_degraded() else 0.0
@@ -399,12 +424,12 @@ class ModelToolHealth(BaseModel):
                 "is_callable": MetricValue(value=self.is_callable),
                 "severity": MetricValue(value=self.get_severity_level()),
                 "consecutive_failures": MetricValue(
-                    value=self.consecutive_failures or 0
+                    value=self.consecutive_failures or 0,
                 ),
             },
         )
 
-    def get_log_context(self) -> Dict[str, str]:
+    def get_log_context(self) -> dict[str, str]:
         """Get structured logging context."""
         context = {
             "tool_name": self.tool_name,
@@ -472,9 +497,9 @@ class ModelToolHealth(BaseModel):
         tool_type: str,
         status: str,
         is_callable: bool,
-        response_time_ms: Optional[int] = None,
-        uptime_seconds: Optional[int] = None,
-        version: Optional[str] = None,
+        response_time_ms: int | None = None,
+        uptime_seconds: int | None = None,
+        version: str | None = None,
     ) -> "ModelToolHealth":
         """Create tool health with comprehensive metrics."""
         return cls(

@@ -5,8 +5,8 @@ Manages git identity for AI-generated commits
 
 import os
 import subprocess
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Dict, Generator, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -14,10 +14,11 @@ from pydantic import BaseModel, Field
 class ModelIdentityInfo(BaseModel):
     """Identity information model."""
 
-    co_author_name: Optional[str] = Field(default=None, description="Co-author name")
-    co_author_email: Optional[str] = Field(default=None, description="Co-author email")
+    co_author_name: str | None = Field(default=None, description="Co-author name")
+    co_author_email: str | None = Field(default=None, description="Co-author email")
     ai_generated: bool = Field(
-        default=True, description="Whether content is AI-generated"
+        default=True,
+        description="Whether content is AI-generated",
     )
 
 
@@ -29,15 +30,21 @@ class AIIdentityManager:
     AI_EMAIL = os.getenv("AI_GIT_EMAIL", "caia@omninode.ai")
 
     @staticmethod
-    def get_current_identity() -> Tuple[str, str]:
+    def get_current_identity() -> tuple[str, str]:
         """Get current git user name and email"""
         try:
             name = subprocess.run(
-                ["git", "config", "user.name"], capture_output=True, text=True
+                ["git", "config", "user.name"],
+                capture_output=True,
+                text=True,
+                check=False,
             ).stdout.strip()
 
             email = subprocess.run(
-                ["git", "config", "user.email"], capture_output=True, text=True
+                ["git", "config", "user.email"],
+                capture_output=True,
+                text=True,
+                check=False,
             ).stdout.strip()
 
             return name, email
@@ -57,7 +64,8 @@ class AIIdentityManager:
     @classmethod
     @contextmanager
     def ai_identity(
-        cls, co_author: Optional[Tuple[str, str]] = None
+        cls,
+        co_author: tuple[str, str] | None = None,
     ) -> Generator[ModelIdentityInfo, None, None]:
         """
         Context manager for AI identity

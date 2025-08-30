@@ -15,7 +15,7 @@ providing clean separation between node logic and caching behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -29,27 +29,35 @@ class ModelCacheKeyStrategy(BaseModel):
     """
 
     key_generation_method: str = Field(
-        ..., description="Method for generating cache keys", min_length=1
+        ...,
+        description="Method for generating cache keys",
+        min_length=1,
     )
 
-    namespace: Optional[str] = Field(
-        default=None, description="Namespace prefix for cache keys"
+    namespace: str | None = Field(
+        default=None,
+        description="Namespace prefix for cache keys",
     )
 
     include_version: bool = Field(
-        default=True, description="Include version in cache keys"
+        default=True,
+        description="Include version in cache keys",
     )
 
     hash_algorithm: str = Field(
-        default="sha256", description="Hash algorithm for key generation"
+        default="sha256",
+        description="Hash algorithm for key generation",
     )
 
     key_separator: str = Field(
-        default=":", description="Separator for cache key components"
+        default=":",
+        description="Separator for cache key components",
     )
 
     max_key_length: int = Field(
-        default=250, description="Maximum length for cache keys", ge=1
+        default=250,
+        description="Maximum length for cache keys",
+        ge=1,
     )
 
 
@@ -62,27 +70,36 @@ class ModelCacheInvalidation(BaseModel):
     """
 
     invalidation_strategy: str = Field(
-        ..., description="Strategy for cache invalidation", min_length=1
+        ...,
+        description="Strategy for cache invalidation",
+        min_length=1,
     )
 
     ttl_seconds: int = Field(
-        default=300, description="Time-to-live for cache entries", ge=1
+        default=300,
+        description="Time-to-live for cache entries",
+        ge=1,
     )
 
     max_idle_seconds: int = Field(
-        default=600, description="Maximum idle time before invalidation", ge=1
+        default=600,
+        description="Maximum idle time before invalidation",
+        ge=1,
     )
 
-    invalidation_triggers: List[str] = Field(
-        default_factory=list, description="Events that trigger cache invalidation"
+    invalidation_triggers: list[str] = Field(
+        default_factory=list,
+        description="Events that trigger cache invalidation",
     )
 
     batch_invalidation: bool = Field(
-        default=False, description="Enable batch invalidation for efficiency"
+        default=False,
+        description="Enable batch invalidation for efficiency",
     )
 
     lazy_expiration: bool = Field(
-        default=True, description="Use lazy expiration to reduce overhead"
+        default=True,
+        description="Use lazy expiration to reduce overhead",
     )
 
 
@@ -95,27 +112,35 @@ class ModelCacheDistribution(BaseModel):
     """
 
     distributed_enabled: bool = Field(
-        default=False, description="Enable distributed caching"
+        default=False,
+        description="Enable distributed caching",
     )
 
     consistency_level: str = Field(
-        default="eventual", description="Consistency level for distributed cache"
+        default="eventual",
+        description="Consistency level for distributed cache",
     )
 
     replication_factor: int = Field(
-        default=2, description="Number of cache replicas", ge=1
+        default=2,
+        description="Number of cache replicas",
+        ge=1,
     )
 
     partition_strategy: str = Field(
-        default="consistent_hash", description="Partitioning strategy for distribution"
+        default="consistent_hash",
+        description="Partitioning strategy for distribution",
     )
 
     sync_interval_ms: int = Field(
-        default=30000, description="Synchronization interval", ge=1000
+        default=30000,
+        description="Synchronization interval",
+        ge=1000,
     )
 
     conflict_resolution: str = Field(
-        default="last_writer_wins", description="Conflict resolution strategy"
+        default="last_writer_wins",
+        description="Conflict resolution strategy",
     )
 
 
@@ -128,39 +153,49 @@ class ModelCachePerformance(BaseModel):
     """
 
     max_memory_mb: int = Field(
-        default=1024, description="Maximum memory allocation for cache", ge=1
+        default=1024,
+        description="Maximum memory allocation for cache",
+        ge=1,
     )
 
     eviction_policy: str = Field(default="lru", description="Cache eviction policy")
 
     preload_enabled: bool = Field(default=False, description="Enable cache preloading")
 
-    preload_patterns: List[str] = Field(
-        default_factory=list, description="Patterns for cache preloading"
+    preload_patterns: list[str] = Field(
+        default_factory=list,
+        description="Patterns for cache preloading",
     )
 
     compression_enabled: bool = Field(
-        default=False, description="Enable compression for cached data"
+        default=False,
+        description="Enable compression for cached data",
     )
 
     compression_threshold_bytes: int = Field(
-        default=1024, description="Minimum size for compression", ge=1
+        default=1024,
+        description="Minimum size for compression",
+        ge=1,
     )
 
     async_writes: bool = Field(
-        default=True, description="Enable asynchronous cache writes"
+        default=True,
+        description="Enable asynchronous cache writes",
     )
 
     read_through_enabled: bool = Field(
-        default=False, description="Enable read-through caching"
+        default=False,
+        description="Enable read-through caching",
     )
 
     write_through_enabled: bool = Field(
-        default=False, description="Enable write-through caching"
+        default=False,
+        description="Enable write-through caching",
     )
 
     write_behind_enabled: bool = Field(
-        default=False, description="Enable write-behind caching"
+        default=False,
+        description="Enable write-behind caching",
     )
 
 
@@ -177,32 +212,40 @@ class ModelCachingSubcontract(BaseModel):
 
     # Core caching configuration
     caching_enabled: bool = Field(
-        default=True, description="Enable caching functionality"
+        default=True,
+        description="Enable caching functionality",
     )
 
     cache_strategy: str = Field(default="lru", description="Primary caching strategy")
 
     cache_backend: str = Field(
-        default="memory", description="Cache backend implementation"
+        default="memory",
+        description="Cache backend implementation",
     )
 
     # Cache sizing and capacity
     max_entries: int = Field(
-        default=10000, description="Maximum number of cache entries", ge=1
+        default=10000,
+        description="Maximum number of cache entries",
+        ge=1,
     )
 
     max_memory_mb: int = Field(
-        default=512, description="Maximum memory allocation in MB", ge=1
+        default=512,
+        description="Maximum memory allocation in MB",
+        ge=1,
     )
 
     entry_size_limit_kb: int = Field(
-        default=1024, description="Maximum size per cache entry in KB", ge=1
+        default=1024,
+        description="Maximum size per cache entry in KB",
+        ge=1,
     )
 
     # Cache key management
     key_strategy: ModelCacheKeyStrategy = Field(
         default_factory=lambda: ModelCacheKeyStrategy(
-            key_generation_method="composite_hash"
+            key_generation_method="composite_hash",
         ),
         description="Cache key generation strategy",
     )
@@ -210,14 +253,15 @@ class ModelCachingSubcontract(BaseModel):
     # Cache invalidation and expiration
     invalidation_policy: ModelCacheInvalidation = Field(
         default_factory=lambda: ModelCacheInvalidation(
-            invalidation_strategy="ttl_based"
+            invalidation_strategy="ttl_based",
         ),
         description="Cache invalidation configuration",
     )
 
     # Distributed caching (optional)
-    distribution_config: Optional[ModelCacheDistribution] = Field(
-        default=None, description="Distributed caching configuration"
+    distribution_config: ModelCacheDistribution | None = Field(
+        default=None,
+        description="Distributed caching configuration",
     )
 
     # Performance tuning
@@ -228,50 +272,65 @@ class ModelCachingSubcontract(BaseModel):
 
     # Cache warming and preloading
     warm_up_enabled: bool = Field(
-        default=False, description="Enable cache warming on startup"
+        default=False,
+        description="Enable cache warming on startup",
     )
 
-    warm_up_sources: List[str] = Field(
-        default_factory=list, description="Data sources for cache warming"
+    warm_up_sources: list[str] = Field(
+        default_factory=list,
+        description="Data sources for cache warming",
     )
 
     warm_up_batch_size: int = Field(
-        default=100, description="Batch size for cache warming", ge=1
+        default=100,
+        description="Batch size for cache warming",
+        ge=1,
     )
 
     # Cache monitoring and metrics
     metrics_enabled: bool = Field(
-        default=True, description="Enable cache metrics collection"
+        default=True,
+        description="Enable cache metrics collection",
     )
 
     detailed_metrics: bool = Field(
-        default=False, description="Enable detailed cache metrics"
+        default=False,
+        description="Enable detailed cache metrics",
     )
 
     hit_ratio_threshold: float = Field(
-        default=0.8, description="Minimum hit ratio threshold", ge=0.0, le=1.0
+        default=0.8,
+        description="Minimum hit ratio threshold",
+        ge=0.0,
+        le=1.0,
     )
 
     performance_monitoring: bool = Field(
-        default=True, description="Enable cache performance monitoring"
+        default=True,
+        description="Enable cache performance monitoring",
     )
 
     # Cache persistence (optional)
     persistence_enabled: bool = Field(
-        default=False, description="Enable cache persistence to disk"
+        default=False,
+        description="Enable cache persistence to disk",
     )
 
     persistence_interval_ms: int = Field(
-        default=60000, description="Persistence interval", ge=1000
+        default=60000,
+        description="Persistence interval",
+        ge=1000,
     )
 
     recovery_enabled: bool = Field(
-        default=False, description="Enable cache recovery on startup"
+        default=False,
+        description="Enable cache recovery on startup",
     )
 
     # Cache hierarchy (multi-level caching)
     multi_level_enabled: bool = Field(
-        default=False, description="Enable multi-level caching"
+        default=False,
+        description="Enable multi-level caching",
     )
 
     l1_cache_size: int = Field(default=1000, description="L1 cache size", ge=1)
@@ -279,7 +338,9 @@ class ModelCachingSubcontract(BaseModel):
     l2_cache_size: int = Field(default=10000, description="L2 cache size", ge=1)
 
     promotion_threshold: int = Field(
-        default=3, description="Hit threshold for L2 to L1 promotion", ge=1
+        default=3,
+        description="Hit threshold for L2 to L1 promotion",
+        ge=1,
     )
 
     @field_validator("max_memory_mb")
@@ -287,7 +348,8 @@ class ModelCachingSubcontract(BaseModel):
     def validate_memory_allocation(cls, v: int, values: Any) -> int:
         """Validate memory allocation is reasonable."""
         if v > 16384:  # 16GB
-            raise ValueError("max_memory_mb cannot exceed 16GB for safety")
+            msg = "max_memory_mb cannot exceed 16GB for safety"
+            raise ValueError(msg)
         return v
 
     @field_validator("hit_ratio_threshold")
@@ -295,7 +357,8 @@ class ModelCachingSubcontract(BaseModel):
     def validate_hit_ratio(cls, v: float) -> float:
         """Validate hit ratio threshold is reasonable."""
         if v < 0.1:
-            raise ValueError("hit_ratio_threshold should be at least 0.1 (10%)")
+            msg = "hit_ratio_threshold should be at least 0.1 (10%)"
+            raise ValueError(msg)
         return v
 
     @field_validator("l2_cache_size")
@@ -305,7 +368,8 @@ class ModelCachingSubcontract(BaseModel):
         if hasattr(values, "data") and values.data.get("multi_level_enabled", False):
             l1_size = values.data.get("l1_cache_size", 1000)
             if v <= l1_size:
-                raise ValueError("l2_cache_size must be larger than l1_cache_size")
+                msg = "l2_cache_size must be larger than l1_cache_size"
+                raise ValueError(msg)
         return v
 
     class Config:

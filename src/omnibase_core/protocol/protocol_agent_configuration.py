@@ -6,12 +6,9 @@ including validation, persistence, versioning, and security.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
-from omnibase_core.model.configuration.model_agent_config import \
-    ModelAgentConfig
-from omnibase_core.model.core.model_validation_result import \
-    ModelValidationResult
+from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
+from omnibase_core.model.core.model_validation_result import ModelValidationResult
 
 
 class ProtocolAgentConfiguration(ABC):
@@ -19,7 +16,8 @@ class ProtocolAgentConfiguration(ABC):
 
     @abstractmethod
     async def validate_configuration(
-        self, config: ModelAgentConfig
+        self,
+        config: ModelAgentConfig,
     ) -> ModelValidationResult:
         """
         Validate agent configuration for correctness and security.
@@ -33,7 +31,6 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             ValidationError: If validation process fails
         """
-        pass
 
     @abstractmethod
     async def save_configuration(self, config: ModelAgentConfig) -> bool:
@@ -50,10 +47,9 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If saving fails
             SecurityError: If configuration violates security policies
         """
-        pass
 
     @abstractmethod
-    async def load_configuration(self, agent_id: str) -> Optional[ModelAgentConfig]:
+    async def load_configuration(self, agent_id: str) -> ModelAgentConfig | None:
         """
         Load agent configuration from persistent storage.
 
@@ -66,7 +62,6 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             ConfigurationError: If loading fails
         """
-        pass
 
     @abstractmethod
     async def delete_configuration(self, agent_id: str) -> bool:
@@ -82,21 +77,21 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             ConfigurationError: If deletion fails
         """
-        pass
 
     @abstractmethod
-    async def list_configurations(self) -> List[str]:
+    async def list_configurations(self) -> list[str]:
         """
         List all available agent configuration IDs.
 
         Returns:
             List of agent IDs with saved configurations
         """
-        pass
 
     @abstractmethod
     async def update_configuration(
-        self, agent_id: str, updates: Dict[str, str]
+        self,
+        agent_id: str,
+        updates: dict[str, str],
     ) -> ModelAgentConfig:
         """
         Update specific fields in an agent configuration.
@@ -112,11 +107,12 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If update fails
             ValidationError: If updated configuration is invalid
         """
-        pass
 
     @abstractmethod
     async def create_configuration_template(
-        self, template_name: str, base_config: ModelAgentConfig
+        self,
+        template_name: str,
+        base_config: ModelAgentConfig,
     ) -> bool:
         """
         Create a reusable configuration template.
@@ -131,14 +127,13 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             ConfigurationError: If template creation fails
         """
-        pass
 
     @abstractmethod
     async def apply_configuration_template(
         self,
         agent_id: str,
         template_name: str,
-        overrides: Optional[Dict[str, str]] = None,
+        overrides: dict[str, str] | None = None,
     ) -> ModelAgentConfig:
         """
         Apply a configuration template to create agent configuration.
@@ -155,17 +150,15 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If template application fails
             TemplateNotFoundError: If template doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def list_configuration_templates(self) -> List[str]:
+    async def list_configuration_templates(self) -> list[str]:
         """
         List all available configuration templates.
 
         Returns:
             List of template names
         """
-        pass
 
     @abstractmethod
     async def backup_configuration(self, agent_id: str) -> str:
@@ -181,7 +174,6 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             ConfigurationError: If backup creation fails
         """
-        pass
 
     @abstractmethod
     async def restore_configuration(self, agent_id: str, backup_id: str) -> bool:
@@ -199,10 +191,9 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If restoration fails
             BackupNotFoundError: If backup doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def get_configuration_history(self, agent_id: str) -> List[Dict[str, str]]:
+    async def get_configuration_history(self, agent_id: str) -> list[dict[str, str]]:
         """
         Get configuration change history for an agent.
 
@@ -212,11 +203,12 @@ class ProtocolAgentConfiguration(ABC):
         Returns:
             List of configuration changes with timestamps and changes
         """
-        pass
 
     @abstractmethod
     async def clone_configuration(
-        self, source_agent_id: str, target_agent_id: str
+        self,
+        source_agent_id: str,
+        target_agent_id: str,
     ) -> ModelAgentConfig:
         """
         Clone configuration from one agent to another.
@@ -232,10 +224,9 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If cloning fails
             SourceNotFoundError: If source configuration doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def validate_security_policies(self, config: ModelAgentConfig) -> List[str]:
+    async def validate_security_policies(self, config: ModelAgentConfig) -> list[str]:
         """
         Validate configuration against security policies.
 
@@ -245,11 +236,11 @@ class ProtocolAgentConfiguration(ABC):
         Returns:
             List of security policy violations
         """
-        pass
 
     @abstractmethod
     async def encrypt_sensitive_fields(
-        self, config: ModelAgentConfig
+        self,
+        config: ModelAgentConfig,
     ) -> ModelAgentConfig:
         """
         Encrypt sensitive fields in agent configuration.
@@ -263,11 +254,11 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             EncryptionError: If encryption fails
         """
-        pass
 
     @abstractmethod
     async def decrypt_sensitive_fields(
-        self, config: ModelAgentConfig
+        self,
+        config: ModelAgentConfig,
     ) -> ModelAgentConfig:
         """
         Decrypt sensitive fields in agent configuration.
@@ -281,11 +272,11 @@ class ProtocolAgentConfiguration(ABC):
         Raises:
             DecryptionError: If decryption fails
         """
-        pass
 
     @abstractmethod
     async def set_configuration_defaults(
-        self, config: ModelAgentConfig
+        self,
+        config: ModelAgentConfig,
     ) -> ModelAgentConfig:
         """
         Apply default values to agent configuration.
@@ -296,11 +287,12 @@ class ProtocolAgentConfiguration(ABC):
         Returns:
             Configuration with defaults applied
         """
-        pass
 
     @abstractmethod
     async def merge_configurations(
-        self, base_config: ModelAgentConfig, override_config: ModelAgentConfig
+        self,
+        base_config: ModelAgentConfig,
+        override_config: ModelAgentConfig,
     ) -> ModelAgentConfig:
         """
         Merge two configurations with override taking precedence.
@@ -312,11 +304,12 @@ class ProtocolAgentConfiguration(ABC):
         Returns:
             Merged agent configuration
         """
-        pass
 
     @abstractmethod
     async def export_configuration(
-        self, agent_id: str, format_type: str = "yaml"
+        self,
+        agent_id: str,
+        format_type: str = "yaml",
     ) -> str:
         """
         Export agent configuration to specified format.
@@ -332,11 +325,13 @@ class ProtocolAgentConfiguration(ABC):
             ConfigurationError: If export fails
             UnsupportedFormatError: If format is not supported
         """
-        pass
 
     @abstractmethod
     async def import_configuration(
-        self, agent_id: str, config_data: str, format_type: str = "yaml"
+        self,
+        agent_id: str,
+        config_data: str,
+        format_type: str = "yaml",
     ) -> ModelAgentConfig:
         """
         Import agent configuration from serialized data.
@@ -354,4 +349,3 @@ class ProtocolAgentConfiguration(ABC):
             ValidationError: If imported configuration is invalid
             UnsupportedFormatError: If format is not supported
         """
-        pass

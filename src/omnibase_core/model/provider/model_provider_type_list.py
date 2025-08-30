@@ -1,7 +1,5 @@
 """Model for managing lists of provider types."""
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
@@ -15,8 +13,9 @@ class ModelProviderTypeList(BaseModel):
     standards requiring specific typed models.
     """
 
-    providers: List[EnumLLMProvider] = Field(
-        default_factory=list, description="List of LLM provider types"
+    providers: list[EnumLLMProvider] = Field(
+        default_factory=list,
+        description="List of LLM provider types",
     )
 
     def add(self, provider_type: EnumLLMProvider) -> None:
@@ -35,7 +34,7 @@ class ModelProviderTypeList(BaseModel):
         """Check if provider type is in list."""
         return provider_type in self.providers
 
-    def get_all(self) -> List[EnumLLMProvider]:
+    def get_all(self) -> list[EnumLLMProvider]:
         """Get all provider types."""
         return self.providers.copy()
 
@@ -47,6 +46,6 @@ class ModelProviderTypeList(BaseModel):
         """Remove all provider types."""
         self.providers.clear()
 
-    def to_list(self) -> List[EnumLLMProvider]:
+    def to_list(self) -> list[EnumLLMProvider]:
         """Convert to list representation."""
         return self.providers.copy()

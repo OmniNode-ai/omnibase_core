@@ -22,8 +22,10 @@ class ModelGetVersionOutputState(OnexOutputState):
 
     version: str = Field(..., description="Qdrant server version string")
     build_info: dict = Field(
-        default_factory=dict, description="Additional build information"
+        default_factory=dict,
+        description="Additional build information",
     )
     server_uptime_seconds: float = Field(
-        default=0.0, description="Server uptime in seconds"
+        default=0.0,
+        description="Server uptime in seconds",
     )

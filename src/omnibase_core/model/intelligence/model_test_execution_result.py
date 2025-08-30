@@ -8,7 +8,7 @@ testing framework.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -59,52 +59,69 @@ class ModelTestStepResult(BaseModel):
     status: TestStepStatus = Field(description="Status of step execution")
 
     start_time: datetime = Field(description="When step execution started")
-    end_time: Optional[datetime] = Field(None, description="When step execution ended")
-    duration_seconds: Optional[float] = Field(
-        None, description="Step execution duration", ge=0
+    end_time: datetime | None = Field(None, description="When step execution ended")
+    duration_seconds: float | None = Field(
+        None,
+        description="Step execution duration",
+        ge=0,
     )
 
-    expected_results: Dict[str, Any] = Field(
-        default_factory=dict, description="Expected results for this step"
+    expected_results: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Expected results for this step",
     )
-    actual_results: Dict[str, Any] = Field(
-        default_factory=dict, description="Actual results from step execution"
+    actual_results: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Actual results from step execution",
     )
 
     assertions_passed: int = Field(
-        default=0, description="Number of assertions passed", ge=0
+        default=0,
+        description="Number of assertions passed",
+        ge=0,
     )
     assertions_failed: int = Field(
-        default=0, description="Number of assertions failed", ge=0
+        default=0,
+        description="Number of assertions failed",
+        ge=0,
     )
     assertions_total: int = Field(
-        default=0, description="Total number of assertions", ge=0
+        default=0,
+        description="Total number of assertions",
+        ge=0,
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Error message if step failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if step failed",
     )
-    exception_details: Optional[str] = Field(
-        None, description="Full exception details if available"
-    )
-
-    performance_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Performance metrics collected during step"
-    )
-    resource_usage: Dict[str, Any] = Field(
-        default_factory=dict, description="Resource usage during step execution"
+    exception_details: str | None = Field(
+        None,
+        description="Full exception details if available",
     )
 
-    agent_id: Optional[str] = Field(
-        None, description="ID of agent that executed this step"
+    performance_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Performance metrics collected during step",
+    )
+    resource_usage: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Resource usage during step execution",
+    )
+
+    agent_id: str | None = Field(
+        None,
+        description="ID of agent that executed this step",
     )
     retry_attempt: int = Field(default=0, description="Retry attempt number", ge=0)
 
-    logs: List[str] = Field(
-        default_factory=list, description="Execution logs for this step"
+    logs: list[str] = Field(
+        default_factory=list,
+        description="Execution logs for this step",
     )
-    artifacts: Dict[str, str] = Field(
-        default_factory=dict, description="Test artifacts generated (name -> path)"
+    artifacts: dict[str, str] = Field(
+        default_factory=dict,
+        description="Test artifacts generated (name -> path)",
     )
 
 
@@ -119,111 +136,152 @@ class ModelValidationResult(BaseModel):
     expected_value: Any = Field(description="Expected value for validation")
     actual_value: Any = Field(description="Actual value found during validation")
 
-    tolerance_threshold: Optional[float] = Field(
-        None, description="Tolerance threshold for numeric comparisons"
+    tolerance_threshold: float | None = Field(
+        None,
+        description="Tolerance threshold for numeric comparisons",
     )
-    comparison_operator: Optional[str] = Field(
-        None, description="Comparison operator used (==, >=, <=, etc.)"
+    comparison_operator: str | None = Field(
+        None,
+        description="Comparison operator used (==, >=, <=, etc.)",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Error message if validation failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if validation failed",
     )
-    warning_message: Optional[str] = Field(
-        None, description="Warning message if applicable"
+    warning_message: str | None = Field(
+        None,
+        description="Warning message if applicable",
     )
 
     validation_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When validation was performed"
+        default_factory=datetime.utcnow,
+        description="When validation was performed",
     )
-    execution_time_ms: Optional[float] = Field(
-        None, description="Time taken to perform validation in milliseconds", ge=0
+    execution_time_ms: float | None = Field(
+        None,
+        description="Time taken to perform validation in milliseconds",
+        ge=0,
     )
 
 
 class ModelPerformanceValidationResult(BaseModel):
     """Result of performance validation checks."""
 
-    response_time_ms: Optional[float] = Field(
-        None, description="Measured response time", ge=0
+    response_time_ms: float | None = Field(
+        None,
+        description="Measured response time",
+        ge=0,
     )
-    throughput_per_second: Optional[float] = Field(
-        None, description="Measured throughput", ge=0
+    throughput_per_second: float | None = Field(
+        None,
+        description="Measured throughput",
+        ge=0,
     )
-    memory_usage_mb: Optional[float] = Field(
-        None, description="Peak memory usage", ge=0
+    memory_usage_mb: float | None = Field(
+        None,
+        description="Peak memory usage",
+        ge=0,
     )
-    cpu_usage_percent: Optional[float] = Field(
-        None, description="Peak CPU usage", ge=0, le=100
+    cpu_usage_percent: float | None = Field(
+        None,
+        description="Peak CPU usage",
+        ge=0,
+        le=100,
     )
-    error_rate_percent: Optional[float] = Field(
-        None, description="Error rate", ge=0, le=100
+    error_rate_percent: float | None = Field(
+        None,
+        description="Error rate",
+        ge=0,
+        le=100,
     )
-    success_rate_percent: Optional[float] = Field(
-        None, description="Success rate", ge=0, le=100
+    success_rate_percent: float | None = Field(
+        None,
+        description="Success rate",
+        ge=0,
+        le=100,
     )
-    recovery_time_seconds: Optional[float] = Field(
-        None, description="Recovery time", ge=0
+    recovery_time_seconds: float | None = Field(
+        None,
+        description="Recovery time",
+        ge=0,
     )
 
     # Validation results against targets
-    response_time_validation: Optional[ModelValidationResult] = None
-    throughput_validation: Optional[ModelValidationResult] = None
-    memory_usage_validation: Optional[ModelValidationResult] = None
-    cpu_usage_validation: Optional[ModelValidationResult] = None
-    error_rate_validation: Optional[ModelValidationResult] = None
-    success_rate_validation: Optional[ModelValidationResult] = None
-    recovery_time_validation: Optional[ModelValidationResult] = None
-    zero_data_loss_validation: Optional[ModelValidationResult] = None
+    response_time_validation: ModelValidationResult | None = None
+    throughput_validation: ModelValidationResult | None = None
+    memory_usage_validation: ModelValidationResult | None = None
+    cpu_usage_validation: ModelValidationResult | None = None
+    error_rate_validation: ModelValidationResult | None = None
+    success_rate_validation: ModelValidationResult | None = None
+    recovery_time_validation: ModelValidationResult | None = None
+    zero_data_loss_validation: ModelValidationResult | None = None
 
     performance_score: float = Field(
-        default=0.0, description="Overall performance score", ge=0, le=100
+        default=0.0,
+        description="Overall performance score",
+        ge=0,
+        le=100,
     )
 
 
 class ModelSecurityValidationResult(BaseModel):
     """Result of security validation checks."""
 
-    security_audit_score: Optional[float] = Field(
-        None, description="Security audit score", ge=0, le=100
+    security_audit_score: float | None = Field(
+        None,
+        description="Security audit score",
+        ge=0,
+        le=100,
     )
     zero_trust_validation_passed: bool = Field(
-        default=False, description="Whether zero-trust validation passed"
+        default=False,
+        description="Whether zero-trust validation passed",
     )
     input_sanitization_passed: bool = Field(
-        default=False, description="Whether input sanitization tests passed"
+        default=False,
+        description="Whether input sanitization tests passed",
     )
     boundary_enforcement_passed: bool = Field(
-        default=False, description="Whether boundary enforcement tests passed"
+        default=False,
+        description="Whether boundary enforcement tests passed",
     )
     threat_detection_passed: bool = Field(
-        default=False, description="Whether threat detection tests passed"
+        default=False,
+        description="Whether threat detection tests passed",
     )
     encryption_validation_passed: bool = Field(
-        default=False, description="Whether encryption validation passed"
+        default=False,
+        description="Whether encryption validation passed",
     )
     access_control_validation_passed: bool = Field(
-        default=False, description="Whether access control validation passed"
+        default=False,
+        description="Whether access control validation passed",
     )
 
-    vulnerabilities_found: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Vulnerabilities discovered during testing"
+    vulnerabilities_found: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Vulnerabilities discovered during testing",
     )
-    security_violations: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Security violations detected"
+    security_violations: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Security violations detected",
     )
 
     # Individual validation results
-    audit_score_validation: Optional[ModelValidationResult] = None
-    zero_trust_validation: Optional[ModelValidationResult] = None
-    input_sanitization_validation: Optional[ModelValidationResult] = None
-    boundary_enforcement_validation: Optional[ModelValidationResult] = None
-    threat_detection_validation: Optional[ModelValidationResult] = None
-    encryption_validation: Optional[ModelValidationResult] = None
-    access_control_validation: Optional[ModelValidationResult] = None
+    audit_score_validation: ModelValidationResult | None = None
+    zero_trust_validation: ModelValidationResult | None = None
+    input_sanitization_validation: ModelValidationResult | None = None
+    boundary_enforcement_validation: ModelValidationResult | None = None
+    threat_detection_validation: ModelValidationResult | None = None
+    encryption_validation: ModelValidationResult | None = None
+    access_control_validation: ModelValidationResult | None = None
 
     security_score: float = Field(
-        default=0.0, description="Overall security score", ge=0, le=100
+        default=0.0,
+        description="Overall security score",
+        ge=0,
+        le=100,
     )
 
 
@@ -234,24 +292,35 @@ class ModelTestCoverageResult(BaseModel):
     covered_test_points: int = Field(description="Number of covered test points", ge=0)
     coverage_percentage: float = Field(description="Coverage percentage", ge=0, le=100)
 
-    code_coverage_percentage: Optional[float] = Field(
-        None, description="Code coverage percentage", ge=0, le=100
+    code_coverage_percentage: float | None = Field(
+        None,
+        description="Code coverage percentage",
+        ge=0,
+        le=100,
     )
-    branch_coverage_percentage: Optional[float] = Field(
-        None, description="Branch coverage percentage", ge=0, le=100
+    branch_coverage_percentage: float | None = Field(
+        None,
+        description="Branch coverage percentage",
+        ge=0,
+        le=100,
     )
-    function_coverage_percentage: Optional[float] = Field(
-        None, description="Function coverage percentage", ge=0, le=100
+    function_coverage_percentage: float | None = Field(
+        None,
+        description="Function coverage percentage",
+        ge=0,
+        le=100,
     )
 
-    uncovered_areas: List[str] = Field(
-        default_factory=list, description="Areas not covered by tests"
+    uncovered_areas: list[str] = Field(
+        default_factory=list,
+        description="Areas not covered by tests",
     )
-    coverage_gaps: List[str] = Field(
-        default_factory=list, description="Identified coverage gaps"
+    coverage_gaps: list[str] = Field(
+        default_factory=list,
+        description="Identified coverage gaps",
     )
 
-    coverage_validation: Optional[ModelValidationResult] = None
+    coverage_validation: ModelValidationResult | None = None
 
 
 class ModelAgentPerformanceResult(BaseModel):
@@ -259,40 +328,60 @@ class ModelAgentPerformanceResult(BaseModel):
 
     agent_id: str = Field(description="ID of the test agent")
     agent_type: str = Field(description="Type of test agent")
-    agent_name: Optional[str] = Field(None, description="Name of test agent")
+    agent_name: str | None = Field(None, description="Name of test agent")
 
     tasks_executed: int = Field(default=0, description="Number of tasks executed", ge=0)
     tasks_successful: int = Field(
-        default=0, description="Number of successful tasks", ge=0
+        default=0,
+        description="Number of successful tasks",
+        ge=0,
     )
     tasks_failed: int = Field(default=0, description="Number of failed tasks", ge=0)
 
     average_task_duration_ms: float = Field(
-        default=0.0, description="Average task duration in milliseconds", ge=0
+        default=0.0,
+        description="Average task duration in milliseconds",
+        ge=0,
     )
     min_task_duration_ms: float = Field(
-        default=0.0, description="Minimum task duration in milliseconds", ge=0
+        default=0.0,
+        description="Minimum task duration in milliseconds",
+        ge=0,
     )
     max_task_duration_ms: float = Field(
-        default=0.0, description="Maximum task duration in milliseconds", ge=0
+        default=0.0,
+        description="Maximum task duration in milliseconds",
+        ge=0,
     )
 
     resource_usage_peak_mb: float = Field(
-        default=0.0, description="Peak resource usage in MB", ge=0
+        default=0.0,
+        description="Peak resource usage in MB",
+        ge=0,
     )
     cpu_usage_peak_percent: float = Field(
-        default=0.0, description="Peak CPU usage percentage", ge=0, le=100
+        default=0.0,
+        description="Peak CPU usage percentage",
+        ge=0,
+        le=100,
     )
 
     coordination_events: int = Field(
-        default=0, description="Number of coordination events handled", ge=0
+        default=0,
+        description="Number of coordination events handled",
+        ge=0,
     )
     communication_latency_ms: float = Field(
-        default=0.0, description="Average communication latency in milliseconds", ge=0
+        default=0.0,
+        description="Average communication latency in milliseconds",
+        ge=0,
     )
 
     agent_efficiency_score: float = Field(
-        default=0.0, description="Agent efficiency score", ge=0, le=100
+        default=0.0,
+        description="Agent efficiency score",
+        ge=0,
+        le=100,
     )
 
 
@@ -306,7 +395,8 @@ class ModelTestExecutionResult(BaseModel):
 
     # Core identification
     execution_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for this test execution"
+        default_factory=uuid4,
+        description="Unique identifier for this test execution",
     )
     scenario_id: UUID = Field(description="ID of the test scenario that was executed")
     scenario_name: str = Field(description="Name of the test scenario")
@@ -315,14 +405,16 @@ class ModelTestExecutionResult(BaseModel):
     # Execution status and timing
     status: TestExecutionStatus = Field(description="Overall execution status")
     start_time: datetime = Field(description="When test execution started")
-    end_time: Optional[datetime] = Field(None, description="When test execution ended")
-    duration_seconds: Optional[float] = Field(
-        None, description="Total execution duration", ge=0
+    end_time: datetime | None = Field(None, description="When test execution ended")
+    duration_seconds: float | None = Field(
+        None,
+        description="Total execution duration",
+        ge=0,
     )
 
     # Step results
-    step_results: List[ModelTestStepResult] = Field(
-        description="Results for each test step executed"
+    step_results: list[ModelTestStepResult] = Field(
+        description="Results for each test step executed",
     )
     steps_passed: int = Field(default=0, description="Number of steps passed", ge=0)
     steps_failed: int = Field(default=0, description="Number of steps failed", ge=0)
@@ -331,84 +423,115 @@ class ModelTestExecutionResult(BaseModel):
 
     # Overall validation results
     total_assertions: int = Field(
-        default=0, description="Total assertions across all steps", ge=0
+        default=0,
+        description="Total assertions across all steps",
+        ge=0,
     )
     assertions_passed: int = Field(default=0, description="Assertions passed", ge=0)
     assertions_failed: int = Field(default=0, description="Assertions failed", ge=0)
 
     # Specific validation results
-    performance_validation: Optional[ModelPerformanceValidationResult] = Field(
-        None, description="Performance validation results"
+    performance_validation: ModelPerformanceValidationResult | None = Field(
+        None,
+        description="Performance validation results",
     )
-    security_validation: Optional[ModelSecurityValidationResult] = Field(
-        None, description="Security validation results"
+    security_validation: ModelSecurityValidationResult | None = Field(
+        None,
+        description="Security validation results",
     )
-    coverage_validation: Optional[ModelTestCoverageResult] = Field(
-        None, description="Test coverage validation results"
+    coverage_validation: ModelTestCoverageResult | None = Field(
+        None,
+        description="Test coverage validation results",
     )
 
     # Agent orchestration results
-    agents_used: List[ModelAgentPerformanceResult] = Field(
-        default_factory=list, description="Performance results for agents used"
+    agents_used: list[ModelAgentPerformanceResult] = Field(
+        default_factory=list,
+        description="Performance results for agents used",
     )
     coordination_efficiency: float = Field(
-        default=0.0, description="Agent coordination efficiency score", ge=0, le=100
+        default=0.0,
+        description="Agent coordination efficiency score",
+        ge=0,
+        le=100,
     )
     parallelization_factor: float = Field(
-        default=1.0, description="Parallelization factor achieved", ge=1.0
+        default=1.0,
+        description="Parallelization factor achieved",
+        ge=1.0,
     )
 
     # Error and failure analysis
-    error_messages: List[str] = Field(
-        default_factory=list, description="Error messages from execution"
+    error_messages: list[str] = Field(
+        default_factory=list,
+        description="Error messages from execution",
     )
-    failure_analysis: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Detailed failure analysis"
+    failure_analysis: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Detailed failure analysis",
     )
     recovery_attempts: int = Field(
-        default=0, description="Number of recovery attempts", ge=0
+        default=0,
+        description="Number of recovery attempts",
+        ge=0,
     )
 
     # Environment and execution context
-    execution_environment: Dict[str, Any] = Field(
-        default_factory=dict, description="Environment information during execution"
+    execution_environment: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Environment information during execution",
     )
-    resource_usage_summary: Dict[str, Any] = Field(
-        default_factory=dict, description="Overall resource usage summary"
+    resource_usage_summary: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Overall resource usage summary",
     )
 
     # Artifacts and outputs
-    test_artifacts: Dict[str, str] = Field(
-        default_factory=dict, description="Generated test artifacts (name -> path)"
+    test_artifacts: dict[str, str] = Field(
+        default_factory=dict,
+        description="Generated test artifacts (name -> path)",
     )
-    execution_logs: List[str] = Field(
-        default_factory=list, description="High-level execution logs"
+    execution_logs: list[str] = Field(
+        default_factory=list,
+        description="High-level execution logs",
     )
 
     # Scoring and assessment
     overall_success_rate: float = Field(
-        default=0.0, description="Overall success rate percentage", ge=0, le=100
+        default=0.0,
+        description="Overall success rate percentage",
+        ge=0,
+        le=100,
     )
     test_quality_score: float = Field(
-        default=0.0, description="Test quality score", ge=0, le=100
+        default=0.0,
+        description="Test quality score",
+        ge=0,
+        le=100,
     )
     execution_efficiency_score: float = Field(
-        default=0.0, description="Execution efficiency score", ge=0, le=100
+        default=0.0,
+        description="Execution efficiency score",
+        ge=0,
+        le=100,
     )
 
     # Recommendations and insights
-    recommendations: List[str] = Field(
-        default_factory=list, description="Recommendations based on test results"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recommendations based on test results",
     )
-    performance_insights: List[str] = Field(
-        default_factory=list, description="Performance insights discovered"
+    performance_insights: list[str] = Field(
+        default_factory=list,
+        description="Performance insights discovered",
     )
-    security_insights: List[str] = Field(
-        default_factory=list, description="Security insights discovered"
+    security_insights: list[str] = Field(
+        default_factory=list,
+        description="Security insights discovered",
     )
 
     # Registry for ONEX compliance (not serialized)
-    registry: Optional[BaseOnexRegistry] = Field(default=None, exclude=True)
+    registry: BaseOnexRegistry | None = Field(default=None, exclude=True)
 
     def __init__(self, registry: BaseOnexRegistry, **data) -> None:
         """Initialize with registry injection following ONEX patterns."""
@@ -417,7 +540,8 @@ class ModelTestExecutionResult(BaseModel):
     def get_registry(self) -> BaseOnexRegistry:
         """Get the injected registry instance for dependency resolution."""
         if self.registry is None:
-            raise ValueError("Registry not injected - model not properly initialized")
+            msg = "Registry not injected - model not properly initialized"
+            raise ValueError(msg)
         return self.registry
 
     @field_validator("steps_total")
@@ -431,9 +555,7 @@ class ModelTestExecutionResult(BaseModel):
         expected_total = passed + failed + skipped
         if expected_total > 0 and v != expected_total:
             # Log warning but don't fail validation
-            print(
-                f"Warning: steps_total ({v}) != passed + failed + skipped ({expected_total})"
-            )
+            pass
 
         return v
 
@@ -443,7 +565,8 @@ class ModelTestExecutionResult(BaseModel):
         """Validate that assertions passed doesn't exceed total."""
         total = info.data.get("total_assertions", 0)
         if total > 0 and v > total:
-            raise ValueError("Assertions passed cannot exceed total assertions")
+            msg = "Assertions passed cannot exceed total assertions"
+            raise ValueError(msg)
         return v
 
     def calculate_overall_success_rate(self) -> float:
@@ -459,10 +582,9 @@ class ModelTestExecutionResult(BaseModel):
             ) * 100
             # Weighted average: 60% step success, 40% assertion success
             return (step_success_rate * 0.6) + (assertion_success_rate * 0.4)
-        else:
-            return step_success_rate
+        return step_success_rate
 
-    def get_failed_step_results(self) -> List[ModelTestStepResult]:
+    def get_failed_step_results(self) -> list[ModelTestStepResult]:
         """Get all step results that failed."""
         return [
             result
@@ -470,12 +592,11 @@ class ModelTestExecutionResult(BaseModel):
             if result.status == TestStepStatus.FAILED
         ]
 
-    def get_critical_failures(self) -> List[ModelTestStepResult]:
+    def get_critical_failures(self) -> list[ModelTestStepResult]:
         """Get failed results for critical steps."""
-        failed_results = self.get_failed_step_results()
+        return self.get_failed_step_results()
         # For critical failures, we would need to check against original scenario
         # This is a simplified implementation
-        return failed_results
 
     def meets_performance_targets(self) -> bool:
         """Check if execution meets all performance targets."""
@@ -542,7 +663,7 @@ class ModelTestExecutionResult(BaseModel):
             and self.meets_coverage_targets()
         )
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """Get a summary of the test execution."""
         return {
             "execution_id": str(self.execution_id),

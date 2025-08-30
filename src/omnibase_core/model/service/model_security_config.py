@@ -3,7 +3,6 @@ Security configuration model for service deployment.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 
@@ -12,15 +11,16 @@ class ModelSecurityConfig(BaseModel):
     """Security configuration for service deployment."""
 
     enable_tls: bool = Field(False, description="Enable TLS/SSL")
-    cert_file: Optional[Path] = Field(None, description="TLS certificate file path")
-    key_file: Optional[Path] = Field(None, description="TLS private key file path")
-    ca_file: Optional[Path] = Field(None, description="TLS CA file path")
-    api_key: Optional[SecretStr] = Field(None, description="API key for authentication")
+    cert_file: Path | None = Field(None, description="TLS certificate file path")
+    key_file: Path | None = Field(None, description="TLS private key file path")
+    ca_file: Path | None = Field(None, description="TLS CA file path")
+    api_key: SecretStr | None = Field(None, description="API key for authentication")
 
     @model_validator(mode="after")
     def validate_tls_config(self) -> "ModelSecurityConfig":
         """Validate TLS configuration consistency."""
         if self.enable_tls and (not self.cert_file or not self.key_file):
-            raise ValueError("TLS enabled but cert_file or key_file not provided")
+            msg = "TLS enabled but cert_file or key_file not provided"
+            raise ValueError(msg)
 
         return self

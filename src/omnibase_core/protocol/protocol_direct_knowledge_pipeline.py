@@ -6,27 +6,20 @@ and write directly to PostgreSQL for debug logs, velocity tracking, PR descripti
 and agent actions using strong typing throughout.
 """
 
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Protocol
+from typing import Protocol
 
-from omnibase_core.model.agent.model_agent_action import (ModelActionInput,
-                                                          ModelActionOutput,
-                                                          ModelAgentAction)
-from omnibase_core.model.ai_workflows.model_ai_execution_metrics import \
-    ModelMetricValue
+from omnibase_core.model.agent.model_agent_action import (
+    ModelAgentAction,
+)
+from omnibase_core.model.ai_workflows.model_ai_execution_metrics import ModelMetricValue
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.intelligence.model_agent_debug_intelligence import \
-    ModelAgentDebugIntelligence
-from omnibase_core.model.pr.model_pr_ticket import (ModelPrAgentAction,
-                                                    ModelPrFileModification,
-                                                    ModelPrTicket,
-                                                    ModelPrToolCall)
-from omnibase_core.model.velocity.model_velocity_context import \
-    ModelVelocityContext
+from omnibase_core.model.intelligence.model_agent_debug_intelligence import (
+    ModelAgentDebugIntelligence,
+)
+from omnibase_core.model.pr.model_pr_ticket import (
+    ModelPrTicket,
+)
 from omnibase_core.model.velocity.model_velocity_log import ModelVelocityLog
-from omnibase_core.model.velocity.model_velocity_metrics import \
-    ModelVelocityMetrics
 
 
 class ProtocolDirectKnowledgePipeline(Protocol):
@@ -48,7 +41,8 @@ class ProtocolDirectKnowledgePipeline(Protocol):
         ...
 
     async def store_debug_log(
-        self, debug_intelligence: ModelAgentDebugIntelligence
+        self,
+        debug_intelligence: ModelAgentDebugIntelligence,
     ) -> str:
         """
         Store debug log directly to database bypassing repository.
@@ -111,10 +105,10 @@ class ProtocolDirectKnowledgePipeline(Protocol):
 
     async def get_velocity_analytics(
         self,
-        agent_id: Optional[str] = None,
-        task_type: Optional[str] = None,
+        agent_id: str | None = None,
+        task_type: str | None = None,
         days: int = 7,
-    ) -> List[ModelMetricValue]:
+    ) -> list[ModelMetricValue]:
         """
         Get velocity analytics for agents and tasks.
 
@@ -132,8 +126,10 @@ class ProtocolDirectKnowledgePipeline(Protocol):
         ...
 
     async def get_agent_productivity(
-        self, agent_id: str, days: int = 30
-    ) -> List[ModelMetricValue]:
+        self,
+        agent_id: str,
+        days: int = 30,
+    ) -> list[ModelMetricValue]:
         """
         Get productivity metrics for a specific agent.
 
@@ -151,11 +147,11 @@ class ProtocolDirectKnowledgePipeline(Protocol):
 
     async def search_debug_logs(
         self,
-        agent_id: Optional[str] = None,
-        success: Optional[bool] = None,
-        keywords: Optional[str] = None,
+        agent_id: str | None = None,
+        success: bool | None = None,
+        keywords: str | None = None,
         limit: int = 100,
-    ) -> List[ModelAgentDebugIntelligence]:
+    ) -> list[ModelAgentDebugIntelligence]:
         """
         Search debug logs with filters.
 
@@ -175,11 +171,11 @@ class ProtocolDirectKnowledgePipeline(Protocol):
 
     async def get_pr_tickets(
         self,
-        agent_id: Optional[str] = None,
-        status: Optional[str] = None,
-        branch: Optional[str] = None,
+        agent_id: str | None = None,
+        status: str | None = None,
+        branch: str | None = None,
         limit: int = 50,
-    ) -> List[ModelPrTicket]:
+    ) -> list[ModelPrTicket]:
         """
         Get PR tickets with optional filters.
 
@@ -199,12 +195,12 @@ class ProtocolDirectKnowledgePipeline(Protocol):
 
     async def get_agent_actions(
         self,
-        agent_id: Optional[str] = None,
-        action_type: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        work_session_id: Optional[str] = None,
+        agent_id: str | None = None,
+        action_type: str | None = None,
+        correlation_id: str | None = None,
+        work_session_id: str | None = None,
         limit: int = 200,
-    ) -> List[ModelAgentAction]:
+    ) -> list[ModelAgentAction]:
         """
         Get agent actions with optional filters.
 
@@ -290,7 +286,7 @@ class ProtocolVelocityTracker(Protocol):
         agent_id: str,
         task_description: str,
         task_type: str,
-        work_session_id: Optional[str] = None,
+        work_session_id: str | None = None,
     ) -> str:
         """
         Start timing a new task.
@@ -307,7 +303,10 @@ class ProtocolVelocityTracker(Protocol):
         ...
 
     async def complete_task_timer(
-        self, timer_id: str, success: bool, metrics: Optional[Dict[str, Any]] = None
+        self,
+        timer_id: str,
+        success: bool,
+        metrics: Dict[str, Any] | None = None,
     ) -> None:
         """
         Complete a task timer and store velocity data.
@@ -345,7 +344,7 @@ class ProtocolAgentActionTracker(Protocol):
         agent_id: str,
         action_type: str,
         action_description: str,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> str:
         """
         Start tracking a new agent action.
@@ -366,7 +365,7 @@ class ProtocolAgentActionTracker(Protocol):
         tracking_id: str,
         success: bool,
         output_data: Dict[str, Any],
-        reasoning: Optional[Dict[str, Any]] = None,
+        reasoning: Dict[str, Any] | None = None,
     ) -> None:
         """
         Complete action tracking and store results.
@@ -380,8 +379,10 @@ class ProtocolAgentActionTracker(Protocol):
         ...
 
     async def get_action_patterns(
-        self, agent_id: str, action_type: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self,
+        agent_id: str,
+        action_type: str | None = None,
+    ) -> list[Dict[str, Any]]:
         """
         Get patterns in agent actions for learning.
 

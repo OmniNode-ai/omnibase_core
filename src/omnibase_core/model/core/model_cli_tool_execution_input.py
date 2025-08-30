@@ -5,8 +5,6 @@ Replaces primitive dict parameters with type-safe Pydantic models
 for CLI tool execution operations.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_advanced_params import ModelAdvancedParams
@@ -22,37 +20,44 @@ class ModelCliToolExecutionInput(BaseModel):
 
     # Core execution parameters
     action: str = Field(..., description="Action to perform with the tool")
-    tool_name: Optional[str] = Field(
-        None, description="Specific tool name for targeted operations"
+    tool_name: str | None = Field(
+        None,
+        description="Specific tool name for targeted operations",
     )
 
     # Tool-specific parameters
-    target_tool: Optional[str] = Field(
-        None, description="Target tool name for tool-info operations"
+    target_tool: str | None = Field(
+        None,
+        description="Target tool name for tool-info operations",
     )
 
     # Input/output configuration
     include_metadata: bool = Field(
-        True, description="Whether to include detailed metadata in results"
+        True,
+        description="Whether to include detailed metadata in results",
     )
     include_health_info: bool = Field(
-        True, description="Whether to include health information"
+        True,
+        description="Whether to include health information",
     )
 
     # Filtering and selection
     health_filter: bool = Field(
-        True, description="Only include healthy tools in results"
+        True,
+        description="Only include healthy tools in results",
     )
-    category_filter: Optional[str] = Field(None, description="Filter tools by category")
+    category_filter: str | None = Field(None, description="Filter tools by category")
 
     # Performance and timeouts
-    timeout_seconds: Optional[float] = Field(
-        None, description="Execution timeout in seconds"
+    timeout_seconds: float | None = Field(
+        None,
+        description="Execution timeout in seconds",
     )
 
     # Output formatting
     output_format: str = Field(
-        "default", description="Output format preference (default, json, table)"
+        "default",
+        description="Output format preference (default, json, table)",
     )
     verbose: bool = Field(False, description="Enable verbose output")
 
@@ -63,11 +68,13 @@ class ModelCliToolExecutionInput(BaseModel):
     )
 
     # Execution context
-    execution_context: Optional[str] = Field(
-        None, description="Execution context identifier"
+    execution_context: str | None = Field(
+        None,
+        description="Execution context identifier",
     )
-    request_id: Optional[str] = Field(
-        None, description="Request identifier for tracking"
+    request_id: str | None = Field(
+        None,
+        description="Request identifier for tracking",
     )
 
     def to_legacy_dict(self) -> dict:
@@ -158,5 +165,5 @@ class ModelCliToolExecutionInput(BaseModel):
                 "advanced_params": {},
                 "execution_context": "cli_main",
                 "request_id": "req_123456",
-            }
+            },
         }

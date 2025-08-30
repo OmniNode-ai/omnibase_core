@@ -3,7 +3,7 @@ OnexEventMetadata model.
 """
 
 # Forward reference to avoid circular imports
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -15,28 +15,29 @@ if TYPE_CHECKING:
 
 
 class ModelOnexEventMetadata(BaseModel):
-    input_state: Optional[dict] = None
-    output_state: Optional[dict] = None
-    error: Optional[str] = None
-    error_type: Optional[str] = None
-    error_code: Optional[str] = None
-    recoverable: Optional[bool] = None
-    node_version: Optional[ModelSemVer] = None
-    operation_type: Optional[str] = None
-    execution_time_ms: Optional[float] = None
-    result_summary: Optional[str] = None
-    status: Optional[str] = None
-    reason: Optional[str] = None
-    registry_id: Optional[Union[str, UUID]] = None
-    trust_state: Optional[str] = None
-    ttl: Optional[int] = None
+    input_state: dict | None = None
+    output_state: dict | None = None
+    error: str | None = None
+    error_type: str | None = None
+    error_code: str | None = None
+    recoverable: bool | None = None
+    node_version: ModelSemVer | None = None
+    operation_type: str | None = None
+    execution_time_ms: float | None = None
+    result_summary: str | None = None
+    status: str | None = None
+    reason: str | None = None
+    registry_id: str | UUID | None = None
+    trust_state: str | None = None
+    ttl: int | None = None
     # Structured logging support
     log_entry: Optional["ModelLogEntry"] = None
     model_config = ConfigDict(extra="allow")
 
     @classmethod
     def from_node_announce(
-        cls, announce: "NodeAnnounceModelMetadata"
+        cls,
+        announce: "NodeAnnounceModelMetadata",
     ) -> "OnexEventModelMetadata":
         """
         Construct an OnexEventModelMetadata from a NodeAnnounceModelMetadata, mapping all fields.

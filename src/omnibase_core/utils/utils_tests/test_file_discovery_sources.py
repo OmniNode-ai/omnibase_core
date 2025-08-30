@@ -33,12 +33,11 @@ import pytest
 
 from omnibase_core.core.error_codes import CoreErrorCode, OnexError
 from omnibase_core.utils.directory_traverser import DirectoryTraverser
-from omnibase_core.utils.hybrid_file_discovery_source import \
-    HybridFileDiscoverySource
-from omnibase_core.utils.tree_file_discovery_source import \
-    TreeFileDiscoverySource
-from omnibase_core.utils.utils_tests.utils_test_file_discovery_sources_cases import \
-    FILE_DISCOVERY_TEST_CASES
+from omnibase_core.utils.hybrid_file_discovery_source import HybridFileDiscoverySource
+from omnibase_core.utils.tree_file_discovery_source import TreeFileDiscoverySource
+from omnibase_core.utils.utils_tests.utils_test_file_discovery_sources_cases import (
+    FILE_DISCOVERY_TEST_CASES,
+)
 
 # Context IDs for fixture parameterization
 MOCK_CONTEXT = 1
@@ -49,9 +48,11 @@ INTEGRATION_CONTEXT = 2
     params=[
         pytest.param(MOCK_CONTEXT, id="mock", marks=pytest.mark.mock),
         pytest.param(
-            INTEGRATION_CONTEXT, id="integration", marks=pytest.mark.integration
+            INTEGRATION_CONTEXT,
+            id="integration",
+            marks=pytest.mark.integration,
         ),
-    ]
+    ],
 )
 def context(request: pytest.FixtureRequest) -> Any:  # type: ignore[no-any-return]
     # Return type is Any due to pytest param mechanics; see ONEX test standards
@@ -64,25 +65,25 @@ def context(request: pytest.FixtureRequest) -> Any:  # type: ignore[no-any-retur
         pytest.param("tree", id="tree"),
         pytest.param("hybrid_warn", id="hybrid_warn"),
         pytest.param("hybrid_strict", id="hybrid_strict"),
-    ]
+    ],
 )
 def discovery_source(request: pytest.FixtureRequest) -> Any:
     if request.param == "filesystem":
         return DirectoryTraverser()
-    elif request.param == "tree":
+    if request.param == "tree":
         return TreeFileDiscoverySource()
-    elif request.param == "hybrid_warn":
+    if request.param == "hybrid_warn":
         return HybridFileDiscoverySource(strict_mode=False)
-    elif request.param == "hybrid_strict":
+    if request.param == "hybrid_strict":
         return HybridFileDiscoverySource(strict_mode=True)
-    else:
-        raise OnexError(
-            f"Unknown discovery source: {request.param}",
-            CoreErrorCode.INVALID_PARAMETER,
-        )
+    msg = f"Unknown discovery source: {request.param}"
+    raise OnexError(
+        msg,
+        CoreErrorCode.INVALID_PARAMETER,
+    )
 
 
-@pytest.mark.parametrize("case_name,case_cls", FILE_DISCOVERY_TEST_CASES.items())
+@pytest.mark.parametrize(("case_name", "case_cls"), FILE_DISCOVERY_TEST_CASES.items())
 def test_file_discovery_sources(
     case_name: str,
     case_cls: type,
@@ -118,7 +119,7 @@ def test_file_discovery_sources(
     # Skip if not supported
     if source_type not in getattr(case, "supported_sources", []):
         pytest.skip(
-            f"Test case {case_name} does not support discovery source {source_type}"
+            f"Test case {case_name} does not support discovery source {source_type}",
         )
     test_dir = case.setup(tmp_path)
     # Run the test case with the injected discovery source

@@ -6,7 +6,7 @@ into generated tools, enabling contract-driven dependency injection.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,9 +26,10 @@ class ModelProtocolDependency(BaseModel):
     name: str = Field(..., description="Dependency identifier")
     interface: str = Field(..., description="Python protocol interface path")
     required: bool = Field(True, description="Whether dependency is required")
-    description: Optional[str] = Field(None, description="Dependency description")
-    fallback: Optional[str] = Field(
-        None, description="Fallback implementation identifier"
+    description: str | None = Field(None, description="Dependency description")
+    fallback: str | None = Field(
+        None,
+        description="Fallback implementation identifier",
     )
 
     @field_validator("interface")
@@ -36,12 +37,14 @@ class ModelProtocolDependency(BaseModel):
     def validate_interface(cls, v: str) -> str:
         """Validate protocol interface path format."""
         if not v or not isinstance(v, str):
-            raise ValueError("interface must be a non-empty string")
+            msg = "interface must be a non-empty string"
+            raise ValueError(msg)
 
         # Should be importable Python path
         parts = v.split(".")
         if len(parts) < 2:
-            raise ValueError("interface must be a valid Python import path")
+            msg = "interface must be a valid Python import path"
+            raise ValueError(msg)
 
         return v
 
@@ -53,9 +56,9 @@ class ModelConsulServiceDependency(BaseModel):
     protocol: str = Field(..., description="Protocol interface identifier")
     interface: str = Field(..., description="Python protocol interface path")
     required: bool = Field(True, description="Whether service is required")
-    description: Optional[str] = Field(None, description="Service description")
-    fallback: Optional[str] = Field(None, description="Fallback implementation")
-    health_check: Optional[str] = Field(None, description="Health check endpoint path")
+    description: str | None = Field(None, description="Service description")
+    fallback: str | None = Field(None, description="Fallback implementation")
+    health_check: str | None = Field(None, description="Health check endpoint path")
     timeout_seconds: int = Field(10, description="Service discovery timeout")
 
     @field_validator("service_name")
@@ -63,12 +66,14 @@ class ModelConsulServiceDependency(BaseModel):
     def validate_service_name(cls, v: str) -> str:
         """Validate Consul service name format."""
         if not v or not isinstance(v, str):
-            raise ValueError("service_name must be a non-empty string")
+            msg = "service_name must be a non-empty string"
+            raise ValueError(msg)
 
         # Consul service names should be lowercase with hyphens
         if not v.replace("-", "").replace("_", "").isalnum():
+            msg = "service_name must contain only alphanumeric, hyphens, underscores"
             raise ValueError(
-                "service_name must contain only alphanumeric, hyphens, underscores"
+                msg,
             )
 
         return v
@@ -79,10 +84,11 @@ class ModelConfigurationDependency(BaseModel):
 
     section: str = Field(..., description="Configuration section path")
     required: bool = Field(True, description="Whether configuration is required")
-    description: Optional[str] = Field(None, description="Configuration description")
-    default_value: Optional[Any] = Field(None, description="Default value if missing")
-    validation_schema: Optional[Dict[str, Any]] = Field(
-        None, description="JSON schema for configuration validation"
+    description: str | None = Field(None, description="Configuration description")
+    default_value: Any | None = Field(None, description="Default value if missing")
+    validation_schema: dict[str, Any] | None = Field(
+        None,
+        description="JSON schema for configuration validation",
     )
 
     @field_validator("section")
@@ -90,11 +96,13 @@ class ModelConfigurationDependency(BaseModel):
     def validate_section(cls, v: str) -> str:
         """Validate configuration section path."""
         if not v or not isinstance(v, str):
-            raise ValueError("section must be a non-empty string")
+            msg = "section must be a non-empty string"
+            raise ValueError(msg)
 
         # Should be dot-separated path like "logging.engine"
         if not all(part.replace("_", "").isalnum() for part in v.split(".")):
-            raise ValueError("section must be dot-separated alphanumeric path")
+            msg = "section must be dot-separated alphanumeric path"
+            raise ValueError(msg)
 
         return v
 
@@ -106,31 +114,37 @@ class ModelStaticServiceDependency(BaseModel):
     protocol: str = Field(..., description="Protocol interface identifier")
     interface: str = Field(..., description="Python protocol interface path")
     required: bool = Field(True, description="Whether service is required")
-    description: Optional[str] = Field(None, description="Service description")
-    factory: Optional[str] = Field(
-        None, description="Factory function for creating service"
+    description: str | None = Field(None, description="Service description")
+    factory: str | None = Field(
+        None,
+        description="Factory function for creating service",
     )
 
 
 class ModelContractDependencies(BaseModel):
     """Complete dependency specification for a contract."""
 
-    protocols: List[ModelProtocolDependency] = Field(
-        default_factory=list, description="Protocol-based dependencies"
+    protocols: list[ModelProtocolDependency] = Field(
+        default_factory=list,
+        description="Protocol-based dependencies",
     )
-    consul_services: List[ModelConsulServiceDependency] = Field(
-        default_factory=list, description="Consul service discovery dependencies"
+    consul_services: list[ModelConsulServiceDependency] = Field(
+        default_factory=list,
+        description="Consul service discovery dependencies",
     )
-    configuration: List[ModelConfigurationDependency] = Field(
-        default_factory=list, description="Configuration section dependencies"
+    configuration: list[ModelConfigurationDependency] = Field(
+        default_factory=list,
+        description="Configuration section dependencies",
     )
-    static_services: List[ModelStaticServiceDependency] = Field(
-        default_factory=list, description="Static service dependencies"
+    static_services: list[ModelStaticServiceDependency] = Field(
+        default_factory=list,
+        description="Static service dependencies",
     )
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelContractDependencies"]:
         """Create from contract dict data."""
         if data is None:
@@ -167,7 +181,7 @@ class ModelContractDependencies(BaseModel):
             static_services=static_services,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         result = {}
 
@@ -195,7 +209,7 @@ class ModelContractDependencies(BaseModel):
 
         return result
 
-    def get_all_protocols(self) -> List[str]:
+    def get_all_protocols(self) -> list[str]:
         """Get all protocol interfaces referenced in dependencies."""
         protocols = set()
 
@@ -211,9 +225,9 @@ class ModelContractDependencies(BaseModel):
         for service in self.static_services:
             protocols.add(service.interface)
 
-        return sorted(list(protocols))
+        return sorted(protocols)
 
-    def get_required_protocols(self) -> List[str]:
+    def get_required_protocols(self) -> list[str]:
         """Get all required protocol interfaces."""
         protocols = set()
 
@@ -232,13 +246,13 @@ class ModelContractDependencies(BaseModel):
             if service.required:
                 protocols.add(service.interface)
 
-        return sorted(list(protocols))
+        return sorted(protocols)
 
-    def get_consul_services(self) -> List[str]:
+    def get_consul_services(self) -> list[str]:
         """Get all Consul service names referenced."""
         return [service.service_name for service in self.consul_services]
 
-    def get_configuration_sections(self) -> List[str]:
+    def get_configuration_sections(self) -> list[str]:
         """Get all configuration sections referenced."""
         return [config.section for config in self.configuration]
 
@@ -248,10 +262,10 @@ class ModelContractDependencies(BaseModel):
             self.protocols
             or self.consul_services
             or self.configuration
-            or self.static_services
+            or self.static_services,
         )
 
-    def validate_dependency_graph(self) -> List[str]:
+    def validate_dependency_graph(self) -> list[str]:
         """Validate dependency graph for circular references and missing protocols."""
         errors = []
 
@@ -266,7 +280,7 @@ class ModelContractDependencies(BaseModel):
             service_name = f"consul:{service.service_name}"
             if service_name in names:
                 errors.append(
-                    f"Duplicate consul service dependency: {service.service_name}"
+                    f"Duplicate consul service dependency: {service.service_name}",
                 )
             names.add(service_name)
 

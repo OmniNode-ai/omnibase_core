@@ -11,7 +11,5 @@ except ImportError:
     class CLIAdapter:
         """Minimal CLI adapter for exit code handling."""
 
-        pass
 
-
-__all__ = ["OnexError", "ModelOnexError", "CLIAdapter"]
+__all__ = ["CLIAdapter", "ModelOnexError", "OnexError"]

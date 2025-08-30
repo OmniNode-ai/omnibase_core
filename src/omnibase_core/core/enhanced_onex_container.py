@@ -12,8 +12,9 @@ import asyncio
 import os
 from datetime import datetime
 from pathlib import Path
+
 # Import needed for type annotations
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 from uuid import uuid4
 
 from dependency_injector import containers, providers
@@ -21,10 +22,14 @@ from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.common_types import ModelStateValue
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.monadic.model_node_result import (ErrorInfo, ErrorType,
-                                                          Event,
-                                                          ExecutionContext,
-                                                          LogEntry, NodeResult)
+from omnibase_core.core.monadic.model_node_result import (
+    ErrorInfo,
+    ErrorType,
+    Event,
+    ExecutionContext,
+    LogEntry,
+    NodeResult,
+)
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
 
 if TYPE_CHECKING:
@@ -45,10 +50,10 @@ class ContainerResolutionResult:
         self,
         service_instance: T,
         resolution_time_ms: int,
-        resolution_path: List[str],
+        resolution_path: list[str],
         cache_hit: bool = False,
         fallback_used: bool = False,
-        warnings: Optional[List[str]] = None,
+        warnings: list[str] | None = None,
     ):
         self.service_instance = service_instance
         self.resolution_time_ms = resolution_time_ms
@@ -68,16 +73,18 @@ class MonadicServiceProvider:
     """
 
     def __init__(
-        self, container: "EnhancedONEXContainer", correlation_id: Optional[str] = None
+        self,
+        container: "EnhancedONEXContainer",
+        correlation_id: str | None = None,
     ):
         self.container = container
         self.correlation_id = correlation_id or str(uuid4())
-        self.resolution_cache: Dict[str, ContainerResolutionResult] = {}
+        self.resolution_cache: dict[str, ContainerResolutionResult] = {}
 
     async def resolve_async(
         self,
-        protocol_type: Type[T],
-        service_name: Optional[str] = None,
+        protocol_type: type[T],
+        service_name: str | None = None,
         use_cache: bool = True,
     ) -> NodeResult[T]:
         """
@@ -119,12 +126,12 @@ class MonadicServiceProvider:
                         "INFO",
                         f"Service resolved from cache: {protocol_name}",
                         datetime.now(),
-                    )
+                    ),
                 )
 
                 return NodeResult.success(
                     value=cached_result.service_instance,
-                    provenance=execution_context.provenance + ["cache.hit"],
+                    provenance=[*execution_context.provenance, "cache.hit"],
                     trust_score=0.95,  # Cached services have slightly lower trust
                     metadata={
                         **execution_context.metadata,
@@ -143,14 +150,15 @@ class MonadicServiceProvider:
                             },
                             timestamp=datetime.now(),
                             correlation_id=self.correlation_id,
-                        )
+                        ),
                     ],
                     correlation_id=self.correlation_id,
                 )
 
             # Resolve service from container
             resolution_result = await self._resolve_from_container(
-                protocol_type, service_name
+                protocol_type,
+                service_name,
             )
 
             end_time = datetime.now()
@@ -168,8 +176,10 @@ class MonadicServiceProvider:
 
             execution_context.logs.append(
                 LogEntry(
-                    "INFO", f"Service resolved successfully: {protocol_name}", end_time
-                )
+                    "INFO",
+                    f"Service resolved successfully: {protocol_name}",
+                    end_time,
+                ),
             )
             execution_context.timestamp = end_time
             execution_context.metadata["resolution_time_ms"] = resolution_time_ms
@@ -190,7 +200,7 @@ class MonadicServiceProvider:
                         },
                         timestamp=end_time,
                         correlation_id=self.correlation_id,
-                    )
+                    ),
                 ],
                 correlation_id=self.correlation_id,
             )
@@ -199,7 +209,7 @@ class MonadicServiceProvider:
             # Handle resolution failure
             error_info = ErrorInfo(
                 error_type=ErrorType.DEPENDENCY,
-                message=f"Service resolution failed for {protocol_name}: {str(e)}",
+                message=f"Service resolution failed for {protocol_name}: {e!s}",
                 code="SERVICE_RESOLUTION_FAILED",
                 context={
                     "protocol_type": protocol_name,
@@ -214,18 +224,22 @@ class MonadicServiceProvider:
 
             execution_context.logs.append(
                 LogEntry(
-                    "ERROR", f"Service resolution failed: {str(e)}", datetime.now()
-                )
+                    "ERROR",
+                    f"Service resolution failed: {e!s}",
+                    datetime.now(),
+                ),
             )
 
             return NodeResult.failure(
                 error=error_info,
-                provenance=execution_context.provenance + ["resolution.failed"],
+                provenance=[*execution_context.provenance, "resolution.failed"],
                 correlation_id=self.correlation_id,
             )
 
     async def _resolve_from_container(
-        self, protocol_type: Type[T], service_name: Optional[str]
+        self,
+        protocol_type: type[T],
+        service_name: str | None,
     ) -> T:
         """
         Resolve service from underlying container implementation.
@@ -240,37 +254,36 @@ class MonadicServiceProvider:
         # Check if container has get_service method (new enhanced container)
         if hasattr(self.container, "get_service_async"):
             return await self.container.get_service_async(protocol_type, service_name)
-        elif hasattr(self.container, "get_service"):
+        if hasattr(self.container, "get_service"):
             # Fallback to synchronous method
             return self.container.get_service(protocol_type, service_name)
-        else:
-            # Try to resolve using protocol name
-            protocol_name = protocol_type.__name__
+        # Try to resolve using protocol name
+        protocol_name = protocol_type.__name__
 
-            # Map common protocol names to container providers
-            provider_map = {
-                "ProtocolLogger": "basic_logger",
-                "Logger": "basic_logger",
-                "ConsulServiceDiscovery": "consul_client",
-                "ServiceDiscovery": "service_discovery",
-            }
+        # Map common protocol names to container providers
+        provider_map = {
+            "ProtocolLogger": "basic_logger",
+            "Logger": "basic_logger",
+            "ConsulServiceDiscovery": "consul_client",
+            "ServiceDiscovery": "service_discovery",
+        }
 
-            if protocol_name in provider_map:
-                provider_name = provider_map[protocol_name]
-                provider = getattr(self.container, provider_name, None)
-                if provider:
-                    return provider()
+        if protocol_name in provider_map:
+            provider_name = provider_map[protocol_name]
+            provider = getattr(self.container, provider_name, None)
+            if provider:
+                return provider()
 
-            # Fallback error
-            raise OnexError(
-                error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
-                message=f"Unable to resolve service for protocol {protocol_name}",
-                context={
-                    "protocol_type": protocol_name,
-                    "service_name": service_name,
-                    "available_providers": dir(self.container),
-                },
-            )
+        # Fallback error
+        raise OnexError(
+            error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            message=f"Unable to resolve service for protocol {protocol_name}",
+            context={
+                "protocol_type": protocol_name,
+                "service_name": service_name,
+                "available_providers": dir(self.container),
+            },
+        )
 
 
 # === CORE CONTAINER DEFINITION ===
@@ -297,7 +310,8 @@ class _BaseONEXContainer(containers.DeclarativeContainer):
 
     # Workflow execution coordinator
     workflow_coordinator = providers.Singleton(
-        lambda factory: _create_workflow_coordinator(factory), factory=workflow_factory
+        lambda factory: _create_workflow_coordinator(factory),
+        factory=workflow_factory,
     )
 
 
@@ -364,9 +378,9 @@ class EnhancedONEXContainer:
 
     async def get_service_async(
         self,
-        protocol_type: Type[T],
-        service_name: Optional[str] = None,
-        correlation_id: Optional[str] = None,
+        protocol_type: type[T],
+        service_name: str | None = None,
+        correlation_id: str | None = None,
     ) -> T:
         """
         Async service resolution with monadic patterns.
@@ -396,7 +410,9 @@ class EnhancedONEXContainer:
         return result.value
 
     def get_service_sync(
-        self, protocol_type: Type[T], service_name: Optional[str] = None
+        self,
+        protocol_type: type[T],
+        service_name: str | None = None,
     ) -> T:
         """
         Synchronous service resolution for backward compatibility.
@@ -412,7 +428,9 @@ class EnhancedONEXContainer:
 
     # Backward compatibility alias
     def get_service(
-        self, protocol_type: Type[T], service_name: Optional[str] = None
+        self,
+        protocol_type: type[T],
+        service_name: str | None = None,
     ) -> T:
         """Backward compatibility method."""
         return self.get_service_sync(protocol_type, service_name)
@@ -420,9 +438,9 @@ class EnhancedONEXContainer:
     async def create_enhanced_nodebase(
         self,
         contract_path: Path,
-        node_id: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        node_id: str | None = None,
+        workflow_id: str | None = None,
+        session_id: str | None = None,
     ) -> "ModelNodeBase":
         """
         Factory method for creating Enhanced ModelNodeBase instances.
@@ -450,7 +468,7 @@ class EnhancedONEXContainer:
         """Get workflow orchestration coordinator."""
         return self.workflow_coordinator()
 
-    def get_performance_metrics(self) -> Dict[str, ModelStateValue]:
+    def get_performance_metrics(self) -> dict[str, ModelStateValue]:
         """
         Get container performance metrics.
 
@@ -483,8 +501,7 @@ def _create_enhanced_logger(level: LogLevelEnum) -> ProtocolLogger:
         ) -> None:
             """Emit log event synchronously."""
             if level.value >= self.level.value:
-                timestamp = datetime.now().isoformat()
-                print(f"[{timestamp}] [{level.name}] {message}")
+                datetime.now().isoformat()
 
         async def emit_log_event_async(
             self,
@@ -525,16 +542,15 @@ def _create_workflow_factory():
         def create_workflow(
             self,
             workflow_type: str,
-            config: Optional[Dict[str, ModelStateValue]] = None,
+            config: dict[str, ModelStateValue] | None = None,
         ):
             """Create workflow instance by type."""
             config = config or {}
 
             # This would be expanded with actual workflow types
             # from LlamaIndex integration
-            return None
 
-        def list_available_workflows(self) -> List[str]:
+        def list_available_workflows(self) -> list[str]:
             """List available workflow types."""
             return [
                 "simple_sequential",
@@ -553,20 +569,21 @@ def _create_workflow_coordinator(factory):
     class WorkflowCoordinator:
         def __init__(self, factory):
             self.factory = factory
-            self.active_workflows: Dict[str, ModelStateValue] = {}
+            self.active_workflows: dict[str, ModelStateValue] = {}
 
         async def execute_workflow(
             self,
             workflow_id: str,
             workflow_type: str,
             input_data: ModelStateValue,
-            config: Optional[Dict[str, ModelStateValue]] = None,
+            config: dict[str, ModelStateValue] | None = None,
         ) -> NodeResult[ModelStateValue]:
             """Execute workflow with monadic result."""
             try:
-                workflow = self.factory.create_workflow(
-                    workflow_type, config
-                )  # noqa: F841
+                self.factory.create_workflow(
+                    workflow_type,
+                    config,
+                )
                 # Execution logic would be implemented here
                 # TODO: Use workflow for actual execution
 
@@ -583,16 +600,17 @@ def _create_workflow_coordinator(factory):
             except Exception as e:
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Workflow execution failed: {str(e)}",
+                    message=f"Workflow execution failed: {e!s}",
                     correlation_id=workflow_id,
                     retryable=False,
                 )
 
                 return NodeResult.failure(
-                    error=error_info, provenance=[f"workflow.{workflow_type}.failed"]
+                    error=error_info,
+                    provenance=[f"workflow.{workflow_type}.failed"],
                 )
 
-        def get_active_workflows(self) -> List[str]:
+        def get_active_workflows(self) -> list[str]:
             """Get list of active workflow IDs."""
             return list(self.active_workflows.keys())
 
@@ -627,7 +645,7 @@ async def create_enhanced_onex_container() -> EnhancedONEXContainer:
                 "default_timeout": int(os.getenv("WORKFLOW_TIMEOUT", "300")),
                 "max_concurrent_workflows": int(os.getenv("MAX_WORKFLOWS", "10")),
             },
-        }
+        },
     )
 
     return container
@@ -635,7 +653,7 @@ async def create_enhanced_onex_container() -> EnhancedONEXContainer:
 
 # === GLOBAL ENHANCED CONTAINER ===
 
-_enhanced_container: Optional[EnhancedONEXContainer] = None
+_enhanced_container: EnhancedONEXContainer | None = None
 
 
 async def get_enhanced_container() -> EnhancedONEXContainer:

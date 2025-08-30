@@ -5,16 +5,14 @@ Defines the protocol interface for CLI tool discovery and resolution,
 providing duck-typed tool execution without hardcoded import paths.
 """
 
-from typing import List, Optional, Protocol
+from typing import Protocol
 
-from omnibase_core.model.core.model_cli_discovery_stats import \
-    ModelCliDiscoveryStats
-from omnibase_core.model.core.model_tool_health_status import \
-    ModelToolHealthStatus
-from omnibase_core.model.core.model_tool_implementation import \
-    ModelToolImplementation
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.core.model_cli_discovery_stats import ModelCliDiscoveryStats
+from omnibase_core.model.core.model_tool_health_status import ModelToolHealthStatus
+from omnibase_core.model.core.model_tool_implementation import ModelToolImplementation
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class ProtocolCliToolDiscovery(Protocol):
@@ -27,8 +25,10 @@ class ProtocolCliToolDiscovery(Protocol):
     """
 
     def discover_available_tools(
-        self, health_filter: bool = True, timeout_seconds: Optional[float] = None
-    ) -> List[ModelDiscoveredTool]:
+        self,
+        health_filter: bool = True,
+        timeout_seconds: float | None = None,
+    ) -> list[ModelDiscoveredTool]:
         """
         Discover all available CLI tools.
 
@@ -46,8 +46,9 @@ class ProtocolCliToolDiscovery(Protocol):
         ...
 
     def resolve_tool_implementation(
-        self, tool_name: str
-    ) -> Optional[ModelToolImplementation]:
+        self,
+        tool_name: str,
+    ) -> ModelToolImplementation | None:
         """
         Resolve tool implementation via protocol abstraction.
 
@@ -64,7 +65,9 @@ class ProtocolCliToolDiscovery(Protocol):
         ...
 
     def validate_tool_health(
-        self, tool_name: str, timeout_seconds: Optional[float] = None
+        self,
+        tool_name: str,
+        timeout_seconds: float | None = None,
     ) -> ModelToolHealthStatus:
         """
         Validate tool health via introspection protocol.
@@ -78,7 +81,7 @@ class ProtocolCliToolDiscovery(Protocol):
         """
         ...
 
-    def get_tool_metadata(self, tool_name: str) -> Optional[ModelDiscoveredTool]:
+    def get_tool_metadata(self, tool_name: str) -> ModelDiscoveredTool | None:
         """
         Get detailed metadata for a specific tool.
 

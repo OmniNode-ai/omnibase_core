@@ -6,8 +6,8 @@ Handles the get_service method functionality that gets lost during
 dependency-injector DynamicContainer transformation.
 """
 
-import asyncio
-from typing import Callable, Dict, Optional, Type, TypeVar, Union
+from collections.abc import Callable
+from typing import TypeVar
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
@@ -35,8 +35,8 @@ def create_get_service_method(
 
     def get_service(
         self,
-        protocol_type_or_name: Union[Type[T], str],
-        service_name: Optional[str] = None,
+        protocol_type_or_name: type[T] | str,
+        service_name: str | None = None,
     ) -> ModelService:
         """
         Get service instance for protocol type or service name.
@@ -49,7 +49,7 @@ def create_get_service_method(
 
             # Handle special service name "event_bus"
             if service_name == "event_bus":
-                event_bus_instance = create_hybrid_event_bus()
+                create_hybrid_event_bus()
                 return ModelService(
                     service_id="event_bus",
                     service_name="event_bus",
@@ -69,7 +69,7 @@ def create_get_service_method(
 
             # Contract-driven service resolution for protocols
             if protocol_name == "ProtocolEventBus":
-                event_bus_instance = create_hybrid_event_bus()
+                create_hybrid_event_bus()
                 return ModelService(
                     service_id="event_bus_protocol",
                     service_name="event_bus",
@@ -77,8 +77,8 @@ def create_get_service_method(
                     protocol_name=protocol_name,
                     health_status="healthy",
                 )
-            elif protocol_name == "ProtocolConsulClient":
-                consul_instance = self.consul_client()
+            if protocol_name == "ProtocolConsulClient":
+                self.consul_client()
                 return ModelService(
                     service_id="consul_client",
                     service_name="consul_client",
@@ -86,7 +86,7 @@ def create_get_service_method(
                     protocol_name=protocol_name,
                     health_status="healthy",
                 )
-            elif protocol_name == "ProtocolVaultClient":
+            if protocol_name == "ProtocolVaultClient":
                 # TODO: Implement vault client resolution
                 pass
 
@@ -94,7 +94,7 @@ def create_get_service_method(
         if service_name:
             registry_map = _build_registry_map(self)
             if service_name in registry_map:
-                service_instance = registry_map[service_name]()
+                registry_map[service_name]()
                 return ModelService(
                     service_id=service_name,
                     service_name=service_name,
@@ -105,8 +105,9 @@ def create_get_service_method(
         # No fallbacks - fail fast for unknown services
 
         # If no protocol_type and service not found, raise error
+        msg = f"Unable to resolve service: {service_name}"
         raise OnexError(
-            f"Unable to resolve service: {service_name}",
+            msg,
             error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
@@ -115,9 +116,9 @@ def create_get_service_method(
 
 def _build_registry_map(
     container: ModelContainerInstance,
-) -> Dict[str, Callable[[], ModelService]]:
+) -> dict[str, Callable[[], ModelService]]:
     """Build registry mapping for service resolution."""
-    registry_map = {
+    return {
         # Generation tool registries
         "contract_validator_registry": container.contract_validator_registry,
         "model_regenerator_registry": container.model_regenerator_registry,
@@ -157,8 +158,6 @@ def _build_registry_map(
         # Infrastructure CLI tool
         "infrastructure_cli": container.infrastructure_cli,
     }
-
-    return registry_map
 
 
 def bind_get_service_method(container: ModelContainerInstance) -> None:

@@ -32,7 +32,7 @@ architectural boundaries.
 """
 
 from enum import Enum
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from pydantic import BaseModel, field_validator
 
@@ -52,10 +52,10 @@ class RegistryArtifactType(str, Enum):
 
 class RegistryArtifactModelMetadata(BaseModel):
     # Canonical fields for artifact metadata; extend as needed
-    description: Optional[str] = None
-    author: Optional[str] = None
-    created_at: Optional[str] = None
-    last_modified_at: Optional[str] = None
+    description: str | None = None
+    author: str | None = None
+    created_at: str | None = None
+    last_modified_at: str | None = None
     # Add more fields as needed for protocol
 
     @field_validator("author", mode="before")
@@ -103,7 +103,7 @@ class RegistryStatus(BaseModel):
     valid_artifact_count: int
     invalid_artifact_count: int
     wip_artifact_count: int
-    artifact_types_found: List[RegistryArtifactType]
+    artifact_types_found: list[RegistryArtifactType]
 
 
 class ProtocolRegistry(Protocol):
@@ -119,18 +119,21 @@ class ProtocolRegistry(Protocol):
         """Get registry loading status and statistics."""
         ...
 
-    def get_artifacts(self) -> List[RegistryArtifactInfo]:
+    def get_artifacts(self) -> list[RegistryArtifactInfo]:
         """Get all artifacts in the registry."""
         ...
 
     def get_artifacts_by_type(
-        self, artifact_type: RegistryArtifactType
-    ) -> List[RegistryArtifactInfo]:
+        self,
+        artifact_type: RegistryArtifactType,
+    ) -> list[RegistryArtifactInfo]:
         """Get artifacts filtered by type."""
         ...
 
     def get_artifact_by_name(
-        self, name: str, artifact_type: Optional[RegistryArtifactType] = None
+        self,
+        name: str,
+        artifact_type: RegistryArtifactType | None = None,
     ) -> RegistryArtifactInfo:
         """
         Get a specific artifact by name.
@@ -148,7 +151,9 @@ class ProtocolRegistry(Protocol):
         ...
 
     def has_artifact(
-        self, name: str, artifact_type: Optional[RegistryArtifactType] = None
+        self,
+        name: str,
+        artifact_type: RegistryArtifactType | None = None,
     ) -> bool:
         """Check if an artifact exists in the registry."""
         ...

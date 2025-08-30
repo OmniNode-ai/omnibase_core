@@ -7,11 +7,10 @@ from contract definitions.
 
 import ast
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Protocol, Union
+from typing import Protocol
 
 from omnibase_core.model.core.model_schema import ModelSchema
-from omnibase_core.model.generation.model_contract_document import \
-    ModelContractDocument
+from omnibase_core.model.generation.model_contract_document import ModelContractDocument
 
 
 @dataclass
@@ -19,7 +18,7 @@ class EnumInfo:
     """Information about a discovered enum."""
 
     name: str
-    values: List[str]
+    values: list[str]
     source_location: str
 
 
@@ -31,8 +30,9 @@ class ProtocolEnumGenerator(Protocol):
     """
 
     def discover_enums_from_contract(
-        self, contract_data: Union[ModelContractDocument, Dict]
-    ) -> List[EnumInfo]:
+        self,
+        contract_data: ModelContractDocument | dict,
+    ) -> list[EnumInfo]:
         """Discover all enum definitions from a contract document.
 
         Args:
@@ -44,8 +44,10 @@ class ProtocolEnumGenerator(Protocol):
         ...
 
     def discover_enums_from_schema(
-        self, schema: Union[ModelSchema, dict], path: str = "root"
-    ) -> List[EnumInfo]:
+        self,
+        schema: ModelSchema | dict,
+        path: str = "root",
+    ) -> list[EnumInfo]:
         """Recursively discover enums from a schema definition.
 
         Args:
@@ -57,7 +59,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def generate_enum_name_from_values(self, enum_values: List[str]) -> str:
+    def generate_enum_name_from_values(self, enum_values: list[str]) -> str:
         """Generate an enum class name from enum values.
 
         Args:
@@ -68,7 +70,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def generate_enum_name_from_schema(self, schema: Union[ModelSchema, dict]) -> str:
+    def generate_enum_name_from_schema(self, schema: ModelSchema | dict) -> str:
         """Generate enum name from a schema with enum values.
 
         Args:
@@ -79,7 +81,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def deduplicate_enums(self, enum_infos: List[EnumInfo]) -> List[EnumInfo]:
+    def deduplicate_enums(self, enum_infos: list[EnumInfo]) -> list[EnumInfo]:
         """Remove duplicate enums based on their values.
 
         Args:
@@ -90,7 +92,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def generate_enum_classes(self, enum_infos: List[EnumInfo]) -> List[ast.ClassDef]:
+    def generate_enum_classes(self, enum_infos: list[EnumInfo]) -> list[ast.ClassDef]:
         """Generate AST enum class definitions.
 
         Args:
@@ -112,7 +114,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def is_enum_schema(self, schema: Union[ModelSchema, dict]) -> bool:
+    def is_enum_schema(self, schema: ModelSchema | dict) -> bool:
         """Check if a schema defines an enum.
 
         Args:
@@ -123,7 +125,7 @@ class ProtocolEnumGenerator(Protocol):
         """
         ...
 
-    def get_enum_values(self, schema: Union[ModelSchema, dict]) -> Optional[List[str]]:
+    def get_enum_values(self, schema: ModelSchema | dict) -> list[str] | None:
         """Extract enum values from a schema.
 
         Args:

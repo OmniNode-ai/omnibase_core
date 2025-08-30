@@ -2,8 +2,6 @@
 Workflow input model.
 """
 
-from typing import List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -12,6 +10,6 @@ class ModelWorkflowInput(BaseModel):
 
     description: str = Field(..., description="Input description")
     required: bool = Field(False, description="Whether input is required")
-    default: Optional[Union[str, int, bool]] = Field(None, description="Default value")
+    default: str | int | bool | None = Field(None, description="Default value")
     type: str = Field("string", description="Input type (string/choice/boolean)")
-    options: Optional[List[str]] = Field(None, description="Options for choice type")
+    options: list[str] | None = Field(None, description="Options for choice type")

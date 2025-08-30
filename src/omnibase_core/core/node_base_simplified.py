@@ -5,25 +5,27 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.models.model_node_base import ModelNodeBase
-from omnibase_core.core.models.model_registry_reference import \
-    ModelRegistryReference
-from omnibase_core.core.services.cli_service.v1_0_0.cli_service import \
-    CliService
-from omnibase_core.core.services.container_service.v1_0_0.container_service import \
-    ContainerService
-from omnibase_core.core.services.contract_service.v1_0_0.contract_service import \
-    ContractService
-from omnibase_core.core.services.event_bus_service.v1_0_0.event_bus_service import \
-    EventBusService
-from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus_config import \
-    ModelEventBusConfig
-from omnibase_core.core.services.tool_discovery_service.v1_0_0.tool_discovery_service import \
-    ToolDiscoveryService
+from omnibase_core.core.models.model_registry_reference import ModelRegistryReference
+from omnibase_core.core.services.cli_service.v1_0_0.cli_service import CliService
+from omnibase_core.core.services.container_service.v1_0_0.container_service import (
+    ContainerService,
+)
+from omnibase_core.core.services.contract_service.v1_0_0.contract_service import (
+    ContractService,
+)
+from omnibase_core.core.services.event_bus_service.v1_0_0.event_bus_service import (
+    EventBusService,
+)
+from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus_config import (
+    ModelEventBusConfig,
+)
+from omnibase_core.core.services.tool_discovery_service.v1_0_0.tool_discovery_service import (
+    ToolDiscoveryService,
+)
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.protocol.protocol_reducer import ProtocolReducer
 from omnibase_core.protocol.protocol_registry import ProtocolRegistry
@@ -35,9 +37,9 @@ class ModelNodeBase(ProtocolReducer):
     def __init__(
         self,
         contract_path: Path,
-        node_id: Optional[str] = None,
-        event_bus: Optional[object] = None,
-        registry: Optional[ProtocolRegistry] = None,
+        node_id: str | None = None,
+        event_bus: object | None = None,
+        registry: ProtocolRegistry | None = None,
         **kwargs,
     ):
         """Initialize ModelNodeBase with service coordination."""
@@ -118,7 +120,7 @@ class ModelNodeBase(ProtocolReducer):
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.INITIALIZATION_FAILED,
-                message=f"ModelNodeBase initialization failed: {str(e)}",
+                message=f"ModelNodeBase initialization failed: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
 
@@ -131,13 +133,20 @@ class ModelNodeBase(ProtocolReducer):
         }
 
         self._event_bus_service.emit_node_start(
-            self.state.node_id, self.state.node_name, correlation_uuid, metadata
+            self.state.node_id,
+            self.state.node_name,
+            correlation_uuid,
+            metadata,
         )
 
         try:
             result = self.process(input_state)
             self._event_bus_service.emit_node_success(
-                self.state.node_id, self.state.node_name, correlation_uuid, result, {}
+                self.state.node_id,
+                self.state.node_name,
+                correlation_uuid,
+                result,
+                {},
             )
             return result
         except Exception as e:
@@ -145,14 +154,18 @@ class ModelNodeBase(ProtocolReducer):
                 e
                 if isinstance(e, OnexError)
                 else OnexError(
-                    message=f"Node execution failed: {str(e)}",
+                    message=f"Node execution failed: {e!s}",
                     error_code=CoreErrorCode.OPERATION_FAILED,
                     correlation_id=str(correlation_uuid),
                     context={"node_name": self.state.node_name},
                 )
             )
             self._event_bus_service.emit_node_failure(
-                self.state.node_id, self.state.node_name, correlation_uuid, error, {}
+                self.state.node_id,
+                self.state.node_name,
+                correlation_uuid,
+                error,
+                {},
             )
             raise error from e
 
@@ -161,20 +174,19 @@ class ModelNodeBase(ProtocolReducer):
         try:
             if hasattr(self._main_tool, "process"):
                 return self._main_tool.process(input_state)
-            elif hasattr(self._main_tool, "run"):
+            if hasattr(self._main_tool, "run"):
                 return self._main_tool.run(input_state)
-            else:
-                raise OnexError(
-                    error_code=CoreErrorCode.OPERATION_FAILED,
-                    message="Main tool does not implement process() or run() method",
-                    context={"node_name": self.state.node_name},
-                )
+            raise OnexError(
+                error_code=CoreErrorCode.OPERATION_FAILED,
+                message="Main tool does not implement process() or run() method",
+                context={"node_name": self.state.node_name},
+            )
         except Exception as e:
             if isinstance(e, OnexError):
                 raise
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Tool execution failed: {str(e)}",
+                message=f"Tool execution failed: {e!s}",
                 context={"node_name": self.state.node_name},
             ) from e
 
@@ -189,7 +201,7 @@ class ModelNodeBase(ProtocolReducer):
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.RESOURCE_UNAVAILABLE,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
                 context={
                     "correlation_id": str(UUIDService.generate_correlation_id()),
                     "node_name": self.state.node_name,
@@ -213,13 +225,14 @@ class ModelNodeBase(ProtocolReducer):
     def node_version(self) -> ModelSemVer:
         return self.state.contract_content.contract_version
 
-    def get_event_patterns(self) -> List[str]:
+    def get_event_patterns(self) -> list[str]:
         """Get event patterns using EventBusService."""
         return self._event_bus_service.get_event_patterns_from_contract(
-            contract_content=self.state.contract_content, node_name=self.state.node_name
+            contract_content=self.state.contract_content,
+            node_name=self.state.node_name,
         )
 
     @staticmethod
-    def run_cli(contract_path: Path, args: Optional[List[str]] = None) -> int:
+    def run_cli(contract_path: Path, args: list[str] | None = None) -> int:
         """Static CLI entry point using CliService."""
         return CliService().run_cli(contract_path, args)

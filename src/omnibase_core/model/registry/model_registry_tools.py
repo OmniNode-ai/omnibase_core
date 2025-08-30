@@ -6,7 +6,6 @@ Strongly typed Pydantic model for tool registration and instance management.
 Replaces Dict[str, Type] and Dict[str, object] patterns.
 """
 
-from typing import Dict, Type
 
 from pydantic import BaseModel, Field
 
@@ -18,22 +17,22 @@ class ModelRegistryTools(BaseModel):
     Replaces Dict[str, Type] and Dict[str, object] patterns with proper validation.
     """
 
-    registered_tools: Dict[str, str] = Field(
+    registered_tools: dict[str, str] = Field(
         default_factory=dict,
         description="Map of tool names to their class names (for serialization)",
     )
 
-    tool_instances_active: Dict[str, bool] = Field(
+    tool_instances_active: dict[str, bool] = Field(
         default_factory=dict,
         description="Track which tool instances are currently active",
     )
 
-    tool_validation_status: Dict[str, bool] = Field(
+    tool_validation_status: dict[str, bool] = Field(
         default_factory=dict,
         description="Track validation status for each registered tool",
     )
 
-    def register_tool(self, name: str, tool_class: Type) -> None:
+    def register_tool(self, name: str, tool_class: type) -> None:
         """Register a tool class by name."""
         self.registered_tools[name] = tool_class.__name__
         self.tool_instances_active[name] = False

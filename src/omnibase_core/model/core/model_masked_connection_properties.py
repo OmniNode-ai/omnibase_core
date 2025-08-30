@@ -2,7 +2,7 @@
 MaskedConnectionProperties model.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -13,24 +13,26 @@ class ModelMaskedConnectionProperties(BaseModel):
     Replaces Dict[str, Any] for get_masked_connection_properties() returns.
     """
 
-    connection_string: Optional[str] = Field(
-        None, description="Masked connection string"
+    connection_string: str | None = Field(
+        None,
+        description="Masked connection string",
     )
-    driver: Optional[str] = Field(None, description="Driver name")
-    protocol: Optional[str] = Field(None, description="Connection protocol")
-    host: Optional[str] = Field(None, description="Server host")
-    port: Optional[int] = Field(None, description="Server port")
-    database: Optional[str] = Field(None, description="Database name")
-    username: Optional[str] = Field(None, description="Username (may be masked)")
+    driver: str | None = Field(None, description="Driver name")
+    protocol: str | None = Field(None, description="Connection protocol")
+    host: str | None = Field(None, description="Server host")
+    port: int | None = Field(None, description="Server port")
+    database: str | None = Field(None, description="Database name")
+    username: str | None = Field(None, description="Username (may be masked)")
     password: str = Field("***MASKED***", description="Always masked")
-    auth_mechanism: Optional[str] = Field(None, description="Authentication mechanism")
-    pool_size: Optional[int] = Field(None, description="Connection pool size")
-    use_ssl: Optional[bool] = Field(None, description="Use SSL/TLS")
-    masked_fields: List[str] = Field(
-        default_factory=list, description="List of masked field names"
+    auth_mechanism: str | None = Field(None, description="Authentication mechanism")
+    pool_size: int | None = Field(None, description="Connection pool size")
+    use_ssl: bool | None = Field(None, description="Use SSL/TLS")
+    masked_fields: list[str] = Field(
+        default_factory=list,
+        description="List of masked field names",
     )
     masking_algorithm: str = Field("sha256", description="Masking algorithm used")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)

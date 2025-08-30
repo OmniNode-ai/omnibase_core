@@ -5,8 +5,6 @@ Tracks token usage, costs, and performance metrics
 across all LLM providers for monitoring and optimization.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -22,11 +20,13 @@ class ModelUsageMetrics(BaseModel):
     prompt_tokens: int = Field(ge=0, description="Number of tokens in the input prompt")
 
     completion_tokens: int = Field(
-        ge=0, description="Number of tokens in the generated response"
+        ge=0,
+        description="Number of tokens in the generated response",
     )
 
     total_tokens: int = Field(
-        ge=0, description="Total tokens used (prompt + completion)"
+        ge=0,
+        description="Total tokens used (prompt + completion)",
     )
 
     cost_usd: float = Field(
@@ -37,24 +37,32 @@ class ModelUsageMetrics(BaseModel):
 
     latency_ms: int = Field(ge=0, description="Response latency in milliseconds")
 
-    throughput_tokens_per_second: Optional[float] = Field(
-        default=None, ge=0.0, description="Generation throughput in tokens per second"
+    throughput_tokens_per_second: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Generation throughput in tokens per second",
     )
 
-    context_length_used: Optional[int] = Field(
-        default=None, ge=0, description="Amount of context window used"
+    context_length_used: int | None = Field(
+        default=None,
+        ge=0,
+        description="Amount of context window used",
     )
 
-    context_length_available: Optional[int] = Field(
-        default=None, ge=0, description="Total context window available"
+    context_length_available: int | None = Field(
+        default=None,
+        ge=0,
+        description="Total context window available",
     )
 
     cache_hit: bool = Field(
-        default=False, description="Whether response was served from cache"
+        default=False,
+        description="Whether response was served from cache",
     )
 
     provider_specific_metrics: dict = Field(
-        default_factory=dict, description="Provider-specific performance metrics"
+        default_factory=dict,
+        description="Provider-specific performance metrics",
     )
 
     model_config = ConfigDict(
@@ -77,12 +85,12 @@ class ModelUsageMetrics(BaseModel):
                     "gpu_utilization": 0.75,
                     "memory_usage_mb": 2048,
                 },
-            }
+            },
         },
     )
 
     @property
-    def context_utilization(self) -> Optional[float]:
+    def context_utilization(self) -> float | None:
         """Calculate context window utilization percentage."""
         if self.context_length_used and self.context_length_available:
             return self.context_length_used / self.context_length_available

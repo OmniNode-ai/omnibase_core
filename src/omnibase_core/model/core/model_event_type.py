@@ -5,7 +5,7 @@ Dynamic Event Type Model.
 enables plugin extensibility and contract-driven event type registration.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -21,24 +21,29 @@ class ModelEventType(BaseModel):
     """
 
     event_name: str = Field(
-        ..., description="Event type identifier", pattern="^[A-Z][A-Z0-9_]*$"
+        ...,
+        description="Event type identifier",
+        pattern="^[A-Z][A-Z0-9_]*$",
     )
     namespace: str = Field(
-        default="onex", description="Event namespace to avoid conflicts"
+        default="onex",
+        description="Event namespace to avoid conflicts",
     )
     description: str = Field(..., description="Human-readable description")
     schema_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Event schema version",
     )
-    payload_schema: Optional[Dict[str, Any]] = Field(
-        None, description="Expected payload schema"
+    payload_schema: dict[str, Any] | None = Field(
+        None,
+        description="Expected payload schema",
     )
     deprecated: bool = Field(
-        default=False, description="Whether event type is deprecated"
+        default=False,
+        description="Whether event type is deprecated",
     )
-    category: Optional[str] = Field(None, description="Event category for grouping")
-    severity: Optional[str] = Field(
+    category: str | None = Field(None, description="Event category for grouping")
+    severity: str | None = Field(
         None,
         description="Event severity level",
         pattern="^(info|warning|error|critical)$",
@@ -49,7 +54,7 @@ class ModelEventType(BaseModel):
         cls,
         event_name: str,
         namespace: str = "onex",
-        description: Optional[str] = None,
+        description: str | None = None,
         **kwargs,
     ) -> "ModelEventType":
         """Factory method for creating event types from contract data."""
@@ -89,7 +94,7 @@ class ModelEventType(BaseModel):
 
 
 # Backward compatibility utilities
-def get_event_type_value(event_type: Union[str, ModelEventType]) -> str:
+def get_event_type_value(event_type: str | ModelEventType) -> str:
     """Get string value from event type for backward compatibility."""
     if isinstance(event_type, str):
         return event_type
@@ -97,7 +102,9 @@ def get_event_type_value(event_type: Union[str, ModelEventType]) -> str:
 
 
 def create_event_type_from_string(
-    event_name: str, namespace: str = "onex", description: Optional[str] = None
+    event_name: str,
+    namespace: str = "onex",
+    description: str | None = None,
 ) -> ModelEventType:
     """Create ModelEventType from string for backward compatibility."""
     from .model_event_type_registry import get_event_type_registry
@@ -116,7 +123,8 @@ def create_event_type_from_string(
 
 
 def is_event_equal(
-    event_type: Union[str, ModelEventType], other: Union[str, ModelEventType]
+    event_type: str | ModelEventType,
+    other: str | ModelEventType,
 ) -> bool:
     """Compare event types for equality (supports mixed types)."""
     event_name1 = get_event_type_value(event_type)

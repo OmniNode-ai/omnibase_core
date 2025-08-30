@@ -5,8 +5,6 @@ Typed model for session management policy configuration,
 replacing Dict[str, Any] with structured fields.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -32,7 +30,7 @@ class ModelSessionPolicy(BaseModel):
         le=1440,  # 24 hours max
     )
 
-    absolute_timeout_minutes: Optional[int] = Field(
+    absolute_timeout_minutes: int | None = Field(
         default=None,
         description="Absolute session timeout regardless of activity",
         ge=1,
@@ -40,15 +38,22 @@ class ModelSessionPolicy(BaseModel):
 
     # Session limits
     concurrent_sessions: int = Field(
-        default=3, description="Maximum concurrent sessions per user", ge=1, le=100
+        default=3,
+        description="Maximum concurrent sessions per user",
+        ge=1,
+        le=100,
     )
 
-    max_sessions_per_ip: Optional[int] = Field(
-        default=10, description="Maximum sessions from same IP address", ge=1
+    max_sessions_per_ip: int | None = Field(
+        default=10,
+        description="Maximum sessions from same IP address",
+        ge=1,
     )
 
-    max_sessions_per_device: Optional[int] = Field(
-        default=1, description="Maximum sessions per device", ge=1
+    max_sessions_per_device: int | None = Field(
+        default=1,
+        description="Maximum sessions per device",
+        ge=1,
     )
 
     # Authentication requirements
@@ -58,7 +63,9 @@ class ModelSessionPolicy(BaseModel):
     )
 
     fresh_auth_timeout_minutes: int = Field(
-        default=5, description="How long authentication is considered 'fresh'", ge=1
+        default=5,
+        description="How long authentication is considered 'fresh'",
+        ge=1,
     )
 
     require_mfa_for_session: bool = Field(
@@ -68,15 +75,18 @@ class ModelSessionPolicy(BaseModel):
 
     # Session persistence
     persist_sessions: bool = Field(
-        default=True, description="Whether to persist sessions across server restarts"
+        default=True,
+        description="Whether to persist sessions across server restarts",
     )
 
     session_cookie_secure: bool = Field(
-        default=True, description="Set secure flag on session cookies (HTTPS only)"
+        default=True,
+        description="Set secure flag on session cookies (HTTPS only)",
     )
 
     session_cookie_httponly: bool = Field(
-        default=True, description="Set HttpOnly flag on session cookies"
+        default=True,
+        description="Set HttpOnly flag on session cookies",
     )
 
     session_cookie_samesite: str = Field(
@@ -87,37 +97,45 @@ class ModelSessionPolicy(BaseModel):
 
     # IP and location restrictions
     bind_session_to_ip: bool = Field(
-        default=False, description="Bind session to originating IP address"
+        default=False,
+        description="Bind session to originating IP address",
     )
 
-    allowed_ip_ranges: List[str] = Field(
+    allowed_ip_ranges: list[str] = Field(
         default_factory=list,
         description="Allowed IP ranges for sessions (CIDR notation)",
     )
 
     geo_restrictions_enabled: bool = Field(
-        default=False, description="Enable geographic restrictions on sessions"
+        default=False,
+        description="Enable geographic restrictions on sessions",
     )
 
-    allowed_countries: List[str] = Field(
-        default_factory=list, description="Allowed countries for sessions (ISO codes)"
+    allowed_countries: list[str] = Field(
+        default_factory=list,
+        description="Allowed countries for sessions (ISO codes)",
     )
 
-    blocked_countries: List[str] = Field(
-        default_factory=list, description="Blocked countries for sessions (ISO codes)"
+    blocked_countries: list[str] = Field(
+        default_factory=list,
+        description="Blocked countries for sessions (ISO codes)",
     )
 
     # Session behavior
     extend_on_activity: bool = Field(
-        default=True, description="Extend session timeout on user activity"
+        default=True,
+        description="Extend session timeout on user activity",
     )
 
     warn_before_timeout_minutes: int = Field(
-        default=5, description="Warn user before session timeout", ge=0
+        default=5,
+        description="Warn user before session timeout",
+        ge=0,
     )
 
     allow_remember_me: bool = Field(
-        default=True, description="Allow 'remember me' functionality"
+        default=True,
+        description="Allow 'remember me' functionality",
     )
 
     remember_me_duration_days: int = Field(
@@ -129,28 +147,34 @@ class ModelSessionPolicy(BaseModel):
 
     # Logout behavior
     logout_on_browser_close: bool = Field(
-        default=False, description="Force logout when browser is closed"
+        default=False,
+        description="Force logout when browser is closed",
     )
 
     invalidate_all_on_password_change: bool = Field(
-        default=True, description="Invalidate all sessions on password change"
+        default=True,
+        description="Invalidate all sessions on password change",
     )
 
     invalidate_all_on_privilege_change: bool = Field(
-        default=True, description="Invalidate all sessions on privilege change"
+        default=True,
+        description="Invalidate all sessions on privilege change",
     )
 
     # Session monitoring
     track_session_activity: bool = Field(
-        default=True, description="Track detailed session activity"
+        default=True,
+        description="Track detailed session activity",
     )
 
     store_session_metadata: bool = Field(
-        default=True, description="Store session metadata (user agent, IP, etc.)"
+        default=True,
+        description="Store session metadata (user agent, IP, etc.)",
     )
 
     alert_on_suspicious_activity: bool = Field(
-        default=True, description="Alert on suspicious session activity"
+        default=True,
+        description="Alert on suspicious session activity",
     )
 
     def to_dict(self) -> dict:

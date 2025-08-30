@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Dict, Protocol, Type, TypeVar
+from typing import Any, Protocol, TypeVar
 
 T = TypeVar("T", bound="SerializableMixin")
 
@@ -36,7 +36,7 @@ class SerializableMixin(Protocol):
     This protocol is foundational and should be implemented by any model intended for canonical serialization or deserialization.
     """
 
-    def to_serializable_dict(self: T) -> Dict[str, Any]: ...
+    def to_serializable_dict(self: T) -> dict[str, Any]: ...
 
     @classmethod
-    def from_serializable_dict(cls: Type[T], data: Dict[str, Any]) -> T: ...
+    def from_serializable_dict(cls: type[T], data: dict[str, Any]) -> T: ...

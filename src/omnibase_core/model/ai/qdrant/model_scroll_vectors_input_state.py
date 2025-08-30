@@ -5,7 +5,7 @@ This model defines the input parameters for scrolling through vectors,
 following ONEX canonical patterns with OnexInputState inheritance.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -23,20 +23,26 @@ class ModelScrollVectorsInputState(OnexInputState):
     """
 
     collection_name: str = Field(
-        ..., description="Name of the collection to scroll through"
+        ...,
+        description="Name of the collection to scroll through",
     )
-    filter_conditions: Optional[Dict[str, Any]] = Field(
-        default=None, description="Metadata filter conditions"
+    filter_conditions: dict[str, Any] | None = Field(
+        default=None,
+        description="Metadata filter conditions",
     )
     limit: int = Field(
-        default=100, description="Maximum number of vectors to return per page"
+        default=100,
+        description="Maximum number of vectors to return per page",
     )
-    offset: Optional[str] = Field(
-        default=None, description="Pagination offset for continuing from previous page"
+    offset: str | None = Field(
+        default=None,
+        description="Pagination offset for continuing from previous page",
     )
     with_payload: bool = Field(
-        default=True, description="Include metadata payload in results"
+        default=True,
+        description="Include metadata payload in results",
     )
     with_vectors: bool = Field(
-        default=False, description="Include vector data in results"
+        default=False,
+        description="Include vector data in results",
     )

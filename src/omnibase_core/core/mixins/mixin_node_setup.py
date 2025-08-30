@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from omnibase_core.model.core.model_state_contract import \
-    load_state_contract_from_file
+from omnibase_core.model.core.model_state_contract import load_state_contract_from_file
 
 
 class MixinNodeSetup:
@@ -21,7 +20,7 @@ class MixinNodeSetup:
         # Fallback: try to infer from the concrete class's file
         import inspect
 
-        frame = inspect.currentframe()
+        inspect.currentframe()
         # Walk up the stack to find the first non-mixin class
         for cls in type(self).mro():
             if cls is not MixinNodeSetup and hasattr(cls, "__module__"):

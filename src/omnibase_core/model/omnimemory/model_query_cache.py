@@ -5,7 +5,7 @@ Provides strongly typed models for caching query results with timestamps.
 """
 
 from datetime import datetime
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -19,10 +19,12 @@ class ModelCacheEntry(BaseModel, Generic[T]):
     cache_key: str = Field(..., description="Unique key for the cache entry")
     cached_data: T = Field(..., description="The cached data")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When the entry was cached"
+        default_factory=datetime.utcnow,
+        description="When the entry was cached",
     )
-    ttl_seconds: Optional[int] = Field(
-        None, description="Time to live in seconds, None for no expiration"
+    ttl_seconds: int | None = Field(
+        None,
+        description="Time to live in seconds, None for no expiration",
     )
 
     def is_expired(self) -> bool:

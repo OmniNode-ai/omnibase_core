@@ -32,19 +32,22 @@ class ModelOnexInternalInputState(BaseModel):
     # Required traceability fields (no Optional)
     event_id: UUID = Field(..., description="Required event ID for tracking")
     correlation_id: UUID = Field(
-        ..., description="Required correlation ID for tracking"
+        ...,
+        description="Required correlation ID for tracking",
     )
     timestamp: datetime = Field(..., description="Required timestamp for tracking")
 
     # Node identification (required for internal processing)
     node_name: str = Field(..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        ..., description="Required node version for processing"
+        ...,
+        description="Required node version for processing",
     )
 
     @classmethod
     def from_boundary_state(
-        cls, boundary_state: "ModelOnexInputState"
+        cls,
+        boundary_state: "ModelOnexInputState",
     ) -> "ModelOnexInternalInputState":
         """
         Create internal state from boundary state, ensuring all UUIDs are populated.

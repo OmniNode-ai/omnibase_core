@@ -28,7 +28,8 @@ class ModelCacheConfig(BaseModel):
 
     # PostgreSQL cache settings (L2 cache)
     postgres_cache_enabled: bool = Field(
-        default=True, description="Enable PostgreSQL L2 cache"
+        default=True,
+        description="Enable PostgreSQL L2 cache",
     )
 
     postgres_ttl_seconds: int = Field(
@@ -54,7 +55,8 @@ class ModelCacheConfig(BaseModel):
 
     # Redis cache settings (deprecated but kept for compatibility)
     redis_cache_enabled: bool = Field(
-        default=False, description="Enable Redis cache (deprecated, use PostgreSQL)"
+        default=False,
+        description="Enable Redis cache (deprecated, use PostgreSQL)",
     )
 
     redis_key_prefix: str = Field(
@@ -72,20 +74,24 @@ class ModelCacheConfig(BaseModel):
     )
 
     use_existing_db_connection: bool = Field(
-        default=True, description="Use existing ONEX database connection"
+        default=True,
+        description="Use existing ONEX database connection",
     )
 
     # Cache behavior
     cache_embeddings: bool = Field(
-        default=True, description="Enable embedding vector caching"
+        default=True,
+        description="Enable embedding vector caching",
     )
 
     cache_query_results: bool = Field(
-        default=True, description="Enable query result caching"
+        default=True,
+        description="Enable query result caching",
     )
 
     cache_preprocessed_docs: bool = Field(
-        default=True, description="Enable preprocessed document caching"
+        default=True,
+        description="Enable preprocessed document caching",
     )
 
     # Performance settings
@@ -97,9 +103,12 @@ class ModelCacheConfig(BaseModel):
     )
 
     compress_large_results: bool = Field(
-        default=True, description="Compress large cache entries"
+        default=True,
+        description="Compress large cache entries",
     )
 
     model_config = ConfigDict(
-        use_enum_values=True, validate_assignment=True, extra="forbid"
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid",
     )

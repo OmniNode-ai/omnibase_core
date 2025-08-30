@@ -22,11 +22,9 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class ModelFileReference(BaseModel):
     path: str  # Use str for now; can be changed to Path if needed
-    description: Optional[str] = None
+    description: str | None = None

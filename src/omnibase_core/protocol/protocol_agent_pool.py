@@ -7,7 +7,6 @@ including dynamic scaling, load balancing, and resource optimization.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class PoolScalingPolicy(str, Enum):
@@ -57,7 +56,6 @@ class ProtocolAgentPool(ABC):
             PoolCreationError: If pool creation fails
             DuplicatePoolError: If pool already exists
         """
-        pass
 
     @abstractmethod
     async def delete_pool(self, pool_name: str, force: bool = False) -> bool:
@@ -76,7 +74,6 @@ class ProtocolAgentPool(ABC):
             PoolDeletionError: If deletion fails
             ActiveAgentsError: If pool has active agents and force=False
         """
-        pass
 
     @abstractmethod
     async def scale_pool(self, pool_name: str, target_size: int) -> bool:
@@ -95,10 +92,9 @@ class ProtocolAgentPool(ABC):
             ScalingError: If scaling fails
             CapacityExceededError: If target exceeds max size
         """
-        pass
 
     @abstractmethod
-    async def get_pool_status(self, pool_name: str) -> Dict[str, str]:
+    async def get_pool_status(self, pool_name: str) -> dict[str, str]:
         """
         Get current status of a pool.
 
@@ -111,20 +107,18 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def list_pools(self) -> List[str]:
+    async def list_pools(self) -> list[str]:
         """
         List all available pools.
 
         Returns:
             List of pool names
         """
-        pass
 
     @abstractmethod
-    async def get_pool_agents(self, pool_name: str) -> List[str]:
+    async def get_pool_agents(self, pool_name: str) -> list[str]:
         """
         Get list of agent IDs in a pool.
 
@@ -137,12 +131,13 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
     async def assign_agent_from_pool(
-        self, pool_name: str, requirements: Optional[Dict[str, str]] = None
-    ) -> Optional[str]:
+        self,
+        pool_name: str,
+        requirements: dict[str, str] | None = None,
+    ) -> str | None:
         """
         Assign an available agent from the pool.
 
@@ -157,7 +152,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             AssignmentError: If assignment fails
         """
-        pass
 
     @abstractmethod
     async def release_agent_to_pool(self, pool_name: str, agent_id: str) -> bool:
@@ -176,7 +170,6 @@ class ProtocolAgentPool(ABC):
             AgentNotFoundError: If agent doesn't exist
             ReleaseError: If release fails
         """
-        pass
 
     @abstractmethod
     async def monitor_pool_health(self, pool_name: str) -> PoolHealthStatus:
@@ -192,10 +185,9 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def rebalance_pools(self) -> Dict[str, int]:
+    async def rebalance_pools(self) -> dict[str, int]:
         """
         Rebalance agents across all pools based on demand.
 
@@ -205,11 +197,13 @@ class ProtocolAgentPool(ABC):
         Raises:
             RebalancingError: If rebalancing fails
         """
-        pass
 
     @abstractmethod
     async def enable_auto_scaling(
-        self, pool_name: str, min_size: int, max_size: int
+        self,
+        pool_name: str,
+        min_size: int,
+        max_size: int,
     ) -> bool:
         """
         Enable auto-scaling for a pool.
@@ -226,7 +220,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             ConfigurationError: If configuration is invalid
         """
-        pass
 
     @abstractmethod
     async def disable_auto_scaling(self, pool_name: str) -> bool:
@@ -242,10 +235,9 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def get_pool_metrics(self, pool_name: str) -> Dict[str, float]:
+    async def get_pool_metrics(self, pool_name: str) -> dict[str, float]:
         """
         Get performance metrics for a pool.
 
@@ -258,7 +250,6 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
     async def set_pool_priority(self, pool_name: str, priority: int) -> bool:
@@ -275,7 +266,6 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
     async def drain_pool(self, pool_name: str, timeout_seconds: int = 300) -> bool:
@@ -293,7 +283,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             DrainTimeoutError: If drain times out
         """
-        pass
 
     @abstractmethod
     async def warm_pool(self, pool_name: str, target_ready_agents: int) -> bool:
@@ -311,7 +300,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             WarmingError: If warming fails
         """
-        pass
 
     @abstractmethod
     async def get_pool_utilization(self, pool_name: str) -> float:
@@ -327,15 +315,14 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
     async def configure_pool_limits(
         self,
         pool_name: str,
-        cpu_limit: Optional[float] = None,
-        memory_limit: Optional[int] = None,
-        concurrent_tasks_limit: Optional[int] = None,
+        cpu_limit: float | None = None,
+        memory_limit: int | None = None,
+        concurrent_tasks_limit: int | None = None,
     ) -> bool:
         """
         Configure resource limits for a pool.
@@ -353,7 +340,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             ConfigurationError: If configuration is invalid
         """
-        pass
 
     @abstractmethod
     async def get_pool_allocation_strategy(self, pool_name: str) -> str:
@@ -369,7 +355,6 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
     async def set_pool_allocation_strategy(self, pool_name: str, strategy: str) -> bool:
@@ -387,7 +372,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             InvalidStrategyError: If strategy is not supported
         """
-        pass
 
     @abstractmethod
     async def backup_pool_configuration(self, pool_name: str) -> str:
@@ -404,7 +388,6 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             BackupError: If backup creation fails
         """
-        pass
 
     @abstractmethod
     async def restore_pool_configuration(self, pool_name: str, backup_id: str) -> bool:
@@ -423,11 +406,12 @@ class ProtocolAgentPool(ABC):
             BackupNotFoundError: If backup doesn't exist
             RestoreError: If restoration fails
         """
-        pass
 
     @abstractmethod
     async def get_pool_cost_estimate(
-        self, pool_name: str, duration_hours: float
+        self,
+        pool_name: str,
+        duration_hours: float,
     ) -> float:
         """
         Get estimated cost for running a pool for specified duration.
@@ -442,10 +426,9 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def optimize_pool_placement(self) -> Dict[str, List[str]]:
+    async def optimize_pool_placement(self) -> dict[str, list[str]]:
         """
         Optimize agent placement across available resources.
 
@@ -455,7 +438,6 @@ class ProtocolAgentPool(ABC):
         Raises:
             OptimizationError: If optimization fails
         """
-        pass
 
     @abstractmethod
     async def create_pool_snapshot(self, pool_name: str, snapshot_name: str) -> bool:
@@ -473,10 +455,9 @@ class ProtocolAgentPool(ABC):
             PoolNotFoundError: If pool doesn't exist
             SnapshotError: If snapshot creation fails
         """
-        pass
 
     @abstractmethod
-    async def list_pool_snapshots(self, pool_name: str) -> List[str]:
+    async def list_pool_snapshots(self, pool_name: str) -> list[str]:
         """
         List all snapshots for a pool.
 
@@ -489,4 +470,3 @@ class ProtocolAgentPool(ABC):
         Raises:
             PoolNotFoundError: If pool doesn't exist
         """
-        pass

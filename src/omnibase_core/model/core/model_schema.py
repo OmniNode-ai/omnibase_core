@@ -6,7 +6,7 @@ full JSON Schema documents and individual schema properties, eliminating
 the need for separate ModelSchemaDefinition and ModelPropertySchema classes.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,87 +31,110 @@ class ModelSchema(BaseModel):
         alias="type",
         description="JSON Schema type (string, object, array, etc.)",
     )
-    description: Optional[str] = Field(None, description="Schema/property description")
-    ref: Optional[str] = Field(
-        None, alias="$ref", description="JSON Schema $ref reference"
+    description: str | None = Field(None, description="Schema/property description")
+    ref: str | None = Field(
+        None,
+        alias="$ref",
+        description="JSON Schema $ref reference",
     )
 
     # Document-level metadata (used when this represents a full document)
     schema_version: str = Field("draft-07", description="JSON Schema version")
-    title: Optional[str] = Field(None, description="Schema title")
+    title: str | None = Field(None, description="Schema title")
 
     # String validation constraints
-    enum_values: Optional[List[str]] = Field(
-        None, alias="enum", description="Enum values for string types"
+    enum_values: list[str] | None = Field(
+        None,
+        alias="enum",
+        description="Enum values for string types",
     )
-    pattern: Optional[str] = Field(None, description="Regex pattern for strings")
-    format: Optional[str] = Field(
-        None, description="String format specifier (e.g., date-time, date, uuid)"
+    pattern: str | None = Field(None, description="Regex pattern for strings")
+    format: str | None = Field(
+        None,
+        description="String format specifier (e.g., date-time, date, uuid)",
     )
-    min_length: Optional[int] = Field(
-        None, alias="minLength", description="Minimum string length"
+    min_length: int | None = Field(
+        None,
+        alias="minLength",
+        description="Minimum string length",
     )
-    max_length: Optional[int] = Field(
-        None, alias="maxLength", description="Maximum string length"
+    max_length: int | None = Field(
+        None,
+        alias="maxLength",
+        description="Maximum string length",
     )
 
     # Numeric validation constraints
-    minimum: Optional[Union[int, float]] = Field(
-        None, description="Minimum numeric value"
+    minimum: int | float | None = Field(
+        None,
+        description="Minimum numeric value",
     )
-    maximum: Optional[Union[int, float]] = Field(
-        None, description="Maximum numeric value"
+    maximum: int | float | None = Field(
+        None,
+        description="Maximum numeric value",
     )
-    multiple_of: Optional[Union[int, float]] = Field(
-        None, description="Numeric multiple constraint"
+    multiple_of: int | float | None = Field(
+        None,
+        description="Numeric multiple constraint",
     )
 
     # Array validation constraints
     items: Optional["ModelSchema"] = Field(None, description="Array item schema")
-    min_items: Optional[int] = Field(None, description="Minimum array length")
-    max_items: Optional[int] = Field(None, description="Maximum array length")
-    unique_items: Optional[bool] = Field(
-        None, description="Whether array items must be unique"
+    min_items: int | None = Field(None, description="Minimum array length")
+    max_items: int | None = Field(None, description="Maximum array length")
+    unique_items: bool | None = Field(
+        None,
+        description="Whether array items must be unique",
     )
 
     # Object structure and validation
-    properties: Optional[Dict[str, "ModelSchema"]] = Field(
-        None, description="Object properties"
+    properties: dict[str, "ModelSchema"] | None = Field(
+        None,
+        description="Object properties",
     )
-    required: Optional[List[str]] = Field(
-        None, description="Required properties for objects"
+    required: list[str] | None = Field(
+        None,
+        description="Required properties for objects",
     )
-    additional_properties: Optional[bool] = Field(
-        True, description="Allow additional properties"
+    additional_properties: bool | None = Field(
+        True,
+        description="Allow additional properties",
     )
-    min_properties: Optional[int] = Field(
-        None, description="Minimum number of properties"
+    min_properties: int | None = Field(
+        None,
+        description="Minimum number of properties",
     )
-    max_properties: Optional[int] = Field(
-        None, description="Maximum number of properties"
+    max_properties: int | None = Field(
+        None,
+        description="Maximum number of properties",
     )
 
     # General property constraints
     nullable: bool = Field(default=False, description="Whether property can be null")
-    default_value: Optional[ModelSchemaValue] = Field(None, description="Default value")
+    default_value: ModelSchemaValue | None = Field(None, description="Default value")
 
     # Schema composition (used when this represents a full document)
-    definitions: Optional[Dict[str, "ModelSchema"]] = Field(
-        None, description="Reusable schema definitions"
+    definitions: dict[str, "ModelSchema"] | None = Field(
+        None,
+        description="Reusable schema definitions",
     )
-    all_of: Optional[List["ModelSchema"]] = Field(
-        None, description="All of constraints"
+    all_of: list["ModelSchema"] | None = Field(
+        None,
+        description="All of constraints",
     )
-    any_of: Optional[List["ModelSchema"]] = Field(
-        None, description="Any of constraints"
+    any_of: list["ModelSchema"] | None = Field(
+        None,
+        description="Any of constraints",
     )
-    one_of: Optional[List["ModelSchema"]] = Field(
-        None, description="One of constraints"
+    one_of: list["ModelSchema"] | None = Field(
+        None,
+        description="One of constraints",
     )
 
     # Documentation and examples
-    examples: Optional[List[ModelExamples]] = Field(
-        None, description="Example valid instances"
+    examples: list[ModelExamples] | None = Field(
+        None,
+        description="Example valid instances",
     )
 
     def is_resolved(self) -> bool:
@@ -146,7 +169,8 @@ class ModelSchema(BaseModel):
         return True
 
     def resolve_refs(
-        self, definitions: Optional[Dict[str, "ModelSchema"]] = None
+        self,
+        definitions: dict[str, "ModelSchema"] | None = None,
     ) -> "ModelSchema":
         """
         Resolve $ref references in this schema.
@@ -208,12 +232,13 @@ class ModelSchema(BaseModel):
                 # These are handled by the type mapper - return a basic schema
                 if "semver_model" in self.ref:
                     return ModelSchema(schema_type="object", title="ModelSemVer")
-                elif "onex_field_model" in self.ref:
+                if "onex_field_model" in self.ref:
                     return ModelSchema(schema_type="object", title="ModelOnexField")
 
             # FAIL FAST: If we can't resolve the reference, throw an error instead of returning placeholder
+            msg = f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list(definitions.keys())}"
             raise ValueError(
-                f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list(definitions.keys())}"
+                msg,
             )
 
         # Create a copy and resolve nested references
@@ -344,7 +369,7 @@ class ModelSchema(BaseModel):
         return schema
 
     @classmethod
-    def from_dict(cls, data: Optional[dict]) -> Optional["ModelSchema"]:
+    def from_dict(cls, data: dict | None) -> Optional["ModelSchema"]:
         """Create from JSON Schema dictionary."""
         if data is None:
             return None
@@ -415,26 +440,29 @@ class ModelSchema(BaseModel):
                         # Simple string example - convert to ModelExamples
                         examples.append(
                             ModelExamples(
-                                value=example, description=f"Example: {example}"
-                            )
+                                value=example,
+                                description=f"Example: {example}",
+                            ),
                         )
                     elif isinstance(example, dict):
                         # Already a ModelExamples object or dict
                         examples.append(ModelExamples.model_validate(example))
                     # Skip invalid examples
-            elif isinstance(examples_data, (str, int, float, bool)):
+            elif isinstance(examples_data, str | int | float | bool):
                 # Single example value
                 examples = [
                     ModelExamples(
-                        value=examples_data, description=f"Example: {examples_data}"
-                    )
+                        value=examples_data,
+                        description=f"Example: {examples_data}",
+                    ),
                 ]
 
         # Log incoming data for debugging
         from omnibase.enums.enum_log_level import LogLevelEnum
 
-        from omnibase_core.core.core_structured_logging import \
-            emit_log_event_sync as emit_log_event
+        from omnibase_core.core.core_structured_logging import (
+            emit_log_event_sync as emit_log_event,
+        )
 
         if data.get("type") == "string" and data.get("format"):
             emit_log_event(
@@ -497,7 +525,7 @@ class ModelTypedProperties(BaseModel):
     New code should use ModelSchema.properties directly.
     """
 
-    properties: Dict[str, ModelSchema] = Field(
+    properties: dict[str, ModelSchema] = Field(
         default_factory=dict,
         description="Property definitions with full type information",
     )
@@ -507,7 +535,7 @@ class ModelTypedProperties(BaseModel):
         return {name: prop.to_dict() for name, prop in self.properties.items()}
 
     @classmethod
-    def from_dict(cls, data: Optional[dict]) -> Optional["ModelTypedProperties"]:
+    def from_dict(cls, data: dict | None) -> Optional["ModelTypedProperties"]:
         """Create from legacy dictionary format."""
         if data is None:
             return None

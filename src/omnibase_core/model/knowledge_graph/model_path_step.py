@@ -11,7 +11,8 @@ class ModelPathStep(BaseModel):
     from_entity_id: str = Field(..., description="Source entity ID for this step")
     to_entity_id: str = Field(..., description="Target entity ID for this step")
     relationship_id: str = Field(
-        ..., description="Relationship ID connecting the entities"
+        ...,
+        description="Relationship ID connecting the entities",
     )
     relationship_type: str = Field(..., description="Type of relationship traversed")
     step_weight: float = Field(..., description="Weight of this step")

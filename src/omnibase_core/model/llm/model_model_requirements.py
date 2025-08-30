@@ -6,7 +6,6 @@ model selection and provider routing.
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -37,44 +36,45 @@ class ModelModelRequirements(BaseModel):
     optimal user experience and resource utilization.
     """
 
-    required_capabilities: List[ModelCapability] = Field(
-        default_factory=list, description="Capabilities that the model must support"
+    required_capabilities: list[ModelCapability] = Field(
+        default_factory=list,
+        description="Capabilities that the model must support",
     )
 
-    preferred_capabilities: List[ModelCapability] = Field(
+    preferred_capabilities: list[ModelCapability] = Field(
         default_factory=list,
         description="Capabilities that are preferred but not required",
     )
 
-    min_context_length: Optional[int] = Field(
+    min_context_length: int | None = Field(
         default=None,
         ge=1,
         le=1000000,
         description="Minimum context window size required",
     )
 
-    max_latency_ms: Optional[int] = Field(
+    max_latency_ms: int | None = Field(
         default=None,
         ge=100,
         le=60000,
         description="Maximum acceptable response latency in milliseconds",
     )
 
-    max_cost_per_token: Optional[float] = Field(
+    max_cost_per_token: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="Maximum acceptable cost per token in USD",
     )
 
-    min_throughput_tokens_per_second: Optional[float] = Field(
+    min_throughput_tokens_per_second: float | None = Field(
         default=None,
         ge=0.1,
         le=1000.0,
         description="Minimum required generation throughput",
     )
 
-    quality_threshold: Optional[float] = Field(
+    quality_threshold: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -86,12 +86,14 @@ class ModelModelRequirements(BaseModel):
         description="Privacy level requirement (local_only, standard, external_ok)",
     )
 
-    exclude_providers: List[str] = Field(
-        default_factory=list, description="Providers to exclude from consideration"
+    exclude_providers: list[str] = Field(
+        default_factory=list,
+        description="Providers to exclude from consideration",
     )
 
     require_streaming: bool = Field(
-        default=False, description="Whether streaming response capability is required"
+        default=False,
+        description="Whether streaming response capability is required",
     )
 
     model_config = ConfigDict(
@@ -110,23 +112,23 @@ class ModelModelRequirements(BaseModel):
                 "privacy_level": "local_only",
                 "exclude_providers": ["anthropic"],
                 "require_streaming": False,
-            }
+            },
         },
     )
 
-    def matches_capability(self, available_capabilities: List[str]) -> bool:
+    def matches_capability(self, available_capabilities: list[str]) -> bool:
         """Check if available capabilities meet requirements."""
         available_set = set(available_capabilities)
-        required_set = set([cap.value for cap in self.required_capabilities])
+        required_set = {cap.value for cap in self.required_capabilities}
         return required_set.issubset(available_set)
 
-    def calculate_preference_score(self, available_capabilities: List[str]) -> float:
+    def calculate_preference_score(self, available_capabilities: list[str]) -> float:
         """Calculate preference score based on available capabilities."""
         if not self.preferred_capabilities:
             return 1.0
 
         available_set = set(available_capabilities)
-        preferred_set = set([cap.value for cap in self.preferred_capabilities])
+        preferred_set = {cap.value for cap in self.preferred_capabilities}
 
         matching_preferred = preferred_set.intersection(available_set)
         return len(matching_preferred) / len(preferred_set)
@@ -135,8 +137,6 @@ class ModelModelRequirements(BaseModel):
         """Check if provider type meets privacy requirements."""
         if self.privacy_level == "local_only":
             return provider_type == "local"
-        elif self.privacy_level == "standard":
+        if self.privacy_level == "standard":
             return provider_type in ["local", "external_trusted"]
-        elif self.privacy_level == "external_ok":
-            return True
-        return False
+        return self.privacy_level == "external_ok"

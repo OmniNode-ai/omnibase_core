@@ -4,10 +4,11 @@ Discovery Client Protocol for ONEX Event-Driven Service Discovery
 Defines the protocol interface for discovery client implementations.
 """
 
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class ProtocolDiscoveryClient(Protocol):
@@ -20,13 +21,13 @@ class ProtocolDiscoveryClient(Protocol):
 
     async def discover_tools(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-        max_results: Optional[int] = None,
+        filters: dict[str, Any] | None = None,
+        timeout: float | None = None,
+        max_results: int | None = None,
         include_metadata: bool = True,
         retry_count: int = 0,
         retry_delay: float = 1.0,
-    ) -> List[ModelDiscoveredTool]:
+    ) -> list[ModelDiscoveredTool]:
         """
         Discover available tools/services based on filters.
 
@@ -48,8 +49,11 @@ class ProtocolDiscoveryClient(Protocol):
         ...
 
     async def discover_tools_by_protocol(
-        self, protocol: str, timeout: Optional[float] = None, **kwargs
-    ) -> List[ModelDiscoveredTool]:
+        self,
+        protocol: str,
+        timeout: float | None = None,
+        **kwargs,
+    ) -> list[ModelDiscoveredTool]:
         """
         Convenience method to discover tools by protocol.
 
@@ -64,8 +68,11 @@ class ProtocolDiscoveryClient(Protocol):
         ...
 
     async def discover_tools_by_tags(
-        self, tags: List[str], timeout: Optional[float] = None, **kwargs
-    ) -> List[ModelDiscoveredTool]:
+        self,
+        tags: list[str],
+        timeout: float | None = None,
+        **kwargs,
+    ) -> list[ModelDiscoveredTool]:
         """
         Convenience method to discover tools by tags.
 
@@ -80,8 +87,10 @@ class ProtocolDiscoveryClient(Protocol):
         ...
 
     async def discover_healthy_tools(
-        self, timeout: Optional[float] = None, **kwargs
-    ) -> List[ModelDiscoveredTool]:
+        self,
+        timeout: float | None = None,
+        **kwargs,
+    ) -> list[ModelDiscoveredTool]:
         """
         Convenience method to discover only healthy tools.
 
@@ -106,7 +115,7 @@ class ProtocolDiscoveryClient(Protocol):
         """Get the number of pending discovery requests"""
         ...
 
-    def get_client_stats(self) -> Dict[str, Any]:
+    def get_client_stats(self) -> dict[str, Any]:
         """
         Get client statistics.
 

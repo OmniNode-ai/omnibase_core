@@ -6,10 +6,9 @@ and compliance with one-model-per-file naming conventions.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
-from pydantic import (BaseModel, ConfigDict, Field, field_serializer,
-                      field_validator)
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
 
@@ -19,10 +18,10 @@ from .model_error_details import ModelErrorDetails
 
 
 @allow_dict_str_any(
-    "Custom fields require flexible dictionary for extensibility across 20+ models"
+    "Custom fields require flexible dictionary for extensibility across 20+ models",
 )
 @allow_any_type(
-    "Custom field values need Any type for flexibility in graph nodes, orchestrator steps, and metadata"
+    "Custom field values need Any type for flexibility in graph nodes, orchestrator steps, and metadata",
 )
 class ModelCustomFields(BaseModel):
     """
@@ -31,26 +30,30 @@ class ModelCustomFields(BaseModel):
     """
 
     # Field definitions (schema)
-    field_definitions: Dict[str, ModelCustomFieldDefinition] = Field(
-        default_factory=dict, description="Custom field definitions"
+    field_definitions: dict[str, ModelCustomFieldDefinition] = Field(
+        default_factory=dict,
+        description="Custom field definitions",
     )
 
     # Field values
-    field_values: Dict[str, Any] = Field(
-        default_factory=dict, description="Custom field values"
+    field_values: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Custom field values",
     )
 
     # Metadata
     schema_version: str = Field("1.0", description="Schema version")
     last_modified: datetime = Field(
-        default_factory=datetime.utcnow, description="Last modification time"
+        default_factory=datetime.utcnow,
+        description="Last modification time",
     )
-    modified_by: Optional[str] = Field(None, description="Last modifier")
+    modified_by: str | None = Field(None, description="Last modifier")
 
     # Validation settings
     strict_validation: bool = Field(False, description="Enforce strict validation")
     allow_undefined_fields: bool = Field(
-        True, description="Allow fields not in definitions"
+        True,
+        description="Allow fields not in definitions",
     )
 
     model_config = ConfigDict()
@@ -59,10 +62,7 @@ class ModelCustomFields(BaseModel):
     @classmethod
     def validate_field_values(cls, v, info=None):
         """Validate field values against definitions."""
-        if info and hasattr(info, "data"):
-            values = info.data
-        else:
-            values = {}
+        values = info.data if info and hasattr(info, "data") else {}
         definitions = values.get("field_definitions", {})
         strict = values.get("strict_validation", False)
         allow_undefined = values.get("allow_undefined_fields", True)
@@ -71,23 +71,25 @@ class ModelCustomFields(BaseModel):
             # Check required fields
             for name, definition in definitions.items():
                 if definition.required and name not in v:
-                    raise ValueError(f"Required field '{name}' is missing")
+                    msg = f"Required field '{name}' is missing"
+                    raise ValueError(msg)
 
             # Check undefined fields
             if not allow_undefined:
                 for name in v:
                     if name not in definitions:
-                        raise ValueError(f"Undefined field '{name}' not allowed")
+                        msg = f"Undefined field '{name}' not allowed"
+                        raise ValueError(msg)
 
         return v
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         # For backward compatibility, return just the field values
         return self.field_values.copy()
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["ModelCustomFields"]:
+    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelCustomFields"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
@@ -119,13 +121,17 @@ class ModelCustomFields(BaseModel):
             definition = self.field_definitions[name]
             # Basic type validation
             if definition.field_type == "string" and not isinstance(value, str):
-                raise ValueError(f"Field '{name}' must be a string")
-            elif definition.field_type == "number" and not isinstance(
-                value, (int, float)
+                msg = f"Field '{name}' must be a string"
+                raise ValueError(msg)
+            if definition.field_type == "number" and not isinstance(
+                value,
+                int | float,
             ):
-                raise ValueError(f"Field '{name}' must be a number")
-            elif definition.field_type == "boolean" and not isinstance(value, bool):
-                raise ValueError(f"Field '{name}' must be a boolean")
+                msg = f"Field '{name}' must be a number"
+                raise ValueError(msg)
+            if definition.field_type == "boolean" and not isinstance(value, bool):
+                msg = f"Field '{name}' must be a boolean"
+                raise ValueError(msg)
 
         self.field_values[name] = value
         self.last_modified = datetime.utcnow()
@@ -139,7 +145,9 @@ class ModelCustomFields(BaseModel):
     def define_field(self, name: str, field_type: str, **kwargs):
         """Define a new custom field."""
         self.field_definitions[name] = ModelCustomFieldDefinition(
-            field_name=name, field_type=field_type, **kwargs
+            field_name=name,
+            field_type=field_type,
+            **kwargs,
         )
 
     @field_serializer("last_modified")
@@ -156,11 +164,11 @@ ErrorDetails = ModelErrorDetails
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelCustomFieldDefinition",
-    "ModelCustomFields",
-    "ModelErrorDetails",
     # Backward compatibility
     "CustomFieldDefinition",
     "CustomFields",
     "ErrorDetails",
+    "ModelCustomFieldDefinition",
+    "ModelCustomFields",
+    "ModelErrorDetails",
 ]

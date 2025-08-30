@@ -22,13 +22,16 @@ class model_pre_push_hook_status(BaseModel):
     hook_exists: bool = Field(..., description="Whether hook file exists on filesystem")
 
     hook_executable: bool = Field(
-        ..., description="Whether hook file has execute permissions"
+        ...,
+        description="Whether hook file has execute permissions",
     )
 
     backup_exists: bool = Field(
-        ..., description="Whether backup of original hook exists"
+        ...,
+        description="Whether backup of original hook exists",
     )
 
     auto_install_enabled: bool = Field(
-        ..., description="Whether automatic pre-commit hook installation is enabled"
+        ...,
+        description="Whether automatic pre-commit hook installation is enabled",
     )

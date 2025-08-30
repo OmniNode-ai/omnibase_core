@@ -6,7 +6,6 @@ Strongly typed Pydantic models for the universal conversation memory system.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -24,45 +23,56 @@ class ModelConversationRole(str, Enum):
 class ModelConversationContext(BaseModel):
     """Context information for a conversation interaction."""
 
-    task_context: Optional[str] = Field(
-        None, description="Current task or operation context"
+    task_context: str | None = Field(
+        None,
+        description="Current task or operation context",
     )
-    tools_used: List[str] = Field(
-        default_factory=list, description="Tools used in this interaction"
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description="Tools used in this interaction",
     )
-    files_referenced: List[str] = Field(
-        default_factory=list, description="Files referenced or modified"
+    files_referenced: list[str] = Field(
+        default_factory=list,
+        description="Files referenced or modified",
     )
-    workspace_path: Optional[str] = Field(
-        None, description="Current workspace or project path"
+    workspace_path: str | None = Field(
+        None,
+        description="Current workspace or project path",
     )
-    ide_context: Optional[str] = Field(
-        None, description="IDE or editor context (e.g., cursor, vscode)"
+    ide_context: str | None = Field(
+        None,
+        description="IDE or editor context (e.g., cursor, vscode)",
     )
-    language: Optional[str] = Field(None, description="Programming language context")
-    tags: List[str] = Field(default_factory=list, description="User-defined tags")
+    language: str | None = Field(None, description="Programming language context")
+    tags: list[str] = Field(default_factory=list, description="User-defined tags")
 
 
 class ModelConversationMetadata(BaseModel):
     """Strongly typed metadata for conversations."""
 
-    source_application: Optional[str] = Field(
-        None, description="Application that created this conversation"
+    source_application: str | None = Field(
+        None,
+        description="Application that created this conversation",
     )
-    source_version: Optional[str] = Field(
-        None, description="Version of the source application"
+    source_version: str | None = Field(
+        None,
+        description="Version of the source application",
     )
-    user_identifier: Optional[str] = Field(
-        None, description="Anonymous user identifier"
+    user_identifier: str | None = Field(
+        None,
+        description="Anonymous user identifier",
     )
-    project_identifier: Optional[str] = Field(
-        None, description="Project or workspace identifier"
+    project_identifier: str | None = Field(
+        None,
+        description="Project or workspace identifier",
     )
-    environment: Optional[str] = Field(
-        None, description="Environment (development, production, etc.)"
+    environment: str | None = Field(
+        None,
+        description="Environment (development, production, etc.)",
     )
-    custom_attributes: Optional[List["ModelCustomAttribute"]] = Field(
-        None, description="Custom attributes"
+    custom_attributes: list["ModelCustomAttribute"] | None = Field(
+        None,
+        description="Custom attributes",
     )
 
 
@@ -79,39 +89,47 @@ class ModelUniversalConversation(BaseModel):
 
     conversation_id: UUID = Field(..., description="Unique conversation identifier")
     session_id: str = Field(
-        ..., description="Session identifier for grouping conversations"
+        ...,
+        description="Session identifier for grouping conversations",
     )
     interaction_timestamp: datetime = Field(
-        ..., description="When the interaction occurred"
+        ...,
+        description="When the interaction occurred",
     )
 
     user_input: str = Field(..., description="The user's input message")
     ai_response: str = Field(..., description="The AI assistant's response")
 
-    context: Optional[ModelConversationContext] = Field(
-        None, description="Conversation context"
+    context: ModelConversationContext | None = Field(
+        None,
+        description="Conversation context",
     )
-    metadata: Optional[ModelConversationMetadata] = Field(
-        None, description="Conversation metadata"
+    metadata: ModelConversationMetadata | None = Field(
+        None,
+        description="Conversation metadata",
     )
 
-    embedding_provider: Optional[str] = Field(
-        None, description="Provider used for embeddings"
+    embedding_provider: str | None = Field(
+        None,
+        description="Provider used for embeddings",
     )
-    embedding_model: Optional[str] = Field(
-        None, description="Model used for embeddings"
+    embedding_model: str | None = Field(
+        None,
+        description="Model used for embeddings",
     )
-    chunk_ids: List[str] = Field(
-        default_factory=list, description="Vector chunk identifiers"
+    chunk_ids: list[str] = Field(
+        default_factory=list,
+        description="Vector chunk identifiers",
     )
 
     outcome: str = Field("completed", description="Interaction outcome status")
     sanitized: bool = Field(False, description="Whether sensitive data was sanitized")
 
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Record creation time"
+        default_factory=datetime.now,
+        description="Record creation time",
     )
-    updated_at: Optional[datetime] = Field(None, description="Last update time")
+    updated_at: datetime | None = Field(None, description="Last update time")
 
 
 class ModelChunkMetadata(BaseModel):
@@ -122,7 +140,7 @@ class ModelChunkMetadata(BaseModel):
     chunk_position: int = Field(..., description="Position in conversation")
     total_chunks: int = Field(..., description="Total chunks in conversation")
     semantic_type: str = Field(..., description="Semantic content type")
-    language_detected: Optional[str] = Field(None, description="Detected language")
+    language_detected: str | None = Field(None, description="Detected language")
 
 
 class ModelConversationChunk(BaseModel):
@@ -136,14 +154,16 @@ class ModelConversationChunk(BaseModel):
     chunk_index: int = Field(..., description="Position in the original conversation")
     chunk_type: str = Field(..., description="Type of chunk (conversation, code, etc.)")
 
-    embedding: Optional[List[float]] = Field(None, description="Vector embedding")
-    embedding_dimensions: Optional[int] = Field(
-        None, description="Embedding vector dimensions"
+    embedding: list[float] | None = Field(None, description="Vector embedding")
+    embedding_dimensions: int | None = Field(
+        None,
+        description="Embedding vector dimensions",
     )
 
     metadata: ModelChunkMetadata = Field(..., description="Chunk metadata")
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Chunk creation time"
+        default_factory=datetime.now,
+        description="Chunk creation time",
     )
 
 
@@ -157,12 +177,13 @@ class ModelTimeRange(BaseModel):
 class ModelContextFilter(BaseModel):
     """Context-based filtering criteria."""
 
-    tools_used: Optional[List[str]] = Field(None, description="Filter by tools")
-    languages: Optional[List[str]] = Field(
-        None, description="Filter by programming languages"
+    tools_used: list[str] | None = Field(None, description="Filter by tools")
+    languages: list[str] | None = Field(
+        None,
+        description="Filter by programming languages",
     )
-    ide_contexts: Optional[List[str]] = Field(None, description="Filter by IDE/editor")
-    tags: Optional[List[str]] = Field(None, description="Filter by tags")
+    ide_contexts: list[str] | None = Field(None, description="Filter by IDE/editor")
+    tags: list[str] | None = Field(None, description="Filter by tags")
 
 
 class ModelConversationQuery(BaseModel):
@@ -170,19 +191,24 @@ class ModelConversationQuery(BaseModel):
 
     query: str = Field(..., description="Search query text")
     limit: int = Field(10, ge=1, le=100, description="Maximum results to return")
-    session_filter: Optional[str] = Field(None, description="Filter by session ID")
+    session_filter: str | None = Field(None, description="Filter by session ID")
     similarity_threshold: float = Field(
-        0.7, ge=0.0, le=1.0, description="Minimum similarity score"
+        0.7,
+        ge=0.0,
+        le=1.0,
+        description="Minimum similarity score",
     )
 
-    timeframe: Optional[ModelTimeRange] = Field(None, description="Time range filter")
-    context_filter: Optional[ModelContextFilter] = Field(
-        None, description="Context-based filters"
+    timeframe: ModelTimeRange | None = Field(None, description="Time range filter")
+    context_filter: ModelContextFilter | None = Field(
+        None,
+        description="Context-based filters",
     )
 
     include_metadata: bool = Field(True, description="Include full metadata in results")
     include_embeddings: bool = Field(
-        False, description="Include embedding vectors in results"
+        False,
+        description="Include embedding vectors in results",
     )
 
 
@@ -190,20 +216,27 @@ class ModelConversationResult(BaseModel):
     """Search result for conversation queries."""
 
     conversation: ModelUniversalConversation = Field(
-        ..., description="Matched conversation"
+        ...,
+        description="Matched conversation",
     )
     relevance_score: float = Field(
-        ..., ge=0.0, le=1.0, description="Similarity/relevance score"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Similarity/relevance score",
     )
-    matched_chunks: List[ModelConversationChunk] = Field(
-        default_factory=list, description="Matching chunks"
+    matched_chunks: list[ModelConversationChunk] = Field(
+        default_factory=list,
+        description="Matching chunks",
     )
 
-    highlight_snippets: Optional[List[str]] = Field(
-        None, description="Highlighted matching text"
+    highlight_snippets: list[str] | None = Field(
+        None,
+        description="Highlighted matching text",
     )
-    context_summary: Optional[str] = Field(
-        None, description="AI-generated context summary"
+    context_summary: str | None = Field(
+        None,
+        description="AI-generated context summary",
     )
 
 
@@ -245,20 +278,24 @@ class ModelProviderStatus(BaseModel):
     total_chunks: int = Field(0, description="Total stored chunks")
     storage_used_bytes: int = Field(0, description="Storage space used")
 
-    metrics: Optional[ModelProviderMetrics] = Field(
-        None, description="Performance metrics"
+    metrics: ModelProviderMetrics | None = Field(
+        None,
+        description="Performance metrics",
     )
 
     last_health_check: datetime = Field(
-        default_factory=datetime.now, description="Last check time"
+        default_factory=datetime.now,
+        description="Last check time",
     )
-    uptime_seconds: Optional[int] = Field(None, description="Service uptime")
+    uptime_seconds: int | None = Field(None, description="Service uptime")
 
-    active_providers: List[str] = Field(
-        default_factory=list, description="Active embedding providers"
+    active_providers: list[str] = Field(
+        default_factory=list,
+        description="Active embedding providers",
     )
-    failed_providers: List[str] = Field(
-        default_factory=list, description="Failed providers"
+    failed_providers: list[str] = Field(
+        default_factory=list,
+        description="Failed providers",
     )
 
 
@@ -300,11 +337,13 @@ class ModelPerformanceStats(BaseModel):
     """System performance statistics."""
 
     average_storage_time_ms: float = Field(
-        ..., description="Avg time to store conversation"
+        ...,
+        description="Avg time to store conversation",
     )
     average_query_time_ms: float = Field(..., description="Avg query response time")
     average_embedding_time_ms: float = Field(
-        ..., description="Avg embedding generation time"
+        ...,
+        description="Avg embedding generation time",
     )
 
     cache_hit_rate_percent: float = Field(..., description="Cache hit rate")
@@ -322,26 +361,33 @@ class ModelMemoryStatistics(BaseModel):
     index_size_bytes: int = Field(..., description="Vector index size")
 
     average_conversation_length: float = Field(
-        ..., description="Avg conversation length"
+        ...,
+        description="Avg conversation length",
     )
     average_chunks_per_conversation: float = Field(
-        ..., description="Avg chunks per conversation"
+        ...,
+        description="Avg chunks per conversation",
     )
 
-    most_used_tools: List[ModelToolUsageStats] = Field(
-        default_factory=list, description="Tool usage stats"
+    most_used_tools: list[ModelToolUsageStats] = Field(
+        default_factory=list,
+        description="Tool usage stats",
     )
-    most_common_tags: List[ModelTagFrequency] = Field(
-        default_factory=list, description="Tag frequency"
+    most_common_tags: list[ModelTagFrequency] = Field(
+        default_factory=list,
+        description="Tag frequency",
     )
 
-    daily_stats: List[ModelDailyStats] = Field(
-        default_factory=list, description="Daily statistics"
+    daily_stats: list[ModelDailyStats] = Field(
+        default_factory=list,
+        description="Daily statistics",
     )
-    performance: Optional[ModelPerformanceStats] = Field(
-        None, description="Performance metrics"
+    performance: ModelPerformanceStats | None = Field(
+        None,
+        description="Performance metrics",
     )
 
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="Stats update time"
+        default_factory=datetime.now,
+        description="Stats update time",
     )

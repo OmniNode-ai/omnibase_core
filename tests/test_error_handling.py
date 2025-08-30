@@ -4,8 +4,6 @@ Test suite for error handling functionality.
 Tests OnexError exception class and error handling decorators.
 """
 
-import pytest
-
 from omnibase_core.exceptions.base_onex_error import OnexError
 
 
@@ -22,7 +20,8 @@ class TestErrorHandling:
     def test_onex_error_with_context(self):
         """Test OnexError with additional context."""
         error = OnexError(
-            message="Test error with context", error_code="TEST_ERROR_CONTEXT"
+            message="Test error with context",
+            error_code="TEST_ERROR_CONTEXT",
         )
 
         assert error.message == "Test error with context"

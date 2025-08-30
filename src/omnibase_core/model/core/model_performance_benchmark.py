@@ -10,13 +10,19 @@ class ModelPerformanceBenchmark(BaseModel):
 
     operation: str = Field(..., description="Operation name")
     avg_duration_ms: float = Field(
-        ..., description="Average duration in milliseconds", ge=0
+        ...,
+        description="Average duration in milliseconds",
+        ge=0,
     )
     min_duration_ms: float = Field(
-        ..., description="Minimum duration in milliseconds", ge=0
+        ...,
+        description="Minimum duration in milliseconds",
+        ge=0,
     )
     max_duration_ms: float = Field(
-        ..., description="Maximum duration in milliseconds", ge=0
+        ...,
+        description="Maximum duration in milliseconds",
+        ge=0,
     )
     p50_duration_ms: float = Field(..., description="50th percentile duration", ge=0)
     p95_duration_ms: float = Field(..., description="95th percentile duration", ge=0)

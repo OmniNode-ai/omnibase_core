@@ -22,10 +22,8 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
 class ModelContext(BaseModel):
-    data: Dict[str, str] = Field(default_factory=dict)
+    data: dict[str, str] = Field(default_factory=dict)

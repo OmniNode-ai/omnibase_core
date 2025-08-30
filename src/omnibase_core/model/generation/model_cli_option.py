@@ -4,7 +4,7 @@ CLI option model for structured CLI option representation.
 Provides structured representation of CLI options with proper validation.
 """
 
-from typing import Any, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -17,10 +17,11 @@ class ModelCliOptionData(BaseModel):
     description: str = Field(default="", description="Option description")
     required: bool = Field(default=False, description="Whether option is required")
     multiple: bool = Field(
-        default=False, description="Whether option accepts multiple values"
+        default=False,
+        description="Whether option accepts multiple values",
     )
-    default: Optional[str] = Field(None, description="Default value")
-    choices: Optional[List[str]] = Field(None, description="Valid choices")
+    default: str | None = Field(None, description="Default value")
+    choices: list[str] | None = Field(None, description="Valid choices")
 
 
 class ModelCliOption(BaseModel):
@@ -28,20 +29,23 @@ class ModelCliOption(BaseModel):
 
     name: str = Field(..., description="Option name (e.g., '--verbose', '-v')")
     type: str = Field(
-        default="string", description="Option type (e.g., 'string', 'flag', 'int')"
+        default="string",
+        description="Option type (e.g., 'string', 'flag', 'int')",
     )
     description: str = Field(..., description="Option description")
     required: bool = Field(default=False, description="Whether option is required")
     multiple: bool = Field(
-        default=False, description="Whether option can be specified multiple times"
+        default=False,
+        description="Whether option can be specified multiple times",
     )
-    default: Optional[Any] = Field(None, description="Default value if optional")
-    choices: Optional[List[str]] = Field(
-        None, description="Valid choices for the option"
+    default: Any | None = Field(None, description="Default value if optional")
+    choices: list[str] | None = Field(
+        None,
+        description="Valid choices for the option",
     )
 
     @classmethod
-    def from_dict(cls, data: Union[str, ModelCliOptionData]) -> "ModelCliOption":
+    def from_dict(cls, data: str | ModelCliOptionData) -> "ModelCliOption":
         """Create from structured data or string."""
         if isinstance(data, str):
             # Handle legacy string format - just the option name

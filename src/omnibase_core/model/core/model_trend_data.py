@@ -3,7 +3,7 @@ Trend data model to replace Dict[str, Any] usage for trends fields.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -25,61 +25,72 @@ class ModelTrendData(BaseModel):
     trend_name: str = Field(..., description="Trend identifier")
     trend_type: str = Field(..., description="Type of trend (metric/usage/performance)")
     time_period: str = Field(
-        ..., description="Time period (hourly/daily/weekly/monthly)"
+        ...,
+        description="Time period (hourly/daily/weekly/monthly)",
     )
 
     # Data points
-    data_points: List[ModelTrendPoint] = Field(
-        default_factory=list, description="Trend data points"
+    data_points: list[ModelTrendPoint] = Field(
+        default_factory=list,
+        description="Trend data points",
     )
 
     # Analysis
-    metrics: Optional[ModelTrendMetrics] = Field(
-        None, description="Trend analysis metrics"
+    metrics: ModelTrendMetrics | None = Field(
+        None,
+        description="Trend analysis metrics",
     )
 
     # Metadata
-    unit: Optional[str] = Field(None, description="Unit of measurement")
-    data_source: Optional[str] = Field(None, description="Data source")
+    unit: str | None = Field(None, description="Unit of measurement")
+    data_source: str | None = Field(None, description="Data source")
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update time"
+        default_factory=datetime.utcnow,
+        description="Last update time",
     )
 
     # Forecast (optional)
-    forecast_points: Optional[List[ModelTrendPoint]] = Field(
-        None, description="Forecasted data points"
+    forecast_points: list[ModelTrendPoint] | None = Field(
+        None,
+        description="Forecasted data points",
     )
-    confidence_interval: Optional[float] = Field(
-        None, description="Forecast confidence interval"
+    confidence_interval: float | None = Field(
+        None,
+        description="Forecast confidence interval",
     )
 
     # Anomalies
-    anomaly_points: Optional[List[ModelTrendPoint]] = Field(
-        None, description="Detected anomaly points"
+    anomaly_points: list[ModelTrendPoint] | None = Field(
+        None,
+        description="Detected anomaly points",
     )
-    anomaly_threshold: Optional[float] = Field(
-        None, description="Anomaly detection threshold"
+    anomaly_threshold: float | None = Field(
+        None,
+        description="Anomaly detection threshold",
     )
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["ModelTrendData"]:
+    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelTrendData"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
         return cls(**data)
 
     def add_point(
-        self, timestamp: datetime, value: Union[float, int], label: Optional[str] = None
+        self,
+        timestamp: datetime,
+        value: float | int,
+        label: str | None = None,
     ):
         """Add a new data point to the trend."""
         self.data_points.append(
-            ModelTrendPoint(timestamp=timestamp, value=value, label=label)
+            ModelTrendPoint(timestamp=timestamp, value=value, label=label),
         )
 
     def calculate_metrics(self):
@@ -97,7 +108,7 @@ class ModelTrendData(BaseModel):
             change_percent=self._calculate_change_percent(values),
         )
 
-    def _calculate_trend_direction(self, values: List[Union[float, int]]) -> str:
+    def _calculate_trend_direction(self, values: list[float | int]) -> str:
         """Calculate overall trend direction."""
         if len(values) < 2:
             return "stable"
@@ -109,14 +120,14 @@ class ModelTrendData(BaseModel):
 
         if second_half_avg > first_half_avg * 1.05:
             return "up"
-        elif second_half_avg < first_half_avg * 0.95:
+        if second_half_avg < first_half_avg * 0.95:
             return "down"
-        else:
-            return "stable"
+        return "stable"
 
     def _calculate_change_percent(
-        self, values: List[Union[float, int]]
-    ) -> Optional[float]:
+        self,
+        values: list[float | int],
+    ) -> float | None:
         """Calculate percentage change from start to end."""
         if len(values) < 2 or values[0] == 0:
             return None

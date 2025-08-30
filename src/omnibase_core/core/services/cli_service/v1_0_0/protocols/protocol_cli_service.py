@@ -8,10 +8,11 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import List, Optional, Protocol
+from typing import Protocol
 
-from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_result import \
-    ModelCliResult
+from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_result import (
+    ModelCliResult,
+)
 
 
 class ProtocolToolHealthResult(Protocol):
@@ -73,7 +74,8 @@ class ProtocolCliService(Protocol):
     """
 
     def parse_command_line_arguments(
-        self, args: Optional[List[str]] = None
+        self,
+        args: list[str] | None = None,
     ) -> ModelCliResult:
         """
         Parse command line arguments and return structured result.
@@ -99,7 +101,9 @@ class ProtocolCliService(Protocol):
         ...
 
     def handle_introspect_flag(
-        self, tool_instance: ProtocolTool, contract_path: Path
+        self,
+        tool_instance: ProtocolTool,
+        contract_path: Path,
     ) -> ModelCliResult:
         """
         Handle --introspect flag execution.
@@ -114,7 +118,9 @@ class ProtocolCliService(Protocol):
         ...
 
     def convert_args_to_input_state(
-        self, parsed_args: dict[str, str | int | bool], tool_instance: ProtocolTool
+        self,
+        parsed_args: dict[str, str | int | bool],
+        tool_instance: ProtocolTool,
     ) -> ProtocolToolInputState:
         """
         Convert parsed CLI arguments to tool-specific input state.
@@ -129,7 +135,9 @@ class ProtocolCliService(Protocol):
         ...
 
     def generate_help_text(
-        self, tool_instance: ProtocolTool, contract_path: Path
+        self,
+        tool_instance: ProtocolTool,
+        contract_path: Path,
     ) -> str:
         """
         Generate help text for the tool based on contract and CLI interface.
@@ -157,7 +165,9 @@ class ProtocolCliService(Protocol):
         ...
 
     def determine_exit_code(
-        self, result: ProtocolToolProcessResult, error: Optional[Exception] = None
+        self,
+        result: ProtocolToolProcessResult,
+        error: Exception | None = None,
     ) -> int:
         """
         Determine appropriate CLI exit code from result or error.
@@ -171,7 +181,7 @@ class ProtocolCliService(Protocol):
         """
         ...
 
-    def should_run_health_check(self, args: Optional[List[str]] = None) -> bool:
+    def should_run_health_check(self, args: list[str] | None = None) -> bool:
         """
         Check if --health-check flag is present in arguments.
 
@@ -183,7 +193,7 @@ class ProtocolCliService(Protocol):
         """
         ...
 
-    def should_run_introspect(self, args: Optional[List[str]] = None) -> bool:
+    def should_run_introspect(self, args: list[str] | None = None) -> bool:
         """
         Check if --introspect flag is present in arguments.
 

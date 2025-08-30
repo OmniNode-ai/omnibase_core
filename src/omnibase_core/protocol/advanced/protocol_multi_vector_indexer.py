@@ -5,12 +5,12 @@ Defines the contract for tools that implement DPR-style multi-vector
 document indexing with passage-level granularity and document context.
 """
 
-from typing import List, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-from omnibase_core.model.advanced.model_multi_vector_document import \
-    ModelMultiVectorDocument
-from omnibase_core.model.semantic.model_input_document import \
-    ModelInputDocument
+from omnibase_core.model.advanced.model_multi_vector_document import (
+    ModelMultiVectorDocument,
+)
+from omnibase_core.model.semantic.model_input_document import ModelInputDocument
 
 
 @runtime_checkable
@@ -26,7 +26,8 @@ class ProtocolMultiVectorIndexer(Protocol):
     """
 
     def index_document(
-        self, input_document: ModelInputDocument
+        self,
+        input_document: ModelInputDocument,
     ) -> ModelMultiVectorDocument:
         """
         Index a single document with multi-vector passage embeddings.
@@ -40,8 +41,9 @@ class ProtocolMultiVectorIndexer(Protocol):
         ...
 
     def index_documents(
-        self, input_documents: List[ModelInputDocument]
-    ) -> List[ModelMultiVectorDocument]:
+        self,
+        input_documents: list[ModelInputDocument],
+    ) -> list[ModelMultiVectorDocument]:
         """
         Batch index multiple documents with multi-vector passage embeddings.
 
@@ -54,7 +56,9 @@ class ProtocolMultiVectorIndexer(Protocol):
         ...
 
     def update_document_index(
-        self, document_id: str, input_document: ModelInputDocument
+        self,
+        document_id: str,
+        input_document: ModelInputDocument,
     ) -> ModelMultiVectorDocument:
         """
         Update an existing document's multi-vector index.

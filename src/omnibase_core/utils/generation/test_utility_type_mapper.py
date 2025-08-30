@@ -7,8 +7,7 @@ Verifies type mapping functionality for ONEX contract generation.
 import pytest
 
 from omnibase_core.model.core.model_schema import ModelSchema
-from omnibase_core.utils.generation.utility_type_mapper import \
-    UtilityTypeMapper
+from omnibase_core.utils.generation.utility_type_mapper import UtilityTypeMapper
 
 
 class TestUtilityTypeMapper:
@@ -42,13 +41,15 @@ class TestUtilityTypeMapper:
 
         # Simple array
         schema = ModelSchema(
-            schema_type="array", items=ModelSchema(schema_type="string")
+            schema_type="array",
+            items=ModelSchema(schema_type="string"),
         )
         assert mapper.get_type_string_from_schema(schema) == "List[str]"
 
         # Array with ref
         schema = ModelSchema(
-            schema_type="array", items=ModelSchema(ref="#/definitions/ModelUser")
+            schema_type="array",
+            items=ModelSchema(ref="#/definitions/ModelUser"),
         )
         assert mapper.get_type_string_from_schema(schema) == "List[ModelUser]"
 
@@ -62,7 +63,8 @@ class TestUtilityTypeMapper:
 
         # Object with properties
         schema = ModelSchema(
-            schema_type="object", properties={"name": ModelSchema(schema_type="string")}
+            schema_type="object",
+            properties={"name": ModelSchema(schema_type="string")},
         )
         assert mapper.get_type_string_from_schema(schema) == "ModelObjectData"
 

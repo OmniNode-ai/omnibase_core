@@ -14,4 +14,4 @@ class ModelMCPRequestParams(BaseModel):
     Base model for MCP request parameters with flexible structure.
     """
 
-    pass  # Base class for specific parameter types
+    # Base class for specific parameter types

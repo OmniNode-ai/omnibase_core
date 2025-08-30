@@ -17,5 +17,6 @@ class ModelReallocation(BaseModel):
     amount: int = Field(..., gt=0, description="Tokens reallocated")
     reason: str = Field(..., description="Reason for reallocation")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When reallocation occurred"
+        default_factory=datetime.utcnow,
+        description="When reallocation occurred",
     )

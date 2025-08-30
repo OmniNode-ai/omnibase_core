@@ -6,27 +6,28 @@ Tests all functionality with real Consul integration (no mocks/stubs).
 Achieves ≥90% code coverage requirement.
 """
 
-import asyncio
-import json
 import os
 import time
-from typing import Any, Dict
 from unittest.mock import patch
 from uuid import uuid4
 
 import consul as python_consul
 import pytest
 
-from omnibase_core.core.models.model_core_errors import (CoreErrorCode,
-                                                         OnexError)
+from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
-    ModelConsulAdapterHealth, ModelConsulHealthCheckNode,
-    ModelConsulHealthResponse, ModelConsulHealthStatus, ModelConsulKVResponse,
-    ModelConsulServiceInfo, ModelConsulServiceListResponse,
-    ModelConsulServiceRegistration, ModelConsulServiceResponse)
-from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import \
-    ToolInfrastructureConsulAdapterEffect
+    ModelConsulHealthResponse,
+    ModelConsulHealthStatus,
+    ModelConsulKVResponse,
+    ModelConsulServiceInfo,
+    ModelConsulServiceListResponse,
+    ModelConsulServiceRegistration,
+    ModelConsulServiceResponse,
+)
+from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
+    ToolInfrastructureConsulAdapterEffect,
+)
 
 
 class TestConsulAdapterEffect:
@@ -67,7 +68,7 @@ class TestConsulAdapterEffect:
         """Create and initialize Consul adapter."""
         adapter = ToolInfrastructureConsulAdapterEffect(container)
         await adapter.initialize_consul_client()
-        yield adapter
+        return adapter
 
     @pytest.fixture
     async def real_consul_client(self, consul_config):
@@ -112,7 +113,9 @@ class TestConsulAdapterEffect:
     def test_init_missing_consul_datacenter(self, container):
         """Test initialization fails without CONSUL_DATACENTER."""
         with patch.dict(
-            os.environ, {"CONSUL_HOST": "localhost", "CONSUL_PORT": "8500"}, clear=True
+            os.environ,
+            {"CONSUL_HOST": "localhost", "CONSUL_PORT": "8500"},
+            clear=True,
         ):
             with pytest.raises(OnexError) as exc_info:
                 ToolInfrastructureConsulAdapterEffect(container)
@@ -253,7 +256,7 @@ class TestConsulAdapterEffect:
 
         # Test DELETE operation for non-existent key
         delete_not_found_response = await consul_adapter.effect_kv_delete(
-            non_existent_key
+            non_existent_key,
         )
         assert isinstance(delete_not_found_response, ModelConsulKVResponse)
         assert delete_not_found_response.status == "not_found"
@@ -279,13 +282,14 @@ class TestConsulAdapterEffect:
             assert put_response.status == "success"
 
         # Verify keys exist with direct Consul client
-        for key in keys_data.keys():
+        for key in keys_data:
             _, data = real_consul_client.kv.get(key)
             assert data is not None
 
         # Test recursive delete
         recursive_delete_response = await consul_adapter.effect_kv_delete(
-            base_prefix, recurse=True
+            base_prefix,
+            recurse=True,
         )
         assert isinstance(recursive_delete_response, ModelConsulKVResponse)
         assert recursive_delete_response.status == "success"
@@ -293,7 +297,7 @@ class TestConsulAdapterEffect:
         assert recursive_delete_response.value is None
 
         # Verify all keys are deleted with direct Consul client
-        for key in keys_data.keys():
+        for key in keys_data:
             _, data = real_consul_client.kv.get(key)
             assert data is None
 
@@ -313,7 +317,7 @@ class TestConsulAdapterEffect:
 
         # Test service registration
         register_response = await consul_adapter.effect_service_register(
-            service_registration
+            service_registration,
         )
         assert isinstance(register_response, ModelConsulServiceResponse)
         assert register_response.status == "success"
@@ -340,11 +344,14 @@ class TestConsulAdapterEffect:
 
     @pytest.mark.asyncio
     async def test_service_registration_with_health_check(
-        self, consul_adapter, real_consul_client
+        self,
+        consul_adapter,
+        real_consul_client,
     ):
         """Test service registration with health check."""
-        from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import \
-            ModelConsulHealthCheck
+        from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
+            ModelConsulHealthCheck,
+        )
 
         service_id = f"test-service-hc-{uuid4()}"
         service_name = "test-service-with-health"
@@ -365,7 +372,7 @@ class TestConsulAdapterEffect:
 
         # Test service registration with health check
         register_response = await consul_adapter.effect_service_register(
-            service_registration
+            service_registration,
         )
         assert isinstance(register_response, ModelConsulServiceResponse)
         assert register_response.status == "success"
@@ -380,7 +387,7 @@ class TestConsulAdapterEffect:
         non_existent_service_id = f"non-existent-service-{uuid4()}"
 
         deregister_response = await consul_adapter.effect_service_deregister(
-            non_existent_service_id
+            non_existent_service_id,
         )
         assert isinstance(deregister_response, ModelConsulServiceResponse)
         assert deregister_response.status == "not_found"
@@ -496,8 +503,9 @@ class TestConsulAdapterEffect:
 
     def test_main_function(self):
         """Test main entry point function."""
-        from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import \
-            main
+        from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
+            main,
+        )
 
         with patch.dict(
             os.environ,
@@ -514,7 +522,9 @@ class TestConsulAdapterEffect:
 
     @pytest.mark.asyncio
     async def test_process_kv_delete_operations(
-        self, consul_adapter, real_consul_client
+        self,
+        consul_adapter,
+        real_consul_client,
     ):
         """Test process method with KV delete operations."""
         from omnibase_core.core.node_effect import EffectType, ModelEffectInput
@@ -535,7 +545,7 @@ class TestConsulAdapterEffect:
                     "operation_type": "kv_delete",
                     "key_path": test_key,
                     "recurse": False,
-                }
+                },
             },
         )
 
@@ -551,7 +561,9 @@ class TestConsulAdapterEffect:
 
     @pytest.mark.asyncio
     async def test_process_service_deregister_operations(
-        self, consul_adapter, real_consul_client
+        self,
+        consul_adapter,
+        real_consul_client,
     ):
         """Test process method with service deregister operations."""
         from omnibase_core.core.node_effect import EffectType, ModelEffectInput
@@ -578,7 +590,7 @@ class TestConsulAdapterEffect:
                     "action": "consul_service_deregister",
                     "operation_type": "service_deregister",
                     "service_config": {"service_id": service_id},
-                }
+                },
             },
         )
 
@@ -595,8 +607,7 @@ class TestConsulAdapterEffect:
     @pytest.mark.asyncio
     async def test_process_error_handling_delete_operations(self, consul_adapter):
         """Test error handling for delete operations in process method."""
-        from omnibase_core.core.models.model_core_errors import (CoreErrorCode,
-                                                                 OnexError)
+        from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
         from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 
         # Test KV delete without key_path
@@ -608,7 +619,7 @@ class TestConsulAdapterEffect:
                     "action": "consul_kv_delete",
                     "operation_type": "kv_delete",
                     # Missing key_path
-                }
+                },
             },
         )
 
@@ -627,9 +638,9 @@ class TestConsulAdapterEffect:
                     "operation_type": "service_deregister",
                     "service_config": {
                         # Missing service_id
-                        "name": "test-service"
+                        "name": "test-service",
                     },
-                }
+                },
             },
         )
 
@@ -637,5 +648,5 @@ class TestConsulAdapterEffect:
             await consul_adapter.process(deregister_input_no_id)
         assert exc_info.value.error_code == CoreErrorCode.MISSING_REQUIRED_PARAMETER
         assert "Service deregistration requires service_config with service_id" in str(
-            exc_info.value
+            exc_info.value,
         )

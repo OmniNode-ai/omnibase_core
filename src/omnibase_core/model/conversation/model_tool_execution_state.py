@@ -5,7 +5,6 @@ Strongly typed model for tool execution state management.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -14,19 +13,23 @@ from pydantic import BaseModel, Field
 class ModelToolExecutionState(BaseModel):
     """Strongly typed model for tool execution state."""
 
-    conversation_buffer: List[dict] = Field(
-        default_factory=list, description="Buffer of conversation interactions"
+    conversation_buffer: list[dict] = Field(
+        default_factory=list,
+        description="Buffer of conversation interactions",
     )
     current_user_message: str = Field(default="", description="Current user message")
     current_task_context: str = Field(default="", description="Current task context")
     session_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Session ID"
+        default_factory=lambda: str(uuid4()),
+        description="Session ID",
     )
-    tools_used_in_interaction: List[str] = Field(
-        default_factory=list, description="Tools used in current interaction"
+    tools_used_in_interaction: list[str] = Field(
+        default_factory=list,
+        description="Tools used in current interaction",
     )
-    interaction_start_time: Optional[datetime] = Field(
-        None, description="Start time of current interaction"
+    interaction_start_time: datetime | None = Field(
+        None,
+        description="Start time of current interaction",
     )
 
     def reset_interaction(self) -> None:

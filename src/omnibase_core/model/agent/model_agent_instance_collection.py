@@ -1,7 +1,5 @@
 """Model for agent instance collection management."""
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
@@ -15,15 +13,16 @@ class ModelAgentInstanceCollection(BaseModel):
     against generic type usage.
     """
 
-    instances: Dict[str, ModelAgentInstance] = Field(
-        default_factory=dict, description="Map of agent ID to agent instance"
+    instances: dict[str, ModelAgentInstance] = Field(
+        default_factory=dict,
+        description="Map of agent ID to agent instance",
     )
 
     def add_agent(self, agent_id: str, instance: ModelAgentInstance) -> None:
         """Add an agent instance to the collection."""
         self.instances[agent_id] = instance
 
-    def get_agent(self, agent_id: str) -> Optional[ModelAgentInstance]:
+    def get_agent(self, agent_id: str) -> ModelAgentInstance | None:
         """Get an agent instance by ID."""
         return self.instances.get(agent_id)
 
@@ -34,11 +33,11 @@ class ModelAgentInstanceCollection(BaseModel):
             return True
         return False
 
-    def list_agent_ids(self) -> List[str]:
+    def list_agent_ids(self) -> list[str]:
         """List all agent IDs in the collection."""
         return list(self.instances.keys())
 
-    def list_agents(self) -> List[ModelAgentInstance]:
+    def list_agents(self) -> list[ModelAgentInstance]:
         """List all agent instances in the collection."""
         return list(self.instances.values())
 

@@ -6,12 +6,10 @@ with unified agent management and task routing.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
-from omnibase_core.model.agent.model_llm_agent_config import \
-    ModelLLMAgentConfig
+from omnibase_core.model.agent.model_llm_agent_config import ModelLLMAgentConfig
 from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
 from omnibase_core.model.llm.model_llm_response import ModelLLMResponse
 
@@ -35,7 +33,6 @@ class ProtocolLLMAgentProvider(ABC):
             ProviderNotAvailableError: If LLM provider is not available
             ConfigurationError: If configuration is invalid
         """
-        pass
 
     @abstractmethod
     async def terminate_agent(self, agent_id: str) -> bool:
@@ -51,10 +48,9 @@ class ProtocolLLMAgentProvider(ABC):
         Raises:
             AgentNotFoundError: If agent doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def get_agent(self, agent_id: str) -> Optional[ModelAgentInstance]:
+    async def get_agent(self, agent_id: str) -> ModelAgentInstance | None:
         """
         Get agent instance by ID.
 
@@ -64,21 +60,22 @@ class ProtocolLLMAgentProvider(ABC):
         Returns:
             Agent instance or None if not found
         """
-        pass
 
     @abstractmethod
-    async def list_active_agents(self) -> List[ModelAgentInstance]:
+    async def list_active_agents(self) -> list[ModelAgentInstance]:
         """
         List all active agent instances.
 
         Returns:
             List of active agent instances
         """
-        pass
 
     @abstractmethod
     async def execute_task(
-        self, agent_id: str, prompt: str, system_prompt: Optional[str] = None
+        self,
+        agent_id: str,
+        prompt: str,
+        system_prompt: str | None = None,
     ) -> ModelLLMResponse:
         """
         Execute a task using a specific agent.
@@ -96,12 +93,12 @@ class ProtocolLLMAgentProvider(ABC):
             AgentBusyError: If agent is currently busy
             ExecutionError: If task execution fails
         """
-        pass
 
     @abstractmethod
     async def get_agents_by_capability(
-        self, capability: EnumAgentCapability
-    ) -> List[ModelAgentInstance]:
+        self,
+        capability: EnumAgentCapability,
+    ) -> list[ModelAgentInstance]:
         """
         Get agents that have a specific capability.
 
@@ -111,12 +108,12 @@ class ProtocolLLMAgentProvider(ABC):
         Returns:
             List of agents with the specified capability
         """
-        pass
 
     @abstractmethod
     async def get_agents_by_provider(
-        self, provider: EnumLLMProvider
-    ) -> List[ModelAgentInstance]:
+        self,
+        provider: EnumLLMProvider,
+    ) -> list[ModelAgentInstance]:
         """
         Get agents using a specific LLM provider.
 
@@ -126,17 +123,15 @@ class ProtocolLLMAgentProvider(ABC):
         Returns:
             List of agents using the specified provider
         """
-        pass
 
     @abstractmethod
-    async def health_check_agents(self) -> Dict[str, str]:
+    async def health_check_agents(self) -> dict[str, str]:
         """
         Perform health check on all agents.
 
         Returns:
             Dictionary mapping agent IDs to health status
         """
-        pass
 
     @abstractmethod
     def get_provider_status(self, provider: EnumLLMProvider) -> str:
@@ -149,7 +144,6 @@ class ProtocolLLMAgentProvider(ABC):
         Returns:
             Provider status (available, unavailable, degraded)
         """
-        pass
 
     @abstractmethod
     async def restart_agent(self, agent_id: str) -> ModelAgentInstance:
@@ -166,4 +160,3 @@ class ProtocolLLMAgentProvider(ABC):
             AgentNotFoundError: If agent doesn't exist
             RestartError: If restart fails
         """
-        pass

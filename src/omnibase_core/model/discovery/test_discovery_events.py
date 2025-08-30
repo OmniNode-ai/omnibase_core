@@ -5,19 +5,23 @@ Basic tests for discovery event models to validate schema definitions.
 from uuid import uuid4
 
 from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery import (ModelNodeHealthEvent,
-                                           ModelNodeIntrospectionEvent,
-                                           ModelNodeShutdownEvent,
-                                           ModelToolDiscoveryRequest,
-                                           ModelToolDiscoveryResponse)
-from omnibase_core.model.discovery.model_node_health_event import \
-    ModelHealthMetrics
-from omnibase_core.model.discovery.model_node_introspection_event import \
-    ModelNodeCapabilities
-from omnibase_core.model.discovery.model_tool_discovery_request import \
-    ModelDiscoveryFilters
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.discovery import (
+    ModelNodeHealthEvent,
+    ModelNodeIntrospectionEvent,
+    ModelNodeShutdownEvent,
+    ModelToolDiscoveryRequest,
+    ModelToolDiscoveryResponse,
+)
+from omnibase_core.model.discovery.model_node_health_event import ModelHealthMetrics
+from omnibase_core.model.discovery.model_node_introspection_event import (
+    ModelNodeCapabilities,
+)
+from omnibase_core.model.discovery.model_tool_discovery_request import (
+    ModelDiscoveryFilters,
+)
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class TestNodeIntrospectionEvent:
@@ -71,7 +75,9 @@ class TestToolDiscoveryRequest:
     def test_create_basic_discovery_request(self):
         """Test creating a basic discovery request"""
         filters = ModelDiscoveryFilters(
-            tags=["generator"], protocols=["mcp"], min_trust_score=0.8
+            tags=["generator"],
+            protocols=["mcp"],
+            min_trust_score=0.8,
         )
 
         request = ModelToolDiscoveryRequest(
@@ -137,7 +143,7 @@ class TestToolDiscoveryResponse:
                 version=ModelSemVer.parse("1.0.0"),
                 actions=["test_action"],
                 protocols=["mcp"],
-            )
+            ),
         ]
 
         response = ModelToolDiscoveryResponse.create_success_response(
@@ -167,7 +173,9 @@ class TestNodeHealthEvent:
         )
 
         event = ModelNodeHealthEvent(
-            node_id="test_node_789", node_name="test_node", health_metrics=metrics
+            node_id="test_node_789",
+            node_name="test_node",
+            health_metrics=metrics,
         )
 
         assert event.node_name == "test_node"
@@ -244,7 +252,9 @@ def test_all_events_have_correlation_id_support():
     )
 
     request = ModelToolDiscoveryRequest.create_simple_request(
-        node_id="test", requester_id="test", correlation_id=correlation_id
+        node_id="test",
+        requester_id="test",
+        correlation_id=correlation_id,
     )
 
     response = ModelToolDiscoveryResponse.create_success_response(
@@ -255,11 +265,15 @@ def test_all_events_have_correlation_id_support():
     )
 
     health = ModelNodeHealthEvent.create_healthy_report(
-        node_id="test", node_name="test", correlation_id=correlation_id
+        node_id="test",
+        node_name="test",
+        correlation_id=correlation_id,
     )
 
     shutdown = ModelNodeShutdownEvent.create_graceful_shutdown(
-        node_id="test", node_name="test", correlation_id=correlation_id
+        node_id="test",
+        node_name="test",
+        correlation_id=correlation_id,
     )
 
     # All should have the same correlation_id
@@ -274,34 +288,25 @@ def test_all_events_have_correlation_id_support():
 
 if __name__ == "__main__":
     # Run basic validation tests
-    print("🧪 Testing discovery event schemas...")
 
     test_node_introspection = TestNodeIntrospectionEvent()
     test_node_introspection.test_create_basic_introspection_event()
     test_node_introspection.test_factory_method_create_from_node_info()
-    print("✅ NODE_INTROSPECTION_EVENT tests passed")
 
     test_discovery_request = TestToolDiscoveryRequest()
     test_discovery_request.test_create_basic_discovery_request()
     test_discovery_request.test_factory_method_create_mcp_request()
-    print("✅ TOOL_DISCOVERY_REQUEST tests passed")
 
     test_discovery_response = TestToolDiscoveryResponse()
     test_discovery_response.test_create_basic_discovery_response()
     test_discovery_response.test_factory_method_create_success_response()
-    print("✅ TOOL_DISCOVERY_RESPONSE tests passed")
 
     test_health_event = TestNodeHealthEvent()
     test_health_event.test_create_basic_health_event()
     test_health_event.test_factory_method_create_warning_report()
-    print("✅ NODE_HEALTH_EVENT tests passed")
 
     test_shutdown_event = TestNodeShutdownEvent()
     test_shutdown_event.test_create_basic_shutdown_event()
     test_shutdown_event.test_factory_method_create_error_shutdown()
-    print("✅ NODE_SHUTDOWN_EVENT tests passed")
 
     test_all_events_have_correlation_id_support()
-    print("✅ Correlation ID support tests passed")
-
-    print("🎉 All discovery event schema tests passed!")

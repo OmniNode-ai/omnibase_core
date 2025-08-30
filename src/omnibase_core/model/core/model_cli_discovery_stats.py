@@ -5,8 +5,6 @@ Provides structured statistics about CLI tool discovery operations,
 replacing primitive dictionary types with type-safe Pydantic models.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -20,53 +18,66 @@ class ModelCliDiscoveryStats(BaseModel):
 
     # Tool counts
     total_tools_discovered: int = Field(
-        0, description="Total number of tools discovered by the system"
+        0,
+        description="Total number of tools discovered by the system",
     )
     healthy_tools_count: int = Field(
-        0, description="Number of healthy tools currently available"
+        0,
+        description="Number of healthy tools currently available",
     )
     unhealthy_tools_count: int = Field(
-        0, description="Number of tools with health issues"
+        0,
+        description="Number of tools with health issues",
     )
 
     # Registry and cache metrics
     discovery_cache_size: int = Field(
-        0, description="Number of tools currently cached in discovery registry"
+        0,
+        description="Number of tools currently cached in discovery registry",
     )
-    cache_hit_rate: Optional[float] = Field(
-        None, description="Discovery cache hit rate as percentage (0-100)"
+    cache_hit_rate: float | None = Field(
+        None,
+        description="Discovery cache hit rate as percentage (0-100)",
     )
 
     # Performance metrics
-    last_discovery_duration_ms: Optional[float] = Field(
-        None, description="Duration of last discovery operation in milliseconds"
+    last_discovery_duration_ms: float | None = Field(
+        None,
+        description="Duration of last discovery operation in milliseconds",
     )
-    average_discovery_duration_ms: Optional[float] = Field(
-        None, description="Average discovery operation duration in milliseconds"
+    average_discovery_duration_ms: float | None = Field(
+        None,
+        description="Average discovery operation duration in milliseconds",
     )
 
     # Timestamp tracking
-    last_refresh_timestamp: Optional[str] = Field(
-        None, description="ISO timestamp of last registry refresh"
+    last_refresh_timestamp: str | None = Field(
+        None,
+        description="ISO timestamp of last registry refresh",
     )
-    last_health_check_timestamp: Optional[str] = Field(
-        None, description="ISO timestamp of last health check cycle"
+    last_health_check_timestamp: str | None = Field(
+        None,
+        description="ISO timestamp of last health check cycle",
     )
 
     # Error tracking
     discovery_errors_count: int = Field(
-        0, description="Number of discovery errors since last reset"
+        0,
+        description="Number of discovery errors since last reset",
     )
-    last_error_message: Optional[str] = Field(
-        None, description="Message from most recent discovery error"
+    last_error_message: str | None = Field(
+        None,
+        description="Message from most recent discovery error",
     )
 
     # Registry health
     registries_online: int = Field(
-        0, description="Number of tool registries currently online"
+        0,
+        description="Number of tool registries currently online",
     )
     registries_total: int = Field(
-        0, description="Total number of tool registries configured"
+        0,
+        description="Total number of tool registries configured",
     )
 
     @property
@@ -118,5 +129,5 @@ class ModelCliDiscoveryStats(BaseModel):
                 "last_error_message": None,
                 "registries_online": 3,
                 "registries_total": 3,
-            }
+            },
         }

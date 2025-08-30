@@ -2,8 +2,6 @@
 Consul service discovery models.
 """
 
-from typing import Dict, List, Optional
-
 from omnibase.enums.enum_health_status import EnumHealthStatus
 from pydantic import BaseModel, Field
 
@@ -12,22 +10,27 @@ class ModelServiceInstance(BaseModel):
     """Represents a discovered service instance."""
 
     service_id: str = Field(
-        ..., description="Unique identifier for this service instance"
+        ...,
+        description="Unique identifier for this service instance",
     )
     service_name: str = Field(..., description="Name of the service")
     address: str = Field(..., description="IP address or hostname of the service")
     port: int = Field(..., description="Port on which the service is listening")
     health_status: EnumHealthStatus = Field(
-        ..., description="Current health status of the service"
+        ...,
+        description="Current health status of the service",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Tags associated with the service"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags associated with the service",
     )
-    meta: Dict[str, str] = Field(
-        default_factory=dict, description="Metadata key-value pairs"
+    meta: dict[str, str] = Field(
+        default_factory=dict,
+        description="Metadata key-value pairs",
     )
     datacenter: str = Field(
-        ..., description="Consul datacenter where service is registered"
+        ...,
+        description="Consul datacenter where service is registered",
     )
 
 
@@ -35,14 +38,17 @@ class ModelServiceDiscoveryRequest(BaseModel):
     """Request for service discovery operations."""
 
     service_name: str = Field(..., description="Name of the service to discover")
-    datacenter: Optional[str] = Field(
-        None, description="Specific datacenter to search (default: local)"
+    datacenter: str | None = Field(
+        None,
+        description="Specific datacenter to search (default: local)",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Required tags for filtering services"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Required tags for filtering services",
     )
     healthy_only: bool = Field(
-        True, description="Only return healthy service instances"
+        True,
+        description="Only return healthy service instances",
     )
 
 
@@ -50,15 +56,19 @@ class ModelServiceDiscoveryResult(BaseModel):
     """Result of service discovery operation."""
 
     success: bool = Field(..., description="Whether the discovery was successful")
-    services: List[ModelServiceInstance] = Field(
-        default_factory=list, description="List of discovered service instances"
+    services: list[ModelServiceInstance] = Field(
+        default_factory=list,
+        description="List of discovered service instances",
     )
     query_time_ms: float = Field(
-        ..., description="Time taken for the discovery query in milliseconds"
+        ...,
+        description="Time taken for the discovery query in milliseconds",
     )
     consul_agent_url: str = Field(
-        ..., description="URL of the Consul agent used for discovery"
+        ...,
+        description="URL of the Consul agent used for discovery",
     )
-    error_message: Optional[str] = Field(
-        None, description="Error message if discovery failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if discovery failed",
     )

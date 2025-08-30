@@ -33,16 +33,19 @@ Usage:
             super().__init__(node_id=node_id, event_bus=event_bus, ...)
 """
 
-from typing import Any, List, Optional, Protocol
+from typing import Protocol
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+
 # EnumToolNames removed - using direct string references
 from omnibase_core.mixin.mixin_event_handler import MixinEventHandler
-from omnibase_core.mixin.mixin_introspection_publisher import \
-    MixinIntrospectionPublisher
+from omnibase_core.mixin.mixin_introspection_publisher import (
+    MixinIntrospectionPublisher,
+)
 from omnibase_core.mixin.mixin_node_lifecycle import MixinNodeLifecycle
-from omnibase_core.mixin.mixin_request_response_introspection import \
-    MixinRequestResponseIntrospection
+from omnibase_core.mixin.mixin_request_response_introspection import (
+    MixinRequestResponseIntrospection,
+)
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 from omnibase_core.protocol.protocol_schema_loader import ProtocolSchemaLoader
 
@@ -68,7 +71,7 @@ class MixinEventDrivenNode(
         self,
         node_id: str,
         event_bus: ProtocolEventBus,
-        metadata_loader: Optional[ProtocolSchemaLoader] = None,
+        metadata_loader: ProtocolSchemaLoader | None = None,
         registry=None,
         **kwargs: object,
     ) -> None:
@@ -132,12 +135,13 @@ class MixinEventDrivenNode(
                 if metadata and hasattr(metadata, "version"):
                     return str(metadata.version)
         except Exception as e:
+            msg = f"Failed to load node version from metadata: {e}"
             raise OnexError(
-                f"Failed to load node version from metadata: {e}",
+                msg,
                 CoreErrorCode.METADATA_LOAD_FAILED,
             )
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Get node capabilities."""
         return ["introspection", "discovery", "lifecycle"]
 
@@ -202,7 +206,7 @@ class EventDrivenNodeProtocol(Protocol):
         """Get the version of this node."""
         ...
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Get the capabilities of this node."""
         ...
 

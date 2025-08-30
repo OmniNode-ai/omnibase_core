@@ -6,19 +6,20 @@ environment enums with flexible, user-defined environments.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, HttpUrl
 
-from omnibase_core.model.core.model_environment_properties import \
-    ModelEnvironmentProperties
+from omnibase_core.model.core.model_environment_properties import (
+    ModelEnvironmentProperties,
+)
 from omnibase_core.model.core.model_feature_flags import ModelFeatureFlags
 
 if TYPE_CHECKING:
-    from omnibase_core.model.configuration.model_resource_limits import \
-        ModelResourceLimits
-    from omnibase_core.model.security.model_security_level import \
-        ModelSecurityLevel
+    from omnibase_core.model.configuration.model_resource_limits import (
+        ModelResourceLimits,
+    )
+    from omnibase_core.model.security.model_security_level import ModelSecurityLevel
 
 
 class ModelEnvironment(BaseModel):
@@ -33,46 +34,56 @@ class ModelEnvironment(BaseModel):
 
     display_name: str = Field(..., description="Human-readable environment name")
 
-    description: Optional[str] = Field(None, description="Environment description")
+    description: str | None = Field(None, description="Environment description")
 
-    configuration_url: Optional[HttpUrl] = Field(
-        None, description="Configuration endpoint URL"
+    configuration_url: HttpUrl | None = Field(
+        None,
+        description="Configuration endpoint URL",
     )
 
     feature_flags: ModelFeatureFlags = Field(
-        default_factory=ModelFeatureFlags, description="Feature flag configuration"
+        default_factory=ModelFeatureFlags,
+        description="Feature flag configuration",
     )
 
     security_level: "ModelSecurityLevel" = Field(
-        None, description="Security requirements and configuration"
+        None,
+        description="Security requirements and configuration",
     )
 
     is_production: bool = Field(
-        default=False, description="Whether this is a production environment"
+        default=False,
+        description="Whether this is a production environment",
     )
 
     is_ephemeral: bool = Field(
-        default=False, description="Whether this environment is temporary/ephemeral"
+        default=False,
+        description="Whether this environment is temporary/ephemeral",
     )
 
     auto_scaling_enabled: bool = Field(
-        default=False, description="Whether auto-scaling is enabled"
+        default=False,
+        description="Whether auto-scaling is enabled",
     )
 
     monitoring_enabled: bool = Field(
-        default=True, description="Whether monitoring is enabled"
+        default=True,
+        description="Whether monitoring is enabled",
     )
 
     logging_level: str = Field(
-        default="INFO", description="Default logging level for this environment"
+        default="INFO",
+        description="Default logging level for this environment",
     )
 
     resource_limits: "ModelResourceLimits" = Field(
-        None, description="Resource limits for this environment"
+        None,
+        description="Resource limits for this environment",
     )
 
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Environment-specific variables"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Environment-specific variables",
     )
 
     custom_properties: ModelEnvironmentProperties = Field(
@@ -97,26 +108,25 @@ class ModelEnvironment(BaseModel):
     def supports_debug(self) -> bool:
         """Check if debug features are allowed in this environment."""
         return not self.is_production or self.feature_flags.is_enabled(
-            "debug_in_prod", False
+            "debug_in_prod",
+            False,
         )
 
     def get_timeout_multiplier(self) -> float:
         """Get timeout multiplier for this environment."""
         if self.is_production:
             return 2.0  # Longer timeouts in production
-        elif self.is_development():
+        if self.is_development():
             return 0.5  # Shorter timeouts in development
-        else:
-            return 1.0  # Default timeouts
+        return 1.0  # Default timeouts
 
     def get_retry_multiplier(self) -> float:
         """Get retry multiplier for this environment."""
         if self.is_production:
             return 2.0  # More retries in production
-        elif self.is_development():
+        if self.is_development():
             return 0.5  # Fewer retries in development
-        else:
-            return 1.0  # Default retries
+        return 1.0  # Default retries
 
     def add_environment_variable(self, key: str, value: str) -> None:
         """Add an environment variable."""
@@ -125,15 +135,17 @@ class ModelEnvironment(BaseModel):
     def add_custom_property(self, key: str, value: Any) -> None:
         """Add a custom property."""
         # Use the type-safe method from ModelEnvironmentProperties
-        if isinstance(value, (str, int, bool, float, list, datetime)):
+        if isinstance(value, str | int | bool | float | list | datetime):
             self.custom_properties.set_property(key, value)
         else:
             # Convert to string for unsupported types
             self.custom_properties.set_property(key, str(value))
 
     def get_environment_variable(
-        self, key: str, default: Optional[str] = None
-    ) -> Optional[str]:
+        self,
+        key: str,
+        default: str | None = None,
+    ) -> str | None:
         """Get environment variable value."""
         return self.environment_variables.get(key, default)
 
@@ -145,7 +157,7 @@ class ModelEnvironment(BaseModel):
             return value if value is not None else default
         return default
 
-    def to_environment_dict(self) -> Dict[str, str]:
+    def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dictionary."""
         env_dict = self.environment_variables.copy()
 
@@ -175,11 +187,11 @@ class ModelEnvironment(BaseModel):
                 env_dict["ONEX_STORAGE_GB"] = str(self.resource_limits.storage_gb)
             if self.resource_limits.max_connections is not None:
                 env_dict["ONEX_MAX_CONNECTIONS"] = str(
-                    self.resource_limits.max_connections
+                    self.resource_limits.max_connections,
                 )
             if self.resource_limits.max_requests_per_second is not None:
                 env_dict["ONEX_MAX_RPS"] = str(
-                    self.resource_limits.max_requests_per_second
+                    self.resource_limits.max_requests_per_second,
                 )
 
         return env_dict
@@ -203,8 +215,9 @@ class ModelEnvironment(BaseModel):
         is_production = name in ["production", "prod"]
 
         # Set appropriate resource limits based on environment
-        from omnibase_core.model.configuration.model_resource_limits import \
-            ModelResourceLimits
+        from omnibase_core.model.configuration.model_resource_limits import (
+            ModelResourceLimits,
+        )
 
         if is_production:
             resource_limits = ModelResourceLimits.create_high_performance()
@@ -228,8 +241,9 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_development(cls) -> "ModelEnvironment":
         """Create a development environment."""
-        from omnibase_core.model.configuration.model_resource_limits import \
-            ModelResourceLimits
+        from omnibase_core.model.configuration.model_resource_limits import (
+            ModelResourceLimits,
+        )
 
         env = cls.create_default("development")
         env.feature_flags.enable("debug_mode")
@@ -241,8 +255,9 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_staging(cls) -> "ModelEnvironment":
         """Create a staging environment."""
-        from omnibase_core.model.configuration.model_resource_limits import \
-            ModelResourceLimits
+        from omnibase_core.model.configuration.model_resource_limits import (
+            ModelResourceLimits,
+        )
 
         env = cls.create_default("staging")
         env.monitoring_enabled = True
@@ -253,10 +268,10 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_production(cls) -> "ModelEnvironment":
         """Create a production environment."""
-        from omnibase_core.model.configuration.model_resource_limits import \
-            ModelResourceLimits
-        from omnibase_core.model.security.model_security_level import \
-            ModelSecurityLevel
+        from omnibase_core.model.configuration.model_resource_limits import (
+            ModelResourceLimits,
+        )
+        from omnibase_core.model.security.model_security_level import ModelSecurityLevel
 
         env = cls.create_default("production")
         env.security_level = ModelSecurityLevel.create_high_security()

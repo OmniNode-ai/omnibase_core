@@ -4,12 +4,11 @@ External Service Collection Model for ONEX Configuration System.
 Strongly typed model for external service configurations.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.service.model_external_service_config import \
-    ModelExternalServiceConfig
+from omnibase_core.model.service.model_external_service_config import (
+    ModelExternalServiceConfig,
+)
 
 
 class ModelExternalServiceCollection(BaseModel):
@@ -19,7 +18,7 @@ class ModelExternalServiceCollection(BaseModel):
     Represents a collection of external services with proper type safety.
     """
 
-    services: Dict[str, ModelExternalServiceConfig] = Field(
+    services: dict[str, ModelExternalServiceConfig] = Field(
         default_factory=dict,
         description="External service configurations by service name",
     )
@@ -33,7 +32,9 @@ class ModelExternalServiceCollection(BaseModel):
         return service_name in self.services
 
     def add_service(
-        self, service_name: str, config: ModelExternalServiceConfig
+        self,
+        service_name: str,
+        config: ModelExternalServiceConfig,
     ) -> None:
         """Add or update a service configuration."""
         self.services[service_name] = config

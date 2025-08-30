@@ -5,11 +5,11 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_fields import ModelCustomFields
+from omnibase_core.model.core.model_custom_fields import ModelCustomFields
 
 
 class ModelWorkflowOutputs(BaseModel):
@@ -21,42 +21,51 @@ class ModelWorkflowOutputs(BaseModel):
     """
 
     # Common output fields
-    result: Optional[str] = Field(None, description="Main result value")
-    status_message: Optional[str] = Field(
-        None, description="Human-readable status message"
+    result: str | None = Field(None, description="Main result value")
+    status_message: str | None = Field(
+        None,
+        description="Human-readable status message",
     )
-    error_message: Optional[str] = Field(None, description="Error message if failed")
+    error_message: str | None = Field(None, description="Error message if failed")
 
     # Structured outputs
-    generated_files: List[str] = Field(
-        default_factory=list, description="List of generated file paths"
+    generated_files: list[str] = Field(
+        default_factory=list,
+        description="List of generated file paths",
     )
-    modified_files: List[str] = Field(
-        default_factory=list, description="List of modified file paths"
+    modified_files: list[str] = Field(
+        default_factory=list,
+        description="List of modified file paths",
     )
 
     # Metrics and statistics
-    execution_time_ms: Optional[int] = Field(
-        None, description="Execution time in milliseconds"
+    execution_time_ms: int | None = Field(
+        None,
+        description="Execution time in milliseconds",
     )
-    items_processed: Optional[int] = Field(
-        None, description="Number of items processed"
+    items_processed: int | None = Field(
+        None,
+        description="Number of items processed",
     )
-    success_count: Optional[int] = Field(
-        None, description="Number of successful operations"
+    success_count: int | None = Field(
+        None,
+        description="Number of successful operations",
     )
-    failure_count: Optional[int] = Field(
-        None, description="Number of failed operations"
+    failure_count: int | None = Field(
+        None,
+        description="Number of failed operations",
     )
 
     # Structured data outputs
-    data: Optional[Dict[str, Union[str, int, float, bool, List[str]]]] = Field(
-        None, description="Structured data outputs"
+    data: dict[str, str | int | float | bool | list[str]] | None = Field(
+        None,
+        description="Structured data outputs",
     )
 
     # For extensibility - custom fields that don't fit above
-    custom_outputs: Optional[ModelCustomFields] = Field(
-        None, description="Custom output fields for workflow-specific data"
+    custom_outputs: ModelCustomFields | None = Field(
+        None,
+        description="Custom output fields for workflow-specific data",
     )
 
     def add_output(self, key: str, value: Any) -> None:
@@ -86,7 +95,7 @@ class ModelWorkflowOutputs(BaseModel):
             return default
         return self.custom_outputs.get(key, default)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         result = {
             "result": self.result,

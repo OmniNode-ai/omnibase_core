@@ -4,8 +4,6 @@ Validation Result Model
 Structured model for validation results that replaces Dict[str, Any] usage.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_validation_rule import EnumValidationSeverity
@@ -20,19 +18,23 @@ class ModelValidationIssue(BaseModel):
     """
 
     severity: EnumValidationSeverity = Field(
-        ..., description="Severity level of the issue"
+        ...,
+        description="Severity level of the issue",
     )
     message: str = Field(..., description="Human-readable issue description")
-    file_path: Optional[str] = Field(
-        None, description="Path to file where issue was found"
+    file_path: str | None = Field(
+        None,
+        description="Path to file where issue was found",
     )
-    line_number: Optional[int] = Field(
-        None, description="Line number where issue was found"
+    line_number: int | None = Field(
+        None,
+        description="Line number where issue was found",
     )
-    rule_name: Optional[str] = Field(
-        None, description="Name of validation rule that triggered this issue"
+    rule_name: str | None = Field(
+        None,
+        description="Name of validation rule that triggered this issue",
     )
-    suggestion: Optional[str] = Field(None, description="Suggested fix for the issue")
+    suggestion: str | None = Field(None, description="Suggested fix for the issue")
 
 
 class ModelValidationResult(BaseModel):
@@ -45,45 +47,59 @@ class ModelValidationResult(BaseModel):
 
     is_valid: bool = Field(..., description="Overall validation result")
     issues_found: int = Field(
-        default=0, description="Number of validation issues found"
+        default=0,
+        description="Number of validation issues found",
     )
-    issues: List[ModelValidationIssue] = Field(
-        default_factory=list, description="List of validation issues"
+    issues: list[ModelValidationIssue] = Field(
+        default_factory=list,
+        description="List of validation issues",
     )
     summary: str = Field(..., description="Human-readable validation summary")
 
     # Optional metadata
-    validation_type: Optional[str] = Field(
-        None, description="Type of validation performed"
+    validation_type: str | None = Field(
+        None,
+        description="Type of validation performed",
     )
-    duration_ms: Optional[int] = Field(
-        None, description="Validation duration in milliseconds"
+    duration_ms: int | None = Field(
+        None,
+        description="Validation duration in milliseconds",
     )
-    files_processed: Optional[int] = Field(
-        None, description="Number of files processed"
+    files_processed: int | None = Field(
+        None,
+        description="Number of files processed",
     )
 
     @classmethod
     def create_success(
-        cls, summary: str = "Validation passed"
+        cls,
+        summary: str = "Validation passed",
     ) -> "ModelValidationResult":
         """Factory method for successful validation results."""
         return cls(is_valid=True, issues_found=0, issues=[], summary=summary)
 
     @classmethod
     def create_failure(
-        cls, issues: List[ModelValidationIssue], summary: Optional[str] = None
+        cls,
+        issues: list[ModelValidationIssue],
+        summary: str | None = None,
     ) -> "ModelValidationResult":
         """Factory method for failed validation results."""
         if summary is None:
             summary = f"Validation failed with {len(issues)} issues"
 
         return cls(
-            is_valid=False, issues_found=len(issues), issues=issues, summary=summary
+            is_valid=False,
+            issues_found=len(issues),
+            issues=issues,
+            summary=summary,
         )
 
     def add_issue(
-        self, severity: EnumValidationSeverity, message: str, **kwargs
+        self,
+        severity: EnumValidationSeverity,
+        message: str,
+        **kwargs,
     ) -> None:
         """Add a validation issue to the result."""
         issue = ModelValidationIssue(severity=severity, message=message, **kwargs)
@@ -107,7 +123,8 @@ class ModelValidationResult(BaseModel):
         )
 
     def get_issues_by_severity(
-        self, severity: EnumValidationSeverity
-    ) -> List[ModelValidationIssue]:
+        self,
+        severity: EnumValidationSeverity,
+    ) -> list[ModelValidationIssue]:
         """Get all issues of a specific severity level."""
         return [issue for issue in self.issues if issue.severity == severity]

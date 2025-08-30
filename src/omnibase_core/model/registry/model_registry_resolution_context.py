@@ -5,24 +5,24 @@ This module provides comprehensive registry resolution context management with b
 dependency tracking, and operational insights for ONEX registry resolution systems.
 """
 
+import contextlib
 import os
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_dependency_mode import EnumDependencyMode
-from omnibase_core.model.core.model_generic_metadata import \
-    ModelGenericMetadata
+from omnibase_core.model.core.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.model.core.model_tool_collection import ToolCollection
-from omnibase_core.model.service.model_external_service_config import \
-    ModelExternalServiceConfig
+from omnibase_core.model.service.model_external_service_config import (
+    ModelExternalServiceConfig,
+)
 
 from .model_registry_operational_summary import ModelRegistryOperationalSummary
-from .model_registry_resource_requirements import \
-    ModelRegistryResourceRequirements
+from .model_registry_resource_requirements import ModelRegistryResourceRequirements
 
 
 class ResolutionComplexity(str, Enum):
@@ -59,8 +59,9 @@ class ModelRegistryResolutionContext(BaseModel):
     - Factory methods for common scenarios
     """
 
-    scenario_path: Optional[Path] = Field(
-        None, description="Path to the scenario YAML file"
+    scenario_path: Path | None = Field(
+        None,
+        description="Path to the scenario YAML file",
     )
 
     dependency_mode: EnumDependencyMode = Field(
@@ -68,61 +69,74 @@ class ModelRegistryResolutionContext(BaseModel):
         description="Resolved dependency mode for tool injection",
     )
 
-    external_services: Dict[str, ModelExternalServiceConfig] = Field(
+    external_services: dict[str, ModelExternalServiceConfig] = Field(
         default_factory=dict,
         description="External service configurations when dependency_mode is REAL",
     )
 
     registry_tools: ToolCollection = Field(
-        default_factory=dict, description="Tool collection for registry injection"
+        default_factory=dict,
+        description="Tool collection for registry injection",
     )
 
-    node_dir: Optional[Path] = Field(
-        None, description="Node directory for context-aware tools"
+    node_dir: Path | None = Field(
+        None,
+        description="Node directory for context-aware tools",
     )
 
-    force_dependency_mode: Optional[EnumDependencyMode] = Field(
-        None, description="CLI override for dependency mode (for debugging/CI)"
+    force_dependency_mode: EnumDependencyMode | None = Field(
+        None,
+        description="CLI override for dependency mode (for debugging/CI)",
     )
 
-    resolution_strategy: Optional[ResolutionStrategy] = Field(
+    resolution_strategy: ResolutionStrategy | None = Field(
         default=ResolutionStrategy.COMPREHENSIVE,
         description="Strategy for registry resolution",
     )
 
-    timeout_seconds: Optional[int] = Field(
-        default=30, description="Timeout for resolution operations", ge=1, le=300
+    timeout_seconds: int | None = Field(
+        default=30,
+        description="Timeout for resolution operations",
+        ge=1,
+        le=300,
     )
 
-    retry_count: Optional[int] = Field(
-        default=3, description="Number of retries for failed resolutions", ge=0, le=10
+    retry_count: int | None = Field(
+        default=3,
+        description="Number of retries for failed resolutions",
+        ge=0,
+        le=10,
     )
 
-    cache_enabled: Optional[bool] = Field(
-        default=True, description="Whether to use caching for resolution results"
+    cache_enabled: bool | None = Field(
+        default=True,
+        description="Whether to use caching for resolution results",
     )
 
-    validation_enabled: Optional[bool] = Field(
-        default=True, description="Whether to validate resolved configurations"
+    validation_enabled: bool | None = Field(
+        default=True,
+        description="Whether to validate resolved configurations",
     )
 
-    metadata: Optional[ModelGenericMetadata] = Field(
-        None, description="Additional metadata and configuration"
+    metadata: ModelGenericMetadata | None = Field(
+        None,
+        description="Additional metadata and configuration",
     )
 
-    resolution_id: Optional[str] = Field(
+    resolution_id: str | None = Field(
         default=None,
         description="Unique identifier for this resolution context",
         max_length=100,
     )
 
-    created_at: Optional[str] = Field(
-        default=None, description="ISO timestamp when context was created"
+    created_at: str | None = Field(
+        default=None,
+        description="ISO timestamp when context was created",
     )
 
     @field_validator("scenario_path")
     @classmethod
-    def validate_scenario_path(cls, v: Optional[Path]) -> Optional[Path]:
+    def validate_scenario_path(cls, v: Path | None) -> Path | None:
         """Validate scenario path exists and is readable."""
         if v is None:
             return v
@@ -132,19 +146,22 @@ class ModelRegistryResolutionContext(BaseModel):
 
         # Check if file exists and is readable
         if not v.exists():
-            raise ValueError(f"Scenario path does not exist: {v}")
+            msg = f"Scenario path does not exist: {v}"
+            raise ValueError(msg)
 
         if not v.is_file():
-            raise ValueError(f"Scenario path is not a file: {v}")
+            msg = f"Scenario path is not a file: {v}"
+            raise ValueError(msg)
 
         if not os.access(v, os.R_OK):
-            raise ValueError(f"Scenario path is not readable: {v}")
+            msg = f"Scenario path is not readable: {v}"
+            raise ValueError(msg)
 
         return v
 
     @field_validator("node_dir")
     @classmethod
-    def validate_node_dir(cls, v: Optional[Path]) -> Optional[Path]:
+    def validate_node_dir(cls, v: Path | None) -> Path | None:
         """Validate node directory exists and is accessible."""
         if v is None:
             return v
@@ -153,16 +170,18 @@ class ModelRegistryResolutionContext(BaseModel):
             v = Path(v)
 
         if not v.exists():
-            raise ValueError(f"Node directory does not exist: {v}")
+            msg = f"Node directory does not exist: {v}"
+            raise ValueError(msg)
 
         if not v.is_dir():
-            raise ValueError(f"Node directory is not a directory: {v}")
+            msg = f"Node directory is not a directory: {v}"
+            raise ValueError(msg)
 
         return v
 
     @field_validator("created_at")
     @classmethod
-    def validate_created_at(cls, v: Optional[str]) -> Optional[str]:
+    def validate_created_at(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return datetime.now().isoformat()
@@ -171,7 +190,8 @@ class ModelRegistryResolutionContext(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("created_at must be a valid ISO timestamp")
+            msg = "created_at must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Dependency Mode Analysis ===
 
@@ -227,12 +247,11 @@ class ModelRegistryResolutionContext(BaseModel):
         # Map score to complexity level
         if complexity_score >= 7:
             return ResolutionComplexity.ENTERPRISE
-        elif complexity_score >= 5:
+        if complexity_score >= 5:
             return ResolutionComplexity.COMPLEX
-        elif complexity_score >= 3:
+        if complexity_score >= 3:
             return ResolutionComplexity.MODERATE
-        else:
-            return ResolutionComplexity.SIMPLE
+        return ResolutionComplexity.SIMPLE
 
     # === External Service Management ===
 
@@ -241,13 +260,16 @@ class ModelRegistryResolutionContext(BaseModel):
         return service_name in self.external_services
 
     def get_external_service(
-        self, service_name: str
-    ) -> Optional[ModelExternalServiceConfig]:
+        self,
+        service_name: str,
+    ) -> ModelExternalServiceConfig | None:
         """Get configuration for a specific external service."""
         return self.external_services.get(service_name)
 
     def add_external_service(
-        self, service_name: str, config: ModelExternalServiceConfig
+        self,
+        service_name: str,
+        config: ModelExternalServiceConfig,
     ) -> None:
         """Add or update an external service configuration."""
         self.external_services[service_name] = config
@@ -260,8 +282,9 @@ class ModelRegistryResolutionContext(BaseModel):
         return False
 
     def get_external_services_by_type(
-        self, service_type: str
-    ) -> Dict[str, ModelExternalServiceConfig]:
+        self,
+        service_type: str,
+    ) -> dict[str, ModelExternalServiceConfig]:
         """Get all external services of a specific type."""
         return {
             name: config
@@ -273,7 +296,7 @@ class ModelRegistryResolutionContext(BaseModel):
         """Get total count of external services."""
         return len(self.external_services)
 
-    def validate_external_services(self) -> List[str]:
+    def validate_external_services(self) -> list[str]:
         """Validate all external service configurations."""
         issues = []
 
@@ -305,11 +328,11 @@ class ModelRegistryResolutionContext(BaseModel):
         """Check if a specific tool is in the collection."""
         return tool_name in self.registry_tools
 
-    def get_tool_names(self) -> Set[str]:
+    def get_tool_names(self) -> set[str]:
         """Get set of all tool names."""
         return set(self.registry_tools.keys())
 
-    def get_tools_by_type(self, tool_type: str) -> Dict[str, Any]:
+    def get_tools_by_type(self, tool_type: str) -> dict[str, Any]:
         """Get tools filtered by type (if type information is available)."""
         # This assumes tools have type information
         filtered_tools = {}
@@ -368,7 +391,7 @@ class ModelRegistryResolutionContext(BaseModel):
 
     # === Validation and Health Checks ===
 
-    def validate_context(self) -> List[str]:
+    def validate_context(self) -> list[str]:
         """Validate the entire resolution context."""
         issues = []
 
@@ -390,7 +413,7 @@ class ModelRegistryResolutionContext(BaseModel):
         estimated_time = self.get_estimated_resolution_time()
         if estimated_time > (self.timeout_seconds or 30):
             issues.append(
-                f"Estimated resolution time ({estimated_time}s) exceeds timeout"
+                f"Estimated resolution time ({estimated_time}s) exceeds timeout",
             )
 
         return issues
@@ -460,8 +483,8 @@ class ModelRegistryResolutionContext(BaseModel):
     @classmethod
     def create_mock_context(
         cls,
-        scenario_path: Optional[Path] = None,
-        tools: Optional[ToolCollection] = None,
+        scenario_path: Path | None = None,
+        tools: ToolCollection | None = None,
     ) -> "ModelRegistryResolutionContext":
         """Create a mock resolution context for testing."""
         return cls(
@@ -476,7 +499,10 @@ class ModelRegistryResolutionContext(BaseModel):
 
     @classmethod
     def create_development_context(
-        cls, scenario_path: Path, node_dir: Path, tools: Optional[ToolCollection] = None
+        cls,
+        scenario_path: Path,
+        node_dir: Path,
+        tools: ToolCollection | None = None,
     ) -> "ModelRegistryResolutionContext":
         """Create a development resolution context."""
         return cls(
@@ -496,7 +522,7 @@ class ModelRegistryResolutionContext(BaseModel):
         cls,
         scenario_path: Path,
         node_dir: Path,
-        external_services: Dict[str, ModelExternalServiceConfig],
+        external_services: dict[str, ModelExternalServiceConfig],
         tools: ToolCollection,
     ) -> "ModelRegistryResolutionContext":
         """Create a production resolution context."""
@@ -516,11 +542,12 @@ class ModelRegistryResolutionContext(BaseModel):
 
     @classmethod
     def create_from_environment(
-        cls, env_prefix: str = "ONEX_RESOLUTION_"
+        cls,
+        env_prefix: str = "ONEX_RESOLUTION_",
     ) -> "ModelRegistryResolutionContext":
         """Create resolution context from environment variables."""
         config_data = {
-            "resolution_id": f"env_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            "resolution_id": f"env_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
         }
 
         # Load from environment variables
@@ -531,26 +558,20 @@ class ModelRegistryResolutionContext(BaseModel):
             config_data["node_dir"] = Path(node_dir)
 
         if dependency_mode := os.getenv(f"{env_prefix}DEPENDENCY_MODE"):
-            try:
+            with contextlib.suppress(ValueError):
                 config_data["dependency_mode"] = EnumDependencyMode(
-                    dependency_mode.lower()
+                    dependency_mode.lower(),
                 )
-            except ValueError:
-                pass
 
         if resolution_strategy := os.getenv(f"{env_prefix}STRATEGY"):
-            try:
+            with contextlib.suppress(ValueError):
                 config_data["resolution_strategy"] = ResolutionStrategy(
-                    resolution_strategy.lower()
+                    resolution_strategy.lower(),
                 )
-            except ValueError:
-                pass
 
         if timeout := os.getenv(f"{env_prefix}TIMEOUT_SECONDS"):
-            try:
+            with contextlib.suppress(ValueError):
                 config_data["timeout_seconds"] = int(timeout)
-            except ValueError:
-                pass
 
         return cls(**config_data)
 

@@ -6,10 +6,9 @@ Supports both standalone creation and dependency injection integration.
 """
 
 import os
-from typing import Optional
 
 
-def create_hybrid_event_bus() -> Optional[object]:
+def create_hybrid_event_bus() -> object | None:
     """
     Create hybrid event bus with Kafka primary, EventBus fallback.
 
@@ -27,8 +26,7 @@ def create_hybrid_event_bus() -> Optional[object]:
     if kafka_servers:
         # Kafka is configured - try to create KafkaProducer
         try:
-            from omnibase_core.routers.hybrid_event_router import \
-                HybridEventRouter
+            from omnibase_core.routers.hybrid_event_router import HybridEventRouter
 
             # Use existing HybridEventRouter which implements proper fallback logic
             return HybridEventRouter()
@@ -37,8 +35,9 @@ def create_hybrid_event_bus() -> Optional[object]:
             try:
                 from kafka import KafkaProducer
 
-                from omnibase_core.adapters.kafka_event_bus_adapter import \
-                    KafkaEventBusAdapter
+                from omnibase_core.adapters.kafka_event_bus_adapter import (
+                    KafkaEventBusAdapter,
+                )
 
                 producer = KafkaProducer(
                     bootstrap_servers=kafka_servers,
@@ -92,7 +91,7 @@ def get_event_bus_type_info(event_bus: object) -> dict:
     return info
 
 
-def create_hybrid_event_bus_standalone() -> Optional[object]:
+def create_hybrid_event_bus_standalone() -> object | None:
     """
     Standalone wrapper for create_hybrid_event_bus.
 

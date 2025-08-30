@@ -6,7 +6,6 @@ that are written directly to the PostgreSQL database bypassing repository.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,36 +29,43 @@ class ModelAgentActionRecord(BaseModel):
     )
 
     action_description: str = Field(
-        ..., description="Detailed description of the action performed"
+        ...,
+        description="Detailed description of the action performed",
     )
 
     # Context
-    work_session_id: Optional[str] = Field(
-        default=None, description="ID of the work session this action belongs to"
+    work_session_id: str | None = Field(
+        default=None,
+        description="ID of the work session this action belongs to",
     )
 
-    correlation_id: Optional[str] = Field(
-        default=None, description="Links related actions together"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Links related actions together",
     )
 
-    parent_action_id: Optional[str] = Field(
-        default=None, description="Parent action ID for action hierarchies"
+    parent_action_id: str | None = Field(
+        default=None,
+        description="Parent action ID for action hierarchies",
     )
 
     # Input and output
-    input_data: Dict = Field(
-        default_factory=dict, description="Input data for this action as JSON"
+    input_data: dict = Field(
+        default_factory=dict,
+        description="Input data for this action as JSON",
     )
 
-    output_data: Dict = Field(
-        default_factory=dict, description="Output data from this action as JSON"
+    output_data: dict = Field(
+        default_factory=dict,
+        description="Output data from this action as JSON",
     )
 
     # Outcome tracking
     success: bool = Field(..., description="Whether the action completed successfully")
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if action failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if action failed",
     )
 
     confidence_score: float = Field(
@@ -73,46 +79,54 @@ class ModelAgentActionRecord(BaseModel):
     duration_ms: int = Field(default=0, description="Action duration in milliseconds")
 
     tokens_used: int = Field(
-        default=0, description="Number of tokens consumed by this action"
+        default=0,
+        description="Number of tokens consumed by this action",
     )
 
     cost_estimate: float = Field(
-        default=0.0, description="Estimated cost of this action"
+        default=0.0,
+        description="Estimated cost of this action",
     )
 
     # Learning data
-    reasoning: Dict = Field(
-        default_factory=dict, description="Agent's reasoning process as JSON"
+    reasoning: dict = Field(
+        default_factory=dict,
+        description="Agent's reasoning process as JSON",
     )
 
-    alternatives_considered: List[Dict] = Field(
-        default_factory=list, description="Other options considered as JSON array"
+    alternatives_considered: list[dict] = Field(
+        default_factory=list,
+        description="Other options considered as JSON array",
     )
 
-    learned_patterns: List[Dict] = Field(
+    learned_patterns: list[dict] = Field(
         default_factory=list,
         description="Patterns identified during action as JSON array",
     )
 
     # File and tool context
-    affected_files: List[str] = Field(
-        default_factory=list, description="List of files affected by this action"
+    affected_files: list[str] = Field(
+        default_factory=list,
+        description="List of files affected by this action",
     )
 
-    tools_involved: List[str] = Field(
-        default_factory=list, description="List of tools used in this action"
+    tools_involved: list[str] = Field(
+        default_factory=list,
+        description="List of tools used in this action",
     )
 
     # Metadata and extensibility
-    metadata: Dict = Field(
-        default_factory=dict, description="Additional metadata as JSON"
+    metadata: dict = Field(
+        default_factory=dict,
+        description="Additional metadata as JSON",
     )
 
     # Timestamps
     timestamp: datetime = Field(..., description="When this action was performed")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this record was created"
+        default_factory=datetime.utcnow,
+        description="When this record was created",
     )
 
     class Config:
@@ -142,22 +156,26 @@ class ModelActionContext(BaseModel):
 
     task_description: str = Field(..., description="Description of the current task")
 
-    current_branch: Optional[str] = Field(
-        default=None, description="Current git branch"
+    current_branch: str | None = Field(
+        default=None,
+        description="Current git branch",
     )
 
     working_directory: str = Field(..., description="Current working directory")
 
     environment: str = Field(
-        default="development", description="Environment where action is performed"
+        default="development",
+        description="Environment where action is performed",
     )
 
-    user_intent: Optional[str] = Field(
-        default=None, description="User's original intent or request"
+    user_intent: str | None = Field(
+        default=None,
+        description="User's original intent or request",
     )
 
-    previous_actions: List[str] = Field(
-        default_factory=list, description="List of previous action IDs in this context"
+    previous_actions: list[str] = Field(
+        default_factory=list,
+        description="List of previous action IDs in this context",
     )
 
     class Config:

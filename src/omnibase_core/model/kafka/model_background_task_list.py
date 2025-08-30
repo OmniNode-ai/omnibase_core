@@ -1,7 +1,6 @@
 """Model for managing background asyncio tasks."""
 
 import asyncio
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -14,8 +13,9 @@ class ModelBackgroundTaskList(BaseModel):
     standards requiring specific typed models.
     """
 
-    tasks: List[asyncio.Task] = Field(
-        default_factory=list, description="List of background asyncio tasks"
+    tasks: list[asyncio.Task] = Field(
+        default_factory=list,
+        description="List of background asyncio tasks",
     )
 
     class Config:
@@ -33,15 +33,15 @@ class ModelBackgroundTaskList(BaseModel):
             return True
         return False
 
-    def get_all_tasks(self) -> List[asyncio.Task]:
+    def get_all_tasks(self) -> list[asyncio.Task]:
         """Get all tasks."""
         return self.tasks
 
-    def get_running_tasks(self) -> List[asyncio.Task]:
+    def get_running_tasks(self) -> list[asyncio.Task]:
         """Get only running (not done) tasks."""
         return [task for task in self.tasks if not task.done()]
 
-    def get_done_tasks(self) -> List[asyncio.Task]:
+    def get_done_tasks(self) -> list[asyncio.Task]:
         """Get completed tasks."""
         return [task for task in self.tasks if task.done()]
 

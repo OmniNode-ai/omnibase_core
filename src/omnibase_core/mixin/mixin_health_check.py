@@ -6,14 +6,16 @@ Supports both synchronous and asynchronous health checks.
 """
 
 import asyncio
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, List, Union
+from typing import Union
 
 from omnibase.enums.enum_health_status import EnumHealthStatus
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 
 
@@ -55,7 +57,7 @@ class MixinHealthCheck:
 
     def get_health_checks(
         self,
-    ) -> List[
+    ) -> list[
         Callable[[], Union[ModelHealthStatus, "asyncio.Future[ModelHealthStatus]"]]
     ]:
         """
@@ -98,9 +100,9 @@ class MixinHealthCheck:
             return base_health
 
         # Run all health checks
-        check_results: List[ModelHealthStatus] = []
+        check_results: list[ModelHealthStatus] = []
         overall_status = EnumHealthStatus.HEALTHY
-        messages: List[str] = []
+        messages: list[str] = []
 
         for check_func in health_checks:
             try:
@@ -156,12 +158,12 @@ class MixinHealthCheck:
 
                 # Mark as unhealthy if check throws
                 overall_status = EnumHealthStatus.UNHEALTHY
-                messages.append(f"{check_func.__name__}: ERROR - {str(e)}")
+                messages.append(f"{check_func.__name__}: ERROR - {e!s}")
 
                 # Create error result
                 error_result = ModelHealthStatus(
                     status=EnumHealthStatus.UNHEALTHY,
-                    message=f"Check failed with error: {str(e)}",
+                    message=f"Check failed with error: {e!s}",
                     timestamp=datetime.utcnow().isoformat(),
                 )
                 check_results.append(error_result)
@@ -241,9 +243,9 @@ class MixinHealthCheck:
                 )
 
         # Wait for all checks to complete
-        check_results: List[ModelHealthStatus] = []
+        check_results: list[ModelHealthStatus] = []
         overall_status = EnumHealthStatus.HEALTHY
-        messages: List[str] = []
+        messages: list[str] = []
 
         for check_name, task in check_tasks:
             try:
@@ -269,7 +271,7 @@ class MixinHealthCheck:
                     {"error": str(e)},
                 )
                 overall_status = EnumHealthStatus.UNHEALTHY
-                messages.append(f"{check_name}: ERROR - {str(e)}")
+                messages.append(f"{check_name}: ERROR - {e!s}")
 
         # Build final health status
         final_message = base_health.message
@@ -283,7 +285,9 @@ class MixinHealthCheck:
         )
 
     def check_dependency_health(
-        self, dependency_name: str, check_func: Callable[[], bool]
+        self,
+        dependency_name: str,
+        check_func: Callable[[], bool],
     ) -> ModelHealthStatus:
         """
         Helper method to check a dependency's health.
@@ -311,6 +315,6 @@ class MixinHealthCheck:
         except Exception as e:
             return ModelHealthStatus(
                 status=EnumHealthStatus.UNHEALTHY,
-                message=f"{dependency_name} check failed: {str(e)}",
+                message=f"{dependency_name} check failed: {e!s}",
                 timestamp=datetime.utcnow().isoformat(),
             )

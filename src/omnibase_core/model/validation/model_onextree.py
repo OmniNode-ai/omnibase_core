@@ -6,7 +6,7 @@ replacing the previous Dict[str, Any] approach with proper type safety.
 """
 
 from pathlib import Path
-from typing import Generator, List, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,6 +16,9 @@ from omnibase_core.exceptions import OnexError
 
 from .model_artifact_counts import ModelArtifactCounts
 from .model_onex_tree_node import ModelOnexTreeNode
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 # Backward compatibility aliases
 OnexTreeNode = ModelOnexTreeNode
@@ -35,8 +38,9 @@ class ModelOnextreeRoot(BaseModel):
         default=EnumOnexTreeNodeType.DIRECTORY,
         description="Type of the root (should always be directory)",
     )
-    children: List[ModelOnexTreeNode] = Field(
-        default_factory=list, description="Child nodes of the root directory"
+    children: list[ModelOnexTreeNode] = Field(
+        default_factory=list,
+        description="Child nodes of the root directory",
     )
 
     @field_validator("type")
@@ -44,8 +48,10 @@ class ModelOnextreeRoot(BaseModel):
     def validate_root_type(cls, v: EnumOnexTreeNodeType) -> EnumOnexTreeNodeType:
         """Validate that root is always a directory."""
         if v != EnumOnexTreeNodeType.DIRECTORY:
+            msg = "Root node must be a directory"
             raise OnexError(
-                "Root node must be a directory", CoreErrorCode.INVALID_PARAMETER
+                msg,
+                CoreErrorCode.INVALID_PARAMETER,
             )
         return v
 
@@ -57,7 +63,7 @@ class ModelOnextreeRoot(BaseModel):
         """Check if this node is a directory."""
         return self.type == EnumOnexTreeNodeType.DIRECTORY
 
-    def find_artifact_directories(self) -> List[tuple[Path, ModelOnexTreeNode]]:
+    def find_artifact_directories(self) -> list[tuple[Path, ModelOnexTreeNode]]:
         """
         Find all artifact directories (nodes, cli_tools, etc.) in the tree.
 
@@ -80,7 +86,7 @@ class ModelOnextreeRoot(BaseModel):
 
         return artifact_dirs
 
-    def find_versioned_artifacts(self) -> List[tuple[str, str, str, ModelOnexTreeNode]]:
+    def find_versioned_artifacts(self) -> list[tuple[str, str, str, ModelOnexTreeNode]]:
         """
         Find all versioned artifacts in the tree.
 
@@ -104,19 +110,18 @@ class ModelOnextreeRoot(BaseModel):
                         "adapters",
                         "contracts",
                         "packages",
-                    }:
-                        if i + 2 < len(parts):
-                            name_part = parts[i + 1]
-                            version_part = parts[i + 2]
+                    } and i + 2 < len(parts):
+                        name_part = parts[i + 1]
+                        version_part = parts[i + 2]
 
-                            if version_part.startswith("v") and node.is_directory():
-                                artifacts.append(
-                                    (type_part, name_part, version_part, node)
-                                )
+                        if version_part.startswith("v") and node.is_directory():
+                            artifacts.append(
+                                (type_part, name_part, version_part, node),
+                            )
 
         return artifacts
 
-    def find_metadata_files(self) -> List[tuple[Path, ModelOnexTreeNode]]:
+    def find_metadata_files(self) -> list[tuple[Path, ModelOnexTreeNode]]:
         """
         Find all metadata files (node.onex.yaml, cli_tool.yaml, etc.) in the tree.
 
@@ -146,7 +151,7 @@ class ModelOnextreeRoot(BaseModel):
         Yields:
             Tuple of (full_path, node)
         """
-        yield Path(self.name), cast(ModelOnexTreeNode, self)
+        yield Path(self.name), cast("ModelOnexTreeNode", self)
 
         for child in self.children:
             yield from child.walk(Path(self.name))
@@ -165,7 +170,7 @@ class ModelOnextreeRoot(BaseModel):
         return cls.model_validate(data)
 
     @classmethod
-    def from_yaml_file(cls, file_path: Union[str, Path]) -> "ModelOnextreeRoot":
+    def from_yaml_file(cls, file_path: str | Path) -> "ModelOnextreeRoot":
         """
         Load an OnextreeRoot from a YAML file.
 
@@ -177,7 +182,7 @@ class ModelOnextreeRoot(BaseModel):
         """
         import yaml
 
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             data = yaml.safe_load(f)
 
         return cls.from_dict(data)

@@ -7,7 +7,6 @@ recovery actions in the production monitoring system.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -72,12 +71,16 @@ class ModelAlertCondition(BaseModel):
     operator: str = Field(..., description="Comparison operator (>, <, ==, etc.)")
     threshold_value: float = Field(..., description="Threshold value")
     duration_seconds: int = Field(
-        0, ge=0, description="Duration condition must persist"
+        0,
+        ge=0,
+        description="Duration condition must persist",
     )
 
     evaluation_window: int = Field(60, gt=0, description="Evaluation window in seconds")
     hysteresis_percent: float = Field(
-        5.0, ge=0, description="Hysteresis percentage to prevent flapping"
+        5.0,
+        ge=0,
+        description="Hysteresis percentage to prevent flapping",
     )
 
     enabled: bool = Field(True, description="Whether condition is active")
@@ -115,12 +118,13 @@ class ModelAlert(BaseModel):
     message: str = Field(..., description="Alert message")
 
     triggered_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When alert was triggered"
+        default_factory=datetime.utcnow,
+        description="When alert was triggered",
     )
-    resolved_at: Optional[datetime] = Field(None, description="When alert was resolved")
+    resolved_at: datetime | None = Field(None, description="When alert was resolved")
 
     source_component: str = Field(..., description="Component that triggered alert")
-    source_agent: Optional[str] = Field(None, description="Agent that triggered alert")
+    source_agent: str | None = Field(None, description="Agent that triggered alert")
 
     metric_name: str = Field(..., description="Metric that triggered alert")
     metric_value: float = Field(..., description="Current metric value")
@@ -129,21 +133,25 @@ class ModelAlert(BaseModel):
     auto_resolve: bool = Field(False, description="Whether alert auto-resolves")
     is_active: bool = Field(True, description="Whether alert is currently active")
 
-    suggested_actions: List[str] = Field(
-        default_factory=list, description="Suggested remediation actions"
+    suggested_actions: list[str] = Field(
+        default_factory=list,
+        description="Suggested remediation actions",
     )
 
-    automated_actions_taken: List[EnumRecoveryAction] = Field(
-        default_factory=list, description="Automated actions already taken"
+    automated_actions_taken: list[EnumRecoveryAction] = Field(
+        default_factory=list,
+        description="Automated actions already taken",
     )
 
     escalation_level: int = Field(0, ge=0, description="Current escalation level")
-    escalated_at: Optional[datetime] = Field(
-        None, description="When alert was escalated"
+    escalated_at: datetime | None = Field(
+        None,
+        description="When alert was escalated",
     )
 
-    related_incidents: List[str] = Field(
-        default_factory=list, description="Related incident IDs"
+    related_incidents: list[str] = Field(
+        default_factory=list,
+        description="Related incident IDs",
     )
 
     def resolve(self) -> None:
@@ -170,35 +178,41 @@ class ModelRecoveryAction(BaseModel):
 
     triggered_by_alert: str = Field(..., description="Alert ID that triggered action")
     target_component: str = Field(..., description="Component being acted upon")
-    target_agent: Optional[str] = Field(
-        None, description="Specific agent if applicable"
+    target_agent: str | None = Field(
+        None,
+        description="Specific agent if applicable",
     )
 
     initiated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When action was initiated"
+        default_factory=datetime.utcnow,
+        description="When action was initiated",
     )
-    completed_at: Optional[datetime] = Field(None, description="When action completed")
+    completed_at: datetime | None = Field(None, description="When action completed")
 
-    success: Optional[bool] = Field(None, description="Whether action was successful")
-    error_message: Optional[str] = Field(
-        None, description="Error message if action failed"
+    success: bool | None = Field(None, description="Whether action was successful")
+    error_message: str | None = Field(
+        None,
+        description="Error message if action failed",
     )
 
-    parameters: Optional[str] = Field(
-        None, description="Action parameters as JSON string"
+    parameters: str | None = Field(
+        None,
+        description="Action parameters as JSON string",
     )
 
     impact_description: str = Field(..., description="Description of expected impact")
 
     def mark_completed(
-        self, success: bool, error_message: Optional[str] = None
+        self,
+        success: bool,
+        error_message: str | None = None,
     ) -> None:
         """Mark action as completed."""
         self.completed_at = datetime.utcnow()
         self.success = success
         self.error_message = error_message
 
-    def get_duration(self) -> Optional[float]:
+    def get_duration(self) -> float | None:
         """Get action duration in seconds."""
         if not self.completed_at:
             return None
@@ -210,27 +224,32 @@ class ModelIncidentTimeline(BaseModel):
 
     entry_id: str = Field(..., description="Unique timeline entry ID")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Entry timestamp"
+        default_factory=datetime.utcnow,
+        description="Entry timestamp",
     )
     entry_type: str = Field(..., description="Type of timeline entry")
     description: str = Field(..., description="Description of what happened")
 
     actor: str = Field(..., description="Who/what made this entry")
-    severity_change: Optional[EnumIncidentSeverity] = Field(
-        None, description="Severity change if any"
+    severity_change: EnumIncidentSeverity | None = Field(
+        None,
+        description="Severity change if any",
     )
-    status_change: Optional[EnumIncidentStatus] = Field(
-        None, description="Status change if any"
+    status_change: EnumIncidentStatus | None = Field(
+        None,
+        description="Status change if any",
     )
 
     automated: bool = Field(False, description="Whether entry was automated")
 
-    related_alerts: List[str] = Field(
-        default_factory=list, description="Related alert IDs"
+    related_alerts: list[str] = Field(
+        default_factory=list,
+        description="Related alert IDs",
     )
 
-    related_actions: List[str] = Field(
-        default_factory=list, description="Related recovery action IDs"
+    related_actions: list[str] = Field(
+        default_factory=list,
+        description="Related recovery action IDs",
     )
 
 
@@ -247,60 +266,76 @@ class ModelIncident(BaseModel):
     status: EnumIncidentStatus = Field(..., description="Current incident status")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Incident creation time"
+        default_factory=datetime.utcnow,
+        description="Incident creation time",
     )
     detected_at: datetime = Field(..., description="When incident was first detected")
-    acknowledged_at: Optional[datetime] = Field(
-        None, description="When incident was acknowledged"
+    acknowledged_at: datetime | None = Field(
+        None,
+        description="When incident was acknowledged",
     )
-    resolved_at: Optional[datetime] = Field(
-        None, description="When incident was resolved"
+    resolved_at: datetime | None = Field(
+        None,
+        description="When incident was resolved",
     )
-    closed_at: Optional[datetime] = Field(None, description="When incident was closed")
+    closed_at: datetime | None = Field(None, description="When incident was closed")
 
-    root_cause: Optional[str] = Field(None, description="Identified root cause")
+    root_cause: str | None = Field(None, description="Identified root cause")
     impact_description: str = Field(..., description="Description of incident impact")
 
-    affected_components: List[str] = Field(
-        default_factory=list, description="Components affected by incident"
+    affected_components: list[str] = Field(
+        default_factory=list,
+        description="Components affected by incident",
     )
 
-    affected_agents: List[str] = Field(
-        default_factory=list, description="Agents affected by incident"
+    affected_agents: list[str] = Field(
+        default_factory=list,
+        description="Agents affected by incident",
     )
 
-    triggering_alerts: List[str] = Field(
-        default_factory=list, description="Alert IDs that triggered this incident"
+    triggering_alerts: list[str] = Field(
+        default_factory=list,
+        description="Alert IDs that triggered this incident",
     )
 
-    recovery_actions: List[str] = Field(
-        default_factory=list, description="Recovery action IDs taken for this incident"
+    recovery_actions: list[str] = Field(
+        default_factory=list,
+        description="Recovery action IDs taken for this incident",
     )
 
-    timeline: List[ModelIncidentTimeline] = Field(
-        default_factory=list, description="Incident timeline entries"
+    timeline: list[ModelIncidentTimeline] = Field(
+        default_factory=list,
+        description="Incident timeline entries",
     )
 
     escalation_level: int = Field(0, ge=0, description="Current escalation level")
-    assigned_to: Optional[str] = Field(None, description="Who incident is assigned to")
+    assigned_to: str | None = Field(None, description="Who incident is assigned to")
 
     post_mortem_required: bool = Field(
-        False, description="Whether post-mortem is required"
+        False,
+        description="Whether post-mortem is required",
     )
     post_mortem_completed: bool = Field(
-        False, description="Whether post-mortem is done"
+        False,
+        description="Whether post-mortem is done",
     )
 
-    lessons_learned: List[str] = Field(
-        default_factory=list, description="Lessons learned from incident"
+    lessons_learned: list[str] = Field(
+        default_factory=list,
+        description="Lessons learned from incident",
     )
 
-    prevention_actions: List[str] = Field(
-        default_factory=list, description="Actions to prevent recurrence"
+    prevention_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions to prevent recurrence",
     )
 
     def add_timeline_entry(
-        self, entry_type: str, description: str, actor: str, automated: bool = False
+        self,
+        entry_type: str,
+        description: str,
+        actor: str,
+        automated: bool = False,
     ) -> None:
         """Add entry to incident timeline."""
         entry = ModelIncidentTimeline(
@@ -318,7 +353,9 @@ class ModelIncident(BaseModel):
         self.acknowledged_at = datetime.utcnow()
         self.assigned_to = assignee
         self.add_timeline_entry(
-            "acknowledged", f"Incident acknowledged by {assignee}", assignee
+            "acknowledged",
+            f"Incident acknowledged by {assignee}",
+            assignee,
         )
 
     def resolve(self, resolution_description: str, resolver: str) -> None:
@@ -333,7 +370,7 @@ class ModelIncident(BaseModel):
         self.closed_at = datetime.utcnow()
         self.add_timeline_entry("closed", "Incident closed", closer)
 
-    def get_mttr(self) -> Optional[float]:
+    def get_mttr(self) -> float | None:
         """Get Mean Time To Resolution in hours."""
         if not self.resolved_at:
             return None
@@ -360,24 +397,31 @@ class ModelIncidentSummary(BaseModel):
 
     avg_mttr_hours: float = Field(0.0, ge=0, description="Average MTTR in hours")
     total_downtime_hours: float = Field(
-        0.0, ge=0, description="Total downtime in hours"
+        0.0,
+        ge=0,
+        description="Total downtime in hours",
     )
 
-    top_failure_causes: List[str] = Field(
-        default_factory=list, description="Most common failure causes"
+    top_failure_causes: list[str] = Field(
+        default_factory=list,
+        description="Most common failure causes",
     )
 
-    most_affected_components: List[str] = Field(
-        default_factory=list, description="Components with most incidents"
+    most_affected_components: list[str] = Field(
+        default_factory=list,
+        description="Components with most incidents",
     )
 
     incidents_prevented: int = Field(
-        0, ge=0, description="Incidents prevented by automation"
+        0,
+        ge=0,
+        description="Incidents prevented by automation",
     )
     auto_resolved_incidents: int = Field(0, ge=0, description="Incidents auto-resolved")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Summary creation time"
+        default_factory=datetime.utcnow,
+        description="Summary creation time",
     )
 
     def get_incident_rate(self) -> float:

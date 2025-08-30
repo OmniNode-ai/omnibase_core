@@ -2,10 +2,9 @@
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
-from omnibase_core.model.proxy.model_tool_parameter_base import \
-    ModelToolParameterBase
+from omnibase_core.model.proxy.model_tool_parameter_base import ModelToolParameterBase
 
 
 class ModelEditToolParams(ModelToolParameterBase):
@@ -21,7 +20,8 @@ class ModelEditToolParams(ModelToolParameterBase):
     def validate_absolute_path(cls, v: Path) -> Path:
         """Ensure path is absolute."""
         if not v.is_absolute():
-            raise ValueError(f"Path must be absolute, got: {v}")
+            msg = f"Path must be absolute, got: {v}"
+            raise ValueError(msg)
         return v
 
     @field_validator("old_string", "new_string")
@@ -30,5 +30,6 @@ class ModelEditToolParams(ModelToolParameterBase):
         """Ensure old and new strings are different."""
         if info.field_name == "new_string" and "old_string" in info.data:
             if v == info.data["old_string"]:
-                raise ValueError("new_string must be different from old_string")
+                msg = "new_string must be different from old_string"
+                raise ValueError(msg)
         return v

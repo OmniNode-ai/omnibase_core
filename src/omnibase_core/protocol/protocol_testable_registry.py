@@ -27,7 +27,7 @@ ProtocolTestableRegistry: Protocol for all testable ONEX registry interfaces.
 Extends ProtocolTestable. Used for registry-driven tests and swappable registry fixtures.
 """
 
-from typing import Any, Dict, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from omnibase_core.protocol.protocol_testable import ProtocolTestable
 
@@ -45,4 +45,4 @@ class ProtocolTestableRegistry(ProtocolTestable, Protocol):
     @classmethod
     def load_mock(cls) -> "ProtocolTestableRegistry": ...
 
-    def get_node(self, node_id: str) -> Dict[str, Any]: ...
+    def get_node(self, node_id: str) -> dict[str, Any]: ...

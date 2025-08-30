@@ -1,7 +1,6 @@
 """Retrieval statistics model with strong typing."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,13 +15,16 @@ class ModelRetrievalStatistics(BaseModel):
 
     # Performance metrics
     average_retrieval_time_ms: float = Field(
-        ge=0.0, description="Average retrieval time in milliseconds"
+        ge=0.0,
+        description="Average retrieval time in milliseconds",
     )
     total_documents_retrieved: int = Field(
-        ge=0, description="Total documents retrieved"
+        ge=0,
+        description="Total documents retrieved",
     )
     average_documents_per_query: float = Field(
-        ge=0.0, description="Average documents per query"
+        ge=0.0,
+        description="Average documents per query",
     )
 
     # Method breakdown
@@ -31,19 +33,29 @@ class ModelRetrievalStatistics(BaseModel):
     hybrid_queries: int = Field(ge=0, description="Number of hybrid queries")
 
     # Quality metrics
-    average_relevance_score: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Average relevance score"
+    average_relevance_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Average relevance score",
     )
     zero_result_queries: int = Field(
-        ge=0, description="Number of queries with zero results"
+        ge=0,
+        description="Number of queries with zero results",
     )
 
     # Cache metrics
-    cache_hit_rate: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Cache hit rate"
+    cache_hit_rate: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Cache hit rate",
     )
-    cache_miss_rate: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Cache miss rate"
+    cache_miss_rate: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Cache miss rate",
     )
 
     # Timing

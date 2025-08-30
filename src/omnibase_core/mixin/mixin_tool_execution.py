@@ -6,12 +6,13 @@ enabling tools to be executed via the event bus in the unified execution model.
 """
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 
@@ -48,7 +49,7 @@ class MixinToolExecution:
             # Extract request data
             requested_tool = event.data.get("tool_name", "")
             parameters = event.data.get("parameters", [])
-            timeout = event.data.get("timeout", 30)
+            event.data.get("timeout", 30)
 
             # Check if this request is for this tool
             if requested_tool != self.get_node_name():
@@ -79,7 +80,7 @@ class MixinToolExecution:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"❌ Tool execution failed: {str(e)}",
+                f"❌ Tool execution failed: {e!s}",
                 {
                     "tool_name": self.get_node_name(),
                     "correlation_id": event.correlation_id,
@@ -128,13 +129,13 @@ class MixinToolExecution:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"⚠️ Failed to create typed input state, using dict: {str(e)}",
+                f"⚠️ Failed to create typed input state, using dict: {e!s}",
                 {"tool_name": self.get_node_name()},
             )
             # Fallback to dict if typed creation fails
             return param_dict
 
-    def _output_state_to_dict(self, output_state: Any) -> Dict[str, Any]:
+    def _output_state_to_dict(self, output_state: Any) -> dict[str, Any]:
         """
         Convert output state to dictionary for response.
 
@@ -143,23 +144,22 @@ class MixinToolExecution:
         if hasattr(output_state, "model_dump"):
             # Pydantic model
             return output_state.model_dump()
-        elif hasattr(output_state, "__dict__"):
+        if hasattr(output_state, "__dict__"):
             # Regular object
             return output_state.__dict__
-        elif isinstance(output_state, dict):
+        if isinstance(output_state, dict):
             # Already a dict
             return output_state
-        else:
-            # Fallback
-            return {"result": str(output_state)}
+        # Fallback
+        return {"result": str(output_state)}
 
     def _publish_execution_response(
         self,
         correlation_id: str,
         success: bool,
-        result: Optional[Dict[str, Any]],
+        result: dict[str, Any] | None,
         execution_time: float,
-        error: Optional[str],
+        error: str | None,
     ) -> None:
         """Publish tool execution response event."""
         if not hasattr(self, "event_bus") or not self.event_bus:

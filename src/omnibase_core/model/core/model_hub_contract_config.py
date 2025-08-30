@@ -7,11 +7,9 @@ and provide a unified interface for contract-driven hub configuration.
 
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
-from pydantic import BaseModel, Field, model_validator, validator
-
-from omnibase_core.model.core.model_semver import ModelSemVer
+from pydantic import BaseModel, Field, model_validator
 
 
 class EnumHubCapability(str, Enum):
@@ -53,29 +51,32 @@ class ModelHubHttpEndpoint(BaseModel):
 
     path: str = Field(..., description="Endpoint path")
     method: str = Field(default="GET", description="HTTP method")
-    description: Optional[str] = Field(None, description="Endpoint description")
+    description: str | None = Field(None, description="Endpoint description")
 
 
 class ModelHubWebSocketEndpoint(BaseModel):
     """WebSocket endpoint configuration for hubs."""
 
     path: str = Field(..., description="WebSocket path")
-    description: Optional[str] = Field(None, description="WebSocket description")
+    description: str | None = Field(None, description="WebSocket description")
 
 
 class ModelHubServiceConfiguration(BaseModel):
     """Service configuration section from contracts."""
 
-    is_persistent_service: Optional[bool] = Field(
-        True, description="Whether hub runs as persistent service"
+    is_persistent_service: bool | None = Field(
+        True,
+        description="Whether hub runs as persistent service",
     )
-    http_endpoints: Optional[List[ModelHubHttpEndpoint]] = Field(
-        default_factory=list, description="HTTP endpoints provided by hub"
+    http_endpoints: list[ModelHubHttpEndpoint] | None = Field(
+        default_factory=list,
+        description="HTTP endpoints provided by hub",
     )
-    websocket_endpoints: Optional[List[ModelHubWebSocketEndpoint]] = Field(
-        default_factory=list, description="WebSocket endpoints provided by hub"
+    websocket_endpoints: list[ModelHubWebSocketEndpoint] | None = Field(
+        default_factory=list,
+        description="WebSocket endpoints provided by hub",
     )
-    default_port: Optional[int] = Field(None, description="Default service port")
+    default_port: int | None = Field(None, description="Default service port")
 
 
 class ModelHubConfiguration(BaseModel):
@@ -89,39 +90,48 @@ class ModelHubConfiguration(BaseModel):
     )
 
     # Service configuration
-    service_port: Optional[int] = Field(
-        None, description="Port for hub HTTP service", ge=1024, le=65535
+    service_port: int | None = Field(
+        None,
+        description="Port for hub HTTP service",
+        ge=1024,
+        le=65535,
     )
 
     # Hub capabilities and behavior
-    coordination_mode: Optional[EnumCoordinationMode] = Field(
-        EnumCoordinationMode.EVENT_ROUTER, description="Hub coordination strategy"
+    coordination_mode: EnumCoordinationMode | None = Field(
+        EnumCoordinationMode.EVENT_ROUTER,
+        description="Hub coordination strategy",
     )
 
-    capabilities: Optional[List[EnumHubCapability]] = Field(
-        default_factory=list, description="Hub capabilities"
+    capabilities: list[EnumHubCapability] | None = Field(
+        default_factory=list,
+        description="Hub capabilities",
     )
 
-    priority: Optional[str] = Field("normal", description="Hub execution priority")
+    priority: str | None = Field("normal", description="Hub execution priority")
 
-    docker_enabled: Optional[bool] = Field(
-        False, description="Enable Docker container isolation"
+    docker_enabled: bool | None = Field(
+        False,
+        description="Enable Docker container isolation",
     )
 
     # Tool management
-    managed_tools: Optional[List[str]] = Field(
-        default_factory=list, description="Tools managed by this hub"
+    managed_tools: list[str] | None = Field(
+        default_factory=list,
+        description="Tools managed by this hub",
     )
 
     # Service registry configuration
-    introspection_timeout: Optional[int] = Field(
-        30, description="Introspection timeout in seconds"
+    introspection_timeout: int | None = Field(
+        30,
+        description="Introspection timeout in seconds",
     )
 
-    service_ttl: Optional[int] = Field(300, description="Service TTL in seconds")
+    service_ttl: int | None = Field(300, description="Service TTL in seconds")
 
-    auto_cleanup_interval: Optional[int] = Field(
-        60, description="Auto cleanup interval in seconds"
+    auto_cleanup_interval: int | None = Field(
+        60,
+        description="Auto cleanup interval in seconds",
     )
 
 
@@ -135,38 +145,45 @@ class ModelUnifiedHubContract(BaseModel):
     """
 
     # Hub configuration (primary)
-    hub_configuration: Optional[ModelHubConfiguration] = Field(
-        None, description="Hub configuration (Generation hub format)"
+    hub_configuration: ModelHubConfiguration | None = Field(
+        None,
+        description="Hub configuration (Generation hub format)",
     )
 
     # Service configuration (AI hub format)
-    service_configuration: Optional[ModelHubServiceConfiguration] = Field(
-        None, description="Service configuration (AI hub format)"
+    service_configuration: ModelHubServiceConfiguration | None = Field(
+        None,
+        description="Service configuration (AI hub format)",
     )
 
     # Tool specification (AI hub format)
-    tool_specification: Optional[Dict[str, Any]] = Field(
-        None, description="Tool specification from AI hub contracts"
+    tool_specification: dict[str, Any] | None = Field(
+        None,
+        description="Tool specification from AI hub contracts",
     )
 
     # Workflows (Generation hub format)
-    orchestration_workflows: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Orchestration workflows"
+    orchestration_workflows: dict[str, Any] | None = Field(
+        default_factory=dict,
+        description="Orchestration workflows",
     )
 
     # Tool coordination (Generation hub format)
-    tool_coordination: Optional[Dict[str, Any]] = Field(
-        None, description="Tool coordination configuration"
+    tool_coordination: dict[str, Any] | None = Field(
+        None,
+        description="Tool coordination configuration",
     )
 
     # Tool execution (Generation hub format)
-    tool_execution: Optional[Dict[str, Any]] = Field(
-        None, description="Tool execution configuration"
+    tool_execution: dict[str, Any] | None = Field(
+        None,
+        description="Tool execution configuration",
     )
 
     # Contract metadata
-    contract_metadata: Optional[Dict[str, Any]] = Field(
-        None, description="Contract metadata"
+    contract_metadata: dict[str, Any] | None = Field(
+        None,
+        description="Contract metadata",
     )
 
     @model_validator(mode="before")
@@ -178,8 +195,9 @@ class ModelUnifiedHubContract(BaseModel):
             service_config = values.get("service_configuration")
 
             if not hub_config and not service_config:
+                msg = "Contract must have either hub_configuration or service_configuration"
                 raise ValueError(
-                    "Contract must have either hub_configuration or service_configuration"
+                    msg,
                 )
 
         return values
@@ -238,12 +256,12 @@ class ModelUnifiedHubContract(BaseModel):
         config = self.get_unified_config()
         return config.service_port or 8080
 
-    def get_managed_tools(self) -> List[str]:
+    def get_managed_tools(self) -> list[str]:
         """Get managed tools from either format."""
         config = self.get_unified_config()
         return config.managed_tools or []
 
-    def get_capabilities(self) -> List[EnumHubCapability]:
+    def get_capabilities(self) -> list[EnumHubCapability]:
         """Get hub capabilities from either format."""
         config = self.get_unified_config()
         return config.capabilities or []
@@ -254,7 +272,7 @@ class ModelUnifiedHubContract(BaseModel):
         return config.coordination_mode or EnumCoordinationMode.EVENT_ROUTER
 
     @classmethod
-    def from_dict(cls, contract_data: Dict[str, Any]) -> "ModelUnifiedHubContract":
+    def from_dict(cls, contract_data: dict[str, Any]) -> "ModelUnifiedHubContract":
         """
         Create unified contract from raw dictionary data.
 
@@ -302,9 +320,10 @@ class ModelUnifiedHubContract(BaseModel):
         import yaml
 
         if not contract_path.exists():
-            raise FileNotFoundError(f"Contract file not found: {contract_path}")
+            msg = f"Contract file not found: {contract_path}"
+            raise FileNotFoundError(msg)
 
-        with open(contract_path, "r") as f:
+        with open(contract_path) as f:
             contract_data = yaml.safe_load(f)
 
         return cls.from_dict(contract_data)

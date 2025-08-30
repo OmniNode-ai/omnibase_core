@@ -7,9 +7,9 @@ assignment, processing, and status synchronization.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
-from typing import AsyncIterator, Dict, List, Optional
 
 from omnibase_core.model.work.model_work_assignment import ModelWorkAssignment
 from omnibase_core.model.work.model_work_ticket import ModelWorkTicket
@@ -49,12 +49,12 @@ class ProtocolWorkQueue(ABC):
         Raises:
             ConnectionError: If connection fails
         """
-        pass
 
     @abstractmethod
     async def fetch_pending_tickets(
-        self, limit: Optional[int] = None
-    ) -> List[ModelWorkTicket]:
+        self,
+        limit: int | None = None,
+    ) -> list[ModelWorkTicket]:
         """
         Fetch pending work tickets from the ONEX system.
 
@@ -67,7 +67,6 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
     async def subscribe_to_ticket_updates(self) -> AsyncIterator[ModelWorkTicket]:
@@ -80,11 +79,12 @@ class ProtocolWorkQueue(ABC):
         Raises:
             SubscriptionError: If subscription fails
         """
-        pass
 
     @abstractmethod
     async def assign_ticket_to_agent(
-        self, ticket_id: str, agent_id: str
+        self,
+        ticket_id: str,
+        agent_id: str,
     ) -> ModelWorkAssignment:
         """
         Assign a work ticket to a specific agent.
@@ -101,11 +101,13 @@ class ProtocolWorkQueue(ABC):
             TicketNotFoundError: If ticket doesn't exist
             AgentNotFoundError: If agent doesn't exist
         """
-        pass
 
     @abstractmethod
     async def update_ticket_status(
-        self, ticket_id: str, status: str, message: Optional[str] = None
+        self,
+        ticket_id: str,
+        status: str,
+        message: str | None = None,
     ) -> bool:
         """
         Update the status of a work ticket.
@@ -122,11 +124,12 @@ class ProtocolWorkQueue(ABC):
             UpdateError: If update fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def update_ticket_progress(
-        self, ticket_id: str, progress_percent: float
+        self,
+        ticket_id: str,
+        progress_percent: float,
     ) -> bool:
         """
         Update the progress percentage of a work ticket.
@@ -142,11 +145,12 @@ class ProtocolWorkQueue(ABC):
             UpdateError: If update fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def complete_ticket(
-        self, ticket_id: str, result_data: Dict[str, str]
+        self,
+        ticket_id: str,
+        result_data: dict[str, str],
     ) -> bool:
         """
         Mark a work ticket as completed with result data.
@@ -162,7 +166,6 @@ class ProtocolWorkQueue(ABC):
             CompletionError: If completion fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def fail_ticket(self, ticket_id: str, error_message: str) -> bool:
@@ -180,10 +183,9 @@ class ProtocolWorkQueue(ABC):
             UpdateError: If update fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def get_ticket_by_id(self, ticket_id: str) -> Optional[ModelWorkTicket]:
+    async def get_ticket_by_id(self, ticket_id: str) -> ModelWorkTicket | None:
         """
         Retrieve a specific work ticket by ID.
 
@@ -196,12 +198,12 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
     async def get_tickets_by_priority(
-        self, priority: WorkQueuePriority
-    ) -> List[ModelWorkTicket]:
+        self,
+        priority: WorkQueuePriority,
+    ) -> list[ModelWorkTicket]:
         """
         Retrieve work tickets filtered by priority.
 
@@ -214,10 +216,9 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
-    async def get_tickets_by_agent(self, agent_id: str) -> List[ModelWorkTicket]:
+    async def get_tickets_by_agent(self, agent_id: str) -> list[ModelWorkTicket]:
         """
         Retrieve work tickets assigned to a specific agent.
 
@@ -230,14 +231,13 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
     async def get_available_tickets(
         self,
-        agent_capabilities: Optional[List[str]] = None,
-        max_priority: Optional[WorkQueuePriority] = None,
-    ) -> List[ModelWorkTicket]:
+        agent_capabilities: list[str] | None = None,
+        max_priority: WorkQueuePriority | None = None,
+    ) -> list[ModelWorkTicket]:
         """
         Get tickets available for assignment based on criteria.
 
@@ -251,11 +251,13 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
     async def reserve_ticket(
-        self, ticket_id: str, agent_id: str, duration_minutes: int = 30
+        self,
+        ticket_id: str,
+        agent_id: str,
+        duration_minutes: int = 30,
     ) -> bool:
         """
         Reserve a ticket for an agent temporarily to prevent conflicts.
@@ -272,7 +274,6 @@ class ProtocolWorkQueue(ABC):
             ReservationError: If reservation fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def release_ticket_reservation(self, ticket_id: str, agent_id: str) -> bool:
@@ -290,20 +291,18 @@ class ProtocolWorkQueue(ABC):
             ReleaseError: If release fails
             ReservationNotFoundError: If reservation doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def get_queue_statistics(self) -> Dict[str, int]:
+    async def get_queue_statistics(self) -> dict[str, int]:
         """
         Get current work queue statistics.
 
         Returns:
             Dictionary containing queue metrics
         """
-        pass
 
     @abstractmethod
-    async def get_ticket_dependencies(self, ticket_id: str) -> List[str]:
+    async def get_ticket_dependencies(self, ticket_id: str) -> list[str]:
         """
         Get list of ticket IDs that this ticket depends on.
 
@@ -317,11 +316,12 @@ class ProtocolWorkQueue(ABC):
             FetchError: If fetching fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def add_ticket_dependency(
-        self, ticket_id: str, dependency_ticket_id: str
+        self,
+        ticket_id: str,
+        dependency_ticket_id: str,
     ) -> bool:
         """
         Add a dependency relationship between tickets.
@@ -337,11 +337,12 @@ class ProtocolWorkQueue(ABC):
             DependencyError: If adding dependency fails
             CircularDependencyError: If this would create a cycle
         """
-        pass
 
     @abstractmethod
     async def remove_ticket_dependency(
-        self, ticket_id: str, dependency_ticket_id: str
+        self,
+        ticket_id: str,
+        dependency_ticket_id: str,
     ) -> bool:
         """
         Remove a dependency relationship between tickets.
@@ -356,10 +357,9 @@ class ProtocolWorkQueue(ABC):
         Raises:
             DependencyError: If removing dependency fails
         """
-        pass
 
     @abstractmethod
-    async def get_blocked_tickets(self) -> List[ModelWorkTicket]:
+    async def get_blocked_tickets(self) -> list[ModelWorkTicket]:
         """
         Get tickets that are blocked by unresolved dependencies.
 
@@ -369,10 +369,9 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
-    async def get_ready_tickets(self) -> List[ModelWorkTicket]:
+    async def get_ready_tickets(self) -> list[ModelWorkTicket]:
         """
         Get tickets that are ready for assignment (no pending dependencies).
 
@@ -382,7 +381,6 @@ class ProtocolWorkQueue(ABC):
         Raises:
             FetchError: If fetching fails
         """
-        pass
 
     @abstractmethod
     async def set_assignment_strategy(self, strategy: AssignmentStrategy) -> bool:
@@ -398,7 +396,6 @@ class ProtocolWorkQueue(ABC):
         Raises:
             ConfigurationError: If strategy configuration fails
         """
-        pass
 
     @abstractmethod
     async def get_assignment_strategy(self) -> AssignmentStrategy:
@@ -408,7 +405,6 @@ class ProtocolWorkQueue(ABC):
         Returns:
             Current assignment strategy
         """
-        pass
 
     @abstractmethod
     async def requeue_ticket(self, ticket_id: str, reason: str) -> bool:
@@ -426,10 +422,9 @@ class ProtocolWorkQueue(ABC):
             RequeueError: If requeuing fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
-    async def estimate_completion_time(self, ticket_id: str) -> Optional[datetime]:
+    async def estimate_completion_time(self, ticket_id: str) -> datetime | None:
         """
         Estimate completion time for a ticket based on historical data.
 
@@ -442,10 +437,9 @@ class ProtocolWorkQueue(ABC):
         Raises:
             EstimationError: If estimation fails
         """
-        pass
 
     @abstractmethod
-    async def get_ticket_metrics(self, ticket_id: str) -> Dict[str, float]:
+    async def get_ticket_metrics(self, ticket_id: str) -> dict[str, float]:
         """
         Get performance metrics for a specific ticket.
 
@@ -459,11 +453,12 @@ class ProtocolWorkQueue(ABC):
             FetchError: If fetching fails
             TicketNotFoundError: If ticket doesn't exist
         """
-        pass
 
     @abstractmethod
     async def create_ticket_checkpoint(
-        self, ticket_id: str, checkpoint_data: Dict[str, str]
+        self,
+        ticket_id: str,
+        checkpoint_data: dict[str, str],
     ) -> str:
         """
         Create a checkpoint for work in progress.
@@ -478,11 +473,12 @@ class ProtocolWorkQueue(ABC):
         Raises:
             CheckpointError: If checkpoint creation fails
         """
-        pass
 
     @abstractmethod
     async def restore_ticket_checkpoint(
-        self, ticket_id: str, checkpoint_id: str
+        self,
+        ticket_id: str,
+        checkpoint_id: str,
     ) -> bool:
         """
         Restore a ticket to a previous checkpoint.
@@ -498,4 +494,3 @@ class ProtocolWorkQueue(ABC):
             RestoreError: If restoration fails
             CheckpointNotFoundError: If checkpoint doesn't exist
         """
-        pass

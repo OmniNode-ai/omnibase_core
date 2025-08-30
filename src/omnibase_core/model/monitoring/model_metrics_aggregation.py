@@ -16,12 +16,17 @@ class ModelMetricsAggregation(BaseModel):
     period_start: datetime = Field(..., description="Aggregation period start")
     period_end: datetime = Field(..., description="Aggregation period end")
     interval_minutes: int = Field(
-        ..., gt=0, description="Aggregation interval in minutes"
+        ...,
+        gt=0,
+        description="Aggregation interval in minutes",
     )
 
     avg_throughput: float = Field(0.0, ge=0, description="Average throughput")
     avg_success_rate: float = Field(
-        0.0, ge=0, le=100, description="Average success rate"
+        0.0,
+        ge=0,
+        le=100,
+        description="Average success rate",
     )
     avg_efficiency: float = Field(0.0, ge=0, le=100, description="Average efficiency")
     avg_cost_per_task: float = Field(0.0, ge=0, description="Average cost per task")
@@ -32,9 +37,13 @@ class ModelMetricsAggregation(BaseModel):
     total_cost: float = Field(0.0, ge=0, description="Total cost in period")
 
     uptime_percent: float = Field(
-        0.0, ge=0, le=100, description="System uptime percentage"
+        0.0,
+        ge=0,
+        le=100,
+        description="System uptime percentage",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Aggregation timestamp"
+        default_factory=datetime.utcnow,
+        description="Aggregation timestamp",
     )

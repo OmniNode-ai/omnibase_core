@@ -7,14 +7,12 @@ Provides response wrapping with status, data, and error information.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.model.core.model_semver import ModelSemVer
-
-from ..protocols.protocol_onex_validation import ModelOnexMetadata
+from omnibase_core.model.protocols.protocol_onex_validation import ModelOnexMetadata
 
 
 class EnumOnexReplyStatus(str, Enum):
@@ -34,14 +32,17 @@ class ModelOnexErrorDetails(BaseModel):
     error_code: str = Field(description="Machine-readable error code")
     error_message: str = Field(description="Human-readable error message")
     error_type: str = Field(description="Error classification")
-    stack_trace: Optional[str] = Field(
-        default=None, description="Stack trace if available"
+    stack_trace: str | None = Field(
+        default=None,
+        description="Stack trace if available",
     )
-    additional_context: Dict[str, str] = Field(
-        default_factory=dict, description="Additional error context"
+    additional_context: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional error context",
     )
-    resolution_suggestions: List[str] = Field(
-        default_factory=list, description="Suggested resolution steps"
+    resolution_suggestions: list[str] = Field(
+        default_factory=list,
+        description="Suggested resolution steps",
     )
 
     class Config:
@@ -52,17 +53,21 @@ class ModelOnexPerformanceMetrics(BaseModel):
     """Performance metrics for Onex replies."""
 
     processing_time_ms: float = Field(description="Processing time in milliseconds")
-    queue_time_ms: Optional[float] = Field(
-        default=None, description="Queue time in milliseconds"
+    queue_time_ms: float | None = Field(
+        default=None,
+        description="Queue time in milliseconds",
     )
-    network_time_ms: Optional[float] = Field(
-        default=None, description="Network time in milliseconds"
+    network_time_ms: float | None = Field(
+        default=None,
+        description="Network time in milliseconds",
     )
-    memory_usage_mb: Optional[float] = Field(
-        default=None, description="Memory usage in MB"
+    memory_usage_mb: float | None = Field(
+        default=None,
+        description="Memory usage in MB",
     )
-    cpu_usage_percent: Optional[float] = Field(
-        default=None, description="CPU usage percentage"
+    cpu_usage_percent: float | None = Field(
+        default=None,
+        description="CPU usage percentage",
     )
 
     class Config:
@@ -81,7 +86,8 @@ class ModelOnexReply(BaseModel):
     reply_id: UUID = Field(default_factory=uuid4, description="Unique reply identifier")
     correlation_id: UUID = Field(description="Request correlation identifier")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Reply creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Reply creation timestamp",
     )
 
     # === STATUS INFORMATION ===
@@ -89,34 +95,40 @@ class ModelOnexReply(BaseModel):
     success: bool = Field(description="Whether operation succeeded")
 
     # === DATA PAYLOAD ===
-    data: Optional[BaseModel] = Field(default=None, description="Response data")
-    data_type: Optional[str] = Field(default=None, description="Type of response data")
+    data: BaseModel | None = Field(default=None, description="Response data")
+    data_type: str | None = Field(default=None, description="Type of response data")
 
     # === ERROR INFORMATION ===
-    error: Optional[ModelOnexErrorDetails] = Field(
-        default=None, description="Error details if applicable"
+    error: ModelOnexErrorDetails | None = Field(
+        default=None,
+        description="Error details if applicable",
     )
-    validation_errors: List[str] = Field(
-        default_factory=list, description="Validation error messages"
+    validation_errors: list[str] = Field(
+        default_factory=list,
+        description="Validation error messages",
     )
 
     # === ROUTING INFORMATION ===
-    source_tool: Optional[str] = Field(
-        default=None, description="Source tool identifier"
+    source_tool: str | None = Field(
+        default=None,
+        description="Source tool identifier",
     )
-    target_tool: Optional[str] = Field(
-        default=None, description="Target tool identifier"
+    target_tool: str | None = Field(
+        default=None,
+        description="Target tool identifier",
     )
-    operation: Optional[str] = Field(default=None, description="Completed operation")
+    operation: str | None = Field(default=None, description="Completed operation")
 
     # === PERFORMANCE METRICS ===
-    performance: Optional[ModelOnexPerformanceMetrics] = Field(
-        default=None, description="Performance metrics"
+    performance: ModelOnexPerformanceMetrics | None = Field(
+        default=None,
+        description="Performance metrics",
     )
 
     # === METADATA ===
-    metadata: Optional[ModelOnexMetadata] = Field(
-        default=None, description="Additional reply metadata"
+    metadata: ModelOnexMetadata | None = Field(
+        default=None,
+        description="Additional reply metadata",
     )
 
     # === Onex COMPLIANCE ===
@@ -130,16 +142,18 @@ class ModelOnexReply(BaseModel):
     )
 
     # === TRACKING INFORMATION ===
-    request_id: Optional[str] = Field(default=None, description="Request identifier")
-    trace_id: Optional[str] = Field(
-        default=None, description="Distributed trace identifier"
+    request_id: str | None = Field(default=None, description="Request identifier")
+    trace_id: str | None = Field(
+        default=None,
+        description="Distributed trace identifier",
     )
-    span_id: Optional[str] = Field(default=None, description="Trace span identifier")
+    span_id: str | None = Field(default=None, description="Trace span identifier")
 
     # === ADDITIONAL CONTEXT ===
-    warnings: List[str] = Field(default_factory=list, description="Warning messages")
-    debug_info: Optional[Dict[str, str]] = Field(
-        default=None, description="Debug information for development"
+    warnings: list[str] = Field(default_factory=list, description="Warning messages")
+    debug_info: dict[str, str] | None = Field(
+        default=None,
+        description="Debug information for development",
     )
 
     class Config:
@@ -151,38 +165,45 @@ class ModelOnexReply(BaseModel):
 
     @validator("success", always=True)
     def validate_success_consistency(
-        cls, v: bool, values: Dict[str, Union[bool, str, ModelOnexErrorDetails]]
+        self,
+        v: bool,
+        values: dict[str, bool | str | ModelOnexErrorDetails],
     ) -> bool:
         """Validate success field consistency with status."""
         status = values.get("status")
         if status == EnumOnexReplyStatus.SUCCESS:
             return True
-        elif status in [
+        if status in [
             EnumOnexReplyStatus.FAILURE,
             EnumOnexReplyStatus.ERROR,
             EnumOnexReplyStatus.TIMEOUT,
             EnumOnexReplyStatus.VALIDATION_ERROR,
         ]:
             return False
-        elif status == EnumOnexReplyStatus.PARTIAL_SUCCESS:
+        if status == EnumOnexReplyStatus.PARTIAL_SUCCESS:
             # Partial success can be either true or false depending on context
             return v
         return v
 
     @validator("data_type")
     def validate_data_type_consistency(
-        cls, v: Optional[str], values: Dict[str, Union[str, BaseModel]]
-    ) -> Optional[str]:
+        self,
+        v: str | None,
+        values: dict[str, str | BaseModel],
+    ) -> str | None:
         """Validate data_type is specified when data is present."""
         data = values.get("data")
         if data is not None and (v is None or not v.strip()):
-            raise ValueError("data_type must be specified when data is present")
+            msg = "data_type must be specified when data is present"
+            raise ValueError(msg)
         return v
 
     @validator("error")
     def validate_error_consistency(
-        cls, v: Optional[ModelOnexErrorDetails], values: Dict[str, Union[bool, str]]
-    ) -> Optional[ModelOnexErrorDetails]:
+        self,
+        v: ModelOnexErrorDetails | None,
+        values: dict[str, bool | str],
+    ) -> ModelOnexErrorDetails | None:
         """Validate error details consistency with status."""
         status = values.get("status")
         success = values.get("success", True)
@@ -192,7 +213,8 @@ class ModelOnexReply(BaseModel):
             and status in [EnumOnexReplyStatus.ERROR, EnumOnexReplyStatus.FAILURE]
             and v is None
         ):
-            raise ValueError("Error details must be provided for error/failure status")
+            msg = "Error details must be provided for error/failure status"
+            raise ValueError(msg)
 
         return v
 
@@ -201,9 +223,9 @@ class ModelOnexReply(BaseModel):
         cls,
         data: BaseModel,
         correlation_id: UUID,
-        data_type: Optional[str] = None,
-        metadata: Optional[ModelOnexMetadata] = None,
-        performance_metrics: Optional[ModelOnexPerformanceMetrics] = None,
+        data_type: str | None = None,
+        metadata: ModelOnexMetadata | None = None,
+        performance_metrics: ModelOnexPerformanceMetrics | None = None,
     ) -> "ModelOnexReply":
         """
         Create a successful Onex reply.
@@ -233,10 +255,10 @@ class ModelOnexReply(BaseModel):
         cls,
         correlation_id: UUID,
         error_message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         error_type: str = "general_error",
-        additional_context: Optional[Dict[str, str]] = None,
-        metadata: Optional[ModelOnexMetadata] = None,
+        additional_context: dict[str, str] | None = None,
+        metadata: ModelOnexMetadata | None = None,
     ) -> "ModelOnexReply":
         """
         Create an error Onex reply.
@@ -271,8 +293,8 @@ class ModelOnexReply(BaseModel):
     def create_validation_error(
         cls,
         correlation_id: UUID,
-        validation_errors: List[str],
-        metadata: Optional[ModelOnexMetadata] = None,
+        validation_errors: list[str],
+        metadata: ModelOnexMetadata | None = None,
     ) -> "ModelOnexReply":
         """
         Create a validation error Onex reply.
@@ -319,7 +341,8 @@ class ModelOnexReply(BaseModel):
         return self.copy(update={"warnings": new_warnings})
 
     def with_performance_metrics(
-        self, metrics: ModelOnexPerformanceMetrics
+        self,
+        metrics: ModelOnexPerformanceMetrics,
     ) -> "ModelOnexReply":
         """
         Add performance metrics to the reply.
@@ -333,7 +356,10 @@ class ModelOnexReply(BaseModel):
         return self.copy(update={"performance": metrics})
 
     def with_routing(
-        self, source_tool: str, target_tool: str, operation: str
+        self,
+        source_tool: str,
+        target_tool: str,
+        operation: str,
     ) -> "ModelOnexReply":
         """
         Add routing information to the reply.
@@ -351,11 +377,14 @@ class ModelOnexReply(BaseModel):
                 "source_tool": source_tool,
                 "target_tool": target_tool,
                 "operation": operation,
-            }
+            },
         )
 
     def with_tracing(
-        self, trace_id: str, span_id: str, request_id: Optional[str] = None
+        self,
+        trace_id: str,
+        span_id: str,
+        request_id: str | None = None,
     ) -> "ModelOnexReply":
         """
         Add distributed tracing information to the reply.
@@ -369,7 +398,7 @@ class ModelOnexReply(BaseModel):
             New reply instance with tracing information
         """
         return self.copy(
-            update={"trace_id": trace_id, "span_id": span_id, "request_id": request_id}
+            update={"trace_id": trace_id, "span_id": span_id, "request_id": request_id},
         )
 
     def is_success(self) -> bool:
@@ -392,19 +421,19 @@ class ModelOnexReply(BaseModel):
         """Check if reply contains warnings."""
         return len(self.warnings) > 0
 
-    def get_processing_time_ms(self) -> Optional[float]:
+    def get_processing_time_ms(self) -> float | None:
         """Get processing time in milliseconds."""
         return self.performance.processing_time_ms if self.performance else None
 
-    def get_error_message(self) -> Optional[str]:
+    def get_error_message(self) -> str | None:
         """Get error message if present."""
         return self.error.error_message if self.error else None
 
-    def get_error_code(self) -> Optional[str]:
+    def get_error_code(self) -> str | None:
         """Get error code if present."""
         return self.error.error_code if self.error else None
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert reply to dictionary representation."""
         return {
             "reply_id": str(self.reply_id),

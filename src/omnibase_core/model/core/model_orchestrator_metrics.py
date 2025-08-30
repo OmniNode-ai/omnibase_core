@@ -2,8 +2,6 @@
 Orchestrator metrics model.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -13,11 +11,13 @@ class ModelOrchestratorMetrics(BaseModel):
     active_workflows: int = Field(0, description="Number of active workflows")
     completed_workflows: int = Field(0, description="Number of completed workflows")
     failed_workflows: int = Field(0, description="Number of failed workflows")
-    avg_execution_time_seconds: Optional[float] = Field(
-        None, description="Average execution time"
+    avg_execution_time_seconds: float | None = Field(
+        None,
+        description="Average execution time",
     )
-    resource_utilization_percent: Optional[float] = Field(
-        None, description="Resource utilization"
+    resource_utilization_percent: float | None = Field(
+        None,
+        description="Resource utilization",
     )
 
     def get_total_workflows(self) -> int:

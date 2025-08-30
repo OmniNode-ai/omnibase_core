@@ -7,34 +7,44 @@ Extracted from model_service_configuration.py for modular architecture complianc
 Author: OmniNode Team
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_fallback_strategy import (
-    FallbackStrategyType, ModelFallbackStrategy)
+    FallbackStrategyType,
+    ModelFallbackStrategy,
+)
 
 
 class ModelRegistryModeConfig(BaseModel):
     """Configuration for a registry mode (production, development, etc.)."""
 
-    required_services: List[str] = Field(
-        default_factory=list, description="List of service names required for this mode"
+    required_services: list[str] = Field(
+        default_factory=list,
+        description="List of service names required for this mode",
     )
     fallback_strategy: ModelFallbackStrategy = Field(
         default_factory=lambda: ModelFallbackStrategy(
-            strategy_type=FallbackStrategyType.BOOTSTRAP
+            strategy_type=FallbackStrategyType.BOOTSTRAP,
         ),
         description="Fallback strategy configuration when required services unavailable",
     )
     health_check_interval: int = Field(
-        30, description="Health check interval in seconds", ge=5, le=300
+        30,
+        description="Health check interval in seconds",
+        ge=5,
+        le=300,
     )
     circuit_breaker_threshold: int = Field(
-        5, description="Number of failures before circuit breaker opens", ge=1, le=20
+        5,
+        description="Number of failures before circuit breaker opens",
+        ge=1,
+        le=20,
     )
     circuit_breaker_timeout: int = Field(
-        60, description="Circuit breaker timeout in seconds", ge=10, le=600
+        60,
+        description="Circuit breaker timeout in seconds",
+        ge=10,
+        le=600,
     )
 
     def has_required_services(self) -> bool:

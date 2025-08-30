@@ -3,7 +3,6 @@ OnexOutputState model.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, field_validator
@@ -27,12 +26,12 @@ class ModelOnexOutputState(BaseModel):
     version: ModelSemVer
     status: EnumOnexStatus
     message: str
-    output_field: Optional[ModelOnexField] = None
-    event_id: Optional[UUID] = None
-    correlation_id: Optional[UUID] = None
-    node_name: Optional[str] = None
-    node_version: Optional[ModelSemVer] = None
-    timestamp: Optional[datetime] = None
+    output_field: ModelOnexField | None = None
+    event_id: UUID | None = None
+    correlation_id: UUID | None = None
+    node_name: str | None = None
+    node_version: ModelSemVer | None = None
+    timestamp: datetime | None = None
 
     @field_validator("version", mode="before")
     @classmethod
@@ -44,7 +43,8 @@ class ModelOnexOutputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("version must be a string, dict, or ModelSemVer")
+        msg = "version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("node_version", mode="before")
     @classmethod
@@ -58,7 +58,8 @@ class ModelOnexOutputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("node_version must be a string, dict, or ModelSemVer")
+        msg = "node_version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("event_id", "correlation_id")
     @classmethod
@@ -74,7 +75,8 @@ class ModelOnexOutputState(BaseModel):
 
     @classmethod
     def from_internal_state(
-        cls, internal_state: "ModelOnexInternalOutputState"
+        cls,
+        internal_state: "ModelOnexInternalOutputState",
     ) -> "ModelOnexOutputState":
         """
         Create boundary output state from internal state.

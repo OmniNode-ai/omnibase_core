@@ -7,12 +7,9 @@ for the infrastructure tool group following modern 4-node architecture.
 """
 
 import asyncio
-import json
-import os
 import time
 from importlib import import_module
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 import yaml
@@ -25,8 +22,11 @@ from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import OnexEvent
 from omnibase_core.model.registry.model_registry_event import (
-    ModelRegistryRequestEvent, ModelRegistryResponseEvent, RegistryOperations,
-    get_operation_for_endpoint)
+    ModelRegistryRequestEvent,
+    ModelRegistryResponseEvent,
+    RegistryOperations,
+    get_operation_for_endpoint,
+)
 
 
 class ToolInfrastructureReducer(NodeReducerService):
@@ -49,13 +49,13 @@ class ToolInfrastructureReducer(NodeReducerService):
         # Infrastructure-specific attributes
         self.loaded_adapters = {}
         self.specialized_components = {}
-        self._pending_registry_requests: Dict[str, asyncio.Future] = {}
+        self._pending_registry_requests: dict[str, asyncio.Future] = {}
         self._event_bus_active = False
 
         # Initialize all infrastructure adapters placeholders
-        self._consul_adapter: Optional[object] = None
-        self._vault_adapter: Optional[object] = None
-        self._kafka_adapter: Optional[object] = None
+        self._consul_adapter: object | None = None
+        self._vault_adapter: object | None = None
+        self._kafka_adapter: object | None = None
 
         # Load infrastructure components
         self._load_infrastructure_adapters()
@@ -65,17 +65,13 @@ class ToolInfrastructureReducer(NodeReducerService):
         if hasattr(self, "logger") and self.logger:
             self.logger.info("✅ Infrastructure Reducer initialized")
             self.logger.info(
-                f"   📦 Loaded Adapters: {list(self.loaded_adapters.keys())}"
+                f"   📦 Loaded Adapters: {list(self.loaded_adapters.keys())}",
             )
             self.logger.info(
-                f"   🔧 Specialized Components: {list(self.specialized_components.keys())}"
+                f"   🔧 Specialized Components: {list(self.specialized_components.keys())}",
             )
         else:
-            print("✅ Infrastructure Reducer initialized")
-            print(f"   📦 Loaded Adapters: {list(self.loaded_adapters.keys())}")
-            print(
-                f"   🔧 Specialized Components: {list(self.specialized_components.keys())}"
-            )
+            pass
 
     def get_introspection_data(self) -> dict:
         """
@@ -113,7 +109,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                     "actions": ["health_check", "aggregate_health_status"],
                     "protocols": ["event_bus", "http"],
                     "metadata": {
-                        "description": "Infrastructure reducer with adapter orchestration"
+                        "description": "Infrastructure reducer with adapter orchestration",
                     },
                     "tags": ["infrastructure", "reducer", "service"],
                 }
@@ -127,7 +123,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                         "type": "infrastructure_adapter",
                         "class": adapter_instance.__class__.__name__,
                         "status": "loaded",
-                    }
+                    },
                 )
 
             component_info = []
@@ -136,11 +132,12 @@ class ToolInfrastructureReducer(NodeReducerService):
                     {
                         "name": component_name,
                         "type": component_data.get(
-                            "component_type", "specialized_component"
+                            "component_type",
+                            "specialized_component",
                         ),
                         "class": component_data["instance"].__class__.__name__,
                         "status": "loaded",
-                    }
+                    },
                 )
 
             # Enhanced introspection data with infrastructure details
@@ -160,7 +157,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                             "service_discovery",
                         ],
                     },
-                }
+                },
             )
 
             return enhanced_data
@@ -173,7 +170,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                 "actions": ["health_check"],
                 "protocols": ["event_bus"],
                 "metadata": {
-                    "description": f"Infrastructure reducer (introspection error: {e})"
+                    "description": f"Infrastructure reducer (introspection error: {e})",
                 },
                 "tags": ["infrastructure", "reducer", "error"],
                 "infrastructure_tools": {
@@ -217,7 +214,7 @@ class ToolInfrastructureReducer(NodeReducerService):
             try:
                 self._setup_infrastructure_introspection()
                 self._log_info(
-                    "Infrastructure introspection handlers registered successfully"
+                    "Infrastructure introspection handlers registered successfully",
                 )
             except Exception as e:
                 self._log_error(f"Failed to set up infrastructure introspection: {e}")
@@ -229,7 +226,7 @@ class ToolInfrastructureReducer(NodeReducerService):
             self._register_signal_handlers()
 
             self._log_info(
-                "Service started successfully - with EventBusClient created in async context"
+                "Service started successfully - with EventBusClient created in async context",
             )
 
             # Main service event loop
@@ -252,7 +249,6 @@ class ToolInfrastructureReducer(NodeReducerService):
         by implementing our own introspection in _setup_infrastructure_introspection.
         """
         # Skip the problematic mixin setup - we handle introspection manually
-        pass
 
     def _setup_infrastructure_introspection(self) -> None:
         """
@@ -264,7 +260,6 @@ class ToolInfrastructureReducer(NodeReducerService):
         from omnibase_core.constants.event_types import CoreEventTypes
 
         if not hasattr(self, "_event_bus") or self._event_bus is None:
-            print("   ⚠️ No event bus available for introspection subscription")
             return
 
         try:
@@ -275,8 +270,6 @@ class ToolInfrastructureReducer(NodeReducerService):
                 CoreEventTypes.NODE_INTROSPECTION_EVENT,
             )
 
-            print(f"   🔍 Subscribed to {CoreEventTypes.NODE_INTROSPECTION_EVENT}")
-
             # CRITICAL FIX: Also subscribe to realtime_request events from CLI
             # The CLI sends "core.discovery.realtime_request" events for tool discovery
             self._event_bus.subscribe(
@@ -284,12 +277,8 @@ class ToolInfrastructureReducer(NodeReducerService):
                 CoreEventTypes.REQUEST_REAL_TIME_INTROSPECTION,
             )
 
-            print(
-                f"   🔍 Subscribed to {CoreEventTypes.REQUEST_REAL_TIME_INTROSPECTION}"
-            )
-
-        except Exception as e:
-            print(f"   ❌ Failed to set up infrastructure introspection: {e}")
+        except Exception:
+            pass
 
     def _handle_infrastructure_introspection_request(self, event) -> None:
         """
@@ -300,15 +289,14 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             from uuid import uuid4
 
-            from omnibase_core.model.discovery.enum_node_current_status import \
-                NodeCurrentStatusEnum
-            from omnibase_core.model.discovery.model_current_tool_availability import \
-                ModelCurrentToolAvailability
-            from omnibase_core.model.discovery.model_introspection_response_event import \
-                ModelIntrospectionResponseEvent
-
-            print(
-                f"   🔍 Handling introspection request from {getattr(event, 'source_node_id', 'unknown')}"
+            from omnibase_core.model.discovery.enum_node_current_status import (
+                NodeCurrentStatusEnum,
+            )
+            from omnibase_core.model.discovery.model_current_tool_availability import (
+                ModelCurrentToolAvailability,
+            )
+            from omnibase_core.model.discovery.model_introspection_response_event import (
+                ModelIntrospectionResponseEvent,
             )
 
             # Get introspection data for our infrastructure tools
@@ -319,7 +307,8 @@ class ToolInfrastructureReducer(NodeReducerService):
 
             # Add infrastructure adapters as tools
             for adapter_info in introspection_data.get("infrastructure_tools", {}).get(
-                "adapters", []
+                "adapters",
+                [],
             ):
                 tool_availabilities.append(
                     ModelCurrentToolAvailability(
@@ -330,12 +319,13 @@ class ToolInfrastructureReducer(NodeReducerService):
                         last_seen=int(__import__("time").time()),
                         performance_metrics=None,
                         resource_usage=None,
-                    )
+                    ),
                 )
 
             # Add specialized components as tools
             for component_info in introspection_data.get(
-                "infrastructure_tools", {}
+                "infrastructure_tools",
+                {},
             ).get("components", []):
                 tool_availabilities.append(
                     ModelCurrentToolAvailability(
@@ -346,7 +336,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                         last_seen=int(__import__("time").time()),
                         performance_metrics=None,
                         resource_usage=None,
-                    )
+                    ),
                 )
 
             # Create and publish introspection response
@@ -366,16 +356,13 @@ class ToolInfrastructureReducer(NodeReducerService):
             # Publish the response via event bus
             if hasattr(self, "_event_bus") and self._event_bus:
                 self._event_bus.publish(
-                    "core.discovery.realtime_response", response_event.model_dump()
-                )
-                print(
-                    f"   ✅ Published introspection response with {len(tool_availabilities)} tools"
+                    "core.discovery.realtime_response",
+                    response_event.model_dump(),
                 )
             else:
-                print("   ⚠️ No event bus available to publish response")
+                pass
 
-        except Exception as e:
-            print(f"   ❌ Failed to handle introspection request: {e}")
+        except Exception:
             import traceback
 
             traceback.print_exc()
@@ -389,11 +376,12 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             # Get adapter configuration from contract
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 contract = yaml.safe_load(f)
 
             loaded_adapters_config = contract.get("infrastructure_services", {}).get(
-                "loaded_adapters", []
+                "loaded_adapters",
+                [],
             )
 
             for adapter_config in loaded_adapters_config:
@@ -404,28 +392,35 @@ class ToolInfrastructureReducer(NodeReducerService):
                 try:
                     # Load adapter using metadata-driven discovery
                     adapter_instance = self._load_adapter_from_metadata(
-                        adapter_name, onex_metadata_path, version_strategy
+                        adapter_name,
+                        onex_metadata_path,
+                        version_strategy,
                     )
                     self.loaded_adapters[adapter_name] = adapter_instance
                     if hasattr(self, "logger") and self.logger:
                         self.logger.info(f"   ✅ Loaded {adapter_name}")
                     else:
-                        print(f"   ✅ Loaded {adapter_name}")
+                        pass
 
                 except Exception as e:
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.error(f"   ❌ Failed to load {adapter_name}: {e}")
+                        self.logger.exception(
+                            f"   ❌ Failed to load {adapter_name}: {e}"
+                        )
                     else:
-                        print(f"   ❌ Failed to load {adapter_name}: {e}")
+                        pass
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
-                self.logger.error(f"Failed to load infrastructure adapters: {e}")
+                self.logger.exception(f"Failed to load infrastructure adapters: {e}")
             else:
-                print(f"Failed to load infrastructure adapters: {e}")
+                pass
 
     def _load_adapter_from_metadata(
-        self, adapter_name: str, metadata_path: str, version_strategy: str
+        self,
+        adapter_name: str,
+        metadata_path: str,
+        version_strategy: str,
     ):
         """
         Load a single adapter using tool.manifest.yaml metadata.
@@ -446,7 +441,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         # Build path from current location - we're at src/omnibase/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/
         # Go up 2 levels to get to src/omnibase/tools/infrastructure/
         infrastructure_root = Path(
-            __file__
+            __file__,
         ).parent.parent.parent  # Go up to infrastructure/
         # path_parts = ['omnibase', 'tools', 'infrastructure', 'tool_infrastructure_consul_adapter_effect']
         # We need the last part (tool_infrastructure_consul_adapter_effect) since we're already in infrastructure/
@@ -456,7 +451,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         )
 
         # Load metadata
-        with open(metadata_file_path, "r") as f:
+        with open(metadata_file_path) as f:
             metadata = yaml.safe_load(f)
 
         # Resolve version using strategy
@@ -497,11 +492,12 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             # Get specialized components configuration from contract
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 contract = yaml.safe_load(f)
 
             specialized_components_config = contract.get(
-                "infrastructure_services", {}
+                "infrastructure_services",
+                {},
             ).get("specialized_components", [])
 
             for component_config in specialized_components_config:
@@ -509,16 +505,20 @@ class ToolInfrastructureReducer(NodeReducerService):
                 onex_metadata_path = component_config["onex_node_metadata"]
                 version_strategy = component_config["version_strategy"]
                 component_type = component_config.get(
-                    "component_type", "delegated_reducer"
+                    "component_type",
+                    "delegated_reducer",
                 )
                 readiness_check = component_config.get(
-                    "delegation_readiness_check", "infrastructure_ready"
+                    "delegation_readiness_check",
+                    "infrastructure_ready",
                 )
 
                 try:
                     # Load component using metadata-driven discovery
                     component_instance = self._load_adapter_from_metadata(
-                        component_name, onex_metadata_path, version_strategy
+                        component_name,
+                        onex_metadata_path,
+                        version_strategy,
                     )
 
                     # Store component with metadata
@@ -531,32 +531,29 @@ class ToolInfrastructureReducer(NodeReducerService):
 
                     if hasattr(self, "logger") and self.logger:
                         self.logger.info(
-                            f"   ✅ Loaded specialized component {component_name} ({component_type})"
+                            f"   ✅ Loaded specialized component {component_name} ({component_type})",
                         )
                     else:
-                        print(
-                            f"   ✅ Loaded specialized component {component_name} ({component_type})"
-                        )
+                        pass
 
                 except Exception as e:
                     if hasattr(self, "logger") and self.logger:
-                        self.logger.error(
-                            f"   ❌ Failed to load specialized component {component_name}: {e}"
+                        self.logger.exception(
+                            f"   ❌ Failed to load specialized component {component_name}: {e}",
                         )
                     else:
-                        print(
-                            f"   ❌ Failed to load specialized component {component_name}: {e}"
-                        )
+                        pass
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
-                self.logger.error(f"Failed to load specialized components: {e}")
+                self.logger.exception(f"Failed to load specialized components: {e}")
             else:
-                print(f"Failed to load specialized components: {e}")
+                pass
 
     async def aggregate_health_status(
-        self, adapter_health_statuses: Dict[str, object]
-    ) -> Dict[str, object]:
+        self,
+        adapter_health_statuses: dict[str, object],
+    ) -> dict[str, object]:
         """
         Legacy health aggregation method - replaced by modernized health_check().
 
@@ -704,13 +701,13 @@ class ToolInfrastructureReducer(NodeReducerService):
             )
 
         except Exception as e:
-            self.logger.error(f"Infrastructure health check failed: {e}")
+            self.logger.exception(f"Infrastructure health check failed: {e}")
             return ModelHealthStatus(
                 status=EnumHealthStatus.UNHEALTHY,
-                message=f"Health check system failure: {str(e)}",
+                message=f"Health check system failure: {e!s}",
             )
 
-    async def get_infrastructure_status(self) -> Dict[str, object]:
+    async def get_infrastructure_status(self) -> dict[str, object]:
         """
         Get current infrastructure aggregation and readiness status.
 
@@ -760,7 +757,7 @@ class ToolInfrastructureReducer(NodeReducerService):
             },
         }
 
-    async def list_loaded_adapters(self) -> Dict[str, object]:
+    async def list_loaded_adapters(self) -> dict[str, object]:
         """
         List all loaded infrastructure adapters and specialized components.
 
@@ -789,8 +786,11 @@ class ToolInfrastructureReducer(NodeReducerService):
         }
 
     async def delegate_registry_request(
-        self, registry_request: Dict[str, object], endpoint_path: str, http_method: str
-    ) -> Dict[str, object]:
+        self,
+        registry_request: dict[str, object],
+        endpoint_path: str,
+        http_method: str,
+    ) -> dict[str, object]:
         """
         Delegate registry requests via event-driven communication with registry catalog aggregator.
 
@@ -818,7 +818,9 @@ class ToolInfrastructureReducer(NodeReducerService):
             # Check if event bus is available and active
             if not self._event_bus_active or not hasattr(self, "event_bus"):
                 return await self._fallback_to_direct_calls(
-                    registry_request, endpoint_path, http_method
+                    registry_request,
+                    endpoint_path,
+                    http_method,
                 )
 
             # Get operation name for the endpoint
@@ -839,15 +841,18 @@ class ToolInfrastructureReducer(NodeReducerService):
 
             # Use event-driven communication
             return await self._send_registry_event_request(
-                operation, endpoint_path, http_method, registry_request
+                operation,
+                endpoint_path,
+                http_method,
+                registry_request,
             )
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
-                self.logger.error(f"Registry delegation error: {e}")
+                self.logger.exception(f"Registry delegation error: {e}")
             return {
                 "status": "error",
-                "message": f"Registry delegation failed: {str(e)}",
+                "message": f"Registry delegation failed: {e!s}",
                 "error_type": "delegation_error",
             }
 
@@ -856,9 +861,9 @@ class ToolInfrastructureReducer(NodeReducerService):
         operation: str,
         endpoint_path: str,
         http_method: str,
-        registry_request: Dict[str, object],
+        registry_request: dict[str, object],
         timeout_ms: int = 30000,
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         """
         Send registry request via event bus and wait for response.
 
@@ -922,12 +927,12 @@ class ToolInfrastructureReducer(NodeReducerService):
 
             # Wait for response with timeout
             try:
-                response_data = await asyncio.wait_for(
-                    response_future, timeout=timeout_ms / 1000.0
+                return await asyncio.wait_for(
+                    response_future,
+                    timeout=timeout_ms / 1000.0,
                 )
-                return response_data
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Clean up pending request
                 self._pending_registry_requests.pop(str(correlation_id), None)
 
@@ -943,14 +948,17 @@ class ToolInfrastructureReducer(NodeReducerService):
             # Clean up pending request
             self._pending_registry_requests.pop(str(correlation_id), None)
 
+            msg = f"Registry event request failed: {e!s}"
             raise OnexError(
-                f"Registry event request failed: {str(e)}",
+                msg,
                 error_code=CoreErrorCode.OPERATION_FAILED,
                 correlation_id=correlation_id,
             ) from e
 
     def _setup_registry_response_listener(
-        self, correlation_id: UUID, response_future: asyncio.Future
+        self,
+        correlation_id: UUID,
+        response_future: asyncio.Future,
     ) -> None:
         """
         Set up event listener for registry response with the given correlation ID.
@@ -983,7 +991,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                                         "message": response_data.error_message,
                                         "error_code": response_data.error_code,
                                         "correlation_id": str(correlation_id),
-                                    }
+                                    },
                                 )
 
                         # Unsubscribe after handling
@@ -991,7 +999,7 @@ class ToolInfrastructureReducer(NodeReducerService):
 
             except Exception as e:
                 if hasattr(self, "logger") and self.logger:
-                    self.logger.error(f"Error handling registry response: {e}")
+                    self.logger.exception(f"Error handling registry response: {e}")
 
                 if not response_future.done():
                     response_future.set_exception(e)
@@ -1000,8 +1008,11 @@ class ToolInfrastructureReducer(NodeReducerService):
         asyncio.create_task(self.event_bus.subscribe_async(response_handler))
 
     async def _fallback_to_direct_calls(
-        self, registry_request: Dict[str, object], endpoint_path: str, http_method: str
-    ) -> Dict[str, object]:
+        self,
+        registry_request: dict[str, object],
+        endpoint_path: str,
+        http_method: str,
+    ) -> dict[str, object]:
         """
         Fallback to direct method calls when event bus is not available.
 
@@ -1016,7 +1027,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             # Get registry catalog aggregator component
             registry_component = self.specialized_components.get(
-                "registry_catalog_aggregator"
+                "registry_catalog_aggregator",
             )
             if not registry_component:
                 return {
@@ -1031,91 +1042,83 @@ class ToolInfrastructureReducer(NodeReducerService):
             if endpoint_path == "/registry/tools" and http_method == "GET":
                 if hasattr(registry_instance, "list_registry_tools"):
                     return await registry_instance.list_registry_tools()
-                else:
-                    return {
-                        "status": "error",
-                        "message": "list_registry_tools method not available",
-                    }
-
-            elif endpoint_path == "/registry/catalog" and http_method == "GET":
-                if hasattr(registry_instance, "get_aggregated_catalog"):
-                    return await registry_instance.get_aggregated_catalog()
-                else:
-                    return {
-                        "status": "error",
-                        "message": "get_aggregated_catalog method not available",
-                    }
-
-            elif endpoint_path == "/registry/metrics" and http_method == "GET":
-                if hasattr(registry_instance, "get_aggregation_metrics"):
-                    return await registry_instance.get_aggregation_metrics()
-                else:
-                    return {
-                        "status": "error",
-                        "message": "get_aggregation_metrics method not available",
-                    }
-
-            elif endpoint_path == "/registry/bootstrap" and http_method == "POST":
-                if hasattr(registry_instance, "trigger_bootstrap_workflow"):
-                    return await registry_instance.trigger_bootstrap_workflow(
-                        registry_request
-                    )
-                else:
-                    return {
-                        "status": "error",
-                        "message": "trigger_bootstrap_workflow method not available",
-                    }
-
-            elif (
-                endpoint_path == "/registry/hello-coordinate" and http_method == "POST"
-            ):
-                if hasattr(registry_instance, "trigger_hello_coordination"):
-                    return await registry_instance.trigger_hello_coordination(
-                        registry_request
-                    )
-                else:
-                    return {
-                        "status": "error",
-                        "message": "trigger_hello_coordination method not available",
-                    }
-
-            elif endpoint_path == "/registry/consul-sync" and http_method == "POST":
-                if hasattr(registry_instance, "trigger_consul_sync"):
-                    return await registry_instance.trigger_consul_sync(registry_request)
-                else:
-                    return {
-                        "status": "error",
-                        "message": "trigger_consul_sync method not available",
-                    }
-
-            else:
                 return {
                     "status": "error",
-                    "message": f"Unsupported registry endpoint: {http_method} {endpoint_path}",
-                    "supported_endpoints": [
-                        "GET /registry/tools",
-                        "GET /registry/catalog",
-                        "GET /registry/metrics",
-                        "POST /registry/bootstrap",
-                        "POST /registry/hello-coordinate",
-                        "POST /registry/consul-sync",
-                    ],
+                    "message": "list_registry_tools method not available",
                 }
+
+            if endpoint_path == "/registry/catalog" and http_method == "GET":
+                if hasattr(registry_instance, "get_aggregated_catalog"):
+                    return await registry_instance.get_aggregated_catalog()
+                return {
+                    "status": "error",
+                    "message": "get_aggregated_catalog method not available",
+                }
+
+            if endpoint_path == "/registry/metrics" and http_method == "GET":
+                if hasattr(registry_instance, "get_aggregation_metrics"):
+                    return await registry_instance.get_aggregation_metrics()
+                return {
+                    "status": "error",
+                    "message": "get_aggregation_metrics method not available",
+                }
+
+            if endpoint_path == "/registry/bootstrap" and http_method == "POST":
+                if hasattr(registry_instance, "trigger_bootstrap_workflow"):
+                    return await registry_instance.trigger_bootstrap_workflow(
+                        registry_request,
+                    )
+                return {
+                    "status": "error",
+                    "message": "trigger_bootstrap_workflow method not available",
+                }
+
+            if endpoint_path == "/registry/hello-coordinate" and http_method == "POST":
+                if hasattr(registry_instance, "trigger_hello_coordination"):
+                    return await registry_instance.trigger_hello_coordination(
+                        registry_request,
+                    )
+                return {
+                    "status": "error",
+                    "message": "trigger_hello_coordination method not available",
+                }
+
+            if endpoint_path == "/registry/consul-sync" and http_method == "POST":
+                if hasattr(registry_instance, "trigger_consul_sync"):
+                    return await registry_instance.trigger_consul_sync(registry_request)
+                return {
+                    "status": "error",
+                    "message": "trigger_consul_sync method not available",
+                }
+
+            return {
+                "status": "error",
+                "message": f"Unsupported registry endpoint: {http_method} {endpoint_path}",
+                "supported_endpoints": [
+                    "GET /registry/tools",
+                    "GET /registry/catalog",
+                    "GET /registry/metrics",
+                    "POST /registry/bootstrap",
+                    "POST /registry/hello-coordinate",
+                    "POST /registry/consul-sync",
+                ],
+            }
 
         except Exception as e:
             if hasattr(self, "logger") and self.logger:
-                self.logger.error(f"Direct registry call fallback error: {e}")
+                self.logger.exception(f"Direct registry call fallback error: {e}")
             return {
                 "status": "error",
-                "message": f"Registry direct call failed: {str(e)}",
+                "message": f"Registry direct call failed: {e!s}",
                 "error_type": "fallback_error",
             }
 
 
 def main():
     """Main entry point for Infrastructure Reducer - returns node instance with infrastructure container"""
-    from omnibase_core.tools.infrastructure.container import \
-        create_infrastructure_container
+    from omnibase_core.tools.infrastructure.container import (
+        create_infrastructure_container,
+    )
 
     container = create_infrastructure_container()
     return ToolInfrastructureReducer(container)

@@ -5,15 +5,13 @@ Defines the input parameters and configuration for advanced text preprocessing
 operations in the semantic discovery engine.
 """
 
-from typing import List, Optional
-
 from pydantic import ConfigDict, Field
 
 from omnibase_core.model.core.model_onex_base_state import ModelOnexInputState
-from omnibase_core.model.semantic.model_input_document import \
-    ModelInputDocument
-from omnibase_core.model.semantic.model_preprocessing_config import \
-    ModelPreprocessingConfig
+from omnibase_core.model.semantic.model_input_document import ModelInputDocument
+from omnibase_core.model.semantic.model_preprocessing_config import (
+    ModelPreprocessingConfig,
+)
 
 
 class ModelPreprocessingInputState(ModelOnexInputState):
@@ -24,8 +22,9 @@ class ModelPreprocessingInputState(ModelOnexInputState):
     and operation metadata required for advanced text preprocessing.
     """
 
-    documents: List[ModelInputDocument] = Field(
-        description="List of documents to process", min_items=1
+    documents: list[ModelInputDocument] = Field(
+        description="List of documents to process",
+        min_items=1,
     )
 
     config: ModelPreprocessingConfig = Field(
@@ -33,14 +32,18 @@ class ModelPreprocessingInputState(ModelOnexInputState):
         default_factory=ModelPreprocessingConfig,
     )
 
-    preserve_metadata: Optional[bool] = Field(
-        default=None, description="Override config setting for metadata preservation"
+    preserve_metadata: bool | None = Field(
+        default=None,
+        description="Override config setting for metadata preservation",
     )
 
     operation_mode: str = Field(
-        default="standard", description="Processing mode: standard, fast, thorough"
+        default="standard",
+        description="Processing mode: standard, fast, thorough",
     )
 
     model_config = ConfigDict(
-        use_enum_values=True, validate_assignment=True, extra="forbid"
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid",
     )

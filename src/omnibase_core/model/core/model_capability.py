@@ -6,7 +6,6 @@ with flexible, third-party extensible capabilities.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -23,13 +22,16 @@ class ModelCapability(BaseModel):
     """
 
     capability_id: UUID = Field(
-        default_factory=uuid4, description="Unique capability identifier"
+        default_factory=uuid4,
+        description="Unique capability identifier",
     )
 
     name: str = Field(..., description="Capability name", pattern="^[a-z][a-z0-9_]*$")
 
     namespace: str = Field(
-        default="onex", description="Capability namespace", pattern="^[a-z][a-z0-9._]*$"
+        default="onex",
+        description="Capability namespace",
+        pattern="^[a-z][a-z0-9._]*$",
     )
 
     version: ModelSemVer = Field(
@@ -47,26 +49,28 @@ class ModelCapability(BaseModel):
         pattern="^[a-z][a-z0-9_]*$",
     )
 
-    dependencies: List[str] = Field(
+    dependencies: list[str] = Field(
         default_factory=list,
         description="Required capability names (namespace:name format)",
     )
 
-    conflicts_with: List[str] = Field(
-        default_factory=list, description="Conflicting capability names"
+    conflicts_with: list[str] = Field(
+        default_factory=list,
+        description="Conflicting capability names",
     )
 
     deprecated: bool = Field(default=False, description="Deprecation flag")
 
-    deprecation_message: Optional[str] = Field(None, description="Deprecation message")
+    deprecation_message: str | None = Field(None, description="Deprecation message")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Creation timestamp",
     )
 
-    expires_at: Optional[datetime] = Field(None, description="Expiration timestamp")
+    expires_at: datetime | None = Field(None, description="Expiration timestamp")
 
-    tags: List[str] = Field(default_factory=list, description="Capability tags")
+    tags: list[str] = Field(default_factory=list, description="Capability tags")
 
     def get_qualified_name(self) -> str:
         """Get fully qualified capability name."""
@@ -154,7 +158,8 @@ class ModelCapability(BaseModel):
     def cli_interface(cls) -> "ModelCapability":
         """CLI interface capability."""
         return cls.create_onex_capability(
-            "cli_interface", "Provides CLI interface for command execution"
+            "cli_interface",
+            "Provides CLI interface for command execution",
         )
 
     @classmethod
@@ -166,14 +171,16 @@ class ModelCapability(BaseModel):
     def introspection(cls) -> "ModelCapability":
         """Introspection capability."""
         return cls.create_onex_capability(
-            "introspection", "Provides node introspection capabilities"
+            "introspection",
+            "Provides node introspection capabilities",
         )
 
     @classmethod
     def health_check(cls) -> "ModelCapability":
         """Health check capability."""
         return cls.create_onex_capability(
-            "health_check", "Provides health check endpoints"
+            "health_check",
+            "Provides health check endpoints",
         )
 
     @classmethod
@@ -185,7 +192,8 @@ class ModelCapability(BaseModel):
     def monitoring(cls) -> "ModelCapability":
         """Monitoring capability."""
         return cls.create_onex_capability(
-            "monitoring", "Provides monitoring and metrics"
+            "monitoring",
+            "Provides monitoring and metrics",
         )
 
     @classmethod
@@ -202,7 +210,8 @@ class ModelCapability(BaseModel):
     def networking(cls) -> "ModelCapability":
         """Networking capability."""
         return cls.create_onex_capability(
-            "networking", "Provides network communication"
+            "networking",
+            "Provides network communication",
         )
 
     @classmethod
@@ -219,7 +228,8 @@ class ModelCapability(BaseModel):
     def transformation(cls) -> "ModelCapability":
         """Transformation capability."""
         return cls.create_onex_capability(
-            "transformation", "Provides data transformation"
+            "transformation",
+            "Provides data transformation",
         )
 
     @classmethod
@@ -241,5 +251,6 @@ class ModelCapability(BaseModel):
     def create_execution_capability(cls) -> "ModelCapability":
         """Execution capability for comprehensive testing."""
         return cls.create_onex_capability(
-            "execution", "Provides node execution capabilities"
+            "execution",
+            "Provides node execution capabilities",
         )

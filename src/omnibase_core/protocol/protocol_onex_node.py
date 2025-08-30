@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Dict, Protocol, Type
+from typing import Any, Protocol
 
 
 class ProtocolOnexNode(Protocol):
@@ -49,7 +49,7 @@ class ProtocolOnexNode(Protocol):
         """
         ...
 
-    def get_node_config(self) -> Dict[str, Any]:
+    def get_node_config(self) -> dict[str, Any]:
         """
         Get the node's configuration information.
 
@@ -59,7 +59,7 @@ class ProtocolOnexNode(Protocol):
         """
         ...
 
-    def get_input_model(self) -> Type[Any]:
+    def get_input_model(self) -> type[Any]:
         """
         Get the expected input model type for this node.
 
@@ -68,7 +68,7 @@ class ProtocolOnexNode(Protocol):
         """
         ...
 
-    def get_output_model(self) -> Type[Any]:
+    def get_output_model(self) -> type[Any]:
         """
         Get the expected output model type for this node.
 

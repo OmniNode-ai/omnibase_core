@@ -4,7 +4,7 @@ This model provides type-safe access to logging policy configuration
 and ensures policy validation and compliance checking.
 """
 
-from typing import Dict, List, Literal, Optional, Union
+from typing import Literal
 
 import semver
 from pydantic import BaseModel, Field, validator
@@ -15,16 +15,16 @@ class ModelLoggingPattern(BaseModel):
 
     level: Literal["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
     template: str
-    fields: List[str]
-    conditions: Optional[List[str]] = None
-    performance_tracking: Optional[bool] = False
-    include_metrics: Optional[bool] = False
-    performance_thresholds: Optional[Dict[str, int]] = None
-    include_exc_info: Optional[bool] = False
-    integrate_with: Optional[List[str]] = None
-    alert_conditions: Optional[List[str]] = None
-    use_for: Optional[List[str]] = None
-    sanitization: Optional[bool] = False
+    fields: list[str]
+    conditions: list[str] | None = None
+    performance_tracking: bool | None = False
+    include_metrics: bool | None = False
+    performance_thresholds: dict[str, int] | None = None
+    include_exc_info: bool | None = False
+    integrate_with: list[str] | None = None
+    alert_conditions: list[str] | None = None
+    use_for: list[str] | None = None
+    sanitization: bool | None = False
 
 
 class ModelLoggingPhilosophy(BaseModel):
@@ -41,32 +41,32 @@ class ModelLoggingPhilosophy(BaseModel):
 class ModelSubsystemOverride(BaseModel):
     """Model for subsystem-specific logging overrides."""
 
-    function_entry: Optional[Dict[str, Union[str, bool]]] = None
-    include_performance_metrics: Optional[bool] = None
-    alert_on_slow_functions: Optional[bool] = None
-    correlation_required: Optional[bool] = None
-    security_enhanced: Optional[bool] = None
-    audit_trail: Optional[bool] = None
-    batch_logging: Optional[bool] = None
-    reduce_verbosity: Optional[bool] = None
-    track_token_usage: Optional[bool] = None
-    track_model_calls: Optional[bool] = None
-    include_generation_metrics: Optional[bool] = None
-    track_requests: Optional[bool] = None
-    include_client_context: Optional[bool] = None
-    track_ai_operations: Optional[bool] = None
-    include_model_metadata: Optional[bool] = None
-    privacy_enhanced: Optional[bool] = None
-    include_user_context: Optional[bool] = None
+    function_entry: dict[str, str | bool] | None = None
+    include_performance_metrics: bool | None = None
+    alert_on_slow_functions: bool | None = None
+    correlation_required: bool | None = None
+    security_enhanced: bool | None = None
+    audit_trail: bool | None = None
+    batch_logging: bool | None = None
+    reduce_verbosity: bool | None = None
+    track_token_usage: bool | None = None
+    track_model_calls: bool | None = None
+    include_generation_metrics: bool | None = None
+    track_requests: bool | None = None
+    include_client_context: bool | None = None
+    track_ai_operations: bool | None = None
+    include_model_metadata: bool | None = None
+    privacy_enhanced: bool | None = None
+    include_user_context: bool | None = None
 
 
 class ModelSecurityRules(BaseModel):
     """Model for security and privacy logging rules."""
 
-    never_log: List[str]
-    sanitize_patterns: List[str]
-    pii_detection: Dict[str, Union[bool, List[str]]]
-    security_levels: Dict[str, str]
+    never_log: list[str]
+    sanitize_patterns: list[str]
+    pii_detection: dict[str, bool | list[str]]
+    security_levels: dict[str, str]
 
 
 class ModelPerformanceConfig(BaseModel):
@@ -79,18 +79,18 @@ class ModelPerformanceConfig(BaseModel):
     async_logging: bool
     buffer_size: int
     flush_interval: str
-    hot_path_detection: Dict[str, Union[bool, int]]
-    performance_monitoring: Dict[str, Union[bool, int]]
+    hot_path_detection: dict[str, bool | int]
+    performance_monitoring: dict[str, bool | int]
 
 
 class ModelIntegrations(BaseModel):
     """Model for external service integrations."""
 
-    rag_service: Dict[str, bool]
-    knowledge_base: Dict[str, bool]
-    mcp_tools: Dict[str, bool]
-    monitoring: Dict[str, bool]
-    tracing: Dict[str, bool]
+    rag_service: dict[str, bool]
+    knowledge_base: dict[str, bool]
+    mcp_tools: dict[str, bool]
+    monitoring: dict[str, bool]
+    tracing: dict[str, bool]
 
 
 class ModelAgentCoordination(BaseModel):
@@ -100,7 +100,7 @@ class ModelAgentCoordination(BaseModel):
     avoid_duplicate_work: bool
     learn_from_other_agents: bool
     coordinate_logging_additions: bool
-    context_sharing: Dict[str, bool]
+    context_sharing: dict[str, bool]
 
 
 class ModelQualityGates(BaseModel):
@@ -110,8 +110,8 @@ class ModelQualityGates(BaseModel):
     check_security_compliance: bool
     verify_performance_impact: bool
     ensure_correlation_tracking: bool
-    required_fields: List[str]
-    optional_fields: List[str]
+    required_fields: list[str]
+    optional_fields: list[str]
 
 
 class ModelMaintenance(BaseModel):
@@ -121,52 +121,56 @@ class ModelMaintenance(BaseModel):
     update_process: str
     version_control: bool
     backward_compatibility: str
-    stakeholders: List[str]
+    stakeholders: list[str]
 
     @validator("backward_compatibility")
-    def validate_semver(cls, v):
+    def validate_semver(self, v):
         """Validate that backward_compatibility follows semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"backward_compatibility must be valid semver: {v}")
+            msg = f"backward_compatibility must be valid semver: {v}"
+            raise ValueError(msg)
 
 
 class ModelLoggingPolicy(BaseModel):
     """Complete model for ONEX Centralized Logging Policy."""
 
     version: str = Field(
-        ..., description="Policy version following semantic versioning"
+        ...,
+        description="Policy version following semantic versioning",
     )
     schema_version: str = Field(
-        ..., description="Schema version following semantic versioning"
+        ...,
+        description="Schema version following semantic versioning",
     )
 
     philosophy: ModelLoggingPhilosophy
-    default_patterns: Dict[str, ModelLoggingPattern]
-    subsystem_overrides: Dict[str, ModelSubsystemOverride]
+    default_patterns: dict[str, ModelLoggingPattern]
+    subsystem_overrides: dict[str, ModelSubsystemOverride]
     security: ModelSecurityRules
     performance: ModelPerformanceConfig
     integrations: ModelIntegrations
     agent_coordination: ModelAgentCoordination
     quality_gates: ModelQualityGates
-    levels: Dict[str, str]
-    templates: Dict[str, str]
-    examples: Dict[str, str]
+    levels: dict[str, str]
+    templates: dict[str, str]
+    examples: dict[str, str]
     maintenance: ModelMaintenance
 
     @validator("version", "schema_version")
-    def validate_semver_versions(cls, v):
+    def validate_semver_versions(self, v):
         """Validate that versions follow semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"Version must be valid semver: {v}")
+            msg = f"Version must be valid semver: {v}"
+            raise ValueError(msg)
 
     @validator("default_patterns")
-    def validate_required_patterns(cls, v):
+    def validate_required_patterns(self, v):
         """Ensure required logging patterns are present."""
         required_patterns = [
             "function_entry",
@@ -181,12 +185,15 @@ class ModelLoggingPolicy(BaseModel):
             pattern for pattern in required_patterns if pattern not in v
         ]
         if missing_patterns:
-            raise ValueError(f"Missing required logging patterns: {missing_patterns}")
+            msg = f"Missing required logging patterns: {missing_patterns}"
+            raise ValueError(msg)
 
         return v
 
     def get_pattern_for_subsystem(
-        self, pattern_name: str, subsystem: str
+        self,
+        pattern_name: str,
+        subsystem: str,
     ) -> ModelLoggingPattern:
         """Get logging pattern with subsystem overrides applied."""
         base_pattern = self.default_patterns[pattern_name]
@@ -231,7 +238,7 @@ class ModelLoggingPolicy(BaseModel):
             current = semver.VersionInfo.parse(self.version)
             other = semver.VersionInfo.parse(other_version)
             backward_compat = semver.VersionInfo.parse(
-                self.maintenance.backward_compatibility
+                self.maintenance.backward_compatibility,
             )
 
             # Compatible if other version is within backward compatibility range

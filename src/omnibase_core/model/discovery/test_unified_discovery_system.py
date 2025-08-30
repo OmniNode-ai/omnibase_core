@@ -15,22 +15,29 @@ import pytest
 
 from omnibase_core.model.core.model_onex_event import OnexEventTypeEnum
 from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery.enum_node_current_status import \
-    NodeCurrentStatusEnum
-from omnibase_core.model.discovery.model_current_tool_availability import \
-    ModelCurrentToolAvailability
-from omnibase_core.model.discovery.model_introspection_filters import \
-    ModelIntrospectionFilters
-from omnibase_core.model.discovery.model_introspection_response_event import \
-    ModelIntrospectionResponseEvent
+from omnibase_core.model.discovery.enum_node_current_status import NodeCurrentStatusEnum
+from omnibase_core.model.discovery.model_current_tool_availability import (
+    ModelCurrentToolAvailability,
+)
+from omnibase_core.model.discovery.model_introspection_filters import (
+    ModelIntrospectionFilters,
+)
+from omnibase_core.model.discovery.model_introspection_response_event import (
+    ModelIntrospectionResponseEvent,
+)
 from omnibase_core.model.discovery.model_node_introspection_event import (
-    ModelNodeCapabilities, ModelNodeIntrospectionEvent)
-from omnibase_core.model.discovery.model_request_introspection_event import \
-    ModelRequestIntrospectionEvent
-from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_discovery_coordinator import \
-    ToolDiscoveryCoordinator
-from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_unified_discovery import \
-    ToolUnifiedDiscovery
+    ModelNodeCapabilities,
+    ModelNodeIntrospectionEvent,
+)
+from omnibase_core.model.discovery.model_request_introspection_event import (
+    ModelRequestIntrospectionEvent,
+)
+from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_discovery_coordinator import (
+    ToolDiscoveryCoordinator,
+)
+from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_unified_discovery import (
+    ToolUnifiedDiscovery,
+)
 
 
 @pytest.fixture
@@ -92,7 +99,9 @@ def sample_introspection_response_event():
         version=ModelSemVer(major=1, minor=0, patch=0),
         current_status=NodeCurrentStatusEnum.READY,
         capabilities=ModelCurrentToolAvailability(
-            available_tools=["test_tool"], tool_status={}, total_tools=1
+            available_tools=["test_tool"],
+            tool_status={},
+            total_tools=1,
         ),
     )
 
@@ -111,7 +120,10 @@ class TestToolDiscoveryCoordinator:
         mock_logger.emit_log_event_sync.assert_called()
 
     def test_discover_nodes_basic(
-        self, mock_event_bus, mock_logger, sample_introspection_filters
+        self,
+        mock_event_bus,
+        mock_logger,
+        sample_introspection_filters,
     ):
         """Test basic node discovery request."""
         coordinator = ToolDiscoveryCoordinator(mock_event_bus, mock_logger)
@@ -146,14 +158,18 @@ class TestToolDiscoveryCoordinator:
         callback = Mock()
 
         correlation_id = coordinator.discover_nodes(
-            requester_id="test_requester", callback=callback
+            requester_id="test_requester",
+            callback=callback,
         )
 
         request_info = coordinator.active_requests[correlation_id]
         assert request_info.callback == callback
 
     def test_response_handling(
-        self, mock_event_bus, mock_logger, sample_introspection_response_event
+        self,
+        mock_event_bus,
+        mock_logger,
+        sample_introspection_response_event,
     ):
         """Test handling of introspection response events."""
         coordinator = ToolDiscoveryCoordinator(mock_event_bus, mock_logger)
@@ -180,7 +196,8 @@ class TestToolDiscoveryCoordinator:
         coordinator = ToolDiscoveryCoordinator(mock_event_bus, mock_logger)
 
         correlation_id = coordinator.discover_nodes(
-            requester_id="test_requester", timeout_ms=100  # Very short timeout
+            requester_id="test_requester",
+            timeout_ms=100,  # Very short timeout
         )
 
         # Wait for timeout
@@ -208,8 +225,8 @@ class TestToolDiscoveryCoordinator:
         coordinator = ToolDiscoveryCoordinator(mock_event_bus, mock_logger)
 
         # Start multiple discoveries
-        correlation_id1 = coordinator.discover_nodes(requester_id="requester1")
-        correlation_id2 = coordinator.discover_nodes(requester_id="requester2")
+        coordinator.discover_nodes(requester_id="requester1")
+        coordinator.discover_nodes(requester_id="requester2")
 
         stats = coordinator.get_active_discoveries()
 
@@ -234,7 +251,10 @@ class TestToolUnifiedDiscovery:
         return coordinator
 
     def test_initialization(
-        self, mock_event_bus, mock_logger, mock_discovery_coordinator
+        self,
+        mock_event_bus,
+        mock_logger,
+        mock_discovery_coordinator,
     ):
         """Test unified discovery initialization."""
         unified_discovery = ToolUnifiedDiscovery(
@@ -326,7 +346,7 @@ class TestToolUnifiedDiscovery:
 
         # Get available nodes with matching filters
         nodes = unified_discovery.get_available_nodes(
-            filters=sample_introspection_filters
+            filters=sample_introspection_filters,
         )
 
         assert len(nodes) == 1
@@ -334,7 +354,7 @@ class TestToolUnifiedDiscovery:
 
         # Test with non-matching filters
         non_matching_filters = ModelIntrospectionFilters(
-            node_names=["non_existent_node"]
+            node_names=["non_existent_node"],
         )
         nodes = unified_discovery.get_available_nodes(filters=non_matching_filters)
 
@@ -397,7 +417,7 @@ class TestToolUnifiedDiscovery:
         mock_discovery_coordinator.discover_nodes.return_value = expected_correlation_id
 
         cached_nodes, correlation_id = unified_discovery.get_cached_and_discover(
-            requester_id="test_requester"
+            requester_id="test_requester",
         )
 
         # Verify cached results
@@ -474,7 +494,10 @@ class TestToolUnifiedDiscovery:
         assert unified_discovery.statistics["cache_clears"] == 1
 
     def test_get_discovery_statistics(
-        self, mock_event_bus, mock_logger, mock_discovery_coordinator
+        self,
+        mock_event_bus,
+        mock_logger,
+        mock_discovery_coordinator,
     ):
         """Test getting discovery system statistics."""
         unified_discovery = ToolUnifiedDiscovery(
@@ -535,7 +558,9 @@ class TestIntegrationScenarios:
             node_name="node_test",
             version=ModelSemVer(major=1, minor=0, patch=0),
             capabilities=ModelNodeCapabilities(
-                actions=["test_action"], protocols=["test_protocol"], metadata={}
+                actions=["test_action"],
+                protocols=["test_protocol"],
+                metadata={},
             ),
             tags=["test_tag"],
             health_endpoint="/health",
@@ -550,7 +575,8 @@ class TestIntegrationScenarios:
 
         # 3. Initiate real-time discovery
         correlation_id = unified_discovery.discover_real_time(
-            requester_id="integration_test", timeout_ms=5000
+            requester_id="integration_test",
+            timeout_ms=5000,
         )
         assert isinstance(correlation_id, UUID)
 
@@ -562,7 +588,9 @@ class TestIntegrationScenarios:
             version=ModelSemVer(major=1, minor=0, patch=0),
             current_status=NodeCurrentStatusEnum.READY,
             capabilities=ModelCurrentToolAvailability(
-                available_tools=["test_tool"], tool_status={}, total_tools=1
+                available_tools=["test_tool"],
+                tool_status={},
+                total_tools=1,
             ),
         )
         response_event.event_type = OnexEventTypeEnum.REAL_TIME_INTROSPECTION_RESPONSE
@@ -576,7 +604,7 @@ class TestIntegrationScenarios:
 
         # 6. Test hybrid approach
         cached_nodes, new_correlation_id = unified_discovery.get_cached_and_discover(
-            requester_id="hybrid_test"
+            requester_id="hybrid_test",
         )
         assert len(cached_nodes) == 1  # From catalog
         assert isinstance(new_correlation_id, UUID)
@@ -598,7 +626,9 @@ class TestIntegrationScenarios:
                 node_name=f"node_test_{capability}",
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 capabilities=ModelNodeCapabilities(
-                    actions=[capability], protocols=["test_protocol"], metadata={}
+                    actions=[capability],
+                    protocols=["test_protocol"],
+                    metadata={},
                 ),
                 tags=[f"tag_{capability}"],
                 health_endpoint="/health",
@@ -646,7 +676,9 @@ class TestUnifiedDiscoverySystem:
             node_name="node_test",
             version=ModelSemVer(major=1, minor=0, patch=0),
             capabilities=ModelNodeCapabilities(
-                actions=["test_action"], protocols=["test_protocol"], metadata={}
+                actions=["test_action"],
+                protocols=["test_protocol"],
+                metadata={},
             ),
             tags=["test_tag"],
             health_endpoint="/health",
@@ -663,13 +695,14 @@ class TestUnifiedDiscoverySystem:
 
         # Test real-time discovery
         correlation_id = unified_discovery.discover_real_time(
-            requester_id="test_requester", timeout_ms=5000
+            requester_id="test_requester",
+            timeout_ms=5000,
         )
         assert isinstance(correlation_id, UUID)
 
         # Test hybrid discovery
         cached_nodes, discovery_id = unified_discovery.get_cached_and_discover(
-            requester_id="hybrid_test"
+            requester_id="hybrid_test",
         )
         assert len(cached_nodes) == 1
         assert isinstance(discovery_id, UUID)
@@ -683,8 +716,6 @@ class TestUnifiedDiscoverySystem:
         # Test cleanup
         unified_discovery.shutdown()
         mock_event_bus.unsubscribe.assert_called()
-
-        print("✅ Unified discovery system test passed!")
 
     def test_filtering_functionality(self, mock_event_bus, mock_logger):
         """Test filtering across catalog and real-time discovery."""
@@ -729,15 +760,14 @@ class TestUnifiedDiscoverySystem:
         filtered_nodes = unified_discovery.get_available_nodes(filters=filters)
         assert len(filtered_nodes) == 0
 
-        print("✅ Filtering functionality test passed!")
-
     def test_coordinator_response_handling(self, mock_event_bus, mock_logger):
         """Test discovery coordinator response collection."""
         coordinator = ToolDiscoveryCoordinator(mock_event_bus, mock_logger)
 
         # Start discovery request
         correlation_id = coordinator.discover_nodes(
-            requester_id="test_requester", timeout_ms=5000
+            requester_id="test_requester",
+            timeout_ms=5000,
         )
 
         # Verify request tracking
@@ -746,16 +776,20 @@ class TestUnifiedDiscoverySystem:
 
         # Create proper capabilities
         capabilities = ModelNodeCapabilities(
-            actions=["action1", "action2"], protocols=["protocol1"], metadata={}
+            actions=["action1", "action2"],
+            protocols=["protocol1"],
+            metadata={},
         )
 
         # Create tool availability objects
         tools = [
             ModelCurrentToolAvailability(
-                tool_name="tool1", status=NodeCurrentStatusEnum.READY
+                tool_name="tool1",
+                status=NodeCurrentStatusEnum.READY,
             ),
             ModelCurrentToolAvailability(
-                tool_name="tool2", status=NodeCurrentStatusEnum.READY
+                tool_name="tool2",
+                status=NodeCurrentStatusEnum.READY,
             ),
         ]
 
@@ -787,8 +821,6 @@ class TestUnifiedDiscoverySystem:
         assert coordinator.cancel_discovery(new_correlation_id) is True
         assert new_correlation_id not in coordinator.active_requests
 
-        print("✅ Coordinator response handling test passed!")
-
 
 if __name__ == "__main__":
     # Run basic smoke tests
@@ -804,12 +836,3 @@ if __name__ == "__main__":
     test_instance.test_complete_discovery_flow(mock_bus, mock_log)
     test_instance.test_filtering_functionality(mock_bus, mock_log)
     test_instance.test_coordinator_response_handling(mock_bus, mock_log)
-
-    print("\n🎉 All unified discovery system tests passed!")
-    print("📋 Test Coverage:")
-    print("  ✅ Discovery coordinator request-response patterns")
-    print("  ✅ Unified discovery API with catalog and real-time")
-    print("  ✅ Event handling and response collection")
-    print("  ✅ Filtering functionality across discovery types")
-    print("  ✅ Statistics and performance monitoring")
-    print("  ✅ Cleanup and shutdown procedures")

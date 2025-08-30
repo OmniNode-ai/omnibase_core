@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -8,7 +8,7 @@ class ModelEventBusOutputField(BaseModel):
     Output field for event bus processing (processed, integration, backend, custom).
     """
 
-    processed: Optional[str] = None
-    integration: Optional[bool] = None
+    processed: str | None = None
+    integration: bool | None = None
     backend: str
-    custom: Optional[Any] = None
+    custom: Any | None = None

@@ -9,7 +9,7 @@ Author: OmniNode Team
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field
 
@@ -34,20 +34,23 @@ class ModelRegistryMode(BaseModel):
     """Scalable registry mode configuration model."""
 
     mode_category: RegistryModeCategory = Field(
-        ..., description="The category of registry mode"
+        ...,
+        description="The category of registry mode",
     )
 
-    custom_mode_name: Optional[str] = Field(
-        None, description="Custom mode name (for specialized deployment scenarios)"
+    custom_mode_name: str | None = Field(
+        None,
+        description="Custom mode name (for specialized deployment scenarios)",
     )
 
-    performance_profile: Optional[str] = Field(
+    performance_profile: str | None = Field(
         None,
         description="Performance optimization profile (high_throughput, low_latency, balanced)",
     )
 
     security_level: str = Field(
-        "standard", description="Security level (minimal, standard, enhanced, maximum)"
+        "standard",
+        description="Security level (minimal, standard, enhanced, maximum)",
     )
 
     fault_tolerance: str = Field(
@@ -56,11 +59,13 @@ class ModelRegistryMode(BaseModel):
     )
 
     resource_allocation: Optional["ModelResourceAllocation"] = Field(
-        None, description="Resource allocation limits and preferences"
+        None,
+        description="Resource allocation limits and preferences",
     )
 
-    feature_flags: Dict[str, bool] = Field(
-        default_factory=dict, description="Feature enablement flags for this mode"
+    feature_flags: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Feature enablement flags for this mode",
     )
 
     monitoring_level: str = Field(
@@ -68,13 +73,14 @@ class ModelRegistryMode(BaseModel):
         description="Monitoring verbosity (minimal, standard, verbose, debug)",
     )
 
-    allowed_operations: List[str] = Field(
+    allowed_operations: list[str] = Field(
         default_factory=lambda: ["read", "write", "admin"],
         description="Operations allowed in this registry mode",
     )
 
-    metadata: Optional[ModelGenericMetadata] = Field(
-        default_factory=dict, description="Additional mode-specific configuration"
+    metadata: ModelGenericMetadata | None = Field(
+        default_factory=dict,
+        description="Additional mode-specific configuration",
     )
 
     def get_effective_mode_name(self) -> str:
@@ -111,7 +117,7 @@ class ModelRegistryMode(BaseModel):
             "maximum",
         ]
 
-    def get_default_feature_flags(self) -> Dict[str, bool]:
+    def get_default_feature_flags(self) -> dict[str, bool]:
         """Get default feature flags for this mode."""
         defaults = {
             RegistryModeCategory.PRODUCTION: {

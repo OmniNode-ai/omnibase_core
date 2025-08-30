@@ -23,14 +23,9 @@
 
 
 import hashlib
-from typing import TYPE_CHECKING, Tuple
 
 from omnibase_core.enums import NodeMetadataField
-from omnibase_core.mixin.mixin_canonical_serialization import \
-    CanonicalYAMLSerializer
-
-if TYPE_CHECKING:
-    pass
+from omnibase_core.mixin.mixin_canonical_serialization import CanonicalYAMLSerializer
 
 
 class HashComputationMixin:
@@ -45,7 +40,7 @@ class HashComputationMixin:
     def compute_hash(
         self,
         body: str,
-        volatile_fields: Tuple[NodeMetadataField, ...] = (
+        volatile_fields: tuple[NodeMetadataField, ...] = (
             NodeMetadataField.HASH,
             NodeMetadataField.LAST_MODIFIED_AT,
         ),

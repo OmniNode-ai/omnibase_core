@@ -7,7 +7,6 @@ and overall system health metrics.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,12 +25,14 @@ class ModelHealthCheck(BaseModel):
 
     name: str = Field(description="Name of the health check")
     status: HealthStatusType = Field(description="Status of this health check")
-    message: Optional[str] = Field(
-        default=None, description="Health check message or error details"
+    message: str | None = Field(
+        default=None,
+        description="Health check message or error details",
     )
     response_time_ms: float = Field(description="Response time in milliseconds")
     last_checked: datetime = Field(
-        default_factory=datetime.now, description="Timestamp of last check"
+        default_factory=datetime.now,
+        description="Timestamp of last check",
     )
 
 
@@ -47,11 +48,12 @@ class ModelSystemMetrics(BaseModel):
     system_memory_percent: float = Field(description="System memory usage percentage")
     system_disk_percent: float = Field(description="System disk usage percentage")
     event_bus_connected: bool = Field(description="Whether event bus is connected")
-    api_quota_remaining: Optional[int] = Field(
-        default=None, description="Remaining API quota"
+    api_quota_remaining: int | None = Field(
+        default=None,
+        description="Remaining API quota",
     )
     api_requests_per_minute: float = Field(
-        description="Current API requests per minute"
+        description="Current API requests per minute",
     )
 
 
@@ -59,15 +61,16 @@ class ModelAgentHealthStatus(BaseModel):
     """Complete agent system health status."""
 
     overall_status: HealthStatusType = Field(description="Overall system health status")
-    health_checks: List[ModelHealthCheck] = Field(
-        description="Individual health check results"
+    health_checks: list[ModelHealthCheck] = Field(
+        description="Individual health check results",
     )
     system_metrics: ModelSystemMetrics = Field(description="System-level metrics")
     service_uptime_seconds: int = Field(description="Service uptime in seconds")
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="Health status last update timestamp"
+        default_factory=datetime.now,
+        description="Health status last update timestamp",
     )
-    alerts: List[str] = Field(default_factory=list, description="Current system alerts")
+    alerts: list[str] = Field(default_factory=list, description="Current system alerts")
 
     @property
     def health_score(self) -> float:

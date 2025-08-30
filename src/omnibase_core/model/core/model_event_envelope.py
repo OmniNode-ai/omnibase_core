@@ -7,7 +7,7 @@ while keeping the original event payload unchanged.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,18 +28,22 @@ class ModelEventEnvelope(BaseModel):
 
     # Envelope identification
     envelope_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique envelope identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique envelope identifier",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the envelope was created"
+        default_factory=datetime.utcnow,
+        description="When the envelope was created",
     )
 
     # Routing information
     route_spec: ModelRouteSpec = Field(
-        ..., description="Routing specification and strategy"
+        ...,
+        description="Routing specification and strategy",
     )
-    trace: List[ModelRouteHop] = Field(
-        default_factory=list, description="Routing audit trail"
+    trace: list[ModelRouteHop] = Field(
+        default_factory=list,
+        description="Routing audit trail",
     )
 
     # Event payload (unchanged by routers)
@@ -49,28 +53,35 @@ class ModelEventEnvelope(BaseModel):
     source_node_id: str = Field(..., description="Original source node ID")
     envelope_version: str = Field(default="1.0", description="Envelope format version")
     correlation_id: UUID = Field(
-        ..., description="Correlation ID for request/response tracking"
+        ...,
+        description="Correlation ID for request/response tracking",
     )
 
     # Status tracking
     current_hop_count: int = Field(default=0, description="Number of hops taken so far")
     is_delivered: bool = Field(
-        default=False, description="Whether envelope has been delivered"
+        default=False,
+        description="Whether envelope has been delivered",
     )
     delivery_attempts: int = Field(default=0, description="Number of delivery attempts")
 
     # Optional metadata
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional envelope metadata"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional envelope metadata",
     )
 
     model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.isoformat(), UUID: lambda v: str(v)}
+        json_encoders={datetime: lambda v: v.isoformat(), UUID: lambda v: str(v)},
     )
 
     @classmethod
     def create_direct(
-        cls, payload: ModelOnexEvent, destination: str, source_node_id: str, **kwargs
+        cls,
+        payload: ModelOnexEvent,
+        destination: str,
+        source_node_id: str,
+        **kwargs,
     ) -> "ModelEventEnvelope":
         """Create envelope for direct routing to destination."""
         route_spec = ModelRouteSpec.create_direct_route(destination)
@@ -91,7 +102,7 @@ class ModelEventEnvelope(BaseModel):
         cls,
         payload: ModelOnexEvent,
         destination: str,
-        hops: List[str],
+        hops: list[str],
         source_node_id: str,
         **kwargs,
     ) -> "ModelEventEnvelope":
@@ -133,7 +144,10 @@ class ModelEventEnvelope(BaseModel):
 
     @classmethod
     def create_broadcast(
-        cls, payload: ModelOnexEvent, source_node_id: str, **kwargs
+        cls,
+        payload: ModelOnexEvent,
+        source_node_id: str,
+        **kwargs,
     ) -> "ModelEventEnvelope":
         """Create envelope for broadcast routing."""
         route_spec = ModelRouteSpec.create_broadcast_route()
@@ -149,30 +163,39 @@ class ModelEventEnvelope(BaseModel):
         envelope.add_source_hop(source_node_id)
         return envelope
 
-    def add_source_hop(self, node_id: str, service_name: Optional[str] = None) -> None:
+    def add_source_hop(self, node_id: str, service_name: str | None = None) -> None:
         """Add source hop to the trace."""
         hop = ModelRouteHop.create_source_hop(node_id, service_name)
         self.trace.append(hop)
 
     def add_router_hop(
-        self, node_id: str, routing_decision: str, next_hop: str, **kwargs
+        self,
+        node_id: str,
+        routing_decision: str,
+        next_hop: str,
+        **kwargs,
     ) -> None:
         """Add a router hop to the trace."""
         hop = ModelRouteHop.create_router_hop(
-            node_id, routing_decision, next_hop, **kwargs
+            node_id,
+            routing_decision,
+            next_hop,
+            **kwargs,
         )
         self.trace.append(hop)
         self.current_hop_count += 1
 
     def add_destination_hop(
-        self, node_id: str, service_name: Optional[str] = None
+        self,
+        node_id: str,
+        service_name: str | None = None,
     ) -> None:
         """Add destination hop and mark as delivered."""
         hop = ModelRouteHop.create_destination_hop(node_id, service_name)
         self.trace.append(hop)
         self.is_delivered = True
 
-    def consume_next_hop(self) -> Optional[str]:
+    def consume_next_hop(self) -> str | None:
         """Get the next hop from the route specification."""
         return self.route_spec.consume_next_hop()
 
@@ -219,11 +242,11 @@ class ModelEventEnvelope(BaseModel):
         """Add metadata to the envelope."""
         self.metadata[key] = value
 
-    def get_routing_path(self) -> List[str]:
+    def get_routing_path(self) -> list[str]:
         """Get the complete routing path from trace."""
         return [f"{hop.hop_type}:{hop.node_id}" for hop in self.trace]
 
-    def get_last_hop(self) -> Optional[ModelRouteHop]:
+    def get_last_hop(self) -> ModelRouteHop | None:
         """Get the last hop from the trace."""
         return self.trace[-1] if self.trace else None
 
@@ -231,7 +254,7 @@ class ModelEventEnvelope(BaseModel):
         """Check if routing can continue (TTL not expired, not delivered)."""
         return not self.is_ttl_expired() and not self.is_delivered
 
-    def validate_routing_state(self) -> List[str]:
+    def validate_routing_state(self) -> list[str]:
         """Validate the current routing state and return any issues."""
         issues = []
 

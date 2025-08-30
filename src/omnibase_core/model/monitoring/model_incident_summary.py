@@ -5,7 +5,6 @@ Summary of incidents over a time period.
 """
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -25,24 +24,31 @@ class ModelIncidentSummary(BaseModel):
 
     avg_mttr_hours: float = Field(0.0, ge=0, description="Average MTTR in hours")
     total_downtime_hours: float = Field(
-        0.0, ge=0, description="Total downtime in hours"
+        0.0,
+        ge=0,
+        description="Total downtime in hours",
     )
 
-    top_failure_causes: List[str] = Field(
-        default_factory=list, description="Most common failure causes"
+    top_failure_causes: list[str] = Field(
+        default_factory=list,
+        description="Most common failure causes",
     )
 
-    most_affected_components: List[str] = Field(
-        default_factory=list, description="Components with most incidents"
+    most_affected_components: list[str] = Field(
+        default_factory=list,
+        description="Components with most incidents",
     )
 
     incidents_prevented: int = Field(
-        0, ge=0, description="Incidents prevented by automation"
+        0,
+        ge=0,
+        description="Incidents prevented by automation",
     )
     auto_resolved_incidents: int = Field(0, ge=0, description="Incidents auto-resolved")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Summary creation time"
+        default_factory=datetime.utcnow,
+        description="Summary creation time",
     )
 
     def get_incident_rate(self) -> float:

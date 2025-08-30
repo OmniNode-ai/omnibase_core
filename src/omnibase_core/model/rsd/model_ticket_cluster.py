@@ -6,7 +6,6 @@ Strongly-typed model for ticket clustering and theme detection in RSD algorithm.
 """
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -24,22 +23,27 @@ class ModelTicketCluster(BaseModel):
 
     cluster_name: str = Field(description="Human-readable name for the cluster theme")
 
-    ticket_ids: List[str] = Field(
-        description="List of ticket IDs belonging to this cluster", default_factory=list
+    ticket_ids: list[str] = Field(
+        description="List of ticket IDs belonging to this cluster",
+        default_factory=list,
     )
 
     theme: str = Field(description="Identified theme or epic description")
 
     confidence_score: float = Field(
-        description="Clustering algorithm confidence score (0.0-1.0)", ge=0.0, le=1.0
+        description="Clustering algorithm confidence score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     created_at: datetime = Field(
-        description="When this cluster was created", default_factory=datetime.now
+        description="When this cluster was created",
+        default_factory=datetime.now,
     )
 
     updated_at: datetime = Field(
-        description="Last update timestamp", default_factory=datetime.now
+        description="Last update timestamp",
+        default_factory=datetime.now,
     )
 
     class Config:

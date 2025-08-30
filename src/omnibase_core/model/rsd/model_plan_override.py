@@ -6,7 +6,6 @@ Strongly-typed model for manual priority adjustments with audit trail.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -32,11 +31,13 @@ class ModelPlanOverride(BaseModel):
     authorized_by: str = Field(description="User ID who authorized the override")
 
     timestamp: datetime = Field(
-        description="When the override was applied", default_factory=datetime.now
+        description="When the override was applied",
+        default_factory=datetime.now,
     )
 
-    expires_at: Optional[datetime] = Field(
-        description="Optional expiration time for temporary overrides", default=None
+    expires_at: datetime | None = Field(
+        description="Optional expiration time for temporary overrides",
+        default=None,
     )
 
     class Config:

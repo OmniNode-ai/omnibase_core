@@ -1,7 +1,5 @@
 """ModelAvroCompatibleData: Avro-compatible envelope data structure"""
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel
 
 
@@ -11,8 +9,8 @@ class ModelAvroCompatibleData(BaseModel):
     envelope_version: str
     op_id: str
     correlation_id: str
-    traceparent: Optional[str] = None
-    tracestate: Optional[str] = None
+    traceparent: str | None = None
+    tracestate: str | None = None
     timestamp: int
     source_service: str
     source_node_id: str
@@ -23,5 +21,5 @@ class ModelAvroCompatibleData(BaseModel):
     content_encoding: str
     priority: str
     delivery_guarantee: str
-    partition_key: Optional[str] = None
-    metadata: Dict[str, str]
+    partition_key: str | None = None
+    metadata: dict[str, str]

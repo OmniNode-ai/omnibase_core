@@ -2,8 +2,6 @@
 Workflow permissions model.
 """
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,33 +12,37 @@ class ModelWorkflowPermissions(BaseModel):
     """
 
     # Standard permissions
-    actions: Optional[str] = Field(
-        None, description="Actions permission (read/write/none)"
+    actions: str | None = Field(
+        None,
+        description="Actions permission (read/write/none)",
     )
-    attestations: Optional[str] = Field(None, description="Attestations permission")
-    checks: Optional[str] = Field(None, description="Checks permission")
-    contents: Optional[str] = Field(None, description="Contents permission")
-    deployments: Optional[str] = Field(None, description="Deployments permission")
-    discussions: Optional[str] = Field(None, description="Discussions permission")
-    id_token: Optional[str] = Field(None, description="ID token permission")
-    issues: Optional[str] = Field(None, description="Issues permission")
-    packages: Optional[str] = Field(None, description="Packages permission")
-    pages: Optional[str] = Field(None, description="Pages permission")
-    pull_requests: Optional[str] = Field(None, description="Pull requests permission")
-    repository_projects: Optional[str] = Field(
-        None, description="Repository projects permission"
+    attestations: str | None = Field(None, description="Attestations permission")
+    checks: str | None = Field(None, description="Checks permission")
+    contents: str | None = Field(None, description="Contents permission")
+    deployments: str | None = Field(None, description="Deployments permission")
+    discussions: str | None = Field(None, description="Discussions permission")
+    id_token: str | None = Field(None, description="ID token permission")
+    issues: str | None = Field(None, description="Issues permission")
+    packages: str | None = Field(None, description="Packages permission")
+    pages: str | None = Field(None, description="Pages permission")
+    pull_requests: str | None = Field(None, description="Pull requests permission")
+    repository_projects: str | None = Field(
+        None,
+        description="Repository projects permission",
     )
-    security_events: Optional[str] = Field(
-        None, description="Security events permission"
+    security_events: str | None = Field(
+        None,
+        description="Security events permission",
     )
-    statuses: Optional[str] = Field(None, description="Statuses permission")
+    statuses: str | None = Field(None, description="Statuses permission")
 
     # Additional permissions
-    custom_permissions: Dict[str, str] = Field(
-        default_factory=dict, description="Custom permissions"
+    custom_permissions: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom permissions",
     )
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert to dictionary for backward compatibility."""
         result = {}
         for field_name, field_value in self.dict(exclude_none=True).items():

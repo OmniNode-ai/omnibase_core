@@ -11,7 +11,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Dict, List, Literal, Optional
+from typing import Literal
 
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, validator
@@ -28,23 +28,31 @@ class ModelAlgorithmFactorConfig(BaseModel):
     """
 
     weight: float = Field(
-        ..., description="Factor weight in algorithm (0.0-1.0)", ge=0.0, le=1.0
+        ...,
+        description="Factor weight in algorithm (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     calculation_method: str = Field(
-        ..., description="Calculation method identifier", min_length=1
+        ...,
+        description="Calculation method identifier",
+        min_length=1,
     )
 
-    parameters: Dict[str, float] = Field(
-        default_factory=dict, description="Method-specific parameters"
+    parameters: dict[str, float] = Field(
+        default_factory=dict,
+        description="Method-specific parameters",
     )
 
     normalization_enabled: bool = Field(
-        default=True, description="Enable factor normalization"
+        default=True,
+        description="Enable factor normalization",
     )
 
     caching_enabled: bool = Field(
-        default=True, description="Enable factor-level caching"
+        default=True,
+        description="Enable factor-level caching",
     )
 
 
@@ -57,27 +65,35 @@ class ModelAlgorithmConfig(BaseModel):
     """
 
     algorithm_type: str = Field(
-        ..., description="Algorithm type identifier", min_length=1
+        ...,
+        description="Algorithm type identifier",
+        min_length=1,
     )
 
-    factors: Dict[str, ModelAlgorithmFactorConfig] = Field(
-        ..., description="Algorithm factors with configuration"
+    factors: dict[str, ModelAlgorithmFactorConfig] = Field(
+        ...,
+        description="Algorithm factors with configuration",
     )
 
     normalization_method: str = Field(
-        default="min_max", description="Global normalization method"
+        default="min_max",
+        description="Global normalization method",
     )
 
     precision_digits: int = Field(
-        default=6, description="Precision for floating point calculations", ge=1, le=15
+        default=6,
+        description="Precision for floating point calculations",
+        ge=1,
+        le=15,
     )
 
     @validator("factors")
-    def validate_factor_weights_sum(cls, v):
+    def validate_factor_weights_sum(self, v):
         """Validate that factor weights sum to approximately 1.0."""
         total_weight = sum(factor.weight for factor in v.values())
         if not (0.99 <= total_weight <= 1.01):
-            raise ValueError(f"Factor weights must sum to 1.0, got {total_weight}")
+            msg = f"Factor weights must sum to 1.0, got {total_weight}"
+            raise ValueError(msg)
         return v
 
 
@@ -92,23 +108,32 @@ class ModelParallelConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable parallel processing")
 
     max_workers: int = Field(
-        default=4, description="Maximum number of worker threads", ge=1, le=32
+        default=4,
+        description="Maximum number of worker threads",
+        ge=1,
+        le=32,
     )
 
     batch_size: int = Field(
-        default=100, description="Batch size for parallel operations", ge=1
+        default=100,
+        description="Batch size for parallel operations",
+        ge=1,
     )
 
     async_enabled: bool = Field(
-        default=False, description="Enable asynchronous processing"
+        default=False,
+        description="Enable asynchronous processing",
     )
 
     thread_pool_type: str = Field(
-        default="ThreadPoolExecutor", description="Thread pool implementation type"
+        default="ThreadPoolExecutor",
+        description="Thread pool implementation type",
     )
 
     queue_size: int = Field(
-        default=1000, description="Maximum queue size for pending operations", ge=1
+        default=1000,
+        description="Maximum queue size for pending operations",
+        ge=1,
     )
 
 
@@ -121,25 +146,32 @@ class ModelCachingConfig(BaseModel):
     """
 
     strategy: str = Field(
-        default="lru", description="Caching strategy (lru, fifo, lfu)"
+        default="lru",
+        description="Caching strategy (lru, fifo, lfu)",
     )
 
     max_size: int = Field(
-        default=1000, description="Maximum cache size (number of entries)", ge=1
+        default=1000,
+        description="Maximum cache size (number of entries)",
+        ge=1,
     )
 
     ttl_seconds: int = Field(
-        default=300, description="Time-to-live for cache entries in seconds", ge=1
+        default=300,
+        description="Time-to-live for cache entries in seconds",
+        ge=1,
     )
 
     enabled: bool = Field(default=True, description="Enable caching")
 
     cache_key_strategy: str = Field(
-        default="input_hash", description="Strategy for generating cache keys"
+        default="input_hash",
+        description="Strategy for generating cache keys",
     )
 
     eviction_policy: str = Field(
-        default="least_recently_used", description="Eviction policy when cache is full"
+        default="least_recently_used",
+        description="Eviction policy when cache is full",
     )
 
 
@@ -152,23 +184,28 @@ class ModelInputValidationConfig(BaseModel):
     """
 
     strict_validation: bool = Field(
-        default=True, description="Enable strict input validation"
+        default=True,
+        description="Enable strict input validation",
     )
 
-    required_fields: List[str] = Field(
-        default_factory=list, description="Required input fields"
+    required_fields: list[str] = Field(
+        default_factory=list,
+        description="Required input fields",
     )
 
-    field_constraints: Dict[str, str] = Field(
-        default_factory=dict, description="Field-specific validation constraints"
+    field_constraints: dict[str, str] = Field(
+        default_factory=dict,
+        description="Field-specific validation constraints",
     )
 
-    transformation_rules: Dict[str, str] = Field(
-        default_factory=dict, description="Input transformation rules"
+    transformation_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Input transformation rules",
     )
 
     sanitization_enabled: bool = Field(
-        default=True, description="Enable input sanitization"
+        default=True,
+        description="Enable input sanitization",
     )
 
 
@@ -183,15 +220,18 @@ class ModelOutputTransformationConfig(BaseModel):
     format_type: str = Field(default="standard", description="Output format type")
 
     precision_control: bool = Field(
-        default=True, description="Enable precision control for numeric outputs"
+        default=True,
+        description="Enable precision control for numeric outputs",
     )
 
-    transformation_rules: Dict[str, str] = Field(
-        default_factory=dict, description="Output transformation rules"
+    transformation_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Output transformation rules",
     )
 
     validation_enabled: bool = Field(
-        default=True, description="Enable output validation before return"
+        default=True,
+        description="Enable output validation before return",
     )
 
 
@@ -209,7 +249,8 @@ class ModelContractCompute(ModelContractBase):
 
     # Computation configuration
     algorithm: ModelAlgorithmConfig = Field(
-        ..., description="Algorithm configuration and parameters"
+        ...,
+        description="Algorithm configuration and parameters",
     )
 
     parallel_processing: ModelParallelConfig = Field(
@@ -218,7 +259,8 @@ class ModelContractCompute(ModelContractBase):
     )
 
     caching: ModelCachingConfig = Field(
-        default_factory=ModelCachingConfig, description="Caching strategy and policies"
+        default_factory=ModelCachingConfig,
+        description="Caching strategy and policies",
     )
 
     # Input/Output configuration
@@ -234,15 +276,18 @@ class ModelContractCompute(ModelContractBase):
 
     # Computation-specific settings
     deterministic_execution: bool = Field(
-        default=True, description="Ensure deterministic execution for same inputs"
+        default=True,
+        description="Ensure deterministic execution for same inputs",
     )
 
     memory_optimization_enabled: bool = Field(
-        default=True, description="Enable memory optimization strategies"
+        default=True,
+        description="Enable memory optimization strategies",
     )
 
     intermediate_result_caching: bool = Field(
-        default=False, description="Enable caching of intermediate computation results"
+        default=False,
+        description="Enable caching of intermediate computation results",
     )
 
     def validate_node_specific_config(self) -> None:
@@ -257,30 +302,35 @@ class ModelContractCompute(ModelContractBase):
         """
         # Validate algorithm factors are defined
         if not self.algorithm.factors:
-            raise ValueError("Compute node must define at least one algorithm factor")
+            msg = "Compute node must define at least one algorithm factor"
+            raise ValueError(msg)
 
         # Validate parallel processing compatibility
         if (
             self.parallel_processing.enabled
             and self.parallel_processing.max_workers < 1
         ):
-            raise ValueError("Parallel processing requires at least 1 worker")
+            msg = "Parallel processing requires at least 1 worker"
+            raise ValueError(msg)
 
         # Validate caching configuration
         if self.caching.enabled and self.caching.max_size < 1:
-            raise ValueError("Caching requires positive max_size")
+            msg = "Caching requires positive max_size"
+            raise ValueError(msg)
 
         # Validate performance requirements for compute nodes
         if not self.performance.single_operation_max_ms:
+            msg = "Compute nodes must specify single_operation_max_ms performance requirement"
             raise ValueError(
-                "Compute nodes must specify single_operation_max_ms performance requirement"
+                msg,
             )
 
     @validator("algorithm")
-    def validate_algorithm_consistency(cls, v):
+    def validate_algorithm_consistency(self, v):
         """Validate algorithm configuration consistency."""
         if v.algorithm_type == "weighted_factor_algorithm" and not v.factors:
-            raise ValueError("Weighted factor algorithm requires at least one factor")
+            msg = "Weighted factor algorithm requires at least one factor"
+            raise ValueError(msg)
         return v
 
     class Config:

@@ -5,14 +5,13 @@ Structured model for node actions that provides better metadata than simple enum
 Enhanced for tool-as-a-service architecture with MCP/GraphQL compatibility.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import Field, field_validator
 
 from omnibase_core.model.core.model_action_category import ModelActionCategory
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.model.core.predefined_categories import (LIFECYCLE,
-                                                            VALIDATION)
+from omnibase_core.model.core.predefined_categories import LIFECYCLE, VALIDATION
 
 from .model_action_base import ModelActionBase
 
@@ -26,36 +25,44 @@ class ModelNodeAction(ModelActionBase):
     """
 
     action_name: str = Field(
-        ..., description="Unique action identifier (human-readable name)"
+        ...,
+        description="Unique action identifier (human-readable name)",
     )
     action_type: ModelNodeActionType = Field(
-        ..., description="Rich action type with embedded metadata"
+        ...,
+        description="Rich action type with embedded metadata",
     )
     category: ModelActionCategory = Field(..., description="Action category")
     display_name: str = Field(..., description="Human-readable action name")
     description: str = Field(
-        ..., description="Detailed description of what this action does"
+        ...,
+        description="Detailed description of what this action does",
     )
 
     # Action metadata
     is_destructive: bool = Field(
-        default=False, description="Whether this action modifies data"
+        default=False,
+        description="Whether this action modifies data",
     )
     requires_confirmation: bool = Field(
-        default=False, description="Whether this action requires user confirmation"
+        default=False,
+        description="Whether this action requires user confirmation",
     )
-    estimated_duration_ms: Optional[int] = Field(
-        None, description="Estimated execution time in milliseconds"
+    estimated_duration_ms: int | None = Field(
+        None,
+        description="Estimated execution time in milliseconds",
     )
 
     # Parameters and validation with strong typing
-    required_parameters: List[str] = Field(
-        default_factory=list, description="Required parameter names"
+    required_parameters: list[str] = Field(
+        default_factory=list,
+        description="Required parameter names",
     )
-    optional_parameters: List[str] = Field(
-        default_factory=list, description="Optional parameter names"
+    optional_parameters: list[str] = Field(
+        default_factory=list,
+        description="Optional parameter names",
     )
-    parameter_schemas: Dict[str, Dict[str, Union[str, List[str], bool, int, float]]] = (
+    parameter_schemas: dict[str, dict[str, str | list[str] | bool | int | float]] = (
         Field(
             default_factory=dict,
             description="JSON schemas for parameters with strong typing",
@@ -63,26 +70,32 @@ class ModelNodeAction(ModelActionBase):
     )
 
     # Documentation and examples
-    examples: List[str] = Field(default_factory=list, description="Usage examples")
-    documentation_url: Optional[str] = Field(
-        None, description="URL to action documentation"
+    examples: list[str] = Field(default_factory=list, description="Usage examples")
+    documentation_url: str | None = Field(
+        None,
+        description="URL to action documentation",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for categorizing actions"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorizing actions",
     )
 
     # Tool-as-a-Service enhancements
-    mcp_endpoint: Optional[str] = Field(
-        None, description="MCP endpoint for executing this action"
+    mcp_endpoint: str | None = Field(
+        None,
+        description="MCP endpoint for executing this action",
     )
-    graphql_endpoint: Optional[str] = Field(
-        None, description="GraphQL endpoint for executing this action"
+    graphql_endpoint: str | None = Field(
+        None,
+        description="GraphQL endpoint for executing this action",
     )
     composition_compatible: bool = Field(
-        default=True, description="Whether action supports composition patterns"
+        default=True,
+        description="Whether action supports composition patterns",
     )
-    service_dependencies: List[str] = Field(
-        default_factory=list, description="Required service dependencies"
+    service_dependencies: list[str] = Field(
+        default_factory=list,
+        description="Required service dependencies",
     )
 
     @field_validator("action_type")
@@ -90,8 +103,9 @@ class ModelNodeAction(ModelActionBase):
     def validate_action_type(cls, v: ModelNodeActionType) -> ModelNodeActionType:
         """Validate that action_type is a valid ModelNodeActionType."""
         if not isinstance(v, ModelNodeActionType):
+            msg = f"action_type must be a ModelNodeActionType, got {type(v)}"
             raise ValueError(
-                f"action_type must be a ModelNodeActionType, got {type(v)}"
+                msg,
             )
         return v
 
@@ -106,8 +120,9 @@ class ModelNodeAction(ModelActionBase):
     ) -> "ModelNodeAction":
         """Create lifecycle actions like health_check."""
         if action_type.category != LIFECYCLE:
+            msg = f"Action type {action_type.name} is not a lifecycle action"
             raise ValueError(
-                f"Action type {action_type.name} is not a lifecycle action"
+                msg,
             )
         return cls(
             action_name=action_name,
@@ -129,8 +144,9 @@ class ModelNodeAction(ModelActionBase):
     ) -> "ModelNodeAction":
         """Create validation actions."""
         if action_type.category != VALIDATION:
+            msg = f"Action type {action_type.name} is not a validation action"
             raise ValueError(
-                f"Action type {action_type.name} is not a validation action"
+                msg,
             )
         return cls(
             action_name=action_name,
@@ -161,10 +177,12 @@ class ModelNodeAction(ModelActionBase):
             # Inherit behavioral flags from action type if not overridden
             is_destructive=kwargs.get("is_destructive", action_type.is_destructive),
             requires_confirmation=kwargs.get(
-                "requires_confirmation", action_type.requires_confirmation
+                "requires_confirmation",
+                action_type.requires_confirmation,
             ),
             estimated_duration_ms=kwargs.get(
-                "estimated_duration_ms", action_type.estimated_duration_ms
+                "estimated_duration_ms",
+                action_type.estimated_duration_ms,
             ),
             **{
                 k: v
@@ -180,7 +198,7 @@ class ModelNodeAction(ModelActionBase):
 
     def to_service_metadata(
         self,
-    ) -> Dict[str, Union[str, bool, List[str], Optional[int], Dict[str, Any]]]:
+    ) -> dict[str, str | bool | list[str] | int | None | dict[str, Any]]:
         """Generate service metadata for tool discovery with strong typing."""
         return {
             "action_name": self.action_name,

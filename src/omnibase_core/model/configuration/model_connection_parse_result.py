@@ -6,6 +6,7 @@ and compliance with one-model-per-file naming conventions.
 """
 
 from .model_latency_profile import ModelLatencyProfile
+
 # Import separated models
 from .model_parsed_connection_info import ModelParsedConnectionInfo
 from .model_pool_recommendations import ModelPoolRecommendations
@@ -17,11 +18,11 @@ LatencyProfile = ModelLatencyProfile
 
 # Re-export for backward compatibility
 __all__ = [
+    "LatencyProfile",
+    "ModelLatencyProfile",
     "ModelParsedConnectionInfo",
     "ModelPoolRecommendations",
-    "ModelLatencyProfile",
     # Backward compatibility
     "ParsedConnectionInfo",
     "PoolRecommendations",
-    "LatencyProfile",
 ]

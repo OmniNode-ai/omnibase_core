@@ -5,16 +5,13 @@ Extends the basic agent config to support Ollama, Claude, and other LLM provider
 with proper ONEX strong typing and dynamic configuration.
 """
 
-from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import Field
 
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
-from omnibase_core.model.agent.model_llm_provider_config import \
-    ModelLLMProviderConfig
-from omnibase_core.model.configuration.model_agent_config import \
-    ModelAgentConfig
+from omnibase_core.model.agent.model_llm_provider_config import ModelLLMProviderConfig
+from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
 
 
 class ModelLLMAgentConfig(ModelAgentConfig):
@@ -27,28 +24,31 @@ class ModelLLMAgentConfig(ModelAgentConfig):
 
     # Provider configuration
     llm_provider_config: ModelLLMProviderConfig = Field(
-        ..., description="LLM provider-specific configuration"
+        ...,
+        description="LLM provider-specific configuration",
     )
 
     # Agent capabilities based on model
-    capabilities: List[EnumAgentCapability] = Field(
-        default_factory=list, description="Agent capabilities for task routing"
+    capabilities: list[EnumAgentCapability] = Field(
+        default_factory=list,
+        description="Agent capabilities for task routing",
     )
 
     # Fallback providers for resilience
-    fallback_providers: List[ModelLLMProviderConfig] = Field(
+    fallback_providers: list[ModelLLMProviderConfig] = Field(
         default_factory=list,
         description="Fallback provider configurations if primary fails",
     )
 
     # Task routing preferences
-    preferred_task_types: List[str] = Field(
-        default_factory=list, description="Types of tasks this agent prefers to handle"
+    preferred_task_types: list[str] = Field(
+        default_factory=list,
+        description="Types of tasks this agent prefers to handle",
     )
 
     # Resource constraints
     max_concurrent_tasks: int = Field(1, description="Maximum concurrent tasks")
-    memory_limit_mb: Optional[int] = Field(None, description="Memory limit in MB")
+    memory_limit_mb: int | None = Field(None, description="Memory limit in MB")
 
     # Agent role/purpose for descriptive naming
     agent_role: str = Field(
@@ -100,5 +100,5 @@ class ModelLLMAgentConfig(ModelAgentConfig):
                     "write_files": True,
                     "execute_commands": False,
                 },
-            }
+            },
         }

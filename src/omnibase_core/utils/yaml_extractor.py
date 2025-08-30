@@ -32,7 +32,8 @@ from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 
 
 def extract_example_from_schema(
-    schema_path: Path, example_index: int = 0
+    schema_path: Path,
+    example_index: int = 0,
 ) -> dict[str, Any]:
     """
     Extract a node metadata example from a YAML schema file's 'examples' section.

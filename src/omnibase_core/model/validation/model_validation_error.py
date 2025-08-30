@@ -5,7 +5,7 @@ Structured validation error model for argument parsing and validation
 with severity levels and detailed error information.
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -28,40 +28,46 @@ class ModelValidationError(BaseModel):
 
     message: str = Field(..., description="Human-readable error message")
 
-    field_name: Optional[str] = Field(
-        None, description="Name of the field that failed validation"
+    field_name: str | None = Field(
+        None,
+        description="Name of the field that failed validation",
     )
 
-    field_value: Optional[Any] = Field(None, description="Value that failed validation")
+    field_value: Any | None = Field(None, description="Value that failed validation")
 
     severity: ModelSeverity = Field(
         default_factory=ModelSeverity.ERROR,
         description="Severity level of this validation error",
     )
 
-    location: Optional[str] = Field(
+    location: str | None = Field(
         None,
         description="Location where the error occurred (e.g., 'argument 2', 'flag --name')",
     )
 
-    expected_type: Optional[str] = Field(
-        None, description="Expected type or format for the field"
+    expected_type: str | None = Field(
+        None,
+        description="Expected type or format for the field",
     )
 
-    actual_type: Optional[str] = Field(
-        None, description="Actual type or format that was provided"
+    actual_type: str | None = Field(
+        None,
+        description="Actual type or format that was provided",
     )
 
-    suggestions: List[str] = Field(
-        default_factory=list, description="Suggested fixes or alternatives"
+    suggestions: list[str] = Field(
+        default_factory=list,
+        description="Suggested fixes or alternatives",
     )
 
-    validation_rule: Optional[str] = Field(
-        None, description="The validation rule that was violated"
+    validation_rule: str | None = Field(
+        None,
+        description="The validation rule that was violated",
     )
 
-    help_text: Optional[str] = Field(
-        None, description="Additional help text for resolving the error"
+    help_text: str | None = Field(
+        None,
+        description="Additional help text for resolving the error",
     )
 
     def is_critical(self) -> bool:
@@ -99,7 +105,7 @@ class ModelValidationError(BaseModel):
 
         return " ".join(parts)
 
-    def get_help_display(self) -> Optional[str]:
+    def get_help_display(self) -> str | None:
         """Get formatted help display with suggestions."""
         if not self.suggestions and not self.help_text:
             return None
@@ -122,7 +128,7 @@ class ModelValidationError(BaseModel):
         field_name: str,
         expected_type: str,
         actual_value: Any,
-        location: Optional[str] = None,
+        location: str | None = None,
     ) -> "ModelValidationError":
         """Create a type validation error."""
         actual_type = type(actual_value).__name__
@@ -140,7 +146,9 @@ class ModelValidationError(BaseModel):
 
     @classmethod
     def create_required_error(
-        cls, field_name: str, location: Optional[str] = None
+        cls,
+        field_name: str,
+        location: str | None = None,
     ) -> "ModelValidationError":
         """Create a required field error."""
         return cls(
@@ -157,8 +165,8 @@ class ModelValidationError(BaseModel):
         cls,
         field_name: str,
         actual_value: Any,
-        valid_choices: List[str],
-        location: Optional[str] = None,
+        valid_choices: list[str],
+        location: str | None = None,
     ) -> "ModelValidationError":
         """Create a choice validation error."""
         return cls(
@@ -177,7 +185,7 @@ class ModelValidationError(BaseModel):
         field_name: str,
         actual_value: Any,
         pattern: str,
-        location: Optional[str] = None,
+        location: str | None = None,
     ) -> "ModelValidationError":
         """Create a pattern validation error."""
         return cls(

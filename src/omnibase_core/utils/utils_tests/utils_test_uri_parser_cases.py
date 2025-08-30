@@ -21,15 +21,16 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 
 from omnibase_core.enums import UriTypeEnum  # type: ignore[import-untyped]
-from omnibase_core.exceptions import \
-    OmniBaseError  # type: ignore[import-untyped]
-from omnibase_core.model.core.model_uri import \
-    ModelOnexUri  # type: ignore[import-untyped]
+from omnibase_core.exceptions import OmniBaseError  # type: ignore[import-untyped]
+from omnibase_core.model.core.model_uri import (  # type: ignore[import-untyped]
+    ModelOnexUri,
+)
 
 URI_PARSER_TEST_CASES: dict[str, type] = {}
 

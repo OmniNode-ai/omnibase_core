@@ -24,29 +24,29 @@ def get_tool_name_discriminator(v: dict) -> str:
         # Try to determine tool type from response structure
         if "exit_code" in v and "stdout" in v:
             return "bash"
-        elif "content" in v and "file_path" in v and "lines_read" in v:
+        if "content" in v and "file_path" in v and "lines_read" in v:
             return "read"
-        elif "bytes_written" in v and "operation_type" in v:
+        if "bytes_written" in v and "operation_type" in v:
             return "write"
-        elif "old_string" in v and "new_string" in v and "replacements_made" in v:
+        if "old_string" in v and "new_string" in v and "replacements_made" in v:
             return "edit"
-        elif "pattern" in v and "search_results" in v:
+        if "pattern" in v and "search_results" in v:
             return "grep"
-        elif (
+        if (
             "pattern" in v
             and "matches_found" in v
             and isinstance(v.get("matches_found"), list)
         ):
             return "glob"
-        elif "entries" in v and "directories_count" in v:
+        if "entries" in v and "directories_count" in v:
             return "ls"
-        elif "edits_applied" in v and "total_edits" in v:
+        if "edits_applied" in v and "total_edits" in v:
             return "multiedit"
-        elif "query" in v and "search_engine" in v:
+        if "query" in v and "search_engine" in v:
             return "websearch"
-        elif "url" in v and "status_code" in v:
+        if "url" in v and "status_code" in v:
             return "webfetch"
-        elif "notebook_path" in v and "edit_mode" in v:
+        if "notebook_path" in v and "edit_mode" in v:
             return "notebookedit"
 
     # Fallback to empty string if can't determine
@@ -80,10 +80,12 @@ class ModelClaudeCodeResponseWrapper(BaseModel):
     """Wrapper for Claude Code tool responses with tool identification."""
 
     tool_name: str = Field(
-        ..., description="Name of the tool that generated this response"
+        ...,
+        description="Name of the tool that generated this response",
     )
     response: ClaudeCodeToolResponseUnion = Field(
-        ..., description="The actual tool response data"
+        ...,
+        description="The actual tool response data",
     )
 
     class Config:
@@ -91,77 +93,88 @@ class ModelClaudeCodeResponseWrapper(BaseModel):
 
     @classmethod
     def create_bash_response(
-        cls, response: ModelBashToolResponse
+        cls,
+        response: ModelBashToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Bash tool response."""
         return cls(tool_name="bash", response=response)
 
     @classmethod
     def create_read_response(
-        cls, response: ModelReadToolResponse
+        cls,
+        response: ModelReadToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Read tool response."""
         return cls(tool_name="read", response=response)
 
     @classmethod
     def create_write_response(
-        cls, response: ModelWriteToolResponse
+        cls,
+        response: ModelWriteToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Write tool response."""
         return cls(tool_name="write", response=response)
 
     @classmethod
     def create_edit_response(
-        cls, response: ModelEditToolResponse
+        cls,
+        response: ModelEditToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Edit tool response."""
         return cls(tool_name="edit", response=response)
 
     @classmethod
     def create_grep_response(
-        cls, response: ModelGrepToolResponse
+        cls,
+        response: ModelGrepToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Grep tool response."""
         return cls(tool_name="grep", response=response)
 
     @classmethod
     def create_glob_response(
-        cls, response: ModelGlobToolResponse
+        cls,
+        response: ModelGlobToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for Glob tool response."""
         return cls(tool_name="glob", response=response)
 
     @classmethod
     def create_ls_response(
-        cls, response: ModelLSToolResponse
+        cls,
+        response: ModelLSToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for LS tool response."""
         return cls(tool_name="ls", response=response)
 
     @classmethod
     def create_multiedit_response(
-        cls, response: ModelMultiEditToolResponse
+        cls,
+        response: ModelMultiEditToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for MultiEdit tool response."""
         return cls(tool_name="multiedit", response=response)
 
     @classmethod
     def create_websearch_response(
-        cls, response: ModelWebSearchToolResponse
+        cls,
+        response: ModelWebSearchToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for WebSearch tool response."""
         return cls(tool_name="websearch", response=response)
 
     @classmethod
     def create_webfetch_response(
-        cls, response: ModelWebFetchToolResponse
+        cls,
+        response: ModelWebFetchToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for WebFetch tool response."""
         return cls(tool_name="webfetch", response=response)
 
     @classmethod
     def create_notebookedit_response(
-        cls, response: ModelNotebookEditToolResponse
+        cls,
+        response: ModelNotebookEditToolResponse,
     ) -> "ModelClaudeCodeResponseWrapper":
         """Create wrapper for NotebookEdit tool response."""
         return cls(tool_name="notebookedit", response=response)

@@ -1,21 +1,19 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.service.model_custom_fields import ModelErrorDetails
-from omnibase_core.model.service.model_event_bus_output_field import \
-    ModelEventBusOutputField
+from omnibase_core.model.service.model_event_bus_output_field import (
+    ModelEventBusOutputField,
+)
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_business_impact import \
-        ModelBusinessImpact
-    from omnibase_core.model.core.model_generic_properties import \
-        ModelErrorSummary
-    from omnibase_core.model.core.model_monitoring_metrics import \
-        ModelMonitoringMetrics
+    from omnibase_core.model.core.model_business_impact import ModelBusinessImpact
+    from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
+    from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
 
 
 class ModelEventBusOutputState(BaseModel):
@@ -33,11 +31,13 @@ class ModelEventBusOutputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        ..., description="Schema version for output state (matches input)"
+        ...,
+        description="Schema version for output state (matches input)",
     )
 
     status: EnumOnexStatus = Field(
-        ..., description="Execution status with business context"
+        ...,
+        description="Execution status with business context",
     )
 
     message: str = Field(
@@ -47,48 +47,60 @@ class ModelEventBusOutputState(BaseModel):
         max_length=2000,
     )
 
-    output_field: Optional[ModelEventBusOutputField] = Field(
-        default=None, description="Canonical output field with processing results"
+    output_field: ModelEventBusOutputField | None = Field(
+        default=None,
+        description="Canonical output field with processing results",
     )
 
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
 
-    event_id: Optional[str] = Field(
-        default=None, description="Unique event identifier", max_length=100
+    event_id: str | None = Field(
+        default=None,
+        description="Unique event identifier",
+        max_length=100,
     )
 
-    processing_time_ms: Optional[int] = Field(
-        default=None, description="Processing time in milliseconds", ge=0
+    processing_time_ms: int | None = Field(
+        default=None,
+        description="Processing time in milliseconds",
+        ge=0,
     )
 
-    retry_attempt: Optional[int] = Field(
-        default=0, description="Current retry attempt number", ge=0, le=10
+    retry_attempt: int | None = Field(
+        default=0,
+        description="Current retry attempt number",
+        ge=0,
+        le=10,
     )
 
-    error_code: Optional[str] = Field(
+    error_code: str | None = Field(
         default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
 
-    error_details: Optional[ModelErrorDetails] = Field(
-        default=None, description="Detailed error information for debugging"
+    error_details: ModelErrorDetails | None = Field(
+        default=None,
+        description="Detailed error information for debugging",
     )
 
     metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None, description="Performance and operational metrics"
+        None,
+        description="Performance and operational metrics",
     )
 
-    warnings: Optional[List[str]] = Field(
-        default_factory=list, description="Non-fatal warnings during processing"
+    warnings: list[str] | None = Field(
+        default_factory=list,
+        description="Non-fatal warnings during processing",
     )
 
-    next_retry_at: Optional[str] = Field(
-        default=None, description="ISO timestamp for next retry attempt"
+    next_retry_at: str | None = Field(
+        default=None,
+        description="ISO timestamp for next retry attempt",
     )
 
     @field_validator("version", mode="before")
@@ -101,14 +113,16 @@ class ModelEventBusOutputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("version must be a string, dict, or ModelSemVer")
+        msg = "version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("status")
     @classmethod
     def validate_status(cls, v: EnumOnexStatus) -> EnumOnexStatus:
         """Validate status value."""
         if not isinstance(v, EnumOnexStatus):
-            raise ValueError("status must be an EnumOnexStatus enum value")
+            msg = "status must be an EnumOnexStatus enum value"
+            raise ValueError(msg)
         return v
 
     @field_validator("message")
@@ -116,13 +130,14 @@ class ModelEventBusOutputState(BaseModel):
     def validate_message(cls, v: str) -> str:
         """Validate message content."""
         if not v or not v.strip():
-            raise ValueError("message cannot be empty or whitespace")
+            msg = "message cannot be empty or whitespace"
+            raise ValueError(msg)
 
         return v.strip()
 
     @field_validator("error_code")
     @classmethod
-    def validate_error_code(cls, v: Optional[str]) -> Optional[str]:
+    def validate_error_code(cls, v: str | None) -> str | None:
         """Validate error code format."""
         if v is None:
             return v
@@ -135,8 +150,9 @@ class ModelEventBusOutputState(BaseModel):
         import re
 
         if not re.match(r"^[A-Z0-9_]+$", v):
+            msg = "error_code must contain only uppercase letters, numbers, and underscores"
             raise ValueError(
-                "error_code must contain only uppercase letters, numbers, and underscores"
+                msg,
             )
 
         return v
@@ -193,14 +209,13 @@ class ModelEventBusOutputState(BaseModel):
 
         if self.processing_time_ms < 100:
             return "excellent"
-        elif self.processing_time_ms < 500:
+        if self.processing_time_ms < 500:
             return "good"
-        elif self.processing_time_ms < 2000:
+        if self.processing_time_ms < 2000:
             return "acceptable"
-        elif self.processing_time_ms < 10000:
+        if self.processing_time_ms < 10000:
             return "slow"
-        else:
-            return "very_slow"
+        return "very_slow"
 
     def is_performance_concerning(self) -> bool:
         """Check if performance metrics indicate potential issues."""
@@ -214,27 +229,26 @@ class ModelEventBusOutputState(BaseModel):
 
         if self.processing_time_ms < 1000:
             return f"{self.processing_time_ms}ms"
-        else:
-            seconds = self.processing_time_ms / 1000
-            return f"{seconds:.2f}s"
+        seconds = self.processing_time_ms / 1000
+        return f"{seconds:.2f}s"
 
-    def get_performance_recommendations(self) -> List[str]:
+    def get_performance_recommendations(self) -> list[str]:
         """Get performance improvement recommendations."""
         recommendations = []
 
         if self.is_performance_concerning():
             recommendations.append(
-                "Consider optimizing processing logic for better performance"
+                "Consider optimizing processing logic for better performance",
             )
 
         if self.retry_attempt and self.retry_attempt > 2:
             recommendations.append(
-                "High retry count indicates potential systemic issues"
+                "High retry count indicates potential systemic issues",
             )
 
         if self.has_warnings():
             recommendations.append(
-                "Review warnings to prevent potential future failures"
+                "Review warnings to prevent potential future failures",
             )
 
         return recommendations
@@ -246,8 +260,7 @@ class ModelEventBusOutputState(BaseModel):
         if not self.is_failed():
             return None
 
-        from omnibase_core.model.core.model_generic_properties import \
-            ModelErrorSummary
+        from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
 
         return ModelErrorSummary(
             error_code=self.error_code or "UNKNOWN",
@@ -261,7 +274,7 @@ class ModelEventBusOutputState(BaseModel):
             },
         )
 
-    def get_troubleshooting_steps(self) -> List[str]:
+    def get_troubleshooting_steps(self) -> list[str]:
         """Get troubleshooting recommendations based on error patterns."""
         steps = []
 
@@ -283,14 +296,14 @@ class ModelEventBusOutputState(BaseModel):
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
-        from omnibase_core.model.core.model_monitoring_metrics import \
-            ModelMonitoringMetrics
+        from omnibase_core.model.core.model_monitoring_metrics import (
+            ModelMonitoringMetrics,
+        )
 
         success_rate = 100.0 if self.is_successful() else 0.0
         error_rate = 100.0 if self.is_failed() else 0.0
 
-        from omnibase_core.model.core.model_monitoring_metrics import \
-            MetricValue
+        from omnibase_core.model.core.model_monitoring_metrics import MetricValue
 
         return ModelMonitoringMetrics(
             response_time_ms=(
@@ -308,12 +321,12 @@ class ModelEventBusOutputState(BaseModel):
                 "severity": MetricValue(value=self.get_severity_level()),
                 "retry_attempt": MetricValue(value=self.retry_attempt or 0),
                 "warnings": MetricValue(
-                    value=len(self.warnings) if self.warnings else 0
+                    value=len(self.warnings) if self.warnings else 0,
                 ),
             },
         )
 
-    def get_log_context(self) -> Dict[str, str]:
+    def get_log_context(self) -> dict[str, str]:
         """Get structured logging context."""
         context = {
             "status": self.status.value,
@@ -340,7 +353,9 @@ class ModelEventBusOutputState(BaseModel):
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the operation result."""
         from omnibase_core.model.core.model_business_impact import (
-            ImpactSeverity, ModelBusinessImpact)
+            ImpactSeverity,
+            ModelBusinessImpact,
+        )
 
         severity = (
             ImpactSeverity.CRITICAL
@@ -390,28 +405,26 @@ class ModelEventBusOutputState(BaseModel):
         """Assess impact on user experience."""
         if self.is_failed():
             return "high_negative"
-        elif self.is_warning_only() or self.has_warnings():
+        if self.is_warning_only() or self.has_warnings():
             return "medium_negative"
-        elif self.is_performance_concerning():
+        if self.is_performance_concerning():
             return "low_negative"
-        elif self.is_successful() and self.get_performance_category() in [
+        if self.is_successful() and self.get_performance_category() in [
             "excellent",
             "good",
         ]:
             return "positive"
-        else:
-            return "neutral"
+        return "neutral"
 
     def _estimate_operational_cost(self) -> str:
         """Estimate operational cost impact."""
         if self.retry_attempt and self.retry_attempt >= 3:
             return "high"
-        elif self.processing_time_ms and self.processing_time_ms > 10000:
+        if self.processing_time_ms and self.processing_time_ms > 10000:
             return "medium"
-        elif self.has_warnings():
+        if self.has_warnings():
             return "low"
-        else:
-            return "minimal"
+        return "minimal"
 
     # === Factory Methods ===
 
@@ -420,7 +433,7 @@ class ModelEventBusOutputState(BaseModel):
         cls,
         version: str,
         message: str = "Operation completed successfully",
-        processing_time_ms: Optional[int] = None,
+        processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create successful output state."""
         return cls(
@@ -435,7 +448,7 @@ class ModelEventBusOutputState(BaseModel):
         cls,
         version: str,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         retry_attempt: int = 0,
     ) -> "ModelEventBusOutputState":
         """Create error output state."""
@@ -452,8 +465,8 @@ class ModelEventBusOutputState(BaseModel):
         cls,
         version: str,
         message: str,
-        warnings: List[str],
-        processing_time_ms: Optional[int] = None,
+        warnings: list[str],
+        processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create warning output state."""
         return cls(
@@ -493,7 +506,7 @@ class ModelEventBusOutputState(BaseModel):
         message: str,
         correlation_id: str,
         event_id: str,
-        processing_time_ms: Optional[int] = None,
+        processing_time_ms: int | None = None,
     ) -> "ModelEventBusOutputState":
         """Create output state with full tracking information."""
         return cls(

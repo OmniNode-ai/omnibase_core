@@ -2,8 +2,6 @@
 Permission action model for defining allowed actions in permission constraints.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +12,9 @@ class ModelPermissionAction(BaseModel):
     """
 
     action_id: str = Field(
-        ..., description="Unique action identifier", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Unique action identifier",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     action_name: str = Field(..., description="Human-readable action name")
@@ -25,12 +25,14 @@ class ModelPermissionAction(BaseModel):
         pattern="^(read|write|delete|execute|admin|custom)$",
     )
 
-    resource_types: List[str] = Field(
-        default_factory=list, description="Resource types this action applies to"
+    resource_types: list[str] = Field(
+        default_factory=list,
+        description="Resource types this action applies to",
     )
 
     requires_approval: bool = Field(
-        default=False, description="Whether this action requires approval"
+        default=False,
+        description="Whether this action requires approval",
     )
 
     risk_level: str = Field(
@@ -39,22 +41,28 @@ class ModelPermissionAction(BaseModel):
         pattern="^(low|medium|high|critical)$",
     )
 
-    description: Optional[str] = Field(
-        None, description="Detailed description of the action"
+    description: str | None = Field(
+        None,
+        description="Detailed description of the action",
     )
 
     # Constraints
-    max_frequency_per_hour: Optional[int] = Field(
-        None, description="Maximum times this action can be performed per hour", ge=0
+    max_frequency_per_hour: int | None = Field(
+        None,
+        description="Maximum times this action can be performed per hour",
+        ge=0,
     )
 
-    cooldown_minutes: Optional[int] = Field(
-        None, description="Cooldown period between actions in minutes", ge=0
+    cooldown_minutes: int | None = Field(
+        None,
+        description="Cooldown period between actions in minutes",
+        ge=0,
     )
 
     # Audit requirements
     audit_required: bool = Field(
-        default=True, description="Whether this action must be audited"
+        default=True,
+        description="Whether this action must be audited",
     )
 
     audit_detail_level: str = Field(

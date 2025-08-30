@@ -6,7 +6,6 @@ enabling third-party plugins to register their own event types dynamically.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 import yaml
 
@@ -17,9 +16,9 @@ class EventTypeRegistry:
     """Registry for dynamically discovered event types."""
 
     def __init__(self):
-        self._event_types: Dict[str, ModelEventType] = {}
-        self._namespace_events: Dict[str, Set[str]] = {}
-        self._qualified_events: Dict[str, ModelEventType] = {}
+        self._event_types: dict[str, ModelEventType] = {}
+        self._namespace_events: dict[str, set[str]] = {}
+        self._qualified_events: dict[str, ModelEventType] = {}
 
     def register_event_type(self, event_type: ModelEventType) -> None:
         """Register an event type from a node contract."""
@@ -32,21 +31,22 @@ class EventTypeRegistry:
         qualified_name = event_type.qualified_name
         self._qualified_events[qualified_name] = event_type
 
-    def get_event_type(self, event_name: str) -> Optional[ModelEventType]:
+    def get_event_type(self, event_name: str) -> ModelEventType | None:
         """Get event type by name."""
         return self._event_types.get(event_name)
 
     def get_event_type_by_qualified_name(
-        self, qualified_name: str
-    ) -> Optional[ModelEventType]:
+        self,
+        qualified_name: str,
+    ) -> ModelEventType | None:
         """Get event type by qualified name (namespace:event)."""
         return self._qualified_events.get(qualified_name)
 
-    def get_all_event_types(self) -> List[ModelEventType]:
+    def get_all_event_types(self) -> list[ModelEventType]:
         """Get all registered event types."""
         return list(self._event_types.values())
 
-    def get_events_for_namespace(self, namespace: str) -> List[ModelEventType]:
+    def get_events_for_namespace(self, namespace: str) -> list[ModelEventType]:
         """Get all event types for a specific namespace."""
         if namespace not in self._namespace_events:
             return []
@@ -78,10 +78,7 @@ class EventTypeRegistry:
         for contract_file in contract_files:
             try:
                 events_discovered += self._discover_from_contract(contract_file)
-            except Exception as e:
-                print(
-                    f"Warning: Failed to discover event types from {contract_file}: {e}"
-                )
+            except Exception:
                 continue
 
         return events_discovered
@@ -99,7 +96,7 @@ class EventTypeRegistry:
         events_discovered = 0
 
         try:
-            with open(contract_file, "r") as f:
+            with open(contract_file) as f:
                 contract = yaml.safe_load(f)
 
             if not contract:
@@ -124,7 +121,8 @@ class EventTypeRegistry:
                     event_name=event_name,
                     namespace=event_config.get("namespace", node_name),
                     description=event_config.get(
-                        "description", f"{event_name} event from {node_name}"
+                        "description",
+                        f"{event_name} event from {node_name}",
                     ),
                     category=event_config.get("category", "contract"),
                     severity=event_config.get("severity", "info"),
@@ -148,7 +146,8 @@ class EventTypeRegistry:
                     events_discovered += 1
 
         except Exception as e:
-            raise Exception(f"Failed to parse contract {contract_file}: {e}")
+            msg = f"Failed to parse contract {contract_file}: {e}"
+            raise Exception(msg)
 
         return events_discovered
 
@@ -183,7 +182,7 @@ class EventTypeRegistry:
         self._namespace_events.clear()
         self._qualified_events.clear()
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get registry statistics."""
         return {
             "total_event_types": len(self._event_types),
@@ -193,7 +192,7 @@ class EventTypeRegistry:
 
 
 # Global registry instance
-_global_event_type_registry: Optional[EventTypeRegistry] = None
+_global_event_type_registry: EventTypeRegistry | None = None
 
 
 def get_event_type_registry() -> EventTypeRegistry:

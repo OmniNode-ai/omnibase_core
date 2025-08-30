@@ -6,7 +6,7 @@ Standardized error handling for the ONEX framework.
 """
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class CoreErrorCode(str, Enum):
@@ -35,8 +35,8 @@ class OnexError(Exception):
         self,
         code: CoreErrorCode,
         message: str,
-        details: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None,
+        details: dict[str, Any] | None = None,
+        cause: Exception | None = None,
     ):
         """
         Initialize ONEX error.
@@ -59,7 +59,7 @@ class OnexError(Exception):
 
         super().__init__(full_message)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for serialization."""
         result = {
             "code": self.code.value,

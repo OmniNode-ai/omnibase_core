@@ -5,13 +5,12 @@ Flexible node reference model that replaces EnumTargetNode
 to support local, remote, and third-party node references.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_capability import ModelCapability
-from omnibase_core.model.core.model_node_metadata import \
-    NodeMetadataBlock as ModelNodeMetadata
+from omnibase_core.model.core.model_node_metadata import (
+    NodeMetadataBlock as ModelNodeMetadata,
+)
 
 
 class ModelNodeReference(BaseModel):
@@ -24,22 +23,26 @@ class ModelNodeReference(BaseModel):
 
     node_name: str = Field(..., description="Node name", pattern="^[a-z][a-z0-9_]*$")
 
-    namespace: Optional[str] = Field(
-        None, description="Namespace for third-party isolation"
+    namespace: str | None = Field(
+        None,
+        description="Namespace for third-party isolation",
     )
 
-    capabilities: List[ModelCapability] = Field(
-        default_factory=list, description="Node capabilities"
+    capabilities: list[ModelCapability] = Field(
+        default_factory=list,
+        description="Node capabilities",
     )
 
     node_type: str = Field(
-        default="local", description="Node type (local, remote, plugin)"
+        default="local",
+        description="Node type (local, remote, plugin)",
     )
 
-    endpoint: Optional[str] = Field(None, description="Remote endpoint URL")
+    endpoint: str | None = Field(None, description="Remote endpoint URL")
 
-    metadata: Optional[ModelNodeMetadata] = Field(
-        None, description="Additional node metadata"
+    metadata: ModelNodeMetadata | None = Field(
+        None,
+        description="Additional node metadata",
     )
 
     def get_qualified_name(self) -> str:
@@ -62,18 +65,19 @@ class ModelNodeReference(BaseModel):
 
     def has_capability(self, capability: ModelCapability) -> bool:
         """Check if node has a specific capability."""
-        for cap in self.capabilities:
-            if cap.matches(capability):
-                return True
-        return False
+        return any(cap.matches(capability) for cap in self.capabilities)
 
     @classmethod
     def create_local(
-        cls, node_name: str, capabilities: Optional[List[ModelCapability]] = None
+        cls,
+        node_name: str,
+        capabilities: list[ModelCapability] | None = None,
     ) -> "ModelNodeReference":
         """Create a local node reference."""
         return cls(
-            node_name=node_name, node_type="local", capabilities=capabilities or []
+            node_name=node_name,
+            node_type="local",
+            capabilities=capabilities or [],
         )
 
     @classmethod
@@ -81,7 +85,7 @@ class ModelNodeReference(BaseModel):
         cls,
         node_name: str,
         endpoint: str,
-        capabilities: Optional[List[ModelCapability]] = None,
+        capabilities: list[ModelCapability] | None = None,
     ) -> "ModelNodeReference":
         """Create a remote node reference."""
         return cls(
@@ -96,7 +100,7 @@ class ModelNodeReference(BaseModel):
         cls,
         node_name: str,
         namespace: str,
-        capabilities: Optional[List[ModelCapability]] = None,
+        capabilities: list[ModelCapability] | None = None,
     ) -> "ModelNodeReference":
         """Create a node reference with namespace."""
         return cls(

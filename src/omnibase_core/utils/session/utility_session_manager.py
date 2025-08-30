@@ -6,10 +6,8 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 
 import hashlib
 import socket
-from typing import Optional
 
-from omnibase_core.model.hook_events.model_onex_hook_event import \
-    ModelOnexHookEvent
+from omnibase_core.model.hook_events.model_onex_hook_event import ModelOnexHookEvent
 from omnibase_core.utils.session.model_session_info import ModelSessionInfo
 
 
@@ -28,8 +26,9 @@ class UtilitySessionManager:
         self.hostname = socket.gethostname()
 
     def extract_working_directory(
-        self, hook_event: ModelOnexHookEvent
-    ) -> Optional[str]:
+        self,
+        hook_event: ModelOnexHookEvent,
+    ) -> str | None:
         """Extract working directory from hook event data.
 
         Args:
@@ -50,7 +49,7 @@ class UtilitySessionManager:
 
         return None
 
-    def generate_session_id(self, working_directory: Optional[str]) -> str:
+    def generate_session_id(self, working_directory: str | None) -> str:
         """Generate consistent session ID from hostname and working directory.
 
         Args:
@@ -64,14 +63,14 @@ class UtilitySessionManager:
             session_key = f"{self.hostname}:{working_directory}"
 
             # Generate consistent session ID from the key (use hash for consistency)
-            session_id = hashlib.md5(session_key.encode()).hexdigest()
-            return session_id
+            return hashlib.md5(session_key.encode()).hexdigest()
 
         # Fallback for events without working directory
         return "unknown-session"
 
     def get_or_generate_session_info(
-        self, hook_event: ModelOnexHookEvent
+        self,
+        hook_event: ModelOnexHookEvent,
     ) -> ModelSessionInfo:
         """Get session information from event or generate new session data.
 

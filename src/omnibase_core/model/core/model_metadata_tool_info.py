@@ -3,7 +3,6 @@ Metadata tool info model.
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -47,13 +46,16 @@ class ModelMetadataToolInfo(BaseModel):
 
     name: str = Field(..., description="Tool name")
     tool_type: MetadataToolType = Field(
-        MetadataToolType.FUNCTION, description="Type of tool"
+        MetadataToolType.FUNCTION,
+        description="Type of tool",
     )
     status: MetadataToolStatus = Field(
-        MetadataToolStatus.ACTIVE, description="Tool status"
+        MetadataToolStatus.ACTIVE,
+        description="Tool status",
     )
     complexity: MetadataToolComplexity = Field(
-        MetadataToolComplexity.SIMPLE, description="Tool complexity"
+        MetadataToolComplexity.SIMPLE,
+        description="Tool complexity",
     )
 
     # Documentation and metadata
@@ -61,29 +63,35 @@ class ModelMetadataToolInfo(BaseModel):
     documentation: str = Field("", description="Detailed documentation")
     author: str = Field("Unknown", description="Tool author")
     version: str = Field("1.0.0", description="Tool version")
-    tags: List[str] = Field(
-        default_factory=list, description="Tool tags for categorization"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tool tags for categorization",
     )
 
     # Usage and performance
     usage_metrics: ModelMetadataToolUsageMetrics = Field(
-        default_factory=ModelMetadataToolUsageMetrics, description="Usage metrics"
+        default_factory=ModelMetadataToolUsageMetrics,
+        description="Usage metrics",
     )
 
     # Dependencies and relationships
-    dependencies: List[str] = Field(
-        default_factory=list, description="Tool dependencies"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Tool dependencies",
     )
-    related_tools: List[str] = Field(default_factory=list, description="Related tools")
-    replaces: Optional[str] = Field(
-        None, description="Tool this replaces (for deprecation)"
+    related_tools: list[str] = Field(default_factory=list, description="Related tools")
+    replaces: str | None = Field(
+        None,
+        description="Tool this replaces (for deprecation)",
     )
 
     # Security and compliance
     security_level: str = Field("standard", description="Security level required")
-    compliance_notes: List[str] = Field(
-        default_factory=list, description="Compliance notes"
+    compliance_notes: list[str] = Field(
+        default_factory=list,
+        description="Compliance notes",
     )
-    audit_trail: List[ModelAuditEntry] = Field(
-        default_factory=list, description="Audit trail"
+    audit_trail: list[ModelAuditEntry] = Field(
+        default_factory=list,
+        description="Audit trail",
     )

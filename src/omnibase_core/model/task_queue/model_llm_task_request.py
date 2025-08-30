@@ -6,7 +6,6 @@ scheduling information, and resource requirements for queue processing.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,12 +28,13 @@ class ModelLLMTaskRequest(BaseModel):
 
     # Core LLM request
     llm_request: ModelLLMRequest = Field(
-        description="Standard LLM request with prompt and generation parameters"
+        description="Standard LLM request with prompt and generation parameters",
     )
 
     # Task metadata
     task_name: str = Field(
-        description="Human-readable task name for tracking", max_length=255
+        description="Human-readable task name for tracking",
+        max_length=255,
     )
 
     task_type: EnumTaskType = Field(description="Type of LLM task being requested")
@@ -45,34 +45,46 @@ class ModelLLMTaskRequest(BaseModel):
     )
 
     # Scheduling
-    scheduled_at: Optional[datetime] = Field(
-        default=None, description="When to execute the task (immediate if None)"
+    scheduled_at: datetime | None = Field(
+        default=None,
+        description="When to execute the task (immediate if None)",
     )
 
-    expires_at: Optional[datetime] = Field(
-        default=None, description="Task expiration time"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Task expiration time",
     )
 
     max_attempts: int = Field(
-        default=3, ge=1, le=10, description="Maximum retry attempts if task fails"
+        default=3,
+        ge=1,
+        le=10,
+        description="Maximum retry attempts if task fails",
     )
 
     # Resource requirements
-    estimated_duration_seconds: Optional[int] = Field(
-        default=None, ge=1, description="Estimated execution time in seconds"
+    estimated_duration_seconds: int | None = Field(
+        default=None,
+        ge=1,
+        description="Estimated execution time in seconds",
     )
 
-    estimated_memory_mb: Optional[int] = Field(
-        default=None, ge=100, description="Estimated memory requirement in MB"
+    estimated_memory_mb: int | None = Field(
+        default=None,
+        ge=100,
+        description="Estimated memory requirement in MB",
     )
 
     requires_gpu: bool = Field(
-        default=False, description="Whether task requires GPU acceleration"
+        default=False,
+        description="Whether task requires GPU acceleration",
     )
 
     # Cost management
-    max_cost_usd: Optional[float] = Field(
-        default=None, ge=0.0, description="Maximum allowed cost in USD for this task"
+    max_cost_usd: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Maximum allowed cost in USD for this task",
     )
 
     cost_preference: str = Field(
@@ -82,28 +94,34 @@ class ModelLLMTaskRequest(BaseModel):
 
     # Privacy and routing
     require_local_execution: bool = Field(
-        default=False, description="Force execution on local models only (no API calls)"
+        default=False,
+        description="Force execution on local models only (no API calls)",
     )
 
-    exclude_providers: List[str] = Field(
-        default_factory=list, description="Provider names to exclude from routing"
+    exclude_providers: list[str] = Field(
+        default_factory=list,
+        description="Provider names to exclude from routing",
     )
 
     # Context and tracking
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation ID for tracking related tasks"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Correlation ID for tracking related tasks",
     )
 
-    parent_task_id: Optional[UUID] = Field(
-        default=None, description="Parent task ID for dependency tracking"
+    parent_task_id: UUID | None = Field(
+        default=None,
+        description="Parent task ID for dependency tracking",
     )
 
-    submitted_by: Optional[str] = Field(
-        default=None, description="User or system that submitted the task"
+    submitted_by: str | None = Field(
+        default=None,
+        description="User or system that submitted the task",
     )
 
     source_system: str = Field(
-        default="api", description="Source system (api, cli, scheduler, etc.)"
+        default="api",
+        description="Source system (api, cli, scheduler, etc.)",
     )
 
     # Additional configuration
@@ -113,8 +131,9 @@ class ModelLLMTaskRequest(BaseModel):
     )
 
     # Callback configuration
-    webhook_url: Optional[str] = Field(
-        default=None, description="Webhook URL to call when task completes"
+    webhook_url: str | None = Field(
+        default=None,
+        description="Webhook URL to call when task completes",
     )
 
     model_config = ConfigDict(
@@ -152,6 +171,6 @@ class ModelLLMTaskRequest(BaseModel):
                     "analysis_type": "quarterly_insights",
                     "output_format": "structured_json",
                 },
-            }
+            },
         },
     )

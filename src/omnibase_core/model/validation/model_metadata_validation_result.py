@@ -2,8 +2,6 @@
 MetadataValidationResult model.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -15,4 +13,4 @@ class ModelMetadataValidationResult(BaseModel):
 
     valid_artifacts: int = 0
     invalid_artifacts: int = 0
-    errors: List[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)

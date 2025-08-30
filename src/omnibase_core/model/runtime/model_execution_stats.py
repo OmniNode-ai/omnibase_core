@@ -5,7 +5,6 @@ ONEX-compliant execution statistics model with proper typing for task performanc
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,9 +12,9 @@ from pydantic import BaseModel, Field
 class ModelExecutionStats(BaseModel):
     """Execution statistics model with proper typing."""
 
-    start_time: Optional[datetime] = Field(default=None)
+    start_time: datetime | None = Field(default=None)
 
-    end_time: Optional[datetime] = Field(default=None)
+    end_time: datetime | None = Field(default=None)
 
     duration_seconds: float = Field(default=0.0, ge=0.0)
 
@@ -27,4 +26,4 @@ class ModelExecutionStats(BaseModel):
 
     network_io_bytes: int = Field(default=0, ge=0)
 
-    exit_code: Optional[int] = Field(default=None)
+    exit_code: int | None = Field(default=None)

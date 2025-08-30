@@ -9,7 +9,7 @@ Author: OmniNode Team
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 
@@ -104,7 +104,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         return dockerfile_content
 
-    def generate_docker_compose_service(self) -> Dict[str, Any]:
+    def generate_docker_compose_service(self) -> dict[str, Any]:
         """
         Generate Docker Compose service definition.
 
@@ -125,7 +125,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         ports = [f"{self.config.network.port}:{self.config.network.port}"]
         if self.config.monitoring.metrics_enabled:
             ports.append(
-                f"{self.config.monitoring.metrics_port}:{self.config.monitoring.metrics_port}"
+                f"{self.config.monitoring.metrics_port}:{self.config.monitoring.metrics_port}",
             )
         service_def["ports"] = ports
 
@@ -165,7 +165,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             volumes = []
             if self.config.security.cert_file:
                 volumes.append(
-                    f"{self.config.security.cert_file}:/app/certs/cert.pem:ro"
+                    f"{self.config.security.cert_file}:/app/certs/cert.pem:ro",
                 )
             if self.config.security.key_file:
                 volumes.append(f"{self.config.security.key_file}:/app/certs/key.pem:ro")
@@ -179,7 +179,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
     def generate_docker_compose_full(
         self,
         include_dependencies: bool = True,
-        additional_services: Optional[Dict[str, Any]] = None,
+        additional_services: dict[str, Any] | None = None,
     ) -> str:
         """
         Generate complete Docker Compose file with dependencies.
@@ -207,7 +207,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         # Add networks if needed
         if self.config.network.network_name:
             compose_config["networks"] = {
-                self.config.network.network_name: {"driver": "bridge"}
+                self.config.network.network_name: {"driver": "bridge"},
             }
 
         # Add volumes for persistent data
@@ -216,7 +216,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         return yaml.dump(compose_config, default_flow_style=False, sort_keys=False)
 
-    def _get_dependency_services(self) -> Dict[str, Any]:
+    def _get_dependency_services(self) -> dict[str, Any]:
         """Get common ONEX dependency services."""
         dependencies = {}
 
@@ -286,7 +286,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             or any("redis" in dep for dep in self.config.depends_on)
         )
 
-    def _get_volume_definitions(self) -> Dict[str, Any]:
+    def _get_volume_definitions(self) -> dict[str, Any]:
         """Get volume definitions for the compose file."""
         volumes = {}
 
@@ -306,7 +306,7 @@ class KubernetesTemplateGenerator:
         """Initialize generator with service configuration."""
         self.config = service_config
 
-    def generate_deployment(self) -> Dict[str, Any]:
+    def generate_deployment(self) -> dict[str, Any]:
         """
         Generate Kubernetes Deployment manifest.
 
@@ -338,14 +338,14 @@ class KubernetesTemplateGenerator:
                                     {
                                         "containerPort": self.config.network.port,
                                         "name": "http",
-                                    }
+                                    },
                                 ],
                                 "env": [
                                     {"name": k, "value": v}
                                     for k, v in self.config.get_environment_dict().items()
                                 ],
-                            }
-                        ]
+                            },
+                        ],
                     },
                 },
             },
@@ -390,7 +390,7 @@ class KubernetesTemplateGenerator:
 
         return deployment
 
-    def generate_service(self) -> Dict[str, Any]:
+    def generate_service(self) -> dict[str, Any]:
         """
         Generate Kubernetes Service manifest.
 
@@ -405,7 +405,7 @@ class KubernetesTemplateGenerator:
                 "port": self.config.network.port,
                 "targetPort": self.config.network.port,
                 "protocol": "TCP",
-            }
+            },
         ]
 
         if self.config.monitoring.metrics_enabled:
@@ -415,7 +415,7 @@ class KubernetesTemplateGenerator:
                     "port": self.config.monitoring.metrics_port,
                     "targetPort": self.config.monitoring.metrics_port,
                     "protocol": "TCP",
-                }
+                },
             )
 
         return {
@@ -433,7 +433,7 @@ class KubernetesTemplateGenerator:
             },
         }
 
-    def generate_configmap(self) -> Dict[str, Any]:
+    def generate_configmap(self) -> dict[str, Any]:
         """
         Generate Kubernetes ConfigMap for configuration.
 
@@ -471,8 +471,9 @@ class KubernetesTemplateGenerator:
 
 
 def generate_deployment_templates(
-    service_config: ModelNodeServiceConfig, output_dir: Path
-) -> Dict[str, Path]:
+    service_config: ModelNodeServiceConfig,
+    output_dir: Path,
+) -> dict[str, Path]:
     """
     Generate all deployment templates for a service configuration.
 

@@ -5,7 +5,6 @@ Defines progress updates for an ongoing task.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -21,13 +20,13 @@ class ModelAgentTaskProgress(BaseModel):
 
     # Progress information
     progress_percent: float = Field(0.0, ge=0.0, le=100.0)
-    current_step: Optional[str] = Field(None, description="Current processing step")
+    current_step: str | None = Field(None, description="Current processing step")
     steps_completed: int = Field(0, ge=0)
-    total_steps: Optional[int] = Field(None)
+    total_steps: int | None = Field(None)
 
     # Resource usage
     tokens_used: int = Field(0, ge=0)
-    estimated_tokens_remaining: Optional[int] = Field(None)
+    estimated_tokens_remaining: int | None = Field(None)
 
     # Timestamps
     started_at: datetime = Field(default_factory=datetime.now)
@@ -38,7 +37,7 @@ class ModelAgentTaskProgress(BaseModel):
         cls,
         node_id: str,
         progress: "ModelAgentTaskProgress",
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
     ) -> ModelOnexEvent:
         """Create ONEX event for task progress."""
         return ModelOnexEvent.create_plugin_event(

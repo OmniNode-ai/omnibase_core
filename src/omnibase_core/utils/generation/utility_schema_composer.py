@@ -7,14 +7,14 @@ Resolves $ref references by loading and merging external schema content.
 
 import copy
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.utils.generation.utility_schema_loader import \
-    UtilitySchemaLoader
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 
 class UtilitySchemaComposer:
@@ -29,7 +29,7 @@ class UtilitySchemaComposer:
     - Recursive resolution of nested references
     """
 
-    def __init__(self, schema_loader: Optional[UtilitySchemaLoader] = None):
+    def __init__(self, schema_loader: UtilitySchemaLoader | None = None):
         """
         Initialize the schema composer.
 
@@ -37,11 +37,13 @@ class UtilitySchemaComposer:
             schema_loader: Schema loader utility for loading external files
         """
         self.schema_loader = schema_loader or UtilitySchemaLoader()
-        self._resolution_stack: Set[str] = set()  # Track circular references
+        self._resolution_stack: set[str] = set()  # Track circular references
 
     def compose_contract_definitions(
-        self, contract_data: Dict[str, Any], contract_path: Path
-    ) -> Dict[str, Dict[str, Any]]:
+        self,
+        contract_data: dict[str, Any],
+        contract_path: Path,
+    ) -> dict[str, dict[str, Any]]:
         """
         Compose all definitions in a contract by resolving external references.
 
@@ -76,7 +78,9 @@ class UtilitySchemaComposer:
 
             try:
                 composed_schema = self.compose_schema(
-                    def_schema, contract_dir, def_name
+                    def_schema,
+                    contract_dir,
+                    def_name,
                 )
                 composed_definitions[def_name] = composed_schema
 
@@ -108,8 +112,11 @@ class UtilitySchemaComposer:
         return composed_definitions
 
     def compose_schema(
-        self, schema: Dict[str, Any], base_dir: Path, context_name: str = "unknown"
-    ) -> Dict[str, Any]:
+        self,
+        schema: dict[str, Any],
+        base_dir: Path,
+        context_name: str = "unknown",
+    ) -> dict[str, Any]:
         """
         Compose a single schema by resolving any $ref references.
 
@@ -123,7 +130,8 @@ class UtilitySchemaComposer:
         """
         # Check for circular reference
         if context_name in self._resolution_stack:
-            raise ValueError(f"Circular reference detected: {context_name}")
+            msg = f"Circular reference detected: {context_name}"
+            raise ValueError(msg)
 
         # If no $ref, return as-is (but recursively process nested schemas)
         if "$ref" not in schema:
@@ -151,18 +159,22 @@ class UtilitySchemaComposer:
             # Resolve and load the external schema
             resolved_path = self.schema_loader.resolve_schema_path(file_path, base_dir)
             external_schema = self.schema_loader.load_schema(
-                str(resolved_path), base_dir
+                str(resolved_path),
+                base_dir,
             )
 
             # Extract the specific fragment
             if fragment and fragment != "#/":
                 external_schema = self.schema_loader.extract_schema_fragment(
-                    external_schema, fragment
+                    external_schema,
+                    fragment,
                 )
 
             # Recursively compose the external schema
             composed_external = self.compose_schema(
-                external_schema, base_dir, f"{context_name}->external"
+                external_schema,
+                base_dir,
+                f"{context_name}->external",
             )
 
             # Merge with any additional properties in the current schema
@@ -186,8 +198,10 @@ class UtilitySchemaComposer:
             self._resolution_stack.discard(context_name)
 
     def _process_nested_schemas(
-        self, schema: Dict[str, Any], base_dir: Path
-    ) -> Dict[str, Any]:
+        self,
+        schema: dict[str, Any],
+        base_dir: Path,
+    ) -> dict[str, Any]:
         """
         Process nested schemas within a schema definition.
 
@@ -205,28 +219,37 @@ class UtilitySchemaComposer:
             for prop_name, prop_schema in result["properties"].items():
                 if isinstance(prop_schema, dict):
                     result["properties"][prop_name] = self.compose_schema(
-                        prop_schema, base_dir, f"property:{prop_name}"
+                        prop_schema,
+                        base_dir,
+                        f"property:{prop_name}",
                     )
 
         # Process array items
         if "items" in result and isinstance(result["items"], dict):
             result["items"] = self.compose_schema(
-                result["items"], base_dir, "array_items"
+                result["items"],
+                base_dir,
+                "array_items",
             )
 
         # Process additional properties
         if "additionalProperties" in result and isinstance(
-            result["additionalProperties"], dict
+            result["additionalProperties"],
+            dict,
         ):
             result["additionalProperties"] = self.compose_schema(
-                result["additionalProperties"], base_dir, "additional_properties"
+                result["additionalProperties"],
+                base_dir,
+                "additional_properties",
             )
 
         return result
 
     def _merge_schemas(
-        self, base_schema: Dict[str, Any], overlay_schema: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        base_schema: dict[str, Any],
+        overlay_schema: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Merge two schemas, with overlay taking precedence.
 
@@ -243,7 +266,7 @@ class UtilitySchemaComposer:
             if key == "$ref":
                 # Skip $ref in overlay - it was already resolved
                 continue
-            elif key == "properties" and "properties" in result:
+            if key == "properties" and "properties" in result:
                 # Merge properties
                 result["properties"].update(value)
             elif key == "required" and "required" in result:
@@ -258,8 +281,10 @@ class UtilitySchemaComposer:
         return result
 
     def validate_composed_schema(
-        self, schema: Dict[str, Any], schema_name: str
-    ) -> List[str]:
+        self,
+        schema: dict[str, Any],
+        schema_name: str,
+    ) -> list[str]:
         """
         Validate a composed schema for common issues.
 
@@ -283,7 +308,7 @@ class UtilitySchemaComposer:
         for field in required:
             if field not in properties:
                 issues.append(
-                    f"Required field '{field}' not found in properties of '{schema_name}'"
+                    f"Required field '{field}' not found in properties of '{schema_name}'",
                 )
 
         # Check for properties with no type
@@ -294,7 +319,7 @@ class UtilitySchemaComposer:
                 and "$ref" not in prop_schema
             ):
                 issues.append(
-                    f"Property '{prop_name}' in '{schema_name}' has no type definition"
+                    f"Property '{prop_name}' in '{schema_name}' has no type definition",
                 )
 
         return issues

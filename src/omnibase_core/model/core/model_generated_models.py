@@ -1,5 +1,3 @@
-from typing import Dict, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_metadata import ModelMetadata
@@ -12,11 +10,11 @@ class ModelGeneratedModels(BaseModel):
     Optionally includes canonical metadata.
     """
 
-    models: Dict[str, str] = Field(
+    models: dict[str, str] = Field(
         default_factory=dict,
         description="Mapping of model names to generated code strings.",
     )
-    metadata: Optional[ModelMetadata] = Field(
+    metadata: ModelMetadata | None = Field(
         default=None,
         description="Optional canonical metadata for the generated models.",
     )

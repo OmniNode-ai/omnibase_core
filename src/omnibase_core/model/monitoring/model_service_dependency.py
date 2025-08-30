@@ -5,7 +5,6 @@ Service dependency status for monitoring.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,9 +16,11 @@ class ModelServiceDependency(BaseModel):
 
     service_name: str = Field(..., description="Service name")
     status: EnumSystemHealth = Field(..., description="Service status")
-    url: Optional[str] = Field(None, description="Service URL")
+    url: str | None = Field(None, description="Service URL")
     last_check: datetime = Field(..., description="Last health check")
     response_time_ms: float = Field(
-        0.0, ge=0, description="Response time in milliseconds"
+        0.0,
+        ge=0,
+        description="Response time in milliseconds",
     )
-    error_message: Optional[str] = Field(None, description="Error message if unhealthy")
+    error_message: str | None = Field(None, description="Error message if unhealthy")

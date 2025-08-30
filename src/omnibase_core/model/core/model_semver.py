@@ -21,7 +21,8 @@ class ModelSemVer(BaseModel):
     def validate_non_negative(cls, v: int) -> int:
         """Validate version numbers are non-negative."""
         if v < 0:
-            raise ValueError("Version numbers must be non-negative")
+            msg = "Version numbers must be non-negative"
+            raise ValueError(msg)
         return v
 
     def __str__(self) -> str:
@@ -44,7 +45,8 @@ class ModelSemVer(BaseModel):
 
         match = re.match(pattern, version_str)
         if not match:
-            raise ValueError(f"Invalid semantic version format: {version_str}")
+            msg = f"Invalid semantic version format: {version_str}"
+            raise ValueError(msg)
 
         return cls(
             major=int(match.group("major")),
@@ -89,12 +91,16 @@ def parse_input_state_version(input_state: dict) -> "ModelSemVer":
     v = input_state.get("version")
 
     if v is None:
-        raise ValueError("Version field is required in input state")
+        msg = "Version field is required in input state"
+        raise ValueError(msg)
 
     if isinstance(v, str):
-        raise ValueError(
+        msg = (
             f"String versions are not allowed. Use structured format: "
             f"{{major: X, minor: Y, patch: Z}}. Got string: {v}"
+        )
+        raise ValueError(
+            msg,
         )
 
     if isinstance(v, ModelSemVer):
@@ -104,12 +110,18 @@ def parse_input_state_version(input_state: dict) -> "ModelSemVer":
         try:
             return ModelSemVer(**v)
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"
+            )
+            raise ValueError(
+                msg,
             ) from e
 
-    raise ValueError(
+    msg = (
         f"Version must be a ModelSemVer instance or dictionary with {{major, minor, patch}} keys. "
         f"Got {type(v).__name__}: {v}"
+    )
+    raise ValueError(
+        msg,
     )

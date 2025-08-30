@@ -11,13 +11,15 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.contracts.model_contract_base import ModelContractBase
-from omnibase_core.core.subcontracts import (ModelCachingSubcontract,
-                                             ModelEventTypeSubcontract)
+from omnibase_core.core.subcontracts import (
+    ModelCachingSubcontract,
+    ModelEventTypeSubcontract,
+)
 from omnibase_core.enums import EnumNodeType
 
 
@@ -30,23 +32,31 @@ class ModelAlgorithmFactorConfig(BaseModel):
     """
 
     weight: float = Field(
-        ..., description="Factor weight in algorithm (0.0-1.0)", ge=0.0, le=1.0
+        ...,
+        description="Factor weight in algorithm (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     calculation_method: str = Field(
-        ..., description="Calculation method identifier", min_length=1
+        ...,
+        description="Calculation method identifier",
+        min_length=1,
     )
 
-    parameters: Dict[str, float] = Field(
-        default_factory=dict, description="Method-specific parameters"
+    parameters: dict[str, float] = Field(
+        default_factory=dict,
+        description="Method-specific parameters",
     )
 
     normalization_enabled: bool = Field(
-        default=True, description="Enable factor normalization"
+        default=True,
+        description="Enable factor normalization",
     )
 
     caching_enabled: bool = Field(
-        default=True, description="Enable factor-level caching"
+        default=True,
+        description="Enable factor-level caching",
     )
 
 
@@ -59,30 +69,39 @@ class ModelAlgorithmConfig(BaseModel):
     """
 
     algorithm_type: str = Field(
-        ..., description="Algorithm type identifier", min_length=1
+        ...,
+        description="Algorithm type identifier",
+        min_length=1,
     )
 
-    factors: Dict[str, ModelAlgorithmFactorConfig] = Field(
-        ..., description="Algorithm factors with configuration"
+    factors: dict[str, ModelAlgorithmFactorConfig] = Field(
+        ...,
+        description="Algorithm factors with configuration",
     )
 
     normalization_method: str = Field(
-        default="min_max", description="Global normalization method"
+        default="min_max",
+        description="Global normalization method",
     )
 
     precision_digits: int = Field(
-        default=6, description="Precision for floating point calculations", ge=1, le=15
+        default=6,
+        description="Precision for floating point calculations",
+        ge=1,
+        le=15,
     )
 
     @field_validator("factors")
     @classmethod
     def validate_factor_weights_sum(
-        cls, v: Dict[str, ModelAlgorithmFactorConfig]
-    ) -> Dict[str, ModelAlgorithmFactorConfig]:
+        cls,
+        v: dict[str, ModelAlgorithmFactorConfig],
+    ) -> dict[str, ModelAlgorithmFactorConfig]:
         """Validate that factor weights sum to approximately 1.0."""
         total_weight = sum(factor.weight for factor in v.values())
         if not (0.99 <= total_weight <= 1.01):
-            raise ValueError(f"Factor weights must sum to 1.0, got {total_weight}")
+            msg = f"Factor weights must sum to 1.0, got {total_weight}"
+            raise ValueError(msg)
         return v
 
 
@@ -97,23 +116,32 @@ class ModelParallelConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable parallel processing")
 
     max_workers: int = Field(
-        default=4, description="Maximum number of worker threads", ge=1, le=32
+        default=4,
+        description="Maximum number of worker threads",
+        ge=1,
+        le=32,
     )
 
     batch_size: int = Field(
-        default=100, description="Batch size for parallel operations", ge=1
+        default=100,
+        description="Batch size for parallel operations",
+        ge=1,
     )
 
     async_enabled: bool = Field(
-        default=False, description="Enable asynchronous processing"
+        default=False,
+        description="Enable asynchronous processing",
     )
 
     thread_pool_type: str = Field(
-        default="ThreadPoolExecutor", description="Thread pool implementation type"
+        default="ThreadPoolExecutor",
+        description="Thread pool implementation type",
     )
 
     queue_size: int = Field(
-        default=1000, description="Maximum queue size for pending operations", ge=1
+        default=1000,
+        description="Maximum queue size for pending operations",
+        ge=1,
     )
 
 
@@ -126,25 +154,32 @@ class ModelCachingConfig(BaseModel):
     """
 
     strategy: str = Field(
-        default="lru", description="Caching strategy (lru, fifo, lfu)"
+        default="lru",
+        description="Caching strategy (lru, fifo, lfu)",
     )
 
     max_size: int = Field(
-        default=1000, description="Maximum cache size (number of entries)", ge=1
+        default=1000,
+        description="Maximum cache size (number of entries)",
+        ge=1,
     )
 
     ttl_seconds: int = Field(
-        default=300, description="Time-to-live for cache entries in seconds", ge=1
+        default=300,
+        description="Time-to-live for cache entries in seconds",
+        ge=1,
     )
 
     enabled: bool = Field(default=True, description="Enable caching")
 
     cache_key_strategy: str = Field(
-        default="input_hash", description="Strategy for generating cache keys"
+        default="input_hash",
+        description="Strategy for generating cache keys",
     )
 
     eviction_policy: str = Field(
-        default="least_recently_used", description="Eviction policy when cache is full"
+        default="least_recently_used",
+        description="Eviction policy when cache is full",
     )
 
 
@@ -157,23 +192,28 @@ class ModelInputValidationConfig(BaseModel):
     """
 
     strict_validation: bool = Field(
-        default=True, description="Enable strict input validation"
+        default=True,
+        description="Enable strict input validation",
     )
 
-    required_fields: List[str] = Field(
-        default_factory=list, description="Required input fields"
+    required_fields: list[str] = Field(
+        default_factory=list,
+        description="Required input fields",
     )
 
-    field_constraints: Dict[str, str] = Field(
-        default_factory=dict, description="Field-specific validation constraints"
+    field_constraints: dict[str, str] = Field(
+        default_factory=dict,
+        description="Field-specific validation constraints",
     )
 
-    transformation_rules: Dict[str, str] = Field(
-        default_factory=dict, description="Input transformation rules"
+    transformation_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Input transformation rules",
     )
 
     sanitization_enabled: bool = Field(
-        default=True, description="Enable input sanitization"
+        default=True,
+        description="Enable input sanitization",
     )
 
 
@@ -188,15 +228,18 @@ class ModelOutputTransformationConfig(BaseModel):
     format_type: str = Field(default="standard", description="Output format type")
 
     precision_control: bool = Field(
-        default=True, description="Enable precision control for numeric outputs"
+        default=True,
+        description="Enable precision control for numeric outputs",
     )
 
-    transformation_rules: Dict[str, str] = Field(
-        default_factory=dict, description="Output transformation rules"
+    transformation_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Output transformation rules",
     )
 
     validation_enabled: bool = Field(
-        default=True, description="Enable output validation before return"
+        default=True,
+        description="Enable output validation before return",
     )
 
 
@@ -220,46 +263,55 @@ class ModelContractCompute(ModelContractBase):
     # These fields support infrastructure patterns and YAML variations
 
     # Flexible dependency field supporting multiple formats
-    dependencies: Optional[List[Union[str, Dict[str, str]]]] = Field(
+    dependencies: list[str | dict[str, str]] | None = Field(
         default=None,
         description="Dependencies supporting string and dict formats",
     )
 
     # Infrastructure-specific fields for backward compatibility
-    node_name: Optional[str] = Field(
-        default=None, description="Node name for infrastructure patterns"
+    node_name: str | None = Field(
+        default=None,
+        description="Node name for infrastructure patterns",
     )
 
-    tool_specification: Optional[Dict[str, Any]] = Field(
-        default=None, description="Tool specification for infrastructure patterns"
+    tool_specification: dict[str, Any] | None = Field(
+        default=None,
+        description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: Optional[Dict[str, Any]] = Field(
-        default=None, description="Service configuration for infrastructure patterns"
+    service_configuration: dict[str, Any] | None = Field(
+        default=None,
+        description="Service configuration for infrastructure patterns",
     )
 
-    input_state: Optional[Dict[str, Any]] = Field(
-        default=None, description="Input state specification"
+    input_state: dict[str, Any] | None = Field(
+        default=None,
+        description="Input state specification",
     )
 
-    output_state: Optional[Dict[str, Any]] = Field(
-        default=None, description="Output state specification"
+    output_state: dict[str, Any] | None = Field(
+        default=None,
+        description="Output state specification",
     )
 
-    actions: Optional[List[Dict[str, Any]]] = Field(
-        default=None, description="Action definitions"
+    actions: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Action definitions",
     )
 
-    infrastructure: Optional[Dict[str, Any]] = Field(
-        default=None, description="Infrastructure configuration"
+    infrastructure: dict[str, Any] | None = Field(
+        default=None,
+        description="Infrastructure configuration",
     )
 
-    infrastructure_services: Optional[Dict[str, Any]] = Field(
-        default=None, description="Infrastructure services configuration"
+    infrastructure_services: dict[str, Any] | None = Field(
+        default=None,
+        description="Infrastructure services configuration",
     )
 
-    validation_rules: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(
-        default=None, description="Validation rules in flexible format"
+    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Validation rules in flexible format",
     )
 
     # === CORE COMPUTATION FUNCTIONALITY ===
@@ -267,7 +319,8 @@ class ModelContractCompute(ModelContractBase):
 
     # Computation configuration
     algorithm: ModelAlgorithmConfig = Field(
-        ..., description="Algorithm configuration and parameters"
+        ...,
+        description="Algorithm configuration and parameters",
     )
 
     parallel_processing: ModelParallelConfig = Field(
@@ -288,32 +341,38 @@ class ModelContractCompute(ModelContractBase):
 
     # Computation-specific settings
     deterministic_execution: bool = Field(
-        default=True, description="Ensure deterministic execution for same inputs"
+        default=True,
+        description="Ensure deterministic execution for same inputs",
     )
 
     memory_optimization_enabled: bool = Field(
-        default=True, description="Enable memory optimization strategies"
+        default=True,
+        description="Enable memory optimization strategies",
     )
 
     intermediate_result_caching: bool = Field(
-        default=False, description="Enable caching of intermediate computation results"
+        default=False,
+        description="Enable caching of intermediate computation results",
     )
 
     # === SUBCONTRACT COMPOSITION ===
     # These fields provide clean subcontract integration
 
     # Event-driven architecture subcontract
-    event_type: Optional[ModelEventTypeSubcontract] = Field(
-        default=None, description="Event type subcontract for event-driven architecture"
+    event_type: ModelEventTypeSubcontract | None = Field(
+        default=None,
+        description="Event type subcontract for event-driven architecture",
     )
 
     # Caching subcontract (replaces embedded caching config)
-    caching: Optional[ModelCachingSubcontract] = Field(
-        default=None, description="Caching subcontract for performance optimization"
+    caching: ModelCachingSubcontract | None = Field(
+        default=None,
+        description="Caching subcontract for performance optimization",
     )
 
     def validate_node_specific_config(
-        self, original_contract_data: Optional[Dict] = None
+        self,
+        original_contract_data: dict | None = None,
     ) -> None:
         """
         Validate compute node-specific configuration requirements.
@@ -329,14 +388,16 @@ class ModelContractCompute(ModelContractBase):
         """
         # Validate algorithm factors are defined
         if not self.algorithm.factors:
-            raise ValueError("Compute node must define at least one algorithm factor")
+            msg = "Compute node must define at least one algorithm factor"
+            raise ValueError(msg)
 
         # Validate parallel processing compatibility
         if (
             self.parallel_processing.enabled
             and self.parallel_processing.max_workers < 1
         ):
-            raise ValueError("Parallel processing requires at least 1 worker")
+            msg = "Parallel processing requires at least 1 worker"
+            raise ValueError(msg)
 
         # Validate caching configuration if present
         if (
@@ -344,12 +405,14 @@ class ModelContractCompute(ModelContractBase):
             and hasattr(self.caching, "max_entries")
             and self.caching.max_entries < 1
         ):
-            raise ValueError("Caching requires positive max_entries")
+            msg = "Caching requires positive max_entries"
+            raise ValueError(msg)
 
         # Validate performance requirements for compute nodes
         if not self.performance.single_operation_max_ms:
+            msg = "Compute nodes must specify single_operation_max_ms performance requirement"
             raise ValueError(
-                "Compute nodes must specify single_operation_max_ms performance requirement"
+                msg,
             )
 
         # Validate tool specification if present (infrastructure pattern)
@@ -357,13 +420,15 @@ class ModelContractCompute(ModelContractBase):
             required_fields = ["tool_name", "main_tool_class"]
             for field in required_fields:
                 if field not in self.tool_specification:
-                    raise ValueError(f"tool_specification must include '{field}'")
+                    msg = f"tool_specification must include '{field}'"
+                    raise ValueError(msg)
 
         # Validate subcontract constraints
         self.validate_subcontract_constraints(original_contract_data)
 
     def validate_subcontract_constraints(
-        self, original_contract_data: Optional[Dict] = None
+        self,
+        original_contract_data: dict | None = None,
     ) -> None:
         """
         Validate COMPUTE node subcontract architectural constraints.
@@ -384,31 +449,31 @@ class ModelContractCompute(ModelContractBase):
         # COMPUTE nodes cannot have state management
         if "state_management" in contract_data:
             violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_management subcontracts"
+                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_management subcontracts",
             )
             violations.append("   💡 Use REDUCER nodes for stateful operations")
 
         # COMPUTE nodes cannot have aggregation subcontracts
         if "aggregation" in contract_data:
             violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have aggregation subcontracts"
+                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have aggregation subcontracts",
             )
             violations.append("   💡 Use REDUCER nodes for data aggregation")
 
         # COMPUTE nodes cannot have state transitions
         if "state_transitions" in contract_data:
             violations.append(
-                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_transitions subcontracts"
+                "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_transitions subcontracts",
             )
             violations.append("   💡 Use REDUCER nodes for state machine workflows")
 
         # All nodes should have event_type subcontracts
         if "event_type" not in contract_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts"
+                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
             )
             violations.append(
-                "   💡 Add event_type configuration for event-driven architecture"
+                "   💡 Add event_type configuration for event-driven architecture",
             )
 
         if violations:
@@ -417,11 +482,13 @@ class ModelContractCompute(ModelContractBase):
     @field_validator("algorithm")
     @classmethod
     def validate_algorithm_consistency(
-        cls, v: ModelAlgorithmConfig
+        cls,
+        v: ModelAlgorithmConfig,
     ) -> ModelAlgorithmConfig:
         """Validate algorithm configuration consistency."""
         if v.algorithm_type == "weighted_factor_algorithm" and not v.factors:
-            raise ValueError("Weighted factor algorithm requires at least one factor")
+            msg = "Weighted factor algorithm requires at least one factor"
+            raise ValueError(msg)
         return v
 
     class Config:

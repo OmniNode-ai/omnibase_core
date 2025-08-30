@@ -4,8 +4,6 @@ ModelValidationResult: Validation result with structured information.
 This model represents the result of validation operations with proper typing.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,24 +12,27 @@ class ModelValidationResult(BaseModel):
 
     is_valid: bool = Field(..., description="Whether the validation passed")
 
-    validated_value: Optional[str] = Field(
-        None, description="The validated and potentially normalized value"
+    validated_value: str | None = Field(
+        None,
+        description="The validated and potentially normalized value",
     )
 
-    errors: List[str] = Field(
-        default_factory=list, description="List of validation errors"
+    errors: list[str] = Field(
+        default_factory=list,
+        description="List of validation errors",
     )
 
-    warnings: List[str] = Field(
-        default_factory=list, description="List of validation warnings"
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="List of validation warnings",
     )
 
-    suggestions: List[str] = Field(
+    suggestions: list[str] = Field(
         default_factory=list,
         description="List of suggestions for fixing validation issues",
     )
 
-    metadata: Optional[dict] = Field(None, description="Additional validation metadata")
+    metadata: dict | None = Field(None, description="Additional validation metadata")
 
     def add_error(self, error: str) -> None:
         """Add an error to the validation result."""
@@ -52,6 +53,6 @@ class ModelValidationResult(BaseModel):
         return cls(is_valid=True, validated_value=value)
 
     @classmethod
-    def create_invalid(cls, errors: List[str]) -> "ModelValidationResult":
+    def create_invalid(cls, errors: list[str]) -> "ModelValidationResult":
         """Create an invalid result."""
         return cls(is_valid=False, errors=errors)

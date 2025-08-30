@@ -6,13 +6,15 @@ Replaces Redis-based locking with PostgreSQL advisory locks.
 import asyncio
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, Optional
+from typing import TYPE_CHECKING
 
 import asyncpg
 
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.core.onex_error import OnexError
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
+
+if TYPE_CHECKING:
+    from omnibase_core.protocol.protocol_logger import ProtocolLogger
 
 
 class PostgreSQLLockManager:
@@ -36,25 +38,28 @@ class PostgreSQLLockManager:
     ):
         """Initialize the PostgreSQL lock manager."""
         self.container = container
-        self.logger: Optional[ProtocolLogger] = container.get_tool("LOGGER")
+        self.logger: ProtocolLogger | None = container.get_tool("LOGGER")
         self.database_url = database_url
         self.key_prefix = key_prefix
-        self.connection_pool: Optional[asyncpg.Pool] = None
+        self.connection_pool: asyncpg.Pool | None = None
         self.instance_id = str(uuid.uuid4())  # Unique ID for this instance
-        self.held_locks: Dict[str, int] = {}  # Track locks held by this instance
+        self.held_locks: dict[str, int] = {}  # Track locks held by this instance
 
     async def connect(self) -> None:
         """Connect to PostgreSQL."""
         try:
             self.connection_pool = await asyncpg.create_pool(
-                self.database_url, min_size=1, max_size=10, command_timeout=60
+                self.database_url,
+                min_size=1,
+                max_size=10,
+                command_timeout=60,
             )
             if self.logger:
                 self.logger.info("Connected to PostgreSQL for distributed locking")
         except Exception as e:
             error_msg = f"Failed to connect to PostgreSQL: {e}"
             if self.logger:
-                self.logger.error(error_msg)
+                self.logger.exception(error_msg)
             raise OnexError(error_msg) from e
 
     async def disconnect(self) -> None:
@@ -74,9 +79,9 @@ class PostgreSQLLockManager:
     async def acquire_lock(
         self,
         lock_key: str,
-        timeout: Optional[float] = None,
-        retry_delay: Optional[float] = None,
-        max_retries: Optional[int] = None,
+        timeout: float | None = None,
+        retry_delay: float | None = None,
+        max_retries: int | None = None,
     ):
         """
         Async context manager to acquire and automatically release a distributed lock.
@@ -88,7 +93,8 @@ class PostgreSQLLockManager:
             max_retries: Maximum retries (default: DEFAULT_MAX_RETRIES)
         """
         if not self.connection_pool:
-            raise OnexError("PostgreSQL lock manager not connected")
+            msg = "PostgreSQL lock manager not connected"
+            raise OnexError(msg)
 
         timeout = timeout or self.DEFAULT_LOCK_TIMEOUT
         retry_delay = retry_delay or self.DEFAULT_RETRY_DELAY
@@ -103,7 +109,8 @@ class PostgreSQLLockManager:
                 async with self.connection_pool.acquire() as connection:
                     # Try to acquire advisory lock (non-blocking)
                     result = await connection.fetchval(
-                        "SELECT pg_try_advisory_lock($1)", lock_id
+                        "SELECT pg_try_advisory_lock($1)",
+                        lock_id,
                     )
 
                     if result:  # Lock acquired
@@ -111,17 +118,19 @@ class PostgreSQLLockManager:
                         self.held_locks[lock_key] = lock_id
                         if self.logger:
                             self.logger.debug(
-                                f"Acquired lock '{lock_key}' (id: {lock_id})"
+                                f"Acquired lock '{lock_key}' (id: {lock_id})",
                             )
                         break
-                    else:
-                        # Lock not available, wait and retry
-                        if attempt < max_retries - 1:
-                            await asyncio.sleep(retry_delay)
+                    # Lock not available, wait and retry
+                    elif attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
 
             if not acquired:
-                raise OnexError(
+                msg = (
                     f"Failed to acquire lock '{lock_key}' after {max_retries} attempts"
+                )
+                raise OnexError(
+                    msg,
                 )
 
             # Yield control to the caller
@@ -133,7 +142,8 @@ class PostgreSQLLockManager:
                 try:
                     async with self.connection_pool.acquire() as connection:
                         await connection.execute(
-                            "SELECT pg_advisory_unlock($1)", lock_id
+                            "SELECT pg_advisory_unlock($1)",
+                            lock_id,
                         )
                     del self.held_locks[lock_key]
                     if self.logger:
@@ -141,7 +151,7 @@ class PostgreSQLLockManager:
                 except Exception as e:
                     if self.logger:
                         self.logger.warning(
-                            f"Failed to explicitly release lock '{lock_key}': {e}"
+                            f"Failed to explicitly release lock '{lock_key}': {e}",
                         )
                     # Note: PostgreSQL will automatically release the lock when connection closes
 
@@ -156,19 +166,21 @@ class PostgreSQLLockManager:
             async with self.connection_pool.acquire() as connection:
                 # Try to acquire lock non-blocking - if successful, it wasn't locked
                 result = await connection.fetchval(
-                    "SELECT pg_try_advisory_lock($1)", lock_id
+                    "SELECT pg_try_advisory_lock($1)",
+                    lock_id,
                 )
 
                 if result:
                     # We got the lock, so it wasn't held - release it immediately
                     await connection.execute("SELECT pg_advisory_unlock($1)", lock_id)
                     return False
-                else:
-                    # Lock is held by someone else
-                    return True
+                # Lock is held by someone else
+                return True
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error checking lock status for '{lock_key}': {e}")
+                self.logger.exception(
+                    f"Error checking lock status for '{lock_key}': {e}"
+                )
             return False
 
     async def release_all_locks(self) -> None:
@@ -186,10 +198,10 @@ class PostgreSQLLockManager:
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
-                        f"Failed to release lock '{lock_key}' during cleanup: {e}"
+                        f"Failed to release lock '{lock_key}' during cleanup: {e}",
                     )
 
-    async def health_check(self) -> Dict[str, any]:
+    async def health_check(self) -> dict[str, any]:
         """Check the health of the lock manager."""
         if not self.connection_pool:
             return {"status": "disconnected", "connection_pool": None, "held_locks": 0}

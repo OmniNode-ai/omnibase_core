@@ -4,7 +4,6 @@ Model for file information used by metadata tools.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -25,62 +24,70 @@ class ModelFileInfo(BaseModel):
 
     file_type: ModelFileType = Field(..., description="Detected file type information")
 
-    created_at: Optional[datetime] = Field(None, description="File creation timestamp")
+    created_at: datetime | None = Field(None, description="File creation timestamp")
 
-    modified_at: Optional[datetime] = Field(
-        None, description="File last modification timestamp"
+    modified_at: datetime | None = Field(
+        None,
+        description="File last modification timestamp",
     )
 
-    content_hash: Optional[str] = Field(None, description="Hash of file content")
+    content_hash: str | None = Field(None, description="Hash of file content")
 
     has_metadata_block: bool = Field(
-        False, description="Whether file contains existing metadata block"
+        False,
+        description="Whether file contains existing metadata block",
     )
 
-    metadata_location: Optional[str] = Field(
-        None, description="Location of metadata block if present (line numbers, etc.)"
+    metadata_location: str | None = Field(
+        None,
+        description="Location of metadata block if present (line numbers, etc.)",
     )
 
     is_readable: bool = Field(True, description="Whether the file is readable")
 
     is_writable: bool = Field(True, description="Whether the file is writable")
 
-    encoding: Optional[str] = Field(
-        None, description="Detected or assumed text encoding"
+    encoding: str | None = Field(
+        None,
+        description="Detected or assumed text encoding",
     )
 
-    line_count: Optional[int] = Field(None, description="Number of lines in the file")
+    line_count: int | None = Field(None, description="Number of lines in the file")
 
-    properties: Optional[ModelMetadataProperties] = Field(
-        None, description="Additional file properties"
+    properties: ModelMetadataProperties | None = Field(
+        None,
+        description="Additional file properties",
     )
 
     @validator("file_path")
-    def validate_file_path(cls, v):
+    def validate_file_path(self, v):
         """Ensure file path is absolute."""
         path = Path(v)
         if not path.is_absolute():
-            raise ValueError("file_path must be absolute")
+            msg = "file_path must be absolute"
+            raise ValueError(msg)
         return str(path)
 
     @validator("file_name")
-    def validate_file_name(cls, v, values):
+    def validate_file_name(self, v, values):
         """Ensure file_name matches the path."""
         if "file_path" in values:
             expected_name = Path(values["file_path"]).name
             if v != expected_name:
+                msg = f"file_name '{v}' does not match path '{expected_name}'"
                 raise ValueError(
-                    f"file_name '{v}' does not match path '{expected_name}'"
+                    msg,
                 )
         return v
 
     @validator("file_extension")
-    def validate_file_extension(cls, v, values):
+    def validate_file_extension(self, v, values):
         """Ensure file_extension matches the path."""
         if "file_path" in values:
             expected_ext = Path(values["file_path"]).suffix
             if v != expected_ext:
+                msg = f"file_extension '{v}' does not match path '{expected_ext}'"
                 raise ValueError(
-                    f"file_extension '{v}' does not match path '{expected_ext}'"
+                    msg,
                 )
         return v

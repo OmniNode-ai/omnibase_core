@@ -28,15 +28,13 @@ Event sent to invoke a tool on a specific node through the persistent service pa
 Enables distributed tool execution through event-driven routing.
 """
 
-from typing import Dict, List, Union
 from uuid import UUID, uuid4
 
 from pydantic import Field
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.discovery.model_tool_parameters import \
-    ModelToolParameters
+from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
 
 
 class ModelToolInvocationEvent(ModelOnexEvent):
@@ -60,15 +58,18 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         description="Unique identifier of the target node that should execute the tool",
     )
     target_node_name: str = Field(
-        ..., description="Name of the target node (e.g., 'node_generator')"
+        ...,
+        description="Name of the target node (e.g., 'node_generator')",
     )
 
     # Tool execution details
     tool_name: str = Field(
-        ..., description="Name of the tool to invoke (e.g., 'generate_node')"
+        ...,
+        description="Name of the tool to invoke (e.g., 'generate_node')",
     )
     action: str = Field(
-        ..., description="Action to perform with the tool (e.g., 'health_check')"
+        ...,
+        description="Action to perform with the tool (e.g., 'health_check')",
     )
     parameters: ModelToolParameters = Field(
         default_factory=ModelToolParameters,
@@ -89,10 +90,12 @@ class ModelToolInvocationEvent(ModelOnexEvent):
 
     # Execution options
     priority: str = Field(
-        default="normal", description="Execution priority (low, normal, high, urgent)"
+        default="normal",
+        description="Execution priority (low, normal, high, urgent)",
     )
     async_execution: bool = Field(
-        default=False, description="Whether to execute asynchronously (fire-and-forget)"
+        default=False,
+        description="Whether to execute asynchronously (fire-and-forget)",
     )
 
     # Request metadata
@@ -101,12 +104,14 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         description="Identifier of the requesting service (e.g., 'mcp_server', 'cli')",
     )
     requester_node_id: str = Field(
-        ..., description="Node ID of the requester for response routing"
+        ...,
+        description="Node ID of the requester for response routing",
     )
 
     # Optional routing hints
-    routing_hints: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Optional hints for routing optimization"
+    routing_hints: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Optional hints for routing optimization",
     )
 
     @classmethod
@@ -243,7 +248,6 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         """Get the expected response time based on priority and timeout."""
         if self.priority == "urgent":
             return min(self.timeout_ms // 4, 5000)
-        elif self.priority == "high":
+        if self.priority == "high":
             return min(self.timeout_ms // 2, 10000)
-        else:
-            return self.timeout_ms
+        return self.timeout_ms

@@ -30,7 +30,7 @@ system, including event tracking, performance metrics, and audit trails.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -104,33 +104,53 @@ class IntelligenceComponent(Enum):
 class ModelIntelligenceMetrics(BaseModel):
     """Performance metrics for intelligence system operations."""
 
-    cpu_usage_percent: Optional[float] = Field(
-        None, description="CPU usage percentage", ge=0, le=100
+    cpu_usage_percent: float | None = Field(
+        None,
+        description="CPU usage percentage",
+        ge=0,
+        le=100,
     )
-    memory_usage_mb: Optional[float] = Field(
-        None, description="Memory usage in MB", ge=0
+    memory_usage_mb: float | None = Field(
+        None,
+        description="Memory usage in MB",
+        ge=0,
     )
-    disk_usage_percent: Optional[float] = Field(
-        None, description="Disk usage percentage", ge=0, le=100
+    disk_usage_percent: float | None = Field(
+        None,
+        description="Disk usage percentage",
+        ge=0,
+        le=100,
     )
-    network_io_bytes: Optional[int] = Field(
-        None, description="Network I/O in bytes", ge=0
+    network_io_bytes: int | None = Field(
+        None,
+        description="Network I/O in bytes",
+        ge=0,
     )
-    request_count: Optional[int] = Field(
-        None, description="Number of requests processed", ge=0
+    request_count: int | None = Field(
+        None,
+        description="Number of requests processed",
+        ge=0,
     )
-    error_count: Optional[int] = Field(
-        None, description="Number of errors encountered", ge=0
+    error_count: int | None = Field(
+        None,
+        description="Number of errors encountered",
+        ge=0,
     )
-    response_time_ms: Optional[float] = Field(
-        None, description="Response time in milliseconds", ge=0
+    response_time_ms: float | None = Field(
+        None,
+        description="Response time in milliseconds",
+        ge=0,
     )
-    throughput_per_second: Optional[float] = Field(
-        None, description="Operations per second", ge=0
+    throughput_per_second: float | None = Field(
+        None,
+        description="Operations per second",
+        ge=0,
     )
-    queue_size: Optional[int] = Field(None, description="Current queue size", ge=0)
-    active_connections: Optional[int] = Field(
-        None, description="Number of active connections", ge=0
+    queue_size: int | None = Field(None, description="Current queue size", ge=0)
+    active_connections: int | None = Field(
+        None,
+        description="Number of active connections",
+        ge=0,
     )
 
 
@@ -140,18 +160,23 @@ class ModelIntelligenceAlert(BaseModel):
     alert_id: str = Field(description="Unique alert identifier")
     alert_name: str = Field(description="Alert rule name")
     severity: str = Field(description="Alert severity level")
-    threshold_value: Optional[float] = Field(
-        None, description="Threshold value that triggered alert"
+    threshold_value: float | None = Field(
+        None,
+        description="Threshold value that triggered alert",
     )
-    current_value: Optional[float] = Field(None, description="Current metric value")
-    threshold_condition: Optional[str] = Field(
-        None, description="Condition that triggered alert"
+    current_value: float | None = Field(None, description="Current metric value")
+    threshold_condition: str | None = Field(
+        None,
+        description="Condition that triggered alert",
     )
     escalation_level: int = Field(
-        default=1, description="Current escalation level", ge=1
+        default=1,
+        description="Current escalation level",
+        ge=1,
     )
     notification_sent: bool = Field(
-        default=False, description="Whether notification was sent"
+        default=False,
+        description="Whether notification was sent",
     )
 
 
@@ -165,83 +190,100 @@ class ModelStructuredLogEvent(BaseModel):
 
     # Core event identification
     event_id: str = Field(description="Unique event identifier")
-    correlation_id: Optional[UUID] = Field(
-        None, description="Correlation ID for tracking related events"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Correlation ID for tracking related events",
     )
-    session_id: Optional[str] = Field(
-        None, description="Session identifier for user/agent sessions"
+    session_id: str | None = Field(
+        None,
+        description="Session identifier for user/agent sessions",
     )
 
     # Event metadata
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="UTC timestamp of the event"
+        default_factory=datetime.utcnow,
+        description="UTC timestamp of the event",
     )
     log_level: IntelligenceLogLevel = Field(description="Log level of the event")
     event_type: IntelligenceEventType = Field(
-        description="Type of intelligence system event"
+        description="Type of intelligence system event",
     )
     component: IntelligenceComponent = Field(
-        description="Component that generated the event"
+        description="Component that generated the event",
     )
 
     # Event content
     message: str = Field(description="Human-readable event message")
-    details: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional event details and context"
+    details: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional event details and context",
     )
 
     # System context
-    node_id: Optional[str] = Field(
-        None, description="Node identifier where event occurred"
+    node_id: str | None = Field(
+        None,
+        description="Node identifier where event occurred",
     )
-    service_name: Optional[str] = Field(
-        None, description="Service name that generated the event"
+    service_name: str | None = Field(
+        None,
+        description="Service name that generated the event",
     )
-    service_version: Optional[str] = Field(None, description="Version of the service")
-    environment: Optional[str] = Field(
-        None, description="Environment (dev, staging, prod)"
+    service_version: str | None = Field(None, description="Version of the service")
+    environment: str | None = Field(
+        None,
+        description="Environment (dev, staging, prod)",
     )
 
     # Performance metrics
-    metrics: Optional[ModelIntelligenceMetrics] = Field(
-        None, description="Performance metrics for the event"
+    metrics: ModelIntelligenceMetrics | None = Field(
+        None,
+        description="Performance metrics for the event",
     )
 
     # Alert information
-    alert: Optional[ModelIntelligenceAlert] = Field(
-        None, description="Alert information if this is an alert event"
+    alert: ModelIntelligenceAlert | None = Field(
+        None,
+        description="Alert information if this is an alert event",
     )
 
     # Error information
-    error_type: Optional[str] = Field(
-        None, description="Type of error if this is an error event"
+    error_type: str | None = Field(
+        None,
+        description="Type of error if this is an error event",
     )
-    error_code: Optional[str] = Field(None, description="Error code for the error")
-    stack_trace: Optional[str] = Field(None, description="Stack trace for errors")
+    error_code: str | None = Field(None, description="Error code for the error")
+    stack_trace: str | None = Field(None, description="Stack trace for errors")
 
     # Audit trail information
-    user_id: Optional[str] = Field(None, description="User ID for audit events")
-    action: Optional[str] = Field(None, description="Action performed for audit events")
-    resource: Optional[str] = Field(None, description="Resource affected by the action")
-    previous_value: Optional[str] = Field(
-        None, description="Previous value before change"
+    user_id: str | None = Field(None, description="User ID for audit events")
+    action: str | None = Field(None, description="Action performed for audit events")
+    resource: str | None = Field(None, description="Resource affected by the action")
+    previous_value: str | None = Field(
+        None,
+        description="Previous value before change",
     )
-    new_value: Optional[str] = Field(None, description="New value after change")
+    new_value: str | None = Field(None, description="New value after change")
 
     # Processing metadata
-    processing_time_ms: Optional[float] = Field(
-        None, description="Time taken to process the event", ge=0
+    processing_time_ms: float | None = Field(
+        None,
+        description="Time taken to process the event",
+        ge=0,
     )
-    memory_usage_bytes: Optional[int] = Field(
-        None, description="Memory used during event processing", ge=0
+    memory_usage_bytes: int | None = Field(
+        None,
+        description="Memory used during event processing",
+        ge=0,
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for categorizing and filtering events"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorizing and filtering events",
     )
 
     # Source code context
-    log_context: Optional[ModelLogContext] = Field(
-        None, description="Source code context where event was logged"
+    log_context: ModelLogContext | None = Field(
+        None,
+        description="Source code context where event was logged",
     )
 
     class Config:
@@ -255,33 +297,43 @@ class ModelStructuredLogEvent(BaseModel):
 class ModelIntelligenceLogFilter(BaseModel):
     """Filter criteria for querying intelligence log events."""
 
-    start_time: Optional[datetime] = Field(
-        None, description="Start time for filtering events"
+    start_time: datetime | None = Field(
+        None,
+        description="Start time for filtering events",
     )
-    end_time: Optional[datetime] = Field(
-        None, description="End time for filtering events"
+    end_time: datetime | None = Field(
+        None,
+        description="End time for filtering events",
     )
-    log_levels: List[IntelligenceLogLevel] = Field(
-        default_factory=list, description="Log levels to include in results"
+    log_levels: list[IntelligenceLogLevel] = Field(
+        default_factory=list,
+        description="Log levels to include in results",
     )
-    event_types: List[IntelligenceEventType] = Field(
-        default_factory=list, description="Event types to include in results"
+    event_types: list[IntelligenceEventType] = Field(
+        default_factory=list,
+        description="Event types to include in results",
     )
-    components: List[IntelligenceComponent] = Field(
-        default_factory=list, description="Components to include in results"
+    components: list[IntelligenceComponent] = Field(
+        default_factory=list,
+        description="Components to include in results",
     )
-    correlation_id: Optional[UUID] = Field(None, description="Filter by correlation ID")
-    session_id: Optional[str] = Field(None, description="Filter by session ID")
-    node_id: Optional[str] = Field(None, description="Filter by node ID")
-    service_name: Optional[str] = Field(None, description="Filter by service name")
-    tags: List[str] = Field(
-        default_factory=list, description="Tags that must be present in events"
+    correlation_id: UUID | None = Field(None, description="Filter by correlation ID")
+    session_id: str | None = Field(None, description="Filter by session ID")
+    node_id: str | None = Field(None, description="Filter by node ID")
+    service_name: str | None = Field(None, description="Filter by service name")
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags that must be present in events",
     )
-    text_search: Optional[str] = Field(
-        None, description="Search term for message and details"
+    text_search: str | None = Field(
+        None,
+        description="Search term for message and details",
     )
     limit: int = Field(
-        default=100, description="Maximum number of events to return", ge=1, le=10000
+        default=100,
+        description="Maximum number of events to return",
+        ge=1,
+        le=10000,
     )
     offset: int = Field(default=0, description="Number of events to skip", ge=0)
 
@@ -290,22 +342,27 @@ class ModelIntelligenceLogSummary(BaseModel):
     """Summary statistics for intelligence log events."""
 
     total_events: int = Field(description="Total number of events in the time period")
-    events_by_level: Dict[str, int] = Field(description="Count of events by log level")
-    events_by_type: Dict[str, int] = Field(description="Count of events by event type")
-    events_by_component: Dict[str, int] = Field(
-        description="Count of events by component"
+    events_by_level: dict[str, int] = Field(description="Count of events by log level")
+    events_by_type: dict[str, int] = Field(description="Count of events by event type")
+    events_by_component: dict[str, int] = Field(
+        description="Count of events by component",
     )
     error_rate: float = Field(
-        description="Percentage of events that are errors", ge=0, le=100
+        description="Percentage of events that are errors",
+        ge=0,
+        le=100,
     )
-    average_response_time_ms: Optional[float] = Field(
-        None, description="Average response time across all events"
+    average_response_time_ms: float | None = Field(
+        None,
+        description="Average response time across all events",
     )
-    peak_memory_usage_mb: Optional[float] = Field(
-        None, description="Peak memory usage observed"
+    peak_memory_usage_mb: float | None = Field(
+        None,
+        description="Peak memory usage observed",
     )
-    peak_cpu_usage_percent: Optional[float] = Field(
-        None, description="Peak CPU usage observed"
+    peak_cpu_usage_percent: float | None = Field(
+        None,
+        description="Peak CPU usage observed",
     )
     active_alerts: int = Field(description="Number of active alerts", ge=0)
     time_range_start: datetime = Field(description="Start time of the summary period")

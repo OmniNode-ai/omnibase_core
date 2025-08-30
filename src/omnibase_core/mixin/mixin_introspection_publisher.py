@@ -30,7 +30,6 @@ This mixin handles:
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 from pydantic import BaseModel, Field, ValidationError
@@ -39,7 +38,9 @@ from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.model.core.model_log_context import ModelLogContext
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.discovery.model_node_introspection_event import (
-    ModelNodeCapabilities, ModelNodeIntrospectionEvent)
+    ModelNodeCapabilities,
+    ModelNodeIntrospectionEvent,
+)
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -60,8 +61,8 @@ class NodeIntrospectionData(BaseModel):
     node_name: str = Field(..., description="Node name identifier")
     version: ModelSemVer = Field(..., description="Semantic version of the node")
     capabilities: ModelNodeCapabilities = Field(..., description="Node capabilities")
-    tags: List[str] = Field(default_factory=list, description="Discovery tags")
-    health_endpoint: Optional[str] = Field(None, description="Health check endpoint")
+    tags: list[str] = Field(default_factory=list, description="Discovery tags")
+    health_endpoint: str | None = Field(None, description="Health check endpoint")
 
 
 class MixinIntrospectionPublisher:
@@ -284,27 +285,33 @@ class MixinIntrospectionPublisher:
                 loader_metadata = getattr(metadata_loader, "metadata", None)
                 if loader_metadata:
                     if hasattr(loader_metadata, "description") and getattr(
-                        loader_metadata, "description", None
+                        loader_metadata,
+                        "description",
+                        None,
                     ):
                         capabilities.metadata["description"] = str(
-                            loader_metadata.description
+                            loader_metadata.description,
                         )
                     if hasattr(loader_metadata, "author") and getattr(
-                        loader_metadata, "author", None
+                        loader_metadata,
+                        "author",
+                        None,
                     ):
                         capabilities.metadata["author"] = str(loader_metadata.author)
                     if hasattr(loader_metadata, "copyright") and getattr(
-                        loader_metadata, "copyright", None
+                        loader_metadata,
+                        "copyright",
+                        None,
                     ):
                         capabilities.metadata["copyright"] = str(
-                            loader_metadata.copyright
+                            loader_metadata.copyright,
                         )
         except Exception:
             pass
 
         return capabilities
 
-    def _extract_node_actions(self) -> List[str]:
+    def _extract_node_actions(self) -> list[str]:
         """Extract actions from node's contract or state models."""
         actions = []
 
@@ -329,10 +336,11 @@ class MixinIntrospectionPublisher:
             if not actions:
                 for method_name in dir(self):
                     if method_name.startswith("action_") or method_name.endswith(
-                        "_action"
+                        "_action",
                     ):
                         action_name = method_name.replace("action_", "").replace(
-                            "_action", ""
+                            "_action",
+                            "",
                         )
                         actions.append(action_name)
                     elif method_name in [
@@ -354,7 +362,7 @@ class MixinIntrospectionPublisher:
 
         return actions
 
-    def _detect_supported_protocols(self) -> List[str]:
+    def _detect_supported_protocols(self) -> list[str]:
         """Detect what protocols this node supports."""
         protocols = ["event_bus"]  # All event-driven nodes support event_bus
 
@@ -373,7 +381,7 @@ class MixinIntrospectionPublisher:
 
         return protocols
 
-    def _generate_discovery_tags(self) -> List[str]:
+    def _generate_discovery_tags(self) -> list[str]:
         """Generate tags for service discovery."""
         tags = ["event_driven"]
 
@@ -397,7 +405,9 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "supports_mcp") and getattr(self, "supports_mcp", False):
                 tags.append("mcp")
             if hasattr(self, "supports_graphql") and getattr(
-                self, "supports_graphql", False
+                self,
+                "supports_graphql",
+                False,
             ):
                 tags.append("graphql")
         except Exception:
@@ -405,7 +415,7 @@ class MixinIntrospectionPublisher:
 
         return list(set(tags))  # Remove duplicates
 
-    def _detect_health_endpoint(self) -> Optional[str]:
+    def _detect_health_endpoint(self) -> str | None:
         """Detect if this node has a health endpoint."""
         try:
             if hasattr(self, "health_check"):
@@ -425,11 +435,12 @@ class MixinIntrospectionPublisher:
         node_id = getattr(self, "_node_id", "unknown")
 
         # Create envelope for the event
-        from omnibase_core.model.core.model_event_envelope import \
-            ModelEventEnvelope
+        from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 
         envelope = ModelEventEnvelope.create_broadcast(
-            payload=event, source_node_id=node_id, correlation_id=event.correlation_id
+            payload=event,
+            source_node_id=node_id,
+            correlation_id=event.correlation_id,
         )
 
         for attempt in range(max_retries):
@@ -452,6 +463,4 @@ class MixinIntrospectionPublisher:
                         context=context,
                     )
                     raise
-                else:
-                    # Retry without logging to keep it simple
-                    pass
+                # Retry without logging to keep it simple

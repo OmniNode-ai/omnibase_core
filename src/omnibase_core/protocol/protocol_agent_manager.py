@@ -6,12 +6,9 @@ including spawning, monitoring, lifecycle management, and resource tracking.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
-from omnibase_core.model.configuration.model_agent_config import \
-    ModelAgentConfig
-from omnibase_core.model.core.model_agent_health_status import \
-    ModelAgentHealthStatus
+from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
+from omnibase_core.model.core.model_agent_health_status import ModelAgentHealthStatus
 from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
 from omnibase_core.model.core.model_agent_status import ModelAgentStatus
 
@@ -34,7 +31,6 @@ class ProtocolAgentManager(ABC):
             AgentSpawnError: If agent spawning fails
             ConfigurationError: If configuration is invalid
         """
-        pass
 
     @abstractmethod
     async def terminate_agent(self, agent_id: str) -> bool:
@@ -51,10 +47,9 @@ class ProtocolAgentManager(ABC):
             AgentNotFoundError: If agent ID doesn't exist
             TerminationError: If termination fails
         """
-        pass
 
     @abstractmethod
-    async def get_agent(self, agent_id: str) -> Optional[ModelAgentInstance]:
+    async def get_agent(self, agent_id: str) -> ModelAgentInstance | None:
         """
         Retrieve agent instance by ID.
 
@@ -64,17 +59,15 @@ class ProtocolAgentManager(ABC):
         Returns:
             Agent instance or None if not found
         """
-        pass
 
     @abstractmethod
-    async def list_active_agents(self) -> List[ModelAgentInstance]:
+    async def list_active_agents(self) -> list[ModelAgentInstance]:
         """
         List all active agent instances.
 
         Returns:
             List of active agent instances
         """
-        pass
 
     @abstractmethod
     async def get_agent_status(self, agent_id: str) -> ModelAgentStatus:
@@ -90,7 +83,6 @@ class ProtocolAgentManager(ABC):
         Raises:
             AgentNotFoundError: If agent ID doesn't exist
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> ModelAgentHealthStatus:
@@ -100,7 +92,6 @@ class ProtocolAgentManager(ABC):
         Returns:
             Health status including system metrics
         """
-        pass
 
     @abstractmethod
     async def restart_agent(self, agent_id: str) -> ModelAgentInstance:
@@ -117,11 +108,12 @@ class ProtocolAgentManager(ABC):
             AgentNotFoundError: If agent ID doesn't exist
             RestartError: If restart fails
         """
-        pass
 
     @abstractmethod
     async def update_agent_config(
-        self, agent_id: str, config: ModelAgentConfig
+        self,
+        agent_id: str,
+        config: ModelAgentConfig,
     ) -> ModelAgentInstance:
         """
         Update configuration of an existing agent.
@@ -137,10 +129,9 @@ class ProtocolAgentManager(ABC):
             AgentNotFoundError: If agent ID doesn't exist
             ConfigurationError: If configuration is invalid
         """
-        pass
 
     @abstractmethod
-    async def get_resource_usage(self, agent_id: str) -> Dict[str, float]:
+    async def get_resource_usage(self, agent_id: str) -> dict[str, float]:
         """
         Get resource usage metrics for an agent.
 
@@ -153,7 +144,6 @@ class ProtocolAgentManager(ABC):
         Raises:
             AgentNotFoundError: If agent ID doesn't exist
         """
-        pass
 
     @abstractmethod
     async def set_agent_idle(self, agent_id: str) -> bool:
@@ -169,7 +159,6 @@ class ProtocolAgentManager(ABC):
         Raises:
             AgentNotFoundError: If agent ID doesn't exist
         """
-        pass
 
     @abstractmethod
     async def set_agent_busy(self, agent_id: str, task_id: str) -> bool:
@@ -186,4 +175,3 @@ class ProtocolAgentManager(ABC):
         Raises:
             AgentNotFoundError: If agent ID doesn't exist
         """
-        pass

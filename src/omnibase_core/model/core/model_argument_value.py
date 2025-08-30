@@ -5,12 +5,12 @@ Type-safe argument value wrapper replacing Any usage
 with structured argument value handling.
 """
 
-from typing import List, Optional, Union
+from typing import Union
 
 from pydantic import BaseModel, Field
 
 # Define allowed argument value types
-ArgumentValueType = Union[str, int, bool, float, List[str], List[int], List[float]]
+ArgumentValueType = Union[str, int, bool, float, list[str], list[int], list[float]]
 
 
 class ModelArgumentValue(BaseModel):
@@ -25,7 +25,8 @@ class ModelArgumentValue(BaseModel):
     original_string: str = Field(..., description="Original string representation")
     type_name: str = Field(..., description="Type name for validation")
     validated: bool = Field(
-        default=False, description="Whether value has been validated"
+        default=False,
+        description="Whether value has been validated",
     )
 
     def get_as_string(self) -> str:
@@ -34,20 +35,20 @@ class ModelArgumentValue(BaseModel):
             return self.value
         return str(self.value)
 
-    def get_as_int(self) -> Optional[int]:
+    def get_as_int(self) -> int | None:
         """Get value as integer."""
         if isinstance(self.value, int):
             return self.value
-        if isinstance(self.value, (float, str)):
+        if isinstance(self.value, float | str):
             try:
                 return int(self.value)
             except ValueError:
                 return None
         return None
 
-    def get_as_float(self) -> Optional[float]:
+    def get_as_float(self) -> float | None:
         """Get value as float."""
-        if isinstance(self.value, (int, float)):
+        if isinstance(self.value, int | float):
             return float(self.value)
         if isinstance(self.value, str):
             try:
@@ -62,11 +63,11 @@ class ModelArgumentValue(BaseModel):
             return self.value
         if isinstance(self.value, str):
             return self.value.lower() in ("true", "yes", "1", "on")
-        if isinstance(self.value, (int, float)):
+        if isinstance(self.value, int | float):
             return self.value != 0
         return False
 
-    def get_as_list(self) -> List[str]:
+    def get_as_list(self) -> list[str]:
         """Get value as list of strings."""
         if isinstance(self.value, list):
             return [str(item) for item in self.value]

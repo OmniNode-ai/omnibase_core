@@ -23,14 +23,13 @@
 
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol, Set, Type, Union
+from typing import Any, Protocol
 
-from omnibase_core.model.configuration.model_handler_protocol import \
-    HandlerModelMetadata
-from omnibase_core.protocol.protocol_file_type_handler import \
-    ProtocolFileTypeHandler
-from omnibase_core.protocol.protocol_file_type_handler_registry import \
-    HandlerSourceEnum
+from omnibase_core.model.configuration.model_handler_protocol import (
+    HandlerModelMetadata,
+)
+from omnibase_core.protocol.protocol_file_type_handler import ProtocolFileTypeHandler
+from omnibase_core.protocol.protocol_file_type_handler_registry import HandlerSourceEnum
 
 
 class ProtocolFileTypeHandlerRegistry(Protocol):
@@ -53,7 +52,7 @@ class ProtocolFileTypeHandlerRegistry(Protocol):
     def register_handler(
         self,
         extension_or_name: str,
-        handler: Union[ProtocolFileTypeHandler, Type[ProtocolFileTypeHandler]],
+        handler: ProtocolFileTypeHandler | type[ProtocolFileTypeHandler],
         source: HandlerSourceEnum,
         priority: int = 0,
         override: bool = False,
@@ -72,27 +71,27 @@ class ProtocolFileTypeHandlerRegistry(Protocol):
         """
         ...
 
-    def get_handler(self, path: Path) -> Optional[ProtocolFileTypeHandler]:
+    def get_handler(self, path: Path) -> ProtocolFileTypeHandler | None:
         """Return the handler for the given path, or None if unhandled."""
         ...
 
-    def get_named_handler(self, name: str) -> Optional[ProtocolFileTypeHandler]:
+    def get_named_handler(self, name: str) -> ProtocolFileTypeHandler | None:
         """Get a handler by name."""
         ...
 
-    def list_handlers(self) -> List[HandlerModelMetadata]:
+    def list_handlers(self) -> list[HandlerModelMetadata]:
         """List all registered handlers with metadata."""
         ...
 
-    def handled_extensions(self) -> Set[str]:
+    def handled_extensions(self) -> set[str]:
         """Return the set of handled file extensions."""
         ...
 
-    def handled_specials(self) -> Set[str]:
+    def handled_specials(self) -> set[str]:
         """Return the set of handled special filenames."""
         ...
 
-    def handled_names(self) -> Set[str]:
+    def handled_names(self) -> set[str]:
         """Return the set of handled named handlers."""
         ...
 
@@ -102,8 +101,9 @@ class ProtocolFileTypeHandlerRegistry(Protocol):
 
     def register_node_local_handlers(
         self,
-        handlers: Dict[
-            str, Union[ProtocolFileTypeHandler, Type[ProtocolFileTypeHandler]]
+        handlers: dict[
+            str,
+            ProtocolFileTypeHandler | type[ProtocolFileTypeHandler],
         ],
     ) -> None:
         """

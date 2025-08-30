@@ -11,7 +11,8 @@ class ModelLLMEndpoint(BaseModel):
     """Configuration for an LLM endpoint with environment variable support."""
 
     host: str = Field(
-        ..., description="Host address - supports env vars like ${MAC_STUDIO_HOST}"
+        ...,
+        description="Host address - supports env vars like ${MAC_STUDIO_HOST}",
     )
     port: int = Field(..., description="Port number for the LLM service")
     protocol: str = Field("http", description="Protocol to use (http/https)")

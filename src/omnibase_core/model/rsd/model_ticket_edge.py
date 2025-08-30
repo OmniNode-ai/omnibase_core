@@ -9,8 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.tools.rsd.shared.enums.enum_rsd_edge_type import \
-    EnumRSDEdgeType
+from omnibase_core.tools.rsd.shared.enums.enum_rsd_edge_type import EnumRSDEdgeType
 
 
 class ModelTicketEdge(BaseModel):
@@ -22,23 +21,26 @@ class ModelTicketEdge(BaseModel):
     """
 
     source_ticket_id: str = Field(
-        description="Source ticket ID in dependency relationship"
+        description="Source ticket ID in dependency relationship",
     )
 
     target_ticket_id: str = Field(
-        description="Target ticket ID in dependency relationship"
+        description="Target ticket ID in dependency relationship",
     )
 
     edge_type: EnumRSDEdgeType = Field(
-        description="Type of relationship between tickets"
+        description="Type of relationship between tickets",
     )
 
     weight: float = Field(
-        description="Strength of relationship (0.0-1.0)", ge=0.0, le=1.0
+        description="Strength of relationship (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     created_at: datetime = Field(
-        description="When this edge was created", default_factory=datetime.now
+        description="When this edge was created",
+        default_factory=datetime.now,
     )
 
     class Config:

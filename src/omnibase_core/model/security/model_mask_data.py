@@ -4,31 +4,34 @@ ModelMaskData: Structured data model for masking operations.
 This model provides strongly typed data masking without using Any types.
 """
 
-from typing import Dict, List, Union
-
 from pydantic import BaseModel, Field
 
 
 class ModelMaskData(BaseModel):
     """Structured data model for masking operations."""
 
-    string_data: Dict[str, str] = Field(
-        default_factory=dict, description="String data fields"
+    string_data: dict[str, str] = Field(
+        default_factory=dict,
+        description="String data fields",
     )
-    integer_data: Dict[str, int] = Field(
-        default_factory=dict, description="Integer data fields"
+    integer_data: dict[str, int] = Field(
+        default_factory=dict,
+        description="Integer data fields",
     )
-    boolean_data: Dict[str, bool] = Field(
-        default_factory=dict, description="Boolean data fields"
+    boolean_data: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Boolean data fields",
     )
-    list_data: Dict[str, List[str]] = Field(
-        default_factory=dict, description="List data fields"
+    list_data: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="List data fields",
     )
-    nested_data: Dict[str, "ModelMaskData"] = Field(
-        default_factory=dict, description="Nested data structures"
+    nested_data: dict[str, "ModelMaskData"] = Field(
+        default_factory=dict,
+        description="Nested data structures",
     )
 
-    def to_dict(self) -> Dict[str, Union[str, int, bool, List[str], Dict]]:
+    def to_dict(self) -> dict[str, str | int | bool | list[str] | dict]:
         """Convert to a dictionary representation."""
         result = {}
         result.update(self.string_data)
@@ -41,7 +44,8 @@ class ModelMaskData(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: Dict[str, Union[str, int, bool, List[str], Dict]]
+        cls,
+        data: dict[str, str | int | bool | list[str] | dict],
     ) -> "ModelMaskData":
         """Create from a dictionary."""
         string_data = {}

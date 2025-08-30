@@ -22,8 +22,6 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict
 
 from .model_onex_ignore_section import ModelOnexIgnoreSection
@@ -33,10 +31,10 @@ OnexIgnoreSection = ModelOnexIgnoreSection
 
 
 class ModelOnexIgnore(BaseModel):
-    stamper: Optional[OnexIgnoreSection] = None
-    validator: Optional[OnexIgnoreSection] = None
-    tree: Optional[OnexIgnoreSection] = None
-    all: Optional[OnexIgnoreSection] = None
+    stamper: OnexIgnoreSection | None = None
+    validator: OnexIgnoreSection | None = None
+    tree: OnexIgnoreSection | None = None
+    all: OnexIgnoreSection | None = None
     # Allow arbitrary tool keys for extensibility
     model_config = ConfigDict(
         extra="allow",
@@ -46,7 +44,7 @@ class ModelOnexIgnore(BaseModel):
                 "validator": {"patterns": ["tests/shared/legacy/*"]},
                 "tree": {"patterns": ["docs/generated/*"]},
                 "all": {"patterns": ["*.bak", "*.tmp"]},
-            }
+            },
         },
     )
 

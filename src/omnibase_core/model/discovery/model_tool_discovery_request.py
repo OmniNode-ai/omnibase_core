@@ -5,8 +5,6 @@ Event published by services to request discovery of available tools.
 The registry responds with a TOOL_DISCOVERY_RESPONSE event.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants.event_types import CoreEventTypes
@@ -16,29 +14,37 @@ from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 class ModelDiscoveryFilters(BaseModel):
     """Filters for tool discovery requests"""
 
-    tags: Optional[List[str]] = Field(
-        None, description="Filter by node tags (e.g. ['generator', 'validated'])"
+    tags: list[str] | None = Field(
+        None,
+        description="Filter by node tags (e.g. ['generator', 'validated'])",
     )
-    protocols: Optional[List[str]] = Field(
-        None, description="Filter by supported protocols (e.g. ['mcp', 'graphql'])"
+    protocols: list[str] | None = Field(
+        None,
+        description="Filter by supported protocols (e.g. ['mcp', 'graphql'])",
     )
-    actions: Optional[List[str]] = Field(
-        None, description="Filter by supported actions (e.g. ['health_check'])"
+    actions: list[str] | None = Field(
+        None,
+        description="Filter by supported actions (e.g. ['health_check'])",
     )
-    node_names: Optional[List[str]] = Field(
-        None, description="Filter by specific node names (e.g. ['node_generator'])"
+    node_names: list[str] | None = Field(
+        None,
+        description="Filter by specific node names (e.g. ['node_generator'])",
     )
-    exclude_nodes: Optional[List[str]] = Field(
-        None, description="Exclude specific node IDs from results"
+    exclude_nodes: list[str] | None = Field(
+        None,
+        description="Exclude specific node IDs from results",
     )
-    min_trust_score: Optional[float] = Field(
-        None, description="Minimum trust score required (0.0-1.0)"
+    min_trust_score: float | None = Field(
+        None,
+        description="Minimum trust score required (0.0-1.0)",
     )
-    datacenter: Optional[str] = Field(
-        None, description="Filter by datacenter (future Consul support)"
+    datacenter: str | None = Field(
+        None,
+        description="Filter by datacenter (future Consul support)",
     )
-    health_status: Optional[str] = Field(
-        None, description="Filter by health status ('healthy', 'warning', 'critical')"
+    health_status: str | None = Field(
+        None,
+        description="Filter by health status ('healthy', 'warning', 'critical')",
     )
 
 
@@ -59,23 +65,28 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
 
     # Request identification
     requester_id: str = Field(
-        ..., description="ID of the service requesting discovery (e.g. 'mcp_server')"
+        ...,
+        description="ID of the service requesting discovery (e.g. 'mcp_server')",
     )
 
     # Query parameters
-    filters: Optional[ModelDiscoveryFilters] = Field(
-        None, description="Filters to apply to the discovery request"
+    filters: ModelDiscoveryFilters | None = Field(
+        None,
+        description="Filters to apply to the discovery request",
     )
 
     # Response control
-    max_results: Optional[int] = Field(
-        None, description="Maximum number of results to return"
+    max_results: int | None = Field(
+        None,
+        description="Maximum number of results to return",
     )
-    timeout_ms: Optional[int] = Field(
-        5000, description="Timeout in milliseconds for the request"
+    timeout_ms: int | None = Field(
+        5000,
+        description="Timeout in milliseconds for the request",
     )
     include_metadata: bool = Field(
-        True, description="Whether to include full metadata in response"
+        True,
+        description="Whether to include full metadata in response",
     )
 
     @classmethod
@@ -83,8 +94,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         cls,
         node_id: str,
         requester_id: str,
-        tags: List[str] = None,
-        protocols: List[str] = None,
+        tags: list[str] | None = None,
+        protocols: list[str] | None = None,
         correlation_id=None,
         **kwargs,
     ) -> "ModelToolDiscoveryRequest":
@@ -135,7 +146,8 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
             ModelToolDiscoveryRequest for MCP tools
         """
         filters = ModelDiscoveryFilters(
-            protocols=["mcp", "event_bus"], health_status="healthy"
+            protocols=["mcp", "event_bus"],
+            health_status="healthy",
         )
 
         return cls(

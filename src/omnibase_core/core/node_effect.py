@@ -18,31 +18,31 @@ Author: ONEX Framework Team
 """
 
 import asyncio
-import os
 import time
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import (Any, AsyncContextManager, AsyncIterator, Callable, Dict,
-                    List, Optional, TypeVar, Union)
+from typing import (
+    Any,
+    TypeVar,
+)
 from uuid import UUID, uuid4
 
-import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+
 # Import contract model for effect nodes
 from omnibase_core.core.model_contract_effect import ModelContractEffect
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.utils.generation.utility_reference_resolver import \
-    UtilityReferenceResolver
+
 # Import utilities for contract loading
-from omnibase_core.utils.io.utility_filesystem_reader import \
-    UtilityFileSystemReader
 
 T = TypeVar("T")
 
@@ -88,15 +88,15 @@ class ModelEffectInput:
     def __init__(
         self,
         effect_type: EffectType,
-        operation_data: Dict[str, Any],
-        operation_id: Optional[str] = None,
+        operation_data: dict[str, Any],
+        operation_id: str | None = None,
         transaction_enabled: bool = True,
         retry_enabled: bool = True,
         max_retries: int = 3,
         retry_delay_ms: int = 1000,
         circuit_breaker_enabled: bool = False,
         timeout_ms: int = 30000,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.effect_type = effect_type
         self.operation_data = operation_data
@@ -127,9 +127,9 @@ class ModelEffectOutput:
         transaction_state: TransactionState,
         processing_time_ms: float,
         retry_count: int = 0,
-        side_effects_applied: Optional[List[str]] = None,
-        rollback_operations: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        side_effects_applied: list[str] | None = None,
+        rollback_operations: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.result = result
         self.operation_id = operation_id
@@ -154,16 +154,16 @@ class Transaction:
     def __init__(self, transaction_id: str):
         self.transaction_id = transaction_id
         self.state = TransactionState.PENDING
-        self.operations: List[Dict[str, Any]] = []
-        self.rollback_operations: List[Callable[..., Any]] = []
+        self.operations: list[dict[str, Any]] = []
+        self.rollback_operations: list[Callable[..., Any]] = []
         self.started_at = datetime.now()
-        self.committed_at: Optional[datetime] = None
+        self.committed_at: datetime | None = None
 
     def add_operation(
         self,
         operation_name: str,
-        operation_data: Dict[str, Any],
-        rollback_func: Optional[Callable[..., Any]] = None,
+        operation_data: dict[str, Any],
+        rollback_func: Callable[..., Any] | None = None,
     ) -> None:
         """Add operation to transaction with optional rollback function."""
         self.operations.append(
@@ -171,7 +171,7 @@ class Transaction:
                 "name": operation_name,
                 "data": operation_data,
                 "timestamp": datetime.now(),
-            }
+            },
         )
 
         if rollback_func:
@@ -196,7 +196,7 @@ class Transaction:
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
-                    f"Rollback operation failed: {str(e)}",
+                    f"Rollback operation failed: {e!s}",
                     {"transaction_id": self.transaction_id, "error": str(e)},
                 )
 
@@ -220,7 +220,7 @@ class CircuitBreaker:
 
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
-        self.last_failure_time: Optional[datetime] = None
+        self.last_failure_time: datetime | None = None
         self.half_open_attempts = 0
 
     def can_execute(self) -> bool:
@@ -229,17 +229,17 @@ class CircuitBreaker:
 
         if self.state == CircuitBreakerState.CLOSED:
             return True
-        elif self.state == CircuitBreakerState.OPEN:
+        if self.state == CircuitBreakerState.OPEN:
             # Check if recovery timeout has passed
             if self.last_failure_time and now - self.last_failure_time > timedelta(
-                seconds=self.recovery_timeout_seconds
+                seconds=self.recovery_timeout_seconds,
             ):
                 self.state = CircuitBreakerState.HALF_OPEN
                 self.half_open_attempts = 0
                 return True
             return False
-        else:  # CircuitBreakerState.HALF_OPEN
-            return self.half_open_attempts < self.half_open_max_attempts
+        # CircuitBreakerState.HALF_OPEN
+        return self.half_open_attempts < self.half_open_max_attempts
 
     def record_success(self) -> None:
         """Record successful operation."""
@@ -309,19 +309,19 @@ class NodeEffect(NodeCoreBase):
         self.max_concurrent_effects = 10
 
         # Transaction management
-        self.active_transactions: Dict[str, Transaction] = {}
+        self.active_transactions: dict[str, Transaction] = {}
 
         # Circuit breakers for external services
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.circuit_breakers: dict[str, CircuitBreaker] = {}
 
         # Effect handlers registry
-        self.effect_handlers: Dict[EffectType, Callable[..., Any]] = {}
+        self.effect_handlers: dict[EffectType, Callable[..., Any]] = {}
 
         # Semaphore for limiting concurrent effects
         self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
 
         # Performance tracking
-        self.effect_metrics: Dict[str, Dict[str, float]] = {}
+        self.effect_metrics: dict[str, dict[str, float]] = {}
 
         # Register built-in effect handlers
         self._register_builtin_effect_handlers()
@@ -341,16 +341,15 @@ class NodeEffect(NodeCoreBase):
         """
         try:
             # Load actual contract from file with subcontract resolution
-            from pathlib import Path
 
             import yaml
 
-            from omnibase_core.constants.contract_constants import \
-                CONTRACT_FILENAME
-            from omnibase_core.utils.generation.utility_reference_resolver import \
-                UtilityReferenceResolver
-            from omnibase_core.utils.io.utility_filesystem_reader import \
-                UtilityFileSystemReader
+            from omnibase_core.utils.generation.utility_reference_resolver import (
+                UtilityReferenceResolver,
+            )
+            from omnibase_core.utils.io.utility_filesystem_reader import (
+                UtilityFileSystemReader,
+            )
 
             # Get contract path - find the node.py file and look for contract.yaml
             contract_path = self._find_contract_path()
@@ -364,7 +363,9 @@ class NodeEffect(NodeCoreBase):
 
             # Resolve any $ref references in the contract
             resolved_contract = self._resolve_contract_references(
-                contract_data, contract_path.parent, reference_resolver
+                contract_data,
+                contract_path.parent,
+                reference_resolver,
             )
 
             # Create ModelContractEffect from resolved contract data
@@ -390,7 +391,7 @@ class NodeEffect(NodeCoreBase):
             # CANONICAL PATTERN: Wrap contract loading errors
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract model loading failed for NodeEffect: {str(e)}",
+                message=f"Contract model loading failed for NodeEffect: {e!s}",
                 details={
                     "contract_model_type": "ModelContractEffect",
                     "error_type": type(e).__name__,
@@ -413,8 +414,7 @@ class NodeEffect(NodeCoreBase):
         import inspect
         from pathlib import Path
 
-        from omnibase_core.constants.contract_constants import \
-            CONTRACT_FILENAME
+        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 
         try:
             # Get the module file for the calling class
@@ -441,12 +441,15 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Error finding contract path: {str(e)}",
+                message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
 
     def _resolve_contract_references(
-        self, data: Any, base_path: Path, reference_resolver: Any
+        self,
+        data: Any,
+        base_path: Path,
+        reference_resolver: Any,
     ) -> Any:
         """
         Recursively resolve all $ref references in contract data.
@@ -469,7 +472,7 @@ class NodeEffect(NodeCoreBase):
                 if "$ref" in data:
                     # Resolve reference to another file
                     ref_file = data["$ref"]
-                    if ref_file.startswith("./") or ref_file.startswith("../"):
+                    if ref_file.startswith(("./", "../")):
                         # Relative path reference
                         ref_path = (base_path / ref_file).resolve()
                     else:
@@ -477,27 +480,30 @@ class NodeEffect(NodeCoreBase):
                         ref_path = Path(ref_file)
 
                     return reference_resolver.resolve_reference(
-                        str(ref_path), base_path
+                        str(ref_path),
+                        base_path,
                     )
-                else:
-                    # Recursively resolve nested dictionaries
-                    return {
-                        key: self._resolve_contract_references(
-                            value, base_path, reference_resolver
-                        )
-                        for key, value in data.items()
-                    }
-            elif isinstance(data, list):
+                # Recursively resolve nested dictionaries
+                return {
+                    key: self._resolve_contract_references(
+                        value,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for key, value in data.items()
+                }
+            if isinstance(data, list):
                 # Recursively resolve lists
                 return [
                     self._resolve_contract_references(
-                        item, base_path, reference_resolver
+                        item,
+                        base_path,
+                        reference_resolver,
                     )
                     for item in data
                 ]
-            else:
-                # Return primitives as-is
-                return data
+            # Return primitives as-is
+            return data
 
         except Exception as e:
             # Log error but don't stop processing
@@ -523,7 +529,7 @@ class NodeEffect(NodeCoreBase):
             OnexError: If side effect execution fails
         """
         start_time = time.time()
-        transaction: Optional[Transaction] = None
+        transaction: Transaction | None = None
         retry_count = 0
 
         try:
@@ -533,7 +539,7 @@ class NodeEffect(NodeCoreBase):
             # Check circuit breaker if enabled
             if input_data.circuit_breaker_enabled:
                 circuit_breaker = self._get_circuit_breaker(
-                    input_data.effect_type.value
+                    input_data.effect_type.value,
                 )
                 if not circuit_breaker.can_execute():
                     raise OnexError(
@@ -568,13 +574,15 @@ class NodeEffect(NodeCoreBase):
             # Record success in circuit breaker
             if input_data.circuit_breaker_enabled:
                 circuit_breaker = self._get_circuit_breaker(
-                    input_data.effect_type.value
+                    input_data.effect_type.value,
                 )
                 circuit_breaker.record_success()
 
             # Update metrics
             await self._update_effect_metrics(
-                input_data.effect_type.value, processing_time, True
+                input_data.effect_type.value,
+                processing_time,
+                True,
             )
             await self._update_processing_metrics(processing_time, True)
 
@@ -624,7 +632,7 @@ class NodeEffect(NodeCoreBase):
                 except Exception as rollback_error:
                     emit_log_event(
                         LogLevelEnum.ERROR,
-                        f"Transaction rollback failed: {str(rollback_error)}",
+                        f"Transaction rollback failed: {rollback_error!s}",
                         {
                             "node_id": self.node_id,
                             "operation_id": input_data.operation_id,
@@ -639,19 +647,21 @@ class NodeEffect(NodeCoreBase):
             # Record failure in circuit breaker
             if input_data.circuit_breaker_enabled:
                 circuit_breaker = self._get_circuit_breaker(
-                    input_data.effect_type.value
+                    input_data.effect_type.value,
                 )
                 circuit_breaker.record_failure()
 
             # Update error metrics
             await self._update_effect_metrics(
-                input_data.effect_type.value, processing_time, False
+                input_data.effect_type.value,
+                processing_time,
+                False,
             )
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Effect execution failed: {str(e)}",
+                message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": self.node_id,
                     "operation_id": input_data.operation_id,
@@ -666,7 +676,8 @@ class NodeEffect(NodeCoreBase):
 
     @asynccontextmanager
     async def transaction_context(
-        self, operation_id: Optional[str] = None
+        self,
+        operation_id: str | None = None,
     ) -> AsyncIterator[Transaction]:
         """
         Async context manager for transaction handling.
@@ -685,9 +696,9 @@ class NodeEffect(NodeCoreBase):
             self.active_transactions[transaction_id] = transaction
             yield transaction
             await transaction.commit()
-        except Exception as e:
+        except Exception:
             await transaction.rollback()
-            raise e
+            raise
         finally:
             if transaction_id in self.active_transactions:
                 del self.active_transactions[transaction_id]
@@ -695,10 +706,10 @@ class NodeEffect(NodeCoreBase):
     async def execute_file_operation(
         self,
         operation_type: str,
-        file_path: Union[str, Path],
-        data: Optional[Any] = None,
+        file_path: str | Path,
+        data: Any | None = None,
         atomic: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute atomic file operation for RSD work ticket management.
 
@@ -733,8 +744,8 @@ class NodeEffect(NodeCoreBase):
     async def emit_state_change_event(
         self,
         event_type: str,
-        payload: Dict[str, Any],
-        correlation_id: Optional[UUID] = None,
+        payload: dict[str, Any],
+        correlation_id: UUID | None = None,
     ) -> bool:
         """
         Emit state change event to event bus.
@@ -765,7 +776,7 @@ class NodeEffect(NodeCoreBase):
         result = await self.process(effect_input)
         return bool(result.result)
 
-    async def get_effect_metrics(self) -> Dict[str, Dict[str, float]]:
+    async def get_effect_metrics(self) -> dict[str, dict[str, float]]:
         """
         Get detailed effect performance metrics.
 
@@ -795,7 +806,7 @@ class NodeEffect(NodeCoreBase):
         """Initialize effect-specific resources."""
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeEffect resources initialized",
+            "NodeEffect resources initialized",
             {
                 "node_id": self.node_id,
                 "max_concurrent_effects": self.max_concurrent_effects,
@@ -817,7 +828,7 @@ class NodeEffect(NodeCoreBase):
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
-                    f"Failed to rollback transaction during cleanup: {str(e)}",
+                    f"Failed to rollback transaction during cleanup: {e!s}",
                     {"node_id": self.node_id, "transaction_id": transaction_id},
                 )
 
@@ -825,7 +836,7 @@ class NodeEffect(NodeCoreBase):
 
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeEffect resources cleaned up",
+            "NodeEffect resources cleaned up",
             {"node_id": self.node_id},
         )
 
@@ -868,26 +879,28 @@ class NodeEffect(NodeCoreBase):
         return self.circuit_breakers[service_name]
 
     async def _execute_with_retry(
-        self, input_data: ModelEffectInput, transaction: Optional[Transaction]
+        self,
+        input_data: ModelEffectInput,
+        transaction: Transaction | None,
     ) -> Any:
         """Execute effect with retry logic."""
         retry_count = 0
         last_exception: Exception = OnexError(
-            error_code=CoreErrorCode.OPERATION_FAILED, message="No retries executed"
+            error_code=CoreErrorCode.OPERATION_FAILED,
+            message="No retries executed",
         )
 
         while retry_count <= input_data.max_retries:
             try:
                 # Execute the effect
-                result = await self._execute_effect(input_data, transaction)
-                return result
+                return await self._execute_effect(input_data, transaction)
 
             except Exception as e:
                 last_exception = e
                 retry_count += 1
 
                 if not input_data.retry_enabled or retry_count > input_data.max_retries:
-                    raise e
+                    raise
 
                 # Wait before retry with exponential backoff
                 delay_ms = input_data.retry_delay_ms * (2 ** (retry_count - 1))
@@ -895,7 +908,7 @@ class NodeEffect(NodeCoreBase):
 
                 emit_log_event(
                     LogLevelEnum.WARNING,
-                    f"Effect retry {retry_count}/{input_data.max_retries}: {str(e)}",
+                    f"Effect retry {retry_count}/{input_data.max_retries}: {e!s}",
                     {
                         "node_id": self.node_id,
                         "operation_id": input_data.operation_id,
@@ -909,28 +922,31 @@ class NodeEffect(NodeCoreBase):
         raise last_exception
 
     async def _execute_effect(
-        self, input_data: ModelEffectInput, transaction: Optional[Transaction]
+        self,
+        input_data: ModelEffectInput,
+        transaction: Transaction | None,
     ) -> Any:
         """Execute the actual effect operation."""
         effect_type = input_data.effect_type
 
         if effect_type in self.effect_handlers:
             handler = self.effect_handlers[effect_type]
-            result = await handler(input_data.operation_data, transaction)
-            return result
-        else:
-            raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"No handler registered for effect type: {effect_type.value}",
-                context={
-                    "node_id": self.node_id,
-                    "effect_type": effect_type.value,
-                    "available_types": [et.value for et in self.effect_handlers.keys()],
-                },
-            )
+            return await handler(input_data.operation_data, transaction)
+        raise OnexError(
+            error_code=CoreErrorCode.OPERATION_FAILED,
+            message=f"No handler registered for effect type: {effect_type.value}",
+            context={
+                "node_id": self.node_id,
+                "effect_type": effect_type.value,
+                "available_types": [et.value for et in self.effect_handlers],
+            },
+        )
 
     async def _update_effect_metrics(
-        self, effect_type: str, processing_time_ms: float, success: bool
+        self,
+        effect_type: str,
+        processing_time_ms: float,
+        success: bool,
     ) -> None:
         """Update effect-specific metrics."""
         if effect_type not in self.effect_metrics:
@@ -953,10 +969,12 @@ class NodeEffect(NodeCoreBase):
 
         # Update timing metrics
         metrics["min_processing_time_ms"] = min(
-            metrics["min_processing_time_ms"], processing_time_ms
+            metrics["min_processing_time_ms"],
+            processing_time_ms,
         )
         metrics["max_processing_time_ms"] = max(
-            metrics["max_processing_time_ms"], processing_time_ms
+            metrics["max_processing_time_ms"],
+            processing_time_ms,
         )
 
         # Update rolling average
@@ -970,8 +988,9 @@ class NodeEffect(NodeCoreBase):
         """Register built-in effect handlers."""
 
         async def file_operation_handler(
-            operation_data: Dict[str, Any], transaction: Optional[Transaction]
-        ) -> Dict[str, Any]:
+            operation_data: dict[str, Any],
+            transaction: Transaction | None,
+        ) -> dict[str, Any]:
             """Handle file operations with atomic guarantees."""
             operation_type = operation_data["operation_type"]
             file_path = Path(operation_data["file_path"])
@@ -988,7 +1007,7 @@ class NodeEffect(NodeCoreBase):
                         context={"file_path": str(file_path)},
                     )
 
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
                 result["content"] = content
                 result["size_bytes"] = len(content.encode("utf-8"))
@@ -1010,13 +1029,15 @@ class NodeEffect(NodeCoreBase):
                                     file_path.unlink()
 
                             transaction.add_operation(
-                                "write", {"file_path": str(file_path)}, rollback_write
+                                "write",
+                                {"file_path": str(file_path)},
+                                rollback_write,
                             )
 
-                    except Exception as e:
+                    except Exception:
                         if temp_path.exists():
                             temp_path.unlink()
-                        raise e
+                        raise
                 else:
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(str(data))
@@ -1028,7 +1049,7 @@ class NodeEffect(NodeCoreBase):
                     # Backup content for rollback
                     backup_content = None
                     if transaction:
-                        with open(file_path, "r", encoding="utf-8") as f:
+                        with open(file_path, encoding="utf-8") as f:
                             backup_content = f.read()
 
                     file_path.unlink()
@@ -1042,7 +1063,9 @@ class NodeEffect(NodeCoreBase):
                                 f.write(backup_content)
 
                         transaction.add_operation(
-                            "delete", {"file_path": str(file_path)}, rollback_delete
+                            "delete",
+                            {"file_path": str(file_path)},
+                            rollback_delete,
                         )
                 else:
                     result["deleted"] = False
@@ -1057,7 +1080,8 @@ class NodeEffect(NodeCoreBase):
             return result
 
         async def event_emission_handler(
-            operation_data: Dict[str, Any], transaction: Optional[Transaction]
+            operation_data: dict[str, Any],
+            transaction: Transaction | None,
         ) -> bool:
             """Handle event emission to event bus."""
             event_type = operation_data["event_type"]
@@ -1083,18 +1107,17 @@ class NodeEffect(NodeCoreBase):
                         correlation_id=UUID(correlation_id) if correlation_id else None,
                     )
                     return True
-                else:
-                    emit_log_event(
-                        LogLevelEnum.WARNING,
-                        "Event bus does not support emit_event method",
-                        {"event_type": event_type},
-                    )
-                    return False
+                emit_log_event(
+                    LogLevelEnum.WARNING,
+                    "Event bus does not support emit_event method",
+                    {"event_type": event_type},
+                )
+                return False
 
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
-                    f"Event emission failed: {str(e)}",
+                    f"Event emission failed: {e!s}",
                     {"event_type": event_type, "error": str(e)},
                 )
                 return False
@@ -1145,7 +1168,7 @@ class NodeEffect(NodeCoreBase):
                 "io_operations_configuration": self._extract_io_operations_configuration(),
                 "effect_constraints": self._extract_effect_constraints(),
                 "supported_effect_types": [
-                    effect_type.value for effect_type in self.effect_handlers.keys()
+                    effect_type.value for effect_type in self.effect_handlers
                 ],
             }
 
@@ -1199,7 +1222,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to generate full effect introspection data: {str(e)}, using fallback",
+                f"Failed to generate full effect introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
 
@@ -1232,18 +1255,18 @@ class NodeEffect(NodeCoreBase):
 
         try:
             # Add effect type operations
-            for effect_type in self.effect_handlers.keys():
+            for effect_type in self.effect_handlers:
                 operations.append(f"handle_{effect_type.value}")
 
             # Add transaction operations
             operations.extend(
-                ["transaction_context", "rollback_transaction", "commit_transaction"]
+                ["transaction_context", "rollback_transaction", "commit_transaction"],
             )
 
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract all effect operations: {str(e)}",
+                f"Failed to extract all effect operations: {e!s}",
                 {"node_id": self.node_id},
             )
 
@@ -1294,7 +1317,7 @@ class NodeEffect(NodeCoreBase):
                             "operation_type": io_op.operation_type,
                             "atomic": io_op.atomic,
                             "timeout_seconds": io_op.timeout_seconds,
-                        }
+                        },
                     )
 
             return {
@@ -1306,7 +1329,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract I/O operations configuration: {str(e)}",
+                f"Failed to extract I/O operations configuration: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"io_operations": []}
@@ -1366,7 +1389,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get effect metrics: {str(e)}",
+                f"Failed to get effect metrics: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}
@@ -1384,7 +1407,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get effect resource usage: {str(e)}",
+                f"Failed to get effect resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown"}
@@ -1410,7 +1433,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get transaction status: {str(e)}",
+                f"Failed to get transaction status: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}
@@ -1441,7 +1464,7 @@ class NodeEffect(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get circuit breaker status: {str(e)}",
+                f"Failed to get circuit breaker status: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}

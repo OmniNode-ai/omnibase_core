@@ -6,7 +6,6 @@ multiple code generation tools to ensure consistency.
 """
 
 import re
-from typing import List
 
 
 def pascal_case(s: str) -> str:
@@ -71,7 +70,7 @@ def snake_case(s: str) -> str:
     s = s.replace("-", "_")
 
     # Insert underscores before uppercase letters (except at start)
-    result: List[str] = []
+    result: list[str] = []
     for i, char in enumerate(s):
         if char.isupper() and i > 0:
             # Only add underscore if previous char isn't already an underscore
@@ -258,7 +257,7 @@ def file_name_from_class_name(class_name: str) -> str:
     return f"{snake_case(class_name)}.py"
 
 
-def split_words(s: str) -> List[str]:
+def split_words(s: str) -> list[str]:
     """
     Split a string into constituent words.
 
@@ -290,7 +289,7 @@ def split_words(s: str) -> List[str]:
     parts = s.split("_")
 
     # Further split PascalCase/camelCase within each part
-    words: List[str] = []
+    words: list[str] = []
     for part in parts:
         if not part:
             continue

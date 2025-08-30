@@ -6,7 +6,6 @@ Provides complete state specification including actions, data requirements, and 
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -41,7 +40,8 @@ class ModelFSMState(BaseModel):
     )
 
     state_type: FSMStateType = Field(
-        ..., description="Type classification of the state"
+        ...,
+        description="Type classification of the state",
     )
 
     description: str = Field(
@@ -55,10 +55,11 @@ class ModelFSMState(BaseModel):
     is_terminal: bool = Field(..., description="Whether this state ends FSM execution")
 
     is_recoverable: bool = Field(
-        ..., description="Whether this state supports recovery operations"
+        ...,
+        description="Whether this state supports recovery operations",
     )
 
-    timeout_ms: Optional[int] = Field(
+    timeout_ms: int | None = Field(
         default=None,
         description="Maximum time to spend in this state (milliseconds)",
         ge=100,
@@ -66,27 +67,30 @@ class ModelFSMState(BaseModel):
     )
 
     # State actions
-    entry_actions: List[str] = Field(
-        default_factory=list, description="Actions to execute when entering this state"
+    entry_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions to execute when entering this state",
     )
 
-    exit_actions: List[str] = Field(
-        default_factory=list, description="Actions to execute when exiting this state"
+    exit_actions: list[str] = Field(
+        default_factory=list,
+        description="Actions to execute when exiting this state",
     )
 
     # Data requirements
-    required_data: List[str] = Field(
+    required_data: list[str] = Field(
         default_factory=list,
         description="Data fields required to be present in this state",
     )
 
-    optional_data: List[str] = Field(
+    optional_data: list[str] = Field(
         default_factory=list,
         description="Data fields that may be present in this state",
     )
 
-    validation_rules: List[str] = Field(
-        default_factory=list, description="Validation rules to apply in this state"
+    validation_rules: list[str] = Field(
+        default_factory=list,
+        description="Validation rules to apply in this state",
     )
 
     class Config:
@@ -102,5 +106,5 @@ class ModelFSMState(BaseModel):
                 "required_data": [],
                 "optional_data": ["correlation_id"],
                 "validation_rules": [],
-            }
+            },
         }

@@ -45,8 +45,6 @@ See Also:
     - ModelToolPostExecutionEvent: Target ONEX event model for conversion
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.claude_code_responses import ClaudeCodeResponse
@@ -77,30 +75,35 @@ class ModelClaudeCodePostExecutionHookInput(BaseModel):
 
     # Core fields from Claude Code
     tool_name: str = Field(..., description="Name of the tool being executed")
-    session_id: Optional[str] = Field(None, description="Claude session identifier")
-    tool_response: Optional[ClaudeCodeResponse] = Field(
-        None, description="Tool execution response"
+    session_id: str | None = Field(None, description="Claude session identifier")
+    tool_response: ClaudeCodeResponse | None = Field(
+        None,
+        description="Tool execution response",
     )
-    duration_ms: Optional[int] = Field(
-        None, description="Execution duration in milliseconds"
+    duration_ms: int | None = Field(
+        None,
+        description="Execution duration in milliseconds",
     )
 
     # Claude Code specific fields
-    claude_message: Optional[str] = Field(None, description="Claude message content")
-    error: Optional[str] = Field(None, description="Error details from Claude Code")
-    topic: Optional[str] = Field(
-        None, description="Kafka topic or similar routing info"
+    claude_message: str | None = Field(None, description="Claude message content")
+    error: str | None = Field(None, description="Error details from Claude Code")
+    topic: str | None = Field(
+        None,
+        description="Kafka topic or similar routing info",
     )
-    working_directory: Optional[str] = Field(None, description="Working directory path")
-    hook_type: Optional[str] = Field(None, description="Hook type from Claude Code")
+    working_directory: str | None = Field(None, description="Working directory path")
+    hook_type: str | None = Field(None, description="Hook type from Claude Code")
 
     # Additional Claude Code environment fields
-    transcript_path: Optional[str] = Field(
-        None, description="Path to Claude Code transcript"
+    transcript_path: str | None = Field(
+        None,
+        description="Path to Claude Code transcript",
     )
-    cwd: Optional[str] = Field(None, description="Current working directory")
-    hook_event_name: Optional[str] = Field(
-        None, description="Claude Code hook event name"
+    cwd: str | None = Field(None, description="Current working directory")
+    hook_event_name: str | None = Field(
+        None,
+        description="Claude Code hook event name",
     )
 
     class Config:

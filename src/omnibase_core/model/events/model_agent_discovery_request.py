@@ -5,7 +5,6 @@ Defines request to discover available agents in the system.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -23,7 +22,9 @@ class ModelAgentDiscoveryRequest(BaseModel):
 
     @classmethod
     def create_event(
-        cls, node_id: str, request: "ModelAgentDiscoveryRequest"
+        cls,
+        node_id: str,
+        request: "ModelAgentDiscoveryRequest",
     ) -> ModelOnexEvent:
         """Create ONEX event for discovery request."""
         return ModelOnexEvent.create_plugin_event(
@@ -39,14 +40,15 @@ class ModelAgentDiscoveryRequest(BaseModel):
 
         # Broadcast to all agents
         return ModelEventEnvelope.create_broadcast(
-            payload=event, source_node_id=source_node_id
+            payload=event,
+            source_node_id=source_node_id,
         )
 
     # Discovery filters
-    required_capabilities: Optional[List[EnumAgentCapability]] = Field(None)
-    preferred_roles: Optional[List[str]] = Field(None)
-    preferred_locations: Optional[List[str]] = Field(None)
-    minimum_health_status: Optional[str] = Field("healthy")
+    required_capabilities: list[EnumAgentCapability] | None = Field(None)
+    preferred_roles: list[str] | None = Field(None)
+    preferred_locations: list[str] | None = Field(None)
+    minimum_health_status: str | None = Field("healthy")
 
     # Response preferences
     include_offline_agents: bool = Field(False)

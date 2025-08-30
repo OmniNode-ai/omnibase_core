@@ -32,7 +32,7 @@ follow this structure for consistency and validation.
 Schema Version: 1.0.0
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -93,7 +93,7 @@ class ModelStateContract(BaseModel):
         json_schema_extra={"example": "1.0.0"},
     )
 
-    contract_name: Optional[str] = Field(
+    contract_name: str | None = Field(
         default=None,
         description="Optional name for the contract",
         json_schema_extra={"example": "cli_node_contract"},
@@ -107,19 +107,22 @@ class ModelStateContract(BaseModel):
 
     # State definitions
     input_state: ModelStateSchema = Field(
-        ..., description="Definition of the input state structure"
+        ...,
+        description="Definition of the input state structure",
     )
 
     output_state: ModelStateSchema = Field(
-        ..., description="Definition of the output state structure"
+        ...,
+        description="Definition of the output state structure",
     )
 
-    error_state: Optional[ModelErrorState] = Field(
-        default=None, description="Optional definition of error state structure"
+    error_state: ModelErrorState | None = Field(
+        default=None,
+        description="Optional definition of error state structure",
     )
 
     # Examples and metadata
-    examples: Optional[ModelExamples] = Field(
+    examples: ModelExamples | None = Field(
         default=None,
         description="Optional examples of valid input/output",
         json_schema_extra={
@@ -130,23 +133,24 @@ class ModelStateContract(BaseModel):
                     "status": "success",
                     "message": "Version 1.0.0",
                 },
-            }
+            },
         },
     )
 
-    metadata: Optional[ModelGenericMetadata] = Field(
-        default=None, description="Optional additional metadata"
+    metadata: ModelGenericMetadata | None = Field(
+        default=None,
+        description="Optional additional metadata",
     )
 
     # Optional provenance/audit fields (for stamped contract.yaml files)
-    hash: Optional[str] = Field(
+    hash: str | None = Field(
         default=None,
         description="Optional hash of the contract file for provenance/audit",
         json_schema_extra={
-            "example": "406d07a5a0377549a710ae4855b7f98fd009f866d701575e4b825ed5f282aae9"
+            "example": "406d07a5a0377549a710ae4855b7f98fd009f866d701575e4b825ed5f282aae9",
         },
     )
-    last_modified_at: Optional[str] = Field(
+    last_modified_at: str | None = Field(
         default=None,
         description="Optional last modified timestamp for the contract file",
         json_schema_extra={"example": "2025-05-30T13:04:27.518784Z"},
@@ -195,7 +199,7 @@ class ModelStateContract(BaseModel):
             )
         return v
 
-    def to_yaml_dict(self) -> Dict[str, Any]:
+    def to_yaml_dict(self) -> dict[str, Any]:
         """
         Convert the model to a dictionary suitable for YAML serialization.
 
@@ -214,7 +218,7 @@ class ModelStateContract(BaseModel):
         return ordered_data
 
     @classmethod
-    def from_yaml_dict(cls, data: Dict[str, Any]) -> "ModelStateContract":
+    def from_yaml_dict(cls, data: dict[str, Any]) -> "ModelStateContract":
         """
         Create a ModelStateContract from a dictionary loaded from YAML.
 
@@ -246,7 +250,8 @@ class ModelStateContract(BaseModel):
 
         except Exception as e:
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR, f"Failed to parse state contract: {e}"
+                CoreErrorCode.VALIDATION_ERROR,
+                f"Failed to parse state contract: {e}",
             ) from e
 
 
@@ -272,7 +277,8 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
         path = Path(file_path)
         if not path.exists():
             raise OnexError(
-                CoreErrorCode.FILE_NOT_FOUND, f"Contract file not found: {file_path}"
+                CoreErrorCode.FILE_NOT_FOUND,
+                f"Contract file not found: {file_path}",
             )
 
         with path.open("r", encoding="utf-8") as f:
@@ -280,14 +286,16 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
 
         if not data:
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR, f"Contract file is empty: {file_path}"
+                CoreErrorCode.VALIDATION_ERROR,
+                f"Contract file is empty: {file_path}",
             )
 
         return ModelStateContract.from_yaml_dict(data)
 
     except yaml.YAMLError as e:
         raise OnexError(
-            CoreErrorCode.VALIDATION_ERROR, f"Failed to parse YAML in {file_path}: {e}"
+            CoreErrorCode.VALIDATION_ERROR,
+            f"Failed to parse YAML in {file_path}: {e}",
         ) from e
     except Exception as e:
         raise OnexError(

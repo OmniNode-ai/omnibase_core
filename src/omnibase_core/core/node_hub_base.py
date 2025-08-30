@@ -19,28 +19,28 @@ Author: ONEX Framework Team
 
 import logging
 import os
+import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import uuid4
 
 import uvicorn
-import yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.models.model_hub_contract_config import (
-    ModelHubConfiguration, ModelUnifiedHubContract)
+    ModelUnifiedHubContract,
+)
 from omnibase_core.core.node_base import ModelNodeBase
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.decorators import standard_error_handling
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.mixin.mixin_debug_discovery_logging import \
-    MixinDebugDiscoveryLogging
+from omnibase_core.mixin.mixin_debug_discovery_logging import MixinDebugDiscoveryLogging
 from omnibase_core.mixin.mixin_service_registry import MixinServiceRegistry
 
 logger = logging.getLogger(__name__)
@@ -93,8 +93,8 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
         self.container = container
 
         # Hub state management
-        self.loaded_tools: Dict[str, dict] = {}
-        self.loaded_workflows: Dict[str, dict] = {}
+        self.loaded_tools: dict[str, dict] = {}
+        self.loaded_workflows: dict[str, dict] = {}
         self.is_running = False
         self.start_time = None
         self.hub_id = f"{self.domain}_hub_{uuid4().hex[:8]}"
@@ -118,26 +118,31 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
 
         # Initialize debug discovery logging
         self.setup_discovery_debug_logging(
-            f"{self.domain}_hub", {"domain": self.domain, "hub_id": self.hub_id}
+            f"{self.domain}_hub",
+            {"domain": self.domain, "hub_id": self.hub_id},
         )
 
     def _load_unified_contract(self) -> ModelUnifiedHubContract:
         """Load unified hub contract from file."""
         try:
             if not self.contract_path.exists():
-                raise FileNotFoundError(f"Hub contract not found: {self.contract_path}")
+                msg = f"Hub contract not found: {self.contract_path}"
+                raise FileNotFoundError(msg)
 
             # Use the unified contract model to load from YAML
             return ModelUnifiedHubContract.from_yaml_file(self.contract_path)
 
         except Exception as e:
-            logger.error(f"Failed to load hub contract: {e}")
+            logger.exception(f"Failed to load hub contract: {e}")
             # Return minimal default configuration
-            from omnibase_core.core.models.model_hub_contract_config import \
-                ModelHubConfiguration
+            from omnibase_core.core.models.model_hub_contract_config import (
+                ModelHubConfiguration,
+            )
 
             default_config = ModelHubConfiguration(
-                domain="unknown", service_port=8080, managed_tools=[]
+                domain="unknown",
+                service_port=8080,
+                managed_tools=[],
             )
             return ModelUnifiedHubContract(hub_configuration=default_config)
 
@@ -176,7 +181,8 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             elif action == "reload_tools":
                 result = self._reload_tools()
             else:
-                raise ValueError(f"Unsupported hub action: {action}")
+                msg = f"Unsupported hub action: {action}"
+                raise ValueError(msg)
 
             # Update success metrics
             self.successful_requests += 1
@@ -193,22 +199,19 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             self.failed_requests += 1
             self._update_response_time_metrics(time.time() - start_time)
 
-            from omnibase_core.core.errors.core_errors import (CoreErrorCode,
-                                                               OnexError)
-
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Error in {self.domain} hub: {str(e)}",
+                f"Error in {self.domain} hub: {e!s}",
                 {"hub_id": self.hub_id, "error": str(e)},
             )
 
             return {
                 "status": EnumOnexStatus.ERROR,
-                "message": f"{self.domain.title()} hub processing error: {str(e)}",
+                "message": f"{self.domain.title()} hub processing error: {e!s}",
                 "hub_status": "error",
             }
 
-    def _start_hub(self) -> Dict:
+    def _start_hub(self) -> dict:
         """Start the hub with service registry and tool loading."""
         self.start_time = time.time()
         self.is_running = True
@@ -235,7 +238,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             "uptime": 0,
         }
 
-    def _stop_hub(self) -> Dict:
+    def _stop_hub(self) -> dict:
         """Stop the hub and clear loaded tools."""
         self.is_running = False
         self.loaded_tools.clear()
@@ -247,7 +250,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             "uptime": time.time() - self.start_time if self.start_time else 0,
         }
 
-    def _health_check(self) -> Dict:
+    def _health_check(self) -> dict:
         """Perform hub health check."""
         uptime = time.time() - self.start_time if self.start_time else 0
 
@@ -263,7 +266,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             "average_response_time": self.average_response_time,
         }
 
-    def _list_tools(self) -> Dict:
+    def _list_tools(self) -> dict:
         """List all loaded tools."""
         return {
             "tools": list(self.loaded_tools.keys()),
@@ -272,7 +275,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             "workflow_count": len(self.loaded_workflows),
         }
 
-    def _reload_tools(self) -> Dict:
+    def _reload_tools(self) -> dict:
         """Reload tools from contract."""
         old_count = len(self.loaded_tools)
         self._load_managed_tools()
@@ -284,7 +287,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             "tools_removed": max(0, old_count - new_count),
         }
 
-    def _load_managed_tools(self) -> Dict[str, dict]:
+    def _load_managed_tools(self) -> dict[str, dict]:
         """Load managed tools from contract configuration."""
         try:
             loaded_tools = {}
@@ -313,10 +316,10 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             return loaded_tools
 
         except Exception as e:
-            logger.error(f"Failed to load managed tools: {e}")
+            logger.exception(f"Failed to load managed tools: {e}")
             return {}
 
-    def _load_workflows(self) -> Dict[str, dict]:
+    def _load_workflows(self) -> dict[str, dict]:
         """Load workflows from unified contract configuration."""
         try:
             workflows = self.unified_contract.orchestration_workflows or {}
@@ -331,7 +334,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             return workflows
 
         except Exception as e:
-            logger.error(f"Failed to load workflows: {e}")
+            logger.exception(f"Failed to load workflows: {e}")
             return {}
 
     def _update_response_time_metrics(self, response_time: float):
@@ -363,12 +366,13 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
                         "hub_status": "ready",
                         "message": f"{self.domain.title()} hub is running",
                         **health_result,
-                    }
+                    },
                 )
             except Exception as e:
-                logger.error(f"Health check failed: {e}")
+                logger.exception(f"Health check failed: {e}")
                 raise HTTPException(
-                    status_code=503, detail=f"Health check failed: {str(e)}"
+                    status_code=503,
+                    detail=f"Health check failed: {e!s}",
                 )
 
         @app.get("/tools")
@@ -378,9 +382,10 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
                 tools_result = self._list_tools()
                 return JSONResponse(content=tools_result)
             except Exception as e:
-                logger.error(f"Failed to list tools: {e}")
+                logger.exception(f"Failed to list tools: {e}")
                 raise HTTPException(
-                    status_code=500, detail=f"Failed to list tools: {str(e)}"
+                    status_code=500,
+                    detail=f"Failed to list tools: {e!s}",
                 )
 
         @app.get("/metrics")
@@ -389,12 +394,13 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             try:
                 health_result = self._health_check()
                 return JSONResponse(
-                    content={"hub_metrics": health_result, "domain": self.domain}
+                    content={"hub_metrics": health_result, "domain": self.domain},
                 )
             except Exception as e:
-                logger.error(f"Failed to get metrics: {e}")
+                logger.exception(f"Failed to get metrics: {e}")
                 raise HTTPException(
-                    status_code=500, detail=f"Failed to get metrics: {str(e)}"
+                    status_code=500,
+                    detail=f"Failed to get metrics: {e!s}",
                 )
 
         return app
@@ -418,7 +424,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
                 logger.info(f"Hub status: {result.get('message', 'Running')}")
 
         except Exception as e:
-            logger.error(f"❌ Failed to initialize {self.domain} hub: {e}")
+            logger.exception(f"❌ Failed to initialize {self.domain} hub: {e}")
             raise
 
         # Get port and host from environment or contract
@@ -445,99 +451,107 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
             if hasattr(self.container, "event_bus_client"):
                 try:
                     logger.info(
-                        f"🔍 Attempting to resolve event_bus_client provider..."
+                        "🔍 Attempting to resolve event_bus_client provider...",
                     )
 
                     # Check if provider is callable
-                    provider = getattr(self.container, "event_bus_client")
+                    provider = self.container.event_bus_client
                     logger.info(f"📋 event_bus_client provider type: {type(provider)}")
 
                     # Attempt to resolve the provider
                     event_bus = self.container.event_bus_client()
-                    logger.info(f"✅ Successfully resolved event_bus_client provider")
+                    logger.info("✅ Successfully resolved event_bus_client provider")
                     logger.info(f"📦 Event bus type: {type(event_bus).__name__}")
 
                 except ImportError as e:
-                    logger.error(f"❌ Import error in event_bus_client provider: {e}")
-                    logger.info(f"🔄 Attempting manual EventBusClient import...")
+                    logger.exception(
+                        f"❌ Import error in event_bus_client provider: {e}"
+                    )
+                    logger.info("🔄 Attempting manual EventBusClient import...")
                     # Fallback: Try manual import and creation
                     try:
                         import os
 
-                        from omnibase_core.services.event_bus_client import \
-                            EventBusClient
+                        from omnibase_core.services.event_bus_client import (
+                            EventBusClient,
+                        )
 
                         event_bus_url = os.getenv(
-                            "EVENT_BUS_URL", "http://onex-event-bus:8080"
+                            "EVENT_BUS_URL",
+                            "http://onex-event-bus:8080",
                         )
                         event_bus = EventBusClient(base_url=event_bus_url)
                         logger.info(
-                            f"✅ Successfully created EventBusClient manually with URL: {event_bus_url}"
+                            f"✅ Successfully created EventBusClient manually with URL: {event_bus_url}",
                         )
                     except Exception as manual_e:
-                        logger.error(
-                            f"❌ Manual EventBusClient creation failed: {manual_e}"
+                        logger.exception(
+                            f"❌ Manual EventBusClient creation failed: {manual_e}",
                         )
 
                 except Exception as e:
-                    logger.error(f"❌ event_bus_client provider resolution failed: {e}")
-                    logger.error(f"📋 Exception type: {type(e).__name__}")
-                    logger.error(f"📋 Exception details: {str(e)}")
+                    logger.exception(
+                        f"❌ event_bus_client provider resolution failed: {e}"
+                    )
+                    logger.exception(f"📋 Exception type: {type(e).__name__}")
+                    logger.exception(f"📋 Exception details: {e!s}")
 
                     # Try to debug container configuration
                     try:
                         config_dict = dict(self.container.config)
                         logger.info(
-                            f"🔧 Container config available: {bool(config_dict)}"
+                            f"🔧 Container config available: {bool(config_dict)}",
                         )
                         if hasattr(self.container.config, "event_bus"):
                             event_bus_config = getattr(
-                                self.container.config, "event_bus", None
+                                self.container.config,
+                                "event_bus",
+                                None,
                             )
                             logger.info(f"🔧 Event bus config: {event_bus_config}")
                     except Exception as config_e:
                         logger.warning(f"⚠️ Cannot inspect container config: {config_e}")
             else:
-                logger.warning(f"⚠️ Container does not have event_bus_client provider")
+                logger.warning("⚠️ Container does not have event_bus_client provider")
                 logger.info(
-                    f"📋 Available container attributes: {[attr for attr in dir(self.container) if not attr.startswith('_')]}"
+                    f"📋 Available container attributes: {[attr for attr in dir(self.container) if not attr.startswith('_')]}",
                 )
 
             # Fallback to legacy event_bus attribute
             if not event_bus:
-                logger.info(f"🔄 Trying legacy event_bus attribute fallback...")
+                logger.info("🔄 Trying legacy event_bus attribute fallback...")
                 event_bus = getattr(self.container, "event_bus", None)
                 if event_bus:
-                    logger.info(f"✅ Found legacy event_bus attribute in container")
+                    logger.info("✅ Found legacy event_bus attribute in container")
                 else:
-                    logger.warning(f"⚠️ No legacy event_bus attribute found")
+                    logger.warning("⚠️ No legacy event_bus attribute found")
 
             # Final fallback: Create EventBusClient directly
             if not event_bus:
-                logger.info(f"🔄 Final fallback: Creating EventBusClient directly...")
+                logger.info("🔄 Final fallback: Creating EventBusClient directly...")
                 try:
                     import os
 
-                    from omnibase_core.services.event_bus_client import \
-                        EventBusClient
+                    from omnibase_core.services.event_bus_client import EventBusClient
 
                     event_bus_url = os.getenv(
-                        "EVENT_BUS_URL", "http://onex-event-bus:8080"
+                        "EVENT_BUS_URL",
+                        "http://onex-event-bus:8080",
                     )
                     event_bus = EventBusClient(base_url=event_bus_url)
                     logger.info(
-                        f"✅ Created EventBusClient as final fallback with URL: {event_bus_url}"
+                        f"✅ Created EventBusClient as final fallback with URL: {event_bus_url}",
                     )
                 except Exception as fallback_e:
-                    logger.error(
-                        f"❌ Final fallback EventBusClient creation failed: {fallback_e}"
+                    logger.exception(
+                        f"❌ Final fallback EventBusClient creation failed: {fallback_e}",
                     )
 
             if event_bus:
                 # Inject event bus into the hub instance
                 tool_instance.event_bus = event_bus
                 logger.info(
-                    f"✅ Event bus injected into {self.domain} hub: {type(event_bus).__name__}"
+                    f"✅ Event bus injected into {self.domain} hub: {type(event_bus).__name__}",
                 )
             else:
                 # Provide detailed error information for debugging
@@ -550,10 +564,11 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
                         attr for attr in dir(self.container) if not attr.startswith("_")
                     ],
                 }
-                logger.error(f"❌ CRITICAL: Event bus resolution failed completely")
+                logger.error("❌ CRITICAL: Event bus resolution failed completely")
                 logger.error(f"📋 Debug details: {error_details}")
+                msg = f"❌ CRITICAL: Failed to inject event bus into {self.domain} hub - all resolution methods failed"
                 raise RuntimeError(
-                    f"❌ CRITICAL: Failed to inject event bus into {self.domain} hub - all resolution methods failed"
+                    msg,
                 )
 
             # Start the service registry with domain filter
@@ -561,16 +576,17 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
                 logger.info(f"🚀 Starting service registry for {self.domain} domain...")
                 tool_instance.start_service_registry(domain_filter=self.domain)
             else:
+                msg = f"❌ CRITICAL: {self.domain} hub does not have start_service_registry method!"
                 raise RuntimeError(
-                    f"❌ CRITICAL: {self.domain} hub does not have start_service_registry method!"
+                    msg,
                 )
 
             logger.info(
-                f"✅ {self.domain.title()} hub initialized successfully with service registry"
+                f"✅ {self.domain.title()} hub initialized successfully with service registry",
             )
 
         except Exception as e:
-            logger.error(f"❌ Failed to initialize {self.domain} hub: {e}")
+            logger.exception(f"❌ Failed to initialize {self.domain} hub: {e}")
             raise
 
 
@@ -582,6 +598,6 @@ def main():
 if __name__ == "__main__":
     # This should never be called directly - subclasses should override
     logger.error(
-        "NodeHubBase should not be run directly - use a specific hub implementation"
+        "NodeHubBase should not be run directly - use a specific hub implementation",
     )
-    exit(1)
+    sys.exit(1)

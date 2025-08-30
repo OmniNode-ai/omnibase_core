@@ -2,8 +2,6 @@
 State schema model for input/output state definitions in ONEX contracts.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_generic_properties import ModelGenericProperties
@@ -23,36 +21,36 @@ class ModelStateSchema(BaseModel):
         json_schema_extra={"example": "CLIInputState"},
     )
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         description="Human-readable description of this state",
         json_schema_extra={"example": "Input state for CLI command execution"},
     )
 
-    required_fields: Optional[List[str]] = Field(
+    required_fields: list[str] | None = Field(
         default=None,
         description="List of required field names",
         json_schema_extra={"example": ["version", "command"]},
     )
 
-    optional_fields: Optional[List[str]] = Field(
+    optional_fields: list[str] | None = Field(
         default=None,
         description="List of optional field names",
         json_schema_extra={"example": ["target_node", "args"]},
     )
 
-    properties: Optional[ModelGenericProperties] = Field(
+    properties: ModelGenericProperties | None = Field(
         default=None,
         description="JSON Schema properties definition",
         json_schema_extra={
             "example": {
                 "version": {"type": "string", "description": "Schema version"},
                 "command": {"type": "string", "description": "Command to execute"},
-            }
+            },
         },
     )
 
-    required: Optional[List[str]] = Field(
+    required: list[str] | None = Field(
         default=None,
         description="JSON Schema required fields (alternative to required_fields)",
         json_schema_extra={"example": ["version", "command"]},

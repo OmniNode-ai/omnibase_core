@@ -6,7 +6,6 @@ Task queue model for scalable distributed task processing.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -43,38 +42,47 @@ class ModelTaskQueueItem(BaseModel):
     """
 
     task_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique task identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique task identifier",
     )
     task_type: str = Field(..., description="Type of task to be executed")
-    agent_requirement: Optional[str] = Field(
-        None, description="Required agent capability or ID"
+    agent_requirement: str | None = Field(
+        None,
+        description="Required agent capability or ID",
     )
 
     # Task scheduling
     priority: EnumTaskPriority = Field(
-        EnumTaskPriority.NORMAL, description="Task priority level"
+        EnumTaskPriority.NORMAL,
+        description="Task priority level",
     )
     scheduled_at: datetime = Field(
-        default_factory=datetime.now, description="When task was scheduled"
+        default_factory=datetime.now,
+        description="When task was scheduled",
     )
-    not_before: Optional[datetime] = Field(
-        None, description="Do not execute before this time"
+    not_before: datetime | None = Field(
+        None,
+        description="Do not execute before this time",
     )
-    expires_at: Optional[datetime] = Field(None, description="Task expiration time")
+    expires_at: datetime | None = Field(None, description="Task expiration time")
 
     # Task lifecycle
     status: EnumTaskStatus = Field(
-        EnumTaskStatus.PENDING, description="Current task status"
+        EnumTaskStatus.PENDING,
+        description="Current task status",
     )
-    assigned_to: Optional[str] = Field(
-        None, description="Agent ID this task is assigned to"
+    assigned_to: str | None = Field(
+        None,
+        description="Agent ID this task is assigned to",
     )
-    assigned_at: Optional[datetime] = Field(None, description="When task was assigned")
-    started_at: Optional[datetime] = Field(
-        None, description="When task processing started"
+    assigned_at: datetime | None = Field(None, description="When task was assigned")
+    started_at: datetime | None = Field(
+        None,
+        description="When task processing started",
     )
-    completed_at: Optional[datetime] = Field(
-        None, description="When task was completed"
+    completed_at: datetime | None = Field(
+        None,
+        description="When task was completed",
     )
 
     # Task execution
@@ -84,24 +92,28 @@ class ModelTaskQueueItem(BaseModel):
     execution_timeout: int = Field(300, description="Task execution timeout in seconds")
 
     # Task data
-    payload: Dict[str, Union[str, int, float, bool, dict, list]] = Field(
-        default_factory=dict, description="Task payload data with strongly typed values"
+    payload: dict[str, str | int | float | bool | dict | list] = Field(
+        default_factory=dict,
+        description="Task payload data with strongly typed values",
     )
 
     # Results and errors
-    result: Optional[Dict[str, Union[str, int, float, bool, dict, list]]] = Field(
-        None, description="Task result data"
+    result: dict[str, str | int | float | bool | dict | list] | None = Field(
+        None,
+        description="Task result data",
     )
-    error_message: Optional[str] = Field(
-        None, description="Error message if task failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if task failed",
     )
-    error_code: Optional[str] = Field(None, description="Error code if task failed")
+    error_code: str | None = Field(None, description="Error code if task failed")
 
     # Metadata
     created_by: str = Field(..., description="Entity that created this task")
-    tags: Dict[str, str] = Field(default_factory=dict, description="Task metadata tags")
-    correlation_id: Optional[str] = Field(
-        None, description="Request correlation identifier"
+    tags: dict[str, str] = Field(default_factory=dict, description="Task metadata tags")
+    correlation_id: str | None = Field(
+        None,
+        description="Request correlation identifier",
     )
 
     class Config:
@@ -127,5 +139,5 @@ class ModelTaskQueueItem(BaseModel):
                 "created_by": "user_123",
                 "tags": {"environment": "production", "project": "omnibase"},
                 "correlation_id": "req_abc123",
-            }
+            },
         }

@@ -22,8 +22,6 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 from omnibase_core.model.core.model_examples import ModelCustomSettings
@@ -31,11 +29,9 @@ from omnibase_core.model.core.model_examples import ModelCustomSettings
 
 class ModelMetadataConfig(BaseModel):
     # Example config fields; add more as needed
-    timeout: Optional[int] = None
-    retries: Optional[int] = None
-    enable_cache: Optional[bool] = None
-    custom_settings: Optional[ModelCustomSettings] = (
-        None  # Arbitrary settings, extensible
-    )
+    timeout: int | None = None
+    retries: int | None = None
+    enable_cache: bool | None = None
+    custom_settings: ModelCustomSettings | None = None  # Arbitrary settings, extensible
     # Arbitrary extra fields allowed for extensibility
     model_config = {"extra": "allow"}

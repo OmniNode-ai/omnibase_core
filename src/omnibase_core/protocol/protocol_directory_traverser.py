@@ -27,11 +27,13 @@ Protocol for directory traversal operations.
 Defines a standardized interface for discovering and filtering files in directories.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List, Optional, Protocol, Set, TypeVar
+from typing import Protocol, TypeVar
 
-from omnibase_core.model.core.model_directory_processing_result import \
-    ModelDirectoryProcessingResult
+from omnibase_core.model.core.model_directory_processing_result import (
+    ModelDirectoryProcessingResult,
+)
 
 T = TypeVar("T")  # Generic type variable for processor result
 
@@ -57,11 +59,11 @@ class ProtocolDirectoryTraverser(Protocol):
     def find_files(
         self,
         directory: Path,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
         recursive: bool = True,
-        ignore_file: Optional[Path] = None,
-    ) -> Set[Path]:
+        ignore_file: Path | None = None,
+    ) -> set[Path]:
         """
         Find all files matching the given patterns in the directory.
 
@@ -77,7 +79,7 @@ class ProtocolDirectoryTraverser(Protocol):
         """
         ...
 
-    def load_ignore_patterns(self, ignore_file: Optional[Path] = None) -> List[str]:
+    def load_ignore_patterns(self, ignore_file: Path | None = None) -> list[str]:
         """
         Load ignore patterns from a file.
 
@@ -89,7 +91,7 @@ class ProtocolDirectoryTraverser(Protocol):
         """
         ...
 
-    def should_ignore(self, path: Path, ignore_patterns: List[str]) -> bool:
+    def should_ignore(self, path: Path, ignore_patterns: list[str]) -> bool:
         """
         Check if a file should be ignored based on patterns.
 
@@ -106,12 +108,12 @@ class ProtocolDirectoryTraverser(Protocol):
         self,
         directory: Path,
         processor: Callable[[Path], T],
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
         recursive: bool = True,
-        ignore_file: Optional[Path] = None,
+        ignore_file: Path | None = None,
         dry_run: bool = False,
-        max_file_size: Optional[int] = None,
+        max_file_size: int | None = None,
     ) -> ModelDirectoryProcessingResult:
         """
         Process all eligible files in a directory using the provided processor function.

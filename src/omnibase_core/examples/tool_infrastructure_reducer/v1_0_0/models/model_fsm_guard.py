@@ -6,7 +6,6 @@ Provides guard condition specification for controlling transition execution.
 """
 
 from enum import Enum
-from typing import Dict, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -70,7 +69,7 @@ class ModelFSMGuard(BaseModel):
         description="Whether failure of this guard should abort transition",
     )
 
-    parameters: Dict[str, Union[str, int, float, bool]] = Field(
+    parameters: dict[str, str | int | float | bool] = Field(
         default_factory=dict,
         description="Parameters for guard evaluation with strongly typed values",
     )
@@ -88,5 +87,5 @@ class ModelFSMGuard(BaseModel):
                     "min_adapters": 1,
                     "required_fields": ["name", "version"],
                 },
-            }
+            },
         }

@@ -12,16 +12,15 @@ Following ONEX standards:
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.contract_loader import ContractLoader
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 from .models.model_contract_cache_entry import ModelContractCacheEntry
@@ -47,7 +46,7 @@ class ContractService:
         self,
         cache_enabled: bool = True,
         cache_max_size: int = 100,
-        base_path: Optional[Path] = None,
+        base_path: Path | None = None,
     ):
         """
         Initialize contract service.
@@ -62,7 +61,7 @@ class ContractService:
             cache_max_size=cache_max_size,
         )
         self._base_path = base_path
-        self._contract_loader: Optional[ContractLoader] = None
+        self._contract_loader: ContractLoader | None = None
 
         emit_log_event(
             LogLevelEnum.INFO,
@@ -138,12 +137,12 @@ class ContractService:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Failed to load contract: {str(e)}",
+                f"Failed to load contract: {e!s}",
                 {"contract_path": contract_path_str, "error": str(e)},
             )
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to load contract: {str(e)}",
+                message=f"Failed to load contract: {e!s}",
                 context={"contract_path": contract_path_str},
             ) from e
 
@@ -188,7 +187,7 @@ class ContractService:
                 except Exception as e:
                     emit_log_event(
                         LogLevelEnum.WARNING,
-                        f"Contract version validation warning: {str(e)}",
+                        f"Contract version validation warning: {e!s}",
                         {"node_name": contract.node_name, "error": str(e)},
                     )
 
@@ -199,13 +198,14 @@ class ContractService:
             self.state.record_validation(success=False)
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract validation failed: {str(e)}",
+                message=f"Contract validation failed: {e!s}",
                 context={"node_name": getattr(contract, "node_name", "unknown")},
             ) from e
 
     def get_cached_contract(
-        self, contract_path: Path
-    ) -> Optional[ModelContractContent]:
+        self,
+        contract_path: Path,
+    ) -> ModelContractContent | None:
         """
         Retrieve contract from cache if available.
 
@@ -242,7 +242,9 @@ class ContractService:
         return cache_entry.contract_content
 
     def cache_contract(
-        self, contract_path: Path, contract: ModelContractContent
+        self,
+        contract_path: Path,
+        contract: ModelContractContent,
     ) -> bool:
         """
         Cache a contract for future retrieval.
@@ -276,7 +278,7 @@ class ContractService:
             # Check cache size limit
             if len(self.state.cache_entries) >= self.state.cache_max_size:
                 evicted_count = self.state.evict_oldest_entries(
-                    self.state.cache_max_size - 1
+                    self.state.cache_max_size - 1,
                 )
                 if evicted_count > 0:
                     emit_log_event(
@@ -305,12 +307,12 @@ class ContractService:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to cache contract: {str(e)}",
+                f"Failed to cache contract: {e!s}",
                 {"contract_path": str(contract_path), "error": str(e)},
             )
             return False
 
-    def clear_cache(self, contract_path: Optional[Path] = None) -> int:
+    def clear_cache(self, contract_path: Path | None = None) -> int:
         """
         Clear contract cache.
 
@@ -326,8 +328,7 @@ class ContractService:
                 del self.state.cache_entries[contract_path_str]
                 return 1
             return 0
-        else:
-            return self.state.clear_cache()
+        return self.state.clear_cache()
 
     def extract_node_id(self, contract: ModelContractContent) -> str:
         """
@@ -345,16 +346,15 @@ class ContractService:
         try:
             if hasattr(contract, "node_name") and contract.node_name:
                 return str(contract.node_name)
-            else:
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
-                    message="Contract missing node_name field",
-                    context={"contract_type": type(contract).__name__},
-                )
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                message="Contract missing node_name field",
+                context={"contract_type": type(contract).__name__},
+            )
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to extract node ID: {str(e)}",
+                message=f"Failed to extract node ID: {e!s}",
                 context={"contract_type": type(contract).__name__},
             ) from e
 
@@ -393,20 +393,20 @@ class ContractService:
                     minor=version_field.minor,
                     patch=version_field.patch,
                 )
-            else:
-                # Parse string version
-                return ModelSemVer.parse(str(version_field))
+            # Parse string version
+            return ModelSemVer.parse(str(version_field))
 
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to extract version: {str(e)}",
+                message=f"Failed to extract version: {e!s}",
                 context={"node_name": getattr(contract, "node_name", "unknown")},
             ) from e
 
     def extract_dependencies(
-        self, contract: ModelContractContent
-    ) -> List[Dict[str, str]]:
+        self,
+        contract: ModelContractContent,
+    ) -> list[dict[str, str]]:
         """
         Extract dependency list from contract.
 
@@ -444,23 +444,23 @@ class ContractService:
         """
         try:
             if hasattr(contract, "tool_specification") and hasattr(
-                contract.tool_specification, "main_tool_class"
+                contract.tool_specification,
+                "main_tool_class",
             ):
                 return str(contract.tool_specification.main_tool_class)
-            else:
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_ERROR,
-                    message="Contract missing tool_specification.main_tool_class",
-                    context={"node_name": getattr(contract, "node_name", "unknown")},
-                )
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                message="Contract missing tool_specification.main_tool_class",
+                context={"node_name": getattr(contract, "node_name", "unknown")},
+            )
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to extract tool class name: {str(e)}",
+                message=f"Failed to extract tool class name: {e!s}",
                 context={"node_name": getattr(contract, "node_name", "unknown")},
             ) from e
 
-    def extract_event_patterns(self, contract: ModelContractContent) -> List[str]:
+    def extract_event_patterns(self, contract: ModelContractContent) -> list[str]:
         """
         Extract event subscription patterns from contract.
 
@@ -482,7 +482,7 @@ class ContractService:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract event patterns: {str(e)}",
+                f"Failed to extract event patterns: {e!s}",
                 {
                     "node_name": getattr(contract, "node_name", "unknown"),
                     "error": str(e),
@@ -491,7 +491,7 @@ class ContractService:
 
         return patterns
 
-    def health_check(self) -> Dict[str, object]:
+    def health_check(self) -> dict[str, object]:
         """
         Perform health check on contract service.
 
@@ -529,7 +529,7 @@ class ContractService:
 
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"ContractService health check failed: {str(e)}",
+                f"ContractService health check failed: {e!s}",
                 error_result,
             )
 

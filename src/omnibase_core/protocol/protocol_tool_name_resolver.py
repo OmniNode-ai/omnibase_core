@@ -6,7 +6,7 @@ replacing the monolithic enum approach.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Protocol, Set
+from typing import Protocol
 
 from omnibase_core.model.core.model_tool_info import ModelToolInfo
 
@@ -19,7 +19,7 @@ class ProtocolToolNameResolver(Protocol):
     contract.yaml files instead of relying on central enums.
     """
 
-    def get_tool_name(self, tool_path: str) -> Optional[str]:
+    def get_tool_name(self, tool_path: str) -> str | None:
         """
         Get tool name from its path by reading contract.yaml.
 
@@ -32,8 +32,9 @@ class ProtocolToolNameResolver(Protocol):
         ...
 
     def discover_all_tools(
-        self, force_refresh: bool = False
-    ) -> Dict[str, ModelToolInfo]:
+        self,
+        force_refresh: bool = False,
+    ) -> dict[str, ModelToolInfo]:
         """
         Discover all tools by scanning for contract.yaml files.
 
@@ -45,7 +46,7 @@ class ProtocolToolNameResolver(Protocol):
         """
         ...
 
-    def validate_tool_name_uniqueness(self) -> List[str]:
+    def validate_tool_name_uniqueness(self) -> list[str]:
         """
         Validate that all tool names are unique across the codebase.
 
@@ -54,7 +55,7 @@ class ProtocolToolNameResolver(Protocol):
         """
         ...
 
-    def get_tool_path(self, tool_name: str) -> Optional[Path]:
+    def get_tool_path(self, tool_name: str) -> Path | None:
         """
         Get the path to a tool by its name.
 
@@ -66,7 +67,7 @@ class ProtocolToolNameResolver(Protocol):
         """
         ...
 
-    def get_all_tool_names(self) -> Set[str]:
+    def get_all_tool_names(self) -> set[str]:
         """
         Get all available tool names.
 

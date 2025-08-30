@@ -4,31 +4,39 @@ Directory traversal utility for finding and processing files in directories.
 
 import fnmatch
 import importlib
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, Optional, Set, TypeVar
+from typing import TypeVar
 
 try:
-    pathspec: Optional[ModuleType] = importlib.import_module("pathspec")
+    pathspec: ModuleType | None = importlib.import_module("pathspec")
 except ImportError:
     pathspec = None
+import contextlib
+
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
-from omnibase_core.enums import (IgnorePatternSourceEnum, LogLevelEnum,
-                                 TraversalModeEnum)
+from omnibase_core.enums import IgnorePatternSourceEnum, LogLevelEnum, TraversalModeEnum
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_directory_processing_result import \
-    ModelDirectoryProcessingResult
+from omnibase_core.model.core.model_directory_processing_result import (
+    ModelDirectoryProcessingResult,
+)
 from omnibase_core.model.core.model_file_filter import FileFilterModel
 from omnibase_core.model.core.model_log_entry import LogModelContext
 from omnibase_core.model.core.model_onex_message_result import (
-    EnumOnexStatus, ModelOnexMessage, OnexResultModel)
+    EnumOnexStatus,
+    ModelOnexMessage,
+    OnexResultModel,
+)
 from omnibase_core.model.core.model_tree_sync_result import ModelTreeSyncResult
-from omnibase_core.protocol.protocol_directory_traverser import \
-    ProtocolDirectoryTraverser
+from omnibase_core.protocol.protocol_directory_traverser import (
+    ProtocolDirectoryTraverser,
+)
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
-from omnibase_core.protocol.protocol_file_discovery_source import \
-    ProtocolFileDiscoverySource
+from omnibase_core.protocol.protocol_file_discovery_source import (
+    ProtocolFileDiscoverySource,
+)
 
 _COMPONENT_NAME = Path(__file__).stem
 T = TypeVar("T")
@@ -57,8 +65,8 @@ class SchemaExclusionRegistry:
 
     def __init__(
         self,
-        extra_dirs: Optional[list[str]] = None,
-        extra_patterns: Optional[list[str]] = None,
+        extra_dirs: list[str] | None = None,
+        extra_patterns: list[str] | None = None,
     ) -> None:
         self.schema_dirs = set(self.DEFAULT_SCHEMA_DIRS)
         if extra_dirs:
@@ -70,10 +78,7 @@ class SchemaExclusionRegistry:
     def is_schema_file(self, path: Path) -> bool:
         if any(part in self.schema_dirs for part in path.parts):
             return True
-        for pat in self.schema_patterns:
-            if path.match(pat):
-                return True
-        return False
+        return any(path.match(pat) for pat in self.schema_patterns)
 
 
 class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource):
@@ -128,12 +133,12 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
     def find_files(
         self,
         directory: Path,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
         recursive: bool = True,
-        ignore_file: Optional[Path] = None,
-        event_bus: Optional[ProtocolEventBus] = None,
-    ) -> Set[Path]:
+        ignore_file: Path | None = None,
+        event_bus: ProtocolEventBus | None = None,
+    ) -> set[Path]:
         """
         Find all files matching the given patterns in the directory.
 
@@ -170,8 +175,8 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         self,
         directory: Path,
         filter_config: FileFilterModel,
-        event_bus: Optional[ProtocolEventBus] = None,
-    ) -> Set[Path]:
+        event_bus: ProtocolEventBus | None = None,
+    ) -> set[Path]:
         """
         Find all files matching filter criteria in the directory.
 
@@ -227,15 +232,15 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             event_bus=event_bus,
         )
         ignore_patterns = self._load_ignore_patterns_from_sources(
-            filter_config.ignore_pattern_sources, filter_config.ignore_file
+            filter_config.ignore_pattern_sources,
+            filter_config.ignore_file,
         )
         if filter_config.exclude_patterns:
             ignore_patterns.extend(filter_config.exclude_patterns)
-        all_files: Set[Path] = set()
+        all_files: set[Path] = set()
         for pattern in filter_config.include_patterns:
-            orig_pattern = pattern
             if recursive:
-                if pattern.startswith("**/") or pattern.startswith("**"):
+                if pattern.startswith(("**/", "**")):
                     pass
                 elif pattern.startswith("*."):
                     pattern = f"**/{pattern}"
@@ -311,7 +316,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             node_id="directory_traverser",
             event_bus=event_bus,
         )
-        eligible_files: Set[Path] = set()
+        eligible_files: set[Path] = set()
         for file_path in all_files:
             skip_reason = None
             if not file_path.is_file():
@@ -323,12 +328,14 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 skip_reason = "not in directory (FLAT mode)"
             elif (
                 filter_config.traversal_mode == TraversalModeEnum.SHALLOW
-                and file_path.parent != directory
-                and file_path.parent.parent != directory
+                and directory not in (file_path.parent, file_path.parent.parent)
             ):
                 skip_reason = "not in immediate subdirectory (SHALLOW mode)"
             elif self.should_ignore(
-                file_path, ignore_patterns, root_dir=directory, event_bus=event_bus
+                file_path,
+                ignore_patterns,
+                root_dir=directory,
+                event_bus=event_bus,
             ):
                 skip_reason = "ignored by pattern"
             elif self.schema_exclusion_registry.is_schema_file(file_path):
@@ -361,11 +368,12 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 )
                 self.result.skipped_count += 1
                 self.result.skipped_files.add(file_path)
-                from omnibase_core.model.core.model_skipped_file_reason import \
-                    ModelSkippedFileReason as ModelSkippedFileReason
+                from omnibase_core.model.core.model_skipped_file_reason import (
+                    ModelSkippedFileReason,
+                )
 
                 self.result.skipped_file_reasons.append(
-                    ModelSkippedFileReason(file=file_path, reason=skip_reason)
+                    ModelSkippedFileReason(file=file_path, reason=skip_reason),
                 )
                 continue
             eligible_files.add(file_path)
@@ -385,8 +393,10 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         return eligible_files
 
     def _load_ignore_patterns_from_sources(
-        self, sources: List[IgnorePatternSourceEnum], ignore_file: Optional[Path] = None
-    ) -> List[str]:
+        self,
+        sources: list[IgnorePatternSourceEnum],
+        ignore_file: Path | None = None,
+    ) -> list[str]:
         """
         Load ignore patterns from multiple sources.
 
@@ -407,7 +417,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             patterns.extend([f"{d}/" for d in self.DEFAULT_IGNORE_DIRS])
         return patterns
 
-    def load_ignore_patterns(self, ignore_file: Optional[Path] = None) -> List[str]:
+    def load_ignore_patterns(self, ignore_file: Path | None = None) -> list[str]:
         """
         Load ignore patterns from .onexignore files, walking up parent directories from the file's directory to the repo root.
         Args:
@@ -423,7 +433,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         else:
             p = Path(ignore_file)
             start_dir = p if p.is_dir() else p.parent
-        dirs = [start_dir] + list(start_dir.parents)
+        dirs = [start_dir, *list(start_dir.parents)]
         for d in dirs:
             onexignore = d / ".onexignore"
             if onexignore.exists():
@@ -462,9 +472,9 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
     def should_ignore(
         self,
         path: Path,
-        ignore_patterns: List[str],
-        root_dir: Optional[Path] = None,
-        event_bus: Optional[ProtocolEventBus] = None,
+        ignore_patterns: list[str],
+        root_dir: Path | None = None,
+        event_bus: ProtocolEventBus | None = None,
     ) -> bool:
         """
         Check if a file should be ignored based on patterns.
@@ -551,28 +561,43 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 event_bus=event_bus,
             )
             return bool(matched)
-        else:
-            for pattern in ignore_patterns:
-                emit_log_event_sync(
-                    LogLevelEnum.DEBUG,
-                    f"[should_ignore] Checking pattern '{pattern}' for {rel_path}",
-                    context=LogModelContext(
-                        calling_module=__name__,
-                        calling_function="should_ignore",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
-                        timestamp="auto",
-                        node_id="directory_traverser",
-                    ),
+        for pattern in ignore_patterns:
+            emit_log_event_sync(
+                LogLevelEnum.DEBUG,
+                f"[should_ignore] Checking pattern '{pattern}' for {rel_path}",
+                context=LogModelContext(
+                    calling_module=__name__,
+                    calling_function="should_ignore",
+                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    timestamp="auto",
                     node_id="directory_traverser",
-                    event_bus=event_bus,
-                )
-                if pattern.endswith("/"):
-                    dir_name = pattern.rstrip("/")
-                    parts = rel_path.split("/")
-                    if dir_name in parts[:-1]:
+                ),
+                node_id="directory_traverser",
+                event_bus=event_bus,
+            )
+            if pattern.endswith("/"):
+                dir_name = pattern.rstrip("/")
+                parts = rel_path.split("/")
+                if dir_name in parts[:-1]:
+                    emit_log_event_sync(
+                        LogLevelEnum.DEBUG,
+                        f"[should_ignore] {rel_path} IGNORED due to directory pattern {pattern} (in parts)",
+                        context=LogModelContext(
+                            calling_module=__name__,
+                            calling_function="should_ignore",
+                            calling_line=__import__("inspect").currentframe().f_lineno,
+                            timestamp="auto",
+                            node_id="directory_traverser",
+                        ),
+                        node_id="directory_traverser",
+                        event_bus=event_bus,
+                    )
+                    return True
+                for parent in path.parents:
+                    if parent.name == dir_name:
                         emit_log_event_sync(
                             LogLevelEnum.DEBUG,
-                            f"[should_ignore] {rel_path} IGNORED due to directory pattern {pattern} (in parts)",
+                            f"[should_ignore] {rel_path} IGNORED due to parent directory {parent} matching {dir_name}",
                             context=LogModelContext(
                                 calling_module=__name__,
                                 calling_function="should_ignore",
@@ -586,45 +611,10 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                             event_bus=event_bus,
                         )
                         return True
-                    for parent in path.parents:
-                        if parent.name == dir_name:
-                            emit_log_event_sync(
-                                LogLevelEnum.DEBUG,
-                                f"[should_ignore] {rel_path} IGNORED due to parent directory {parent} matching {dir_name}",
-                                context=LogModelContext(
-                                    calling_module=__name__,
-                                    calling_function="should_ignore",
-                                    calling_line=__import__("inspect")
-                                    .currentframe()
-                                    .f_lineno,
-                                    timestamp="auto",
-                                    node_id="directory_traverser",
-                                ),
-                                node_id="directory_traverser",
-                                event_bus=event_bus,
-                            )
-                            return True
-                    if rel_path.startswith(dir_name + "/"):
-                        emit_log_event_sync(
-                            LogLevelEnum.DEBUG,
-                            f"[should_ignore] {rel_path} IGNORED due to rel_path starting with {dir_name}/",
-                            context=LogModelContext(
-                                calling_module=__name__,
-                                calling_function="should_ignore",
-                                calling_line=__import__("inspect")
-                                .currentframe()
-                                .f_lineno,
-                                timestamp="auto",
-                                node_id="directory_traverser",
-                            ),
-                            node_id="directory_traverser",
-                            event_bus=event_bus,
-                        )
-                        return True
-                if fnmatch.fnmatch(rel_path, pattern):
+                if rel_path.startswith(dir_name + "/"):
                     emit_log_event_sync(
                         LogLevelEnum.DEBUG,
-                        f"[should_ignore] {rel_path} IGNORED by fnmatch on rel_path with pattern '{pattern}'",
+                        f"[should_ignore] {rel_path} IGNORED due to rel_path starting with {dir_name}/",
                         context=LogModelContext(
                             calling_module=__name__,
                             calling_function="should_ignore",
@@ -636,24 +626,10 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         event_bus=event_bus,
                     )
                     return True
-                if fnmatch.fnmatch(path.name, pattern):
-                    emit_log_event_sync(
-                        LogLevelEnum.DEBUG,
-                        f"[should_ignore] {rel_path} IGNORED by fnmatch on path.name with pattern '{pattern}'",
-                        context=LogModelContext(
-                            calling_module=__name__,
-                            calling_function="should_ignore",
-                            calling_line=__import__("inspect").currentframe().f_lineno,
-                            timestamp="auto",
-                            node_id="directory_traverser",
-                        ),
-                        node_id="directory_traverser",
-                        event_bus=event_bus,
-                    )
-                    return True
+            if fnmatch.fnmatch(rel_path, pattern):
                 emit_log_event_sync(
                     LogLevelEnum.DEBUG,
-                    f"[should_ignore] {rel_path} NOT ignored by pattern '{pattern}'",
+                    f"[should_ignore] {rel_path} IGNORED by fnmatch on rel_path with pattern '{pattern}'",
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="should_ignore",
@@ -664,6 +640,35 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     node_id="directory_traverser",
                     event_bus=event_bus,
                 )
+                return True
+            if fnmatch.fnmatch(path.name, pattern):
+                emit_log_event_sync(
+                    LogLevelEnum.DEBUG,
+                    f"[should_ignore] {rel_path} IGNORED by fnmatch on path.name with pattern '{pattern}'",
+                    context=LogModelContext(
+                        calling_module=__name__,
+                        calling_function="should_ignore",
+                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        timestamp="auto",
+                        node_id="directory_traverser",
+                    ),
+                    node_id="directory_traverser",
+                    event_bus=event_bus,
+                )
+                return True
+            emit_log_event_sync(
+                LogLevelEnum.DEBUG,
+                f"[should_ignore] {rel_path} NOT ignored by pattern '{pattern}'",
+                context=LogModelContext(
+                    calling_module=__name__,
+                    calling_function="should_ignore",
+                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    timestamp="auto",
+                    node_id="directory_traverser",
+                ),
+                node_id="directory_traverser",
+                event_bus=event_bus,
+            )
         emit_log_event_sync(
             LogLevelEnum.DEBUG,
             f"[should_ignore] {rel_path} is NOT ignored by any pattern.",
@@ -683,13 +688,13 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         self,
         directory: Path,
         processor: Callable[[Path], T],
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
         recursive: bool = True,
-        ignore_file: Optional[Path] = None,
+        ignore_file: Path | None = None,
         dry_run: bool = False,
-        max_file_size: Optional[int] = None,
-        event_bus: Optional[ProtocolEventBus] = None,
+        max_file_size: int | None = None,
+        event_bus: ProtocolEventBus | None = None,
     ) -> OnexResultModel:
         """
         Process all eligible files in a directory using the provided processor function.
@@ -749,7 +754,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=None,
                         timestamp=None,
                         type=None,
-                    )
+                    ),
                 ],
             )
         if not directory.is_dir():
@@ -767,7 +772,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=None,
                         timestamp=None,
                         type=None,
-                    )
+                    ),
                 ],
             )
         filter_config = FileFilterModel(
@@ -786,7 +791,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 IgnorePatternSourceEnum.DEFAULT,
             ],
         )
-        eligible_files: Set[Path] = self.find_files(
+        eligible_files: set[Path] = self.find_files(
             directory,
             filter_config.include_patterns,
             filter_config.exclude_patterns,
@@ -800,7 +805,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             node_id="directory_traverser",
             event_bus=event_bus,
         )
-        results: List[OnexResultModel] = []
+        results: list[OnexResultModel] = []
         for file_path in eligible_files:
             try:
                 if dry_run:
@@ -822,18 +827,16 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                                 status=EnumOnexStatus.SUCCESS,
                                 target=str(file_path),
                                 messages=[],
-                            )
+                            ),
                         )
                     self.result.processed_count += 1
                     self.result.processed_files.add(file_path)
-                    try:
+                    with contextlib.suppress(OSError):
                         self.result.total_size_bytes += file_path.stat().st_size
-                    except OSError:
-                        pass
             except Exception as e:
                 emit_log_event_sync(
                     LogLevelEnum.ERROR,
-                    f"Error processing {file_path}: {str(e)}",
+                    f"Error processing {file_path}: {e!s}",
                     node_id="directory_traverser",
                     event_bus=event_bus,
                 )
@@ -845,7 +848,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         target=str(file_path),
                         messages=[
                             ModelOnexMessage(
-                                summary=f"Error processing file: {str(e)}",
+                                summary=f"Error processing file: {e!s}",
                                 level=LogLevelEnum.ERROR,
                                 file=None,
                                 line=None,
@@ -854,9 +857,9 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                                 context=None,
                                 timestamp=None,
                                 type=None,
-                            )
+                            ),
                         ],
-                    )
+                    ),
                 )
         if not eligible_files:
             return OnexResultModel(
@@ -873,7 +876,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=None,
                         timestamp=None,
                         type=None,
-                    )
+                    ),
                 ],
                 metadata={
                     "processed": self.result.processed_count,
@@ -886,7 +889,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             status = EnumOnexStatus.ERROR
         elif self.result.processed_count == 0:
             status = EnumOnexStatus.WARNING
-        onex_result = OnexResultModel(
+        return OnexResultModel(
             status=status,
             target=str(directory),
             messages=[
@@ -908,7 +911,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=None,
                     timestamp=None,
                     type=None,
-                )
+                ),
             ],
             metadata={
                 "processed": self.result.processed_count,
@@ -921,36 +924,39 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 ],
             },
         )
-        return onex_result
 
     def validate_tree_sync(
-        self, directory: Path, tree_file: Path
+        self,
+        directory: Path,
+        tree_file: Path,
     ) -> ModelTreeSyncResult:
         """
         ProtocolFileDiscoverySource compliance: validate .tree sync (not supported in filesystem mode).
         This is a protocol stub; always raises NotImplementedError.
         """
+        msg = "validate_tree_sync is not supported in filesystem mode."
         raise NotImplementedError(
-            "validate_tree_sync is not supported in filesystem mode."
+            msg,
         )
 
-    def get_canonical_files_from_tree(self, tree_file: Path) -> Set[Path]:
+    def get_canonical_files_from_tree(self, tree_file: Path) -> set[Path]:
         """
         ProtocolFileDiscoverySource compliance: get canonical files from .tree (not supported in filesystem mode).
         This is a protocol stub; always raises NotImplementedError.
         """
+        msg = "get_canonical_files_from_tree is not supported in filesystem mode."
         raise NotImplementedError(
-            "get_canonical_files_from_tree is not supported in filesystem mode."
+            msg,
         )
 
     def discover_files(
         self,
         directory: Path,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-        ignore_file: Optional[Path] = None,
-        event_bus: Optional[ProtocolEventBus] = None,
-    ) -> Set[Path]:
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        ignore_file: Path | None = None,
+        event_bus: ProtocolEventBus | None = None,
+    ) -> set[Path]:
         """
         ProtocolFileDiscoverySource compliance: discover files in directory.
         """

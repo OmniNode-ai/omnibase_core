@@ -30,10 +30,9 @@ architecture where handlers can be discovered dynamically.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
-from omnibase_core.protocol.protocol_file_type_handler import \
-    ProtocolFileTypeHandler
+from omnibase_core.protocol.protocol_file_type_handler import ProtocolFileTypeHandler
 
 
 class HandlerInfo:
@@ -41,13 +40,13 @@ class HandlerInfo:
 
     def __init__(
         self,
-        handler_class: Type[ProtocolFileTypeHandler],
+        handler_class: type[ProtocolFileTypeHandler],
         name: str,
         source: str,
         priority: int = 0,
-        extensions: Optional[List[str]] = None,
-        special_files: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        extensions: list[str] | None = None,
+        special_files: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.handler_class = handler_class
         self.name = name
@@ -68,14 +67,13 @@ class ProtocolHandlerDiscovery(ABC):
     """
 
     @abstractmethod
-    def discover_handlers(self) -> List[HandlerInfo]:
+    def discover_handlers(self) -> list[HandlerInfo]:
         """
         Discover available handlers.
 
         Returns:
             List of HandlerInfo objects for discovered handlers
         """
-        pass
 
     @abstractmethod
     def get_source_name(self) -> str:
@@ -85,7 +83,6 @@ class ProtocolHandlerDiscovery(ABC):
         Returns:
             Human-readable name for this discovery source
         """
-        pass
 
 
 class ProtocolHandlerRegistry(ABC):
@@ -104,14 +101,12 @@ class ProtocolHandlerRegistry(ABC):
         Args:
             discovery: Handler discovery implementation
         """
-        pass
 
     @abstractmethod
     def discover_and_register_handlers(self) -> None:
         """
         Discover and register handlers from all registered discovery sources.
         """
-        pass
 
     @abstractmethod
     def register_handler_info(self, handler_info: HandlerInfo) -> None:
@@ -121,4 +116,3 @@ class ProtocolHandlerRegistry(ABC):
         Args:
             handler_info: Information about the handler to register
         """
-        pass

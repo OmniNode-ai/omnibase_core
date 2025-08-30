@@ -4,7 +4,7 @@ CLI entrypoint model for strongly typed CLI interface representation.
 Provides structured representation of CLI entrypoints with proper validation.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,7 +21,8 @@ class ModelCliEntrypoint(BaseModel):
     def validate_command(cls, v):
         """Validate command format."""
         if not v or not isinstance(v, str):
-            raise ValueError("Command must be a non-empty string")
+            msg = "Command must be a non-empty string"
+            raise ValueError(msg)
         return v
 
     @field_validator("subcommand")
@@ -29,7 +30,8 @@ class ModelCliEntrypoint(BaseModel):
     def validate_subcommand(cls, v):
         """Validate subcommand format."""
         if not v or not isinstance(v, str):
-            raise ValueError("Subcommand must be a non-empty string")
+            msg = "Subcommand must be a non-empty string"
+            raise ValueError(msg)
         return v
 
     @field_validator("node_reference")
@@ -37,10 +39,12 @@ class ModelCliEntrypoint(BaseModel):
     def validate_node_reference(cls, v):
         """Validate node reference format."""
         if not v or not isinstance(v, str):
-            raise ValueError("Node reference must be a non-empty string")
+            msg = "Node reference must be a non-empty string"
+            raise ValueError(msg)
         if not v.replace("_", "").replace("-", "").isalnum():
+            msg = "Node reference must contain only alphanumeric characters, hyphens, and underscores"
             raise ValueError(
-                "Node reference must contain only alphanumeric characters, hyphens, and underscores"
+                msg,
             )
         return v
 
@@ -56,12 +60,14 @@ class ModelCliEntrypoint(BaseModel):
             ModelCliEntrypoint with parsed components
         """
         if not entrypoint_str:
-            raise ValueError("Entrypoint string cannot be empty")
+            msg = "Entrypoint string cannot be empty"
+            raise ValueError(msg)
 
         parts = entrypoint_str.strip().split()
         if len(parts) < 3:
+            msg = "Entrypoint must have at least 3 parts: command subcommand node_reference"
             raise ValueError(
-                "Entrypoint must have at least 3 parts: command subcommand node_reference"
+                msg,
             )
 
         # Extract components
@@ -76,11 +82,13 @@ class ModelCliEntrypoint(BaseModel):
             node_reference = parts[2] if len(parts) > 2 else "unknown"
 
         return cls(
-            command=command, subcommand=subcommand, node_reference=node_reference
+            command=command,
+            subcommand=subcommand,
+            node_reference=node_reference,
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelCliEntrypoint":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCliEntrypoint":
         """Create from dictionary data."""
         if "entrypoint" in data and isinstance(data["entrypoint"], str):
             # Parse from string format
@@ -96,7 +104,7 @@ class ModelCliEntrypoint(BaseModel):
         """Convert to entrypoint string format."""
         return f"{self.command} {self.subcommand} {self.node_reference}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         return {
             "command": self.command,

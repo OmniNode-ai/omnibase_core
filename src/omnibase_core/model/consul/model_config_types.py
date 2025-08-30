@@ -4,9 +4,7 @@ Typed configuration models for Consul integration.
 Provides strongly typed configuration dictionaries to replace Dict[str, Any] usage.
 """
 
-from typing import Any, List, TypedDict, Union
-
-from typing_extensions import NotRequired
+from typing import Any, NotRequired, TypedDict
 
 
 class ConsulAgentConfig(TypedDict):
@@ -29,7 +27,7 @@ class ServiceDiscoveryLayerConfig(TypedDict):
     health_check: NotRequired[bool]
     fallback_delay: NotRequired[int]
     discovery_timeout: NotRequired[int]
-    default_endpoints: NotRequired[List[str]]
+    default_endpoints: NotRequired[list[str]]
     connection_timeout: NotRequired[int]
 
 
@@ -37,7 +35,7 @@ class ServiceDiscoveryConfig(TypedDict):
     """Service discovery configuration."""
 
     layers: dict[str, ServiceDiscoveryLayerConfig]
-    caching: NotRequired[dict[str, Union[bool, int]]]
+    caching: NotRequired[dict[str, bool | int]]
 
 
 class ConsulKVNamespaces(TypedDict):
@@ -91,7 +89,7 @@ class ServiceRegistrationConfig(TypedDict):
     service_id: str
     address: str
     port: int
-    tags: NotRequired[List[str]]
+    tags: NotRequired[list[str]]
     meta: NotRequired[dict[str, str]]
     check: NotRequired[dict[str, Any]]
 
@@ -104,9 +102,9 @@ class HealthCheckConfig(TypedDict):
     enabled: bool
     timeout: NotRequired[int]
     interval: NotRequired[int]
-    threshold: NotRequired[Union[int, float]]
-    warning_threshold: NotRequired[Union[int, float]]
-    critical_threshold: NotRequired[Union[int, float]]
+    threshold: NotRequired[int | float]
+    warning_threshold: NotRequired[int | float]
+    critical_threshold: NotRequired[int | float]
     connection_string: NotRequired[str]
     query: NotRequired[str]
 
@@ -116,7 +114,7 @@ class HealthEndpointConfig(TypedDict):
 
     enabled: bool
     endpoint_path: str
-    checks: List[HealthCheckConfig]
+    checks: list[HealthCheckConfig]
     cache_ttl: NotRequired[int]
     detailed_response: NotRequired[bool]
 

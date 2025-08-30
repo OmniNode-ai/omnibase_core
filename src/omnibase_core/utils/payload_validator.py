@@ -7,8 +7,7 @@ in memory-constrained environments.
 
 import json
 import logging
-import sys
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.model_publisher_config import ModelPublisherConfig
@@ -17,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 def validate_payload_size(
-    payload: Union[Dict[str, Any], str, bytes],
+    payload: dict[str, Any] | str | bytes,
     config: ModelPublisherConfig,
     compress_large_payloads: bool = True,
-) -> Union[Dict[str, Any], str, bytes]:
+) -> dict[str, Any] | str | bytes:
     """
     Validate and optionally compress payload based on size limits.
 
@@ -55,8 +54,11 @@ def validate_payload_size(
             payload_size = len(payload_bytes)
             payload_type = "serialized"
         except (TypeError, ValueError) as e:
+            msg = (
+                f"Cannot determine payload size for type {type(payload).__name__}: {e}"
+            )
             raise OnexError(
-                f"Cannot determine payload size for type {type(payload).__name__}: {e}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
             ) from e
 
@@ -65,7 +67,7 @@ def validate_payload_size(
     # Log payload size for monitoring
     if payload_size > max_size * 0.8:  # Warn when approaching limit
         logger.warning(
-            f"Large payload detected: {payload_size:,} bytes ({payload_size/max_size*100:.1f}% of limit)"
+            f"Large payload detected: {payload_size:,} bytes ({payload_size/max_size*100:.1f}% of limit)",
         )
 
     # Check if payload exceeds limit
@@ -76,7 +78,10 @@ def validate_payload_size(
     # Payload exceeds limit - try compression if enabled
     if compress_large_payloads and payload_type in ["json", "string", "serialized"]:
         compressed_payload = _try_compress_payload(
-            payload, payload_bytes, max_size, config
+            payload,
+            payload_bytes,
+            max_size,
+            config,
         )
         if compressed_payload is not None:
             return compressed_payload
@@ -93,10 +98,9 @@ def validate_payload_size(
     if config.environment == "production":
         # Strict enforcement in production
         raise OnexError(error_msg, error_code=CoreErrorCode.VALIDATION_ERROR)
-    else:
-        # Warning in non-production environments
-        logger.warning(f"{error_msg} Allowing in {config.environment} environment.")
-        return payload
+    # Warning in non-production environments
+    logger.warning(f"{error_msg} Allowing in {config.environment} environment.")
+    return payload
 
 
 def _try_compress_payload(
@@ -104,7 +108,7 @@ def _try_compress_payload(
     payload_bytes: bytes,
     max_size: int,
     config: ModelPublisherConfig,
-) -> Optional[Union[Dict[str, Any], str]]:
+) -> dict[str, Any] | str | None:
     """
     Try to compress payload using various strategies.
 
@@ -148,7 +152,7 @@ def _try_compress_payload(
     if best_compressed and best_size <= max_size:
         compression_ratio = (1 - best_size / len(payload_bytes)) * 100
         logger.info(
-            f"Payload compressed with {best_method}: {len(payload_bytes):,} -> {best_size:,} bytes ({compression_ratio:.1f}% reduction)"
+            f"Payload compressed with {best_method}: {len(payload_bytes):,} -> {best_size:,} bytes ({compression_ratio:.1f}% reduction)",
         )
 
         # Return compressed payload with metadata
@@ -159,15 +163,16 @@ def _try_compress_payload(
                 "__original_size__": len(payload_bytes),
                 "__compressed_data__": best_compressed.hex(),  # Hex encode for JSON safety
             }
-        else:
-            # For non-dict payloads, return as compressed string
-            return f"__COMPRESSED__{best_method}__{best_compressed.hex()}__"
+        # For non-dict payloads, return as compressed string
+        return f"__COMPRESSED__{best_method}__{best_compressed.hex()}__"
 
     return None
 
 
 def estimate_memory_usage(
-    payload_count: int, average_payload_size: int, overhead_factor: float = 1.5
+    payload_count: int,
+    average_payload_size: int,
+    overhead_factor: float = 1.5,
 ) -> int:
     """
     Estimate memory usage for a given number of payloads.
@@ -184,7 +189,9 @@ def estimate_memory_usage(
 
 
 def calculate_max_concurrent_events(
-    max_memory_bytes: int, max_payload_size_bytes: int, overhead_factor: float = 1.5
+    max_memory_bytes: int,
+    max_payload_size_bytes: int,
+    overhead_factor: float = 1.5,
 ) -> int:
     """
     Calculate maximum number of concurrent events based on memory constraints.
@@ -202,7 +209,7 @@ def calculate_max_concurrent_events(
     return max(1, max_events)  # Always allow at least 1 event
 
 
-def get_payload_size_recommendations(environment: str) -> Dict[str, int]:
+def get_payload_size_recommendations(environment: str) -> dict[str, int]:
     """
     Get recommended payload size limits for different environments.
 
@@ -240,7 +247,7 @@ def get_payload_size_recommendations(environment: str) -> Dict[str, int]:
     return {k: v * 1024 for k, v in env_config.items()}
 
 
-def decompress_payload(payload: Union[Dict[str, Any], str]) -> Any:
+def decompress_payload(payload: dict[str, Any] | str) -> Any:
     """
     Decompress a compressed payload.
 
@@ -268,15 +275,17 @@ def decompress_payload(payload: Union[Dict[str, Any], str]) -> Any:
             elif method == "zlib":
                 decompressed_bytes = zlib.decompress(compressed_data)
             else:
+                msg = f"Unknown compression method: {method}"
                 raise OnexError(
-                    f"Unknown compression method: {method}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
             # Verify size matches
             if len(decompressed_bytes) != original_size:
+                msg = f"Decompressed size mismatch: expected {original_size}, got {len(decompressed_bytes)}"
                 raise OnexError(
-                    f"Decompressed size mismatch: expected {original_size}, got {len(decompressed_bytes)}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
@@ -290,8 +299,9 @@ def decompress_payload(payload: Union[Dict[str, Any], str]) -> Any:
             # Compressed string format
             parts = payload.split("__", 4)
             if len(parts) != 5 or parts[0] != "" or parts[1] != "COMPRESSED":
+                msg = "Invalid compressed string format"
                 raise OnexError(
-                    "Invalid compressed string format",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
@@ -303,8 +313,9 @@ def decompress_payload(payload: Union[Dict[str, Any], str]) -> Any:
             elif method == "zlib":
                 decompressed_bytes = zlib.decompress(compressed_data)
             else:
+                msg = f"Unknown compression method: {method}"
                 raise OnexError(
-                    f"Unknown compression method: {method}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                 )
 
@@ -315,13 +326,14 @@ def decompress_payload(payload: Union[Dict[str, Any], str]) -> Any:
             return payload
 
     except Exception as e:
+        msg = f"Failed to decompress payload: {e}"
         raise OnexError(
-            f"Failed to decompress payload: {e}",
+            msg,
             error_code=CoreErrorCode.VALIDATION_ERROR,
         ) from e
 
 
-def is_compressed_payload(payload: Union[Dict[str, Any], str]) -> bool:
+def is_compressed_payload(payload: dict[str, Any] | str) -> bool:
     """
     Check if a payload is compressed.
 
@@ -333,12 +345,12 @@ def is_compressed_payload(payload: Union[Dict[str, Any], str]) -> bool:
     """
     if isinstance(payload, dict):
         return payload.get("__compressed__", False)
-    elif isinstance(payload, str):
+    if isinstance(payload, str):
         return payload.startswith("__COMPRESSED__")
     return False
 
 
-def get_system_memory_info() -> Dict[str, int]:
+def get_system_memory_info() -> dict[str, int]:
     """
     Get system memory information for capacity planning.
 
@@ -360,7 +372,7 @@ def get_system_memory_info() -> Dict[str, int]:
         # Fallback for systems without psutil
         logger.warning("psutil not available, using system memory info fallback")
         try:
-            with open("/proc/meminfo", "r") as f:
+            with open("/proc/meminfo") as f:
                 meminfo = {}
                 for line in f:
                     key, value = line.strip().split(":", 1)
@@ -369,7 +381,8 @@ def get_system_memory_info() -> Dict[str, int]:
                 return {
                     "total_bytes": meminfo.get("MemTotal", 0),
                     "available_bytes": meminfo.get(
-                        "MemAvailable", meminfo.get("MemFree", 0)
+                        "MemAvailable",
+                        meminfo.get("MemFree", 0),
                     ),
                     "used_bytes": meminfo.get("MemTotal", 0)
                     - meminfo.get("MemFree", 0),

@@ -5,8 +5,6 @@ Replaces EnumNodeCapability with a proper model that includes metadata,
 descriptions, and dependencies for each capability.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -26,24 +24,29 @@ class ModelNodeCapability(BaseModel):
     )
 
     value: str = Field(
-        ..., description="Lowercase value for compatibility (e.g., supports_dry_run)"
+        ...,
+        description="Lowercase value for compatibility (e.g., supports_dry_run)",
     )
 
     description: str = Field(
-        ..., description="Human-readable description of the capability"
+        ...,
+        description="Human-readable description of the capability",
     )
 
     # Metadata fields
     version_introduced: str = Field(
-        default="1.0.0", description="ONEX version when this capability was introduced"
+        default="1.0.0",
+        description="ONEX version when this capability was introduced",
     )
 
-    dependencies: List[str] = Field(
-        default_factory=list, description="Other capabilities this one depends on"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Other capabilities this one depends on",
     )
 
     configuration_required: bool = Field(
-        default=False, description="Whether this capability requires configuration"
+        default=False,
+        description="Whether this capability requires configuration",
     )
 
     performance_impact: str = Field(
@@ -54,15 +57,18 @@ class ModelNodeCapability(BaseModel):
 
     # Optional fields
     deprecated: bool = Field(
-        default=False, description="Whether this capability is deprecated"
+        default=False,
+        description="Whether this capability is deprecated",
     )
 
-    replacement: Optional[str] = Field(
-        default=None, description="Replacement capability if deprecated"
+    replacement: str | None = Field(
+        default=None,
+        description="Replacement capability if deprecated",
     )
 
-    example_config: Optional[dict] = Field(
-        default=None, description="Example configuration for this capability"
+    example_config: dict | None = Field(
+        default=None,
+        description="Example configuration for this capability",
     )
 
     # Factory methods for standard capabilities
@@ -200,14 +206,13 @@ class ModelNodeCapability(BaseModel):
         factory = factory_map.get(capability_upper)
         if factory:
             return factory()
-        else:
-            # Unknown capability - create generic
-            return cls(
-                name=capability_upper,
-                value=capability.lower(),
-                description=f"Custom capability: {capability}",
-                version_introduced="1.0.0",
-            )
+        # Unknown capability - create generic
+        return cls(
+            name=capability_upper,
+            value=capability.lower(),
+            description=f"Custom capability: {capability}",
+            version_introduced="1.0.0",
+        )
 
     def __str__(self) -> str:
         """String representation for backward compatibility."""
@@ -217,7 +222,7 @@ class ModelNodeCapability(BaseModel):
         """Equality comparison for backward compatibility."""
         if isinstance(other, str):
             return self.value == other or self.name == other.upper()
-        elif isinstance(other, ModelNodeCapability):
+        if isinstance(other, ModelNodeCapability):
             return self.name == other.name
         return False
 

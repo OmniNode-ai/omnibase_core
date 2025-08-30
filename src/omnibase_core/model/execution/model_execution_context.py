@@ -1,31 +1,38 @@
 """Execution context model for Workflow execution state tracking."""
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.execution.model_execution_metadata import \
-    ModelExecutionMetadata
-from omnibase_core.model.execution.model_execution_result import \
-    ModelExecutionResult
+from omnibase_core.model.execution.model_execution_metadata import (
+    ModelExecutionMetadata,
+)
+from omnibase_core.model.execution.model_execution_result import ModelExecutionResult
 
 
 class ModelExecutionContext(BaseModel):
     """Model for execution context replacing Dict[str, Any]."""
 
     correlation_id: str = Field(
-        ..., description="Correlation ID for tracking", min_length=1
+        ...,
+        description="Correlation ID for tracking",
+        min_length=1,
     )
-    node_results: Dict[str, ModelExecutionResult] = Field(
-        default_factory=dict, description="Results by node ID"
+    node_results: dict[str, ModelExecutionResult] = Field(
+        default_factory=dict,
+        description="Results by node ID",
     )
-    workflow_parameters: Optional[Any] = Field(
-        None, description="Workflow parameters (forward reference)"
+    workflow_parameters: Any | None = Field(
+        None,
+        description="Workflow parameters (forward reference)",
     )
     execution_metadata: ModelExecutionMetadata = Field(
         default_factory=lambda: ModelExecutionMetadata(
-            start_timestamp=time.time(), user_id=None, environment=None, git_commit=None
+            start_timestamp=time.time(),
+            user_id=None,
+            environment=None,
+            git_commit=None,
         ),
         description="Execution metadata",
     )

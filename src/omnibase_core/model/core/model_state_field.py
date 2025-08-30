@@ -2,7 +2,7 @@
 State field model for state model specification.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,4 +14,4 @@ class ModelStateField(BaseModel):
     type: str = Field(..., description="Field type")
     required: bool = Field(..., description="Whether field is required")
     description: str = Field(..., description="Field description")
-    default: Optional[Any] = Field(None, description="Default value if optional")
+    default: Any | None = Field(None, description="Default value if optional")

@@ -4,12 +4,10 @@ This module defines the response model for event discovery queries.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.discovery.model_event_descriptor import \
-    ModelEventDescriptor
+from omnibase_core.model.discovery.model_event_descriptor import ModelEventDescriptor
 
 
 class ModelEventDiscoveryResponse(BaseModel):
@@ -19,30 +17,36 @@ class ModelEventDiscoveryResponse(BaseModel):
     correlation_id: str = Field(..., description="Correlation ID from request")
 
     # Results
-    discovered_events: List[ModelEventDescriptor] = Field(
-        default_factory=list, description="Discovered events"
+    discovered_events: list[ModelEventDescriptor] = Field(
+        default_factory=list,
+        description="Discovered events",
     )
     total_count: int = Field(0, description="Total number of matching events")
     result_count: int = Field(0, description="Number of events returned")
 
     # Response Metadata
     response_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Response timestamp"
+        default_factory=datetime.utcnow,
+        description="Response timestamp",
     )
-    consul_query_time_ms: Optional[int] = Field(
-        None, description="Consul query time in milliseconds"
+    consul_query_time_ms: int | None = Field(
+        None,
+        description="Consul query time in milliseconds",
     )
     container_adapter_active: bool = Field(
-        True, description="Whether Container Adapter is active"
+        True,
+        description="Whether Container Adapter is active",
     )
 
     # Status Information
     query_successful: bool = Field(True, description="Whether query was successful")
-    error_message: Optional[str] = Field(
-        None, description="Error message if query failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if query failed",
     )
     partial_results: bool = Field(
-        False, description="Whether results are partial due to timeout"
+        False,
+        description="Whether results are partial due to timeout",
     )
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")

@@ -6,7 +6,7 @@ Provides action specification including configuration, timing, and recovery opti
 """
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -45,8 +45,9 @@ class ModelFSMEffect(BaseModel):
 
     action_type: FSMActionType = Field(..., description="Type of action to execute")
 
-    action_config: Dict[str, Any] = Field(
-        default_factory=dict, description="Configuration parameters for the action"
+    action_config: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Configuration parameters for the action",
     )
 
     # Execution configuration
@@ -58,7 +59,8 @@ class ModelFSMEffect(BaseModel):
     )
 
     is_critical: bool = Field(
-        ..., description="Whether failure of this action should abort transition"
+        ...,
+        description="Whether failure of this action should abort transition",
     )
 
     timeout_ms: int = Field(
@@ -70,14 +72,18 @@ class ModelFSMEffect(BaseModel):
 
     # Recovery configuration
     retry_on_failure: bool = Field(
-        default=False, description="Whether to retry this action on failure"
+        default=False,
+        description="Whether to retry this action on failure",
     )
 
-    max_retries: Optional[int] = Field(
-        default=None, description="Maximum retry attempts for this action", ge=1, le=5
+    max_retries: int | None = Field(
+        default=None,
+        description="Maximum retry attempts for this action",
+        ge=1,
+        le=5,
     )
 
-    rollback_action: Optional[str] = Field(
+    rollback_action: str | None = Field(
         default=None,
         description="Action to execute for rollback",
         pattern=r"^[a-z][a-z0-9_]*$",
@@ -96,5 +102,5 @@ class ModelFSMEffect(BaseModel):
                 "is_critical": False,
                 "timeout_ms": 1000,
                 "retry_on_failure": False,
-            }
+            },
         }

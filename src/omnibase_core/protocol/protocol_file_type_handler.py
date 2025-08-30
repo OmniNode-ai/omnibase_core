@@ -24,20 +24,22 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from omnibase_core.model.configuration.model_can_handle_result import \
-        ModelCanHandleResult
-    from omnibase_core.model.configuration.model_handler_protocol import \
-        ModelHandlerMetadata
-    from omnibase_core.model.configuration.model_serialized_block import \
-        ModelSerializedBlock
-    from omnibase_core.model.core.model_extracted_block import \
-        ModelExtractedBlock
-    from omnibase_core.model.core.model_onex_message_result import \
-        OnexResultModel
+    from pathlib import Path
+
+    from omnibase_core.model.configuration.model_can_handle_result import (
+        ModelCanHandleResult,
+    )
+    from omnibase_core.model.configuration.model_handler_protocol import (
+        ModelHandlerMetadata,
+    )
+    from omnibase_core.model.configuration.model_serialized_block import (
+        ModelSerializedBlock,
+    )
+    from omnibase_core.model.core.model_extracted_block import ModelExtractedBlock
+    from omnibase_core.model.core.model_onex_message_result import OnexResultModel
 
 
 class ProtocolFileTypeHandler(Protocol):
@@ -84,13 +86,22 @@ class ProtocolFileTypeHandler(Protocol):
     def stamp(self, path: Path, content: str, **kwargs: object) -> OnexResultModel: ...
 
     def pre_validate(
-        self, path: Path, content: str, **kwargs: object
-    ) -> Optional[OnexResultModel]: ...
+        self,
+        path: Path,
+        content: str,
+        **kwargs: object,
+    ) -> OnexResultModel | None: ...
 
     def post_validate(
-        self, path: Path, content: str, **kwargs: object
-    ) -> Optional[OnexResultModel]: ...
+        self,
+        path: Path,
+        content: str,
+        **kwargs: object,
+    ) -> OnexResultModel | None: ...
 
     def validate(
-        self, path: Path, content: str, **kwargs: object
+        self,
+        path: Path,
+        content: str,
+        **kwargs: object,
     ) -> OnexResultModel: ...

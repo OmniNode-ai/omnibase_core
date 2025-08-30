@@ -5,10 +5,9 @@ Defines the protocol interface for hub workflow execution,
 providing abstracted hub operations without direct tool imports.
 """
 
-from typing import Dict, Optional, Protocol
+from typing import Protocol
 
-from omnibase_core.model.core.model_cli_execution_result import \
-    ModelCliExecutionResult
+from omnibase_core.model.core.model_cli_execution_result import ModelCliExecutionResult
 
 
 class ProtocolHubExecution(Protocol):
@@ -24,8 +23,8 @@ class ProtocolHubExecution(Protocol):
         domain: str,
         workflow_name: str,
         dry_run: bool = False,
-        timeout: Optional[int] = None,
-        parameters: Optional[Dict] = None,
+        timeout: int | None = None,
+        parameters: dict | None = None,
     ) -> ModelCliExecutionResult:
         """
         Execute a workflow in the specified domain hub.
@@ -58,7 +57,9 @@ class ProtocolHubExecution(Protocol):
         ...
 
     def validate_workflow(
-        self, domain: str, workflow_name: str
+        self,
+        domain: str,
+        workflow_name: str,
     ) -> ModelCliExecutionResult:
         """
         Validate a workflow exists and is executable.

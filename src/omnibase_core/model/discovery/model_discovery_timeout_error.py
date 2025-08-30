@@ -4,10 +4,9 @@ Discovery Timeout Error Model
 Exception raised when discovery requests timeout with partial results support.
 """
 
-from typing import List
-
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class ModelDiscoveryTimeoutError(Exception):
@@ -21,7 +20,7 @@ class ModelDiscoveryTimeoutError(Exception):
         self,
         message: str,
         timeout_seconds: float,
-        partial_results: List[ModelDiscoveredTool] = None,
+        partial_results: list[ModelDiscoveredTool] | None = None,
     ):
         """
         Initialize discovery timeout error.

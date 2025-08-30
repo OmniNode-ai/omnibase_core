@@ -2,8 +2,6 @@
 Model for file statistics information.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -20,12 +18,14 @@ class ModelFileStatistics(BaseModel):
 
     smallest_file_bytes: int = Field(..., description="Size of smallest file in bytes")
 
-    extensions: Dict[str, int] = Field(
-        default_factory=dict, description="Count of files by extension"
+    extensions: dict[str, int] = Field(
+        default_factory=dict,
+        description="Count of files by extension",
     )
 
-    file_types: Dict[str, int] = Field(
-        default_factory=dict, description="Count of files by type"
+    file_types: dict[str, int] = Field(
+        default_factory=dict,
+        description="Count of files by type",
     )
 
     readable_files: int = Field(..., description="Number of readable files")
@@ -33,9 +33,11 @@ class ModelFileStatistics(BaseModel):
     writable_files: int = Field(..., description="Number of writable files")
 
     readable_percentage: float = Field(
-        ..., description="Percentage of files that are readable"
+        ...,
+        description="Percentage of files that are readable",
     )
 
     writable_percentage: float = Field(
-        ..., description="Percentage of files that are writable"
+        ...,
+        description="Percentage of files that are writable",
     )

@@ -7,7 +7,6 @@ documents, code files, and other resources in the ONEX system.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import Field, validator
 
@@ -59,38 +58,45 @@ class ModelDependencyNode(ModelOnexInputState):
     node_id: str = Field(..., description="Unique identifier for this node")
     file_path: str = Field(..., description="Full path to the file or resource")
     node_type: EnumDependencyType = Field(
-        ..., description="Type of dependency this node represents"
+        ...,
+        description="Type of dependency this node represents",
     )
 
     # File metadata
     exists: bool = Field(default=True, description="Whether the file currently exists")
     last_modified: datetime = Field(..., description="Last modification timestamp")
     file_size_bytes: int = Field(default=0, description="File size in bytes")
-    file_hash: Optional[str] = Field(
-        None, description="File content hash for change detection"
+    file_hash: str | None = Field(
+        None,
+        description="File content hash for change detection",
     )
 
     # Analysis metadata
     is_critical: bool = Field(
-        default=False, description="Whether this dependency is critical"
+        default=False,
+        description="Whether this dependency is critical",
     )
     complexity_score: float = Field(
-        default=0.5, description="Complexity score (0.0-1.0)"
+        default=0.5,
+        description="Complexity score (0.0-1.0)",
     )
     change_frequency: float = Field(
-        default=0.0, description="How frequently this file changes (changes/day)"
+        default=0.0,
+        description="How frequently this file changes (changes/day)",
     )
 
     # Tracking
-    last_analyzed: Optional[datetime] = Field(
-        None, description="Last time this node was analyzed"
+    last_analyzed: datetime | None = Field(
+        None,
+        description="Last time this node was analyzed",
     )
     analysis_version: str = Field(default="1.0", description="Version of analysis used")
 
     @validator("complexity_score")
-    def validate_complexity_score(cls, v):
+    def validate_complexity_score(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Complexity score must be between 0.0 and 1.0")
+            msg = "Complexity score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -99,26 +105,32 @@ class ModelDependencyEdge(ModelOnexInputState):
 
     edge_id: str = Field(..., description="Unique identifier for this edge")
     source_node_id: str = Field(
-        ..., description="ID of the source node (typically a document)"
+        ...,
+        description="ID of the source node (typically a document)",
     )
     target_node_id: str = Field(
-        ..., description="ID of the target node (the dependency)"
+        ...,
+        description="ID of the target node (the dependency)",
     )
 
     relationship_type: EnumDependencyRelationship = Field(
-        ..., description="Type of relationship"
+        ...,
+        description="Type of relationship",
     )
     impact_weight: float = Field(default=1.0, description="Weight of impact (0.0-1.0)")
     change_impact: EnumChangeImpact = Field(
-        default=EnumChangeImpact.MEDIUM, description="Expected impact of changes"
+        default=EnumChangeImpact.MEDIUM,
+        description="Expected impact of changes",
     )
 
     # Context information
-    line_numbers: List[int] = Field(
-        default_factory=list, description="Line numbers where dependency is referenced"
+    line_numbers: list[int] = Field(
+        default_factory=list,
+        description="Line numbers where dependency is referenced",
     )
-    context_snippets: List[str] = Field(
-        default_factory=list, description="Code/text snippets showing the reference"
+    context_snippets: list[str] = Field(
+        default_factory=list,
+        description="Code/text snippets showing the reference",
     )
 
     # Tracking
@@ -126,17 +138,20 @@ class ModelDependencyEdge(ModelOnexInputState):
         default_factory=datetime.utcnow,
         description="When this relationship was discovered",
     )
-    last_verified: Optional[datetime] = Field(
-        None, description="Last time this relationship was verified to still exist"
+    last_verified: datetime | None = Field(
+        None,
+        description="Last time this relationship was verified to still exist",
     )
     confidence_score: float = Field(
-        default=1.0, description="Confidence in this relationship (0.0-1.0)"
+        default=1.0,
+        description="Confidence in this relationship (0.0-1.0)",
     )
 
     @validator("impact_weight", "confidence_score")
-    def validate_scores(cls, v):
+    def validate_scores(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Score must be between 0.0 and 1.0")
+            msg = "Score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -144,48 +159,60 @@ class ModelDependencyGraph(ModelOnexInputState):
     """Complete dependency graph for a document or set of documents."""
 
     graph_id: str = Field(
-        ..., description="Unique identifier for this dependency graph"
+        ...,
+        description="Unique identifier for this dependency graph",
     )
     root_document_path: str = Field(
-        ..., description="Primary document this graph is built for"
+        ...,
+        description="Primary document this graph is built for",
     )
 
     # Graph structure
-    nodes: Dict[str, ModelDependencyNode] = Field(
-        default_factory=dict, description="All nodes in the graph"
+    nodes: dict[str, ModelDependencyNode] = Field(
+        default_factory=dict,
+        description="All nodes in the graph",
     )
-    edges: List[ModelDependencyEdge] = Field(
-        default_factory=list, description="All edges in the graph"
+    edges: list[ModelDependencyEdge] = Field(
+        default_factory=list,
+        description="All edges in the graph",
     )
 
     # Graph metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this graph was created"
+        default_factory=datetime.utcnow,
+        description="When this graph was created",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last time graph was updated"
+        default_factory=datetime.utcnow,
+        description="Last time graph was updated",
     )
     analysis_depth: int = Field(
-        default=1, description="Depth of dependency analysis performed"
+        default=1,
+        description="Depth of dependency analysis performed",
     )
 
     # Statistics
     total_dependencies: int = Field(
-        default=0, description="Total number of dependencies tracked"
+        default=0,
+        description="Total number of dependencies tracked",
     )
     critical_dependencies: int = Field(
-        default=0, description="Number of critical dependencies"
+        default=0,
+        description="Number of critical dependencies",
     )
     stale_dependencies: int = Field(
-        default=0, description="Number of stale dependencies"
+        default=0,
+        description="Number of stale dependencies",
     )
     missing_dependencies: int = Field(
-        default=0, description="Number of missing/broken dependencies"
+        default=0,
+        description="Number of missing/broken dependencies",
     )
 
     # Performance tracking
     build_duration_ms: int = Field(
-        default=0, description="Time taken to build this graph in milliseconds"
+        default=0,
+        description="Time taken to build this graph in milliseconds",
     )
     memory_usage_bytes: int = Field(default=0, description="Memory used by this graph")
 
@@ -195,53 +222,64 @@ class ModelDependencyAnalysisResult(ModelOnexInputState):
 
     analysis_id: str = Field(..., description="Unique identifier for this analysis")
     document_path: str = Field(..., description="Document that was analyzed")
-    trigger_change: Optional[str] = Field(
-        None, description="Change that triggered this analysis"
+    trigger_change: str | None = Field(
+        None,
+        description="Change that triggered this analysis",
     )
 
     # Analysis results
     dependency_graph: ModelDependencyGraph = Field(
-        ..., description="Generated dependency graph"
+        ...,
+        description="Generated dependency graph",
     )
-    impact_assessment: Dict[str, EnumChangeImpact] = Field(
-        default_factory=dict, description="Impact assessment for each dependency"
+    impact_assessment: dict[str, EnumChangeImpact] = Field(
+        default_factory=dict,
+        description="Impact assessment for each dependency",
     )
 
     # Recommendations
     requires_update: bool = Field(
-        default=False, description="Whether document requires updating"
+        default=False,
+        description="Whether document requires updating",
     )
     update_priority: str = Field(
         default="low",
         description="Priority level for updates (low, medium, high, critical)",
     )
-    suggested_actions: List[str] = Field(
-        default_factory=list, description="Suggested actions to take"
+    suggested_actions: list[str] = Field(
+        default_factory=list,
+        description="Suggested actions to take",
     )
 
     # Quality metrics
     coverage_score: float = Field(
-        default=0.0, description="Percentage of dependencies successfully analyzed"
+        default=0.0,
+        description="Percentage of dependencies successfully analyzed",
     )
     confidence_score: float = Field(
-        default=0.0, description="Overall confidence in analysis results"
+        default=0.0,
+        description="Overall confidence in analysis results",
     )
 
     # Timing
     analysis_started_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When analysis started"
+        default_factory=datetime.utcnow,
+        description="When analysis started",
     )
-    analysis_completed_at: Optional[datetime] = Field(
-        None, description="When analysis completed"
+    analysis_completed_at: datetime | None = Field(
+        None,
+        description="When analysis completed",
     )
     analysis_duration_ms: int = Field(
-        default=0, description="Analysis duration in milliseconds"
+        default=0,
+        description="Analysis duration in milliseconds",
     )
 
     @validator("coverage_score", "confidence_score")
-    def validate_scores(cls, v):
+    def validate_scores(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Score must be between 0.0 and 1.0")
+            msg = "Score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -256,29 +294,33 @@ class ModelDependencyChangeEvent(ModelOnexInputState):
     )
 
     # Change details
-    affected_node_id: Optional[str] = Field(None, description="ID of node that changed")
-    affected_edge_id: Optional[str] = Field(None, description="ID of edge that changed")
-    old_value: Optional[Dict] = Field(None, description="Previous value before change")
-    new_value: Optional[Dict] = Field(None, description="New value after change")
+    affected_node_id: str | None = Field(None, description="ID of node that changed")
+    affected_edge_id: str | None = Field(None, description="ID of edge that changed")
+    old_value: dict | None = Field(None, description="Previous value before change")
+    new_value: dict | None = Field(None, description="New value after change")
 
     # Impact
     impact_level: EnumChangeImpact = Field(
-        ..., description="Assessed impact level of this change"
+        ...,
+        description="Assessed impact level of this change",
     )
-    affected_documents: List[str] = Field(
-        default_factory=list, description="Documents affected by this change"
+    affected_documents: list[str] = Field(
+        default_factory=list,
+        description="Documents affected by this change",
     )
 
     # Metadata
     detected_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this change was detected"
+        default_factory=datetime.utcnow,
+        description="When this change was detected",
     )
     source: str = Field(
         default="unknown",
         description="Source of change detection (git, filesystem, manual)",
     )
     processed: bool = Field(
-        default=False, description="Whether this change has been processed"
+        default=False,
+        description="Whether this change has been processed",
     )
 
 
@@ -287,31 +329,36 @@ class ModelDependencyGraphConfig(ModelOnexInputState):
 
     # Analysis settings
     max_depth: int = Field(
-        default=3, description="Maximum depth for dependency traversal"
+        default=3,
+        description="Maximum depth for dependency traversal",
     )
     include_test_files: bool = Field(
-        default=True, description="Whether to include test files in analysis"
+        default=True,
+        description="Whether to include test files in analysis",
     )
     include_build_files: bool = Field(
-        default=True, description="Whether to include build files"
+        default=True,
+        description="Whether to include build files",
     )
     include_config_files: bool = Field(
-        default=True, description="Whether to include configuration files"
+        default=True,
+        description="Whether to include configuration files",
     )
 
     # File patterns
-    excluded_patterns: List[str] = Field(
+    excluded_patterns: list[str] = Field(
         default_factory=lambda: ["*.pyc", "*.log", "__pycache__/*", ".git/*"],
         description="File patterns to exclude",
     )
-    included_extensions: List[str] = Field(
+    included_extensions: list[str] = Field(
         default_factory=lambda: [".py", ".md", ".yaml", ".yml", ".json", ".toml"],
         description="File extensions to include",
     )
 
     # Thresholds
     min_file_size_bytes: int = Field(
-        default=1, description="Minimum file size to analyze"
+        default=1,
+        description="Minimum file size to analyze",
     )
     max_file_size_bytes: int = Field(
         default=10 * 1024 * 1024,
@@ -320,36 +367,45 @@ class ModelDependencyGraphConfig(ModelOnexInputState):
 
     # Performance settings
     max_analysis_time_seconds: int = Field(
-        default=300, description="Maximum time to spend on analysis"
+        default=300,
+        description="Maximum time to spend on analysis",
     )
     enable_caching: bool = Field(
-        default=True, description="Whether to enable result caching"
+        default=True,
+        description="Whether to enable result caching",
     )
     cache_ttl_seconds: int = Field(
-        default=3600, description="Cache time-to-live in seconds"
+        default=3600,
+        description="Cache time-to-live in seconds",
     )
 
     # Change detection
     enable_real_time_monitoring: bool = Field(
-        default=True, description="Enable real-time file system monitoring"
+        default=True,
+        description="Enable real-time file system monitoring",
     )
     change_debounce_seconds: int = Field(
-        default=5, description="Debounce time for rapid file changes"
+        default=5,
+        description="Debounce time for rapid file changes",
     )
 
     # AI analysis
     enable_ai_analysis: bool = Field(
-        default=False, description="Enable AI-powered dependency analysis"
+        default=False,
+        description="Enable AI-powered dependency analysis",
     )
     ai_analysis_batch_size: int = Field(
-        default=10, description="Batch size for AI analysis"
+        default=10,
+        description="Batch size for AI analysis",
     )
     ai_confidence_threshold: float = Field(
-        default=0.7, description="Minimum confidence for AI-detected dependencies"
+        default=0.7,
+        description="Minimum confidence for AI-detected dependencies",
     )
 
     @validator("ai_confidence_threshold")
-    def validate_ai_confidence_threshold(cls, v):
+    def validate_ai_confidence_threshold(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("AI confidence threshold must be between 0.0 and 1.0")
+            msg = "AI confidence threshold must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v

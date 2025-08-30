@@ -7,7 +7,6 @@ Provides authentication, authorization, and audit capabilities.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
@@ -47,14 +46,16 @@ class ModelOnexAuditEvent(BaseModel):
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")
     event_type: str = Field(description="Type of audit event")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Event timestamp"
+        default_factory=datetime.utcnow,
+        description="Event timestamp",
     )
-    actor: Optional[str] = Field(default=None, description="Actor performing action")
-    resource: Optional[str] = Field(default=None, description="Resource being accessed")
+    actor: str | None = Field(default=None, description="Actor performing action")
+    resource: str | None = Field(default=None, description="Resource being accessed")
     action: str = Field(description="Action being performed")
     outcome: str = Field(description="Action outcome (success/failure)")
-    additional_data: Dict[str, str] = Field(
-        default_factory=dict, description="Additional audit data"
+    additional_data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional audit data",
     )
 
     class Config:
@@ -70,72 +71,89 @@ class ModelOnexSecurityContext(BaseModel):
     """
 
     # === AUTHENTICATION ===
-    user_id: Optional[str] = Field(default=None, description="User identifier")
-    session_id: Optional[str] = Field(default=None, description="Session identifier")
-    authentication_token: Optional[str] = Field(
-        default=None, description="Authentication token"
+    user_id: str | None = Field(default=None, description="User identifier")
+    session_id: str | None = Field(default=None, description="Session identifier")
+    authentication_token: str | None = Field(
+        default=None,
+        description="Authentication token",
     )
     authentication_method: EnumAuthenticationMethod = Field(
-        default=EnumAuthenticationMethod.NONE, description="Authentication method used"
+        default=EnumAuthenticationMethod.NONE,
+        description="Authentication method used",
     )
-    authentication_timestamp: Optional[datetime] = Field(
-        default=None, description="Authentication timestamp"
+    authentication_timestamp: datetime | None = Field(
+        default=None,
+        description="Authentication timestamp",
     )
-    token_expiry: Optional[datetime] = Field(
-        default=None, description="Token expiry timestamp"
+    token_expiry: datetime | None = Field(
+        default=None,
+        description="Token expiry timestamp",
     )
 
     # === AUTHORIZATION ===
-    authorization_roles: List[str] = Field(
-        default_factory=list, description="User authorization roles"
+    authorization_roles: list[str] = Field(
+        default_factory=list,
+        description="User authorization roles",
     )
-    permissions: List[str] = Field(
-        default_factory=list, description="Specific permissions granted"
+    permissions: list[str] = Field(
+        default_factory=list,
+        description="Specific permissions granted",
     )
-    resource_access: Dict[str, List[str]] = Field(
-        default_factory=dict, description="Resource-specific access permissions"
+    resource_access: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Resource-specific access permissions",
     )
 
     # === SECURITY PROFILE ===
     security_profile: EnumSecurityProfile = Field(
-        default=EnumSecurityProfile.SP0_BOOTSTRAP, description="Security profile level"
+        default=EnumSecurityProfile.SP0_BOOTSTRAP,
+        description="Security profile level",
     )
     data_classification: EnumDataClassification = Field(
-        default=EnumDataClassification.INTERNAL, description="Data classification level"
+        default=EnumDataClassification.INTERNAL,
+        description="Data classification level",
     )
 
     # === CLIENT INFORMATION ===
-    client_ip: Optional[str] = Field(default=None, description="Client IP address")
-    user_agent: Optional[str] = Field(default=None, description="Client user agent")
-    client_fingerprint: Optional[str] = Field(
-        default=None, description="Client fingerprint"
+    client_ip: str | None = Field(default=None, description="Client IP address")
+    user_agent: str | None = Field(default=None, description="Client user agent")
+    client_fingerprint: str | None = Field(
+        default=None,
+        description="Client fingerprint",
     )
 
     # === AUDIT TRAIL ===
-    audit_events: List[ModelOnexAuditEvent] = Field(
-        default_factory=list, description="Security audit events"
+    audit_events: list[ModelOnexAuditEvent] = Field(
+        default_factory=list,
+        description="Security audit events",
     )
     audit_enabled: bool = Field(
-        default=True, description="Whether audit logging is enabled"
+        default=True,
+        description="Whether audit logging is enabled",
     )
 
     # === ENCRYPTION ===
     encryption_required: bool = Field(
-        default=True, description="Whether encryption is required"
+        default=True,
+        description="Whether encryption is required",
     )
-    encryption_algorithm: Optional[str] = Field(
-        default=None, description="Encryption algorithm used"
+    encryption_algorithm: str | None = Field(
+        default=None,
+        description="Encryption algorithm used",
     )
 
     # === VALIDATION METADATA ===
     context_id: UUID = Field(
-        default_factory=uuid4, description="Security context identifier"
+        default_factory=uuid4,
+        description="Security context identifier",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Context creation time"
+        default_factory=datetime.utcnow,
+        description="Context creation time",
     )
-    last_validated: Optional[datetime] = Field(
-        default=None, description="Last validation timestamp"
+    last_validated: datetime | None = Field(
+        default=None,
+        description="Last validation timestamp",
     )
 
     class Config:
@@ -147,22 +165,26 @@ class ModelOnexSecurityContext(BaseModel):
 
     @validator("token_expiry")
     def validate_token_expiry(
-        cls, v: Optional[datetime], values: Dict[str, Union[str, datetime]]
-    ) -> Optional[datetime]:
+        self,
+        v: datetime | None,
+        values: dict[str, str | datetime],
+    ) -> datetime | None:
         """Validate token expiry is in the future."""
         if v is not None and v <= datetime.utcnow():
-            raise ValueError("Token expiry must be in the future")
+            msg = "Token expiry must be in the future"
+            raise ValueError(msg)
         return v
 
     @validator("authentication_timestamp")
-    def validate_auth_timestamp(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_auth_timestamp(self, v: datetime | None) -> datetime | None:
         """Validate authentication timestamp is not in the future."""
         if v is not None and v > datetime.utcnow():
-            raise ValueError("Authentication timestamp cannot be in the future")
+            msg = "Authentication timestamp cannot be in the future"
+            raise ValueError(msg)
         return v
 
     @validator("client_ip")
-    def validate_client_ip(cls, v: Optional[str]) -> Optional[str]:
+    def validate_client_ip(self, v: str | None) -> str | None:
         """Validate client IP format."""
         if v is not None:
             # Basic IP validation - in production, use proper IP validation library
@@ -170,7 +192,8 @@ class ModelOnexSecurityContext(BaseModel):
 
             ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
             if not re.match(ip_pattern, v):
-                raise ValueError("Invalid IP address format")
+                msg = "Invalid IP address format"
+                raise ValueError(msg)
         return v
 
     def is_authenticated(self) -> bool:
@@ -225,8 +248,8 @@ class ModelOnexSecurityContext(BaseModel):
         event_type: str,
         action: str,
         outcome: str,
-        resource: Optional[str] = None,
-        additional_data: Optional[Dict[str, str]] = None,
+        resource: str | None = None,
+        additional_data: dict[str, str] | None = None,
     ) -> "ModelOnexSecurityContext":
         """
         Add audit event to the security context.
@@ -271,7 +294,9 @@ class ModelOnexSecurityContext(BaseModel):
         return self
 
     def add_resource_access(
-        self, resource: str, access_types: List[str]
+        self,
+        resource: str,
+        access_types: list[str],
     ) -> "ModelOnexSecurityContext":
         """Add resource access permissions."""
         new_resource_access = {**self.resource_access}
@@ -299,7 +324,7 @@ class ModelOnexSecurityContext(BaseModel):
         # Higher security profiles would have additional requirements
         return True
 
-    def sanitize_for_logging(self) -> Dict[str, Optional[str]]:
+    def sanitize_for_logging(self) -> dict[str, str | None]:
         """Create sanitized version for logging (removes sensitive data)."""
         return {
             "user_id": self.user_id or "anonymous",

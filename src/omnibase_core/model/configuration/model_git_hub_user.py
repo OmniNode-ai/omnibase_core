@@ -2,8 +2,6 @@
 GitHubUser model.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -12,6 +10,6 @@ class ModelGitHubUser(BaseModel):
 
     login: str = Field(..., description="Username")
     id: int = Field(..., description="User ID")
-    avatar_url: Optional[str] = Field(None, description="Avatar URL")
-    url: Optional[str] = Field(None, description="User API URL")
+    avatar_url: str | None = Field(None, description="Avatar URL")
+    url: str | None = Field(None, description="User API URL")
     type: str = Field("User", description="User type")

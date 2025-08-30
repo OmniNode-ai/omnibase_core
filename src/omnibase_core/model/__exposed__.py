@@ -29,6 +29,7 @@ These models are approved for cross-domain usage:
 # Configuration models (for service integration)
 from .configuration.model_handler_config import *
 from .configuration.model_metadata_config import *
+
 # Core models (available to all domains)
 from .core.model_base_error import *
 from .core.model_base_result import *
@@ -38,8 +39,10 @@ from .core.model_onex_event import *
 from .core.model_onex_message import *
 from .core.model_shared_types import *
 from .core.model_state_contract import *
+
 # Health models (for monitoring integration)
 from .health.model_health_check import *
+
 # Validation models (for testing integration)
 from .validation.model_validate_error import *
 
@@ -48,15 +51,15 @@ __all__ = [
     "BaseError",
     "BaseResult",
     "Context",
-    "SharedTypes",
+    "FallbackStrategyType",
+    "HealthCheck",
+    "MetadataConfig",
+    "ModelFallbackStrategy",
+    "ModelHandlerConfig",
     "OnexEvent",
     "OnexMessage",
+    "SharedTypes",
     "StateContract",
-    "ModelHandlerConfig",
-    "MetadataConfig",
-    "HealthCheck",
-    "ModelFallbackStrategy",
-    "FallbackStrategyType",
     "ValidateError",
 ]
 

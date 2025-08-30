@@ -2,8 +2,6 @@
 Model for health status information.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_semver import ModelSemVer
@@ -16,7 +14,7 @@ class ModelToolHealthStatus(BaseModel):
     timestamp: str = Field(description="Timestamp of health check")
     tool_name: str = Field(description="Name of the tool")
     version: ModelSemVer = Field(description="Version as SemVer")
-    checks: Dict[str, bool] = Field(description="Individual health check results")
+    checks: dict[str, bool] = Field(description="Individual health check results")
 
     class Config:
         json_schema_extra = {
@@ -36,5 +34,5 @@ class ModelToolHealthStatus(BaseModel):
                     "models_valid": True,
                     "imports_resolvable": True,
                 },
-            }
+            },
         }

@@ -1,7 +1,6 @@
 """Model for tracking active tasks."""
 
 from datetime import datetime
-from typing import Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -14,16 +13,19 @@ class ModelTaskMap(BaseModel):
     requiring specific typed models.
     """
 
-    agent_tasks: Dict[str, str] = Field(
-        default_factory=dict, description="Map of agent ID to task ID"
+    agent_tasks: dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of agent ID to task ID",
     )
 
-    task_agents: Dict[str, str] = Field(
-        default_factory=dict, description="Map of task ID to agent ID"
+    task_agents: dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of task ID to agent ID",
     )
 
-    task_start_times: Dict[str, datetime] = Field(
-        default_factory=dict, description="Map of task ID to start time"
+    task_start_times: dict[str, datetime] = Field(
+        default_factory=dict,
+        description="Map of task ID to start time",
     )
 
     def assign_task(self, agent_id: str, task_id: str) -> None:
@@ -41,11 +43,11 @@ class ModelTaskMap(BaseModel):
         self.task_agents[task_id] = agent_id
         self.task_start_times[task_id] = datetime.utcnow()
 
-    def get_agent_task(self, agent_id: str) -> Optional[str]:
+    def get_agent_task(self, agent_id: str) -> str | None:
         """Get the current task ID for an agent."""
         return self.agent_tasks.get(agent_id)
 
-    def get_task_agent(self, task_id: str) -> Optional[str]:
+    def get_task_agent(self, task_id: str) -> str | None:
         """Get the agent ID assigned to a task."""
         return self.task_agents.get(task_id)
 
@@ -61,7 +63,7 @@ class ModelTaskMap(BaseModel):
             return True
         return False
 
-    def remove_agent_task(self, agent_id: str) -> Optional[str]:
+    def remove_agent_task(self, agent_id: str) -> str | None:
         """Remove task assignment for an agent, returns removed task ID."""
         if agent_id in self.agent_tasks:
             task_id = self.agent_tasks[agent_id]
@@ -77,11 +79,11 @@ class ModelTaskMap(BaseModel):
         """Check if a task is assigned to any agent."""
         return task_id in self.task_agents
 
-    def get_active_agents(self) -> Set[str]:
+    def get_active_agents(self) -> set[str]:
         """Get all agent IDs with active tasks."""
         return set(self.agent_tasks.keys())
 
-    def get_active_tasks(self) -> Set[str]:
+    def get_active_tasks(self) -> set[str]:
         """Get all active task IDs."""
         return set(self.task_agents.keys())
 
@@ -89,16 +91,13 @@ class ModelTaskMap(BaseModel):
         """Count the number of active tasks."""
         return len(self.task_agents)
 
-    def get_task_duration(self, task_id: str) -> Optional[float]:
+    def get_task_duration(self, task_id: str) -> float | None:
         """Get task duration in seconds if task is active."""
         if task_id in self.task_start_times:
-            duration = (
-                datetime.utcnow() - self.task_start_times[task_id]
-            ).total_seconds()
-            return duration
+            return (datetime.utcnow() - self.task_start_times[task_id]).total_seconds()
         return None
 
-    def get_long_running_tasks(self, threshold_seconds: int = 3600) -> List[str]:
+    def get_long_running_tasks(self, threshold_seconds: int = 3600) -> list[str]:
         """Get task IDs that have been running longer than threshold."""
         long_running = []
         for task_id, start_time in self.task_start_times.items():

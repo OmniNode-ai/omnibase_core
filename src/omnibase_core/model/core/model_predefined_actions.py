@@ -9,11 +9,14 @@ from typing import Any
 
 from omnibase_core.model.core.model_action_category import ModelActionCategory
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.model.core.predefined_categories import (LIFECYCLE,
-                                                            MANAGEMENT,
-                                                            OPERATION, QUERY,
-                                                            TRANSFORMATION,
-                                                            VALIDATION)
+from omnibase_core.model.core.predefined_categories import (
+    LIFECYCLE,
+    MANAGEMENT,
+    OPERATION,
+    QUERY,
+    TRANSFORMATION,
+    VALIDATION,
+)
 
 
 def _create_and_register_action(

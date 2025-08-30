@@ -7,8 +7,7 @@ without direct imports, enabling proper dependency injection and registry patter
 
 from typing import Protocol
 
-from omnibase_core.protocol.llm.protocol_llm_provider import \
-    ProtocolLLMProvider
+from omnibase_core.protocol.llm.protocol_llm_provider import ProtocolLLMProvider
 
 
 class ProtocolModelRouter(Protocol):

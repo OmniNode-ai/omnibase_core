@@ -1,7 +1,6 @@
 """Velocity log entry model for direct-to-database knowledge pipeline."""
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -16,18 +15,20 @@ class ModelVelocityLogEntry(BaseModel):
     """
 
     # Core identification
-    velocity_id: Optional[UUID] = Field(
-        None, description="Auto-generated UUID for the velocity log entry"
+    velocity_id: UUID | None = Field(
+        None,
+        description="Auto-generated UUID for the velocity log entry",
     )
     session_id: str = Field(..., description="Claude Code session identifier")
-    conversation_id: Optional[str] = Field(
-        None, description="Conversation context identifier"
+    conversation_id: str | None = Field(
+        None,
+        description="Conversation context identifier",
     )
 
     # Task identification
     task_type: str = Field(..., description="Type of development task being performed")
     task_description: str = Field(..., description="Detailed description of the task")
-    task_complexity: Optional[str] = Field(
+    task_complexity: str | None = Field(
         None,
         description="Task complexity level",
         regex="^(simple|moderate|complex|expert)$",
@@ -40,7 +41,10 @@ class ModelVelocityLogEntry(BaseModel):
 
     # Progress tracking
     completion_percentage: int = Field(
-        default=100, ge=0, le=100, description="Percentage of task completion"
+        default=100,
+        ge=0,
+        le=100,
+        description="Percentage of task completion",
     )
     success_status: str = Field(
         ...,
@@ -49,71 +53,90 @@ class ModelVelocityLogEntry(BaseModel):
     )
 
     # Development metrics
-    tools_used: List[str] = Field(
-        default_factory=list, description="List of tools used during the task"
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description="List of tools used during the task",
     )
     files_modified: int = Field(default=0, ge=0, description="Number of files modified")
     lines_added: int = Field(default=0, ge=0, description="Number of lines added")
     lines_removed: int = Field(default=0, ge=0, description="Number of lines removed")
     errors_encountered: int = Field(
-        default=0, ge=0, description="Number of errors encountered"
+        default=0,
+        ge=0,
+        description="Number of errors encountered",
     )
 
     # Quality metrics
-    code_quality_score: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Code quality assessment score"
+    code_quality_score: float | None = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Code quality assessment score",
     )
-    test_coverage_delta: Optional[float] = Field(
-        None, description="Change in test coverage"
+    test_coverage_delta: float | None = Field(
+        None,
+        description="Change in test coverage",
     )
     documentation_updated: bool = Field(
-        default=False, description="Whether documentation was updated"
+        default=False,
+        description="Whether documentation was updated",
     )
 
     # Context and patterns
-    work_ticket_id: Optional[str] = Field(
-        None, description="Associated work ticket identifier"
+    work_ticket_id: str | None = Field(
+        None,
+        description="Associated work ticket identifier",
     )
-    epic_id: Optional[str] = Field(None, description="Associated epic identifier")
-    developer_focus_area: Optional[str] = Field(
-        None, description="Primary focus area for the developer"
+    epic_id: str | None = Field(None, description="Associated epic identifier")
+    developer_focus_area: str | None = Field(
+        None,
+        description="Primary focus area for the developer",
     )
     interruption_count: int = Field(
-        default=0, ge=0, description="Number of interruptions during the task"
+        default=0,
+        ge=0,
+        description="Number of interruptions during the task",
     )
     context_switches: int = Field(
-        default=0, ge=0, description="Number of context switches"
+        default=0,
+        ge=0,
+        description="Number of context switches",
     )
 
     # Learning data
-    productivity_patterns: Optional[
-        Dict[str, Union[str, int, float, bool, List[str]]]
-    ] = Field(None, description="Patterns that affected productivity")
-    blockers_encountered: List[str] = Field(
-        default_factory=list, description="List of blockers encountered"
+    productivity_patterns: dict[str, str | int | float | bool | list[str]] | None = (
+        Field(None, description="Patterns that affected productivity")
     )
-    efficiency_notes: Optional[str] = Field(
-        None, description="Notes about efficiency and productivity"
+    blockers_encountered: list[str] = Field(
+        default_factory=list,
+        description="List of blockers encountered",
+    )
+    efficiency_notes: str | None = Field(
+        None,
+        description="Notes about efficiency and productivity",
     )
 
     # Metadata
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the velocity log was created"
+        default_factory=datetime.now,
+        description="When the velocity log was created",
     )
-    git_branch: Optional[str] = Field(None, description="Git branch being worked on")
-    pr_number: Optional[int] = Field(None, description="Associated pull request number")
+    git_branch: str | None = Field(None, description="Git branch being worked on")
+    pr_number: int | None = Field(None, description="Associated pull request number")
 
     # Intelligence integration
-    pattern_id: Optional[UUID] = Field(
-        None, description="Reference to learning pattern if applicable"
+    pattern_id: UUID | None = Field(
+        None,
+        description="Reference to learning pattern if applicable",
     )
-    velocity_trend: Optional[str] = Field(
+    velocity_trend: str | None = Field(
         None,
         description="Velocity trend analysis",
         regex="^(improving|stable|declining)$",
     )
-    benchmark_comparison: Optional[Dict[str, Union[str, int, float]]] = Field(
-        None, description="Comparison against benchmarks"
+    benchmark_comparison: dict[str, str | int | float] | None = Field(
+        None,
+        description="Comparison against benchmarks",
     )
 
     class Config:
@@ -161,5 +184,5 @@ class ModelVelocityLogEntry(BaseModel):
                     "lines_per_hour": 67.5,
                     "quality_vs_team_avg": 1.15,
                 },
-            }
+            },
         }

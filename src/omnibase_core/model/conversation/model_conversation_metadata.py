@@ -5,12 +5,12 @@ Provides strongly typed metadata structures for conversation capture and storage
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.conversation.model_conversation_session_summary import \
-    ModelConversationSessionSummary
+from omnibase_core.model.conversation.model_conversation_session_summary import (
+    ModelConversationSessionSummary,
+)
 
 
 class ModelConversationMetadata(BaseModel):
@@ -19,15 +19,17 @@ class ModelConversationMetadata(BaseModel):
     session_id: str = Field(description="Unique session identifier")
     session_start: datetime = Field(description="When the session started")
     interaction_count: int = Field(description="Number of interactions in session")
-    task_type: Optional[str] = Field(default=None, description="Type of task")
-    domain: Optional[str] = Field(default=None, description="Domain of the task")
-    complexity: Optional[str] = Field(default=None, description="Task complexity level")
+    task_type: str | None = Field(default=None, description="Type of task")
+    domain: str | None = Field(default=None, description="Domain of the task")
+    complexity: str | None = Field(default=None, description="Task complexity level")
     tools_count: int = Field(default=0, description="Total number of tools used")
     interaction_duration_ms: float = Field(
-        default=0.0, description="Duration of the interaction in milliseconds"
+        default=0.0,
+        description="Duration of the interaction in milliseconds",
     )
-    session_summary: Optional[ModelConversationSessionSummary] = Field(
-        default=None, description="Session summary statistics"
+    session_summary: ModelConversationSessionSummary | None = Field(
+        default=None,
+        description="Session summary statistics",
     )
 
     class Config:

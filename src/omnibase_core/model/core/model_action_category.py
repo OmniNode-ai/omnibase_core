@@ -4,7 +4,7 @@ Action Category Model.
 Defines the categories of node actions as a proper Pydantic model.
 """
 
-from typing import ClassVar, Dict, List
+from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -19,21 +19,24 @@ class ModelActionCategory(BaseModel):
     name: str = Field(..., description="Category name identifier")
     display_name: str = Field(..., description="Human-readable category name")
     description: str = Field(
-        ..., description="Description of what this category represents"
+        ...,
+        description="Description of what this category represents",
     )
 
     # Class-level registry for predefined categories
-    _registry: ClassVar[Dict[str, "ModelActionCategory"]] = {}
+    _registry: ClassVar[dict[str, "ModelActionCategory"]] = {}
 
     @field_validator("name")
     @classmethod
     def validate_name_format(cls, v: str) -> str:
         """Validate category name follows naming conventions."""
         if not v.islower():
-            raise ValueError("Category name must be lowercase")
+            msg = "Category name must be lowercase"
+            raise ValueError(msg)
         if not v.replace("_", "").isalnum():
+            msg = "Category name must contain only letters, numbers, and underscores"
             raise ValueError(
-                "Category name must contain only letters, numbers, and underscores"
+                msg,
             )
         return v
 
@@ -63,10 +66,11 @@ class ModelActionCategory(BaseModel):
         """Get category by name from registry."""
         category = cls._registry.get(name)
         if not category:
-            raise ValueError(f"Unknown category: {name}")
+            msg = f"Unknown category: {name}"
+            raise ValueError(msg)
         return category
 
     @classmethod
-    def get_all_registered(cls) -> List["ModelActionCategory"]:
+    def get_all_registered(cls) -> list["ModelActionCategory"]:
         """Get all registered categories."""
         return list(cls._registry.values())

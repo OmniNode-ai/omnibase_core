@@ -15,7 +15,8 @@ class ModelFixtureData(BaseModel):
 
     name: str = Field(..., description="Fixture name.")
     data: Any = Field(
-        ..., description="Fixture data (arbitrary type, typically dict or list)."
+        ...,
+        description="Fixture data (arbitrary type, typically dict or list).",
     )
 
 

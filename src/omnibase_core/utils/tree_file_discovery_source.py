@@ -28,16 +28,18 @@ Implements ProtocolFileDiscoverySource.
 """
 
 from pathlib import Path
-from typing import List, Optional, Set
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.model.core.model_onex_message_result import ModelOnexMessage
 from omnibase_core.model.core.model_tree_sync_result import (
-    ModelTreeSyncResult, TreeSyncStatusEnum)
-from omnibase_core.protocol.protocol_file_discovery_source import \
-    ProtocolFileDiscoverySource
+    ModelTreeSyncResult,
+    TreeSyncStatusEnum,
+)
+from omnibase_core.protocol.protocol_file_discovery_source import (
+    ProtocolFileDiscoverySource,
+)
 
 
 class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
@@ -48,11 +50,11 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
     def discover_files(
         self,
         directory: Path,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-        ignore_file: Optional[Path] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        ignore_file: Path | None = None,
         event_bus=None,
-    ) -> Set[Path]:
+    ) -> set[Path]:
         """
         Discover files listed in the .tree file in the given directory.
         Ignores include/exclude patterns; only files in .tree are returned.
@@ -69,7 +71,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
         Validate that the .tree file and filesystem are in sync.
         """
         canonical_files = self.get_canonical_files_from_tree(tree_file)
-        files_on_disk = set(p for p in directory.rglob("*") if p.is_file())
+        files_on_disk = {p for p in directory.rglob("*") if p.is_file()}
         extra_files = files_on_disk - canonical_files
         missing_files = canonical_files - files_on_disk
         status = (
@@ -90,7 +92,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
                     context=None,
                     timestamp=None,
                     type=None,
-                )
+                ),
             )
         if missing_files:
             messages.append(
@@ -104,7 +106,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
                     context=None,
                     timestamp=None,
                     type=None,
-                )
+                ),
             )
         return ModelTreeSyncResult(
             extra_files_on_disk=extra_files,
@@ -113,17 +115,17 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
             messages=messages,
         )
 
-    def get_canonical_files_from_tree(self, tree_file: Path) -> Set[Path]:
+    def get_canonical_files_from_tree(self, tree_file: Path) -> set[Path]:
         """
         Parse the .tree file and return the set of canonical files.
         """
         if not tree_file.exists():
             return set()
-        with open(tree_file, "r") as f:
+        with open(tree_file) as f:
             data = yaml.safe_load(f)
         return set(self._extract_files_from_tree_data(tree_file.parent, data))
 
-    def _extract_files_from_tree_data(self, base_dir: Path, data: object) -> List[Path]:
+    def _extract_files_from_tree_data(self, base_dir: Path, data: object) -> list[Path]:
         """
         Recursively extract file paths from .tree data structure.
         """

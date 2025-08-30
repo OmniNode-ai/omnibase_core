@@ -7,7 +7,6 @@ structures for performance optimization.
 """
 
 from datetime import datetime
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,27 +20,33 @@ class ModelOrchestratorCacheEntry(BaseModel):
     """
 
     ticket_id: str = Field(
-        description="Unique ticket identifier for this cache entry", min_length=1
+        description="Unique ticket identifier for this cache entry",
+        min_length=1,
     )
 
-    cached_factors: Dict[str, float] = Field(
-        description="Cached orchestrator factor calculations"
+    cached_factors: dict[str, float] = Field(
+        description="Cached orchestrator factor calculations",
     )
 
     base_score: float = Field(
-        description="Cached base RSD score for this ticket", ge=0.0, le=100.0
+        description="Cached base RSD score for this ticket",
+        ge=0.0,
+        le=100.0,
     )
 
     orchestrator_adjusted_score: float = Field(
-        description="Cached orchestrator-adjusted score", ge=0.0, le=150.0
+        description="Cached orchestrator-adjusted score",
+        ge=0.0,
+        le=150.0,
     )
 
     calculation_timestamp: datetime = Field(
-        description="When this cache entry was created"
+        description="When this cache entry was created",
     )
 
     context_hash: str = Field(
-        description="Hash of the context used for this calculation", min_length=1
+        description="Hash of the context used for this calculation",
+        min_length=1,
     )
 
     hit_count: int = Field(
@@ -70,11 +75,12 @@ class ModelOrchestratorCache(BaseModel):
     priority engine with TTL management and performance tracking.
     """
 
-    entries: Dict[str, ModelOrchestratorCacheEntry] = Field(
-        default_factory=dict, description="Cache entries keyed by ticket ID"
+    entries: dict[str, ModelOrchestratorCacheEntry] = Field(
+        default_factory=dict,
+        description="Cache entries keyed by ticket ID",
     )
 
-    cache_stats: Dict[str, int] = Field(
+    cache_stats: dict[str, int] = Field(
         default_factory=lambda: {
             "hits": 0,
             "misses": 0,
@@ -85,15 +91,20 @@ class ModelOrchestratorCache(BaseModel):
     )
 
     max_entries: int = Field(
-        default=10000, description="Maximum number of cache entries", ge=100
+        default=10000,
+        description="Maximum number of cache entries",
+        ge=100,
     )
 
     ttl_seconds: int = Field(
-        default=300, description="TTL for cache entries in seconds", ge=60  # 5 minutes
+        default=300,
+        description="TTL for cache entries in seconds",
+        ge=60,  # 5 minutes
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Cache creation timestamp"
+        default_factory=datetime.now,
+        description="Cache creation timestamp",
     )
 
     class Config:

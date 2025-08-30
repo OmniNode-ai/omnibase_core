@@ -7,7 +7,6 @@ and business logic implementations.
 """
 
 import re
-from typing import Dict, List, Optional, Union
 
 
 class UtilityTextProcessor:
@@ -20,8 +19,8 @@ class UtilityTextProcessor:
 
     @staticmethod
     def validate_text_content(
-        content: Union[str, None],
-    ) -> Dict[str, Union[bool, str, List[str]]]:
+        content: str | None,
+    ) -> dict[str, bool | str | list[str]]:
         """
         Validate text content for basic quality standards.
 
@@ -92,12 +91,10 @@ class UtilityTextProcessor:
         # Remove excessive whitespace
         text = re.sub(r"\n\s*\n\s*\n", "\n\n", text)  # Max 2 consecutive newlines
         text = re.sub(r"[ \t]+", " ", text)  # Multiple spaces/tabs to single space
-        text = text.strip()
-
-        return text
+        return text.strip()
 
     @staticmethod
-    def extract_keywords(text: str, min_length: int = 3) -> List[str]:
+    def extract_keywords(text: str, min_length: int = 3) -> list[str]:
         """
         Extract keywords from text.
 
@@ -168,7 +165,7 @@ class UtilityTextProcessor:
         return text[:truncate_length] + suffix
 
     @staticmethod
-    def analyze_text_metrics(text: str) -> Dict[str, Union[int, float, List[str]]]:
+    def analyze_text_metrics(text: str) -> dict[str, int | float | list[str]]:
         """
         Analyze text and return comprehensive metrics.
 

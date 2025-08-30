@@ -1,25 +1,28 @@
 """Discovery cache model for persistent tool discovery caching."""
 
 from datetime import datetime
-from typing import Dict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class ModelDiscoveryCache(BaseModel):
     """Cache for discovered tools with TTL management."""
 
-    tools: Dict[str, ModelDiscoveredTool] = Field(
-        default_factory=dict, description="Cached discovered tools keyed by node_name"
+    tools: dict[str, ModelDiscoveredTool] = Field(
+        default_factory=dict,
+        description="Cached discovered tools keyed by node_name",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="When cache was last updated"
+        default_factory=datetime.now,
+        description="When cache was last updated",
     )
     ttl_seconds: int = Field(
-        default=300, description="Time-to-live for cache entries in seconds"
+        default=300,
+        description="Time-to-live for cache entries in seconds",
     )
 
     def is_valid(self) -> bool:

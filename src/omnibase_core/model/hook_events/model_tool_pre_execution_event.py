@@ -1,7 +1,8 @@
 """Model for tool pre-execution hook event."""
 
-from omnibase_core.model.hook_events.model_tool_execution_event import \
-    ModelToolExecutionEvent
+from omnibase_core.model.hook_events.model_tool_execution_event import (
+    ModelToolExecutionEvent,
+)
 
 
 class ModelToolPreExecutionEvent(ModelToolExecutionEvent):

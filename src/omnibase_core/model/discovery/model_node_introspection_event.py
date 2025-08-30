@@ -5,7 +5,7 @@ Event published by nodes on startup to announce their capabilities to the regist
 This enables pure event-driven service discovery.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -17,14 +17,15 @@ from omnibase_core.model.core.model_semver import ModelSemVer
 class ModelNodeCapabilities(BaseModel):
     """Node capabilities data structure"""
 
-    actions: List[str] = Field(
-        default_factory=list, description="List of actions this node supports"
+    actions: list[str] = Field(
+        default_factory=list,
+        description="List of actions this node supports",
     )
-    protocols: List[str] = Field(
+    protocols: list[str] = Field(
         default_factory=list,
         description="List of protocols this node supports (mcp, graphql, event_bus)",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional node metadata (author, trust_score, etc.)",
     )
@@ -50,24 +51,28 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
 
     # Node capabilities
     capabilities: ModelNodeCapabilities = Field(
-        ..., description="Node capabilities including actions, protocols, and metadata"
+        ...,
+        description="Node capabilities including actions, protocols, and metadata",
     )
 
     # Discovery metadata
-    health_endpoint: Optional[str] = Field(
-        None, description="Health check endpoint if available"
+    health_endpoint: str | None = Field(
+        None,
+        description="Health check endpoint if available",
     )
-    tags: List[str] = Field(
+    tags: list[str] = Field(
         default_factory=list,
         description="Tags for categorization and discovery filtering",
     )
 
     # Consul-compatible fields for future adapter
-    service_id: Optional[str] = Field(
-        None, description="Service ID for Consul compatibility (future)"
+    service_id: str | None = Field(
+        None,
+        description="Service ID for Consul compatibility (future)",
     )
-    datacenter: Optional[str] = Field(
-        None, description="Datacenter for multi-DC discovery (future)"
+    datacenter: str | None = Field(
+        None,
+        description="Datacenter for multi-DC discovery (future)",
     )
 
     @classmethod
@@ -76,10 +81,10 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         node_id: str,
         node_name: str,
         version: ModelSemVer,
-        actions: List[str],
-        protocols: List[str] = None,
-        metadata: Dict[str, Any] = None,
-        tags: List[str] = None,
+        actions: list[str],
+        protocols: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         **kwargs,
     ) -> "ModelNodeIntrospectionEvent":
         """

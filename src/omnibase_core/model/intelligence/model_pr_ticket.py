@@ -6,7 +6,6 @@ that are written directly to the PostgreSQL database bypassing repository.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,19 +20,23 @@ class ModelFileChange(BaseModel):
     file_uuid: str = Field(..., description="UUID assigned to this file for tracking")
 
     change_type: str = Field(
-        ..., description="Type of change: added, modified, deleted, renamed"
+        ...,
+        description="Type of change: added, modified, deleted, renamed",
     )
 
     lines_added: int = Field(
-        default=0, description="Number of lines added to this file"
+        default=0,
+        description="Number of lines added to this file",
     )
 
     lines_removed: int = Field(
-        default=0, description="Number of lines removed from this file"
+        default=0,
+        description="Number of lines removed from this file",
     )
 
     complexity_delta: float = Field(
-        default=0.0, description="Change in complexity score for this file"
+        default=0.0,
+        description="Change in complexity score for this file",
     )
 
 
@@ -46,13 +49,14 @@ class ModelToolCall(BaseModel):
 
     timestamp: datetime = Field(..., description="When the tool was called")
 
-    affected_files: List[str] = Field(
+    affected_files: list[str] = Field(
         default_factory=list,
         description="List of file UUIDs affected by this tool call",
     )
 
     tool_result: str = Field(
-        default="", description="Result or output from the tool call"
+        default="",
+        description="Result or output from the tool call",
     )
 
     success: bool = Field(..., description="Whether the tool call was successful")
@@ -64,19 +68,24 @@ class ModelAgentAction(BaseModel):
     """
 
     action_type: str = Field(
-        ..., description="Type of action: file_read, file_write, analysis, decision"
+        ...,
+        description="Type of action: file_read, file_write, analysis, decision",
     )
 
     timestamp: datetime = Field(..., description="When the action was performed")
 
-    affected_files: List[str] = Field(
-        default_factory=list, description="List of file UUIDs affected by this action"
+    affected_files: list[str] = Field(
+        default_factory=list,
+        description="List of file UUIDs affected by this action",
     )
 
     reasoning: str = Field(default="", description="Agent's reasoning for this action")
 
     confidence_score: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Agent's confidence in this action"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Agent's confidence in this action",
     )
 
 
@@ -93,8 +102,9 @@ class ModelPrTicket(BaseModel):
     agent_id: str = Field(..., description="Agent that created this PR")
 
     # PR identification
-    pr_number: Optional[int] = Field(
-        default=None, description="GitHub PR number (if PR has been created)"
+    pr_number: int | None = Field(
+        default=None,
+        description="GitHub PR number (if PR has been created)",
     )
 
     pr_title: str = Field(..., description="Title of the PR")
@@ -104,30 +114,35 @@ class ModelPrTicket(BaseModel):
     pr_branch: str = Field(..., description="Git branch for this PR")
 
     # File tracking with UUIDs
-    modified_files: List[ModelFileChange] = Field(
+    modified_files: list[ModelFileChange] = Field(
         default_factory=list,
         description="Array of file objects with UUIDs for tracking",
     )
 
-    tree_structure_before: Dict = Field(
-        default_factory=dict, description="Directory tree structure before changes"
+    tree_structure_before: dict = Field(
+        default_factory=dict,
+        description="Directory tree structure before changes",
     )
 
-    tree_structure_after: Dict = Field(
-        default_factory=dict, description="Directory tree structure after changes"
+    tree_structure_after: dict = Field(
+        default_factory=dict,
+        description="Directory tree structure after changes",
     )
 
     # Change analysis
     total_files_changed: int = Field(
-        default=0, description="Total number of files modified"
+        default=0,
+        description="Total number of files modified",
     )
 
     total_lines_added: int = Field(
-        default=0, description="Total lines added across all files"
+        default=0,
+        description="Total lines added across all files",
     )
 
     total_lines_removed: int = Field(
-        default=0, description="Total lines removed across all files"
+        default=0,
+        description="Total lines removed across all files",
     )
 
     change_complexity: float = Field(
@@ -138,12 +153,14 @@ class ModelPrTicket(BaseModel):
     )
 
     # Tool correlation
-    tool_calls: List[ModelToolCall] = Field(
-        default_factory=list, description="Array of tool call objects linked to changes"
+    tool_calls: list[ModelToolCall] = Field(
+        default_factory=list,
+        description="Array of tool call objects linked to changes",
     )
 
-    agent_actions: List[ModelAgentAction] = Field(
-        default_factory=list, description="Array of agent action objects"
+    agent_actions: list[ModelAgentAction] = Field(
+        default_factory=list,
+        description="Array of agent action objects",
     )
 
     # Status and lifecycle
@@ -152,26 +169,31 @@ class ModelPrTicket(BaseModel):
         description="PR status: draft, ready, submitted, merged, closed",
     )
 
-    merged_at: Optional[datetime] = Field(
-        default=None, description="When the PR was merged"
+    merged_at: datetime | None = Field(
+        default=None,
+        description="When the PR was merged",
     )
 
-    closed_at: Optional[datetime] = Field(
-        default=None, description="When the PR was closed"
+    closed_at: datetime | None = Field(
+        default=None,
+        description="When the PR was closed",
     )
 
     # Metadata
-    metadata: Dict = Field(
-        default_factory=dict, description="Additional metadata as JSON"
+    metadata: dict = Field(
+        default_factory=dict,
+        description="Additional metadata as JSON",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this record was created"
+        default_factory=datetime.utcnow,
+        description="When this record was created",
     )
 
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this record was last updated"
+        default_factory=datetime.utcnow,
+        description="When this record was last updated",
     )
 
     class Config:

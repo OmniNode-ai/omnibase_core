@@ -4,8 +4,6 @@ This model provides type-safe access to coding standards configuration
 and ensures standards validation and compliance checking.
 """
 
-from typing import Dict, List, Literal, Optional
-
 import semver
 from pydantic import BaseModel, Field, validator
 
@@ -31,50 +29,50 @@ class ModelNamingConventions(BaseModel):
 class ModelTypeSafety(BaseModel):
     """Model for type safety requirements."""
 
-    prohibited_types: List[str]
-    required_patterns: Dict[str, str]
-    type_checking: Dict[str, bool]
+    prohibited_types: list[str]
+    required_patterns: dict[str, str]
+    type_checking: dict[str, bool]
 
 
 class ModelModelStandards(BaseModel):
     """Model for Pydantic model standards."""
 
-    base_requirements: Dict[str, bool]
-    field_naming: Dict[str, bool]
-    validation_rules: Dict[str, str]
+    base_requirements: dict[str, bool]
+    field_naming: dict[str, bool]
+    validation_rules: dict[str, str]
 
 
 class ModelArchitecturePatterns(BaseModel):
     """Model for architecture pattern requirements."""
 
-    protocol_resolution: Dict[str, bool]
-    registry_injection: Dict[str, str]
-    error_handling: Dict[str, str]
+    protocol_resolution: dict[str, bool]
+    registry_injection: dict[str, str]
+    error_handling: dict[str, str]
 
 
 class ModelDocumentation(BaseModel):
     """Model for documentation standards."""
 
     docstring_format: str
-    required_sections: List[str]
-    class_documentation: Dict[str, bool]
-    function_documentation: Dict[str, bool]
+    required_sections: list[str]
+    class_documentation: dict[str, bool]
+    function_documentation: dict[str, bool]
 
 
 class ModelTestingStandards(BaseModel):
     """Model for testing requirements."""
 
-    test_coverage: Dict[str, int]
-    test_structure: Dict[str, bool]
-    test_categories: Dict[str, str]
+    test_coverage: dict[str, int]
+    test_structure: dict[str, bool]
+    test_categories: dict[str, str]
 
 
 class ModelQualityStandards(BaseModel):
     """Model for code quality rules."""
 
-    complexity_limits: Dict[str, int]
-    code_style: Dict[str, str]
-    maintainability: Dict[str, bool]
+    complexity_limits: dict[str, int]
+    code_style: dict[str, str]
+    maintainability: dict[str, bool]
 
 
 class ModelSecurityRequirements(BaseModel):
@@ -98,19 +96,19 @@ class ModelPerformanceStandards(BaseModel):
 class ModelDependencyManagement(BaseModel):
     """Model for import and dependency rules."""
 
-    import_organization: List[str]
+    import_organization: list[str]
     circular_imports: str
     relative_imports: str
     unused_imports: str
-    dependency_rules: Dict[str, bool]
+    dependency_rules: dict[str, bool]
 
 
 class ModelAgentDevelopment(BaseModel):
     """Model for agent-specific guidelines."""
 
-    agent_structure: Dict[str, bool]
-    agent_coordination: Dict[str, bool]
-    agent_quality: Dict[str, bool]
+    agent_structure: dict[str, bool]
+    agent_coordination: dict[str, bool]
+    agent_quality: dict[str, bool]
 
 
 class ModelCodingPrinciples(BaseModel):
@@ -133,26 +131,29 @@ class ModelMaintenance(BaseModel):
     update_process: str
     version_control: bool
     backward_compatibility: str
-    stakeholders: List[str]
+    stakeholders: list[str]
 
     @validator("backward_compatibility")
-    def validate_semver(cls, v):
+    def validate_semver(self, v):
         """Validate that backward_compatibility follows semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"backward_compatibility must be valid semver: {v}")
+            msg = f"backward_compatibility must be valid semver: {v}"
+            raise ValueError(msg)
 
 
 class ModelCodingStandardsPolicy(BaseModel):
     """Complete model for ONEX Coding Standards Policy."""
 
     version: str = Field(
-        ..., description="Policy version following semantic versioning"
+        ...,
+        description="Policy version following semantic versioning",
     )
     schema_version: str = Field(
-        ..., description="Schema version following semantic versioning"
+        ...,
+        description="Schema version following semantic versioning",
     )
 
     principles: ModelCodingPrinciples
@@ -170,28 +171,30 @@ class ModelCodingStandardsPolicy(BaseModel):
     maintenance: ModelMaintenance
 
     @validator("version", "schema_version")
-    def validate_semver_versions(cls, v):
+    def validate_semver_versions(self, v):
         """Validate that versions follow semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"Version must be valid semver: {v}")
+            msg = f"Version must be valid semver: {v}"
+            raise ValueError(msg)
 
     @validator("type_safety")
-    def validate_prohibited_types(cls, v):
+    def validate_prohibited_types(self, v):
         """Ensure critical prohibited types are included."""
         required_prohibited = ["Any", "Dict[str, Any]", "List[Any]"]
         missing = [t for t in required_prohibited if t not in v.prohibited_types]
         if missing:
-            raise ValueError(f"Missing required prohibited types: {missing}")
+            msg = f"Missing required prohibited types: {missing}"
+            raise ValueError(msg)
         return v
 
     def is_type_prohibited(self, type_string: str) -> bool:
         """Check if a type usage is prohibited."""
         return type_string in self.type_safety.prohibited_types
 
-    def get_naming_pattern(self, file_type: str) -> Optional[ModelNamingConvention]:
+    def get_naming_pattern(self, file_type: str) -> ModelNamingConvention | None:
         """Get naming convention for a specific file type."""
         type_mapping = {
             "model": self.naming_conventions.model_files,
@@ -211,18 +214,18 @@ class ModelCodingStandardsPolicy(BaseModel):
         # Simple pattern matching - would need regex for complex patterns
         if file_type == "model":
             return filename.startswith("model_") and filename.endswith(".py")
-        elif file_type == "tool":
+        if file_type == "tool":
             return filename.startswith("tool_") and filename.endswith(".py")
-        elif file_type == "utility":
+        if file_type == "utility":
             return filename.startswith("utility_") and filename.endswith(".py")
-        elif file_type == "service":
+        if file_type == "service":
             return filename.endswith("_service.py")
-        elif file_type == "node":
+        if file_type == "node":
             return filename.startswith("node_") and filename.endswith(".py")
 
         return True
 
-    def get_complexity_limit(self, metric: str) -> Optional[int]:
+    def get_complexity_limit(self, metric: str) -> int | None:
         """Get complexity limit for a specific metric."""
         return self.quality_standards.complexity_limits.get(metric)
 
@@ -232,7 +235,7 @@ class ModelCodingStandardsPolicy(BaseModel):
             current = semver.VersionInfo.parse(self.version)
             other = semver.VersionInfo.parse(other_version)
             backward_compat = semver.VersionInfo.parse(
-                self.maintenance.backward_compatibility
+                self.maintenance.backward_compatibility,
             )
 
             # Compatible if other version is within backward compatibility range

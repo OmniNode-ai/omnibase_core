@@ -2,14 +2,12 @@
 Permission condition model for defining conditional access rules.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.security.model_condition_value import \
-    ModelConditionValue
-from omnibase_core.model.security.model_required_attributes import \
-    ModelRequiredAttributes
+from omnibase_core.model.security.model_condition_value import ModelConditionValue
+from omnibase_core.model.security.model_required_attributes import (
+    ModelRequiredAttributes,
+)
 
 
 class ModelPermissionCondition(BaseModel):
@@ -19,7 +17,9 @@ class ModelPermissionCondition(BaseModel):
     """
 
     condition_id: str = Field(
-        ..., description="Unique condition identifier", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Unique condition identifier",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     condition_type: str = Field(
@@ -37,49 +37,59 @@ class ModelPermissionCondition(BaseModel):
     field_name: str = Field(..., description="Field to evaluate")
 
     expected_value: ModelConditionValue = Field(
-        ..., description="Expected value for comparison"
+        ...,
+        description="Expected value for comparison",
     )
 
     # Time-based conditions
-    time_window_start: Optional[str] = Field(
-        None, description="Start time for time-based conditions (HH:MM format)"
+    time_window_start: str | None = Field(
+        None,
+        description="Start time for time-based conditions (HH:MM format)",
     )
 
-    time_window_end: Optional[str] = Field(
-        None, description="End time for time-based conditions (HH:MM format)"
+    time_window_end: str | None = Field(
+        None,
+        description="End time for time-based conditions (HH:MM format)",
     )
 
-    days_of_week: Optional[List[str]] = Field(
+    days_of_week: list[str] | None = Field(
         None,
         description="Days when condition applies (mon, tue, wed, thu, fri, sat, sun)",
     )
 
     # Location-based conditions
-    allowed_locations: Optional[List[str]] = Field(
-        None, description="Allowed geographic locations"
+    allowed_locations: list[str] | None = Field(
+        None,
+        description="Allowed geographic locations",
     )
 
-    ip_ranges: Optional[List[str]] = Field(
-        None, description="Allowed IP ranges (CIDR notation)"
+    ip_ranges: list[str] | None = Field(
+        None,
+        description="Allowed IP ranges (CIDR notation)",
     )
 
     # Attribute conditions
-    required_attributes: Optional[ModelRequiredAttributes] = Field(
-        None, description="Required user/resource attributes"
+    required_attributes: ModelRequiredAttributes | None = Field(
+        None,
+        description="Required user/resource attributes",
     )
 
     # Logical operators
-    combine_with: Optional[str] = Field(
-        None, description="How to combine with other conditions", pattern="^(and|or)$"
+    combine_with: str | None = Field(
+        None,
+        description="How to combine with other conditions",
+        pattern="^(and|or)$",
     )
 
     negate: bool = Field(default=False, description="Whether to negate this condition")
 
     # Metadata
-    description: Optional[str] = Field(
-        None, description="Human-readable description of the condition"
+    description: str | None = Field(
+        None,
+        description="Human-readable description of the condition",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Custom error message when condition fails"
+    error_message: str | None = Field(
+        None,
+        description="Custom error message when condition fails",
     )

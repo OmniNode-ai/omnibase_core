@@ -17,15 +17,19 @@ class ModelTrustLevel(BaseModel):
     )
 
     minimum_trusted_signatures: int = Field(
-        0, description="Minimum number of signatures from trusted nodes required", ge=0
+        0,
+        description="Minimum number of signatures from trusted nodes required",
+        ge=0,
     )
 
     require_all_trusted: bool = Field(
-        False, description="Whether all signatures must be from trusted nodes"
+        False,
+        description="Whether all signatures must be from trusted nodes",
     )
 
     allow_untrusted_with_majority: bool = Field(
-        True, description="Allow untrusted signatures if majority are trusted"
+        True,
+        description="Allow untrusted signatures if majority are trusted",
     )
 
     trusted_percentage_threshold: float = Field(
@@ -48,8 +52,9 @@ class ModelTrustLevel(BaseModel):
             "compromised",
         }
         if v not in valid_levels:
+            msg = f"Invalid trust level: {v}. Must be one of: {valid_levels}"
             raise ValueError(
-                f"Invalid trust level: {v}. Must be one of: {valid_levels}"
+                msg,
             )
         return v
 

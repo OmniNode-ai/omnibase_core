@@ -6,7 +6,6 @@ Defines protocols for unified file processing, tree analysis, and caching operat
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,8 +19,8 @@ class ModelFileProcessingResult(BaseModel):
     success: bool
     processing_time_ms: float
     cached: bool
-    metadata: Dict[str, str] = Field(default_factory=dict)
-    error_message: Optional[str] = None
+    metadata: dict[str, str] = Field(default_factory=dict)
+    error_message: str | None = None
 
 
 class ModelProjectAnalysis(BaseModel):
@@ -33,22 +32,22 @@ class ModelProjectAnalysis(BaseModel):
     ignored_files: int
     failed_files: int
     processing_time_ms: float
-    file_results: List[ModelFileProcessingResult]
-    tree_structure: Dict[str, object]  # OnexTree structure
-    ignore_patterns: List[str]  # OnexIgnore patterns applied
+    file_results: list[ModelFileProcessingResult]
+    tree_structure: dict[str, object]  # OnexTree structure
+    ignore_patterns: list[str]  # OnexIgnore patterns applied
 
 
 class ModelASTNode(BaseModel):
     """AST node representation"""
 
     node_type: str
-    name: Optional[str] = None
+    name: str | None = None
     start_line: int
     end_line: int
     start_column: int
     end_column: int
-    children: List["ModelASTNode"] = Field(default_factory=list)
-    metadata: Dict[str, object] = Field(default_factory=dict)
+    children: list["ModelASTNode"] = Field(default_factory=list)
+    metadata: dict[str, object] = Field(default_factory=dict)
 
 
 class ModelASTResult(BaseModel):
@@ -60,7 +59,7 @@ class ModelASTResult(BaseModel):
     parsing_time_ms: float
     node_count: int
     error_count: int
-    warnings: List[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 # === PROTOCOLS ===
@@ -80,12 +79,12 @@ class ProtocolFileProcessor(ABC):
         Returns:
             Processing result with metadata
         """
-        pass
 
     @abstractmethod
     async def process_directory(
-        self, directory: Path
-    ) -> List[ModelFileProcessingResult]:
+        self,
+        directory: Path,
+    ) -> list[ModelFileProcessingResult]:
         """
         Process all files in a directory.
 
@@ -95,7 +94,6 @@ class ProtocolFileProcessor(ABC):
         Returns:
             List of processing results
         """
-        pass
 
     @abstractmethod
     async def process_project(self, project_root: Path) -> ModelProjectAnalysis:
@@ -108,7 +106,6 @@ class ProtocolFileProcessor(ABC):
         Returns:
             Complete project analysis
         """
-        pass
 
 
 class ProtocolTreeAnalyzer(ABC):
@@ -116,7 +113,9 @@ class ProtocolTreeAnalyzer(ABC):
 
     @abstractmethod
     async def parse_file(
-        self, file_path: Path, language: Optional[str] = None
+        self,
+        file_path: Path,
+        language: str | None = None,
     ) -> ModelASTResult:
         """
         Parse file and return AST.
@@ -128,20 +127,18 @@ class ProtocolTreeAnalyzer(ABC):
         Returns:
             Parsed AST result
         """
-        pass
 
     @abstractmethod
-    def get_supported_languages(self) -> List[str]:
+    def get_supported_languages(self) -> list[str]:
         """
         Return list of supported languages.
 
         Returns:
             List of language identifiers (e.g., ["python", "typescript"])
         """
-        pass
 
     @abstractmethod
-    async def extract_symbols(self, ast_result: ModelASTResult) -> Dict[str, List[str]]:
+    async def extract_symbols(self, ast_result: ModelASTResult) -> dict[str, list[str]]:
         """
         Extract symbols from AST (functions, classes, etc).
 
@@ -151,14 +148,13 @@ class ProtocolTreeAnalyzer(ABC):
         Returns:
             Dictionary of symbol types to symbol names
         """
-        pass
 
 
 class ProtocolCacheManager(ABC):
     """Protocol for caching operations"""
 
     @abstractmethod
-    async def get(self, key: str) -> Optional[object]:
+    async def get(self, key: str) -> object | None:
         """
         Get cached value.
 
@@ -168,7 +164,6 @@ class ProtocolCacheManager(ABC):
         Returns:
             Cached value or None if not found
         """
-        pass
 
     @abstractmethod
     async def set(self, key: str, value: object, ttl_seconds: int) -> None:
@@ -180,7 +175,6 @@ class ProtocolCacheManager(ABC):
             value: Value to cache
             ttl_seconds: Time to live in seconds
         """
-        pass
 
     @abstractmethod
     async def invalidate(self, pattern: str) -> int:
@@ -193,22 +187,19 @@ class ProtocolCacheManager(ABC):
         Returns:
             Number of entries invalidated
         """
-        pass
 
     @abstractmethod
     async def clear(self) -> None:
         """Clear all cache entries"""
-        pass
 
     @abstractmethod
-    async def get_stats(self) -> Dict[str, int]:
+    async def get_stats(self) -> dict[str, int]:
         """
         Get cache statistics.
 
         Returns:
             Dictionary with stats (hits, misses, size, etc)
         """
-        pass
 
 
 class ProtocolRateLimiter(ABC):
@@ -225,7 +216,6 @@ class ProtocolRateLimiter(ABC):
         Raises:
             RateLimitExceeded: If rate limit exceeded
         """
-        pass
 
     @abstractmethod
     async def release(self, resource: str) -> None:
@@ -235,7 +225,6 @@ class ProtocolRateLimiter(ABC):
         Args:
             resource: Resource identifier
         """
-        pass
 
     @abstractmethod
     def get_limit(self, resource: str) -> int:
@@ -248,7 +237,6 @@ class ProtocolRateLimiter(ABC):
         Returns:
             Maximum requests per time window
         """
-        pass
 
 
 class ProtocolMetricsCollector(ABC):
@@ -256,7 +244,10 @@ class ProtocolMetricsCollector(ABC):
 
     @abstractmethod
     def increment(
-        self, metric: str, value: int = 1, tags: Optional[Dict[str, str]] = None
+        self,
+        metric: str,
+        value: int = 1,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """
         Increment counter metric.
@@ -266,11 +257,13 @@ class ProtocolMetricsCollector(ABC):
             value: Increment value
             tags: Optional metric tags
         """
-        pass
 
     @abstractmethod
     def gauge(
-        self, metric: str, value: float, tags: Optional[Dict[str, str]] = None
+        self,
+        metric: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """
         Set gauge metric.
@@ -280,11 +273,13 @@ class ProtocolMetricsCollector(ABC):
             value: Gauge value
             tags: Optional metric tags
         """
-        pass
 
     @abstractmethod
     def histogram(
-        self, metric: str, value: float, tags: Optional[Dict[str, str]] = None
+        self,
+        metric: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """
         Record histogram metric.
@@ -294,17 +289,15 @@ class ProtocolMetricsCollector(ABC):
             value: Value to record
             tags: Optional metric tags
         """
-        pass
 
     @abstractmethod
-    async def export_metrics(self) -> Dict[str, object]:
+    async def export_metrics(self) -> dict[str, object]:
         """
         Export all metrics.
 
         Returns:
             Dictionary of metric data
         """
-        pass
 
 
 # Enable forward references

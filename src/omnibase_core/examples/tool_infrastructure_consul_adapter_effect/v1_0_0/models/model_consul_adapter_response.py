@@ -1,7 +1,5 @@
 """Response models for Consul Adapter operations."""
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -20,12 +18,12 @@ class ModelConsulKvResponse(BaseModel):
     """Strongly typed model for Consul KV operation responses."""
 
     key: str = Field(..., description="Consul key")
-    value: Optional[str] = Field(None, description="Consul value")
-    flags: Optional[int] = Field(None, description="Consul flags")
-    session: Optional[str] = Field(None, description="Session ID")
-    create_index: Optional[int] = Field(None, description="Create index")
-    modify_index: Optional[int] = Field(None, description="Modify index")
-    lock_index: Optional[int] = Field(None, description="Lock index")
+    value: str | None = Field(None, description="Consul value")
+    flags: int | None = Field(None, description="Consul flags")
+    session: str | None = Field(None, description="Session ID")
+    create_index: int | None = Field(None, description="Create index")
+    modify_index: int | None = Field(None, description="Modify index")
+    lock_index: int | None = Field(None, description="Lock index")
 
 
 class ModelConsulServiceResponse(BaseModel):
@@ -35,7 +33,7 @@ class ModelConsulServiceResponse(BaseModel):
     service_name: str = Field(..., description="Service name")
     address: str = Field(..., description="Service address")
     port: int = Field(..., description="Service port")
-    tags: Optional[List[str]] = Field(None, description="Service tags")
+    tags: list[str] | None = Field(None, description="Service tags")
     registered: bool = Field(..., description="Registration status")
 
 
@@ -45,12 +43,15 @@ class ModelConsulOperationResponse(BaseModel):
     operation: str = Field(..., description="Operation performed")
     success: bool = Field(..., description="Operation success status")
     message: str = Field(..., description="Operation result message")
-    kv_response: Optional[ModelConsulKvResponse] = Field(
-        None, description="KV operation response"
+    kv_response: ModelConsulKvResponse | None = Field(
+        None,
+        description="KV operation response",
     )
-    service_response: Optional[ModelConsulServiceResponse] = Field(
-        None, description="Service operation response"
+    service_response: ModelConsulServiceResponse | None = Field(
+        None,
+        description="Service operation response",
     )
-    error_code: Optional[str] = Field(
-        None, description="Error code if operation failed"
+    error_code: str | None = Field(
+        None,
+        description="Error code if operation failed",
     )

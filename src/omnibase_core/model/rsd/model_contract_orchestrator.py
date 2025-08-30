@@ -12,7 +12,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Dict, List, Literal, Optional, Union
+from typing import Literal
 
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, validator
@@ -34,27 +34,36 @@ class ModelThunkEmissionConfig(BaseModel):
     )
 
     batch_size: int = Field(
-        default=10, description="Batch size for batch emission strategy", ge=1
+        default=10,
+        description="Batch size for batch emission strategy",
+        ge=1,
     )
 
     max_deferred_thunks: int = Field(
-        default=1000, description="Maximum number of deferred thunks", ge=1
+        default=1000,
+        description="Maximum number of deferred thunks",
+        ge=1,
     )
 
     execution_delay_ms: int = Field(
-        default=0, description="Delay before thunk execution in milliseconds", ge=0
+        default=0,
+        description="Delay before thunk execution in milliseconds",
+        ge=0,
     )
 
     priority_based_emission: bool = Field(
-        default=True, description="Enable priority-based thunk emission ordering"
+        default=True,
+        description="Enable priority-based thunk emission ordering",
     )
 
     dependency_aware_emission: bool = Field(
-        default=True, description="Consider dependencies when emitting thunks"
+        default=True,
+        description="Consider dependencies when emitting thunks",
     )
 
     retry_failed_thunks: bool = Field(
-        default=True, description="Automatically retry failed thunk executions"
+        default=True,
+        description="Automatically retry failed thunk executions",
     )
 
 
@@ -72,31 +81,41 @@ class ModelWorkflowConfig(BaseModel):
     )
 
     max_parallel_branches: int = Field(
-        default=4, description="Maximum parallel execution branches", ge=1
+        default=4,
+        description="Maximum parallel execution branches",
+        ge=1,
     )
 
     checkpoint_enabled: bool = Field(
-        default=True, description="Enable workflow checkpointing"
+        default=True,
+        description="Enable workflow checkpointing",
     )
 
     checkpoint_interval_ms: int = Field(
-        default=5000, description="Checkpoint interval in milliseconds", ge=100
+        default=5000,
+        description="Checkpoint interval in milliseconds",
+        ge=100,
     )
 
     state_persistence_enabled: bool = Field(
-        default=True, description="Enable workflow state persistence"
+        default=True,
+        description="Enable workflow state persistence",
     )
 
     rollback_enabled: bool = Field(
-        default=True, description="Enable workflow rollback capabilities"
+        default=True,
+        description="Enable workflow rollback capabilities",
     )
 
-    timeout_ms: Optional[int] = Field(
-        default=None, description="Workflow execution timeout in milliseconds", ge=1
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Workflow execution timeout in milliseconds",
+        ge=1,
     )
 
     recovery_enabled: bool = Field(
-        default=True, description="Enable automatic workflow recovery"
+        default=True,
+        description="Enable automatic workflow recovery",
     )
 
 
@@ -108,8 +127,9 @@ class ModelBranchingConfig(BaseModel):
     strategies for dynamic workflow execution paths.
     """
 
-    decision_points: List[str] = Field(
-        default_factory=list, description="Named decision points in the workflow"
+    decision_points: list[str] = Field(
+        default_factory=list,
+        description="Named decision points in the workflow",
     )
 
     condition_evaluation_strategy: str = Field(
@@ -123,7 +143,8 @@ class ModelBranchingConfig(BaseModel):
     )
 
     default_branch_enabled: bool = Field(
-        default=True, description="Enable default branch for unmatched conditions"
+        default=True,
+        description="Enable default branch for unmatched conditions",
     )
 
     condition_timeout_ms: int = Field(
@@ -133,11 +154,14 @@ class ModelBranchingConfig(BaseModel):
     )
 
     nested_branching_enabled: bool = Field(
-        default=True, description="Enable nested branching structures"
+        default=True,
+        description="Enable nested branching structures",
     )
 
     max_branch_depth: int = Field(
-        default=10, description="Maximum branching depth", ge=1
+        default=10,
+        description="Maximum branching depth",
+        ge=1,
     )
 
 
@@ -150,29 +174,39 @@ class ModelEventDescriptor(BaseModel):
     """
 
     event_name: str = Field(
-        ..., description="Unique event name identifier", min_length=1
+        ...,
+        description="Unique event name identifier",
+        min_length=1,
     )
 
     event_type: str = Field(..., description="Event type classification", min_length=1)
 
     schema_reference: str = Field(
-        ..., description="Reference to event schema definition", min_length=1
+        ...,
+        description="Reference to event schema definition",
+        min_length=1,
     )
 
     description: str = Field(
-        ..., description="Human-readable event description", min_length=1
+        ...,
+        description="Human-readable event description",
+        min_length=1,
     )
 
     version: str = Field(
-        default="1.0.0", description="Event schema version", pattern=r"^\d+\.\d+\.\d+$"
+        default="1.0.0",
+        description="Event schema version",
+        pattern=r"^\d+\.\d+\.\d+$",
     )
 
-    payload_structure: Dict[str, str] = Field(
-        default_factory=dict, description="Event payload field definitions"
+    payload_structure: dict[str, str] = Field(
+        default_factory=dict,
+        description="Event payload field definitions",
     )
 
-    metadata_fields: List[str] = Field(
-        default_factory=list, description="Required metadata fields"
+    metadata_fields: list[str] = Field(
+        default_factory=list,
+        description="Required metadata fields",
     )
 
     criticality_level: str = Field(
@@ -190,35 +224,47 @@ class ModelEventSubscription(BaseModel):
     """
 
     event_pattern: str = Field(
-        ..., description="Event name pattern or specific event name", min_length=1
+        ...,
+        description="Event name pattern or specific event name",
+        min_length=1,
     )
 
-    filter_conditions: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Event filtering conditions"
+    filter_conditions: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Event filtering conditions",
     )
 
     handler_function: str = Field(
-        ..., description="Event handler function identifier", min_length=1
+        ...,
+        description="Event handler function identifier",
+        min_length=1,
     )
 
     batch_processing: bool = Field(
-        default=False, description="Enable batch processing for events"
+        default=False,
+        description="Enable batch processing for events",
     )
 
     batch_size: int = Field(
-        default=1, description="Batch size for event processing", ge=1
+        default=1,
+        description="Batch size for event processing",
+        ge=1,
     )
 
     timeout_ms: int = Field(
-        default=5000, description="Event processing timeout in milliseconds", ge=1
+        default=5000,
+        description="Event processing timeout in milliseconds",
+        ge=1,
     )
 
     retry_enabled: bool = Field(
-        default=True, description="Enable retry for failed event processing"
+        default=True,
+        description="Enable retry for failed event processing",
     )
 
     dead_letter_enabled: bool = Field(
-        default=True, description="Enable dead letter queue for failed events"
+        default=True,
+        description="Enable dead letter queue for failed events",
     )
 
 
@@ -230,8 +276,9 @@ class ModelEventCoordinationConfig(BaseModel):
     and coordination patterns for event-driven execution.
     """
 
-    trigger_mappings: Dict[str, str] = Field(
-        default_factory=dict, description="Event pattern to workflow action mappings"
+    trigger_mappings: dict[str, str] = Field(
+        default_factory=dict,
+        description="Event pattern to workflow action mappings",
     )
 
     coordination_strategy: str = Field(
@@ -240,23 +287,30 @@ class ModelEventCoordinationConfig(BaseModel):
     )
 
     buffer_size: int = Field(
-        default=100, description="Event buffer size for buffered coordination", ge=1
+        default=100,
+        description="Event buffer size for buffered coordination",
+        ge=1,
     )
 
     correlation_enabled: bool = Field(
-        default=True, description="Enable event correlation for related events"
+        default=True,
+        description="Enable event correlation for related events",
     )
 
     correlation_timeout_ms: int = Field(
-        default=10000, description="Correlation timeout in milliseconds", ge=1
+        default=10000,
+        description="Correlation timeout in milliseconds",
+        ge=1,
     )
 
     ordering_guaranteed: bool = Field(
-        default=False, description="Guarantee event processing order"
+        default=False,
+        description="Guarantee event processing order",
     )
 
     duplicate_detection_enabled: bool = Field(
-        default=True, description="Enable duplicate event detection"
+        default=True,
+        description="Enable duplicate event detection",
     )
 
 
@@ -269,35 +323,45 @@ class ModelEventRegistryConfig(BaseModel):
     """
 
     discovery_enabled: bool = Field(
-        default=True, description="Enable automatic event discovery"
+        default=True,
+        description="Enable automatic event discovery",
     )
 
     auto_provisioning_enabled: bool = Field(
-        default=True, description="Enable automatic event provisioning"
+        default=True,
+        description="Enable automatic event provisioning",
     )
 
-    registry_endpoint: Optional[str] = Field(
-        default=None, description="Event Registry service endpoint"
+    registry_endpoint: str | None = Field(
+        default=None,
+        description="Event Registry service endpoint",
     )
 
     health_check_enabled: bool = Field(
-        default=True, description="Enable Event Registry health checking"
+        default=True,
+        description="Enable Event Registry health checking",
     )
 
     health_check_interval_s: int = Field(
-        default=30, description="Health check interval in seconds", ge=1
+        default=30,
+        description="Health check interval in seconds",
+        ge=1,
     )
 
     cache_enabled: bool = Field(
-        default=True, description="Enable registry data caching"
+        default=True,
+        description="Enable registry data caching",
     )
 
     cache_ttl_s: int = Field(
-        default=300, description="Registry cache TTL in seconds", ge=1
+        default=300,
+        description="Registry cache TTL in seconds",
+        ge=1,
     )
 
     security_enabled: bool = Field(
-        default=True, description="Enable security for registry communication"
+        default=True,
+        description="Enable security for registry communication",
     )
 
 
@@ -335,12 +399,14 @@ class ModelContractOrchestrator(ModelContractBase):
         description="Event discovery and provisioning configuration",
     )
 
-    published_events: List[ModelEventDescriptor] = Field(
-        default_factory=list, description="Events published by this orchestrator"
+    published_events: list[ModelEventDescriptor] = Field(
+        default_factory=list,
+        description="Events published by this orchestrator",
     )
 
-    consumed_events: List[ModelEventSubscription] = Field(
-        default_factory=list, description="Events consumed by this orchestrator"
+    consumed_events: list[ModelEventSubscription] = Field(
+        default_factory=list,
+        description="Events consumed by this orchestrator",
     )
 
     event_coordination: ModelEventCoordinationConfig = Field(
@@ -350,19 +416,23 @@ class ModelContractOrchestrator(ModelContractBase):
 
     # Orchestrator-specific settings
     load_balancing_enabled: bool = Field(
-        default=True, description="Enable load balancing across execution nodes"
+        default=True,
+        description="Enable load balancing across execution nodes",
     )
 
     failure_isolation_enabled: bool = Field(
-        default=True, description="Enable failure isolation between workflow branches"
+        default=True,
+        description="Enable failure isolation between workflow branches",
     )
 
     monitoring_enabled: bool = Field(
-        default=True, description="Enable comprehensive workflow monitoring"
+        default=True,
+        description="Enable comprehensive workflow monitoring",
     )
 
     metrics_collection_enabled: bool = Field(
-        default=True, description="Enable metrics collection for workflow execution"
+        default=True,
+        description="Enable metrics collection for workflow execution",
     )
 
     def validate_node_specific_config(self) -> None:
@@ -380,15 +450,17 @@ class ModelContractOrchestrator(ModelContractBase):
             self.thunk_emission.emission_strategy == "batch"
             and self.thunk_emission.batch_size < 1
         ):
-            raise ValueError("Batch emission strategy requires positive batch_size")
+            msg = "Batch emission strategy requires positive batch_size"
+            raise ValueError(msg)
 
         # Validate workflow coordination
         if (
             self.workflow_coordination.execution_mode == "parallel"
             and self.workflow_coordination.max_parallel_branches < 1
         ):
+            msg = "Parallel execution requires positive max_parallel_branches"
             raise ValueError(
-                "Parallel execution requires positive max_parallel_branches"
+                msg,
             )
 
         # Validate checkpoint configuration
@@ -396,11 +468,13 @@ class ModelContractOrchestrator(ModelContractBase):
             self.workflow_coordination.checkpoint_enabled
             and self.workflow_coordination.checkpoint_interval_ms < 100
         ):
-            raise ValueError("Checkpoint interval must be at least 100ms")
+            msg = "Checkpoint interval must be at least 100ms"
+            raise ValueError(msg)
 
         # Validate branching configuration
         if self.conditional_branching.max_branch_depth < 1:
-            raise ValueError("Max branch depth must be at least 1")
+            msg = "Max branch depth must be at least 1"
+            raise ValueError(msg)
 
         # Validate event registry configuration
         if (
@@ -413,47 +487,54 @@ class ModelContractOrchestrator(ModelContractBase):
         # Validate published events have unique names
         published_names = [event.event_name for event in self.published_events]
         if len(published_names) != len(set(published_names)):
-            raise ValueError("Published events must have unique names")
+            msg = "Published events must have unique names"
+            raise ValueError(msg)
 
         # Validate event subscriptions reference valid handlers
         for subscription in self.consumed_events:
             if not subscription.handler_function:
-                raise ValueError("Event subscriptions must specify handler_function")
+                msg = "Event subscriptions must specify handler_function"
+                raise ValueError(msg)
 
         # Validate performance requirements for orchestrator nodes
         if not self.performance.single_operation_max_ms:
+            msg = "Orchestrator nodes must specify single_operation_max_ms performance requirement"
             raise ValueError(
-                "Orchestrator nodes must specify single_operation_max_ms performance requirement"
+                msg,
             )
 
     @validator("published_events")
-    def validate_published_events_consistency(cls, v):
+    def validate_published_events_consistency(self, v):
         """Validate published events configuration consistency."""
         # Check for duplicate event names
         event_names = [event.event_name for event in v]
         if len(event_names) != len(set(event_names)):
-            raise ValueError("Published events must have unique event names")
+            msg = "Published events must have unique event names"
+            raise ValueError(msg)
 
         return v
 
     @validator("consumed_events")
-    def validate_consumed_events_consistency(cls, v):
+    def validate_consumed_events_consistency(self, v):
         """Validate consumed events configuration consistency."""
         # Check for conflicting batch processing settings
         for subscription in v:
             if subscription.batch_processing and subscription.batch_size < 1:
-                raise ValueError("Batch processing requires positive batch_size")
+                msg = "Batch processing requires positive batch_size"
+                raise ValueError(msg)
 
         return v
 
     @validator("event_coordination")
-    def validate_event_coordination_consistency(cls, v):
+    def validate_event_coordination_consistency(self, v):
         """Validate event coordination configuration consistency."""
         if v.coordination_strategy == "buffered" and v.buffer_size < 1:
-            raise ValueError("Buffered coordination requires positive buffer_size")
+            msg = "Buffered coordination requires positive buffer_size"
+            raise ValueError(msg)
 
         if v.correlation_enabled and v.correlation_timeout_ms < 1000:
-            raise ValueError("Event correlation requires timeout of at least 1000ms")
+            msg = "Event correlation requires timeout of at least 1000ms"
+            raise ValueError(msg)
 
         return v
 

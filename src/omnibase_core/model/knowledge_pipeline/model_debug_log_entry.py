@@ -1,7 +1,6 @@
 """Debug log entry model for direct-to-database knowledge pipeline."""
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -16,45 +15,55 @@ class ModelDebugLogEntry(BaseModel):
     """
 
     # Core identification
-    log_id: Optional[UUID] = Field(
-        None, description="Auto-generated UUID for the debug log entry"
+    log_id: UUID | None = Field(
+        None,
+        description="Auto-generated UUID for the debug log entry",
     )
     session_id: str = Field(..., description="Claude Code session identifier")
-    conversation_id: Optional[str] = Field(
-        None, description="Conversation context identifier"
+    conversation_id: str | None = Field(
+        None,
+        description="Conversation context identifier",
     )
 
     # Error classification
     error_type: str = Field(..., description="Type of error encountered")
     severity: str = Field(
-        ..., description="Error severity level", regex="^(low|medium|high|critical)$"
+        ...,
+        description="Error severity level",
+        regex="^(low|medium|high|critical)$",
     )
     error_category: str = Field(
-        ..., description="Categorical classification of the error"
+        ...,
+        description="Categorical classification of the error",
     )
 
     # Context and causality
-    tool_name: Optional[str] = Field(
-        None, description="Name of the tool that encountered the error"
+    tool_name: str | None = Field(
+        None,
+        description="Name of the tool that encountered the error",
     )
     operation_description: str = Field(
-        ..., description="Description of the operation being performed"
+        ...,
+        description="Description of the operation being performed",
     )
-    full_context: Dict[str, Union[str, int, float, bool, List[str], Dict[str, str]]] = (
+    full_context: dict[str, str | int | float | bool | list[str] | dict[str, str]] = (
         Field(..., description="Complete context data")
     )
-    causality_chain: List[str] = Field(
-        default_factory=list, description="Chain of events leading to the error"
+    causality_chain: list[str] = Field(
+        default_factory=list,
+        description="Chain of events leading to the error",
     )
 
     # Error details
     error_message: str = Field(..., description="Detailed error message")
-    stack_trace: Optional[str] = Field(None, description="Stack trace if available")
-    user_action: Optional[str] = Field(
-        None, description="User action that triggered the error"
+    stack_trace: str | None = Field(None, description="Stack trace if available")
+    user_action: str | None = Field(
+        None,
+        description="User action that triggered the error",
     )
-    system_state: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        None, description="System state at time of error"
+    system_state: dict[str, str | int | float | bool] | None = Field(
+        None,
+        description="System state at time of error",
     )
 
     # Resolution tracking
@@ -63,31 +72,39 @@ class ModelDebugLogEntry(BaseModel):
         description="Current resolution status",
         regex="^(unresolved|investigating|resolved|ignored)$",
     )
-    resolution_notes: Optional[str] = Field(
-        None, description="Notes about error resolution"
+    resolution_notes: str | None = Field(
+        None,
+        description="Notes about error resolution",
     )
-    resolved_by: Optional[str] = Field(
-        None, description="Who or what resolved the error"
+    resolved_by: str | None = Field(
+        None,
+        description="Who or what resolved the error",
     )
-    resolved_at: Optional[datetime] = Field(
-        None, description="When the error was resolved"
+    resolved_at: datetime | None = Field(
+        None,
+        description="When the error was resolved",
     )
 
     # Metadata
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the debug log was created"
+        default_factory=datetime.now,
+        description="When the debug log was created",
     )
-    source_file: Optional[str] = Field(
-        None, description="Source file where error occurred"
+    source_file: str | None = Field(
+        None,
+        description="Source file where error occurred",
     )
-    line_number: Optional[int] = Field(
-        None, description="Line number where error occurred"
+    line_number: int | None = Field(
+        None,
+        description="Line number where error occurred",
     )
-    git_commit_hash: Optional[str] = Field(
-        None, description="Git commit hash at time of error"
+    git_commit_hash: str | None = Field(
+        None,
+        description="Git commit hash at time of error",
     )
-    working_directory: Optional[str] = Field(
-        None, description="Working directory when error occurred"
+    working_directory: str | None = Field(
+        None,
+        description="Working directory when error occurred",
     )
 
     # Intelligence integration
@@ -97,8 +114,9 @@ class ModelDebugLogEntry(BaseModel):
         le=1.0,
         description="Quality score for intelligence processing",
     )
-    pattern_id: Optional[UUID] = Field(
-        None, description="Reference to learning pattern if applicable"
+    pattern_id: UUID | None = Field(
+        None,
+        description="Reference to learning pattern if applicable",
     )
     intelligence_processed: bool = Field(
         default=False,
@@ -132,5 +150,5 @@ class ModelDebugLogEntry(BaseModel):
                 "user_action": "Edit file with malformed code",
                 "system_state": {"memory_usage": 512, "active_tools": 3},
                 "quality_score": 0.8,
-            }
+            },
         }

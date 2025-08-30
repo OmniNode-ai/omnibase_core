@@ -6,7 +6,6 @@ and capacity utilization.
 """
 
 from datetime import datetime
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,53 +23,76 @@ class ModelLoadMetrics(BaseModel):
     max_queue_depth: int = Field(default=1000, description="Maximum queue depth", ge=1)
 
     throughput_per_second: float = Field(
-        default=0.0, description="Current throughput per second", ge=0.0
+        default=0.0,
+        description="Current throughput per second",
+        ge=0.0,
     )
 
     capacity_utilization: float = Field(
-        default=0.0, description="Capacity utilization percentage", ge=0.0, le=100.0
+        default=0.0,
+        description="Capacity utilization percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     active_tasks: int = Field(default=0, description="Number of active tasks", ge=0)
 
     max_concurrent_tasks: int = Field(
-        default=100, description="Maximum concurrent tasks", ge=1
+        default=100,
+        description="Maximum concurrent tasks",
+        ge=1,
     )
 
     pending_tasks: int = Field(default=0, description="Number of pending tasks", ge=0)
 
     completed_tasks_total: int = Field(
-        default=0, description="Total completed tasks", ge=0
+        default=0,
+        description="Total completed tasks",
+        ge=0,
     )
 
     failed_tasks_total: int = Field(default=0, description="Total failed tasks", ge=0)
 
     average_task_duration_ms: float = Field(
-        default=0.0, description="Average task duration in milliseconds", ge=0.0
+        default=0.0,
+        description="Average task duration in milliseconds",
+        ge=0.0,
     )
 
-    p95_task_duration_ms: Optional[float] = Field(
-        None, description="95th percentile task duration", ge=0.0
+    p95_task_duration_ms: float | None = Field(
+        None,
+        description="95th percentile task duration",
+        ge=0.0,
     )
 
-    p99_task_duration_ms: Optional[float] = Field(
-        None, description="99th percentile task duration", ge=0.0
+    p99_task_duration_ms: float | None = Field(
+        None,
+        description="99th percentile task duration",
+        ge=0.0,
     )
 
     rejection_rate: float = Field(
-        default=0.0, description="Task rejection rate percentage", ge=0.0, le=100.0
+        default=0.0,
+        description="Task rejection rate percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     saturation_score: float = Field(
-        default=0.0, description="Saturation score (0.0 to 1.0)", ge=0.0, le=1.0
+        default=0.0,
+        description="Saturation score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
-    last_overload_timestamp: Optional[datetime] = Field(
-        None, description="Last time node was overloaded"
+    last_overload_timestamp: datetime | None = Field(
+        None,
+        description="Last time node was overloaded",
     )
 
-    custom_load_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Custom load metrics"
+    custom_load_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Custom load metrics",
     )
 
     def is_overloaded(self, threshold: float = 0.8) -> bool:
@@ -145,5 +167,7 @@ class ModelLoadMetrics(BaseModel):
 
         # Take the maximum as saturation indicator
         self.saturation_score = max(
-            queue_saturation, task_saturation, capacity_saturation
+            queue_saturation,
+            task_saturation,
+            capacity_saturation,
         )

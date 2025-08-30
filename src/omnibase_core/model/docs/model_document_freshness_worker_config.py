@@ -5,7 +5,6 @@ Configuration for document freshness worker operations with PostgreSQL integrati
 """
 
 import os
-from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +13,9 @@ class ModelDocumentFreshnessWorkerConfig(BaseModel):
     """Configuration for the document freshness worker."""
 
     model_config = ConfigDict(
-        str_strip_whitespace=True, validate_assignment=True, extra="forbid"
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra="forbid",
     )
 
     # PostgreSQL connection configuration (from environment variables)
@@ -39,15 +40,18 @@ class ModelDocumentFreshnessWorkerConfig(BaseModel):
         description="PostgreSQL database password",
     )
     ai_analysis_enabled: bool = Field(
-        default=False, description="Whether to enable AI-powered semantic analysis"
+        default=False,
+        description="Whether to enable AI-powered semantic analysis",
     )
     recursive: bool = Field(
-        default=True, description="Whether to recursively monitor subdirectories"
+        default=True,
+        description="Whether to recursively monitor subdirectories",
     )
-    include_patterns: List[str] = Field(
-        default_factory=list, description="File patterns to include in monitoring"
+    include_patterns: list[str] = Field(
+        default_factory=list,
+        description="File patterns to include in monitoring",
     )
-    exclude_patterns: List[str] = Field(
+    exclude_patterns: list[str] = Field(
         default_factory=lambda: ["*.tmp", "*.log", ".git/*", "__pycache__/*"],
         description="File patterns to exclude from monitoring",
     )

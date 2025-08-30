@@ -4,7 +4,6 @@ Knowledge gap model for identifying missing documentation or relationships.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,21 +26,25 @@ class ModelKnowledgeGap(BaseModel):
     gap_id: str = Field(..., description="Unique identifier for the gap")
     gap_type: EnumGapType = Field(..., description="Type of knowledge gap")
     severity: str = Field(
-        ..., description="Severity level (low, medium, high, critical)"
+        ...,
+        description="Severity level (low, medium, high, critical)",
     )
     description: str = Field(..., description="Description of the gap")
 
     # Location information
-    affected_entity_ids: List[str] = Field(
-        default_factory=list, description="Entities affected by this gap"
+    affected_entity_ids: list[str] = Field(
+        default_factory=list,
+        description="Entities affected by this gap",
     )
-    source_locations: List[str] = Field(
-        default_factory=list, description="File paths where gap was detected"
+    source_locations: list[str] = Field(
+        default_factory=list,
+        description="File paths where gap was detected",
     )
 
     # Analysis metadata
     confidence_score: float = Field(
-        ..., description="Confidence in gap detection (0.0-1.0)"
+        ...,
+        description="Confidence in gap detection (0.0-1.0)",
     )
     detection_method: str = Field(..., description="Method used to detect the gap")
     suggested_action: str = Field(..., description="Recommended action to address gap")
@@ -53,15 +56,17 @@ class ModelKnowledgeGap(BaseModel):
 
     # Temporal tracking
     detected_at: datetime = Field(
-        default_factory=datetime.now, description="When gap was detected"
+        default_factory=datetime.now,
+        description="When gap was detected",
     )
-    last_validated: Optional[datetime] = Field(
-        None, description="When gap was last validated"
+    last_validated: datetime | None = Field(
+        None,
+        description="When gap was last validated",
     )
-    resolved_at: Optional[datetime] = Field(None, description="When gap was resolved")
+    resolved_at: datetime | None = Field(None, description="When gap was resolved")
 
     # Resolution tracking
     resolution_status: str = Field("open", description="Resolution status")
-    resolution_notes: Optional[str] = Field(None, description="Notes about resolution")
+    resolution_notes: str | None = Field(None, description="Notes about resolution")
 
     model_config = ConfigDict(frozen=False, validate_assignment=True)

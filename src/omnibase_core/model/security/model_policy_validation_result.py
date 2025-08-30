@@ -4,8 +4,6 @@ ModelPolicyValidationResult: Result of policy validation against signature chain
 This model represents the result of validating a signature chain against a trust policy.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from .model_policy_severity import ModelPolicySeverity
@@ -18,19 +16,24 @@ class ModelPolicyValidationResult(BaseModel):
     policy_id: str = Field(..., description="ID of the policy that was evaluated")
     policy_version: str = Field(..., description="Version of the policy")
     status: str = Field(
-        ..., description="Validation status: compliant, warning, violated"
+        ...,
+        description="Validation status: compliant, warning, violated",
     )
     severity: ModelPolicySeverity = Field(
-        ..., description="Severity level of any violations"
+        ...,
+        description="Severity level of any violations",
     )
-    violations: List[str] = Field(
-        default_factory=list, description="List of policy violations"
+    violations: list[str] = Field(
+        default_factory=list,
+        description="List of policy violations",
     )
-    warnings: List[str] = Field(
-        default_factory=list, description="List of policy warnings"
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="List of policy warnings",
     )
     requirements: ModelSignatureRequirements = Field(
-        ..., description="Evaluated signature requirements"
+        ...,
+        description="Evaluated signature requirements",
     )
     enforcement_mode: str = Field(..., description="Policy enforcement mode")
     validated_at: str = Field(..., description="Timestamp of validation")

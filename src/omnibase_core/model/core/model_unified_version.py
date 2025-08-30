@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class ModelUnifiedVersion(BaseModel):
@@ -12,6 +14,6 @@ class ModelUnifiedVersion(BaseModel):
     """
 
     protocol_version: str
-    tool_version: Optional[str] = None
-    schema_version: Optional[str] = None
-    last_updated: Optional[datetime] = None
+    tool_version: str | None = None
+    schema_version: str | None = None
+    last_updated: datetime | None = None

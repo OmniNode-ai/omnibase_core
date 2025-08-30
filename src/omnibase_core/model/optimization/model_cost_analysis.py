@@ -5,19 +5,18 @@ Cost analysis and optimization recommendations.
 """
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.optimization.enum_cost_tier import EnumCostTier
-from omnibase_core.model.optimization.model_cost_breakdown import \
-    ModelCostBreakdown
-from omnibase_core.model.optimization.model_cost_projection import \
-    ModelCostProjection
-from omnibase_core.model.optimization.model_efficiency_metrics import \
-    ModelEfficiencyMetrics
-from omnibase_core.model.optimization.model_optimization_opportunity import \
-    ModelOptimizationOpportunity
+from omnibase_core.model.optimization.model_cost_breakdown import ModelCostBreakdown
+from omnibase_core.model.optimization.model_cost_projection import ModelCostProjection
+from omnibase_core.model.optimization.model_efficiency_metrics import (
+    ModelEfficiencyMetrics,
+)
+from omnibase_core.model.optimization.model_optimization_opportunity import (
+    ModelOptimizationOpportunity,
+)
 
 
 class ModelCostAnalysis(BaseModel):
@@ -43,11 +42,13 @@ class ModelCostAnalysis(BaseModel):
     )
 
     efficiency_metrics: ModelEfficiencyMetrics = Field(
-        default_factory=ModelEfficiencyMetrics, description="Efficiency metrics"
+        default_factory=ModelEfficiencyMetrics,
+        description="Efficiency metrics",
     )
 
-    optimization_opportunities: List[ModelOptimizationOpportunity] = Field(
-        default_factory=list, description="Identified optimization opportunities"
+    optimization_opportunities: list[ModelOptimizationOpportunity] = Field(
+        default_factory=list,
+        description="Identified optimization opportunities",
     )
 
     projections: ModelCostProjection = Field(
@@ -61,8 +62,9 @@ class ModelCostAnalysis(BaseModel):
         description="Cost projections",
     )
 
-    recommendations: List[str] = Field(
-        default_factory=list, description="Cost optimization recommendations"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Cost optimization recommendations",
     )
 
     def calculate_roi(self, value_generated: float) -> float:

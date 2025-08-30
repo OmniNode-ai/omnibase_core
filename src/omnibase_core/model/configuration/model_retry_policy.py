@@ -5,8 +5,6 @@ Type-safe retry policy configuration for handling failures
 in distributed operations.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -19,13 +17,20 @@ class ModelRetryPolicy(BaseModel):
     """
 
     max_attempts: int = Field(
-        default=3, description="Maximum retry attempts", ge=0, le=10
+        default=3,
+        description="Maximum retry attempts",
+        ge=0,
+        le=10,
     )
     initial_delay_ms: int = Field(
-        default=1000, description="Initial delay in milliseconds", ge=0
+        default=1000,
+        description="Initial delay in milliseconds",
+        ge=0,
     )
     max_delay_ms: int = Field(
-        default=30000, description="Maximum delay in milliseconds", ge=0
+        default=30000,
+        description="Maximum delay in milliseconds",
+        ge=0,
     )
     backoff_multiplier: float = Field(
         default=2.0,
@@ -34,13 +39,14 @@ class ModelRetryPolicy(BaseModel):
         le=10.0,
     )
     jitter_enabled: bool = Field(
-        default=True, description="Whether to add random jitter to delays"
+        default=True,
+        description="Whether to add random jitter to delays",
     )
-    retryable_errors: List[str] = Field(
+    retryable_errors: list[str] = Field(
         default_factory=lambda: ["timeout", "network_error", "service_unavailable"],
         description="List of retryable error types",
     )
-    non_retryable_errors: List[str] = Field(
+    non_retryable_errors: list[str] = Field(
         default_factory=lambda: [
             "authentication_error",
             "authorization_error",
@@ -49,7 +55,8 @@ class ModelRetryPolicy(BaseModel):
         description="List of non-retryable error types",
     )
     circuit_breaker_enabled: bool = Field(
-        default=False, description="Whether circuit breaker is enabled"
+        default=False,
+        description="Whether circuit breaker is enabled",
     )
 
     def should_retry(self, attempt: int, error_type: str) -> bool:
@@ -60,10 +67,7 @@ class ModelRetryPolicy(BaseModel):
         if error_type in self.non_retryable_errors:
             return False
 
-        if self.retryable_errors and error_type not in self.retryable_errors:
-            return False
-
-        return True
+        return not (self.retryable_errors and error_type not in self.retryable_errors)
 
     def get_delay_ms(self, attempt: int) -> int:
         """Calculate delay for given attempt number."""

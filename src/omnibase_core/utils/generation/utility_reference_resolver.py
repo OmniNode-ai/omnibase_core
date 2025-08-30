@@ -8,12 +8,13 @@ Provides consistent reference resolution across all ONEX tools.
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 
 @dataclass
@@ -59,11 +60,13 @@ class UtilityReferenceResolver:
         r"(?:Generator|Parser|Manager|Processor|Validator|Analyzer|"
         r"Injector|Resolver|Builder|Runner|Tracker|Engine)?"
         r"(ProcessingConfig|ValidationConfig|ProcessingResult|"
-        r"ValidationResult|NodeStatus|ActionSpec|LogContext)$"
+        r"ValidationResult|NodeStatus|ActionSpec|LogContext)$",
     )
 
     def __init__(
-        self, config: Optional[Any] = None, import_tracker: Optional[Any] = None
+        self,
+        config: Any | None = None,
+        import_tracker: Any | None = None,
     ):
         """
         Initialize the reference resolver.
@@ -132,7 +135,9 @@ class UtilityReferenceResolver:
 
         # Fallback for malformed refs
         emit_log_event(
-            LogLevelEnum.WARNING, f"Malformed reference: {ref}", {"ref": ref}
+            LogLevelEnum.WARNING,
+            f"Malformed reference: {ref}",
+            {"ref": ref},
         )
         return ModelRefInfo(file_path="", type_name=ref)
 
@@ -201,10 +206,10 @@ class UtilityReferenceResolver:
         # Default: derive from file path
         # contracts/contract_models.yaml -> models
         if subcontract_path.startswith("contracts/contract_"):
-            name = subcontract_path.replace("contracts/contract_", "").replace(
-                ".yaml", ""
+            return subcontract_path.replace("contracts/contract_", "").replace(
+                ".yaml",
+                "",
             )
-            return name
 
         # Fallback to stem
         return Path(subcontract_path).stem
@@ -240,7 +245,9 @@ class UtilityReferenceResolver:
         )
 
     def _track_subcontract_import(
-        self, ref_info: ModelRefInfo, resolved_name: str
+        self,
+        ref_info: ModelRefInfo,
+        resolved_name: str,
     ) -> None:
         """Track a subcontract import."""
         if not self.import_tracker:
@@ -288,18 +295,18 @@ class UtilityReferenceResolver:
         # Add Model prefix
         return f"Model{name}"
 
-    def _resolve_by_file_path(self, ref_info: ModelRefInfo) -> Optional[str]:
+    def _resolve_by_file_path(self, ref_info: ModelRefInfo) -> str | None:
         """Try to resolve type by examining file path."""
         path_lower = ref_info.file_path.lower()
 
         # Known file patterns
         if "onex_field_model" in path_lower:
             return "ModelOnexFieldModel"
-        elif "semver" in path_lower:
+        if "semver" in path_lower:
             return "ModelSemVer"
-        elif "action_spec" in path_lower:
+        if "action_spec" in path_lower:
             return "ModelActionSpec"
-        elif "log_context" in path_lower:
+        if "log_context" in path_lower:
             return "ModelLogContext"
 
         return None

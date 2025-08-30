@@ -6,7 +6,6 @@ Structured model for refactoring operation results.
 
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,10 +25,11 @@ class ModelRefactorChange(BaseModel):
 
     file_path: Path = Field(..., description="Path to modified file")
     change_type: str = Field(..., description="Type of change made")
-    old_content: Optional[str] = Field(None, description="Original content")
-    new_content: Optional[str] = Field(None, description="Modified content")
-    line_range: Optional[List[int]] = Field(
-        None, description="Line range affected [start, end]"
+    old_content: str | None = Field(None, description="Original content")
+    new_content: str | None = Field(None, description="Modified content")
+    line_range: list[int] | None = Field(
+        None,
+        description="Line range affected [start, end]",
     )
 
 
@@ -47,35 +47,42 @@ class ModelRefactorResult(BaseModel):
 
     # Change details
     files_modified: int = Field(default=0, description="Number of files modified")
-    changes_made: List[ModelRefactorChange] = Field(
-        default_factory=list, description="List of changes made"
+    changes_made: list[ModelRefactorChange] = Field(
+        default_factory=list,
+        description="List of changes made",
     )
-    backup_files: List[Path] = Field(
-        default_factory=list, description="Backup files created"
+    backup_files: list[Path] = Field(
+        default_factory=list,
+        description="Backup files created",
     )
 
     # Issues and validation
-    syntax_errors: List[str] = Field(
-        default_factory=list, description="Syntax errors found"
+    syntax_errors: list[str] = Field(
+        default_factory=list,
+        description="Syntax errors found",
     )
-    warnings: List[str] = Field(default_factory=list, description="Warnings generated")
+    warnings: list[str] = Field(default_factory=list, description="Warnings generated")
 
     # Metadata
-    duration_ms: Optional[int] = Field(
-        None, description="Refactoring duration in milliseconds"
+    duration_ms: int | None = Field(
+        None,
+        description="Refactoring duration in milliseconds",
     )
     summary: str = Field(..., description="Human-readable refactoring summary")
 
     @classmethod
     def create_success(
-        cls, summary: str = "Refactoring completed successfully"
+        cls,
+        summary: str = "Refactoring completed successfully",
     ) -> "ModelRefactorResult":
         """Factory method for successful refactor results."""
         return cls(status=EnumRefactorStatus.success, success=True, summary=summary)
 
     @classmethod
     def create_failure(
-        cls, errors: List[str], summary: Optional[str] = None
+        cls,
+        errors: list[str],
+        summary: str | None = None,
     ) -> "ModelRefactorResult":
         """Factory method for failed refactor results."""
         if summary is None:

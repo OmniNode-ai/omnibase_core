@@ -6,7 +6,6 @@ and operational status.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,8 +31,8 @@ class ModelProcessInfo(BaseModel):
                 "cpu_percent": 15.5,
                 "memory_mb": 256.0,
                 "uptime_seconds": 3600.0,
-            }
-        }
+            },
+        },
     )
 
 
@@ -45,10 +44,11 @@ class ModelServiceStatus(BaseModel):
     is_healthy: bool = Field(..., description="Whether service is healthy")
     uptime_seconds: float = Field(..., description="Service uptime in seconds")
     last_check: datetime = Field(..., description="Timestamp of last health check")
-    processes: List[ModelProcessInfo] = Field(
-        default_factory=list, description="Running processes"
+    processes: list[ModelProcessInfo] = Field(
+        default_factory=list,
+        description="Running processes",
     )
-    details: Optional[Dict] = Field(None, description="Additional status details")
+    details: dict | None = Field(None, description="Additional status details")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -66,9 +66,9 @@ class ModelServiceStatus(BaseModel):
                         "cpu_percent": 5.0,
                         "memory_mb": 128.0,
                         "uptime_seconds": 3600.0,
-                    }
+                    },
                 ],
                 "details": {"total_processes": 5, "health_issues": []},
-            }
-        }
+            },
+        },
     )

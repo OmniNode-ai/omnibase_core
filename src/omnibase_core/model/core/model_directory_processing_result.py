@@ -26,7 +26,7 @@ Model for directory processing results.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,27 +50,33 @@ class ModelDirectoryProcessingResult(BaseModel):
     skipped_count: int = Field(0, description="Number of files skipped")
 
     # File sets
-    processed_files: Set[Path] = Field(
-        default_factory=set, description="Set of processed files"
+    processed_files: set[Path] = Field(
+        default_factory=set,
+        description="Set of processed files",
     )
-    failed_files: Set[Path] = Field(
-        default_factory=set, description="Set of files that failed processing"
+    failed_files: set[Path] = Field(
+        default_factory=set,
+        description="Set of files that failed processing",
     )
-    skipped_files: Set[Path] = Field(
-        default_factory=set, description="Set of files skipped"
+    skipped_files: set[Path] = Field(
+        default_factory=set,
+        description="Set of files skipped",
     )
 
     # Processing metadata
     total_size_bytes: int = Field(
-        0, description="Total size of processed files in bytes"
+        0,
+        description="Total size of processed files in bytes",
     )
-    directory: Optional[Path] = Field(None, description="Directory that was processed")
+    directory: Path | None = Field(None, description="Directory that was processed")
     filter_config: Optional["ModelFileFilter"] = Field(
-        None, description="Filter configuration used"
+        None,
+        description="Filter configuration used",
     )
 
-    skipped_file_reasons: List[ModelSkippedFileReason] = Field(
-        default_factory=list, description="List of skipped files and reasons"
+    skipped_file_reasons: list[ModelSkippedFileReason] = Field(
+        default_factory=list,
+        description="List of skipped files and reasons",
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

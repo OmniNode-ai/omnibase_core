@@ -5,8 +5,15 @@ Centralized metrics definitions for all monitoring components.
 
 from typing import cast
 
-from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Gauge, Histogram,
-                               Info, Summary, generate_latest)
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    Info,
+    Summary,
+    generate_latest,
+)
 
 # =============================================================================
 # AGENT METRICS
@@ -14,15 +21,21 @@ from prometheus_client import (CONTENT_TYPE_LATEST, Counter, Gauge, Histogram,
 
 # Agent state and health
 agents_active = Gauge(
-    "onex_agents_active", "Number of active agents", ["window_id", "agent_type"]
+    "onex_agents_active",
+    "Number of active agents",
+    ["window_id", "agent_type"],
 )
 
 agent_health_score = Gauge(
-    "onex_agent_health_score", "Agent health score (0-100)", ["agent_id", "window_id"]
+    "onex_agent_health_score",
+    "Agent health score (0-100)",
+    ["agent_id", "window_id"],
 )
 
 agent_queue_depth = Gauge(
-    "onex_agent_queue_depth", "Current queue depth per agent", ["agent_id", "window_id"]
+    "onex_agent_queue_depth",
+    "Current queue depth per agent",
+    ["agent_id", "window_id"],
 )
 
 # Agent performance
@@ -57,7 +70,9 @@ scaling_events = Counter(
 )
 
 scaling_cooldown_active = Gauge(
-    "onex_scaling_cooldown_active", "Whether scaling cooldown is active", ["window_id"]
+    "onex_scaling_cooldown_active",
+    "Whether scaling cooldown is active",
+    ["window_id"],
 )
 
 # =============================================================================
@@ -66,7 +81,9 @@ scaling_cooldown_active = Gauge(
 
 # Quota usage
 quota_tokens_used = Counter(
-    "onex_quota_tokens_used_total", "Total tokens consumed", ["window_id", "task_type"]
+    "onex_quota_tokens_used_total",
+    "Total tokens consumed",
+    ["window_id", "task_type"],
 )
 
 quota_remaining = Gauge(
@@ -76,16 +93,22 @@ quota_remaining = Gauge(
 )
 
 quota_usage_rate = Gauge(
-    "onex_quota_usage_rate_per_minute", "Token usage rate per minute", ["window_id"]
+    "onex_quota_usage_rate_per_minute",
+    "Token usage rate per minute",
+    ["window_id"],
 )
 
 # Cost tracking
 api_cost_dollars = Counter(
-    "onex_api_cost_dollars_total", "Total API cost in dollars", ["window_id", "model"]
+    "onex_api_cost_dollars_total",
+    "Total API cost in dollars",
+    ["window_id", "model"],
 )
 
 cost_per_task = Summary(
-    "onex_cost_per_task_dollars", "Cost per task in dollars", ["task_type", "window_id"]
+    "onex_cost_per_task_dollars",
+    "Cost per task in dollars",
+    ["task_type", "window_id"],
 )
 
 # Quota optimization
@@ -96,7 +119,9 @@ quota_reallocation_events = Counter(
 )
 
 quota_efficiency_score = Gauge(
-    "onex_quota_efficiency_score", "Quota usage efficiency score (0-100)", ["window_id"]
+    "onex_quota_efficiency_score",
+    "Quota usage efficiency score (0-100)",
+    ["window_id"],
 )
 
 # =============================================================================
@@ -113,7 +138,9 @@ window_transitions = Counter(
 current_window = Info("onex_current_window", "Currently active window")
 
 window_quota_allocation = Gauge(
-    "onex_window_quota_allocation", "Quota allocated per window", ["window_id"]
+    "onex_window_quota_allocation",
+    "Quota allocated per window",
+    ["window_id"],
 )
 
 # Window performance
@@ -124,7 +151,9 @@ window_task_throughput = Gauge(
 )
 
 window_success_rate = Gauge(
-    "onex_window_success_rate", "Task success rate per window", ["window_id"]
+    "onex_window_success_rate",
+    "Task success rate per window",
+    ["window_id"],
 )
 
 # =============================================================================
@@ -133,11 +162,14 @@ window_success_rate = Gauge(
 
 # System availability
 system_health_score = Gauge(
-    "onex_system_health_score", "Overall system health score (0-100)"
+    "onex_system_health_score",
+    "Overall system health score (0-100)",
 )
 
 service_availability = Gauge(
-    "onex_service_availability", "Service availability status", ["service_name"]
+    "onex_service_availability",
+    "Service availability status",
+    ["service_name"],
 )
 
 # Performance metrics
@@ -196,7 +228,9 @@ distributed_locks_active = Gauge(
 # =============================================================================
 
 incidents_created = Counter(
-    "onex_incidents_created_total", "Incidents created", ["severity", "component"]
+    "onex_incidents_created_total",
+    "Incidents created",
+    ["severity", "component"],
 )
 
 incidents_resolved = Counter(
@@ -224,15 +258,16 @@ development_velocity = Gauge(
 roi_score = Gauge("onex_roi_score", "Return on investment score")
 
 automation_efficiency = Gauge(
-    "onex_automation_efficiency_percentage", "Percentage of work automated successfully"
+    "onex_automation_efficiency_percentage",
+    "Percentage of work automated successfully",
 )
 
 
 def get_metrics() -> str:
     """Generate current metrics in Prometheus format."""
-    return cast(str, generate_latest())
+    return cast("str", generate_latest())
 
 
 def get_content_type() -> str:
     """Get Prometheus content type for HTTP response."""
-    return cast(str, CONTENT_TYPE_LATEST)
+    return cast("str", CONTENT_TYPE_LATEST)

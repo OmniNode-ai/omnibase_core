@@ -4,7 +4,6 @@ This protocol defines the interface that contract compliance validation tools mu
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 from omnibase_core.protocol.protocol_file_io import ProtocolFileIO
@@ -16,8 +15,8 @@ class ProtocolContractCompliance(ABC):
     @abstractmethod
     def __init__(
         self,
-        file_io: Optional[ProtocolFileIO] = None,
-        event_bus: Optional[ProtocolEventBus] = None,
+        file_io: ProtocolFileIO | None = None,
+        event_bus: ProtocolEventBus | None = None,
     ):
         """Initialize the contract compliance tool.
 
@@ -25,7 +24,6 @@ class ProtocolContractCompliance(ABC):
             file_io: File I/O protocol implementation
             event_bus: Event bus protocol implementation
         """
-        pass
 
     @abstractmethod
     def process(self, input_state) -> any:
@@ -37,4 +35,3 @@ class ProtocolContractCompliance(ABC):
         Returns:
             Output state with validation results
         """
-        pass

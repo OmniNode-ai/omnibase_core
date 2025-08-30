@@ -1,31 +1,36 @@
 """Tool discovery result model with validation details."""
 
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.discovery.model_discovery_config import \
-    ModelDiscoveryConfig
-from omnibase_core.model.discovery.model_tool_discovery_error import \
-    ModelToolDiscoveryError
+from omnibase_core.model.discovery.model_discovery_config import ModelDiscoveryConfig
+from omnibase_core.model.discovery.model_tool_discovery_error import (
+    ModelToolDiscoveryError,
+)
 
 
 class ModelToolDiscoveryResult(BaseModel):
     """Result of tool discovery with validation details."""
 
-    discovered_tools: List[Path] = Field(
-        default_factory=list, description="Successfully discovered tools"
+    discovered_tools: list[Path] = Field(
+        default_factory=list,
+        description="Successfully discovered tools",
     )
-    invalid_tools: List[ModelToolDiscoveryError] = Field(
-        default_factory=list, description="Tools with invalid contracts"
+    invalid_tools: list[ModelToolDiscoveryError] = Field(
+        default_factory=list,
+        description="Tools with invalid contracts",
     )
-    skipped_tools: List[ModelToolDiscoveryError] = Field(
-        default_factory=list, description="Tools skipped for other reasons"
+    skipped_tools: list[ModelToolDiscoveryError] = Field(
+        default_factory=list,
+        description="Tools skipped for other reasons",
     )
     total_discovered: int = Field(
-        default=0, description="Total number of valid tools discovered", ge=0
+        default=0,
+        description="Total number of valid tools discovered",
+        ge=0,
     )
     discovery_config: ModelDiscoveryConfig = Field(
-        ..., description="Discovery configuration used"
+        ...,
+        description="Discovery configuration used",
     )

@@ -2,12 +2,11 @@
 Audit value model to replace Dict[str, Any] usage in audit entries.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.core.model_audit_field_change import \
-    ModelAuditFieldChange
+from omnibase_core.model.core.model_audit_field_change import ModelAuditFieldChange
 
 # Backward compatibility alias
 AuditFieldChange = ModelAuditFieldChange
@@ -22,32 +21,36 @@ class ModelAuditValue(BaseModel):
     # Object identification
     object_type: str = Field(..., description="Type of audited object")
     object_id: str = Field(..., description="ID of audited object")
-    object_name: Optional[str] = Field(None, description="Name of audited object")
+    object_name: str | None = Field(None, description="Name of audited object")
 
     # Change details
-    field_changes: List[ModelAuditFieldChange] = Field(
-        default_factory=list, description="List of field changes"
+    field_changes: list[ModelAuditFieldChange] = Field(
+        default_factory=list,
+        description="List of field changes",
     )
 
     # Metadata
-    version_before: Optional[str] = Field(None, description="Version before change")
-    version_after: Optional[str] = Field(None, description="Version after change")
+    version_before: str | None = Field(None, description="Version before change")
+    version_after: str | None = Field(None, description="Version after change")
 
     # Serialized representations (for complex objects)
-    serialized_before: Optional[str] = Field(
-        None, description="JSON serialized state before"
+    serialized_before: str | None = Field(
+        None,
+        description="JSON serialized state before",
     )
-    serialized_after: Optional[str] = Field(
-        None, description="JSON serialized state after"
+    serialized_after: str | None = Field(
+        None,
+        description="JSON serialized state after",
     )
 
     # Summary
-    change_summary: Optional[str] = Field(
-        None, description="Human-readable change summary"
+    change_summary: str | None = Field(
+        None,
+        description="Human-readable change summary",
     )
     change_count: int = Field(0, description="Number of fields changed")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         # For backward compatibility, return a simple dict of changes
         result = {}
@@ -61,7 +64,9 @@ class ModelAuditValue(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]], is_new: bool = False
+        cls,
+        data: dict[str, Any] | None,
+        is_new: bool = False,
     ) -> Optional["ModelAuditValue"]:
         """Create from dictionary for easy migration."""
         if data is None:
@@ -79,7 +84,7 @@ class ModelAuditValue(BaseModel):
                             old_value=value["old"],
                             new_value=value["new"],
                             value_type=type(value["new"]).__name__,
-                        )
+                        ),
                     )
                 else:
                     # Simple value - determine if old or new
@@ -89,7 +94,7 @@ class ModelAuditValue(BaseModel):
                             old_value=None if is_new else value,
                             new_value=value if is_new else None,
                             value_type=type(value).__name__,
-                        )
+                        ),
                     )
 
             return cls(
@@ -101,7 +106,7 @@ class ModelAuditValue(BaseModel):
 
         return cls(**data)
 
-    def get_changed_fields(self) -> List[str]:
+    def get_changed_fields(self) -> list[str]:
         """Get list of changed field names."""
         return [change.field_path for change in self.field_changes]
 

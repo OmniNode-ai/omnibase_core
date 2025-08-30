@@ -5,8 +5,7 @@ Nuanced trust level model that replaces hardcoded trust enums
 with flexible, verifiable trust scores and metadata.
 """
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -31,37 +30,41 @@ class ModelTrustLevel(BaseModel):
 
     display_name: str = Field(..., description="Human-readable trust level name")
 
-    verification_methods: List[ModelVerificationMethod] = Field(
-        default_factory=list, description="How trust was established"
+    verification_methods: list[ModelVerificationMethod] = Field(
+        default_factory=list,
+        description="How trust was established",
     )
 
-    last_verified: Optional[datetime] = Field(
-        None, description="Last verification timestamp"
+    last_verified: datetime | None = Field(
+        None,
+        description="Last verification timestamp",
     )
 
-    expires_at: Optional[datetime] = Field(None, description="When trust expires")
+    expires_at: datetime | None = Field(None, description="When trust expires")
 
-    issuer: Optional[str] = Field(None, description="Trust issuer")
+    issuer: str | None = Field(None, description="Trust issuer")
 
     revocable: bool = Field(default=True, description="Can trust be revoked")
 
     requires_renewal: bool = Field(
-        default=False, description="Whether trust needs periodic renewal"
+        default=False,
+        description="Whether trust needs periodic renewal",
     )
 
-    renewal_period_days: Optional[int] = Field(
-        None, description="Days between required renewals"
+    renewal_period_days: int | None = Field(
+        None,
+        description="Days between required renewals",
     )
 
     def _get_current_utc(self) -> datetime:
         """Get current UTC datetime with timezone awareness"""
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def _ensure_timezone_aware(self, dt: datetime) -> datetime:
         """Ensure datetime is timezone-aware"""
         if dt.tzinfo is None:
             # Assume naive datetimes are UTC
-            return dt.replace(tzinfo=timezone.utc)
+            return dt.replace(tzinfo=UTC)
         return dt
 
     def is_trusted(self, threshold: float = 0.5) -> bool:
@@ -91,7 +94,7 @@ class ModelTrustLevel(BaseModel):
         days_since_verified = (current_time - last_verified).days
         return days_since_verified >= self.renewal_period_days
 
-    def get_highest_verification_level(self) -> Optional[str]:
+    def get_highest_verification_level(self) -> str | None:
         """Get the highest level of verification applied."""
         if not self.verification_methods:
             return None
@@ -144,10 +147,11 @@ class ModelTrustLevel(BaseModel):
             display_name="Validated",
             verification_methods=[
                 ModelVerificationMethod(
-                    method_name="automated_validation", verifier=verifier
-                )
+                    method_name="automated_validation",
+                    verifier=verifier,
+                ),
             ],
-            last_verified=datetime.now(timezone.utc),
+            last_verified=datetime.now(UTC),
         )
 
     @classmethod
@@ -158,9 +162,9 @@ class ModelTrustLevel(BaseModel):
             trust_category="high",
             display_name="Trusted",
             verification_methods=[
-                ModelVerificationMethod(method_name="manual_review", verifier=verifier)
+                ModelVerificationMethod(method_name="manual_review", verifier=verifier),
             ],
-            last_verified=datetime.now(timezone.utc),
+            last_verified=datetime.now(UTC),
         )
 
     @classmethod
@@ -176,9 +180,9 @@ class ModelTrustLevel(BaseModel):
                     method_name="cryptographic_signature",
                     verifier=issuer,
                     signature=signature,
-                )
+                ),
             ],
-            last_verified=datetime.now(timezone.utc),
+            last_verified=datetime.now(UTC),
             revocable=True,
             requires_renewal=True,
             renewal_period_days=365,

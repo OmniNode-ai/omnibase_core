@@ -5,7 +5,7 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import ClassVar, Dict, List, Optional, Union
+from typing import ClassVar, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -27,36 +27,44 @@ class ModelNodeActionType(BaseModel):
 
     # Behavioral metadata
     is_destructive: bool = Field(
-        default=False, description="Whether this action modifies data"
+        default=False,
+        description="Whether this action modifies data",
     )
     requires_confirmation: bool = Field(
-        default=False, description="Whether this action requires user confirmation"
+        default=False,
+        description="Whether this action requires user confirmation",
     )
-    estimated_duration_ms: Optional[int] = Field(
-        None, description="Estimated execution time in milliseconds"
+    estimated_duration_ms: int | None = Field(
+        None,
+        description="Estimated execution time in milliseconds",
     )
 
     # Security and permissions
     security_level: str = Field(
-        default="standard", description="Required security clearance level"
+        default="standard",
+        description="Required security clearance level",
     )
-    required_permissions: List[str] = Field(
-        default_factory=list, description="Required permissions for execution"
+    required_permissions: list[str] = Field(
+        default_factory=list,
+        description="Required permissions for execution",
     )
 
     # Tool-as-a-service metadata
     mcp_compatible: bool = Field(
-        default=True, description="Whether action supports MCP protocol"
+        default=True,
+        description="Whether action supports MCP protocol",
     )
     graphql_compatible: bool = Field(
-        default=True, description="Whether action supports GraphQL"
+        default=True,
+        description="Whether action supports GraphQL",
     )
     composition_compatible: bool = Field(
-        default=True, description="Whether action supports composition patterns"
+        default=True,
+        description="Whether action supports composition patterns",
     )
 
     # Class-level registry for action type management
-    _registry: ClassVar[Dict[str, "ModelNodeActionType"]] = {}
+    _registry: ClassVar[dict[str, "ModelNodeActionType"]] = {}
 
     @field_validator("security_level")
     @classmethod
@@ -64,7 +72,8 @@ class ModelNodeActionType(BaseModel):
         """Validate security level is from allowed values."""
         allowed_levels = {"public", "standard", "elevated", "restricted", "classified"}
         if v not in allowed_levels:
-            raise ValueError(f"Security level must be one of: {allowed_levels}")
+            msg = f"Security level must be one of: {allowed_levels}"
+            raise ValueError(msg)
         return v
 
     @field_validator("name")
@@ -72,10 +81,12 @@ class ModelNodeActionType(BaseModel):
     def validate_name_format(cls, v: str) -> str:
         """Validate action name follows naming conventions."""
         if not v.islower():
-            raise ValueError("Action name must be lowercase")
+            msg = "Action name must be lowercase"
+            raise ValueError(msg)
         if not v.replace("_", "").isalnum():
+            msg = "Action name must contain only letters, numbers, and underscores"
             raise ValueError(
-                "Action name must contain only letters, numbers, and underscores"
+                msg,
             )
         return v
 
@@ -107,25 +118,26 @@ class ModelNodeActionType(BaseModel):
 
     @classmethod
     def get_by_category(
-        cls, category: ModelActionCategory
-    ) -> List["ModelNodeActionType"]:
+        cls,
+        category: ModelActionCategory,
+    ) -> list["ModelNodeActionType"]:
         """Get all action types in a specific category."""
         return [
             action for action in cls._registry.values() if action.category == category
         ]
 
     @classmethod
-    def get_all_registered(cls) -> List["ModelNodeActionType"]:
+    def get_all_registered(cls) -> list["ModelNodeActionType"]:
         """Get all registered action types."""
         return list(cls._registry.values())
 
     @classmethod
-    def get_destructive_actions(cls) -> List["ModelNodeActionType"]:
+    def get_destructive_actions(cls) -> list["ModelNodeActionType"]:
         """Get all destructive action types."""
         return [action for action in cls._registry.values() if action.is_destructive]
 
     @classmethod
-    def get_by_security_level(cls, security_level: str) -> List["ModelNodeActionType"]:
+    def get_by_security_level(cls, security_level: str) -> list["ModelNodeActionType"]:
         """Get all action types requiring specific security level."""
         return [
             action
@@ -144,8 +156,9 @@ class ModelNodeActionType(BaseModel):
 
     def to_service_metadata(
         self,
-    ) -> Dict[
-        str, Union[str, bool, int, List[str], ModelActionCategory, Optional[int]]
+    ) -> dict[
+        str,
+        str | bool | int | list[str] | ModelActionCategory | int | None,
     ]:
         """Generate service discovery metadata with strong typing."""
         return {

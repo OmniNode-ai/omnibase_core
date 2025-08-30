@@ -7,7 +7,6 @@ logic throughout the internal processing pipeline.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -34,21 +33,24 @@ class ModelOnexInternalOutputState(BaseModel):
     # Required traceability fields (no Optional)
     event_id: UUID = Field(..., description="Required event ID for tracking")
     correlation_id: UUID = Field(
-        ..., description="Required correlation ID for tracking"
+        ...,
+        description="Required correlation ID for tracking",
     )
     timestamp: datetime = Field(..., description="Required timestamp for tracking")
 
     # Node identification (required for internal processing)
     node_name: str = Field(..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        ..., description="Required node version for processing"
+        ...,
+        description="Required node version for processing",
     )
 
     # Processing results
     status: EnumOnexStatus = Field(..., description="Processing status")
     message: str = Field(..., description="Processing message")
-    output_field: Optional[ModelOnexField] = Field(
-        None, description="Output field with processing results"
+    output_field: ModelOnexField | None = Field(
+        None,
+        description="Output field with processing results",
     )
 
     def to_boundary_state(self) -> "ModelOnexOutputState":
@@ -62,8 +64,7 @@ class ModelOnexInternalOutputState(BaseModel):
             ModelOnexOutputState: Boundary state suitable for external consumption
         """
         # Import here to avoid circular imports
-        from omnibase_core.model.core.model_onex_base_state import \
-            ModelOnexOutputState
+        from omnibase_core.model.core.model_onex_base_state import ModelOnexOutputState
 
         return ModelOnexOutputState(
             version=self.version,

@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 
 class SensitiveFieldRedactionMixin:
@@ -65,7 +65,7 @@ class SensitiveFieldRedactionMixin:
     }
 
     @classmethod
-    def get_sensitive_field_patterns(cls) -> List[str]:
+    def get_sensitive_field_patterns(cls) -> list[str]:
         """
         Get the list of sensitive field patterns for this model.
 
@@ -77,7 +77,7 @@ class SensitiveFieldRedactionMixin:
         return cls._DEFAULT_SENSITIVE_PATTERNS.copy()
 
     @classmethod
-    def get_redaction_values(cls) -> Dict[str, str]:
+    def get_redaction_values(cls) -> dict[str, str]:
         """
         Get the redaction values for different field types.
 
@@ -122,20 +122,19 @@ class SensitiveFieldRedactionMixin:
         # Check for specific field type patterns
         if "password" in field_lower or "passwd" in field_lower:
             return redaction_values.get("password", redaction_values["default"])
-        elif "token" in field_lower:
+        if "token" in field_lower:
             return redaction_values.get("token", redaction_values["default"])
-        elif "secret" in field_lower:
+        if "secret" in field_lower:
             return redaction_values.get("secret", redaction_values["default"])
-        elif "key" in field_lower:
+        if "key" in field_lower:
             return redaction_values.get("key", redaction_values["default"])
-        else:
-            return redaction_values.get("string", redaction_values["default"])
+        return redaction_values.get("string", redaction_values["default"])
 
     def redact_sensitive_fields(
         self,
-        data: Dict[str, Any],
-        additional_sensitive_fields: Optional[Set[str]] = None,
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        additional_sensitive_fields: set[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Redact sensitive fields in a dictionary.
 
@@ -155,13 +154,15 @@ class SensitiveFieldRedactionMixin:
                 # Only redact non-None values
                 if field_value is not None:
                     redacted_data[field_name] = self.get_redaction_value(
-                        field_name, field_value
+                        field_name,
+                        field_value,
                     )
 
             # Recursively redact nested dictionaries
             elif isinstance(field_value, dict):
                 redacted_data[field_name] = self.redact_sensitive_fields(
-                    field_value, additional_sensitive_fields
+                    field_value,
+                    additional_sensitive_fields,
                 )
 
             # Redact items in lists that are dictionaries
@@ -171,8 +172,9 @@ class SensitiveFieldRedactionMixin:
                     if isinstance(item, dict):
                         redacted_list.append(
                             self.redact_sensitive_fields(
-                                item, additional_sensitive_fields
-                            )
+                                item,
+                                additional_sensitive_fields,
+                            ),
                         )
                     else:
                         redacted_list.append(item)
@@ -181,8 +183,10 @@ class SensitiveFieldRedactionMixin:
         return redacted_data
 
     def redact(
-        self, additional_sensitive_fields: Optional[Set[str]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self,
+        additional_sensitive_fields: set[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         """
         Get a redacted version of the model data.
 
@@ -205,8 +209,10 @@ class SensitiveFieldRedactionMixin:
         return self.redact_sensitive_fields(data, additional_sensitive_fields)
 
     def model_dump_redacted(
-        self, additional_sensitive_fields: Optional[Set[str]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self,
+        additional_sensitive_fields: set[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         """
         Convenience method that combines model_dump with redaction.
 

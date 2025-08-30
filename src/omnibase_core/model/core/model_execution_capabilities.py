@@ -5,13 +5,12 @@ Type-safe execution capabilities and constraints for nodes,
 replacing Dict[str, Any] with structured configuration.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
-from omnibase_core.model.configuration.model_performance_constraints import \
-    ModelPerformanceConstraints
+from omnibase_core.model.configuration.model_performance_constraints import (
+    ModelPerformanceConstraints,
+)
 from omnibase_core.model.core.model_duration import ModelDuration
 
 from .model_node_type import ModelNodeType
@@ -25,27 +24,35 @@ class ModelExecutionCapabilities(BaseModel):
     replacing Dict[str, Any] with type-safe models.
     """
 
-    supported_node_types: List[ModelNodeType] = Field(
-        ..., description="Supported node types"
+    supported_node_types: list[ModelNodeType] = Field(
+        ...,
+        description="Supported node types",
     )
-    supported_delivery_modes: List[EnumDeliveryMode] = Field(
-        ..., description="Supported delivery modes"
+    supported_delivery_modes: list[EnumDeliveryMode] = Field(
+        ...,
+        description="Supported delivery modes",
     )
     max_concurrent_executions: int = Field(
-        ..., description="Maximum concurrent executions", ge=1
+        ...,
+        description="Maximum concurrent executions",
+        ge=1,
     )
     timeout: ModelDuration = Field(..., description="Default execution timeout")
-    performance_constraints: Optional[ModelPerformanceConstraints] = Field(
-        None, description="Performance constraints"
+    performance_constraints: ModelPerformanceConstraints | None = Field(
+        None,
+        description="Performance constraints",
     )
     supports_streaming: bool = Field(
-        default=False, description="Supports streaming execution"
+        default=False,
+        description="Supports streaming execution",
     )
     supports_batching: bool = Field(
-        default=False, description="Supports batch execution"
+        default=False,
+        description="Supports batch execution",
     )
     requires_persistent_storage: bool = Field(
-        default=False, description="Requires persistent storage"
+        default=False,
+        description="Requires persistent storage",
     )
 
     def supports_node_type(self, node_type: ModelNodeType) -> bool:

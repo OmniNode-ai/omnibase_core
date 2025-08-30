@@ -5,19 +5,18 @@ This module provides comprehensive registry resolution result tracking with busi
 performance analytics, and operational insights for ONEX registry resolution systems.
 """
 
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_business_impact import ModelBusinessImpact
-    from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
-    from omnibase_core.model.core.model_generic_metadata import ModelGenericMetadata
-    from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
     from omnibase_core.model.core.model_audit_entry import ModelAuditEntry
+    from omnibase_core.model.core.model_business_impact import ModelBusinessImpact
+    from omnibase_core.model.core.model_generic_metadata import ModelGenericMetadata
+    from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
+    from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
 
 from .model_registry_resolution_context import ModelRegistryResolutionContext
 
@@ -61,67 +60,82 @@ class ModelRegistryResolutionResult(BaseModel):
     registry: Any = Field(..., description="The resolved registry instance")
 
     resolution_context: ModelRegistryResolutionContext = Field(
-        ..., description="Context used for resolution"
+        ...,
+        description="Context used for resolution",
     )
 
-    resolution_log: List[str] = Field(
+    resolution_log: list[str] = Field(
         default_factory=list,
         description="Log of resolution steps for audit and debugging",
     )
 
-    status: Optional[ResolutionStatus] = Field(
-        default=ResolutionStatus.SUCCESS, description="Overall resolution status"
+    status: ResolutionStatus | None = Field(
+        default=ResolutionStatus.SUCCESS,
+        description="Overall resolution status",
     )
 
-    start_time: Optional[str] = Field(
-        default=None, description="ISO timestamp when resolution started"
+    start_time: str | None = Field(
+        default=None,
+        description="ISO timestamp when resolution started",
     )
 
-    end_time: Optional[str] = Field(
-        default=None, description="ISO timestamp when resolution completed"
+    end_time: str | None = Field(
+        default=None,
+        description="ISO timestamp when resolution completed",
     )
 
-    duration_ms: Optional[int] = Field(
-        default=None, description="Resolution duration in milliseconds", ge=0
+    duration_ms: int | None = Field(
+        default=None,
+        description="Resolution duration in milliseconds",
+        ge=0,
     )
 
-    cached_result: Optional[bool] = Field(
-        default=False, description="Whether this result was served from cache"
+    cached_result: bool | None = Field(
+        default=False,
+        description="Whether this result was served from cache",
     )
 
-    retry_count: Optional[int] = Field(
-        default=0, description="Number of retries performed", ge=0
+    retry_count: int | None = Field(
+        default=0,
+        description="Number of retries performed",
+        ge=0,
     )
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if resolution failed", max_length=1000
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if resolution failed",
+        max_length=1000,
     )
 
-    error_code: Optional[str] = Field(
+    error_code: str | None = Field(
         default=None,
         description="Specific error code for programmatic handling",
         max_length=50,
     )
 
-    warnings: Optional[List[str]] = Field(
-        default_factory=list, description="Non-fatal warnings during resolution"
+    warnings: list[str] | None = Field(
+        default_factory=list,
+        description="Non-fatal warnings during resolution",
     )
 
     performance_metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None, description="Detailed performance and resource metrics"
+        None,
+        description="Detailed performance and resource metrics",
     )
 
     registry_metadata: Optional["ModelGenericMetadata"] = Field(
-        None, description="Metadata about the resolved registry"
+        None,
+        description="Metadata about the resolved registry",
     )
 
     cache_metadata: Optional["ModelGenericMetadata"] = Field(
-        None, description="Cache-related metadata and statistics"
+        None,
+        description="Cache-related metadata and statistics",
     )
 
     @field_validator("start_time", "end_time")
     @classmethod
-    def validate_timestamps(cls, v: Optional[str]) -> Optional[str]:
+    def validate_timestamps(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return v
@@ -130,7 +144,8 @@ class ModelRegistryResolutionResult(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("Timestamp must be a valid ISO timestamp")
+            msg = "Timestamp must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Status and Success Analysis ===
 
@@ -160,18 +175,16 @@ class ModelRegistryResolutionResult(BaseModel):
             # Success on first try gets 1.0, success with retries gets lower score
             if self.retry_count == 0:
                 return 1.0
-            else:
-                # Penalize based on retry count
-                penalty = min(self.retry_count * 0.1, 0.5)
-                return 1.0 - penalty
-        elif self.is_partial_success():
+            # Penalize based on retry count
+            penalty = min(self.retry_count * 0.1, 0.5)
+            return 1.0 - penalty
+        if self.is_partial_success():
             return 0.7
-        else:
-            return 0.0
+        return 0.0
 
     # === Performance Analysis ===
 
-    def get_duration_seconds(self) -> Optional[float]:
+    def get_duration_seconds(self) -> float | None:
         """Get resolution duration in seconds."""
         if self.duration_ms is None:
             return None
@@ -186,14 +199,13 @@ class ModelRegistryResolutionResult(BaseModel):
 
         if seconds < 1:
             return ResolutionPerformance.EXCELLENT
-        elif seconds < 5:
+        if seconds < 5:
             return ResolutionPerformance.GOOD
-        elif seconds < 15:
+        if seconds < 15:
             return ResolutionPerformance.ACCEPTABLE
-        elif seconds < 30:
+        if seconds < 30:
             return ResolutionPerformance.SLOW
-        else:
-            return ResolutionPerformance.VERY_SLOW
+        return ResolutionPerformance.VERY_SLOW
 
     def is_performance_concerning(self) -> bool:
         """Check if performance indicates potential issues."""
@@ -234,9 +246,8 @@ class ModelRegistryResolutionResult(BaseModel):
 
         if self.duration_ms < 1000:
             return f"{self.duration_ms}ms"
-        else:
-            seconds = self.duration_ms / 1000
-            return f"{seconds:.2f}s"
+        seconds = self.duration_ms / 1000
+        return f"{seconds:.2f}s"
 
     # === Cache Analysis ===
 
@@ -244,7 +255,7 @@ class ModelRegistryResolutionResult(BaseModel):
         """Check if result was served from cache."""
         return self.cached_result or self.status == ResolutionStatus.CACHED
 
-    def get_cache_efficiency(self) -> Optional[float]:
+    def get_cache_efficiency(self) -> float | None:
         """Get cache efficiency score if applicable."""
         if not self.was_cached():
             return None
@@ -252,10 +263,9 @@ class ModelRegistryResolutionResult(BaseModel):
         # Cache efficiency is excellent if very fast
         if self.duration_ms and self.duration_ms < 100:
             return 1.0
-        elif self.duration_ms and self.duration_ms < 500:
+        if self.duration_ms and self.duration_ms < 500:
             return 0.8
-        else:
-            return 0.6
+        return 0.6
 
     def should_update_cache(self) -> bool:
         """Determine if cache should be updated with this result."""
@@ -272,8 +282,7 @@ class ModelRegistryResolutionResult(BaseModel):
         if not self.is_failed() and not self.error_message:
             return None
 
-        from omnibase_core.model.core.model_generic_properties import \
-            ModelErrorSummary
+        from omnibase_core.model.core.model_generic_properties import ModelErrorSummary
 
         return ModelErrorSummary(
             code=self.error_code,
@@ -287,7 +296,7 @@ class ModelRegistryResolutionResult(BaseModel):
             },
         )
 
-    def get_resolution_issues(self) -> List[str]:
+    def get_resolution_issues(self) -> list[str]:
         """Get list of all issues encountered during resolution."""
         issues = []
 
@@ -306,13 +315,13 @@ class ModelRegistryResolutionResult(BaseModel):
 
         return issues
 
-    def get_recovery_recommendations(self) -> List[str]:
+    def get_recovery_recommendations(self) -> list[str]:
         """Get recovery recommendations based on resolution issues."""
         recommendations = []
 
         if self.status == ResolutionStatus.TIMEOUT:
             recommendations.append(
-                "Increase resolution timeout or optimize dependencies"
+                "Increase resolution timeout or optimize dependencies",
             )
 
         if self.retry_count > 2:
@@ -323,7 +332,7 @@ class ModelRegistryResolutionResult(BaseModel):
 
         if self.error_code:
             recommendations.append(
-                f"Check documentation for error code: {self.error_code}"
+                f"Check documentation for error code: {self.error_code}",
             )
 
         if not self.resolution_context.validation_enabled:
@@ -352,7 +361,9 @@ class ModelRegistryResolutionResult(BaseModel):
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the resolution result."""
         from omnibase_core.model.core.model_business_impact import (
-            ImpactSeverity, ModelBusinessImpact)
+            ImpactSeverity,
+            ModelBusinessImpact,
+        )
 
         # Determine severity based on status
         if self.is_failed():
@@ -380,47 +391,46 @@ class ModelRegistryResolutionResult(BaseModel):
         """Assess impact on system performance."""
         if self.is_failed():
             return "high_negative"
-        elif self.is_performance_concerning():
+        if self.is_performance_concerning():
             return "medium_negative"
-        elif self.get_performance_category() == ResolutionPerformance.EXCELLENT:
+        if self.get_performance_category() == ResolutionPerformance.EXCELLENT:
             return "positive"
-        else:
-            return "neutral"
+        return "neutral"
 
     def _assess_operational_efficiency(self) -> str:
         """Assess operational efficiency."""
         if self.was_cached():
             return "high_efficiency"
-        elif self.is_successful() and not self.retry_count:
+        if self.is_successful() and not self.retry_count:
             return "good_efficiency"
-        elif self.retry_count > 0 or self.has_warnings():
+        if self.retry_count > 0 or self.has_warnings():
             return "low_efficiency"
-        else:
-            return "poor_efficiency"
+        return "poor_efficiency"
 
     def _assess_user_experience(self) -> str:
         """Assess impact on user experience."""
         if self.is_failed():
             return "very_poor"
-        elif self.is_partial_success():
+        if self.is_partial_success():
             return "poor"
-        elif self.is_performance_concerning():
+        if self.is_performance_concerning():
             return "degraded"
-        elif self.get_performance_category() == ResolutionPerformance.EXCELLENT:
+        if self.get_performance_category() == ResolutionPerformance.EXCELLENT:
             return "excellent"
-        else:
-            return "good"
+        return "good"
 
     # === Monitoring Integration ===
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get comprehensive metrics for monitoring systems."""
         from omnibase_core.model.core.model_monitoring_metrics import (
-            MetricValue, ModelMonitoringMetrics)
+            MetricValue,
+            ModelMonitoringMetrics,
+        )
 
         custom_metrics = {
             "resolution_id": MetricValue(
-                value=self.resolution_context.resolution_id or "unknown"
+                value=self.resolution_context.resolution_id or "unknown",
             ),
             "status": MetricValue(value=self.status.value),
             "is_successful": MetricValue(value=self.is_successful()),
@@ -428,17 +438,17 @@ class ModelRegistryResolutionResult(BaseModel):
             "success_rate": MetricValue(value=self.get_success_rate()),
             "reliability_score": MetricValue(value=self.calculate_reliability_score()),
             "performance_category": MetricValue(
-                value=self.get_performance_category().value
+                value=self.get_performance_category().value,
             ),
             "performance_score": MetricValue(value=self.get_performance_score()),
             "is_performance_concerning": MetricValue(
-                value=self.is_performance_concerning()
+                value=self.is_performance_concerning(),
             ),
             "was_cached": MetricValue(value=self.was_cached()),
             "retry_count": MetricValue(value=self.retry_count or 0),
             "has_warnings": MetricValue(value=self.has_warnings()),
             "warning_count": MetricValue(
-                value=len(self.warnings) if self.warnings else 0
+                value=len(self.warnings) if self.warnings else 0,
             ),
         }
 
@@ -458,7 +468,7 @@ class ModelRegistryResolutionResult(BaseModel):
             custom_metrics=custom_metrics,
         )
 
-    def get_audit_trail(self) -> List["ModelAuditEntry"]:
+    def get_audit_trail(self) -> list["ModelAuditEntry"]:
         """Get audit trail for compliance and debugging."""
         from omnibase_core.model.core.model_audit_entry import ModelAuditEntry
 
@@ -477,7 +487,7 @@ class ModelRegistryResolutionResult(BaseModel):
                         "context": self.resolution_context.get_operational_summary(),
                         "dependency_mode": self.resolution_context.get_effective_dependency_mode().value,
                     },
-                )
+                ),
             )
 
         # Add each log entry as an audit event
@@ -499,7 +509,7 @@ class ModelRegistryResolutionResult(BaseModel):
                     resource=f"registry_resolution_{self.resolution_context.resolution_id}",
                     result="logged",
                     details={"message": message},
-                )
+                ),
             )
 
         # Add completion event
@@ -518,14 +528,14 @@ class ModelRegistryResolutionResult(BaseModel):
                         "warnings": self.warnings,
                         "performance_category": self.get_performance_category().value,
                     },
-                )
+                ),
             )
 
         return audit_entries
 
     # === Logging and Tracking ===
 
-    def add_log_entry(self, message: str, timestamp: Optional[str] = None) -> None:
+    def add_log_entry(self, message: str, timestamp: str | None = None) -> None:
         """Add a log entry to the resolution process."""
         if timestamp is None:
             timestamp = datetime.now().isoformat()
@@ -541,7 +551,8 @@ class ModelRegistryResolutionResult(BaseModel):
         self.add_log_entry(f"WARNING: {warning}")
 
     def mark_completed(
-        self, status: ResolutionStatus = ResolutionStatus.SUCCESS
+        self,
+        status: ResolutionStatus = ResolutionStatus.SUCCESS,
     ) -> None:
         """Mark the resolution as completed with timing."""
         self.status = status
@@ -562,7 +573,7 @@ class ModelRegistryResolutionResult(BaseModel):
         cls,
         registry: Any,
         context: ModelRegistryResolutionContext,
-        duration_ms: Optional[int] = None,
+        duration_ms: int | None = None,
         cached: bool = False,
     ) -> "ModelRegistryResolutionResult":
         """Create a successful resolution result."""
@@ -579,7 +590,7 @@ class ModelRegistryResolutionResult(BaseModel):
         if cached:
             result.add_log_entry("Result served from cache")
         result.mark_completed(
-            ResolutionStatus.CACHED if cached else ResolutionStatus.SUCCESS
+            ResolutionStatus.CACHED if cached else ResolutionStatus.SUCCESS,
         )
 
         return result
@@ -589,7 +600,7 @@ class ModelRegistryResolutionResult(BaseModel):
         cls,
         context: ModelRegistryResolutionContext,
         error_message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         retry_count: int = 0,
     ) -> "ModelRegistryResolutionResult":
         """Create a failed resolution result."""
@@ -613,7 +624,9 @@ class ModelRegistryResolutionResult(BaseModel):
 
     @classmethod
     def create_timeout(
-        cls, context: ModelRegistryResolutionContext, timeout_seconds: int
+        cls,
+        context: ModelRegistryResolutionContext,
+        timeout_seconds: int,
     ) -> "ModelRegistryResolutionResult":
         """Create a timeout resolution result."""
         result = cls(
@@ -637,8 +650,8 @@ class ModelRegistryResolutionResult(BaseModel):
         cls,
         registry: Any,
         context: ModelRegistryResolutionContext,
-        warnings: List[str],
-        duration_ms: Optional[int] = None,
+        warnings: list[str],
+        duration_ms: int | None = None,
     ) -> "ModelRegistryResolutionResult":
         """Create a partial success resolution result."""
         result = cls(

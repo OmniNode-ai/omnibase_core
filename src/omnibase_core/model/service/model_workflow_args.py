@@ -5,8 +5,6 @@ Defines the argument models for workflow execution and management operations
 within the ONEX architecture.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_workflow_parameters import ModelWorkflowParameters
@@ -21,16 +19,19 @@ class ModelWorkflowExecutionArgs(BaseModel):
     """
 
     workflow_name: str = Field(..., description="Name of the workflow to execute")
-    parameters: Optional[ModelWorkflowParameters] = Field(
-        None, description="Workflow execution parameters"
+    parameters: ModelWorkflowParameters | None = Field(
+        None,
+        description="Workflow execution parameters",
     )
     dry_run: bool = Field(default=False, description="Whether to perform a dry run")
-    timeout_seconds: Optional[int] = Field(
-        None, description="Execution timeout in seconds"
+    timeout_seconds: int | None = Field(
+        None,
+        description="Execution timeout in seconds",
     )
-    priority: Optional[str] = Field(None, description="Execution priority")
-    tags: Optional[List[str]] = Field(
-        None, description="Tags for the workflow execution"
+    priority: str | None = Field(None, description="Execution priority")
+    tags: list[str] | None = Field(
+        None,
+        description="Tags for the workflow execution",
     )
 
 

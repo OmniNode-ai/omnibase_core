@@ -7,19 +7,20 @@ and caching for performance.
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.policy.model_coding_standards_policy import \
-    ModelCodingStandardsPolicyWrapper
-from omnibase_core.model.policy.model_debug_logging_policy import \
-    ModelDebugLoggingPolicyWrapper
-from omnibase_core.model.policy.model_logging_policy import \
-    ModelLoggingPolicyWrapper
+from omnibase_core.model.policy.model_coding_standards_policy import (
+    ModelCodingStandardsPolicyWrapper,
+)
+from omnibase_core.model.policy.model_debug_logging_policy import (
+    ModelDebugLoggingPolicyWrapper,
+)
+from omnibase_core.model.policy.model_logging_policy import ModelLoggingPolicyWrapper
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -29,10 +30,10 @@ logger = logging.getLogger(__name__)
 class UtilityPolicyLoader:
     """Utility for loading and validating ONEX policy files."""
 
-    def __init__(self, policies_dir: Optional[Path] = None):
+    def __init__(self, policies_dir: Path | None = None):
         """Initialize policy loader with policies directory."""
         self.policies_dir = policies_dir or Path("config/policies")
-        self._policy_cache: Dict[str, Any] = {}
+        self._policy_cache: dict[str, Any] = {}
 
     @lru_cache(maxsize=32)
     def load_logging_policy(self) -> ModelLoggingPolicyWrapper:
@@ -57,7 +58,8 @@ class UtilityPolicyLoader:
             OnexError: If policy file cannot be loaded or validated
         """
         return self._load_policy_file(
-            "coding_standards_policy.yaml", ModelCodingStandardsPolicyWrapper
+            "coding_standards_policy.yaml",
+            ModelCodingStandardsPolicyWrapper,
         )
 
     @lru_cache(maxsize=32)
@@ -71,10 +73,11 @@ class UtilityPolicyLoader:
             OnexError: If policy file cannot be loaded or validated
         """
         return self._load_policy_file(
-            "debug_logging_policy.yaml", ModelDebugLoggingPolicyWrapper
+            "debug_logging_policy.yaml",
+            ModelDebugLoggingPolicyWrapper,
         )
 
-    def _load_policy_file(self, filename: str, model_class: Type[T]) -> T:
+    def _load_policy_file(self, filename: str, model_class: type[T]) -> T:
         """Load and validate a policy file against its Pydantic model.
 
         Args:
@@ -111,7 +114,7 @@ class UtilityPolicyLoader:
                 },
             )
 
-            with open(policy_path, "r", encoding="utf-8") as f:
+            with open(policy_path, encoding="utf-8") as f:
                 policy_data = yaml.safe_load(f)
 
             if not policy_data:
@@ -194,7 +197,9 @@ class UtilityPolicyLoader:
             ) from e
 
     def validate_policy_compatibility(
-        self, policy_version: str, required_version: str
+        self,
+        policy_version: str,
+        required_version: str,
     ) -> bool:
         """Validate that a policy version is compatible with requirements.
 
@@ -208,7 +213,7 @@ class UtilityPolicyLoader:
         try:
             logging_policy = self.load_logging_policy()
             return logging_policy.logging_policy.is_compatible_with_version(
-                required_version
+                required_version,
             )
 
         except Exception as e:
@@ -227,7 +232,7 @@ class UtilityPolicyLoader:
             )
             return False
 
-    def get_policy_version(self, policy_name: str) -> Optional[str]:
+    def get_policy_version(self, policy_name: str) -> str | None:
         """Get the version of a specific policy.
 
         Args:
@@ -240,10 +245,10 @@ class UtilityPolicyLoader:
             if policy_name == "logging_policy":
                 policy = self.load_logging_policy()
                 return policy.logging_policy.version
-            elif policy_name == "coding_standards_policy":
+            if policy_name == "coding_standards_policy":
                 policy = self.load_coding_standards_policy()
                 return policy.coding_standards_policy.version
-            elif policy_name == "debug_logging_policy":
+            if policy_name == "debug_logging_policy":
                 policy = self.load_debug_logging_policy()
                 return policy.debug_logging_policy.version
             # Add other policy types as they are implemented
@@ -323,7 +328,8 @@ def validate_logging_pattern(pattern_name: str, subsystem: str = "default") -> b
     try:
         policy = get_logging_policy()
         pattern = policy.logging_policy.get_pattern_for_subsystem(
-            pattern_name, subsystem
+            pattern_name,
+            subsystem,
         )
         return pattern is not None
 

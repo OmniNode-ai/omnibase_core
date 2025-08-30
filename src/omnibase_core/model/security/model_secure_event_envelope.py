@@ -7,7 +7,6 @@ enterprise-grade security and compliance.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Set
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -16,16 +15,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.model.core.model_route_spec import ModelRouteSpec
-from omnibase_core.model.security.model_policy_context import \
-    ModelPolicyContext
-from omnibase_core.model.security.model_security_context import \
-    ModelSecurityContext
-from omnibase_core.model.security.model_security_event import \
-    ModelSecurityEvent
-from omnibase_core.model.security.model_security_summary import \
-    ModelSecuritySummary
-from omnibase_core.model.security.model_signature_verification_result import \
-    ModelSignatureVerificationResult
+from omnibase_core.model.security.model_policy_context import ModelPolicyContext
+from omnibase_core.model.security.model_security_context import ModelSecurityContext
+from omnibase_core.model.security.model_security_event import ModelSecurityEvent
+from omnibase_core.model.security.model_security_summary import ModelSecuritySummary
+from omnibase_core.model.security.model_signature_verification_result import (
+    ModelSignatureVerificationResult,
+)
 
 from .model_node_signature import ModelNodeSignature
 from .model_signature_chain import ModelSignatureChain, TrustLevel
@@ -39,46 +35,57 @@ class EncryptionMetadata(BaseModel):
     key_id: str = Field(..., description="Encryption key identifier")
     iv: str = Field(..., description="Base64-encoded initialization vector")
     auth_tag: str = Field(..., description="Base64-encoded authentication tag")
-    encrypted_key: Optional[str] = Field(
-        None, description="Encrypted symmetric key (for asymmetric)"
+    encrypted_key: str | None = Field(
+        None,
+        description="Encrypted symmetric key (for asymmetric)",
     )
-    recipient_keys: Dict[str, str] = Field(
-        default_factory=dict, description="Per-recipient encrypted keys"
+    recipient_keys: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-recipient encrypted keys",
     )
 
 
 class ComplianceMetadata(BaseModel):
     """Compliance and regulatory metadata."""
 
-    frameworks: List[str] = Field(
-        default_factory=list, description="Applicable frameworks"
+    frameworks: list[str] = Field(
+        default_factory=list,
+        description="Applicable frameworks",
     )
     classification: str = Field(
-        default="internal", description="Data classification level"
+        default="internal",
+        description="Data classification level",
     )
-    retention_period_days: Optional[int] = Field(
-        None, description="Retention period in days"
+    retention_period_days: int | None = Field(
+        None,
+        description="Retention period in days",
     )
-    jurisdiction: Optional[str] = Field(None, description="Legal jurisdiction")
+    jurisdiction: str | None = Field(None, description="Legal jurisdiction")
     consent_required: bool = Field(
-        default=False, description="Explicit consent required"
+        default=False,
+        description="Explicit consent required",
     )
     audit_level: str = Field(
-        default="standard", description="Required audit detail level"
+        default="standard",
+        description="Required audit detail level",
     )
 
     # Specific compliance flags
     contains_pii: bool = Field(
-        default=False, description="Contains personally identifiable information"
+        default=False,
+        description="Contains personally identifiable information",
     )
     contains_phi: bool = Field(
-        default=False, description="Contains protected health information"
+        default=False,
+        description="Contains protected health information",
     )
     contains_financial: bool = Field(
-        default=False, description="Contains financial data"
+        default=False,
+        description="Contains financial data",
     )
     export_controlled: bool = Field(
-        default=False, description="Subject to export controls"
+        default=False,
+        description="Subject to export controls",
     )
 
 
@@ -92,8 +99,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     """
 
     # Enhanced security context
-    security_context: Optional[ModelSecurityContext] = Field(
-        None, description="Enhanced security context with JWT and RBAC"
+    security_context: ModelSecurityContext | None = Field(
+        None,
+        description="Enhanced security context with JWT and RBAC",
     )
 
     # Cryptographic signature chain
@@ -106,8 +114,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     )
 
     # Trust and policy enforcement
-    trust_policy: Optional[ModelTrustPolicy] = Field(
-        None, description="Trust policy governing signature requirements"
+    trust_policy: ModelTrustPolicy | None = Field(
+        None,
+        description="Trust policy governing signature requirements",
     )
     required_trust_level: TrustLevel = Field(
         default=TrustLevel.STANDARD,
@@ -116,13 +125,16 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
 
     # Encryption support
     is_encrypted: bool = Field(
-        default=False, description="Whether payload is encrypted"
+        default=False,
+        description="Whether payload is encrypted",
     )
-    encryption_metadata: Optional[EncryptionMetadata] = Field(
-        None, description="Encryption details if payload is encrypted"
+    encryption_metadata: EncryptionMetadata | None = Field(
+        None,
+        description="Encryption details if payload is encrypted",
     )
-    encrypted_payload: Optional[str] = Field(
-        None, description="Base64-encoded encrypted payload"
+    encrypted_payload: str | None = Field(
+        None,
+        description="Base64-encoded encrypted payload",
     )
 
     # Compliance and regulatory
@@ -132,38 +144,47 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     )
 
     # Security clearance and access control
-    security_clearance_required: Optional[str] = Field(
-        None, description="Required security clearance level"
+    security_clearance_required: str | None = Field(
+        None,
+        description="Required security clearance level",
     )
-    authorized_roles: List[str] = Field(
-        default_factory=list, description="Roles authorized to process this envelope"
+    authorized_roles: list[str] = Field(
+        default_factory=list,
+        description="Roles authorized to process this envelope",
     )
-    authorized_nodes: Set[str] = Field(
-        default_factory=set, description="Specific nodes authorized to process envelope"
+    authorized_nodes: set[str] = Field(
+        default_factory=set,
+        description="Specific nodes authorized to process envelope",
     )
 
     # Tamper detection
     content_hash: str = Field(
-        ..., description="Hash of envelope content for tamper detection"
+        ...,
+        description="Hash of envelope content for tamper detection",
     )
     signature_required: bool = Field(
-        default=True, description="Whether signatures are required"
+        default=True,
+        description="Whether signatures are required",
     )
     minimum_signatures: int = Field(
-        default=1, description="Minimum required signatures"
+        default=1,
+        description="Minimum required signatures",
     )
 
     # Security audit trail
-    security_events: List[ModelSecurityEvent] = Field(
-        default_factory=list, description="Security events and audit trail"
+    security_events: list[ModelSecurityEvent] = Field(
+        default_factory=list,
+        description="Security events and audit trail",
     )
 
     # Performance and timeout settings
     signature_timeout_ms: int = Field(
-        default=15000, description="Maximum time allowed for signature operations"
+        default=15000,
+        description="Maximum time allowed for signature operations",
     )
     encryption_timeout_ms: int = Field(
-        default=10000, description="Maximum time allowed for encryption operations"
+        default=10000,
+        description="Maximum time allowed for encryption operations",
     )
 
     model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
@@ -185,9 +206,11 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     def validate_minimum_signatures(cls, v):
         """Validate minimum signature count."""
         if v < 0:
-            raise ValueError("Minimum signatures cannot be negative")
+            msg = "Minimum signatures cannot be negative"
+            raise ValueError(msg)
         if v > 50:
-            raise ValueError("Minimum signatures cannot exceed 50")
+            msg = "Minimum signatures cannot exceed 50"
+            raise ValueError(msg)
         return v
 
     def _update_content_hash(self) -> None:
@@ -238,14 +261,16 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         """Add a cryptographic signature to the envelope."""
         # Validate signature is for this envelope
         if signature.envelope_version != self.envelope_version:
-            raise ValueError("Signature envelope version mismatch")
+            msg = "Signature envelope version mismatch"
+            raise ValueError(msg)
 
         # Update content hash before signing
         self._update_content_hash()
 
         # Ensure signature includes current content hash
         if signature.content_hash != self.content_hash:
-            raise ValueError("Signature content hash mismatch")
+            msg = "Signature content hash mismatch"
+            raise ValueError(msg)
 
         # Add to signature chain
         self.signature_chain.add_signature(signature)
@@ -259,11 +284,14 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         )
 
     def verify_signatures(
-        self, trusted_nodes: Set[str] = None
+        self,
+        trusted_nodes: set[str] | None = None,
     ) -> ModelSignatureVerificationResult:
         """Verify all signatures in the chain."""
         from omnibase_core.model.security.model_signature_verification_result import (
-            ModelChainValidation, ModelPolicyValidation)
+            ModelChainValidation,
+            ModelPolicyValidation,
+        )
 
         # Default status for no signatures
         if not self.signature_chain.signatures:
@@ -312,7 +340,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         policy_validation = None
         if self.trust_policy:
             policy_result = self.trust_policy.validate_signature_chain(
-                self.signature_chain, context=self._get_policy_context()
+                self.signature_chain,
+                context=self._get_policy_context(),
             )
             if policy_result:
                 policy_validation = ModelPolicyValidation(
@@ -373,18 +402,24 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         return context
 
     def encrypt_payload(
-        self, encryption_key: str, algorithm: str = "AES-256-GCM"
+        self,
+        encryption_key: str,
+        algorithm: str = "AES-256-GCM",
     ) -> None:
         """Encrypt the envelope payload."""
         if self.is_encrypted:
-            raise ValueError("Payload is already encrypted")
+            msg = "Payload is already encrypted"
+            raise ValueError(msg)
 
         # AI_PROMPT: Implement actual encryption using cryptography library
         # This should use AES-256-GCM with proper key derivation
-        raise NotImplementedError(
+        msg = (
             "Encryption implementation required: Use cryptography library "
             "to implement AES-256-GCM encryption with proper IV generation "
             "and authentication tag creation"
+        )
+        raise NotImplementedError(
+            msg,
         )
 
         # Update content hash after encryption
@@ -400,21 +435,28 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     def decrypt_payload(self, decryption_key: str) -> ModelOnexEvent:
         """Decrypt the envelope payload."""
         if not self.is_encrypted:
-            raise ValueError("Payload is not encrypted")
+            msg = "Payload is not encrypted"
+            raise ValueError(msg)
 
         if not self.encrypted_payload or not self.encryption_metadata:
-            raise ValueError("Missing encryption data")
+            msg = "Missing encryption data"
+            raise ValueError(msg)
 
         # AI_PROMPT: Implement actual decryption using cryptography library
         # This should use AES-256-GCM with proper key derivation
-        raise NotImplementedError(
+        msg = (
             "Decryption implementation required: Use cryptography library "
             "to implement AES-256-GCM decryption with IV and authentication "
             "tag verification"
         )
+        raise NotImplementedError(
+            msg,
+        )
 
     def check_authorization(
-        self, node_id: str, user_context: Optional[ModelSecurityContext] = None
+        self,
+        node_id: str,
+        user_context: ModelSecurityContext | None = None,
     ) -> bool:
         """Check if node/user is authorized to process this envelope."""
         # Check node authorization
@@ -443,7 +485,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         if self.security_clearance_required and user_context:
             user_clearance = user_context.trust_level
             if not user_clearance or str(user_clearance) < str(
-                self.security_clearance_required
+                self.security_clearance_required,
             ):
                 self.log_security_event(
                     "authorization_failed",
@@ -470,8 +512,11 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     def get_security_summary(self) -> ModelSecuritySummary:
         """Get comprehensive security summary for reporting."""
         from omnibase_core.model.security.model_security_summary import (
-            ModelAuthorizationSummary, ModelComplianceSummary,
-            ModelSecurityEventSummary, ModelSignatureChainSummary)
+            ModelAuthorizationSummary,
+            ModelComplianceSummary,
+            ModelSecurityEventSummary,
+            ModelSignatureChainSummary,
+        )
 
         chain_summary = self.signature_chain.get_chain_summary()
 
@@ -515,8 +560,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         payload: ModelOnexEvent,
         destination: str,
         source_node_id: str,
-        security_context: Optional[ModelSecurityContext] = None,
-        trust_policy: Optional[ModelTrustPolicy] = None,
+        security_context: ModelSecurityContext | None = None,
+        trust_policy: ModelTrustPolicy | None = None,
         **kwargs,
     ) -> "ModelSecureEventEnvelope":
         """Create secure envelope for direct routing."""
@@ -544,8 +589,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
         destination: str,
         source_node_id: str,
         encryption_key: str,
-        security_context: Optional[ModelSecurityContext] = None,
-        trust_policy: Optional[ModelTrustPolicy] = None,
+        security_context: ModelSecurityContext | None = None,
+        trust_policy: ModelTrustPolicy | None = None,
         **kwargs,
     ) -> "ModelSecureEventEnvelope":
         """Create secure envelope with encrypted payload."""

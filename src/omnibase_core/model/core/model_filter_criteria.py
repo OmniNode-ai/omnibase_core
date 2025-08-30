@@ -3,7 +3,7 @@ Filter criteria model to replace Dict[str, Any] usage for filter fields.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,49 +23,55 @@ class ModelFilterCriteria(BaseModel):
     """
 
     # Basic filters
-    conditions: List[ModelFilterCondition] = Field(
-        default_factory=list, description="Filter conditions"
+    conditions: list[ModelFilterCondition] = Field(
+        default_factory=list,
+        description="Filter conditions",
     )
 
     # Logical operators
     logic: str = Field("AND", description="Logical operator (AND/OR)")
 
     # Time-based filters
-    time_range: Optional[Dict[str, datetime]] = Field(
-        None, description="Time range filter with 'start' and 'end'"
+    time_range: dict[str, datetime] | None = Field(
+        None,
+        description="Time range filter with 'start' and 'end'",
     )
 
     # Field selection
-    include_fields: Optional[List[str]] = Field(
-        None, description="Fields to include in results"
+    include_fields: list[str] | None = Field(
+        None,
+        description="Fields to include in results",
     )
-    exclude_fields: Optional[List[str]] = Field(
-        None, description="Fields to exclude from results"
+    exclude_fields: list[str] | None = Field(
+        None,
+        description="Fields to exclude from results",
     )
 
     # Sorting
-    sort_by: Optional[str] = Field(None, description="Field to sort by")
+    sort_by: str | None = Field(None, description="Field to sort by")
     sort_order: str = Field("asc", description="Sort order (asc/desc)")
 
     # Pagination
-    limit: Optional[int] = Field(None, description="Maximum results to return")
-    offset: Optional[int] = Field(None, description="Results offset for pagination")
+    limit: int | None = Field(None, description="Maximum results to return")
+    offset: int | None = Field(None, description="Results offset for pagination")
 
     # Advanced filters
-    tags: Optional[List[str]] = Field(None, description="Tag filters")
-    categories: Optional[List[str]] = Field(None, description="Category filters")
-    severity_levels: Optional[List[str]] = Field(
-        None, description="Severity level filters"
+    tags: list[str] | None = Field(None, description="Tag filters")
+    categories: list[str] | None = Field(None, description="Category filters")
+    severity_levels: list[str] | None = Field(
+        None,
+        description="Severity level filters",
     )
 
     # Custom filters (for extensibility)
     custom_filters: ModelCustomFilters = Field(
-        default_factory=ModelCustomFilters, description="Custom filter extensions"
+        default_factory=ModelCustomFilters,
+        description="Custom filter extensions",
     )
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         data = self.model_dump(exclude_none=True)
         # Convert custom filters to dict if present
@@ -75,7 +81,8 @@ class ModelFilterCriteria(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelFilterCriteria"]:
         """Create from dictionary for easy migration."""
         if data is None:
@@ -100,14 +107,14 @@ class ModelFilterCriteria(BaseModel):
                         ModelFilterCondition(
                             field=key,
                             operator=ModelFilterOperator(operator="eq", value=value),
-                        )
+                        ),
                     )
             data["conditions"] = conditions
 
         # Convert custom_filters if present
         if "custom_filters" in data and isinstance(data["custom_filters"], dict):
             data["custom_filters"] = ModelCustomFilters.from_dict(
-                data["custom_filters"]
+                data["custom_filters"],
             )
 
         return cls(**data)
@@ -118,7 +125,7 @@ class ModelFilterCriteria(BaseModel):
             ModelFilterCondition(
                 field=field,
                 operator=ModelFilterOperator(operator=operator, value=value),
-            )
+            ),
         )
 
     def to_query_string(self) -> str:

@@ -1,7 +1,5 @@
 """Model for managing task assignments."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -13,8 +11,9 @@ class ModelTaskAssignmentMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    assignments: Dict[str, str] = Field(
-        default_factory=dict, description="Map of task IDs to agent IDs"
+    assignments: dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of task IDs to agent IDs",
     )
 
     def assign_task(self, task_id: str, agent_id: str) -> None:

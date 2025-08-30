@@ -8,13 +8,15 @@ This eliminates the need for every single node to manually wire up mixin initial
 from omnibase_core.core.node_effect import NodeEffect
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
-from omnibase_core.mixin.mixin_node_id_from_contract import \
-    MixinNodeIdFromContract
+from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService
 
 
 class NodeEffectService(
-    NodeEffect, MixinNodeService, MixinNodeIdFromContract, MixinHealthCheck
+    NodeEffect,
+    MixinNodeService,
+    MixinNodeIdFromContract,
+    MixinHealthCheck,
 ):
     """
     Proper base class for effect nodes that need service capabilities.

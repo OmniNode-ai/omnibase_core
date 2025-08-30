@@ -1,7 +1,6 @@
 """DateTime-based custom filter model."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import Field
 
@@ -12,7 +11,7 @@ class ModelDateTimeFilter(ModelCustomFilterBase):
     """DateTime-based custom filter."""
 
     filter_type: str = Field(default="datetime", description="Filter type identifier")
-    after: Optional[datetime] = Field(None, description="After this datetime")
-    before: Optional[datetime] = Field(None, description="Before this datetime")
-    on_date: Optional[datetime] = Field(None, description="On specific date")
-    relative_days: Optional[int] = Field(None, description="Within N days from now")
+    after: datetime | None = Field(None, description="After this datetime")
+    before: datetime | None = Field(None, description="Before this datetime")
+    on_date: datetime | None = Field(None, description="On specific date")
+    relative_days: int | None = Field(None, description="Within N days from now")

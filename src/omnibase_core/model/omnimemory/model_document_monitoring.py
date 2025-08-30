@@ -13,9 +13,11 @@ class ModelMonitoringStatus(BaseModel):
 
     active: bool = Field(..., description="Whether monitoring is currently active")
     monitored_files: int = Field(
-        ..., description="Number of files currently being monitored"
+        ...,
+        description="Number of files currently being monitored",
     )
     pending_changes: int = Field(
-        ..., description="Number of pending changes in the queue"
+        ...,
+        description="Number of pending changes in the queue",
     )
     scan_interval: int = Field(..., description="Scan interval in seconds")

@@ -5,13 +5,14 @@ Provides automatic registry dependency injection and validation.
 Handles common registry patterns and protocol enforcement.
 """
 
-from typing import Generic, Optional, Protocol, TypeVar
+from typing import Generic, Protocol, TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.exceptions import OnexError
 from omnibase_core.protocol.protocol_registry import ProtocolRegistry
@@ -23,7 +24,7 @@ RegistryT = TypeVar("RegistryT", bound=ProtocolRegistry)
 class ProtocolRegistryAware(Protocol):
     """Protocol for classes that can accept a registry."""
 
-    registry: Optional[ProtocolRegistry]
+    registry: ProtocolRegistry | None
 
 
 class MixinRegistryInjection(Generic[RegistryT]):
@@ -52,7 +53,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         super().__init__(**kwargs)
 
         # Registry will be set via property
-        self._registry: Optional[RegistryT] = None
+        self._registry: RegistryT | None = None
         self._registry_validated: bool = False
 
         emit_log_event(
@@ -65,12 +66,12 @@ class MixinRegistryInjection(Generic[RegistryT]):
         )
 
     @property
-    def registry(self) -> Optional[RegistryT]:
+    def registry(self) -> RegistryT | None:
         """Get the injected registry."""
         return self._registry
 
     @registry.setter
-    def registry(self, value: Optional[RegistryT]) -> None:
+    def registry(self, value: RegistryT | None) -> None:
         """Set and validate the registry."""
         emit_log_event(
             LogLevelEnum.DEBUG,
@@ -173,7 +174,7 @@ class MixinRegistryInjection(Generic[RegistryT]):
         # No health check available, assume success
         return EnumOnexStatus.SUCCESS
 
-    def get_service(self, service_name: str) -> Optional[object]:
+    def get_service(self, service_name: str) -> object | None:
         """Get a service from the registry with validation."""
         if self._registry is None:
             emit_log_event(

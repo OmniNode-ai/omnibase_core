@@ -36,6 +36,7 @@ from enum import Enum
 from .model_git_hub_actions_workflow import ModelGitHubActionsWorkflow
 from .model_job import ModelJob
 from .model_pull_request_trigger import ModelPullRequestTrigger
+
 # Import separated models
 from .model_push_trigger import ModelPushTrigger
 from .model_schedule_trigger import ModelScheduleTrigger
@@ -84,25 +85,25 @@ Job = ModelJob
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelPushTrigger",
-    "ModelPullRequestTrigger",
-    "ModelScheduleTrigger",
-    "ModelWorkflowTriggers",
-    "ModelStepWith",
-    "ModelStep",
-    "ModelJob",
-    "ModelGitHubActionsWorkflow",
-    "ModelGitHubActionEvent",
-    "ModelGitHubRunnerOS",
+    "GitHubActionEvent",
     # Backward compatibility
     "GitHubActionsWorkflow",
-    "GitHubActionEvent",
     "GitHubRunnerOS",
-    "PushTrigger",
-    "PullRequestTrigger",
-    "ScheduleTrigger",
-    "WorkflowTriggers",
-    "StepWith",
-    "Step",
     "Job",
+    "ModelGitHubActionEvent",
+    "ModelGitHubActionsWorkflow",
+    "ModelGitHubRunnerOS",
+    "ModelJob",
+    "ModelPullRequestTrigger",
+    "ModelPushTrigger",
+    "ModelScheduleTrigger",
+    "ModelStep",
+    "ModelStepWith",
+    "ModelWorkflowTriggers",
+    "PullRequestTrigger",
+    "PushTrigger",
+    "ScheduleTrigger",
+    "Step",
+    "StepWith",
+    "WorkflowTriggers",
 ]

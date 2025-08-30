@@ -17,4 +17,4 @@ from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from .model_registry_health_report import ModelRegistryHealthReport
 
 # Maintain backward compatibility with any existing imports
-__all__ = ["ModelToolHealth", "ModelServiceHealth", "ModelRegistryHealthReport"]
+__all__ = ["ModelRegistryHealthReport", "ModelServiceHealth", "ModelToolHealth"]

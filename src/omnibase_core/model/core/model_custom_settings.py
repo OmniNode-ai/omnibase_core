@@ -3,7 +3,7 @@ Custom settings model.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,31 +15,36 @@ class ModelCustomSettings(BaseModel):
     """
 
     # Settings categories
-    general_settings: Dict[str, Any] = Field(
-        default_factory=dict, description="General settings"
+    general_settings: dict[str, Any] = Field(
+        default_factory=dict,
+        description="General settings",
     )
 
-    advanced_settings: Dict[str, Any] = Field(
-        default_factory=dict, description="Advanced settings"
+    advanced_settings: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Advanced settings",
     )
 
-    experimental_settings: Dict[str, Any] = Field(
-        default_factory=dict, description="Experimental settings"
+    experimental_settings: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Experimental settings",
     )
 
     # Metadata
     version: str = Field("1.0", description="Settings version")
-    last_modified: Optional[datetime] = Field(
-        None, description="Last modification time"
+    last_modified: datetime | None = Field(
+        None,
+        description="Last modification time",
     )
 
     # Validation
     validate_on_set: bool = Field(
-        False, description="Validate settings on modification"
+        False,
+        description="Validate settings on modification",
     )
     allow_unknown: bool = Field(True, description="Allow unknown settings")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         # Merge all settings for backward compatibility
         result = {}
@@ -50,7 +55,8 @@ class ModelCustomSettings(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelCustomSettings"]:
         """Create from dictionary for easy migration."""
         if data is None:

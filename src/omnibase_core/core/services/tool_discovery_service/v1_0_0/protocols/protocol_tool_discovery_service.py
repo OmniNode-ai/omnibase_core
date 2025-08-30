@@ -8,15 +8,14 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Any, Optional, Protocol, Type
+from typing import Any, Protocol
 
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.decorators import allow_any_type
 
 
 @allow_any_type(
-    "Protocol interfaces require Any types for generic tool and registry handling"
+    "Protocol interfaces require Any types for generic tool and registry handling",
 )
 class ProtocolToolDiscoveryService(Protocol):
     """
@@ -52,7 +51,7 @@ class ProtocolToolDiscoveryService(Protocol):
         self,
         module_path: str,
         tool_class_name: str,
-    ) -> Type:
+    ) -> type:
         """
         Discover tool class from module path.
 
@@ -70,7 +69,7 @@ class ProtocolToolDiscoveryService(Protocol):
 
     def instantiate_tool_with_container(
         self,
-        tool_class: Type,
+        tool_class: type,
         container: Any,
     ) -> Any:
         """
@@ -92,7 +91,7 @@ class ProtocolToolDiscoveryService(Protocol):
         self,
         registry: Any,
         tool_class_name: str,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Resolve tool from legacy registry pattern.
 

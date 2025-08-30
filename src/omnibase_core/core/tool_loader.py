@@ -9,13 +9,12 @@ with full dependency injection support.
 import importlib
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.generation.model_contract_document import \
-    ModelContractDocument
+from omnibase_core.model.generation.model_contract_document import ModelContractDocument
 from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
 
 logger = logging.getLogger(__name__)
@@ -25,8 +24,6 @@ T = TypeVar("T", bound=ProtocolOnexNode)
 
 class ToolLoadError(OnexError):
     """Raised when tool loading fails."""
-
-    pass
 
 
 class ToolLoader:
@@ -53,7 +50,9 @@ class ToolLoader:
         self.tool_cache = {}
 
     def load_tool_from_contract(
-        self, contract_path: str, tool_path: Optional[str] = None
+        self,
+        contract_path: str,
+        tool_path: str | None = None,
     ) -> ProtocolOnexNode:
         """
         Load a tool from its contract specification.
@@ -76,7 +75,8 @@ class ToolLoader:
             # Step 2: Determine tool module path
             if not tool_path:
                 tool_path = self._resolve_tool_path_from_contract(
-                    contract, contract_path
+                    contract,
+                    contract_path,
                 )
 
             # Step 3: Dynamically import tool module
@@ -98,14 +98,14 @@ class ToolLoader:
             return tool_instance
 
         except Exception as e:
-            logger.error(f"❌ Failed to load tool from {contract_path}: {e}")
+            logger.exception(f"❌ Failed to load tool from {contract_path}: {e}")
             raise ToolLoadError(
                 code=CoreErrorCode.TOOL_ERROR,
                 message=f"Failed to load tool from contract: {contract_path}",
                 details={"error": str(e), "contract_path": contract_path},
             )
 
-    def load_tool_from_spec(self, tool_spec: Dict[str, Any]) -> ProtocolOnexNode:
+    def load_tool_from_spec(self, tool_spec: dict[str, Any]) -> ProtocolOnexNode:
         """
         Load a tool from a specification dictionary.
 
@@ -129,18 +129,19 @@ class ToolLoader:
         if contract_path and Path(contract_path).exists():
             # Load from contract
             return self.load_tool_from_contract(contract_path, tool_path)
-        elif tool_path:
+        if tool_path:
             # Load directly without contract
             return self._load_tool_direct(tool_path, tool_name, tool_spec)
-        else:
-            raise ToolLoadError(
-                code=CoreErrorCode.VALIDATION_ERROR,
-                message="Tool spec missing required paths",
-                details={"tool_spec": tool_spec},
-            )
+        raise ToolLoadError(
+            code=CoreErrorCode.VALIDATION_ERROR,
+            message="Tool spec missing required paths",
+            details={"tool_spec": tool_spec},
+        )
 
     def _resolve_tool_path_from_contract(
-        self, contract: ModelContractDocument, contract_path: str
+        self,
+        contract: ModelContractDocument,
+        contract_path: str,
     ) -> str:
         """
         Resolve tool implementation path from contract.
@@ -196,7 +197,7 @@ class ToolLoader:
         name = contract.node_name.lower().replace(" ", "_")
         return f"omnibase.tools.{category}.{name}.v1_0_0.node"
 
-    def _import_tool_class(self, module_path: str, tool_name: str) -> Type:
+    def _import_tool_class(self, module_path: str, tool_name: str) -> type:
         """
         Dynamically import tool class from module.
 
@@ -260,7 +261,7 @@ class ToolLoader:
                 details={"module": module_path, "error": str(e)},
             )
 
-    def _resolve_dependencies(self, contract: ModelContractDocument) -> Dict[str, Any]:
+    def _resolve_dependencies(self, contract: ModelContractDocument) -> dict[str, Any]:
         """
         Resolve tool dependencies from contract using DI container.
 
@@ -311,7 +312,7 @@ class ToolLoader:
 
         return dependencies
 
-    def _get_protocol_type(self, protocol_name: str) -> Type:
+    def _get_protocol_type(self, protocol_name: str) -> type:
         """
         Get protocol type from name.
 
@@ -330,7 +331,8 @@ class ToolLoader:
         }
 
         module_path = protocol_map.get(
-            protocol_name, f"omnibase.protocol.{protocol_name.lower()}.{protocol_name}"
+            protocol_name,
+            f"omnibase.protocol.{protocol_name.lower()}.{protocol_name}",
         )
 
         try:
@@ -343,8 +345,8 @@ class ToolLoader:
 
     def _instantiate_tool(
         self,
-        tool_class: Type,
-        dependencies: Dict[str, Any],
+        tool_class: type,
+        dependencies: dict[str, Any],
         contract: ModelContractDocument,
     ) -> ProtocolOnexNode:
         """
@@ -401,7 +403,9 @@ class ToolLoader:
             )
 
     def _validate_tool_protocol(
-        self, tool_instance: Any, contract: ModelContractDocument
+        self,
+        tool_instance: Any,
+        contract: ModelContractDocument,
     ) -> None:
         """
         Validate tool implements required protocol.
@@ -424,18 +428,21 @@ class ToolLoader:
         missing_methods = []
         for method in required_methods:
             if not hasattr(tool_instance, method) or not callable(
-                getattr(tool_instance, method)
+                getattr(tool_instance, method),
             ):
                 missing_methods.append(method)
 
         if missing_methods:
             logger.warning(
-                f"⚠️ Tool {contract.node_name} missing protocol methods: {missing_methods}"
+                f"⚠️ Tool {contract.node_name} missing protocol methods: {missing_methods}",
             )
             # Don't fail for now, just warn
 
     def _load_tool_direct(
-        self, tool_path: str, tool_name: str, tool_spec: Dict[str, Any]
+        self,
+        tool_path: str,
+        tool_name: str,
+        tool_spec: dict[str, Any],
     ) -> ProtocolOnexNode:
         """
         Load tool directly without contract.

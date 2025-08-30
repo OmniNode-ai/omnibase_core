@@ -1,17 +1,14 @@
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 
 from omnibase_core.model.core.model_metadata import ModelMetadata
-from omnibase_core.model.core.model_regeneration_target import \
-    ModelRegenerationTarget
-from omnibase_core.model.core.model_rendered_template import \
-    ModelRenderedTemplate
+from omnibase_core.model.core.model_regeneration_target import ModelRegenerationTarget
+from omnibase_core.model.core.model_rendered_template import ModelRenderedTemplate
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 # Re-export for backward compatibility
-__all__ = ["ModelTemplateContext", "ModelRenderedTemplate", "ModelRegenerationTarget"]
+__all__ = ["ModelRegenerationTarget", "ModelRenderedTemplate", "ModelTemplateContext"]
 
 
 class ModelTemplateContext(BaseModel):
@@ -27,23 +24,23 @@ class ModelTemplateContext(BaseModel):
     author: str
     year: int  # Copyright year
     version: ModelSemVer  # Required version field
-    description: Optional[str] = None
-    metadata: Optional[ModelMetadata] = None
+    description: str | None = None
+    metadata: ModelMetadata | None = None
     # Additional fields for template tokenization
-    version_string: Optional[str] = (
+    version_string: str | None = (
         None  # String version for template tokens like {VERSION}
     )
-    bundle_hash: Optional[str] = None
-    last_modified: Optional[str] = None
-    deployment_timestamp: Optional[str] = None
+    bundle_hash: str | None = None
+    last_modified: str | None = None
+    deployment_timestamp: str | None = None
 
     # Contract-derived fields for template token replacement
-    contract_hash: Optional[str] = None
-    contract_version: Optional[str] = None
-    node_version: Optional[str] = None
-    input_fields: Optional[str] = None
-    output_fields: Optional[str] = None
-    uuid: Optional[str] = None
+    contract_hash: str | None = None
+    contract_version: str | None = None
+    node_version: str | None = None
+    input_fields: str | None = None
+    output_fields: str | None = None
+    uuid: str | None = None
 
     # Output directory handling for dynamic path generation
-    output_directory: Optional[Path] = None
+    output_directory: Path | None = None

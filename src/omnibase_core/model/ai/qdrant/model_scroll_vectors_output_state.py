@@ -5,7 +5,7 @@ This model defines the output results for scrolling through vectors,
 following ONEX canonical patterns with OnexOutputState inheritance.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -22,15 +22,19 @@ class ModelScrollVectorsOutputState(OnexOutputState):
     - execution_time_seconds: Execution duration
     """
 
-    vectors: List[Dict[str, Any]] = Field(
-        ..., description="List of vector records with metadata"
+    vectors: list[dict[str, Any]] = Field(
+        ...,
+        description="List of vector records with metadata",
     )
-    next_offset: Optional[str] = Field(
-        default=None, description="Offset for next page, None if no more results"
+    next_offset: str | None = Field(
+        default=None,
+        description="Offset for next page, None if no more results",
     )
-    total_count: Optional[int] = Field(
-        default=None, description="Total number of vectors in collection (if available)"
+    total_count: int | None = Field(
+        default=None,
+        description="Total number of vectors in collection (if available)",
     )
     collection_name: str = Field(
-        ..., description="Name of the collection that was scrolled"
+        ...,
+        description="Name of the collection that was scrolled",
     )

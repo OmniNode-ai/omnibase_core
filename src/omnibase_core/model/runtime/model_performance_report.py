@@ -4,8 +4,6 @@ Performance Report Models
 ONEX-compliant models for performance reporting with strong typing.
 """
 
-from typing import List
-
 from pydantic import BaseModel
 
 
@@ -24,7 +22,7 @@ class ModelExecutionStatistics(BaseModel):
     total_tasks_failed: int
     total_execution_time_seconds: float
     average_execution_time_seconds: float
-    resource_efficiency_scores: List[float]
+    resource_efficiency_scores: list[float]
     error_count: int
     preemption_count: int
     retry_count: int

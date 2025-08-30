@@ -6,15 +6,13 @@ timing, quality, and effectiveness metrics for agent tasks.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.velocity.model_velocity_context import \
-    ModelVelocityContext
-from omnibase_core.model.velocity.model_velocity_metrics import \
-    ModelVelocityMetrics
+from omnibase_core.model.velocity.model_velocity_context import ModelVelocityContext
+from omnibase_core.model.velocity.model_velocity_metrics import ModelVelocityMetrics
 
 
 class ModelVelocityLog(BaseModel):
@@ -41,14 +39,16 @@ class ModelVelocityLog(BaseModel):
     # Task information
     task_description: str = Field(description="Human-readable description of the task")
     task_type: str = Field(
-        description="Type of task: implementation, debugging, analysis, documentation, etc."
+        description="Type of task: implementation, debugging, analysis, documentation, etc.",
     )
 
     # Timing information
     started_at: datetime = Field(description="When the task was started")
     completed_at: datetime = Field(description="When the task was completed")
     duration_seconds: float = Field(
-        default=0.0, ge=0.0, description="Task duration in seconds (auto-calculated)"
+        default=0.0,
+        ge=0.0,
+        description="Task duration in seconds (auto-calculated)",
     )
 
     # Outcome
@@ -56,25 +56,30 @@ class ModelVelocityLog(BaseModel):
 
     # Detailed metrics
     metrics: ModelVelocityMetrics = Field(
-        default_factory=ModelVelocityMetrics, description="Detailed velocity metrics"
+        default_factory=ModelVelocityMetrics,
+        description="Detailed velocity metrics",
     )
 
     # Context information
     context: ModelVelocityContext = Field(
-        default_factory=ModelVelocityContext, description="Task context information"
+        default_factory=ModelVelocityContext,
+        description="Task context information",
     )
 
     # Extensible metadata
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for extensibility"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata for extensibility",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Record creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Record creation timestamp",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Record last update timestamp"
+        default_factory=datetime.utcnow,
+        description="Record last update timestamp",
     )
 
     def __post_init__(self):

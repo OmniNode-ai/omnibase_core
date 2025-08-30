@@ -29,10 +29,10 @@ from omnibase_core.model.memory.model_statistics import ModelStatistics
 ```
 """
 
-from typing import Dict, Union
+from typing import Union
 
 # Type aliases for CLI configuration
-CliConfigType = Dict[str, Union[str, int, bool]]
+CliConfigType = dict[str, str | int | bool]
 """CLI configuration structure for user preferences and settings.
 
 Supports:

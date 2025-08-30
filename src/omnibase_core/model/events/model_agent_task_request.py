@@ -5,7 +5,6 @@ Defines strongly-typed request to execute a task on a distributed agent.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -21,10 +20,12 @@ class ModelAgentTaskRequest(BaseModel):
 
     # Task identification
     task_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique task identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique task identifier",
     )
     correlation_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Correlation ID for tracking"
+        default_factory=lambda: str(uuid4()),
+        description="Correlation ID for tracking",
     )
 
     @classmethod
@@ -32,7 +33,7 @@ class ModelAgentTaskRequest(BaseModel):
         cls,
         node_id: str,
         task_request: "ModelAgentTaskRequest",
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
     ) -> ModelOnexEvent:
         """Create ONEX event for task request."""
         return ModelOnexEvent.create_plugin_event(
@@ -44,37 +45,42 @@ class ModelAgentTaskRequest(BaseModel):
         )
 
     def wrap_in_envelope(
-        self, source_node_id: str, destination: Optional[str] = None
+        self,
+        source_node_id: str,
+        destination: str | None = None,
     ) -> ModelEventEnvelope:
         """Wrap task request in event envelope for routing."""
         event = self.create_event(source_node_id, self)
 
         if destination:
             return ModelEventEnvelope.create_direct(
-                payload=event, destination=destination, source_node_id=source_node_id
-            )
-        else:
-            # Anycast to any available agent executor service
-            return ModelEventEnvelope.create_anycast(
                 payload=event,
-                service_pattern="service://agent-executor",
+                destination=destination,
                 source_node_id=source_node_id,
             )
+        # Anycast to any available agent executor service
+        return ModelEventEnvelope.create_anycast(
+            payload=event,
+            service_pattern="service://agent-executor",
+            source_node_id=source_node_id,
+        )
 
     # Task details
     task_type: str = Field(
-        ..., description="Type of task (e.g., 'code_review', 'documentation')"
+        ...,
+        description="Type of task (e.g., 'code_review', 'documentation')",
     )
     prompt: str = Field(..., description="Task prompt/instructions")
-    system_prompt: Optional[str] = Field(None, description="System prompt for context")
+    system_prompt: str | None = Field(None, description="System prompt for context")
 
     # Routing preferences
-    preferred_agent_role: Optional[str] = Field(
-        None, description="Preferred agent role"
+    preferred_agent_role: str | None = Field(
+        None,
+        description="Preferred agent role",
     )
-    required_capabilities: List[EnumAgentCapability] = Field(default_factory=list)
-    preferred_providers: List[EnumLLMProvider] = Field(default_factory=list)
-    preferred_location: Optional[str] = Field(None, description="home_lab, remote, any")
+    required_capabilities: list[EnumAgentCapability] = Field(default_factory=list)
+    preferred_providers: list[EnumLLMProvider] = Field(default_factory=list)
+    preferred_location: str | None = Field(None, description="home_lab, remote, any")
 
     # Task metadata
     priority: int = Field(1, ge=1, le=10, description="Task priority (1-10)")
@@ -83,14 +89,15 @@ class ModelAgentTaskRequest(BaseModel):
 
     # Security and tracking
     requester_id: str = Field(..., description="ID of the requester")
-    requester_location: Optional[str] = Field(None, description="Location of requester")
-    auth_token: Optional[str] = Field(
-        None, description="Authentication token for secure access"
+    requester_location: str | None = Field(None, description="Location of requester")
+    auth_token: str | None = Field(
+        None,
+        description="Authentication token for secure access",
     )
 
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = Field(None, description="Task expiration time")
+    expires_at: datetime | None = Field(None, description="Task expiration time")
 
     class Config:
         """Pydantic configuration."""
@@ -104,5 +111,5 @@ class ModelAgentTaskRequest(BaseModel):
                 "preferred_location": "home_lab",
                 "priority": 5,
                 "requester_id": "remote_user_123",
-            }
+            },
         }

@@ -26,7 +26,7 @@
 ModelResultCLI: Canonical Pydantic model for structured CLI output/results.
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 from omnibase_core.model.core.model_base_error import ModelBaseError
 from omnibase_core.model.core.model_base_result import ModelBaseResult
@@ -36,12 +36,12 @@ from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelResultCLI(ModelBaseResult):
-    output: Optional[ModelCLIOutput] = None
-    errors: List[ModelBaseError] = []
+    output: ModelCLIOutput | None = None
+    errors: list[ModelBaseError] = []
     # Use Optional[Any] instead of Optional[BaseModel] to avoid PydanticUserError.
     # TODO: Replace Any with Union of allowed result models for stricter typing.
-    result: Optional[Any] = None
-    metadata: Optional[ModelGenericMetadata] = None
+    result: Any | None = None
+    metadata: ModelGenericMetadata | None = None
 
 
 # Backward compatibility - export both classes

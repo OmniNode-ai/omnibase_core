@@ -24,8 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_naming_convention import \
-    ModelNamingConventionResult
+from omnibase_core.model.core.model_naming_convention import ModelNamingConventionResult
 
 
 class ProtocolNamingConvention(Protocol):

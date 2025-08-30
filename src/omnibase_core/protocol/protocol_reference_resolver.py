@@ -5,7 +5,7 @@ Defines the interface for resolving $ref references in JSON Schema
 to Python type names for code generation.
 """
 
-from typing import Dict, Optional, Protocol
+from typing import Protocol
 
 
 class ProtocolReferenceResolver(Protocol):
@@ -93,7 +93,7 @@ class ProtocolReferenceResolver(Protocol):
         """
         ...
 
-    def get_ref_parts(self, ref: str) -> Dict[str, Optional[str]]:
+    def get_ref_parts(self, ref: str) -> dict[str, str | None]:
         """Parse reference into component parts.
 
         Args:

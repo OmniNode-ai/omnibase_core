@@ -4,8 +4,6 @@ ModelPolicySeverity: Policy violation severity configuration.
 This model represents policy violation severity levels and handling.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -19,31 +17,39 @@ class ModelPolicySeverity(BaseModel):
     )
 
     auto_remediate: bool = Field(
-        False, description="Whether to attempt automatic remediation"
+        False,
+        description="Whether to attempt automatic remediation",
     )
 
     block_operation: bool = Field(
-        True, description="Whether to block the operation on violation"
+        True,
+        description="Whether to block the operation on violation",
     )
 
     notify_administrators: bool = Field(
-        False, description="Whether to notify administrators on violation"
+        False,
+        description="Whether to notify administrators on violation",
     )
 
     log_to_audit: bool = Field(
-        True, description="Whether to log violations to audit trail"
+        True,
+        description="Whether to log violations to audit trail",
     )
 
     escalation_threshold: int = Field(
-        3, description="Number of violations before escalation", ge=1
+        3,
+        description="Number of violations before escalation",
+        ge=1,
     )
 
-    remediation_action: Optional[str] = Field(
-        None, description="Automatic remediation action to take"
+    remediation_action: str | None = Field(
+        None,
+        description="Automatic remediation action to take",
     )
 
-    custom_message: Optional[str] = Field(
-        None, description="Custom message for this severity level"
+    custom_message: str | None = Field(
+        None,
+        description="Custom message for this severity level",
     )
 
     @field_validator("level")
@@ -52,8 +58,9 @@ class ModelPolicySeverity(BaseModel):
         """Validate severity level."""
         valid_levels = {"info", "warning", "error", "critical"}
         if v not in valid_levels:
+            msg = f"Invalid severity level: {v}. Must be one of: {valid_levels}"
             raise ValueError(
-                f"Invalid severity level: {v}. Must be one of: {valid_levels}"
+                msg,
             )
         return v
 

@@ -5,8 +5,6 @@ Provides strongly-typed function call model to replace Dict[str, Any] usage
 in chat messages with proper ONEX naming conventions.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -22,8 +20,9 @@ class ModelLLMFunctionCall(BaseModel):
 
     arguments: str = Field(description="JSON string of function arguments")
 
-    call_id: Optional[str] = Field(
-        default=None, description="Unique identifier for this function call"
+    call_id: str | None = Field(
+        default=None,
+        description="Unique identifier for this function call",
     )
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")

@@ -6,7 +6,6 @@ cost tracking, performance metrics, and error information for queue processing.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,9 +13,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.database.models.model_task import EnumTaskStatus
 from omnibase_core.model.llm.model_llm_response import ModelLLMResponse
 
-from .model_task_configuration import (ModelLLMExecutionContext,
-                                       ModelLLMStructuredOutput,
-                                       ModelLLMTaskConfiguration)
+from .model_task_configuration import (
+    ModelLLMExecutionContext,
+    ModelLLMStructuredOutput,
+    ModelLLMTaskConfiguration,
+)
 
 
 class ModelLLMTaskResult(BaseModel):
@@ -37,8 +38,9 @@ class ModelLLMTaskResult(BaseModel):
     status: EnumTaskStatus = Field(description="Final task execution status")
 
     # LLM response (if successful)
-    llm_response: Optional[ModelLLMResponse] = Field(
-        default=None, description="LLM response data (None if task failed)"
+    llm_response: ModelLLMResponse | None = Field(
+        default=None,
+        description="LLM response data (None if task failed)",
     )
 
     # Timing information
@@ -47,72 +49,91 @@ class ModelLLMTaskResult(BaseModel):
     completed_at: datetime = Field(description="When task execution finished")
 
     duration_seconds: float = Field(
-        ge=0.0, description="Total execution time in seconds"
+        ge=0.0,
+        description="Total execution time in seconds",
     )
 
     # Attempt tracking
     attempt_number: int = Field(
-        ge=1, description="Which attempt this was (1 for first attempt)"
+        ge=1,
+        description="Which attempt this was (1 for first attempt)",
     )
 
     total_attempts: int = Field(ge=1, description="Total number of attempts made")
 
     # Provider and routing information
-    provider_used: Optional[str] = Field(
-        default=None, description="LLM provider that handled the request"
+    provider_used: str | None = Field(
+        default=None,
+        description="LLM provider that handled the request",
     )
 
-    model_used: Optional[str] = Field(
-        default=None, description="Specific model used for generation"
+    model_used: str | None = Field(
+        default=None,
+        description="Specific model used for generation",
     )
 
-    routing_decision: Optional[str] = Field(
-        default=None, description="Reason for provider/model selection"
+    routing_decision: str | None = Field(
+        default=None,
+        description="Reason for provider/model selection",
     )
 
     failover_occurred: bool = Field(
-        default=False, description="Whether failover to backup provider occurred"
+        default=False,
+        description="Whether failover to backup provider occurred",
     )
 
-    failover_providers: List[str] = Field(
-        default_factory=list, description="List of providers tried during failover"
+    failover_providers: list[str] = Field(
+        default_factory=list,
+        description="List of providers tried during failover",
     )
 
     # Cost and resource tracking
     total_cost_usd: float = Field(
-        default=0.0, ge=0.0, description="Total cost incurred for this task"
+        default=0.0,
+        ge=0.0,
+        description="Total cost incurred for this task",
     )
 
-    cost_breakdown: Dict[str, float] = Field(
-        default_factory=dict, description="Cost breakdown by provider/model"
+    cost_breakdown: dict[str, float] = Field(
+        default_factory=dict,
+        description="Cost breakdown by provider/model",
     )
 
-    memory_used_mb: Optional[int] = Field(
-        default=None, description="Peak memory usage during execution"
+    memory_used_mb: int | None = Field(
+        default=None,
+        description="Peak memory usage during execution",
     )
 
     gpu_used: bool = Field(default=False, description="Whether GPU was utilized")
 
     # Quality metrics
-    output_quality_score: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Automated quality assessment score"
+    output_quality_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Automated quality assessment score",
     )
 
-    output_length_chars: Optional[int] = Field(
-        default=None, ge=0, description="Length of generated output in characters"
+    output_length_chars: int | None = Field(
+        default=None,
+        ge=0,
+        description="Length of generated output in characters",
     )
 
     # Error information (if failed)
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if task failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if task failed",
     )
 
-    error_code: Optional[str] = Field(
-        default=None, description="Structured error code for programmatic handling"
+    error_code: str | None = Field(
+        default=None,
+        description="Structured error code for programmatic handling",
     )
 
-    error_traceback: Optional[str] = Field(
-        default=None, description="Full error traceback for debugging"
+    error_traceback: str | None = Field(
+        default=None,
+        description="Full error traceback for debugging",
     )
 
     # Configuration and context
@@ -127,34 +148,43 @@ class ModelLLMTaskResult(BaseModel):
     )
 
     # Output data
-    structured_output: Optional[ModelLLMStructuredOutput] = Field(
-        default=None, description="Structured/parsed output data (if applicable)"
+    structured_output: ModelLLMStructuredOutput | None = Field(
+        default=None,
+        description="Structured/parsed output data (if applicable)",
     )
 
-    artifacts: List[str] = Field(
-        default_factory=list, description="Paths to any generated artifacts or files"
+    artifacts: list[str] = Field(
+        default_factory=list,
+        description="Paths to any generated artifacts or files",
     )
 
     # Callback tracking
     webhook_delivered: bool = Field(
-        default=False, description="Whether webhook notification was delivered"
+        default=False,
+        description="Whether webhook notification was delivered",
     )
 
-    webhook_response_code: Optional[int] = Field(
-        default=None, description="HTTP response code from webhook delivery"
+    webhook_response_code: int | None = Field(
+        default=None,
+        description="HTTP response code from webhook delivery",
     )
 
     # Performance insights
     queue_wait_time_seconds: float = Field(
-        default=0.0, ge=0.0, description="Time spent waiting in queue before execution"
+        default=0.0,
+        ge=0.0,
+        description="Time spent waiting in queue before execution",
     )
 
-    provider_latency_ms: Optional[int] = Field(
-        default=None, description="Provider-specific response latency"
+    provider_latency_ms: int | None = Field(
+        default=None,
+        description="Provider-specific response latency",
     )
 
-    tokens_per_second: Optional[float] = Field(
-        default=None, ge=0.0, description="Generation speed in tokens per second"
+    tokens_per_second: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Generation speed in tokens per second",
     )
 
     model_config = ConfigDict(
@@ -213,6 +243,6 @@ class ModelLLMTaskResult(BaseModel):
                 "queue_wait_time_seconds": 12.5,
                 "provider_latency_ms": 2340,
                 "tokens_per_second": 3.2,
-            }
+            },
         },
     )

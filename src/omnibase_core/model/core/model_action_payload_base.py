@@ -4,7 +4,7 @@ Action Payload Base Model.
 Base class for action-specific payload types with common fields and validation.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,13 +20,16 @@ class ModelActionPayloadBase(BaseModel):
     """
 
     action_type: ModelNodeActionType = Field(
-        ..., description="The rich action type being performed"
+        ...,
+        description="The rich action type being performed",
     )
-    correlation_id: Optional[UUID] = Field(
-        None, description="Correlation ID for tracking this action"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Correlation ID for tracking this action",
     )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata for the action"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata for the action",
     )
 
     model_config = ConfigDict(use_enum_values=True)

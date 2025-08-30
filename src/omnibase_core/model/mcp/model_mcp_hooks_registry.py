@@ -1,6 +1,6 @@
 """Strongly typed model for MCP tool hooks registry."""
 
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
@@ -21,12 +21,16 @@ class ModelMCPHookDefinition(BaseModel):
 class ModelMCPHooksRegistry(BaseModel):
     """Strongly typed model for MCP tool hooks registry."""
 
-    hooks: Dict[str, ModelMCPHookDefinition] = Field(
-        default_factory=dict, description="Registry of tool hooks"
+    hooks: dict[str, ModelMCPHookDefinition] = Field(
+        default_factory=dict,
+        description="Registry of tool hooks",
     )
 
     def register_hook(
-        self, tool_name: str, original_function: Callable, hook_function: Callable
+        self,
+        tool_name: str,
+        original_function: Callable,
+        hook_function: Callable,
     ) -> None:
         """Register a new tool hook."""
         self.hooks[tool_name] = ModelMCPHookDefinition(
@@ -39,7 +43,7 @@ class ModelMCPHooksRegistry(BaseModel):
         """Get a hook by tool name."""
         return self.hooks.get(tool_name)
 
-    def list_hooked_tools(self) -> List[str]:
+    def list_hooked_tools(self) -> list[str]:
         """List all hooked tool names."""
         return list(self.hooks.keys())
 

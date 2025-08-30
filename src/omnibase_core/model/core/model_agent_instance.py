@@ -7,14 +7,14 @@ configuration, status, and runtime information.
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.agent.model_llm_agent_config import \
-    ModelLLMAgentConfig
-from omnibase_core.model.core.model_agent_status import (AgentStatusType,
-                                                         ModelAgentStatus)
+from omnibase_core.model.agent.model_llm_agent_config import ModelLLMAgentConfig
+from omnibase_core.model.core.model_agent_status import (
+    AgentStatusType,
+    ModelAgentStatus,
+)
 
 
 class ModelAgentInstance(BaseModel):
@@ -23,36 +23,46 @@ class ModelAgentInstance(BaseModel):
     agent_id: str = Field(description="Unique identifier for the agent instance")
     config: ModelLLMAgentConfig = Field(description="Unified LLM agent configuration")
     status: ModelAgentStatus = Field(description="Current agent status")
-    process_id: Optional[int] = Field(
-        default=None, description="Operating system process ID"
+    process_id: int | None = Field(
+        default=None,
+        description="Operating system process ID",
     )
-    endpoint_url: Optional[str] = Field(
-        default=None, description="HTTP endpoint URL for agent communication"
+    endpoint_url: str | None = Field(
+        default=None,
+        description="HTTP endpoint URL for agent communication",
     )
-    websocket_url: Optional[str] = Field(
-        default=None, description="WebSocket URL for real-time communication"
+    websocket_url: str | None = Field(
+        default=None,
+        description="WebSocket URL for real-time communication",
     )
-    api_client_id: Optional[str] = Field(
-        default=None, description="Anthropic API client identifier"
+    api_client_id: str | None = Field(
+        default=None,
+        description="Anthropic API client identifier",
     )
-    session_token: Optional[str] = Field(
-        default=None, description="Session token for agent authentication"
+    session_token: str | None = Field(
+        default=None,
+        description="Session token for agent authentication",
     )
     working_directory: str = Field(description="Current working directory")
-    log_file_path: Optional[str] = Field(
-        default=None, description="Path to agent log file"
+    log_file_path: str | None = Field(
+        default=None,
+        description="Path to agent log file",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Instance creation timestamp"
+        default_factory=datetime.now,
+        description="Instance creation timestamp",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="Agent start timestamp"
+    started_at: datetime | None = Field(
+        default=None,
+        description="Agent start timestamp",
     )
-    terminated_at: Optional[datetime] = Field(
-        default=None, description="Agent termination timestamp"
+    terminated_at: datetime | None = Field(
+        default=None,
+        description="Agent termination timestamp",
     )
-    last_heartbeat: Optional[datetime] = Field(
-        default=None, description="Last heartbeat timestamp"
+    last_heartbeat: datetime | None = Field(
+        default=None,
+        description="Last heartbeat timestamp",
     )
 
     @property
@@ -96,9 +106,11 @@ class ModelAgentInstance(BaseModel):
         """
         # Validate task type format
         if not task_type.replace("_", "").isalnum():
-            raise ValueError("Task type must be alphanumeric with underscores only")
+            msg = "Task type must be alphanumeric with underscores only"
+            raise ValueError(msg)
         if task_type != task_type.lower():
-            raise ValueError("Task type must be lowercase")
+            msg = "Task type must be lowercase"
+            raise ValueError(msg)
 
         # Generate 8-character UUID suffix
         uuid_suffix = str(uuid.uuid4()).replace("-", "")[:8]

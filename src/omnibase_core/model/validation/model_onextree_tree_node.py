@@ -2,8 +2,6 @@
 OnextreeTreeNode model.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -14,7 +12,7 @@ class ModelOnextreeTreeNode(BaseModel):
 
     name: str
     type: str  # "file" or "directory"
-    children: Optional[List["ModelOnextreeTreeNode"]] = None
+    children: list["ModelOnextreeTreeNode"] | None = None
 
 
 # Use model_rebuild for forward references in Pydantic v2

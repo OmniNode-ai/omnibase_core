@@ -5,16 +5,12 @@ Defines the standardized request format for all LLM providers
 with configurable generation parameters and provider preferences.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.llm.model_generation_params import \
-    ModelGenerationParams
+from omnibase_core.model.llm.model_generation_params import ModelGenerationParams
 from omnibase_core.model.llm.model_llm_context import ModelLlmContext
 from omnibase_core.model.llm.model_llm_metadata import ModelLlmMetadata
-from omnibase_core.model.llm.model_model_requirements import \
-    ModelModelRequirements
+from omnibase_core.model.llm.model_model_requirements import ModelModelRequirements
 
 
 class ModelLLMRequest(BaseModel):
@@ -27,16 +23,18 @@ class ModelLLMRequest(BaseModel):
     """
 
     prompt: str = Field(
-        description="Main text prompt for generation", min_length=1, max_length=100000
+        description="Main text prompt for generation",
+        min_length=1,
+        max_length=100000,
     )
 
-    system_prompt: Optional[str] = Field(
+    system_prompt: str | None = Field(
         default=None,
         description="System prompt to set context and behavior",
         max_length=10000,
     )
 
-    model_requirements: Optional[ModelModelRequirements] = Field(
+    model_requirements: ModelModelRequirements | None = Field(
         default=None,
         description="Capability and constraint specifications for model selection",
     )
@@ -46,7 +44,7 @@ class ModelLLMRequest(BaseModel):
         description="Temperature, max_tokens, and other generation parameters",
     )
 
-    provider_preferences: List[str] = Field(
+    provider_preferences: list[str] = Field(
         default_factory=lambda: ["ollama", "openai", "anthropic"],
         description="Preferred provider order for intelligent routing",
     )
@@ -56,12 +54,14 @@ class ModelLLMRequest(BaseModel):
         description="Enable streaming responses for real-time interaction",
     )
 
-    conversation_id: Optional[str] = Field(
-        default=None, description="Conversation identifier for multi-turn interactions"
+    conversation_id: str | None = Field(
+        default=None,
+        description="Conversation identifier for multi-turn interactions",
     )
 
-    context: Optional[List[ModelLlmContext]] = Field(
-        default=None, description="Previous conversation context for multi-turn support"
+    context: list[ModelLlmContext] | None = Field(
+        default=None,
+        description="Previous conversation context for multi-turn support",
     )
 
     metadata: ModelLlmMetadata = Field(
@@ -90,6 +90,6 @@ class ModelLLMRequest(BaseModel):
                 "provider_preferences": ["ollama", "openai"],
                 "stream": False,
                 "metadata": {"source": "cli_chat", "user_id": "developer_001"},
-            }
+            },
         },
     )

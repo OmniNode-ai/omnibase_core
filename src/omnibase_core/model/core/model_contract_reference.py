@@ -21,5 +21,6 @@ class ModelContractReference(BaseModel):
     )
     file_path: Path = Field(..., description="Resolved file path")
     json_path: str = Field(
-        default="", description="JSON path within the file (empty string if none)"
+        default="",
+        description="JSON path within the file (empty string if none)",
     )

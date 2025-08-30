@@ -8,7 +8,6 @@ logging, monitoring, and security validation information.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -42,7 +41,7 @@ class ModelSandboxResourceUsage(BaseModel):
     """Resource usage metrics for sandbox execution."""
 
     peak_cpu_usage: float = Field(
-        description="Peak CPU usage as percentage (0.0-100.0)"
+        description="Peak CPU usage as percentage (0.0-100.0)",
     )
 
     peak_memory_usage_mb: int = Field(description="Peak memory usage in MB")
@@ -52,15 +51,17 @@ class ModelSandboxResourceUsage(BaseModel):
     disk_io_write_mb: float = Field(description="Total disk write I/O in MB")
 
     network_bytes_sent: int = Field(
-        default=0, description="Total bytes sent over network"
+        default=0,
+        description="Total bytes sent over network",
     )
 
     network_bytes_received: int = Field(
-        default=0, description="Total bytes received over network"
+        default=0,
+        description="Total bytes received over network",
     )
 
     execution_time_seconds: float = Field(
-        description="Actual execution time in seconds"
+        description="Actual execution time in seconds",
     )
 
     file_descriptors_used: int = Field(description="Number of file descriptors used")
@@ -68,7 +69,8 @@ class ModelSandboxResourceUsage(BaseModel):
     processes_spawned: int = Field(description="Number of processes spawned")
 
     syscalls_made: int = Field(
-        default=0, description="Total number of system calls made"
+        default=0,
+        description="Total number of system calls made",
     )
 
 
@@ -83,18 +85,21 @@ class ModelSandboxSecurityEvent(BaseModel):
 
     description: str = Field(description="Human-readable description of the event")
 
-    details: Dict[str, str] = Field(
-        default_factory=dict, description="Additional event details and context"
+    details: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional event details and context",
     )
 
     blocked: bool = Field(description="Whether the action was blocked")
 
-    process_id: Optional[int] = Field(
-        default=None, description="Process ID that triggered the event"
+    process_id: int | None = Field(
+        default=None,
+        description="Process ID that triggered the event",
     )
 
-    command: Optional[str] = Field(
-        default=None, description="Command that triggered the event"
+    command: str | None = Field(
+        default=None,
+        description="Command that triggered the event",
     )
 
 
@@ -109,8 +114,9 @@ class ModelSandboxExecutionLog(BaseModel):
 
     message: str = Field(description="Log message content")
 
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional log metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional log metadata",
     )
 
 
@@ -127,55 +133,66 @@ class ModelSandboxExecutionResult(BaseModel):
 
     started_at: datetime = Field(description="Execution start timestamp")
 
-    completed_at: Optional[datetime] = Field(
-        default=None, description="Execution completion timestamp"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="Execution completion timestamp",
     )
 
-    exit_code: Optional[int] = Field(
-        default=None, description="Process exit code (0 = success)"
+    exit_code: int | None = Field(
+        default=None,
+        description="Process exit code (0 = success)",
     )
 
     stdout: str = Field(default="", description="Standard output from execution")
 
     stderr: str = Field(default="", description="Standard error from execution")
 
-    result_data: Optional[str] = Field(
-        default=None, description="Structured result data from execution"
+    result_data: str | None = Field(
+        default=None,
+        description="Structured result data from execution",
     )
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if execution failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if execution failed",
     )
 
-    resource_usage: Optional[ModelSandboxResourceUsage] = Field(
-        default=None, description="Resource usage metrics"
+    resource_usage: ModelSandboxResourceUsage | None = Field(
+        default=None,
+        description="Resource usage metrics",
     )
 
-    security_events: List[ModelSandboxSecurityEvent] = Field(
-        default_factory=list, description="Security events detected during execution"
+    security_events: list[ModelSandboxSecurityEvent] = Field(
+        default_factory=list,
+        description="Security events detected during execution",
     )
 
-    execution_logs: List[ModelSandboxExecutionLog] = Field(
-        default_factory=list, description="Execution logs and output"
+    execution_logs: list[ModelSandboxExecutionLog] = Field(
+        default_factory=list,
+        description="Execution logs and output",
     )
 
-    files_created: List[str] = Field(
-        default_factory=list, description="List of files created during execution"
+    files_created: list[str] = Field(
+        default_factory=list,
+        description="List of files created during execution",
     )
 
-    files_modified: List[str] = Field(
-        default_factory=list, description="List of files modified during execution"
+    files_modified: list[str] = Field(
+        default_factory=list,
+        description="List of files modified during execution",
     )
 
-    network_connections: List[str] = Field(
-        default_factory=list, description="Network connections attempted"
+    network_connections: list[str] = Field(
+        default_factory=list,
+        description="Network connections attempted",
     )
 
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional execution metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional execution metadata",
     )
 
-    def get_execution_duration(self) -> Optional[float]:
+    def get_execution_duration(self) -> float | None:
         """Calculate execution duration in seconds."""
         if self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
@@ -205,7 +222,7 @@ class ModelSandboxExecutionResult(BaseModel):
             return combined[: max_length - 3] + "..."
         return combined
 
-    def get_security_summary(self) -> Dict[str, int]:
+    def get_security_summary(self) -> dict[str, int]:
         """Get summary of security events by severity."""
         summary = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
         for event in self.security_events:

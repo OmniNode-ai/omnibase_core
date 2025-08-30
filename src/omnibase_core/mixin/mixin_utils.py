@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import TYPE_CHECKING, Any, Dict, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from omnibase_core.enums import NodeMetadataField
 
@@ -33,8 +33,8 @@ if TYPE_CHECKING:
 
 
 def canonicalize_metadata_block(
-    block: Union[Dict[str, object], "NodeMetadataBlock"],
-    volatile_fields: Tuple[NodeMetadataField, ...] = (
+    block: Union[dict[str, object], "NodeMetadataBlock"],
+    volatile_fields: tuple[NodeMetadataField, ...] = (
         NodeMetadataField.HASH,
         NodeMetadataField.LAST_MODIFIED_AT,
     ),
@@ -75,5 +75,5 @@ def canonicalize_metadata_block(
             allow_unicode=allow_unicode,
             comment_prefix=comment_prefix,
             **kwargs,
-        )
+        ),
     )

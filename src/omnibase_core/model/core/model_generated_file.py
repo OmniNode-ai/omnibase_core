@@ -16,5 +16,6 @@ class ModelGeneratedFile(BaseModel):
     path: Path = Field(..., description="Path where the file will be written")
     content: str = Field(..., description="Content of the file")
     file_type: str = Field(
-        ..., description="Type of file (models, config, error_codes, etc.)"
+        ...,
+        description="Type of file (models, config, error_codes, etc.)",
     )

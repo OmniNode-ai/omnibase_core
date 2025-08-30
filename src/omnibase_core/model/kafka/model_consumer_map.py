@@ -1,7 +1,5 @@
 """Model for managing Kafka consumers."""
 
-from typing import Dict
-
 from aiokafka import AIOKafkaConsumer
 from pydantic import BaseModel, Field
 
@@ -14,8 +12,9 @@ class ModelConsumerMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    consumers: Dict[str, AIOKafkaConsumer] = Field(
-        default_factory=dict, description="Map of topic names to Kafka consumers"
+    consumers: dict[str, AIOKafkaConsumer] = Field(
+        default_factory=dict,
+        description="Map of topic names to Kafka consumers",
     )
 
     class Config:
@@ -37,7 +36,7 @@ class ModelConsumerMap(BaseModel):
             return True
         return False
 
-    def get_all_consumers(self) -> Dict[str, AIOKafkaConsumer]:
+    def get_all_consumers(self) -> dict[str, AIOKafkaConsumer]:
         """Get all consumers."""
         return self.consumers
 

@@ -8,7 +8,7 @@ error analysis, and operational insights for ONEX registry validation systems.
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -73,7 +73,10 @@ class ModelMissingTool(BaseModel):
     """
 
     tool_name: str = Field(
-        ..., description="Name of the missing tool", min_length=1, max_length=200
+        ...,
+        description="Name of the missing tool",
+        min_length=1,
+        max_length=200,
     )
 
     reason: str = Field(
@@ -90,76 +93,84 @@ class ModelMissingTool(BaseModel):
         max_length=500,
     )
 
-    reason_category: Optional[ToolMissingReason] = Field(
+    reason_category: ToolMissingReason | None = Field(
         default=ToolMissingReason.NOT_FOUND,
         description="Categorized reason for missing tool",
     )
 
-    criticality: Optional[ToolCriticality] = Field(
+    criticality: ToolCriticality | None = Field(
         default=ToolCriticality.MEDIUM,
         description="Business criticality level of the missing tool",
     )
 
-    tool_category: Optional[ToolCategory] = Field(
+    tool_category: ToolCategory | None = Field(
         default=ToolCategory.UTILITY,
         description="Functional category of the missing tool",
     )
 
-    expected_interface: Optional[str] = Field(
+    expected_interface: str | None = Field(
         default=None,
         description="Expected protocol or interface the tool should implement",
         max_length=300,
     )
 
-    actual_type_found: Optional[str] = Field(
+    actual_type_found: str | None = Field(
         default=None,
         description="Actual type found if any (for type mismatches)",
         max_length=500,
     )
 
-    error_details: Optional[str] = Field(
+    error_details: str | None = Field(
         default=None,
         description="Detailed error message or stack trace",
         max_length=2000,
     )
 
-    suggested_solution: Optional[str] = Field(
+    suggested_solution: str | None = Field(
         default=None,
         description="Suggested solution to resolve the missing tool",
         max_length=1000,
     )
 
-    dependencies: Optional[List[str]] = Field(
-        default_factory=list, description="List of dependencies required for this tool"
+    dependencies: list[str] | None = Field(
+        default_factory=list,
+        description="List of dependencies required for this tool",
     )
 
-    alternative_tools: Optional[List[str]] = Field(
+    alternative_tools: list[str] | None = Field(
         default_factory=list,
         description="Alternative tools that could provide similar functionality",
     )
 
-    first_detected: Optional[str] = Field(
-        default=None, description="ISO timestamp when this issue was first detected"
+    first_detected: str | None = Field(
+        default=None,
+        description="ISO timestamp when this issue was first detected",
     )
 
-    detection_count: Optional[int] = Field(
-        default=1, description="Number of times this tool was detected as missing", ge=1
+    detection_count: int | None = Field(
+        default=1,
+        description="Number of times this tool was detected as missing",
+        ge=1,
     )
 
-    metadata: Optional[ModelGenericMetadata] = Field(
-        default_factory=dict, description="Additional metadata and context information"
+    metadata: ModelGenericMetadata | None = Field(
+        default_factory=dict,
+        description="Additional metadata and context information",
     )
 
-    affected_operations: Optional[List[str]] = Field(
+    affected_operations: list[str] | None = Field(
         default_factory=list,
         description="List of operations affected by this missing tool",
     )
 
-    business_impact_score: Optional[float] = Field(
-        default=None, description="Business impact score (0.0 to 1.0)", ge=0.0, le=1.0
+    business_impact_score: float | None = Field(
+        default=None,
+        description="Business impact score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
-    resolution_priority: Optional[int] = Field(
+    resolution_priority: int | None = Field(
         default=None,
         description="Resolution priority ranking (1-10, 1 being highest)",
         ge=1,
@@ -171,13 +182,15 @@ class ModelMissingTool(BaseModel):
     def validate_tool_name(cls, v: str) -> str:
         """Validate tool name format."""
         if not v.strip():
-            raise ValueError("Tool name cannot be empty")
+            msg = "Tool name cannot be empty"
+            raise ValueError(msg)
 
         # Check for valid Python identifier-like names
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v.strip()):
             # Allow some flexibility for tool names with dots or hyphens
             if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
-                raise ValueError("Tool name should be a valid identifier-like string")
+                msg = "Tool name should be a valid identifier-like string"
+                raise ValueError(msg)
 
         return v.strip()
 
@@ -186,7 +199,8 @@ class ModelMissingTool(BaseModel):
     def validate_expected_type(cls, v: str) -> str:
         """Validate expected type format."""
         if not v.strip():
-            raise ValueError("Expected type cannot be empty")
+            msg = "Expected type cannot be empty"
+            raise ValueError(msg)
 
         # Basic validation for Python type annotations
         # Allow common patterns like 'str', 'Optional[str]', 'Protocol[...]', etc.
@@ -194,7 +208,7 @@ class ModelMissingTool(BaseModel):
 
     @field_validator("first_detected")
     @classmethod
-    def validate_first_detected(cls, v: Optional[str]) -> Optional[str]:
+    def validate_first_detected(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return datetime.now().isoformat()
@@ -203,7 +217,8 @@ class ModelMissingTool(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("first_detected must be a valid ISO timestamp")
+            msg = "first_detected must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Classification and Analysis ===
 
@@ -235,23 +250,20 @@ class ModelMissingTool(BaseModel):
         """Get overall severity level combining criticality and impact."""
         if self.is_critical_tool():
             return "CRITICAL"
-        elif self.criticality == ToolCriticality.HIGH:
-            return "HIGH"
-        elif self.reason_category in [
+        if self.criticality == ToolCriticality.HIGH or self.reason_category in [
             ToolMissingReason.PERMISSION_DENIED,
             ToolMissingReason.PERMISSION_DENIED,
         ]:
             return "HIGH"
-        elif self.criticality == ToolCriticality.MEDIUM:
+        if self.criticality == ToolCriticality.MEDIUM:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
     # === Error Analysis ===
 
-    def analyze_error_category(self) -> Dict[str, Any]:
+    def analyze_error_category(self) -> dict[str, Any]:
         """Analyze the error category and provide insights."""
-        analysis = {
+        return {
             "category": self.reason_category.value,
             "is_recoverable": self._is_recoverable_error(),
             "requires_code_change": self._requires_code_change(),
@@ -259,8 +271,6 @@ class ModelMissingTool(BaseModel):
             "estimated_fix_time": self._estimate_fix_time(),
             "fix_complexity": self._assess_fix_complexity(),
         }
-
-        return analysis
 
     def _is_recoverable_error(self) -> bool:
         """Check if the error is recoverable."""
@@ -295,18 +305,17 @@ class ModelMissingTool(BaseModel):
         """Estimate time required to fix this issue."""
         if self.reason_category == ToolMissingReason.NOT_FOUND:
             return "1-4 hours"  # Need to implement
-        elif self.reason_category == ToolMissingReason.CONFIGURATION_INVALID:
+        if self.reason_category == ToolMissingReason.CONFIGURATION_INVALID:
             return "15-30 minutes"  # Config fix
-        elif self.reason_category == ToolMissingReason.DEPENDENCY_MISSING:
+        if self.reason_category == ToolMissingReason.DEPENDENCY_MISSING:
             return "30-60 minutes"  # Install dependencies
-        elif self.reason_category == ToolMissingReason.TYPE_MISMATCH:
+        if self.reason_category == ToolMissingReason.TYPE_MISMATCH:
             return "2-6 hours"  # Code refactoring
-        elif self.reason_category == ToolMissingReason.PROTOCOL_VIOLATION:
+        if self.reason_category == ToolMissingReason.PROTOCOL_VIOLATION:
             return "4-8 hours"  # Interface compliance
-        elif self.reason_category == ToolMissingReason.CIRCULAR_DEPENDENCY:
+        if self.reason_category == ToolMissingReason.CIRCULAR_DEPENDENCY:
             return "8-16 hours"  # Architecture fix
-        else:
-            return "1-2 hours"  # General estimate
+        return "1-2 hours"  # General estimate
 
     def _assess_fix_complexity(self) -> str:
         """Assess the complexity of fixing this issue."""
@@ -315,30 +324,29 @@ class ModelMissingTool(BaseModel):
             ToolMissingReason.PROTOCOL_VIOLATION,
         ]:
             return "HIGH"
-        elif self.reason_category in [
+        if self.reason_category in [
             ToolMissingReason.TYPE_MISMATCH,
             ToolMissingReason.VERSION_INCOMPATIBLE,
         ]:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
     # === Recovery Recommendations ===
 
-    def get_recovery_recommendations(self) -> List[str]:
+    def get_recovery_recommendations(self) -> list[str]:
         """Get prioritized recovery recommendations."""
         recommendations = []
 
         if self.reason_category == ToolMissingReason.NOT_FOUND:
             recommendations.append(
-                "Implement the missing tool with the expected interface"
+                "Implement the missing tool with the expected interface",
             )
             recommendations.append("Check if tool is defined in a different module")
             recommendations.append("Verify tool registration in the registry")
 
         elif self.reason_category == ToolMissingReason.TYPE_MISMATCH:
             recommendations.append(
-                f"Update tool implementation to match expected type: {self.expected_type}"
+                f"Update tool implementation to match expected type: {self.expected_type}",
             )
             recommendations.append("Check if tool interface has changed")
             recommendations.append("Consider using adapter pattern for compatibility")
@@ -366,7 +374,7 @@ class ModelMissingTool(BaseModel):
         # Add alternative solutions if available
         if self.alternative_tools:
             recommendations.append(
-                f"Consider using alternative tools: {', '.join(self.alternative_tools)}"
+                f"Consider using alternative tools: {', '.join(self.alternative_tools)}",
             )
 
         # Add suggested solution if provided
@@ -375,7 +383,7 @@ class ModelMissingTool(BaseModel):
 
         return recommendations
 
-    def get_debugging_steps(self) -> List[str]:
+    def get_debugging_steps(self) -> list[str]:
         """Get debugging steps to investigate this issue."""
         steps = [
             f"Verify tool '{self.tool_name}' is correctly registered",
@@ -385,7 +393,7 @@ class ModelMissingTool(BaseModel):
 
         if self.dependencies:
             steps.append(
-                f"Verify dependencies are available: {', '.join(self.dependencies)}"
+                f"Verify dependencies are available: {', '.join(self.dependencies)}",
             )
 
         if self.error_details:
@@ -396,7 +404,7 @@ class ModelMissingTool(BaseModel):
                 "Check tool implementation for interface compliance",
                 "Verify tool can be instantiated independently",
                 "Check for conflicting tool registrations",
-            ]
+            ],
         )
 
         return steps
@@ -447,9 +455,9 @@ class ModelMissingTool(BaseModel):
 
         return min(score, 1.0)
 
-    def assess_operational_impact(self) -> Dict[str, Any]:
+    def assess_operational_impact(self) -> dict[str, Any]:
         """Assess operational impact of this missing tool."""
-        impact = {
+        return {
             "business_impact_score": self.calculate_business_impact_score(),
             "severity_level": self.get_severity_level(),
             "affected_operations_count": (
@@ -461,42 +469,37 @@ class ModelMissingTool(BaseModel):
             "system_stability_risk": self._assess_stability_risk(),
         }
 
-        return impact
-
     def _estimate_downtime(self) -> str:
         """Estimate potential downtime impact."""
         if self.is_critical_tool():
             return "Immediate service disruption"
-        elif self.criticality == ToolCriticality.HIGH:
+        if self.criticality == ToolCriticality.HIGH:
             return "Major functionality impacted"
-        elif self.criticality == ToolCriticality.MEDIUM:
+        if self.criticality == ToolCriticality.MEDIUM:
             return "Some features unavailable"
-        else:
-            return "Minimal impact"
+        return "Minimal impact"
 
     def _assess_user_experience_impact(self) -> str:
         """Assess impact on user experience."""
         if self.is_critical_tool():
             return "Severe degradation"
-        elif self.tool_category == ToolCategory.SECURITY:
+        if self.tool_category == ToolCategory.SECURITY:
             return "Security concerns"
-        elif self.criticality == ToolCriticality.HIGH:
+        if self.criticality == ToolCriticality.HIGH:
             return "Significant degradation"
-        elif self.criticality == ToolCriticality.MEDIUM:
+        if self.criticality == ToolCriticality.MEDIUM:
             return "Moderate impact"
-        else:
-            return "Minor impact"
+        return "Minor impact"
 
     def _assess_stability_risk(self) -> str:
         """Assess system stability risk."""
         if self.reason_category == ToolMissingReason.CIRCULAR_DEPENDENCY:
             return "High stability risk"
-        elif self.is_critical_tool():
+        if self.is_critical_tool():
             return "System instability likely"
-        elif self.tool_category == ToolCategory.CORE:
+        if self.tool_category == ToolCategory.CORE:
             return "Moderate stability risk"
-        else:
-            return "Low stability risk"
+        return "Low stability risk"
 
     # === Monitoring Integration ===
 
@@ -522,7 +525,7 @@ class ModelMissingTool(BaseModel):
             "first_detected": self.first_detected,
         }
 
-    def get_alert_data(self) -> Dict[str, Any]:
+    def get_alert_data(self) -> dict[str, Any]:
         """Get structured data for alerting systems."""
         return {
             "alert_level": self.get_severity_level(),
@@ -589,7 +592,7 @@ class ModelMissingTool(BaseModel):
         tool_name: str,
         expected_type: str,
         error_details: str,
-        dependencies: Optional[List[str]] = None,
+        dependencies: list[str] | None = None,
     ) -> "ModelMissingTool":
         """Create a missing tool entry for import errors."""
         return cls(
@@ -623,7 +626,10 @@ class ModelMissingTool(BaseModel):
 
     @classmethod
     def create_dependency_missing(
-        cls, tool_name: str, expected_type: str, missing_dependencies: List[str]
+        cls,
+        tool_name: str,
+        expected_type: str,
+        missing_dependencies: list[str],
     ) -> "ModelMissingTool":
         """Create a missing tool entry for missing dependencies."""
         deps_str = ", ".join(missing_dependencies)
@@ -639,7 +645,10 @@ class ModelMissingTool(BaseModel):
 
     @classmethod
     def create_from_exception(
-        cls, tool_name: str, expected_type: str, exception: Exception
+        cls,
+        tool_name: str,
+        expected_type: str,
+        exception: Exception,
     ) -> "ModelMissingTool":
         """Create a missing tool entry from an exception."""
         error_type = type(exception).__name__

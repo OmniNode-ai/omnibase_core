@@ -5,7 +5,7 @@ Defines the structured result model for node discovery operations
 within the ONEX architecture.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -21,22 +21,27 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
     discovery mechanisms (registry, filesystem, etc.).
     """
 
-    nodes: List[ModelNodeInfo] = Field(
-        default_factory=list, description="List of discovered nodes"
+    nodes: list[ModelNodeInfo] = Field(
+        default_factory=list,
+        description="List of discovered nodes",
     )
     source: str = Field(
-        ..., description="Discovery source (registry, filesystem, etc.)"
+        ...,
+        description="Discovery source (registry, filesystem, etc.)",
     )
-    total_available: Optional[int] = Field(
-        None, description="Total nodes available in source"
+    total_available: int | None = Field(
+        None,
+        description="Total nodes available in source",
     )
-    discovery_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional discovery metadata"
+    discovery_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional discovery metadata",
     )
-    execution_time_ms: Optional[float] = Field(
-        None, description="Discovery execution time in milliseconds"
+    execution_time_ms: float | None = Field(
+        None,
+        description="Discovery execution time in milliseconds",
     )
 
 
 # Backward compatibility - export both classes
-__all__ = ["ModelNodeInfo", "ModelNodeDiscoveryResult"]
+__all__ = ["ModelNodeDiscoveryResult", "ModelNodeInfo"]

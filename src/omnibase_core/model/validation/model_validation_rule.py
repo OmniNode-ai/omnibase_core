@@ -5,7 +5,6 @@ Structured model for validation rules that replaces List[str] usage.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -39,69 +38,85 @@ class ModelValidationRuleParameters(BaseModel):
     """
 
     # Numeric parameters
-    min_value: Optional[Union[int, float]] = Field(
-        None, description="Minimum allowed value"
+    min_value: int | float | None = Field(
+        None,
+        description="Minimum allowed value",
     )
-    max_value: Optional[Union[int, float]] = Field(
-        None, description="Maximum allowed value"
+    max_value: int | float | None = Field(
+        None,
+        description="Maximum allowed value",
     )
-    min_length: Optional[int] = Field(None, description="Minimum string/array length")
-    max_length: Optional[int] = Field(None, description="Maximum string/array length")
+    min_length: int | None = Field(None, description="Minimum string/array length")
+    max_length: int | None = Field(None, description="Maximum string/array length")
 
     # String parameters
-    allowed_values: Optional[List[str]] = Field(
-        None, description="List of allowed string values"
+    allowed_values: list[str] | None = Field(
+        None,
+        description="List of allowed string values",
     )
-    forbidden_values: Optional[List[str]] = Field(
-        None, description="List of forbidden string values"
+    forbidden_values: list[str] | None = Field(
+        None,
+        description="List of forbidden string values",
     )
-    case_sensitive: Optional[bool] = Field(
-        None, description="Whether string comparisons are case sensitive"
+    case_sensitive: bool | None = Field(
+        None,
+        description="Whether string comparisons are case sensitive",
     )
 
     # Pattern parameters
-    regex_pattern: Optional[str] = Field(
-        None, description="Regular expression pattern to match"
+    regex_pattern: str | None = Field(
+        None,
+        description="Regular expression pattern to match",
     )
-    regex_flags: Optional[List[str]] = Field(
-        None, description="Regex flags like 'i', 'm', 's'"
+    regex_flags: list[str] | None = Field(
+        None,
+        description="Regex flags like 'i', 'm', 's'",
     )
 
     # File/Path parameters
-    file_extensions: Optional[List[str]] = Field(
-        None, description="Allowed file extensions"
+    file_extensions: list[str] | None = Field(
+        None,
+        description="Allowed file extensions",
     )
-    path_must_exist: Optional[bool] = Field(
-        None, description="Whether the path must exist"
+    path_must_exist: bool | None = Field(
+        None,
+        description="Whether the path must exist",
     )
-    require_absolute_path: Optional[bool] = Field(
-        None, description="Whether path must be absolute"
+    require_absolute_path: bool | None = Field(
+        None,
+        description="Whether path must be absolute",
     )
 
     # Schema parameters
-    schema_version: Optional[str] = Field(None, description="Required schema version")
-    required_fields: Optional[List[str]] = Field(
-        None, description="Required field names"
+    schema_version: str | None = Field(None, description="Required schema version")
+    required_fields: list[str] | None = Field(
+        None,
+        description="Required field names",
     )
-    forbidden_fields: Optional[List[str]] = Field(
-        None, description="Forbidden field names"
+    forbidden_fields: list[str] | None = Field(
+        None,
+        description="Forbidden field names",
     )
 
     # Performance parameters
-    max_execution_time_ms: Optional[int] = Field(
-        None, description="Maximum execution time in milliseconds"
+    max_execution_time_ms: int | None = Field(
+        None,
+        description="Maximum execution time in milliseconds",
     )
-    max_memory_mb: Optional[int] = Field(None, description="Maximum memory usage in MB")
+    max_memory_mb: int | None = Field(None, description="Maximum memory usage in MB")
 
     # Custom parameters for extensibility (strongly typed)
-    custom_string_params: Optional[Dict[str, str]] = Field(
-        None, description="Custom string parameters"
+    custom_string_params: dict[str, str] | None = Field(
+        None,
+        description="Custom string parameters",
     )
-    custom_int_params: Optional[Dict[str, int]] = Field(
-        None, description="Custom integer parameters"
+    custom_int_params: dict[str, int] | None = Field(
+        None,
+        description="Custom integer parameters",
     )
-    custom_bool_params: Optional[Dict[str, bool]] = Field(
-        None, description="Custom boolean parameters"
+    custom_bool_params: dict[str, bool] | None = Field(
+        None,
+        description="Custom boolean parameters",
     )
 
 
@@ -115,41 +130,53 @@ class ModelValidationRule(BaseModel):
 
     rule_name: str = Field(..., description="Unique name for the validation rule")
     rule_type: EnumValidationRuleType = Field(
-        ..., description="Type of validation rule"
+        ...,
+        description="Type of validation rule",
     )
     severity: EnumValidationSeverity = Field(
-        default=EnumValidationSeverity.error, description="Severity level"
+        default=EnumValidationSeverity.error,
+        description="Severity level",
     )
     description: str = Field(
-        ..., description="Human-readable description of what this rule validates"
+        ...,
+        description="Human-readable description of what this rule validates",
     )
 
     # Rule configuration
     enabled: bool = Field(default=True, description="Whether this rule is enabled")
-    pattern: Optional[str] = Field(
-        None, description="Regex pattern for pattern-based rules"
+    pattern: str | None = Field(
+        None,
+        description="Regex pattern for pattern-based rules",
     )
-    expected_value: Optional[Union[str, int, float, bool]] = Field(
-        None, description="Expected value for comparison rules"
+    expected_value: str | int | float | bool | None = Field(
+        None,
+        description="Expected value for comparison rules",
     )
-    parameters: Optional[ModelValidationRuleParameters] = Field(
-        None, description="Strongly-typed rule parameters"
+    parameters: ModelValidationRuleParameters | None = Field(
+        None,
+        description="Strongly-typed rule parameters",
     )
 
     # Metadata
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for categorizing rules"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorizing rules",
     )
-    documentation_url: Optional[str] = Field(
-        None, description="URL to rule documentation"
+    documentation_url: str | None = Field(
+        None,
+        description="URL to rule documentation",
     )
     auto_fixable: bool = Field(
-        default=False, description="Whether violations can be auto-fixed"
+        default=False,
+        description="Whether violations can be auto-fixed",
     )
 
     @classmethod
     def create_schema_rule(
-        cls, rule_name: str, description: str, **kwargs
+        cls,
+        rule_name: str,
+        description: str,
+        **kwargs,
     ) -> "ModelValidationRule":
         """Factory method for schema validation rules."""
         return cls(
@@ -161,7 +188,10 @@ class ModelValidationRule(BaseModel):
 
     @classmethod
     def create_compliance_rule(
-        cls, rule_name: str, description: str, **kwargs
+        cls,
+        rule_name: str,
+        description: str,
+        **kwargs,
     ) -> "ModelValidationRule":
         """Factory method for compliance validation rules."""
         return cls(
@@ -207,8 +237,8 @@ class ModelValidationRule(BaseModel):
         cls,
         rule_name: str,
         description: str,
-        min_value: Optional[Union[int, float]] = None,
-        max_value: Optional[Union[int, float]] = None,
+        min_value: int | float | None = None,
+        max_value: int | float | None = None,
         **kwargs,
     ) -> "ModelValidationRule":
         """Factory method for numeric range validation rules."""

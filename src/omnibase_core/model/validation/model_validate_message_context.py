@@ -2,14 +2,14 @@
 ValidateMessageContext model.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
 
 class ModelValidateMessageContext(BaseModel):
-    field: Optional[str] = None
-    value: Optional[Any] = None
-    expected: Optional[Any] = None
-    actual: Optional[Any] = None
-    reason: Optional[str] = None
+    field: str | None = None
+    value: Any | None = None
+    expected: Any | None = None
+    actual: Any | None = None
+    reason: str | None = None

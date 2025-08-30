@@ -6,7 +6,6 @@ cascade failures in load balancing systems.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,11 +21,15 @@ class ModelCircuitBreaker(BaseModel):
     """
 
     enabled: bool = Field(
-        default=True, description="Whether circuit breaker is enabled"
+        default=True,
+        description="Whether circuit breaker is enabled",
     )
 
     failure_threshold: int = Field(
-        default=5, description="Number of failures before opening circuit", ge=1, le=100
+        default=5,
+        description="Number of failures before opening circuit",
+        ge=1,
+        le=100,
     )
 
     success_threshold: int = Field(
@@ -44,7 +47,10 @@ class ModelCircuitBreaker(BaseModel):
     )
 
     window_size_seconds: int = Field(
-        default=120, description="Time window for failure counting", ge=30, le=3600
+        default=120,
+        description="Time window for failure counting",
+        ge=30,
+        le=3600,
     )
 
     half_open_max_requests: int = Field(
@@ -68,14 +74,14 @@ class ModelCircuitBreaker(BaseModel):
         le=1000,
     )
 
-    slow_call_duration_threshold_ms: Optional[int] = Field(
+    slow_call_duration_threshold_ms: int | None = Field(
         None,
         description="Duration threshold for slow calls in milliseconds",
         ge=100,
         le=60000,
     )
 
-    slow_call_rate_threshold: Optional[float] = Field(
+    slow_call_rate_threshold: float | None = Field(
         None,
         description="Slow call rate threshold (0.0-1.0) to open circuit",
         ge=0.0,
@@ -88,32 +94,43 @@ class ModelCircuitBreaker(BaseModel):
         pattern="^(closed|open|half_open)$",
     )
 
-    last_failure_time: Optional[datetime] = Field(
-        None, description="Timestamp of last failure"
+    last_failure_time: datetime | None = Field(
+        None,
+        description="Timestamp of last failure",
     )
 
-    last_state_change: Optional[datetime] = Field(
-        None, description="Timestamp of last state change"
+    last_state_change: datetime | None = Field(
+        None,
+        description="Timestamp of last state change",
     )
 
     failure_count: int = Field(
-        default=0, description="Current failure count in window", ge=0
+        default=0,
+        description="Current failure count in window",
+        ge=0,
     )
 
     success_count: int = Field(
-        default=0, description="Current success count in half-open state", ge=0
+        default=0,
+        description="Current success count in half-open state",
+        ge=0,
     )
 
     total_requests: int = Field(
-        default=0, description="Total requests in current window", ge=0
+        default=0,
+        description="Total requests in current window",
+        ge=0,
     )
 
     half_open_requests: int = Field(
-        default=0, description="Requests made in half-open state", ge=0
+        default=0,
+        description="Requests made in half-open state",
+        ge=0,
     )
 
-    circuit_breaker_metadata: Optional[ModelCircuitBreakerMetadata] = Field(
-        None, description="Additional circuit breaker metadata"
+    circuit_breaker_metadata: ModelCircuitBreakerMetadata | None = Field(
+        None,
+        description="Additional circuit breaker metadata",
     )
 
     def should_allow_request(self) -> bool:
@@ -128,13 +145,13 @@ class ModelCircuitBreaker(BaseModel):
 
         if self.state == "closed":
             return True
-        elif self.state == "open":
+        if self.state == "open":
             # Check if timeout has elapsed to transition to half-open
             if self._should_transition_to_half_open(current_time):
                 self._transition_to_half_open()
                 return True
             return False
-        elif self.state == "half_open":
+        if self.state == "half_open":
             # Allow limited requests in half-open state
             return self.half_open_requests < self.half_open_max_requests
 

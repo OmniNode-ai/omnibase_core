@@ -21,17 +21,17 @@ OrchestratorResultModel = ModelOrchestratorResult
 
 # Re-export for backward compatibility
 __all__ = [
+    # Backward compatibility
+    "GraphModel",
     "ModelGraph",
-    "ModelPlan",
     "ModelOrchestratorGraph",
     "ModelOrchestratorPlan",
     "ModelOrchestratorResult",
-    # Backward compatibility
-    "GraphModel",
-    "PlanModel",
+    "ModelPlan",
     "OrchestratorGraphModel",
     "OrchestratorPlanModel",
     "OrchestratorResultModel",
+    "PlanModel",
 ]
 
 # === OmniNode:Metadata ===

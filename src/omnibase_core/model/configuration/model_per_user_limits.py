@@ -5,8 +5,6 @@ Per-user limits model for defining user-specific rate limiting rules
 with user tiers, quotas, and individual user overrides.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +17,8 @@ class ModelPerUserLimits(BaseModel):
     """
 
     enabled: bool = Field(
-        default=True, description="Whether per-user rate limiting is enabled"
+        default=True,
+        description="Whether per-user rate limiting is enabled",
     )
 
     default_user_limit: int = Field(
@@ -35,8 +34,9 @@ class ModelPerUserLimits(BaseModel):
         pattern="^(user_id|api_key|ip_address|session_id|custom_header|jwt_subject)$",
     )
 
-    user_identification_header: Optional[str] = Field(
-        None, description="Header name for user identification (if using custom_header)"
+    user_identification_header: str | None = Field(
+        None,
+        description="Header name for user identification (if using custom_header)",
     )
 
     anonymous_user_limit: int = Field(
@@ -46,21 +46,24 @@ class ModelPerUserLimits(BaseModel):
         le=100000,
     )
 
-    user_tier_limits: Dict[str, int] = Field(
+    user_tier_limits: dict[str, int] = Field(
         default_factory=lambda: {"free": 100, "premium": 1000, "enterprise": 10000},
         description="Rate limits by user tier",
     )
 
-    individual_user_overrides: Dict[str, int] = Field(
-        default_factory=dict, description="Specific rate limits for individual users"
+    individual_user_overrides: dict[str, int] = Field(
+        default_factory=dict,
+        description="Specific rate limits for individual users",
     )
 
-    blocked_users: List[str] = Field(
-        default_factory=list, description="Users that are completely blocked"
+    blocked_users: list[str] = Field(
+        default_factory=list,
+        description="Users that are completely blocked",
     )
 
-    unlimited_users: List[str] = Field(
-        default_factory=list, description="Users with unlimited access"
+    unlimited_users: list[str] = Field(
+        default_factory=list,
+        description="Users with unlimited access",
     )
 
     user_quota_enabled: bool = Field(
@@ -68,16 +71,21 @@ class ModelPerUserLimits(BaseModel):
         description="Whether user quotas (daily/monthly limits) are enabled",
     )
 
-    daily_quota_limits: Dict[str, int] = Field(
-        default_factory=dict, description="Daily quota limits by user tier"
+    daily_quota_limits: dict[str, int] = Field(
+        default_factory=dict,
+        description="Daily quota limits by user tier",
     )
 
-    monthly_quota_limits: Dict[str, int] = Field(
-        default_factory=dict, description="Monthly quota limits by user tier"
+    monthly_quota_limits: dict[str, int] = Field(
+        default_factory=dict,
+        description="Monthly quota limits by user tier",
     )
 
     quota_reset_hour: int = Field(
-        default=0, description="Hour of day (0-23) when daily quotas reset", ge=0, le=23
+        default=0,
+        description="Hour of day (0-23) when daily quotas reset",
+        ge=0,
+        le=23,
     )
 
     grace_period_minutes: int = Field(
@@ -87,19 +95,21 @@ class ModelPerUserLimits(BaseModel):
         le=60,
     )
 
-    burst_allowance_per_user: Optional[float] = Field(
+    burst_allowance_per_user: float | None = Field(
         None,
         description="Additional burst capacity multiplier per user",
         ge=1.0,
         le=5.0,
     )
 
-    user_specific_burst: Dict[str, float] = Field(
-        default_factory=dict, description="User-specific burst multipliers"
+    user_specific_burst: dict[str, float] = Field(
+        default_factory=dict,
+        description="User-specific burst multipliers",
     )
 
     escalation_enabled: bool = Field(
-        default=True, description="Whether to escalate limits for trusted users"
+        default=True,
+        description="Whether to escalate limits for trusted users",
     )
 
     escalation_trust_threshold: float = Field(
@@ -110,10 +120,13 @@ class ModelPerUserLimits(BaseModel):
     )
 
     escalation_multiplier: float = Field(
-        default=1.5, description="Multiplier for escalated user limits", ge=1.0, le=5.0
+        default=1.5,
+        description="Multiplier for escalated user limits",
+        ge=1.0,
+        le=5.0,
     )
 
-    def get_user_limit(self, user_id: str, user_tier: Optional[str] = None) -> int:
+    def get_user_limit(self, user_id: str, user_tier: str | None = None) -> int:
         """Get rate limit for a specific user"""
         if not self.enabled:
             return self.default_user_limit
@@ -149,14 +162,14 @@ class ModelPerUserLimits(BaseModel):
 
         return int(base_limit * multiplier)
 
-    def get_daily_quota(self, user_tier: Optional[str] = None) -> Optional[int]:
+    def get_daily_quota(self, user_tier: str | None = None) -> int | None:
         """Get daily quota for a user tier"""
         if not self.user_quota_enabled or not user_tier:
             return None
 
         return self.daily_quota_limits.get(user_tier)
 
-    def get_monthly_quota(self, user_tier: Optional[str] = None) -> Optional[int]:
+    def get_monthly_quota(self, user_tier: str | None = None) -> int | None:
         """Get monthly quota for a user tier"""
         if not self.user_quota_enabled or not user_tier:
             return None
@@ -184,31 +197,32 @@ class ModelPerUserLimits(BaseModel):
 
     def extract_user_id(
         self,
-        headers: Dict[str, str],
-        query_params: Dict[str, str] = None,
+        headers: dict[str, str],
+        query_params: dict[str, str] | None = None,
         client_ip: str = "",
-        jwt_payload: Dict = None,
-    ) -> Optional[str]:
+        jwt_payload: dict | None = None,
+    ) -> str | None:
         """Extract user ID based on identification method"""
         query_params = query_params or {}
         jwt_payload = jwt_payload or {}
 
         if self.user_identification_method == "user_id":
             return headers.get("X-User-ID") or query_params.get("user_id")
-        elif self.user_identification_method == "api_key":
+        if self.user_identification_method == "api_key":
             return headers.get("X-API-Key") or headers.get("Authorization", "").replace(
-                "Bearer ", ""
+                "Bearer ",
+                "",
             )
-        elif self.user_identification_method == "ip_address":
+        if self.user_identification_method == "ip_address":
             return client_ip
-        elif self.user_identification_method == "session_id":
+        if self.user_identification_method == "session_id":
             return headers.get("X-Session-ID") or query_params.get("session_id")
-        elif (
+        if (
             self.user_identification_method == "custom_header"
             and self.user_identification_header
         ):
             return headers.get(self.user_identification_header)
-        elif self.user_identification_method == "jwt_subject":
+        if self.user_identification_method == "jwt_subject":
             return jwt_payload.get("sub")
 
         return None

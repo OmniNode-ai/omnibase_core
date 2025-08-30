@@ -6,7 +6,6 @@ supporting subsystem health, issues tracking, metrics, and trend analysis.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -35,43 +34,58 @@ class ModelHealthStatus(BaseModel):
     )
 
     health_score: float = Field(
-        ..., description="Overall health score (0.0-1.0)", ge=0.0, le=1.0
+        ...,
+        description="Overall health score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
-    subsystem_health: Dict[str, "ModelHealthStatus"] = Field(
-        default_factory=dict, description="Health status of subsystems"
+    subsystem_health: dict[str, "ModelHealthStatus"] = Field(
+        default_factory=dict,
+        description="Health status of subsystems",
     )
 
-    metrics: List[ModelHealthMetric] = Field(
-        default_factory=list, description="Health metrics collection"
+    metrics: list[ModelHealthMetric] = Field(
+        default_factory=list,
+        description="Health metrics collection",
     )
 
-    issues: List[ModelHealthIssue] = Field(
-        default_factory=list, description="Current health issues"
+    issues: list[ModelHealthIssue] = Field(
+        default_factory=list,
+        description="Current health issues",
     )
 
     last_check: datetime = Field(
-        default_factory=datetime.utcnow, description="Last health check timestamp"
+        default_factory=datetime.utcnow,
+        description="Last health check timestamp",
     )
 
-    next_check: Optional[datetime] = Field(
-        None, description="Next scheduled health check"
+    next_check: datetime | None = Field(
+        None,
+        description="Next scheduled health check",
     )
 
-    check_duration_ms: Optional[int] = Field(
-        None, description="Health check duration in milliseconds", ge=0
+    check_duration_ms: int | None = Field(
+        None,
+        description="Health check duration in milliseconds",
+        ge=0,
     )
 
     check_count: int = Field(
-        default=0, description="Total number of health checks performed", ge=0
+        default=0,
+        description="Total number of health checks performed",
+        ge=0,
     )
 
-    uptime_seconds: Optional[int] = Field(
-        None, description="System uptime in seconds", ge=0
+    uptime_seconds: int | None = Field(
+        None,
+        description="System uptime in seconds",
+        ge=0,
     )
 
-    metadata: Optional[ModelHealthMetadata] = Field(
-        None, description="Additional health metadata"
+    metadata: ModelHealthMetadata | None = Field(
+        None,
+        description="Additional health metadata",
     )
 
     def is_healthy(self, threshold: float = 0.7) -> bool:
@@ -111,22 +125,22 @@ class ModelHealthStatus(BaseModel):
             or self.status == "unhealthy"
         )
 
-    def get_critical_issues(self) -> List[ModelHealthIssue]:
+    def get_critical_issues(self) -> list[ModelHealthIssue]:
         """Get all critical health issues"""
         return [issue for issue in self.issues if issue.severity == "critical"]
 
-    def get_high_issues(self) -> List[ModelHealthIssue]:
+    def get_high_issues(self) -> list[ModelHealthIssue]:
         """Get all high severity health issues"""
         return [issue for issue in self.issues if issue.severity == "high"]
 
-    def get_metric_by_name(self, metric_name: str) -> Optional[ModelHealthMetric]:
+    def get_metric_by_name(self, metric_name: str) -> ModelHealthMetric | None:
         """Get a specific health metric by name"""
         for metric in self.metrics:
             if metric.metric_name == metric_name:
                 return metric
         return None
 
-    def get_subsystem_health_summary(self) -> Dict[str, str]:
+    def get_subsystem_health_summary(self) -> dict[str, str]:
         """Get summary of all subsystem health statuses"""
         return {name: health.status for name, health in self.subsystem_health.items()}
 
@@ -180,12 +194,11 @@ class ModelHealthStatus(BaseModel):
 
         if self.is_critical():
             return f"CRITICAL: {critical_count} critical issues, score {self.health_score:.1%}"
-        elif self.is_degraded():
+        if self.is_degraded():
             return f"DEGRADED: {high_count} high issues, score {self.health_score:.1%}"
-        elif self.is_healthy():
+        if self.is_healthy():
             return f"HEALTHY: score {self.health_score:.1%}"
-        else:
-            return f"UNKNOWN: score {self.health_score:.1%}"
+        return f"UNKNOWN: score {self.health_score:.1%}"
 
     @classmethod
     def create_healthy(cls, score: float = 1.0) -> "ModelHealthStatus":
@@ -194,20 +207,30 @@ class ModelHealthStatus(BaseModel):
 
     @classmethod
     def create_degraded(
-        cls, score: float = 0.6, issues: Optional[List[ModelHealthIssue]] = None
+        cls,
+        score: float = 0.6,
+        issues: list[ModelHealthIssue] | None = None,
     ) -> "ModelHealthStatus":
         """Create a degraded status instance"""
         return cls(
-            status="degraded", health_score=score, issues=issues or [], check_count=1
+            status="degraded",
+            health_score=score,
+            issues=issues or [],
+            check_count=1,
         )
 
     @classmethod
     def create_unhealthy(
-        cls, score: float = 0.2, issues: Optional[List[ModelHealthIssue]] = None
+        cls,
+        score: float = 0.2,
+        issues: list[ModelHealthIssue] | None = None,
     ) -> "ModelHealthStatus":
         """Create an unhealthy status instance"""
         return cls(
-            status="unhealthy", health_score=score, issues=issues or [], check_count=1
+            status="unhealthy",
+            health_score=score,
+            issues=issues or [],
+            check_count=1,
         )
 
 

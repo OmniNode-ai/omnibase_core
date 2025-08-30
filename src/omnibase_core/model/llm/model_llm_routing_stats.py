@@ -5,8 +5,6 @@ Provides strongly-typed routing statistics to replace Dict[str, Any] usage
 with proper ONEX naming conventions.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -19,23 +17,32 @@ class ModelLLMRoutingStats(BaseModel):
     """
 
     total_requests: int = Field(
-        default=0, ge=0, description="Total number of LLM requests processed"
+        default=0,
+        ge=0,
+        description="Total number of LLM requests processed",
     )
 
     successful_requests: int = Field(
-        default=0, ge=0, description="Number of successful LLM requests"
+        default=0,
+        ge=0,
+        description="Number of successful LLM requests",
     )
 
     failed_requests: int = Field(
-        default=0, ge=0, description="Number of failed LLM requests"
+        default=0,
+        ge=0,
+        description="Number of failed LLM requests",
     )
 
-    provider_usage: Dict[str, int] = Field(
-        default_factory=dict, description="Request count per LLM provider"
+    provider_usage: dict[str, int] = Field(
+        default_factory=dict,
+        description="Request count per LLM provider",
     )
 
     failover_attempts: int = Field(
-        default=0, ge=0, description="Number of failover attempts between providers"
+        default=0,
+        ge=0,
+        description="Number of failover attempts between providers",
     )
 
     cost_savings: float = Field(

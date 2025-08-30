@@ -3,7 +3,6 @@ Logging configuration model.
 """
 
 import enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +21,6 @@ class LogFormat(enum.StrEnum):
 class ModelLoggingConfig(BaseModel):
     """Logging configuration for nodes."""
 
-    level: Optional[str] = None
-    format: Optional[LogFormat] = None
-    audit_events: List[str] = Field(default_factory=list)
+    level: str | None = None
+    format: LogFormat | None = None
+    audit_events: list[str] = Field(default_factory=list)

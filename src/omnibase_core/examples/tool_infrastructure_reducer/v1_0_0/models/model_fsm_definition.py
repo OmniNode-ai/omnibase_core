@@ -5,11 +5,15 @@ Generated from FSM subcontract following ONEX contract-driven patterns.
 Provides comprehensive state machine structure with states, transitions, and operations.
 """
 
-from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, validator
+
+if TYPE_CHECKING:
+    from .model_fsm_operation import ModelFSMOperation
+    from .model_fsm_state import ModelFSMState
+    from .model_fsm_transition import ModelFSMTransition
 
 
 class FSMConflictResolutionStrategy(str, Enum):
@@ -60,31 +64,38 @@ class ModelFSMDefinition(BaseModel):
         pattern=r"^[a-z][a-z0-9_]*$",
     )
 
-    terminal_states: List[str] = Field(
+    terminal_states: list[str] = Field(
         default_factory=list,
         description="List of terminal states that end FSM execution",
     )
 
-    error_states: List[str] = Field(
-        default_factory=list, description="List of error states for error handling"
+    error_states: list[str] = Field(
+        default_factory=list,
+        description="List of error states for error handling",
     )
 
     # FSM components
-    states: List["ModelFSMState"] = Field(
-        ..., description="Complete list of state definitions", min_items=1
+    states: list["ModelFSMState"] = Field(
+        ...,
+        description="Complete list of state definitions",
+        min_items=1,
     )
 
-    transitions: List["ModelFSMTransition"] = Field(
-        ..., description="Complete list of transition definitions", min_items=1
+    transitions: list["ModelFSMTransition"] = Field(
+        ...,
+        description="Complete list of transition definitions",
+        min_items=1,
     )
 
-    operations: List["ModelFSMOperation"] = Field(
-        default_factory=list, description="Available operations within the FSM"
+    operations: list["ModelFSMOperation"] = Field(
+        default_factory=list,
+        description="Available operations within the FSM",
     )
 
     # FSM Configuration
     persistence_enabled: bool = Field(
-        default=True, description="Whether FSM state should be persisted"
+        default=True,
+        description="Whether FSM state should be persisted",
     )
 
     checkpoint_interval_ms: int = Field(
@@ -95,15 +106,20 @@ class ModelFSMDefinition(BaseModel):
     )
 
     max_checkpoints: int = Field(
-        default=10, description="Maximum number of checkpoints to retain", ge=1, le=100
+        default=10,
+        description="Maximum number of checkpoints to retain",
+        ge=1,
+        le=100,
     )
 
     recovery_enabled: bool = Field(
-        default=True, description="Whether FSM supports recovery from failures"
+        default=True,
+        description="Whether FSM supports recovery from failures",
     )
 
     rollback_enabled: bool = Field(
-        default=True, description="Whether FSM supports transaction rollback"
+        default=True,
+        description="Whether FSM supports transaction rollback",
     )
 
     conflict_resolution_strategy: FSMConflictResolutionStrategy = Field(
@@ -129,37 +145,41 @@ class ModelFSMDefinition(BaseModel):
     )
 
     state_monitoring_enabled: bool = Field(
-        default=True, description="Whether to enable state monitoring and metrics"
+        default=True,
+        description="Whether to enable state monitoring and metrics",
     )
 
     event_logging_enabled: bool = Field(
-        default=True, description="Whether to log all FSM events"
+        default=True,
+        description="Whether to log all FSM events",
     )
 
     @validator("states")
-    def validate_states_contain_initial(cls, v, values):
+    def validate_states_contain_initial(self, v, values):
         """Validate that states list contains the initial state."""
         if "initial_state" in values:
             initial_state = values["initial_state"]
             state_names = [state.state_name for state in v]
             if initial_state not in state_names:
+                msg = f"Initial state '{initial_state}' not found in states list"
                 raise ValueError(
-                    f"Initial state '{initial_state}' not found in states list"
+                    msg,
                 )
         return v
 
     @validator("terminal_states", "error_states")
-    def validate_special_states_exist(cls, v, values):
+    def validate_special_states_exist(self, v, values):
         """Validate that terminal and error states exist in the states list."""
         if "states" in values and v:
             state_names = [state.state_name for state in values["states"]]
             for state_name in v:
                 if state_name not in state_names:
-                    raise ValueError(f"State '{state_name}' not found in states list")
+                    msg = f"State '{state_name}' not found in states list"
+                    raise ValueError(msg)
         return v
 
     @validator("transitions")
-    def validate_transition_states_exist(cls, v, values):
+    def validate_transition_states_exist(self, v, values):
         """Validate that all transition from/to states exist."""
         if "states" in values:
             state_names = {state.state_name for state in values["states"]}
@@ -169,12 +189,14 @@ class ModelFSMDefinition(BaseModel):
                     transition.from_state != "*"
                     and transition.from_state not in state_names
                 ):
+                    msg = f"Transition from_state '{transition.from_state}' not found in states"
                     raise ValueError(
-                        f"Transition from_state '{transition.from_state}' not found in states"
+                        msg,
                     )
                 if transition.to_state not in state_names:
+                    msg = f"Transition to_state '{transition.to_state}' not found in states"
                     raise ValueError(
-                        f"Transition to_state '{transition.to_state}' not found in states"
+                        msg,
                     )
         return v
 
@@ -190,14 +212,11 @@ class ModelFSMDefinition(BaseModel):
                 "persistence_enabled": True,
                 "recovery_enabled": True,
                 "conflict_resolution_strategy": "priority_based",
-            }
+            },
         }
 
 
-from .model_fsm_operation import ModelFSMOperation
 # Import forward references after model definition to avoid circular imports
-from .model_fsm_state import ModelFSMState
-from .model_fsm_transition import ModelFSMTransition
 
 # Update forward references
 ModelFSMDefinition.model_rebuild()

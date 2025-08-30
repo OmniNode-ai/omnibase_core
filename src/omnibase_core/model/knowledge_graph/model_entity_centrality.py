@@ -11,11 +11,13 @@ class ModelEntityCentrality(BaseModel):
     entity_id: str = Field(..., description="Entity identifier")
     degree_centrality: float = Field(..., description="Degree centrality score")
     betweenness_centrality: float = Field(
-        ..., description="Betweenness centrality score"
+        ...,
+        description="Betweenness centrality score",
     )
     closeness_centrality: float = Field(..., description="Closeness centrality score")
     eigenvector_centrality: float = Field(
-        ..., description="Eigenvector centrality score"
+        ...,
+        description="Eigenvector centrality score",
     )
     pagerank_score: float = Field(..., description="PageRank score")
     overall_importance: float = Field(..., description="Combined importance score")

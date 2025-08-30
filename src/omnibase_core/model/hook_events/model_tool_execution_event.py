@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,35 +17,39 @@ class ModelToolExecutionEvent(BaseModel):
     event_type: str = Field(..., description="pre-execution or post-execution")
     tool_name: str = Field(..., description="Name of the tool being executed")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
-        None, description="Correlated conversation ID"
+    conversation_id: str | None = Field(
+        None,
+        description="Correlated conversation ID",
     )
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     hook_version: str = Field("1.0.0", description="Hook system version")
 
     # Pre-execution data
-    parameters_json: Optional[str] = Field(
-        None, description="JSON-serialized tool parameters for pre-execution events"
+    parameters_json: str | None = Field(
+        None,
+        description="JSON-serialized tool parameters for pre-execution events",
     )
 
     # Post-execution data
-    result: Optional[str] = Field(None, description="Tool execution result")
-    success: Optional[bool] = Field(None, description="Whether execution succeeded")
-    duration_ms: Optional[int] = Field(
-        None, description="Execution duration in milliseconds"
+    result: str | None = Field(None, description="Tool execution result")
+    success: bool | None = Field(None, description="Whether execution succeeded")
+    duration_ms: int | None = Field(
+        None,
+        description="Execution duration in milliseconds",
     )
-    error_message: Optional[str] = Field(None, description="Error message if failed")
-    error_type: Optional[str] = Field(None, description="Type of error if failed")
-    result_size_bytes: Optional[int] = Field(None, description="Size of result data")
+    error_message: str | None = Field(None, description="Error message if failed")
+    error_type: str | None = Field(None, description="Type of error if failed")
+    result_size_bytes: int | None = Field(None, description="Size of result data")
 
     # Claude Code additional fields
-    claude_message: Optional[str] = Field(None, description="Claude message content")
-    error: Optional[str] = Field(None, description="Error details from Claude Code")
-    topic: Optional[str] = Field(
-        None, description="Kafka topic or similar routing info"
+    claude_message: str | None = Field(None, description="Claude message content")
+    error: str | None = Field(None, description="Error details from Claude Code")
+    topic: str | None = Field(
+        None,
+        description="Kafka topic or similar routing info",
     )
-    working_directory: Optional[str] = Field(None, description="Working directory path")
-    hook_type: Optional[str] = Field(None, description="Hook type from Claude Code")
+    working_directory: str | None = Field(None, description="Working directory path")
+    hook_type: str | None = Field(None, description="Hook type from Claude Code")
 
     @field_validator("parameters_json")
     @classmethod
@@ -56,7 +59,8 @@ class ModelToolExecutionEvent(BaseModel):
             try:
                 json.loads(v)
             except json.JSONDecodeError:
-                raise ValueError("parameters_json must be valid JSON")
+                msg = "parameters_json must be valid JSON"
+                raise ValueError(msg)
         return v
 
     def get_parameters(self) -> dict:

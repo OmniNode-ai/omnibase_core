@@ -2,7 +2,7 @@
 GitHubIssueCommentEvent model.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,17 +23,19 @@ class ModelGitHubIssueCommentEvent(BaseModel):
     comment: ModelGitHubIssueComment = Field(..., description="Comment data")
     repository: ModelGitHubRepository = Field(..., description="Repository data")
     sender: ModelGitHubUser = Field(..., description="User who triggered the event")
-    changes: Optional[Dict[str, Any]] = Field(
-        None, description="Changes made (for edited action)"
+    changes: dict[str, Any] | None = Field(
+        None,
+        description="Changes made (for edited action)",
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelGitHubIssueCommentEvent"]:
         """Create from dictionary for easy migration."""
         if data is None:

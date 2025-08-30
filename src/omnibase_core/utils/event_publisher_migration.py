@@ -5,27 +5,22 @@ This module provides utilities to help migrate services from Event Bus to Kafka
 publishers while maintaining backward compatibility and ensuring zero downtime.
 """
 
-import asyncio
 import json
 import logging
-from datetime import datetime, timedelta
+from collections.abc import Callable
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from omnibase.enums.enum_health_status import EnumHealthStatus
 from pydantic import BaseModel, Field
 
 from omnibase_core.configs.event_publisher_config import get_config_manager
 from omnibase_core.core.core_errors import OnexError
-from omnibase_core.enums.enum_protocol_event_type import EnumProtocolEventType
 from omnibase_core.enums.enum_publisher_type import EnumPublisherType
-from omnibase_core.models.model_event import ModelEvent
 from omnibase_core.models.model_publisher_config import ModelPublisherConfig
-from omnibase_core.monitors.event_publisher_health_monitor import \
-    get_health_monitor
-from omnibase_core.protocols.protocol_event_publisher import \
-    ProtocolEventPublisher
+from omnibase_core.monitors.event_publisher_health_monitor import get_health_monitor
 from omnibase_core.registries.event_publisher_registry import get_registry
 
 
@@ -61,21 +56,22 @@ class ModelMigrationStep(BaseModel):
     phase: EnumMigrationPhase = Field(description="Migration phase")
 
     # Dependencies
-    depends_on: List[str] = Field(default_factory=list, description="Step dependencies")
+    depends_on: list[str] = Field(default_factory=list, description="Step dependencies")
 
     # Status
     status: EnumMigrationStatus = Field(default=EnumMigrationStatus.NOT_STARTED)
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
+    started_at: datetime | None = Field(default=None)
+    completed_at: datetime | None = Field(default=None)
 
     # Results
     success: bool = Field(default=False)
-    error_message: Optional[str] = Field(default=None)
-    output: Dict[str, Any] = Field(default_factory=dict)
+    error_message: str | None = Field(default=None)
+    output: dict[str, Any] = Field(default_factory=dict)
 
     # Rollback
-    rollback_function: Optional[str] = Field(
-        default=None, description="Rollback function name"
+    rollback_function: str | None = Field(
+        default=None,
+        description="Rollback function name",
     )
 
 
@@ -87,10 +83,10 @@ class ModelServiceMigration(BaseModel):
 
     # Migration details
     source_publisher_type: EnumPublisherType = Field(
-        description="Current publisher type"
+        description="Current publisher type",
     )
     target_publisher_type: EnumPublisherType = Field(
-        description="Target publisher type"
+        description="Target publisher type",
     )
 
     # Status
@@ -98,24 +94,24 @@ class ModelServiceMigration(BaseModel):
     current_phase: EnumMigrationPhase = Field(default=EnumMigrationPhase.ASSESSMENT)
 
     # Steps
-    migration_steps: List[ModelMigrationStep] = Field(default_factory=list)
+    migration_steps: list[ModelMigrationStep] = Field(default_factory=list)
 
     # Configuration
-    source_config: Optional[ModelPublisherConfig] = Field(default=None)
-    target_config: Optional[ModelPublisherConfig] = Field(default=None)
+    source_config: ModelPublisherConfig | None = Field(default=None)
+    target_config: ModelPublisherConfig | None = Field(default=None)
 
     # Timing
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
+    started_at: datetime | None = Field(default=None)
+    completed_at: datetime | None = Field(default=None)
 
     # Validation
-    validation_metrics: Dict[str, Any] = Field(default_factory=dict)
+    validation_metrics: dict[str, Any] = Field(default_factory=dict)
     rollback_ready: bool = Field(default=False)
 
     # Events and topics
-    monitored_topics: List[str] = Field(default_factory=list)
-    critical_events: List[str] = Field(default_factory=list)
+    monitored_topics: list[str] = Field(default_factory=list)
+    critical_events: list[str] = Field(default_factory=list)
 
 
 class EventPublisherMigrationUtility:
@@ -123,8 +119,8 @@ class EventPublisherMigrationUtility:
 
     def __init__(self):
         """Initialize migration utility."""
-        self._active_migrations: Dict[str, ModelServiceMigration] = {}
-        self._migration_history: List[ModelServiceMigration] = []
+        self._active_migrations: dict[str, ModelServiceMigration] = {}
+        self._migration_history: list[ModelServiceMigration] = []
 
         # Dependencies
         self._registry = get_registry()
@@ -135,9 +131,9 @@ class EventPublisherMigrationUtility:
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # Step handlers
-        self._step_handlers: Dict[str, Callable] = self._register_step_handlers()
+        self._step_handlers: dict[str, Callable] = self._register_step_handlers()
 
-    def _register_step_handlers(self) -> Dict[str, Callable]:
+    def _register_step_handlers(self) -> dict[str, Callable]:
         """Register migration step handlers."""
         return {
             "assess_current_setup": self._assess_current_setup,
@@ -157,8 +153,8 @@ class EventPublisherMigrationUtility:
         self,
         service_name: str,
         target_publisher_type: EnumPublisherType,
-        monitored_topics: Optional[List[str]] = None,
-        critical_events: Optional[List[str]] = None,
+        monitored_topics: list[str] | None = None,
+        critical_events: list[str] | None = None,
     ) -> ModelServiceMigration:
         """
         Create a migration plan for a service.
@@ -175,7 +171,8 @@ class EventPublisherMigrationUtility:
         # Determine current publisher type
         current_publishers = self._registry.list_publishers(service_name=service_name)
         if not current_publishers:
-            raise OnexError(f"No publishers found for service: {service_name}")
+            msg = f"No publishers found for service: {service_name}"
+            raise OnexError(msg)
 
         source_publisher_type = current_publishers[0].publisher_type
 
@@ -199,14 +196,15 @@ class EventPublisherMigrationUtility:
         self._active_migrations[migration_id] = migration
 
         self._logger.info(
-            f"Created migration plan: {migration_id} ({source_publisher_type.value} -> {target_publisher_type.value})"
+            f"Created migration plan: {migration_id} ({source_publisher_type.value} -> {target_publisher_type.value})",
         )
 
         return migration
 
     def _generate_migration_steps(
-        self, migration: ModelServiceMigration
-    ) -> List[ModelMigrationStep]:
+        self,
+        migration: ModelServiceMigration,
+    ) -> list[ModelMigrationStep]:
         """Generate migration steps based on source and target types."""
         steps = []
 
@@ -226,7 +224,7 @@ class EventPublisherMigrationUtility:
                     phase=EnumMigrationPhase.ASSESSMENT,
                     depends_on=["assess_current_setup"],
                 ),
-            ]
+            ],
         )
 
         # Phase 2: Preparation
@@ -246,7 +244,7 @@ class EventPublisherMigrationUtility:
                     phase=EnumMigrationPhase.PREPARATION,
                     depends_on=["validate_target_config"],
                 ),
-            ]
+            ],
         )
 
         # Phase 3: Dual Mode (if different types)
@@ -267,7 +265,7 @@ class EventPublisherMigrationUtility:
                         phase=EnumMigrationPhase.DUAL_MODE,
                         depends_on=["setup_dual_mode"],
                     ),
-                ]
+                ],
             )
 
         # Phase 4: Validation
@@ -284,8 +282,8 @@ class EventPublisherMigrationUtility:
                         != migration.target_publisher_type
                         else ["create_target_publisher"]
                     ),
-                )
-            ]
+                ),
+            ],
         )
 
         # Phase 5: Cutover
@@ -305,7 +303,7 @@ class EventPublisherMigrationUtility:
                     phase=EnumMigrationPhase.CUTOVER,
                     depends_on=["switch_traffic"],
                 ),
-            ]
+            ],
         )
 
         # Phase 6: Cleanup
@@ -325,7 +323,7 @@ class EventPublisherMigrationUtility:
                     phase=EnumMigrationPhase.CLEANUP,
                     depends_on=["cleanup_old_publisher"],
                 ),
-            ]
+            ],
         )
 
         return steps
@@ -342,12 +340,14 @@ class EventPublisherMigrationUtility:
             Success status
         """
         if migration_id not in self._active_migrations:
-            raise OnexError(f"Migration not found: {migration_id}")
+            msg = f"Migration not found: {migration_id}"
+            raise OnexError(msg)
 
         migration = self._active_migrations[migration_id]
 
         if migration.overall_status == EnumMigrationStatus.IN_PROGRESS:
-            raise OnexError(f"Migration already in progress: {migration_id}")
+            msg = f"Migration already in progress: {migration_id}"
+            raise OnexError(msg)
 
         # Start migration
         migration.overall_status = EnumMigrationStatus.IN_PROGRESS
@@ -377,15 +377,17 @@ class EventPublisherMigrationUtility:
 
         except Exception as e:
             migration.overall_status = EnumMigrationStatus.FAILED
-            self._logger.error(f"Migration error: {migration_id}: {e}")
+            self._logger.exception(f"Migration error: {migration_id}: {e}")
             return False
 
     async def _execute_migration_steps(
-        self, migration: ModelServiceMigration, dry_run: bool
+        self,
+        migration: ModelServiceMigration,
+        dry_run: bool,
     ) -> bool:
         """Execute migration steps in dependency order."""
         # Build dependency graph
-        steps_by_id = {step.step_id: step for step in migration.migration_steps}
+        {step.step_id: step for step in migration.migration_steps}
         completed_steps = set()
 
         while len(completed_steps) < len(migration.migration_steps):
@@ -409,13 +411,13 @@ class EventPublisherMigrationUtility:
                 ]
                 if failed_steps:
                     self._logger.error(
-                        f"Migration failed due to step failures: {[s.step_id for s in failed_steps]}"
+                        f"Migration failed due to step failures: {[s.step_id for s in failed_steps]}",
                     )
                     return False
 
                 # No ready steps and no failures - might be circular dependency
                 self._logger.error(
-                    "No ready steps found - possible circular dependency"
+                    "No ready steps found - possible circular dependency",
                 )
                 return False
 
@@ -429,7 +431,9 @@ class EventPublisherMigrationUtility:
 
                 try:
                     success = await self._execute_migration_step(
-                        migration, step, dry_run
+                        migration,
+                        step,
+                        dry_run,
                     )
 
                     if success:
@@ -451,13 +455,16 @@ class EventPublisherMigrationUtility:
                     step.error_message = str(e)
                     step.completed_at = datetime.utcnow()
 
-                    self._logger.error(f"Step failed: {step.step_id}: {e}")
+                    self._logger.exception(f"Step failed: {step.step_id}: {e}")
                     return False
 
         return True
 
     async def _execute_migration_step(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
     ) -> bool:
         """Execute a single migration step."""
         self._logger.info(f"Executing step: {step.step_id} (dry_run={dry_run})")
@@ -465,7 +472,8 @@ class EventPublisherMigrationUtility:
         # Get step handler
         handler = self._step_handlers.get(step.step_id)
         if not handler:
-            raise OnexError(f"No handler found for step: {step.step_id}")
+            msg = f"No handler found for step: {step.step_id}"
+            raise OnexError(msg)
 
         # Execute handler
         try:
@@ -478,14 +486,18 @@ class EventPublisherMigrationUtility:
 
     # Step handler implementations
     async def _assess_current_setup(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Assess current publisher setup."""
         publishers = self._registry.list_publishers(service_name=migration.service_name)
 
         if not publishers:
+            msg = f"No publishers found for service: {migration.service_name}"
             raise OnexError(
-                f"No publishers found for service: {migration.service_name}"
+                msg,
             )
 
         # Get current configuration
@@ -494,7 +506,7 @@ class EventPublisherMigrationUtility:
 
         # Get health status
         health = self._health_monitor.get_publisher_health(
-            current_publisher.publisher_id
+            current_publisher.publisher_id,
         )
 
         return {
@@ -505,13 +517,17 @@ class EventPublisherMigrationUtility:
         }
 
     async def _create_target_config(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Create target publisher configuration."""
         # Base on source config
         base_config = migration.source_config
         if not base_config:
-            raise OnexError("Source configuration not available")
+            msg = "Source configuration not available"
+            raise OnexError(msg)
 
         # Create target configuration
         target_config = base_config.copy()
@@ -534,11 +550,15 @@ class EventPublisherMigrationUtility:
         }
 
     async def _validate_target_config(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Validate target publisher configuration."""
         if not migration.target_config:
-            raise OnexError("Target configuration not available")
+            msg = "Target configuration not available"
+            raise OnexError(msg)
 
         # Basic validation
         config = migration.target_config
@@ -546,16 +566,21 @@ class EventPublisherMigrationUtility:
         # Type-specific validation
         if config.publisher_type == EnumPublisherType.KAFKA:
             if not config.kafka_config:
-                raise OnexError("Kafka configuration required for Kafka publisher")
+                msg = "Kafka configuration required for Kafka publisher"
+                raise OnexError(msg)
 
             if not config.kafka_config.bootstrap_servers:
-                raise OnexError("Kafka bootstrap servers required")
+                msg = "Kafka bootstrap servers required"
+                raise OnexError(msg)
 
         return {"validation_passed": True, "config_type": config.publisher_type.value}
 
     async def _create_target_publisher(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Create target publisher."""
         if dry_run:
             return {"created": False, "dry_run": True}
@@ -563,7 +588,7 @@ class EventPublisherMigrationUtility:
         target_publisher_id = f"{migration.service_name}_target"
 
         # Create publisher
-        target_publisher = await self._registry.create_publisher(
+        await self._registry.create_publisher(
             publisher_id=target_publisher_id,
             publisher_type=migration.target_publisher_type,
             config=migration.target_config,
@@ -578,8 +603,11 @@ class EventPublisherMigrationUtility:
         }
 
     async def _setup_dual_mode(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Setup dual-mode operation."""
         if dry_run:
             return {"setup": False, "dry_run": True}
@@ -590,8 +618,11 @@ class EventPublisherMigrationUtility:
         return {"dual_mode_enabled": True}
 
     async def _start_event_mirroring(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Start event mirroring to target publisher."""
         if dry_run:
             return {"mirroring": False, "dry_run": True}
@@ -602,25 +633,33 @@ class EventPublisherMigrationUtility:
         return {"mirroring_started": True}
 
     async def _validate_event_flow(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Validate event flow to target publisher."""
         target_publisher_id = f"{migration.service_name}_target"
         target_publisher = await self._registry.get_publisher(target_publisher_id)
 
         if not target_publisher:
-            raise OnexError("Target publisher not found")
+            msg = "Target publisher not found"
+            raise OnexError(msg)
 
         # Check health
         health = self._health_monitor.get_publisher_health(target_publisher_id)
         if not health or health.status != EnumHealthStatus.HEALTHY:
-            raise OnexError("Target publisher is not healthy")
+            msg = "Target publisher is not healthy"
+            raise OnexError(msg)
 
         return {"health_status": health.status.value, "validation_passed": True}
 
     async def _switch_traffic(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Switch traffic to target publisher."""
         if dry_run:
             return {"traffic_switched": False, "dry_run": True}
@@ -631,21 +670,28 @@ class EventPublisherMigrationUtility:
         return {"traffic_switched": True}
 
     async def _validate_cutover(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Validate cutover was successful."""
         # Check that target publisher is receiving traffic
         target_publisher_id = f"{migration.service_name}_target"
         health = self._health_monitor.get_publisher_health(target_publisher_id)
 
         if not health or health.status != EnumHealthStatus.HEALTHY:
-            raise OnexError("Target publisher health check failed after cutover")
+            msg = "Target publisher health check failed after cutover"
+            raise OnexError(msg)
 
         return {"cutover_validated": True, "target_health": health.status.value}
 
     async def _cleanup_old_publisher(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Clean up old publisher."""
         if dry_run:
             return {"cleaned_up": False, "dry_run": True}
@@ -666,8 +712,11 @@ class EventPublisherMigrationUtility:
         }
 
     async def _finalize_migration(
-        self, migration: ModelServiceMigration, step: ModelMigrationStep, dry_run: bool
-    ) -> Dict[str, Any]:
+        self,
+        migration: ModelServiceMigration,
+        step: ModelMigrationStep,
+        dry_run: bool,
+    ) -> dict[str, Any]:
         """Finalize migration."""
         # Update target publisher tags
         target_publisher_id = f"{migration.service_name}_target"
@@ -683,8 +732,9 @@ class EventPublisherMigrationUtility:
         return {"migration_finalized": True, "migration_id": migration.migration_id}
 
     def get_migration_status(
-        self, migration_id: str
-    ) -> Optional[ModelServiceMigration]:
+        self,
+        migration_id: str,
+    ) -> ModelServiceMigration | None:
         """Get migration status."""
         # Check active migrations
         if migration_id in self._active_migrations:
@@ -697,7 +747,7 @@ class EventPublisherMigrationUtility:
 
         return None
 
-    def list_active_migrations(self) -> List[ModelServiceMigration]:
+    def list_active_migrations(self) -> list[ModelServiceMigration]:
         """List active migrations."""
         return list(self._active_migrations.values())
 
@@ -705,14 +755,15 @@ class EventPublisherMigrationUtility:
         """Export migration plan to file."""
         migration = self.get_migration_status(migration_id)
         if not migration:
-            raise OnexError(f"Migration not found: {migration_id}")
+            msg = f"Migration not found: {migration_id}"
+            raise OnexError(msg)
 
         with open(file_path, "w") as f:
             json.dump(migration.dict(), f, indent=2, default=str)
 
     def import_migration_plan(self, file_path: Path) -> ModelServiceMigration:
         """Import migration plan from file."""
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             data = json.load(f)
 
         migration = ModelServiceMigration(**data)
@@ -724,14 +775,16 @@ class EventPublisherMigrationUtility:
         """Rollback a migration."""
         migration = self.get_migration_status(migration_id)
         if not migration:
-            raise OnexError(f"Migration not found: {migration_id}")
+            msg = f"Migration not found: {migration_id}"
+            raise OnexError(msg)
 
         if migration.overall_status not in [
             EnumMigrationStatus.FAILED,
             EnumMigrationStatus.IN_PROGRESS,
         ]:
+            msg = f"Cannot rollback migration in status: {migration.overall_status}"
             raise OnexError(
-                f"Cannot rollback migration in status: {migration.overall_status}"
+                msg,
             )
 
         # This would implement rollback logic
@@ -743,7 +796,7 @@ class EventPublisherMigrationUtility:
 
 
 # Global utility instance
-_global_migration_utility: Optional[EventPublisherMigrationUtility] = None
+_global_migration_utility: EventPublisherMigrationUtility | None = None
 
 
 def get_migration_utility() -> EventPublisherMigrationUtility:
@@ -756,7 +809,9 @@ def get_migration_utility() -> EventPublisherMigrationUtility:
 
 # Convenience functions
 def create_migration_plan_global(
-    service_name: str, target_publisher_type: EnumPublisherType, **kwargs
+    service_name: str,
+    target_publisher_type: EnumPublisherType,
+    **kwargs,
 ) -> ModelServiceMigration:
     """Create migration plan using global utility."""
     utility = get_migration_utility()

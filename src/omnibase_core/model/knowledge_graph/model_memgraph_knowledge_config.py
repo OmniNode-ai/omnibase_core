@@ -6,7 +6,6 @@ for database connection parameters and credentials management.
 """
 
 import os
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -22,11 +21,11 @@ class ModelMemgraphKnowledgeConfig(BaseModel):
         default_factory=lambda: int(os.getenv("MEMGRAPH_PORT", "7687")),
         description="Memgraph port (env: MEMGRAPH_PORT)",
     )
-    username: Optional[str] = Field(
+    username: str | None = Field(
         default_factory=lambda: os.getenv("MEMGRAPH_USERNAME"),
         description="Database username (env: MEMGRAPH_USERNAME)",
     )
-    password: Optional[SecretStr] = Field(
+    password: SecretStr | None = Field(
         default_factory=lambda: (
             SecretStr(os.getenv("MEMGRAPH_PASSWORD"))
             if os.getenv("MEMGRAPH_PASSWORD")
@@ -49,7 +48,7 @@ class ModelMemgraphKnowledgeConfig(BaseModel):
 
     model_config = ConfigDict(frozen=False, validate_assignment=True)
 
-    def get_auth_tuple(self) -> Optional[tuple]:
+    def get_auth_tuple(self) -> tuple | None:
         """Get auth tuple with password revealed only when needed."""
         if self.username and self.password:
             return (self.username, self.password.get_secret_value())

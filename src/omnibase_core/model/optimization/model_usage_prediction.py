@@ -5,14 +5,15 @@ Usage prediction for optimization.
 """
 
 from datetime import datetime
-from typing import Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.optimization.model_prediction_factors import \
-    ModelPredictionFactors
-from omnibase_core.model.optimization.model_prediction_metadata import \
-    ModelPredictionMetadata
+from omnibase_core.model.optimization.model_prediction_factors import (
+    ModelPredictionFactors,
+)
+from omnibase_core.model.optimization.model_prediction_metadata import (
+    ModelPredictionMetadata,
+)
 
 
 class ModelUsagePrediction(BaseModel):
@@ -25,7 +26,10 @@ class ModelUsagePrediction(BaseModel):
 
     predicted_tokens: int = Field(..., ge=0, description="Predicted token usage")
     confidence_score: float = Field(
-        ..., ge=0, le=1, description="Prediction confidence"
+        ...,
+        ge=0,
+        le=1,
+        description="Prediction confidence",
     )
 
     lower_bound: int = Field(..., ge=0, description="Lower bound estimate")
@@ -38,16 +42,17 @@ class ModelUsagePrediction(BaseModel):
 
     based_on: str = Field(..., description="Prediction methodology used")
 
-    historical_accuracy: Optional[float] = Field(
-        None, description="Historical accuracy of similar predictions"
+    historical_accuracy: float | None = Field(
+        None,
+        description="Historical accuracy of similar predictions",
     )
 
-    metadata: Optional[ModelPredictionMetadata] = Field(
+    metadata: ModelPredictionMetadata | None = Field(
         default_factory=ModelPredictionMetadata,
         description="Additional prediction data",
     )
 
-    def get_range(self) -> Tuple[int, int]:
+    def get_range(self) -> tuple[int, int]:
         """Get prediction range."""
         return (self.lower_bound, self.upper_bound)
 

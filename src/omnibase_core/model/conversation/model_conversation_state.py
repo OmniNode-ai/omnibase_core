@@ -5,28 +5,30 @@ Strongly typed model for conversation state management.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.conversation.model_conversation_context import \
-    ModelConversationInteraction
+from omnibase_core.model.conversation.model_conversation_context import (
+    ModelConversationInteraction,
+)
 
 
 class ModelConversationState(BaseModel):
     """Strongly typed model for conversation state management."""
 
-    current_session: List[ModelConversationInteraction] = Field(
-        default_factory=list, description="Current session interactions"
+    current_session: list[ModelConversationInteraction] = Field(
+        default_factory=list,
+        description="Current session interactions",
     )
-    session_id: Optional[str] = Field(None, description="Current session ID")
-    session_start: Optional[datetime] = Field(None, description="Session start time")
-    buffer: List[ModelConversationInteraction] = Field(
+    session_id: str | None = Field(None, description="Current session ID")
+    session_start: datetime | None = Field(None, description="Session start time")
+    buffer: list[ModelConversationInteraction] = Field(
         default_factory=list,
         description="Buffered interactions waiting to be persisted",
     )
     buffer_size: int = Field(
-        default=5, description="Number of interactions to buffer before persisting"
+        default=5,
+        description="Number of interactions to buffer before persisting",
     )
 
     def clear_session(self) -> None:

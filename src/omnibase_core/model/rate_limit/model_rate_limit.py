@@ -7,7 +7,6 @@ for distributed system resource protection.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -64,39 +63,47 @@ class ModelRateLimitConfig(BaseModel):
         description="Rate limiting algorithm to use",
     )
     requests_per_window: int = Field(
-        ..., description="Maximum requests allowed per window"
+        ...,
+        description="Maximum requests allowed per window",
     )
     window_size_seconds: int = Field(..., description="Time window size in seconds")
 
     # Burst and grace configurations
-    burst_size: Optional[int] = Field(
-        None, description="Maximum burst size for token bucket"
+    burst_size: int | None = Field(
+        None,
+        description="Maximum burst size for token bucket",
     )
     grace_period_seconds: int = Field(
-        0, description="Grace period before rate limiting starts"
+        0,
+        description="Grace period before rate limiting starts",
     )
 
     # Action configuration
     action: EnumRateLimitAction = Field(
-        EnumRateLimitAction.BLOCK, description="Action to take when rate limit exceeded"
+        EnumRateLimitAction.BLOCK,
+        description="Action to take when rate limit exceeded",
     )
 
     # Metadata
     name: str = Field(..., description="Human-readable name for this rate limit")
-    description: Optional[str] = Field(
-        None, description="Description of rate limiting purpose"
+    description: str | None = Field(
+        None,
+        description="Description of rate limiting purpose",
     )
     enabled: bool = Field(True, description="Whether rate limiting is enabled")
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Configuration creation time"
+        default_factory=datetime.now,
+        description="Configuration creation time",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="Last update time"
+        default_factory=datetime.now,
+        description="Last update time",
     )
-    expires_at: Optional[datetime] = Field(
-        None, description="When configuration expires"
+    expires_at: datetime | None = Field(
+        None,
+        description="When configuration expires",
     )
 
     # Tags and metadata
@@ -124,7 +131,7 @@ class ModelRateLimitConfig(BaseModel):
                 "updated_at": "2025-07-30T12:00:00Z",
                 "tags": {"environment": "production", "service": "api_gateway"},
                 "priority": 3,
-            }
+            },
         }
 
 
@@ -143,28 +150,34 @@ class ModelRateLimitStatus(BaseModel):
 
     # Quota information
     requests_remaining: int = Field(
-        ..., description="Number of requests remaining in window"
+        ...,
+        description="Number of requests remaining in window",
     )
     requests_used: int = Field(
-        0, description="Number of requests used in current window"
+        0,
+        description="Number of requests used in current window",
     )
     limit: int = Field(0, description="Total request limit for window")
 
     # Timing information
     reset_time: datetime = Field(..., description="When the rate limit window resets")
-    retry_after_seconds: Optional[float] = Field(
-        None, description="Seconds to wait before retry"
+    retry_after_seconds: float | None = Field(
+        None,
+        description="Seconds to wait before retry",
     )
-    window_start: Optional[datetime] = Field(
-        None, description="Current window start time"
+    window_start: datetime | None = Field(
+        None,
+        description="Current window start time",
     )
 
     # Rate limit configuration reference
-    config_id: Optional[str] = Field(
-        None, description="Configuration ID that generated this status"
+    config_id: str | None = Field(
+        None,
+        description="Configuration ID that generated this status",
     )
-    algorithm: Optional[EnumRateLimitAlgorithm] = Field(
-        None, description="Algorithm used"
+    algorithm: EnumRateLimitAlgorithm | None = Field(
+        None,
+        description="Algorithm used",
     )
 
     # Additional context
@@ -173,7 +186,8 @@ class ModelRateLimitStatus(BaseModel):
 
     # Timestamps
     checked_at: datetime = Field(
-        default_factory=datetime.now, description="When rate limit was checked"
+        default_factory=datetime.now,
+        description="When rate limit was checked",
     )
 
     class Config:
@@ -195,7 +209,7 @@ class ModelRateLimitStatus(BaseModel):
                 "violation_count": 0,
                 "burst_used": 0,
                 "checked_at": "2025-07-30T12:30:00Z",
-            }
+            },
         }
 
 
@@ -208,7 +222,8 @@ class ModelRateLimitViolation(BaseModel):
     """
 
     violation_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique violation identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique violation identifier",
     )
     scope: EnumRateLimitScope = Field(..., description="Rate limiting scope")
     identifier: str = Field(..., description="Unique identifier within scope")
@@ -216,47 +231,56 @@ class ModelRateLimitViolation(BaseModel):
     # Violation details
     attempted_requests: int = Field(..., description="Number of requests attempted")
     allowed_requests: int = Field(
-        ..., description="Number of requests that were allowed"
+        ...,
+        description="Number of requests that were allowed",
     )
     blocked_requests: int = Field(
-        ..., description="Number of requests that were blocked"
+        ...,
+        description="Number of requests that were blocked",
     )
 
     # Configuration context
     config_id: str = Field(..., description="Rate limit configuration ID")
     algorithm: EnumRateLimitAlgorithm = Field(
-        ..., description="Algorithm that detected violation"
+        ...,
+        description="Algorithm that detected violation",
     )
     limit: int = Field(..., description="Rate limit that was exceeded")
     window_size_seconds: int = Field(
-        ..., description="Window size for the violated limit"
+        ...,
+        description="Window size for the violated limit",
     )
 
     # Timing
     violation_time: datetime = Field(
-        default_factory=datetime.now, description="When violation occurred"
+        default_factory=datetime.now,
+        description="When violation occurred",
     )
     window_start: datetime = Field(
-        ..., description="Start of the window when violation occurred"
+        ...,
+        description="Start of the window when violation occurred",
     )
     window_end: datetime = Field(
-        ..., description="End of the window when violation occurred"
+        ...,
+        description="End of the window when violation occurred",
     )
 
     # Additional context
-    source_ip: Optional[str] = Field(None, description="Source IP address if available")
-    user_agent: Optional[str] = Field(None, description="User agent if available")
-    endpoint: Optional[str] = Field(None, description="API endpoint if applicable")
+    source_ip: str | None = Field(None, description="Source IP address if available")
+    user_agent: str | None = Field(None, description="User agent if available")
+    endpoint: str | None = Field(None, description="API endpoint if applicable")
 
     # Severity and impact
     severity: str = Field(
-        "medium", description="Violation severity (low, medium, high, critical)"
+        "medium",
+        description="Violation severity (low, medium, high, critical)",
     )
     impact_score: float = Field(0.0, description="Calculated impact score (0.0-10.0)")
 
     # Metadata
     tags: dict = Field(
-        default_factory=dict, description="Additional violation metadata"
+        default_factory=dict,
+        description="Additional violation metadata",
     )
 
     class Config:
@@ -283,7 +307,7 @@ class ModelRateLimitViolation(BaseModel):
                 "severity": "medium",
                 "impact_score": 4.5,
                 "tags": {"environment": "production", "alert_sent": "true"},
-            }
+            },
         }
 
 
@@ -304,46 +328,57 @@ class ModelRateLimitMetrics(BaseModel):
     # Violation statistics
     total_violations: int = Field(0, description="Total violations detected")
     unique_violators: int = Field(
-        0, description="Number of unique violating identifiers"
+        0,
+        description="Number of unique violating identifiers",
     )
 
     # Performance metrics
     average_check_time_ms: float = Field(
-        0.0, description="Average rate limit check time in milliseconds"
+        0.0,
+        description="Average rate limit check time in milliseconds",
     )
     p95_check_time_ms: float = Field(
-        0.0, description="95th percentile check time in milliseconds"
+        0.0,
+        description="95th percentile check time in milliseconds",
     )
     p99_check_time_ms: float = Field(
-        0.0, description="99th percentile check time in milliseconds"
+        0.0,
+        description="99th percentile check time in milliseconds",
     )
 
     # Resource usage
     active_configurations: int = Field(
-        0, description="Number of active rate limit configurations"
+        0,
+        description="Number of active rate limit configurations",
     )
     memory_usage_bytes: int = Field(0, description="Estimated memory usage in bytes")
 
     # Time window
     metrics_start_time: datetime = Field(
-        default_factory=datetime.now, description="Start of metrics collection window"
+        default_factory=datetime.now,
+        description="Start of metrics collection window",
     )
     metrics_end_time: datetime = Field(
-        default_factory=datetime.now, description="End of metrics collection window"
+        default_factory=datetime.now,
+        description="End of metrics collection window",
     )
     collection_duration_seconds: float = Field(
-        0.0, description="Duration of metrics collection in seconds"
+        0.0,
+        description="Duration of metrics collection in seconds",
     )
 
     # Algorithm breakdown
     token_bucket_requests: int = Field(
-        0, description="Requests processed by token bucket algorithm"
+        0,
+        description="Requests processed by token bucket algorithm",
     )
     sliding_window_requests: int = Field(
-        0, description="Requests processed by sliding window algorithm"
+        0,
+        description="Requests processed by sliding window algorithm",
     )
     fixed_window_requests: int = Field(
-        0, description="Requests processed by fixed window algorithm"
+        0,
+        description="Requests processed by fixed window algorithm",
     )
 
     class Config:
@@ -368,5 +403,5 @@ class ModelRateLimitMetrics(BaseModel):
                 "token_bucket_requests": 7500,
                 "sliding_window_requests": 2000,
                 "fixed_window_requests": 500,
-            }
+            },
         }

@@ -1,7 +1,5 @@
 """Model for mapping roles to agent instances."""
 
-from typing import Dict, List, Optional, Set
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
@@ -15,8 +13,9 @@ class ModelAgentRoleMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    role_agents: Dict[str, List[ModelAgentInstance]] = Field(
-        default_factory=dict, description="Map of role names to agent instances"
+    role_agents: dict[str, list[ModelAgentInstance]] = Field(
+        default_factory=dict,
+        description="Map of role names to agent instances",
     )
 
     def add_agent(self, role: str, agent: ModelAgentInstance) -> None:
@@ -25,7 +24,7 @@ class ModelAgentRoleMap(BaseModel):
             self.role_agents[role] = []
         self.role_agents[role].append(agent)
 
-    def get_agents(self, role: str) -> List[ModelAgentInstance]:
+    def get_agents(self, role: str) -> list[ModelAgentInstance]:
         """Get all agents for a specific role."""
         return self.role_agents.get(role, [])
 
@@ -42,7 +41,7 @@ class ModelAgentRoleMap(BaseModel):
             return len(self.role_agents.get(role, [])) < original_count
         return False
 
-    def find_agent(self, agent_id: str) -> Optional[ModelAgentInstance]:
+    def find_agent(self, agent_id: str) -> ModelAgentInstance | None:
         """Find an agent across all roles by ID."""
         for agents in self.role_agents.values():
             for agent in agents:
@@ -50,7 +49,7 @@ class ModelAgentRoleMap(BaseModel):
                     return agent
         return None
 
-    def get_roles_for_agent(self, agent_id: str) -> List[str]:
+    def get_roles_for_agent(self, agent_id: str) -> list[str]:
         """Get all roles assigned to a specific agent."""
         roles = []
         for role, agents in self.role_agents.items():
@@ -59,17 +58,17 @@ class ModelAgentRoleMap(BaseModel):
                     roles.append(role)
         return roles
 
-    def get_available_roles(self) -> Set[str]:
+    def get_available_roles(self) -> set[str]:
         """Get all available roles that have agents."""
         return set(self.role_agents.keys())
 
-    def count_agents(self, role: Optional[str] = None) -> int:
+    def count_agents(self, role: str | None = None) -> int:
         """Count agents for a specific role or all roles."""
         if role:
             return len(self.role_agents.get(role, []))
         return sum(len(agents) for agents in self.role_agents.values())
 
-    def get_all_agents(self) -> List[ModelAgentInstance]:
+    def get_all_agents(self) -> list[ModelAgentInstance]:
         """Get all unique agents across all roles."""
         # Use dict to maintain uniqueness by agent_id
         unique_agents = {}

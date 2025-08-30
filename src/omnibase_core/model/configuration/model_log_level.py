@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_log_destination import ModelLogDestination
@@ -16,27 +14,35 @@ class ModelLogLevel(BaseModel):
         pattern="^[A-Z][A-Z0-9_]*$",
     )
     numeric_value: int = Field(
-        ..., description="Numeric value for comparison and ordering", ge=0, le=100
+        ...,
+        description="Numeric value for comparison and ordering",
+        ge=0,
+        le=100,
     )
     display_name: str = Field(..., description="Human-readable display name")
-    color_code: Optional[str] = Field(
-        None, description="Terminal color code for console output"
+    color_code: str | None = Field(
+        None,
+        description="Terminal color code for console output",
     )
-    output_destinations: List[ModelLogDestination] = Field(
-        default_factory=list, description="Where to send logs of this level"
+    output_destinations: list[ModelLogDestination] = Field(
+        default_factory=list,
+        description="Where to send logs of this level",
     )
     formatting_rules: ModelLogFormatting = Field(
         default_factory=ModelLogFormatting,
         description="How to format logs at this level",
     )
-    filters: List[ModelLogFilter] = Field(
-        default_factory=list, description="Log filters to apply at this level"
+    filters: list[ModelLogFilter] = Field(
+        default_factory=list,
+        description="Log filters to apply at this level",
     )
     is_error_level: bool = Field(
-        default=False, description="Whether this represents an error/warning level"
+        default=False,
+        description="Whether this represents an error/warning level",
     )
     enabled: bool = Field(
-        default=True, description="Whether this log level is currently enabled"
+        default=True,
+        description="Whether this log level is currently enabled",
     )
 
     def __lt__(self, other: "ModelLogLevel") -> bool:
@@ -133,7 +139,7 @@ class ModelLogLevel(BaseModel):
         numeric_value: int,
         display_name: str,
         is_error: bool = False,
-        color: Optional[str] = None,
+        color: str | None = None,
     ) -> "ModelLogLevel":
         """Factory method for custom log levels."""
         return cls(

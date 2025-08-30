@@ -4,16 +4,19 @@ Converts between different hook event models while maintaining
 strong typing throughout the pipeline.
 """
 
-from omnibase_core.model.hook_events.model_claude_code_post_execution_hook_input import \
-    ModelClaudeCodePostExecutionHookInput
-from omnibase_core.model.hook_events.model_claude_code_pre_execution_hook_input import \
-    ModelClaudeCodePreExecutionHookInput
-from omnibase_core.model.hook_events.model_onex_hook_event import \
-    ModelOnexHookEvent
-from omnibase_core.model.hook_events.model_tool_post_execution_event import \
-    ModelToolPostExecutionEvent
-from omnibase_core.model.hook_events.model_tool_pre_execution_event import \
-    ModelToolPreExecutionEvent
+from omnibase_core.model.hook_events.model_claude_code_post_execution_hook_input import (
+    ModelClaudeCodePostExecutionHookInput,
+)
+from omnibase_core.model.hook_events.model_claude_code_pre_execution_hook_input import (
+    ModelClaudeCodePreExecutionHookInput,
+)
+from omnibase_core.model.hook_events.model_onex_hook_event import ModelOnexHookEvent
+from omnibase_core.model.hook_events.model_tool_post_execution_event import (
+    ModelToolPostExecutionEvent,
+)
+from omnibase_core.model.hook_events.model_tool_pre_execution_event import (
+    ModelToolPreExecutionEvent,
+)
 
 
 class UtilityHookEventConverter:
@@ -69,7 +72,7 @@ class UtilityHookEventConverter:
             raw_result = (
                 hook_input.tool_response.result or hook_input.tool_response.output
             )
-            if isinstance(raw_result, (dict, list)):
+            if isinstance(raw_result, dict | list):
                 import json as _json
 
                 result = _json.dumps(raw_result)
@@ -102,8 +105,8 @@ class UtilityHookEventConverter:
     @staticmethod
     def pre_execution_tool_event_to_onex_event(
         tool_event: ModelToolPreExecutionEvent,
-        topic: str = None,
-        working_directory: str = None,
+        topic: str | None = None,
+        working_directory: str | None = None,
     ) -> ModelOnexHookEvent:
         """Convert pre-execution tool event to ONEX hook event.
 
@@ -131,8 +134,8 @@ class UtilityHookEventConverter:
     @staticmethod
     def post_execution_tool_event_to_onex_event(
         tool_event: ModelToolPostExecutionEvent,
-        topic: str = None,
-        working_directory: str = None,
+        topic: str | None = None,
+        working_directory: str | None = None,
     ) -> ModelOnexHookEvent:
         """Convert post-execution tool event to ONEX hook event.
 
@@ -148,8 +151,7 @@ class UtilityHookEventConverter:
         error = None
         if tool_event.error_message:
             from omnibase_core.core.core_error_codes import CoreErrorCode
-            from omnibase_core.model.core.model_onex_error import \
-                ModelOnexError
+            from omnibase_core.model.core.model_onex_error import ModelOnexError
 
             error = ModelOnexError(
                 message=tool_event.error_message,

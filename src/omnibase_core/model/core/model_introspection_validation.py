@@ -20,5 +20,5 @@ class ModelIntrospectionValidation(BaseModel):
                 "has_modern_patterns": True,
                 "cli_discoverable": True,
                 "passes_standards": True,
-            }
+            },
         }

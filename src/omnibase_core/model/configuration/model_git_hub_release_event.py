@@ -2,7 +2,7 @@
 GitHub release event model to replace Dict[str, Any] usage.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,13 +25,14 @@ class ModelGitHubReleaseEvent(BaseModel):
     repository: ModelGitHubRepository = Field(..., description="Repository data")
     sender: ModelGitHubUser = Field(..., description="User who triggered the event")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelGitHubReleaseEvent"]:
         """Create from dictionary for easy migration."""
         if data is None:

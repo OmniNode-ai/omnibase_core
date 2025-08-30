@@ -5,10 +5,12 @@ Defines the interface for CLI command operations and orchestration.
 
 from typing import Protocol
 
-from ..nodes.node_kafka_event_bus.v1_0_0.models.model_cli_command import \
-    ModelCliCommand
-from ..nodes.node_kafka_event_bus.v1_0_0.models.state import \
-    KafkaEventBusOutputState
+from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.models.model_cli_command import (
+    ModelCliCommand,
+)
+from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.models.state import (
+    KafkaEventBusOutputState,
+)
 
 
 class ProtocolCliCommands(Protocol):

@@ -12,14 +12,16 @@ Provides event-driven execution capabilities to tool nodes by:
 import re
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Generic, Optional, Type, TypeVar
+from typing import Generic, TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 from pydantic import ValidationError
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
@@ -93,14 +95,13 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         """Get the node name from the implementing class."""
         if hasattr(self, "node_name"):
             return self.node_name
-        else:
-            # Fallback: derive from class name
-            class_name = self.__class__.__name__
-            # Convert CamelCase to snake_case
-            return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
+        # Fallback: derive from class name
+        class_name = self.__class__.__name__
+        # Convert CamelCase to snake_case
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
 
     @property
-    def event_bus(self) -> Optional[ProtocolEventBus]:
+    def event_bus(self) -> ProtocolEventBus | None:
         """Get event bus instance from implementing class."""
         return getattr(self, "_event_bus", None)
 
@@ -111,7 +112,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """Process method that should be implemented by the tool."""
-        raise NotImplementedError("Tool must implement process method")
+        msg = "Tool must implement process method"
+        raise NotImplementedError(msg)
 
     def get_event_patterns(self) -> list[str]:
         """
@@ -130,7 +132,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 if contract_path.exists():
                     import yaml
 
-                    with open(contract_path, "r") as f:
+                    with open(contract_path) as f:
                         contract = yaml.safe_load(f)
 
                     event_subscriptions = contract.get("event_subscriptions", [])
@@ -191,7 +193,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     f"💥 FAIL-FAST: Contract validation failed: {e}",
                     {"node_name": self.get_node_name()},
                 )
-                raise e  # Re-raise to crash the service
+                raise  # Re-raise to crash the service
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.WARNING,
@@ -695,34 +697,32 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         },
                     )
                     return result
-                else:
-                    # Try to extract dict from model
-                    if hasattr(data, "model_dump"):
-                        dict_data = data.model_dump()
-                        result = input_state_class(**dict_data)
-                        emit_log_event(
-                            LogLevelEnum.DEBUG,
-                            "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
-                            {"node_name": self.get_node_name()},
-                        )
-                        return result
-                    elif hasattr(data, "dict"):
-                        dict_data = data.dict()
-                        result = input_state_class(**dict_data)
-                        emit_log_event(
-                            LogLevelEnum.DEBUG,
-                            "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
-                            {"node_name": self.get_node_name()},
-                        )
-                        return result
-                    else:
-                        result = input_state_class(data=data)
-                        emit_log_event(
-                            LogLevelEnum.DEBUG,
-                            "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
-                            {"node_name": self.get_node_name()},
-                        )
-                        return result
+                # Try to extract dict from model
+                if hasattr(data, "model_dump"):
+                    dict_data = data.model_dump()
+                    result = input_state_class(**dict_data)
+                    emit_log_event(
+                        LogLevelEnum.DEBUG,
+                        "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
+                        {"node_name": self.get_node_name()},
+                    )
+                    return result
+                if hasattr(data, "dict"):
+                    dict_data = data.dict()
+                    result = input_state_class(**dict_data)
+                    emit_log_event(
+                        LogLevelEnum.DEBUG,
+                        "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
+                        {"node_name": self.get_node_name()},
+                    )
+                    return result
+                result = input_state_class(data=data)
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
+                    {"node_name": self.get_node_name()},
+                )
+                return result
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
@@ -735,7 +735,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         "target_class": input_state_class.__name__,
                     },
                 )
-                raise ValueError(f"Failed to convert event data to input state: {e}")
+                msg = f"Failed to convert event data to input state: {e}"
+                raise ValueError(msg)
         else:
             # No input state class found - this is a critical error
             emit_log_event(
@@ -743,12 +744,15 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 "❌ EVENT_TO_INPUT_STATE: No input state class found",
                 {"node_name": self.get_node_name()},
             )
-            raise ValueError(
+            msg = (
                 f"Could not find input state class for {self.get_node_name()}. "
                 f"Event listener requires proper type conversion."
             )
+            raise ValueError(
+                msg,
+            )
 
-    def _get_input_state_class(self) -> Optional[Type]:
+    def _get_input_state_class(self) -> type | None:
         """Get the input state class for this tool."""
         # Try to find input state class from type hints
         if hasattr(self.process, "__annotations__"):
@@ -796,7 +800,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         return None
 
     def _publish_completion_event(
-        self, input_event: ModelOnexEvent, output_state: OutputStateT
+        self,
+        input_event: ModelOnexEvent,
+        output_state: OutputStateT,
     ):
         """Publish completion event with results."""
         emit_log_event(

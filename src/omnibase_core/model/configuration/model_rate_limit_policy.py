@@ -5,8 +5,6 @@ Rate limiting policy model that combines window configuration, user limits,
 throttling behavior, and burst handling for complete rate limiting management.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_burst_config import ModelBurstConfig
@@ -25,18 +23,22 @@ class ModelRateLimitPolicy(BaseModel):
     """
 
     policy_name: str = Field(
-        ..., description="Policy identifier", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Policy identifier",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     description: str = Field(
-        default="", description="Human-readable policy description"
+        default="",
+        description="Human-readable policy description",
     )
 
     enabled: bool = Field(
-        default=True, description="Whether this rate limiting policy is enabled"
+        default=True,
+        description="Whether this rate limiting policy is enabled",
     )
 
-    global_rate_limit: Optional[float] = Field(
+    global_rate_limit: float | None = Field(
         None,
         description="Global requests per second limit (overrides all other limits)",
         gt=0,
@@ -44,11 +46,13 @@ class ModelRateLimitPolicy(BaseModel):
     )
 
     window_config: ModelRateLimitWindow = Field(
-        default_factory=ModelRateLimitWindow, description="Time window configuration"
+        default_factory=ModelRateLimitWindow,
+        description="Time window configuration",
     )
 
-    per_user_limits: Optional[ModelPerUserLimits] = Field(
-        None, description="Per-user rate limiting configuration"
+    per_user_limits: ModelPerUserLimits | None = Field(
+        None,
+        description="Per-user rate limiting configuration",
     )
 
     throttling_behavior: ModelThrottlingBehavior = Field(
@@ -56,8 +60,9 @@ class ModelRateLimitPolicy(BaseModel):
         description="Behavior when rate limits are exceeded",
     )
 
-    burst_config: Optional[ModelBurstConfig] = Field(
-        None, description="Burst handling configuration"
+    burst_config: ModelBurstConfig | None = Field(
+        None,
+        description="Burst handling configuration",
     )
 
     retry_policy: ModelRetryPolicy = Field(
@@ -65,32 +70,32 @@ class ModelRateLimitPolicy(BaseModel):
         description="Retry policy for rate limited requests",
     )
 
-    per_endpoint_limits: Dict[str, float] = Field(
+    per_endpoint_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Per-endpoint rate limits (requests per second)",
     )
 
-    per_method_limits: Dict[str, float] = Field(
+    per_method_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Per-HTTP-method rate limits (requests per second)",
     )
 
-    ip_whitelist: List[str] = Field(
+    ip_whitelist: list[str] = Field(
         default_factory=list,
         description="IP addresses/CIDR blocks exempt from rate limiting",
     )
 
-    ip_blacklist: List[str] = Field(
+    ip_blacklist: list[str] = Field(
         default_factory=list,
         description="IP addresses/CIDR blocks that are completely blocked",
     )
 
-    geographic_limits: Dict[str, float] = Field(
+    geographic_limits: dict[str, float] = Field(
         default_factory=dict,
         description="Rate limits by geographic region (country codes)",
     )
 
-    priority_lanes: Dict[str, float] = Field(
+    priority_lanes: dict[str, float] = Field(
         default_factory=lambda: {
             "critical": 1000.0,
             "high": 500.0,
@@ -119,7 +124,8 @@ class ModelRateLimitPolicy(BaseModel):
     )
 
     cache_key_prefix: str = Field(
-        default="rate_limit", description="Prefix for cache keys"
+        default="rate_limit",
+        description="Prefix for cache keys",
     )
 
     monitoring_enabled: bool = Field(
@@ -127,7 +133,7 @@ class ModelRateLimitPolicy(BaseModel):
         description="Whether to enable rate limiting monitoring and metrics",
     )
 
-    alert_thresholds: Dict[str, float] = Field(
+    alert_thresholds: dict[str, float] = Field(
         default_factory=lambda: {
             "high_rejection_rate": 0.1,  # 10% rejection rate
             "burst_frequency": 0.05,  # 5% of windows have bursts
@@ -189,12 +195,14 @@ class ModelRateLimitPolicy(BaseModel):
         # Simple implementation - in production would use CIDR matching
         return ip_address in self.ip_blacklist
 
-    def get_geographic_limit(self, country_code: str) -> Optional[float]:
+    def get_geographic_limit(self, country_code: str) -> float | None:
         """Get rate limit for specific geographic region"""
         return self.geographic_limits.get(country_code)
 
     def should_apply_burst_handling(
-        self, current_rate: float, base_limit: float
+        self,
+        current_rate: float,
+        base_limit: float,
     ) -> bool:
         """Check if burst handling should be applied"""
         if not self.burst_config or not self.burst_config.burst_detection_enabled:
@@ -215,7 +223,7 @@ class ModelRateLimitPolicy(BaseModel):
         retry_after = max(1, int(window_end - current_time))
         return min(retry_after, 3600)  # Cap at 1 hour
 
-    def get_monitoring_metrics(self) -> Dict[str, bool]:
+    def get_monitoring_metrics(self) -> dict[str, bool]:
         """Get metrics that should be monitored for this policy"""
         return {
             "requests_per_second": True,
@@ -228,7 +236,7 @@ class ModelRateLimitPolicy(BaseModel):
             "distributed_sync_latency": self.distributed_enabled,
         }
 
-    def validate_policy_consistency(self) -> List[str]:
+    def validate_policy_consistency(self) -> list[str]:
         """Validate policy configuration for consistency and conflicts"""
         issues = []
 

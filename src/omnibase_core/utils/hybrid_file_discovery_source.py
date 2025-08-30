@@ -29,7 +29,6 @@ Implements ProtocolFileDiscoverySource.
 """
 
 from pathlib import Path
-from typing import List, Optional, Set
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
@@ -37,12 +36,14 @@ from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_tree_sync_result import (
-    ModelTreeSyncResult, TreeSyncStatusEnum)
-from omnibase_core.protocol.protocol_file_discovery_source import \
-    ProtocolFileDiscoverySource
+    ModelTreeSyncResult,
+    TreeSyncStatusEnum,
+)
+from omnibase_core.protocol.protocol_file_discovery_source import (
+    ProtocolFileDiscoverySource,
+)
 from omnibase_core.utils.directory_traverser import DirectoryTraverser
-from omnibase_core.utils.tree_file_discovery_source import \
-    TreeFileDiscoverySource
+from omnibase_core.utils.tree_file_discovery_source import TreeFileDiscoverySource
 
 
 class HybridFileDiscoverySource(ProtocolFileDiscoverySource):
@@ -59,11 +60,11 @@ class HybridFileDiscoverySource(ProtocolFileDiscoverySource):
     def discover_files(
         self,
         directory: Path,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-        ignore_file: Optional[Path] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        ignore_file: Path | None = None,
         event_bus=None,
-    ) -> Set[Path]:
+    ) -> set[Path]:
         """
         Discover files using filesystem, but cross-check with .tree if present.
         Warn or error on drift depending on strict_mode.
@@ -82,22 +83,22 @@ class HybridFileDiscoverySource(ProtocolFileDiscoverySource):
             if sync_result.status == TreeSyncStatusEnum.DRIFT:
                 msg = "; ".join(m.summary for m in sync_result.messages)
                 if self.strict_mode:
+                    msg = f"Drift detected between filesystem and .tree: {msg}"
                     raise OnexError(
-                        f"Drift detected between filesystem and .tree: {msg}",
+                        msg,
                         CoreErrorCode.VALIDATION_FAILED,
                     )
-                else:
-                    emit_log_event_sync(
-                        LogLevelEnum.WARNING,
-                        f"[WARNING] Drift detected between filesystem and .tree: {msg}",
-                        context=None,
-                        node_id="hybrid_file_discovery_source",
-                        event_bus=event_bus,
-                    )
+                emit_log_event_sync(
+                    LogLevelEnum.WARNING,
+                    f"[WARNING] Drift detected between filesystem and .tree: {msg}",
+                    context=None,
+                    node_id="hybrid_file_discovery_source",
+                    event_bus=event_bus,
+                )
             # Optionally, filter to only files in .tree if strict_mode
             if self.strict_mode:
                 files = files & self.tree_source.get_canonical_files_from_tree(
-                    tree_file
+                    tree_file,
                 )
         return files
 
@@ -111,7 +112,7 @@ class HybridFileDiscoverySource(ProtocolFileDiscoverySource):
         """
         return self.tree_source.validate_tree_sync(directory, tree_file)
 
-    def get_canonical_files_from_tree(self, tree_file: Path) -> Set[Path]:
+    def get_canonical_files_from_tree(self, tree_file: Path) -> set[Path]:
         """
         Get canonical files from .tree file.
         """

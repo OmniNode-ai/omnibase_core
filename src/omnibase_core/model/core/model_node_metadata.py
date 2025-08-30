@@ -38,13 +38,10 @@ This policy is enforced for all ONEX metadata blocks.
 
 import enum
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from omnibase_core.enums import EnumDataClassification
-from omnibase_core.enums.enum_metadata import (EntrypointType, Lifecycle,
-                                               MetaTypeEnum)
-from omnibase_core.model.core.model_dependency_block import \
-    ModelDependencyBlock
+from omnibase_core.enums.enum_metadata import EntrypointType, Lifecycle, MetaTypeEnum
+from omnibase_core.model.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.model.core.model_io_block import ModelIOBlock
 from omnibase_core.model.core.model_io_contract import ModelIOContract
 from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
@@ -54,17 +51,17 @@ from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
 from .model_logging_config import LogFormat, ModelLoggingConfig
 from .model_namespace import ModelNamespace
-from .model_node_metadata_block import (ModelNodeMetadataBlock,
-                                        strip_volatile_fields_from_dict)
+from .model_node_metadata_block import (
+    ModelNodeMetadataBlock,
+    strip_volatile_fields_from_dict,
+)
+
 # Import separated models
 from .model_signature_contract import ModelSignatureContract
 from .model_source_repository import ModelSourceRepository
 from .model_state_contract_block import ModelStateContractBlock
 from .model_test_matrix_entry import ModelTestMatrixEntry
 from .model_testing_block import ModelTestingBlock
-
-if TYPE_CHECKING:
-    pass
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -109,16 +106,15 @@ def debug_compare_model_dump_vs_dict(model):
     dct = {k: v for k, v in model.__dict__.items() if not k.startswith("_")}
     dump_str = pprint.pformat(dump, width=120, sort_dicts=True)
     dict_str = pprint.pformat(dct, width=120, sort_dicts=True)
-    diff = list(
+    return list(
         difflib.unified_diff(
             dump_str.splitlines(),
             dict_str.splitlines(),
             fromfile="model_dump()",
             tofile="__dict__",
             lineterm="",
-        )
+        ),
     )
-    return diff
 
 
 # --- Pydantic forward reference for ModelExtractedBlock ---
@@ -130,43 +126,43 @@ from .model_node_metadata_core import ModelNodeMetadata
 
 # Re-export for backward compatibility
 __all__ = [
-    # Core models
-    "ModelNodeMetadata",
-    # Separated models
-    "ModelSignatureContract",
-    "ModelStateContractBlock",
-    "ModelLoggingConfig",
-    "ModelSourceRepository",
-    "ModelTestingBlock",
-    "ModelNamespace",
-    "ModelDataHandlingDeclaration",
-    "ModelExtensionValue",
-    "ModelTestMatrixEntry",
-    "ModelNodeMetadataBlock",
-    # Enums and utilities
-    "LogFormat",
     "Architecture",
     "DataClassification",
-    "EntrypointType",
-    "Lifecycle",
-    "MetaTypeEnum",
-    # Backward compatibility
-    "SignatureContract",
-    "StateContractBlock",
-    "LoggingConfig",
-    "SourceRepository",
-    "TestingBlock",
-    "Namespace",
     "DataHandlingDeclaration",
+    "DependencyBlock",
+    "EntrypointType",
     "ExtensionValueModel",
-    "TestMatrixEntry",
-    "NodeMetadataBlock",
     "IOBlock",
     "IOContract",
-    "TrustScoreStub",
-    "DependencyBlock",
+    "Lifecycle",
+    # Enums and utilities
+    "LogFormat",
+    "LoggingConfig",
+    "MetaTypeEnum",
+    "ModelDataHandlingDeclaration",
+    "ModelExtensionValue",
+    "ModelLoggingConfig",
+    "ModelNamespace",
+    # Core models
+    "ModelNodeMetadata",
+    "ModelNodeMetadataBlock",
+    # Separated models
+    "ModelSignatureContract",
+    "ModelSourceRepository",
+    "ModelStateContractBlock",
+    "ModelTestMatrixEntry",
+    "ModelTestingBlock",
+    "Namespace",
+    "NodeMetadataBlock",
     "SignatureBlock",
+    # Backward compatibility
+    "SignatureContract",
+    "SourceRepository",
+    "StateContractBlock",
+    "TestMatrixEntry",
+    "TestingBlock",
+    "TrustScoreStub",
+    "debug_compare_model_dump_vs_dict",
     # Utilities
     "strip_volatile_fields_from_dict",
-    "debug_compare_model_dump_vs_dict",
 ]

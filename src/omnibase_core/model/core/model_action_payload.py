@@ -5,7 +5,6 @@ Action payload with rich metadata for tool-as-a-service execution.
 Wraps a ModelNodeAction with execution parameters and context.
 """
 
-from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import Field
@@ -26,31 +25,35 @@ class ModelActionPayload(ModelOnexInputState):
     """
 
     action: ModelNodeAction = Field(..., description="The action to execute")
-    parameters: Dict[str, Union[str, int, float, bool, List[str], Dict[str, str]]] = (
+    parameters: dict[str, str | int | float | bool | list[str] | dict[str, str]] = (
         Field(
             default_factory=dict,
             description="Action execution parameters with strong typing",
         )
     )
-    execution_context: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Execution context and environment metadata"
+    execution_context: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Execution context and environment metadata",
     )
 
     # Execution tracking (in addition to base correlation_id)
-    parent_correlation_id: Optional[UUID] = Field(
-        None, description="Parent action correlation ID for chaining"
+    parent_correlation_id: UUID | None = Field(
+        None,
+        description="Parent action correlation ID for chaining",
     )
-    execution_chain: List[str] = Field(
+    execution_chain: list[str] = Field(
         default_factory=list,
         description="Execution chain for action composition tracking",
     )
 
     # Service composition with strong typing
-    target_service: Optional[str] = Field(
-        None, description="Target service for action execution"
+    target_service: str | None = Field(
+        None,
+        description="Target service for action execution",
     )
-    routing_metadata: Dict[str, Union[str, int, float]] = Field(
-        default_factory=dict, description="Service routing and load balancing metadata"
+    routing_metadata: dict[str, str | int | float] = Field(
+        default_factory=dict,
+        description="Service routing and load balancing metadata",
     )
     trust_level: float = Field(
         default=1.0,
@@ -60,11 +63,13 @@ class ModelActionPayload(ModelOnexInputState):
     )
 
     # Tool-as-a-Service metadata with strong typing
-    service_metadata: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
-        default_factory=dict, description="Service discovery and composition metadata"
+    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
+        default_factory=dict,
+        description="Service discovery and composition metadata",
     )
-    tool_discovery_tags: List[str] = Field(
-        default_factory=list, description="Tags for tool discovery and categorization"
+    tool_discovery_tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for tool discovery and categorization",
     )
 
     def add_to_execution_chain(self, action_name: str) -> None:
@@ -72,7 +77,9 @@ class ModelActionPayload(ModelOnexInputState):
         self.execution_chain.append(action_name)
 
     def create_child_payload(
-        self, child_action: ModelNodeAction, **kwargs
+        self,
+        child_action: ModelNodeAction,
+        **kwargs,
     ) -> "ModelActionPayload":
         """Create child payload for action composition."""
         return ModelActionPayload(

@@ -6,7 +6,6 @@ and share intelligence with other agents through the knowledge base.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Literal, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
@@ -59,28 +58,33 @@ class EnumAgentType(str, Enum):
 class ModelProblemContext(BaseModel):
     """Context information about the problem encountered."""
 
-    subsystem: Optional[str] = Field(
-        None, description="ONEX subsystem where problem occurred"
+    subsystem: str | None = Field(
+        None,
+        description="ONEX subsystem where problem occurred",
     )
-    component: Optional[str] = Field(None, description="Specific component affected")
-    operation: Optional[str] = Field(None, description="Operation being performed")
-    input_data: Optional[Dict[str, Union[str, int, float, bool, List[str]]]] = Field(
-        None, description="Sanitized input data"
+    component: str | None = Field(None, description="Specific component affected")
+    operation: str | None = Field(None, description="Operation being performed")
+    input_data: dict[str, str | int | float | bool | list[str]] | None = Field(
+        None,
+        description="Sanitized input data",
     )
-    error_messages: Optional[List[str]] = Field(
-        None, description="Error messages encountered"
+    error_messages: list[str] | None = Field(
+        None,
+        description="Error messages encountered",
     )
-    stack_trace: Optional[str] = Field(None, description="Stack trace if applicable")
-    environment: Optional[Dict[str, str]] = Field(
-        None, description="Environment variables"
+    stack_trace: str | None = Field(None, description="Stack trace if applicable")
+    environment: dict[str, str] | None = Field(
+        None,
+        description="Environment variables",
     )
-    dependencies: Optional[Dict[str, str]] = Field(
-        None, description="Relevant dependency versions"
+    dependencies: dict[str, str] | None = Field(
+        None,
+        description="Relevant dependency versions",
     )
-    user_context: Optional[str] = Field(None, description="User or request context")
+    user_context: str | None = Field(None, description="User or request context")
 
     @validator("input_data", "environment")
-    def sanitize_sensitive_data(cls, v):
+    def sanitize_sensitive_data(self, v):
         """Sanitize sensitive data from input_data and environment fields."""
         if v is None:
             return v
@@ -115,7 +119,7 @@ class ModelProblemContext(BaseModel):
         return v
 
     @validator("stack_trace", "error_messages")
-    def sanitize_stack_traces_and_errors(cls, v):
+    def sanitize_stack_traces_and_errors(self, v):
         """Remove sensitive data from stack traces and error messages."""
         if v is None:
             return v
@@ -158,7 +162,7 @@ class ModelProblemContext(BaseModel):
                             )
                 sanitized.append(sanitized_item)
             return sanitized
-        elif isinstance(v, str):
+        if isinstance(v, str):
             sanitized = v
             for pattern in sensitive_patterns:
                 if pattern in sanitized.lower():
@@ -185,21 +189,26 @@ class ModelSolutionApproach(BaseModel):
     """Details of the solution approach taken."""
 
     strategy: str = Field(
-        ..., description="High-level strategy used to solve the problem"
+        ...,
+        description="High-level strategy used to solve the problem",
     )
-    steps: List[str] = Field(
-        ..., description="Specific steps taken to implement solution"
+    steps: list[str] = Field(
+        ...,
+        description="Specific steps taken to implement solution",
     )
-    tools_used: Optional[List[str]] = Field(None, description="Tools or utilities used")
-    code_changes: Optional[List[str]] = Field(None, description="Code changes made")
-    configuration_changes: Optional[List[str]] = Field(
-        None, description="Configuration changes"
+    tools_used: list[str] | None = Field(None, description="Tools or utilities used")
+    code_changes: list[str] | None = Field(None, description="Code changes made")
+    configuration_changes: list[str] | None = Field(
+        None,
+        description="Configuration changes",
     )
-    external_resources: Optional[List[str]] = Field(
-        None, description="External docs or resources consulted"
+    external_resources: list[str] | None = Field(
+        None,
+        description="External docs or resources consulted",
     )
-    time_to_solution: Optional[int] = Field(
-        None, description="Time to solve in minutes"
+    time_to_solution: int | None = Field(
+        None,
+        description="Time to solve in minutes",
     )
 
 
@@ -207,18 +216,22 @@ class ModelSolutionOutcome(BaseModel):
     """Results and effectiveness of the solution."""
 
     effectiveness: EnumSolutionEffectiveness
-    success_indicators: List[str] = Field(..., description="How success was measured")
-    remaining_issues: Optional[List[str]] = Field(
-        None, description="Any unresolved aspects"
+    success_indicators: list[str] = Field(..., description="How success was measured")
+    remaining_issues: list[str] | None = Field(
+        None,
+        description="Any unresolved aspects",
     )
-    side_effects: Optional[List[str]] = Field(
-        None, description="Unintended consequences"
+    side_effects: list[str] | None = Field(
+        None,
+        description="Unintended consequences",
     )
-    follow_up_actions: Optional[List[str]] = Field(
-        None, description="Additional actions needed"
+    follow_up_actions: list[str] | None = Field(
+        None,
+        description="Additional actions needed",
     )
-    lessons_learned: Optional[List[str]] = Field(
-        None, description="Key insights gained"
+    lessons_learned: list[str] | None = Field(
+        None,
+        description="Key insights gained",
     )
 
 
@@ -228,72 +241,92 @@ class ModelAgentDebugIntelligence(BaseModel):
     # Identity
     entry_id: UUID = Field(default_factory=uuid4, description="Unique identifier")
     agent_name: str = Field(
-        ..., description="Name of the agent that created this entry"
+        ...,
+        description="Name of the agent that created this entry",
     )
     agent_type: EnumAgentType = Field(..., description="Type/category of the agent")
     agent_version: str = Field(..., description="Version of the agent")
 
     # Problem Description
     problem_type: EnumProblemType = Field(
-        ..., description="Classification of the problem"
+        ...,
+        description="Classification of the problem",
     )
     problem_description: str = Field(
-        ..., description="Clear description of the problem"
+        ...,
+        description="Clear description of the problem",
     )
     problem_context: ModelProblemContext = Field(
-        ..., description="Detailed context about the problem"
+        ...,
+        description="Detailed context about the problem",
     )
 
     # Solution Details
     solution_approach: ModelSolutionApproach = Field(
-        ..., description="How the problem was solved"
+        ...,
+        description="How the problem was solved",
     )
     solution_outcome: ModelSolutionOutcome = Field(
-        ..., description="Results of the solution"
+        ...,
+        description="Results of the solution",
     )
 
     # Intelligence Metadata
-    similar_problems_consulted: Optional[List[UUID]] = Field(
-        None, description="Similar problems this agent referenced"
+    similar_problems_consulted: list[UUID] | None = Field(
+        None,
+        description="Similar problems this agent referenced",
     )
     confidence_level: float = Field(
-        ..., ge=0.0, le=1.0, description="Agent's confidence in this solution"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Agent's confidence in this solution",
     )
     reusability_score: float = Field(
-        ..., ge=0.0, le=1.0, description="How reusable this solution is"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="How reusable this solution is",
     )
 
     # Temporal Information
     problem_occurred_at: datetime = Field(
-        ..., description="When the problem was first encountered"
+        ...,
+        description="When the problem was first encountered",
     )
     solution_completed_at: datetime = Field(
-        ..., description="When the solution was implemented"
+        ...,
+        description="When the solution was implemented",
     )
     entry_created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this entry was created"
+        default_factory=datetime.utcnow,
+        description="When this entry was created",
     )
 
     # Correlation and Learning
-    correlation_id: Optional[UUID] = Field(
-        None, description="Links related problem-solving sessions"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Links related problem-solving sessions",
     )
-    parent_task_id: Optional[str] = Field(
-        None, description="Parent task or operation ID"
+    parent_task_id: str | None = Field(
+        None,
+        description="Parent task or operation ID",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Searchable tags for categorization"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Searchable tags for categorization",
     )
 
     @validator("problem_description")
-    def validate_problem_description(cls, v):
+    def validate_problem_description(self, v):
         """Ensure problem description is meaningful."""
         if len(v.strip()) < 10:
-            raise ValueError("Problem description must be at least 10 characters")
+            msg = "Problem description must be at least 10 characters"
+            raise ValueError(msg)
         return v.strip()
 
     @validator("tags")
-    def validate_tags(cls, v):
+    def validate_tags(self, v):
         """Ensure tags are lowercase and valid."""
         return [tag.lower().strip() for tag in v if tag.strip()]
 
@@ -336,18 +369,23 @@ class ModelDebugIntelligenceQuery(BaseModel):
     """Model for querying debug intelligence."""
 
     problem_description: str = Field(..., description="Description of current problem")
-    problem_type: Optional[EnumProblemType] = Field(
-        None, description="Problem type filter"
+    problem_type: EnumProblemType | None = Field(
+        None,
+        description="Problem type filter",
     )
-    agent_type: Optional[EnumAgentType] = Field(None, description="Agent type filter")
-    subsystem: Optional[str] = Field(None, description="Subsystem filter")
-    component: Optional[str] = Field(None, description="Component filter")
-    tags: Optional[List[str]] = Field(None, description="Tag filters")
-    min_effectiveness: Optional[EnumSolutionEffectiveness] = Field(
-        None, description="Minimum solution effectiveness"
+    agent_type: EnumAgentType | None = Field(None, description="Agent type filter")
+    subsystem: str | None = Field(None, description="Subsystem filter")
+    component: str | None = Field(None, description="Component filter")
+    tags: list[str] | None = Field(None, description="Tag filters")
+    min_effectiveness: EnumSolutionEffectiveness | None = Field(
+        None,
+        description="Minimum solution effectiveness",
     )
-    min_reusability_score: Optional[float] = Field(
-        0.5, ge=0.0, le=1.0, description="Minimum reusability score"
+    min_reusability_score: float | None = Field(
+        0.5,
+        ge=0.0,
+        le=1.0,
+        description="Minimum reusability score",
     )
     limit: int = Field(10, ge=1, le=100, description="Maximum number of results")
 
@@ -357,7 +395,10 @@ class ModelDebugIntelligenceResult(BaseModel):
 
     entry: ModelAgentDebugIntelligence
     similarity_score: float = Field(
-        ..., ge=0.0, le=1.0, description="Similarity to query"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Similarity to query",
     )
     relevance_explanation: str = Field(..., description="Why this result is relevant")
 
@@ -366,10 +407,10 @@ class ModelDebugIntelligenceStats(BaseModel):
     """Statistics about debug intelligence in the system."""
 
     total_entries: int
-    entries_by_agent_type: Dict[str, int]
-    entries_by_problem_type: Dict[str, int]
+    entries_by_agent_type: dict[str, int]
+    entries_by_problem_type: dict[str, int]
     average_solution_time_minutes: float
     most_effective_solutions: int
     highly_reusable_solutions: int
-    most_common_tags: List[str]
+    most_common_tags: list[str]
     recent_activity_count: int  # Entries in last 24 hours

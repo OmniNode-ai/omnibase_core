@@ -7,7 +7,6 @@ for execution, including task details, dependencies, and requirements.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -52,13 +51,15 @@ class ModelWorkDependency(BaseModel):
 
     ticket_id: str = Field(description="ID of the dependent ticket")
     dependency_type: str = Field(
-        description="Type of dependency (blocks, requires, follows)"
+        description="Type of dependency (blocks, requires, follows)",
     )
     required: bool = Field(
-        default=True, description="Whether this dependency is required"
+        default=True,
+        description="Whether this dependency is required",
     )
-    description: Optional[str] = Field(
-        default=None, description="Description of the dependency relationship"
+    description: str | None = Field(
+        default=None,
+        description="Description of the dependency relationship",
     )
 
 
@@ -67,14 +68,17 @@ class ModelWorkRequirement(BaseModel):
 
     requirement_id: str = Field(description="Unique identifier for this requirement")
     description: str = Field(description="Detailed requirement description")
-    acceptance_criteria: List[str] = Field(
-        default_factory=list, description="List of acceptance criteria"
+    acceptance_criteria: list[str] = Field(
+        default_factory=list,
+        description="List of acceptance criteria",
     )
-    validation_method: Optional[str] = Field(
-        default=None, description="Method to validate this requirement"
+    validation_method: str | None = Field(
+        default=None,
+        description="Method to validate this requirement",
     )
     priority: WorkTicketPriority = Field(
-        default=WorkTicketPriority.MEDIUM, description="Priority of this requirement"
+        default=WorkTicketPriority.MEDIUM,
+        description="Priority of this requirement",
     )
 
 
@@ -82,11 +86,12 @@ class ModelWorkConstraint(BaseModel):
     """Work constraint specification."""
 
     constraint_type: str = Field(
-        description="Type of constraint (time, resource, technical)"
+        description="Type of constraint (time, resource, technical)",
     )
     description: str = Field(description="Constraint description")
-    value: Optional[Union[str, int, float]] = Field(
-        default=None, description="Constraint value or limit"
+    value: str | int | float | None = Field(
+        default=None,
+        description="Constraint value or limit",
     )
     enforcement_level: str = Field(
         default="strict",
@@ -102,86 +107,113 @@ class ModelWorkTicket(BaseModel):
     description: str = Field(description="Detailed description of the work to be done")
     ticket_type: WorkTicketType = Field(description="Type of work ticket")
     priority: WorkTicketPriority = Field(
-        default=WorkTicketPriority.MEDIUM, description="Priority level of this ticket"
+        default=WorkTicketPriority.MEDIUM,
+        description="Priority level of this ticket",
     )
     status: WorkTicketStatus = Field(
-        default=WorkTicketStatus.PENDING, description="Current status of the ticket"
+        default=WorkTicketStatus.PENDING,
+        description="Current status of the ticket",
     )
-    assigned_agent_id: Optional[str] = Field(
-        default=None, description="ID of the agent assigned to this ticket"
+    assigned_agent_id: str | None = Field(
+        default=None,
+        description="ID of the agent assigned to this ticket",
     )
     created_by: str = Field(description="User or system that created this ticket")
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Ticket creation timestamp"
+        default_factory=datetime.now,
+        description="Ticket creation timestamp",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="Last update timestamp"
+        default_factory=datetime.now,
+        description="Last update timestamp",
     )
-    assigned_at: Optional[datetime] = Field(
-        default=None, description="Assignment timestamp"
+    assigned_at: datetime | None = Field(
+        default=None,
+        description="Assignment timestamp",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="Work start timestamp"
+    started_at: datetime | None = Field(
+        default=None,
+        description="Work start timestamp",
     )
-    completed_at: Optional[datetime] = Field(
-        default=None, description="Work completion timestamp"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="Work completion timestamp",
     )
-    due_date: Optional[datetime] = Field(
-        default=None, description="Due date for completion"
+    due_date: datetime | None = Field(
+        default=None,
+        description="Due date for completion",
     )
-    estimated_hours: Optional[float] = Field(
-        default=None, description="Estimated hours to complete"
+    estimated_hours: float | None = Field(
+        default=None,
+        description="Estimated hours to complete",
     )
-    actual_hours: Optional[float] = Field(
-        default=None, description="Actual hours spent"
+    actual_hours: float | None = Field(
+        default=None,
+        description="Actual hours spent",
     )
-    requirements: List[ModelWorkRequirement] = Field(
-        default_factory=list, description="List of work requirements"
+    requirements: list[ModelWorkRequirement] = Field(
+        default_factory=list,
+        description="List of work requirements",
     )
-    dependencies: List[ModelWorkDependency] = Field(
-        default_factory=list, description="List of ticket dependencies"
+    dependencies: list[ModelWorkDependency] = Field(
+        default_factory=list,
+        description="List of ticket dependencies",
     )
-    constraints: List[ModelWorkConstraint] = Field(
-        default_factory=list, description="List of work constraints"
+    constraints: list[ModelWorkConstraint] = Field(
+        default_factory=list,
+        description="List of work constraints",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for categorization and filtering"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorization and filtering",
     )
-    affected_files: List[str] = Field(
-        default_factory=list, description="List of files expected to be affected"
+    affected_files: list[str] = Field(
+        default_factory=list,
+        description="List of files expected to be affected",
     )
-    test_requirements: List[str] = Field(
-        default_factory=list, description="List of testing requirements"
+    test_requirements: list[str] = Field(
+        default_factory=list,
+        description="List of testing requirements",
     )
-    validation_steps: List[str] = Field(
-        default_factory=list, description="Steps to validate completion"
+    validation_steps: list[str] = Field(
+        default_factory=list,
+        description="Steps to validate completion",
     )
-    rollback_plan: Optional[str] = Field(
-        default=None, description="Plan for rolling back if needed"
+    rollback_plan: str | None = Field(
+        default=None,
+        description="Plan for rolling back if needed",
     )
-    notes: List[str] = Field(
-        default_factory=list, description="Additional notes and comments"
+    notes: list[str] = Field(
+        default_factory=list,
+        description="Additional notes and comments",
     )
-    attachments: List[str] = Field(
-        default_factory=list, description="List of attachment file paths"
+    attachments: list[str] = Field(
+        default_factory=list,
+        description="List of attachment file paths",
     )
-    context_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional context data"
+    context_data: dict[str, str] | None = Field(
+        default=None,
+        description="Additional context data",
     )
-    agent_requirements: Optional[Dict[str, str]] = Field(
-        default=None, description="Specific agent capability requirements"
+    agent_requirements: dict[str, str] | None = Field(
+        default=None,
+        description="Specific agent capability requirements",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if ticket failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if ticket failed",
     )
     progress_percent: float = Field(
-        default=0.0, description="Progress percentage (0-100)"
+        default=0.0,
+        description="Progress percentage (0-100)",
     )
-    session_id: Optional[str] = Field(
-        default=None, description="Session identifier for tracking"
+    session_id: str | None = Field(
+        default=None,
+        description="Session identifier for tracking",
     )
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation ID for related events"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Correlation ID for related events",
     )
 
     @property
@@ -215,7 +247,7 @@ class ModelWorkTicket(BaseModel):
         return self.status == WorkTicketStatus.COMPLETED
 
     @property
-    def elapsed_time(self) -> Optional[timedelta]:
+    def elapsed_time(self) -> timedelta | None:
         """Get elapsed time since work started."""
         if self.started_at:
             end_time = self.completed_at or datetime.now()
@@ -223,14 +255,14 @@ class ModelWorkTicket(BaseModel):
         return None
 
     @property
-    def time_to_completion(self) -> Optional[timedelta]:
+    def time_to_completion(self) -> timedelta | None:
         """Get time from creation to completion."""
         if self.completed_at:
             return self.completed_at - self.created_at
         return None
 
     @property
-    def pending_dependencies(self) -> List[str]:
+    def pending_dependencies(self) -> list[str]:
         """Get list of pending dependency ticket IDs."""
         return [
             dep.ticket_id
@@ -239,7 +271,7 @@ class ModelWorkTicket(BaseModel):
         ]
 
     @property
-    def critical_requirements(self) -> List[ModelWorkRequirement]:
+    def critical_requirements(self) -> list[ModelWorkRequirement]:
         """Get list of critical requirements."""
         return [
             req
@@ -258,7 +290,7 @@ class ModelWorkTicket(BaseModel):
         self.notes.append(f"[{timestamp}] {note}")
         self.updated_at = datetime.now()
 
-    def update_progress(self, percent: float, note: Optional[str] = None) -> None:
+    def update_progress(self, percent: float, note: str | None = None) -> None:
         """Update progress percentage."""
         self.progress_percent = max(0.0, min(100.0, percent))
         self.updated_at = datetime.now()
@@ -281,7 +313,9 @@ class ModelWorkTicket(BaseModel):
         self.add_note("Work started")
 
     def complete_work(
-        self, success: bool = True, message: Optional[str] = None
+        self,
+        success: bool = True,
+        message: str | None = None,
     ) -> None:
         """Mark ticket as completed."""
         self.status = WorkTicketStatus.COMPLETED if success else WorkTicketStatus.FAILED

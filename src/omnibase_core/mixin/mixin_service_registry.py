@@ -6,17 +6,17 @@ through event bus integration. Maintains a live registry of available tools
 and their capabilities.
 """
 
-import asyncio
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 from uuid import uuid4
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,10 @@ class ServiceRegistryEntry:
     """Registry entry for a discovered service/tool."""
 
     def __init__(
-        self, node_id: str, service_name: str, metadata: Optional[Dict] = None
+        self,
+        node_id: str,
+        service_name: str,
+        metadata: dict | None = None,
     ):
         self.node_id = node_id
         self.service_name = service_name
@@ -44,7 +47,7 @@ class ServiceRegistryEntry:
         """Mark service as offline."""
         self.status = "offline"
 
-    def update_introspection(self, introspection_data: Dict):
+    def update_introspection(self, introspection_data: dict):
         """Update with introspection data."""
         self.introspection_data = introspection_data
         self.capabilities = introspection_data.get("capabilities", [])
@@ -70,8 +73,8 @@ class MixinServiceRegistry:
         super().__init__(*args, **kwargs)
 
         # Service registry
-        self.service_registry: Dict[str, ServiceRegistryEntry] = {}
-        self.discovery_callbacks: List[Callable] = []
+        self.service_registry: dict[str, ServiceRegistryEntry] = {}
+        self.discovery_callbacks: list[Callable] = []
 
         # Configuration
         self.introspection_timeout = introspection_timeout
@@ -88,7 +91,7 @@ class MixinServiceRegistry:
     def _setup_registry_event_handlers(self):
         """Setup event handlers for service lifecycle events."""
         logger.info(
-            f"🔧 Setting up registry event handlers - event_bus: {hasattr(self, 'event_bus')}, value: {getattr(self, 'event_bus', None)}"
+            f"🔧 Setting up registry event handlers - event_bus: {hasattr(self, 'event_bus')}, value: {getattr(self, 'event_bus', None)}",
         )
 
         if hasattr(self, "event_bus") and self.event_bus:
@@ -113,25 +116,26 @@ class MixinServiceRegistry:
 
                 # Listen for discovery requests (realtime requests from other hubs/services)
                 self.event_bus.subscribe(
-                    "core.discovery.realtime_request", self._handle_discovery_request
+                    "core.discovery.realtime_request",
+                    self._handle_discovery_request,
                 )
                 logger.info("✅ Subscribed to core.discovery.realtime_request")
 
                 logger.info(
-                    "🔔 Service registry event handlers registered successfully!"
+                    "🔔 Service registry event handlers registered successfully!",
                 )
 
             except Exception as e:
-                logger.error(f"❌ Failed to setup registry event handlers: {e}")
+                logger.exception(f"❌ Failed to setup registry event handlers: {e}")
                 import traceback
 
                 traceback.print_exc()
         else:
             logger.error(
-                f"❌ Cannot setup event handlers - event_bus not available: hasattr={hasattr(self, 'event_bus')}, event_bus={getattr(self, 'event_bus', None)}"
+                f"❌ Cannot setup event handlers - event_bus not available: hasattr={hasattr(self, 'event_bus')}, event_bus={getattr(self, 'event_bus', None)}",
             )
 
-    def start_service_registry(self, domain_filter: Optional[str] = None):
+    def start_service_registry(self, domain_filter: str | None = None):
         """
         Start the service registry with optional domain filtering.
 
@@ -185,10 +189,8 @@ class MixinServiceRegistry:
 
         try:
             # Import the required models
-            from omnibase_core.model.core.model_event_envelope import \
-                ModelEventEnvelope
-            from omnibase_core.model.core.model_onex_event import \
-                ModelOnexEvent
+            from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+            from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 
             # Create the discovery event
             discovery_event = ModelOnexEvent(
@@ -224,7 +226,7 @@ class MixinServiceRegistry:
             )
 
         except Exception as e:
-            logger.error(f"❌ Failed to send discovery request: {e}")
+            logger.exception(f"❌ Failed to send discovery request: {e}")
             import traceback
 
             traceback.print_exc()
@@ -282,13 +284,13 @@ class MixinServiceRegistry:
                     try:
                         callback("tool_discovered", entry)
                     except Exception as e:
-                        logger.error(f"Discovery callback error: {e}")
+                        logger.exception(f"Discovery callback error: {e}")
             else:
                 # Update existing entry
                 self.service_registry[node_id].update_last_seen()
 
         except Exception as e:
-            logger.error(f"❌ Error handling node start event: {e}")
+            logger.exception(f"❌ Error handling node start event: {e}")
 
     def _handle_node_stop(self, envelope):
         """Handle node stop events - tools going offline."""
@@ -318,10 +320,10 @@ class MixinServiceRegistry:
                     try:
                         callback("tool_offline", self.service_registry[node_id])
                     except Exception as e:
-                        logger.error(f"Discovery callback error: {e}")
+                        logger.exception(f"Discovery callback error: {e}")
 
         except Exception as e:
-            logger.error(f"❌ Error handling node stop event: {e}")
+            logger.exception(f"❌ Error handling node stop event: {e}")
 
     def _handle_node_failure(self, envelope):
         """Handle node failure events - tools failing."""
@@ -337,10 +339,8 @@ class MixinServiceRegistry:
 
         try:
             # Import the required models
-            from omnibase_core.model.core.model_event_envelope import \
-                ModelEventEnvelope
-            from omnibase_core.model.core.model_onex_event import \
-                ModelOnexEvent
+            from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+            from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 
             # Create the introspection event
             introspection_event = ModelOnexEvent(
@@ -371,7 +371,9 @@ class MixinServiceRegistry:
             )
 
         except Exception as e:
-            logger.error(f"❌ Failed to send introspection request to {node_id}: {e}")
+            logger.exception(
+                f"❌ Failed to send introspection request to {node_id}: {e}"
+            )
 
     def _handle_introspection_response(self, envelope):
         """Handle introspection responses from tools."""
@@ -393,13 +395,13 @@ class MixinServiceRegistry:
                     {
                         "node_id": node_id,
                         "capabilities_count": len(
-                            introspection_data.get("capabilities", [])
+                            introspection_data.get("capabilities", []),
                         ),
                     },
                 )
 
         except Exception as e:
-            logger.error(f"❌ Error handling introspection response: {e}")
+            logger.exception(f"❌ Error handling introspection response: {e}")
 
     def _handle_discovery_request(self, envelope):
         """Handle discovery requests from other hubs/services."""
@@ -423,7 +425,7 @@ class MixinServiceRegistry:
             if domain_filter and hasattr(self, "domain_filter") and self.domain_filter:
                 if domain_filter != self.domain_filter:
                     logger.debug(
-                        f"🔍 Ignoring discovery request for domain '{domain_filter}' (we are '{self.domain_filter}')"
+                        f"🔍 Ignoring discovery request for domain '{domain_filter}' (we are '{self.domain_filter}')",
                     )
                     return
 
@@ -448,19 +450,20 @@ class MixinServiceRegistry:
                 if hasattr(self, "event_bus") and self.event_bus:
                     self.event_bus.publish("core.discovery.response", response_data)
                     logger.info(
-                        f"📤 Sent discovery response with {len(self.service_registry)} tools"
+                        f"📤 Sent discovery response with {len(self.service_registry)} tools",
                     )
                 else:
                     logger.warning(
-                        "⚠️ Cannot send discovery response - no event bus available"
+                        "⚠️ Cannot send discovery response - no event bus available",
                     )
 
         except Exception as e:
-            logger.error(f"❌ Error handling discovery request: {e}")
+            logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(
-        self, status_filter: Optional[str] = None
-    ) -> List[ServiceRegistryEntry]:
+        self,
+        status_filter: str | None = None,
+    ) -> list[ServiceRegistryEntry]:
         """
         Get list of registered tools.
 
@@ -477,14 +480,14 @@ class MixinServiceRegistry:
 
         return tools
 
-    def get_tool_by_name(self, service_name: str) -> Optional[ServiceRegistryEntry]:
+    def get_tool_by_name(self, service_name: str) -> ServiceRegistryEntry | None:
         """Get tool by service name."""
         for entry in self.service_registry.values():
             if entry.service_name == service_name:
                 return entry
         return None
 
-    def get_tools_by_capability(self, capability: str) -> List[ServiceRegistryEntry]:
+    def get_tools_by_capability(self, capability: str) -> list[ServiceRegistryEntry]:
         """Get tools that have a specific capability."""
         matching_tools = []
         for entry in self.service_registry.values():
@@ -526,7 +529,8 @@ class MixinServiceRegistry:
         if hasattr(self, "event_loop") and self.event_loop:
             try:
                 self.cleanup_task = self.event_loop.call_later(
-                    self.auto_cleanup_interval, self._cleanup_and_reschedule
+                    self.auto_cleanup_interval,
+                    self._cleanup_and_reschedule,
                 )
             except Exception as e:
                 logger.debug(f"Could not schedule cleanup task: {e}")
@@ -536,18 +540,18 @@ class MixinServiceRegistry:
         try:
             self.cleanup_stale_entries()
         except Exception as e:
-            logger.error(f"❌ Error during cleanup: {e}")
+            logger.exception(f"❌ Error during cleanup: {e}")
         finally:
             if self.registry_started:
                 self._schedule_cleanup()
 
-    def get_registry_stats(self) -> Dict[str, Any]:
+    def get_registry_stats(self) -> dict[str, Any]:
         """Get registry statistics."""
         online_count = len(
-            [e for e in self.service_registry.values() if e.status == "online"]
+            [e for e in self.service_registry.values() if e.status == "online"],
         )
         offline_count = len(
-            [e for e in self.service_registry.values() if e.status == "offline"]
+            [e for e in self.service_registry.values() if e.status == "offline"],
         )
 
         return {

@@ -5,8 +5,6 @@ Replaces EnumToolType with a proper model that includes metadata,
 descriptions, and categorization for each tool type.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -28,16 +26,20 @@ class ModelToolType(BaseModel):
     description: str = Field(..., description="Human-readable description of the tool")
 
     category: str = Field(
-        ..., description="Tool category for organization", pattern="^[a-z][a-z0-9_]*$"
+        ...,
+        description="Tool category for organization",
+        pattern="^[a-z][a-z0-9_]*$",
     )
 
     # Optional metadata
-    dependencies: List[str] = Field(
-        default_factory=list, description="Other tools this tool depends on"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Other tools this tool depends on",
     )
 
     version_compatibility: str = Field(
-        default=">=1.0.0", description="Version compatibility constraint"
+        default=">=1.0.0",
+        description="Version compatibility constraint",
     )
 
     execution_priority: int = Field(
@@ -48,18 +50,21 @@ class ModelToolType(BaseModel):
     )
 
     is_generator: bool = Field(
-        default=False, description="Whether this tool generates code/files"
+        default=False,
+        description="Whether this tool generates code/files",
     )
 
     is_validator: bool = Field(
-        default=False, description="Whether this tool validates existing code/files"
+        default=False,
+        description="Whether this tool validates existing code/files",
     )
 
     requires_contract: bool = Field(
-        default=False, description="Whether this tool requires a contract.yaml"
+        default=False,
+        description="Whether this tool requires a contract.yaml",
     )
 
-    output_type: Optional[str] = Field(
+    output_type: str | None = Field(
         default=None,
         description="Type of output produced (models, files, reports, etc.)",
     )
@@ -438,9 +443,8 @@ class ModelToolType(BaseModel):
         factory = factory_map.get(name)
         if factory:
             return factory()
-        else:
-            # Unknown tool type - create generic
-            return cls(name=name, description=f"Tool: {name}", category="unknown")
+        # Unknown tool type - create generic
+        return cls(name=name, description=f"Tool: {name}", category="unknown")
 
     def __str__(self) -> str:
         """String representation for backward compatibility."""
@@ -450,6 +454,6 @@ class ModelToolType(BaseModel):
         """Equality comparison for backward compatibility."""
         if isinstance(other, str):
             return self.name == other
-        elif isinstance(other, ModelToolType):
+        if isinstance(other, ModelToolType):
             return self.name == other.name
         return False

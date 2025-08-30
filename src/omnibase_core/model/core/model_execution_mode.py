@@ -24,34 +24,42 @@ class ModelExecutionMode(BaseModel):
     )
 
     value: str = Field(
-        ..., description="Lowercase value for compatibility (direct, inmemory, kafka)"
+        ...,
+        description="Lowercase value for compatibility (direct, inmemory, kafka)",
     )
 
     # Properties as fields (replacing methods)
     is_synchronous: bool = Field(
-        ..., description="Whether this execution mode is synchronous"
+        ...,
+        description="Whether this execution mode is synchronous",
     )
 
     is_asynchronous: bool = Field(
-        ..., description="Whether this execution mode is asynchronous"
+        ...,
+        description="Whether this execution mode is asynchronous",
     )
 
     is_distributed: bool = Field(
-        ..., description="Whether this execution mode is distributed"
+        ...,
+        description="Whether this execution mode is distributed",
     )
 
     is_local: bool = Field(..., description="Whether this execution mode is local")
 
     requires_event_bus: bool = Field(
-        ..., description="Whether this mode requires an event bus"
+        ...,
+        description="Whether this mode requires an event bus",
     )
 
     supports_scaling: bool = Field(
-        ..., description="Whether this mode supports horizontal scaling"
+        ...,
+        description="Whether this mode supports horizontal scaling",
     )
 
     typical_latency_ms: int = Field(
-        ..., description="Typical latency for this execution mode in milliseconds", gt=0
+        ...,
+        description="Typical latency for this execution mode in milliseconds",
+        gt=0,
     )
 
     reliability_level: str = Field(
@@ -62,7 +70,8 @@ class ModelExecutionMode(BaseModel):
 
     # Optional metadata
     description: str = Field(
-        default="", description="Human-readable description of the execution mode"
+        default="",
+        description="Human-readable description of the execution mode",
     )
 
     supported_node_types: list[str] = Field(
@@ -137,25 +146,24 @@ class ModelExecutionMode(BaseModel):
         mode_upper = mode.upper()
         if mode_upper == "DIRECT":
             return cls.DIRECT()
-        elif mode_upper == "INMEMORY":
+        if mode_upper == "INMEMORY":
             return cls.INMEMORY()
-        elif mode_upper == "KAFKA":
+        if mode_upper == "KAFKA":
             return cls.KAFKA()
-        else:
-            # Unknown mode - create a generic one
-            return cls(
-                name=mode_upper,
-                value=mode.lower(),
-                is_synchronous=False,
-                is_asynchronous=True,
-                is_distributed=False,
-                is_local=True,
-                requires_event_bus=False,
-                supports_scaling=False,
-                typical_latency_ms=50,
-                reliability_level="medium",
-                description=f"Custom execution mode: {mode}",
-            )
+        # Unknown mode - create a generic one
+        return cls(
+            name=mode_upper,
+            value=mode.lower(),
+            is_synchronous=False,
+            is_asynchronous=True,
+            is_distributed=False,
+            is_local=True,
+            requires_event_bus=False,
+            supports_scaling=False,
+            typical_latency_ms=50,
+            reliability_level="medium",
+            description=f"Custom execution mode: {mode}",
+        )
 
     def __str__(self) -> str:
         """String representation for backward compatibility."""
@@ -165,7 +173,7 @@ class ModelExecutionMode(BaseModel):
         """Equality comparison for backward compatibility."""
         if isinstance(other, str):
             return self.value == other or self.name == other.upper()
-        elif isinstance(other, ModelExecutionMode):
+        if isinstance(other, ModelExecutionMode):
             return self.name == other.name
         return False
 

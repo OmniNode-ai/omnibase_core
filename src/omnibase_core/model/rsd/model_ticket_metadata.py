@@ -6,7 +6,6 @@ Strongly-typed metadata model for ticket nodes, replacing Union types.
 Generated from contract: rsd_metadata_types_contract.yaml
 """
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,13 +18,13 @@ class ModelTicketMetadata(BaseModel):
     This model provides type safety and validation for ticket node metadata.
     """
 
-    text_data: Optional[str] = Field(None, description="Text-based metadata value")
+    text_data: str | None = Field(None, description="Text-based metadata value")
 
-    numeric_data: Optional[float] = Field(None, description="Numeric metadata value")
+    numeric_data: float | None = Field(None, description="Numeric metadata value")
 
-    boolean_data: Optional[bool] = Field(None, description="Boolean metadata value")
+    boolean_data: bool | None = Field(None, description="Boolean metadata value")
 
-    integer_data: Optional[int] = Field(None, description="Integer metadata value")
+    integer_data: int | None = Field(None, description="Integer metadata value")
 
     class Config:
         """Pydantic model configuration for ONEX compliance."""

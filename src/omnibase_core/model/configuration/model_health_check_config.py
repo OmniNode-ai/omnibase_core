@@ -2,7 +2,7 @@
 Health check configuration model.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,40 +24,48 @@ class ModelHealthCheckConfig(BaseModel):
     # Thresholds
     healthy_threshold: int = Field(2, description="Consecutive successes for healthy")
     unhealthy_threshold: int = Field(
-        3, description="Consecutive failures for unhealthy"
+        3,
+        description="Consecutive failures for unhealthy",
     )
 
     # Expected response
-    expected_status_codes: List[int] = Field(
-        default_factory=lambda: [200, 204], description="Expected HTTP status codes"
+    expected_status_codes: list[int] = Field(
+        default_factory=lambda: [200, 204],
+        description="Expected HTTP status codes",
     )
-    expected_response_time_ms: Optional[int] = Field(
-        None, description="Maximum expected response time"
+    expected_response_time_ms: int | None = Field(
+        None,
+        description="Maximum expected response time",
     )
 
     # Response validation
     check_response_body: bool = Field(
-        False, description="Whether to check response body"
+        False,
+        description="Whether to check response body",
     )
-    expected_response_contains: Optional[str] = Field(
-        None, description="Expected string in response"
+    expected_response_contains: str | None = Field(
+        None,
+        description="Expected string in response",
     )
-    expected_json_path: Optional[str] = Field(
-        None, description="JSON path to check (e.g., $.status)"
+    expected_json_path: str | None = Field(
+        None,
+        description="JSON path to check (e.g., $.status)",
     )
-    expected_json_value: Optional[Any] = Field(
-        None, description="Expected value at JSON path"
+    expected_json_value: Any | None = Field(
+        None,
+        description="Expected value at JSON path",
     )
 
     # Headers
-    headers: Dict[str, str] = Field(
-        default_factory=dict, description="Headers to send with health check"
+    headers: dict[str, str] = Field(
+        default_factory=dict,
+        description="Headers to send with health check",
     )
 
     # Retry behavior
     retry_on_failure: bool = Field(True, description="Retry on failure")
     max_retries: int = Field(2, description="Maximum retry attempts")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)

@@ -5,15 +5,13 @@ Defines the result of a completed agent task.
 """
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.events.model_agent_result_data import \
-    ModelAgentTaskResultData
+from omnibase_core.model.events.model_agent_result_data import ModelAgentTaskResultData
 
 
 class ModelAgentTaskResult(BaseModel):
@@ -28,7 +26,7 @@ class ModelAgentTaskResult(BaseModel):
         cls,
         node_id: str,
         result: "ModelAgentTaskResult",
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
     ) -> ModelOnexEvent:
         """Create ONEX event for task result."""
         return ModelOnexEvent.create_plugin_event(
@@ -40,7 +38,9 @@ class ModelAgentTaskResult(BaseModel):
         )
 
     def wrap_in_envelope(
-        self, source_node_id: str, destination: str
+        self,
+        source_node_id: str,
+        destination: str,
     ) -> ModelEventEnvelope:
         """Wrap task result in event envelope for routing back to requester."""
         event = self.create_event(source_node_id, self)
@@ -54,11 +54,12 @@ class ModelAgentTaskResult(BaseModel):
 
     # Result data
     success: bool = Field(..., description="Whether task completed successfully")
-    result_text: Optional[str] = Field(None, description="Text result from agent")
+    result_text: str | None = Field(None, description="Text result from agent")
     result_data: ModelAgentTaskResultData = Field(
-        default_factory=ModelAgentTaskResultData, description="Structured result data"
+        default_factory=ModelAgentTaskResultData,
+        description="Structured result data",
     )
-    error_message: Optional[str] = Field(None, description="Error message if failed")
+    error_message: str | None = Field(None, description="Error message if failed")
 
     # Execution metadata
     execution_time_seconds: float = Field(..., description="Total execution time")
@@ -67,8 +68,8 @@ class ModelAgentTaskResult(BaseModel):
     provider_used: str = Field(..., description="Actual provider used")
 
     # Quality metrics
-    confidence_score: Optional[float] = Field(None, ge=0.0, le=1.0)
-    quality_checks_passed: Optional[List[str]] = Field(None)
+    confidence_score: float | None = Field(None, ge=0.0, le=1.0)
+    quality_checks_passed: list[str] | None = Field(None)
 
     # Timestamps
     started_at: datetime = Field(...)
@@ -87,5 +88,5 @@ class ModelAgentTaskResult(BaseModel):
                 "tokens_used": 1250,
                 "model_used": "codellama:13b-instruct",
                 "provider_used": "ollama",
-            }
+            },
         }

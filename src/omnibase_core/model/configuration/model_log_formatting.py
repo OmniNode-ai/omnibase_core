@@ -1,8 +1,6 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
-from ..core.model_custom_fields import ModelCustomFields
+from omnibase_core.model.core.model_custom_fields import ModelCustomFields
 
 
 class ModelLogFormatting(BaseModel):
@@ -14,54 +12,71 @@ class ModelLogFormatting(BaseModel):
         pattern="^(text|json|structured|custom)$",
     )
     timestamp_format: str = Field(
-        default="%Y-%m-%d %H:%M:%S", description="Timestamp format string"
+        default="%Y-%m-%d %H:%M:%S",
+        description="Timestamp format string",
     )
     include_timestamp: bool = Field(
-        default=True, description="Whether to include timestamps"
+        default=True,
+        description="Whether to include timestamps",
     )
     include_level: bool = Field(
-        default=True, description="Whether to include log level"
+        default=True,
+        description="Whether to include log level",
     )
     include_logger_name: bool = Field(
-        default=True, description="Whether to include logger name"
+        default=True,
+        description="Whether to include logger name",
     )
     include_thread_id: bool = Field(
-        default=False, description="Whether to include thread ID"
+        default=False,
+        description="Whether to include thread ID",
     )
     include_process_id: bool = Field(
-        default=False, description="Whether to include process ID"
+        default=False,
+        description="Whether to include process ID",
     )
-    field_order: List[str] = Field(
+    field_order: list[str] = Field(
         default_factory=lambda: ["timestamp", "level", "logger", "message"],
         description="Order of fields in log output",
     )
     field_separator: str = Field(
-        default=" | ", description="Separator between fields in text format"
+        default=" | ",
+        description="Separator between fields in text format",
     )
-    message_template: Optional[str] = Field(None, description="Custom message template")
-    json_indent: Optional[int] = Field(
-        None, description="JSON indentation for pretty printing", ge=0, le=8
+    message_template: str | None = Field(None, description="Custom message template")
+    json_indent: int | None = Field(
+        None,
+        description="JSON indentation for pretty printing",
+        ge=0,
+        le=8,
     )
-    custom_fields: Optional[ModelCustomFields] = Field(
-        None, description="Additional custom fields to include"
+    custom_fields: ModelCustomFields | None = Field(
+        None,
+        description="Additional custom fields to include",
     )
     truncate_long_messages: bool = Field(
-        default=False, description="Whether to truncate very long messages"
+        default=False,
+        description="Whether to truncate very long messages",
     )
     max_message_length: int = Field(
-        default=10000, description="Maximum message length before truncation", ge=100
+        default=10000,
+        description="Maximum message length before truncation",
+        ge=100,
     )
 
     def format_message(
-        self, level: str, logger_name: str, message: str, **kwargs
+        self,
+        level: str,
+        logger_name: str,
+        message: str,
+        **kwargs,
     ) -> str:
         """Format a log message according to configuration."""
         if self.format_type == "json":
             return self._format_json(level, logger_name, message, **kwargs)
-        elif self.format_type == "structured":
+        if self.format_type == "structured":
             return self._format_structured(level, logger_name, message, **kwargs)
-        else:
-            return self._format_text(level, logger_name, message, **kwargs)
+        return self._format_text(level, logger_name, message, **kwargs)
 
     def _format_text(self, level: str, logger_name: str, message: str, **kwargs) -> str:
         """Format as plain text."""
@@ -104,7 +119,11 @@ class ModelLogFormatting(BaseModel):
         return json.dumps(log_data, indent=self.json_indent)
 
     def _format_structured(
-        self, level: str, logger_name: str, message: str, **kwargs
+        self,
+        level: str,
+        logger_name: str,
+        message: str,
+        **kwargs,
     ) -> str:
         """Format as structured key-value pairs."""
         import datetime
@@ -143,7 +162,7 @@ class ModelLogFormatting(BaseModel):
         return cls(format_type="text")
 
     @classmethod
-    def create_json(cls, indent: Optional[int] = None) -> "ModelLogFormatting":
+    def create_json(cls, indent: int | None = None) -> "ModelLogFormatting":
         """Factory method for JSON formatting."""
         return cls(format_type="json", json_indent=indent)
 

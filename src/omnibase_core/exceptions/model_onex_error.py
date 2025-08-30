@@ -6,7 +6,6 @@ serialization, and schema generation capabilities across all ONEX components.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,8 +30,8 @@ class ModelOnexError(BaseModel):
                 "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
                 "timestamp": "2025-05-25T22:30:00Z",
                 "context": {"file_path": "/path/to/config.yaml"},
-            }
-        }
+            },
+        },
     )
 
     message: str = Field(
@@ -40,7 +39,7 @@ class ModelOnexError(BaseModel):
         description="Human-readable error message",
         json_schema_extra={"example": "File not found: config.yaml"},
     )
-    error_code: Optional[str] = Field(
+    error_code: str | None = Field(
         default=None,
         description="Canonical error code for this error",
         json_schema_extra={"example": "ONEX_CORE_021_FILE_NOT_FOUND"},
@@ -50,12 +49,12 @@ class ModelOnexError(BaseModel):
         description="EnumOnexStatus for this error",
         json_schema_extra={"example": "error"},
     )
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Optional correlation ID for request tracking",
         json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
     )
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the error occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},

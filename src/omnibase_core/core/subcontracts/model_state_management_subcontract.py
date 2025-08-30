@@ -4,7 +4,7 @@ State Management Subcontract Model - ONEX Standards Compliant.
 
 Dedicated subcontract model for state management functionality providing:
 - State persistence and recovery strategies
-- State synchronization and consistency policies  
+- State synchronization and consistency policies
 - State validation and integrity checks
 - State versioning and migration support
 - State monitoring and metrics
@@ -15,7 +15,7 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -29,39 +29,51 @@ class ModelStatePersistence(BaseModel):
     """
 
     persistence_enabled: bool = Field(
-        default=True, description="Enable state persistence"
+        default=True,
+        description="Enable state persistence",
     )
 
     storage_backend: str = Field(
-        default="postgresql", description="Backend storage system for state"
+        default="postgresql",
+        description="Backend storage system for state",
     )
 
     backup_enabled: bool = Field(
-        default=True, description="Enable automatic state backups"
+        default=True,
+        description="Enable automatic state backups",
     )
 
     backup_interval_ms: int = Field(
-        default=300000, description="Backup interval", ge=1000
+        default=300000,
+        description="Backup interval",
+        ge=1000,
     )
 
     backup_retention_days: int = Field(
-        default=7, description="Backup retention period", ge=1
+        default=7,
+        description="Backup retention period",
+        ge=1,
     )
 
     checkpoint_enabled: bool = Field(
-        default=True, description="Enable state checkpointing"
+        default=True,
+        description="Enable state checkpointing",
     )
 
     checkpoint_interval_ms: int = Field(
-        default=60000, description="Checkpoint interval", ge=1000
+        default=60000,
+        description="Checkpoint interval",
+        ge=1000,
     )
 
     recovery_enabled: bool = Field(
-        default=True, description="Enable automatic state recovery"
+        default=True,
+        description="Enable automatic state recovery",
     )
 
     compression_enabled: bool = Field(
-        default=False, description="Enable state compression"
+        default=False,
+        description="Enable state compression",
     )
 
 
@@ -74,29 +86,35 @@ class ModelStateValidation(BaseModel):
     """
 
     validation_enabled: bool = Field(
-        default=True, description="Enable state validation"
+        default=True,
+        description="Enable state validation",
     )
 
     schema_validation: bool = Field(
-        default=True, description="Enable schema validation for state"
+        default=True,
+        description="Enable schema validation for state",
     )
 
     integrity_checks: bool = Field(default=True, description="Enable integrity checks")
 
     consistency_checks: bool = Field(
-        default=False, description="Enable consistency validation"
+        default=False,
+        description="Enable consistency validation",
     )
 
-    validation_rules: List[str] = Field(
-        default_factory=list, description="Custom validation rules"
+    validation_rules: list[str] = Field(
+        default_factory=list,
+        description="Custom validation rules",
     )
 
     repair_enabled: bool = Field(
-        default=False, description="Enable automatic state repair"
+        default=False,
+        description="Enable automatic state repair",
     )
 
-    repair_strategies: List[str] = Field(
-        default_factory=list, description="Available repair strategies"
+    repair_strategies: list[str] = Field(
+        default_factory=list,
+        description="Available repair strategies",
     )
 
 
@@ -109,31 +127,40 @@ class ModelStateSynchronization(BaseModel):
     """
 
     synchronization_enabled: bool = Field(
-        default=False, description="Enable state synchronization"
+        default=False,
+        description="Enable state synchronization",
     )
 
     consistency_level: str = Field(
-        default="eventual", description="Consistency level for distributed state"
+        default="eventual",
+        description="Consistency level for distributed state",
     )
 
     sync_interval_ms: int = Field(
-        default=30000, description="Synchronization interval", ge=1000
+        default=30000,
+        description="Synchronization interval",
+        ge=1000,
     )
 
     conflict_resolution: str = Field(
-        default="timestamp_based", description="Conflict resolution strategy"
+        default="timestamp_based",
+        description="Conflict resolution strategy",
     )
 
     replication_factor: int = Field(
-        default=1, description="Number of state replicas", ge=1
+        default=1,
+        description="Number of state replicas",
+        ge=1,
     )
 
     leader_election_enabled: bool = Field(
-        default=False, description="Enable leader election for coordination"
+        default=False,
+        description="Enable leader election for coordination",
     )
 
     distributed_locking: bool = Field(
-        default=False, description="Enable distributed locking for state access"
+        default=False,
+        description="Enable distributed locking for state access",
     )
 
 
@@ -146,29 +173,36 @@ class ModelStateVersioning(BaseModel):
     """
 
     versioning_enabled: bool = Field(
-        default=True, description="Enable state versioning"
+        default=True,
+        description="Enable state versioning",
     )
 
     version_scheme: str = Field(
-        default="semantic", description="Versioning scheme for state"
+        default="semantic",
+        description="Versioning scheme for state",
     )
 
     migration_enabled: bool = Field(default=True, description="Enable state migration")
 
-    migration_strategies: List[str] = Field(
-        default_factory=list, description="Available migration strategies"
+    migration_strategies: list[str] = Field(
+        default_factory=list,
+        description="Available migration strategies",
     )
 
     backward_compatibility: bool = Field(
-        default=True, description="Maintain backward compatibility"
+        default=True,
+        description="Maintain backward compatibility",
     )
 
     version_retention: int = Field(
-        default=5, description="Number of state versions to retain", ge=1
+        default=5,
+        description="Number of state versions to retain",
+        ge=1,
     )
 
     rollback_enabled: bool = Field(
-        default=True, description="Enable state rollback to previous versions"
+        default=True,
+        description="Enable state rollback to previous versions",
     )
 
 
@@ -185,15 +219,18 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # Core state management configuration
     state_management_enabled: bool = Field(
-        default=True, description="Enable state management functionality"
+        default=True,
+        description="Enable state management functionality",
     )
 
     state_scope: str = Field(
-        default="node_local", description="Scope of state management"
+        default="node_local",
+        description="Scope of state management",
     )
 
     state_lifecycle: str = Field(
-        default="persistent", description="State lifecycle management strategy"
+        default="persistent",
+        description="State lifecycle management strategy",
     )
 
     # State persistence configuration
@@ -209,8 +246,9 @@ class ModelStateManagementSubcontract(BaseModel):
     )
 
     # State synchronization (for distributed scenarios)
-    synchronization: Optional[ModelStateSynchronization] = Field(
-        default=None, description="State synchronization configuration"
+    synchronization: ModelStateSynchronization | None = Field(
+        default=None,
+        description="State synchronization configuration",
     )
 
     # State versioning and migration
@@ -221,26 +259,32 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State access and concurrency
     concurrent_access_enabled: bool = Field(
-        default=True, description="Enable concurrent state access"
+        default=True,
+        description="Enable concurrent state access",
     )
 
     locking_strategy: str = Field(
-        default="optimistic", description="Locking strategy for state access"
+        default="optimistic",
+        description="Locking strategy for state access",
     )
 
     transaction_support: bool = Field(
-        default=True, description="Enable transactional state operations"
+        default=True,
+        description="Enable transactional state operations",
     )
 
     isolation_level: str = Field(
-        default="read_committed", description="Transaction isolation level"
+        default="read_committed",
+        description="Transaction isolation level",
     )
 
     # State caching and performance
     caching_enabled: bool = Field(default=True, description="Enable state caching")
 
     cache_size: int = Field(
-        default=1000, description="Maximum cached state entries", ge=1
+        default=1000,
+        description="Maximum cached state entries",
+        ge=1,
     )
 
     cache_ttl_seconds: int = Field(default=300, description="Cache time-to-live", ge=1)
@@ -249,53 +293,66 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State monitoring and metrics
     monitoring_enabled: bool = Field(
-        default=True, description="Enable state monitoring"
+        default=True,
+        description="Enable state monitoring",
     )
 
     metrics_collection: bool = Field(
-        default=True, description="Enable state metrics collection"
+        default=True,
+        description="Enable state metrics collection",
     )
 
     performance_tracking: bool = Field(
-        default=False, description="Enable detailed performance tracking"
+        default=False,
+        description="Enable detailed performance tracking",
     )
 
     alert_on_corruption: bool = Field(
-        default=True, description="Alert on state corruption detection"
+        default=True,
+        description="Alert on state corruption detection",
     )
 
     # State security and encryption
     encryption_enabled: bool = Field(
-        default=False, description="Enable state encryption at rest"
+        default=False,
+        description="Enable state encryption at rest",
     )
 
     encryption_algorithm: str = Field(
-        default="aes256", description="Encryption algorithm for state data"
+        default="aes256",
+        description="Encryption algorithm for state data",
     )
 
     key_rotation_enabled: bool = Field(
-        default=False, description="Enable encryption key rotation"
+        default=False,
+        description="Enable encryption key rotation",
     )
 
     access_control_enabled: bool = Field(
-        default=False, description="Enable access control for state operations"
+        default=False,
+        description="Enable access control for state operations",
     )
 
     # State cleanup and maintenance
     cleanup_enabled: bool = Field(
-        default=True, description="Enable automatic state cleanup"
+        default=True,
+        description="Enable automatic state cleanup",
     )
 
     cleanup_interval_ms: int = Field(
-        default=3600000, description="Cleanup interval", ge=60000
+        default=3600000,
+        description="Cleanup interval",
+        ge=60000,
     )
 
     orphan_cleanup: bool = Field(
-        default=True, description="Enable cleanup of orphaned state"
+        default=True,
+        description="Enable cleanup of orphaned state",
     )
 
     compaction_enabled: bool = Field(
-        default=False, description="Enable state compaction"
+        default=False,
+        description="Enable state compaction",
     )
 
     @field_validator("cache_size")
@@ -304,8 +361,9 @@ class ModelStateManagementSubcontract(BaseModel):
         """Validate cache size when caching is enabled."""
         if hasattr(values, "data") and values.data.get("caching_enabled", True):
             if v < 10:
+                msg = "cache_size must be at least 10 when caching is enabled"
                 raise ValueError(
-                    "cache_size must be at least 10 when caching is enabled"
+                    msg,
                 )
         return v
 
@@ -315,8 +373,9 @@ class ModelStateManagementSubcontract(BaseModel):
         """Validate cleanup interval when cleanup is enabled."""
         if hasattr(values, "data") and values.data.get("cleanup_enabled", True):
             if v < 60000:  # 1 minute minimum
+                msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
                 raise ValueError(
-                    "cleanup_interval_ms must be at least 60000ms (1 minute)"
+                    msg,
                 )
         return v
 

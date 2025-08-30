@@ -6,11 +6,10 @@ message routing, event streaming, and protocol translation.
 """
 
 from abc import ABC, abstractmethod
-from typing import AsyncIterator, Dict, List, Optional
+from collections.abc import AsyncIterator
 
 from omnibase_core.model.communication.model_agent_event import ModelAgentEvent
-from omnibase_core.model.communication.model_progress_update import \
-    ModelProgressUpdate
+from omnibase_core.model.communication.model_progress_update import ModelProgressUpdate
 from omnibase_core.model.communication.model_work_result import ModelWorkResult
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.model.work.model_work_ticket import ModelWorkTicket
@@ -21,7 +20,9 @@ class ProtocolCommunicationBridge(ABC):
 
     @abstractmethod
     async def forward_work_request(
-        self, agent_id: str, ticket: ModelWorkTicket
+        self,
+        agent_id: str,
+        ticket: ModelWorkTicket,
     ) -> bool:
         """
         Forward work request from ONEX to Claude Code agent.
@@ -37,11 +38,13 @@ class ProtocolCommunicationBridge(ABC):
             CommunicationError: If forwarding fails
             AgentNotFoundError: If agent is not available
         """
-        pass
 
     @abstractmethod
     async def send_agent_command(
-        self, agent_id: str, command: str, parameters: Optional[Dict[str, str]] = None
+        self,
+        agent_id: str,
+        command: str,
+        parameters: dict[str, str] | None = None,
     ) -> bool:
         """
         Send command to specific Claude Code agent.
@@ -58,7 +61,6 @@ class ProtocolCommunicationBridge(ABC):
             CommunicationError: If command sending fails
             InvalidCommandError: If command is not recognized
         """
-        pass
 
     @abstractmethod
     async def receive_progress_update(self, update: ModelProgressUpdate) -> None:
@@ -71,7 +73,6 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             ProcessingError: If update processing fails
         """
-        pass
 
     @abstractmethod
     async def receive_work_completion(self, result: ModelWorkResult) -> None:
@@ -84,7 +85,6 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             ProcessingError: If result processing fails
         """
-        pass
 
     @abstractmethod
     async def receive_agent_event(self, event: ModelAgentEvent) -> None:
@@ -97,11 +97,11 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             ProcessingError: If event processing fails
         """
-        pass
 
     @abstractmethod
     async def subscribe_to_agent_events(
-        self, agent_id: str
+        self,
+        agent_id: str,
     ) -> AsyncIterator[ModelAgentEvent]:
         """
         Subscribe to event stream from specific Claude Code agent.
@@ -115,7 +115,6 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             SubscriptionError: If subscription fails
         """
-        pass
 
     @abstractmethod
     async def publish_to_event_bus(self, event: ModelOnexEvent) -> bool:
@@ -131,11 +130,11 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             PublishError: If publishing fails
         """
-        pass
 
     @abstractmethod
     async def subscribe_to_onex_events(
-        self, event_types: List[str]
+        self,
+        event_types: list[str],
     ) -> AsyncIterator[ModelOnexEvent]:
         """
         Subscribe to ONEX Event Bus for specific event types.
@@ -149,7 +148,6 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             SubscriptionError: If subscription fails
         """
-        pass
 
     @abstractmethod
     async def register_agent(self, agent_id: str, endpoint_url: str) -> bool:
@@ -166,7 +164,6 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             RegistrationError: If registration fails
         """
-        pass
 
     @abstractmethod
     async def unregister_agent(self, agent_id: str) -> bool:
@@ -182,17 +179,15 @@ class ProtocolCommunicationBridge(ABC):
         Raises:
             UnregistrationError: If unregistration fails
         """
-        pass
 
     @abstractmethod
-    async def get_registered_agents(self) -> List[str]:
+    async def get_registered_agents(self) -> list[str]:
         """
         Get list of currently registered agents.
 
         Returns:
             List of registered agent IDs
         """
-        pass
 
     @abstractmethod
     async def check_agent_connectivity(self, agent_id: str) -> bool:
@@ -205,22 +200,21 @@ class ProtocolCommunicationBridge(ABC):
         Returns:
             True if agent is reachable
         """
-        pass
 
     @abstractmethod
-    async def get_message_statistics(self) -> Dict[str, int]:
+    async def get_message_statistics(self) -> dict[str, int]:
         """
         Get communication statistics.
 
         Returns:
             Dictionary of message counts and statistics
         """
-        pass
 
     @abstractmethod
     async def transform_onex_to_agent_message(
-        self, onex_event: ModelOnexEvent
-    ) -> Optional[Dict[str, str]]:
+        self,
+        onex_event: ModelOnexEvent,
+    ) -> dict[str, str] | None:
         """
         Transform ONEX event to Claude Code agent message format.
 
@@ -230,12 +224,12 @@ class ProtocolCommunicationBridge(ABC):
         Returns:
             Transformed message or None if not applicable
         """
-        pass
 
     @abstractmethod
     async def transform_agent_to_onex_event(
-        self, agent_event: ModelAgentEvent
-    ) -> Optional[ModelOnexEvent]:
+        self,
+        agent_event: ModelAgentEvent,
+    ) -> ModelOnexEvent | None:
         """
         Transform Claude Code agent event to ONEX event format.
 
@@ -245,4 +239,3 @@ class ProtocolCommunicationBridge(ABC):
         Returns:
             Transformed ONEX event or None if not applicable
         """
-        pass

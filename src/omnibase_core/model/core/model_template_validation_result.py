@@ -1,7 +1,5 @@
 """Result of template validation with comprehensive metrics"""
 
-from typing import List
-
 from pydantic import BaseModel
 
 from .model_validation_issue import ModelValidationIssue
@@ -10,7 +8,7 @@ from .model_validation_issue import ModelValidationIssue
 class ModelTemplateValidationResult(BaseModel):
     """Result of template validation with comprehensive metrics"""
 
-    issues: List[ModelValidationIssue]
+    issues: list[ModelValidationIssue]
     error_count: int
     warning_count: int
     info_count: int

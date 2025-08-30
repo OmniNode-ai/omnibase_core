@@ -5,7 +5,7 @@ and ensures systematic incident investigation and documentation.
 """
 
 from datetime import datetime
-from typing import Dict, List, Literal, Optional
+from typing import Literal
 
 import semver
 from pydantic import BaseModel, Field, validator
@@ -26,93 +26,93 @@ class ModelLogStructure(BaseModel):
     """Model for debug log structure requirements."""
 
     title_format: str
-    required_sections: List[str]
-    optional_sections: List[str]
+    required_sections: list[str]
+    optional_sections: list[str]
 
 
 class ModelIssueClassification(BaseModel):
     """Model for issue classification system."""
 
-    severity_levels: Dict[str, str]
-    issue_types: Dict[str, str]
+    severity_levels: dict[str, str]
+    issue_types: dict[str, str]
 
 
 class ModelInvestigationProcess(BaseModel):
     """Model for systematic investigation methodology."""
 
-    phase_1_detection: List[str]
-    phase_2_context_gathering: List[str]
-    phase_3_historical_analysis: List[str]
-    phase_4_root_cause_analysis: List[str]
-    phase_5_solution_development: List[str]
-    phase_6_implementation: List[str]
-    phase_7_learning_extraction: List[str]
+    phase_1_detection: list[str]
+    phase_2_context_gathering: list[str]
+    phase_3_historical_analysis: list[str]
+    phase_4_root_cause_analysis: list[str]
+    phase_5_solution_development: list[str]
+    phase_6_implementation: list[str]
+    phase_7_learning_extraction: list[str]
 
 
 class ModelRootCauseFramework(BaseModel):
     """Model for root cause analysis framework."""
 
-    analysis_dimensions: Dict[str, str]
-    questioning_techniques: Dict[str, str]
-    evidence_collection: Dict[str, str]
+    analysis_dimensions: dict[str, str]
+    questioning_techniques: dict[str, str]
+    evidence_collection: dict[str, str]
 
 
 class ModelSolutionStandards(BaseModel):
     """Model for solution documentation standards."""
 
-    fix_categories: Dict[str, str]
-    implementation_phases: Dict[str, str]
-    validation_requirements: Dict[str, str]
+    fix_categories: dict[str, str]
+    implementation_phases: dict[str, str]
+    validation_requirements: dict[str, str]
 
 
 class ModelRagIntegration(BaseModel):
     """Model for RAG service integration configuration."""
 
-    query_patterns: Dict[str, str]
-    context_enrichment: Dict[str, str]
-    learning_extraction: Dict[str, str]
+    query_patterns: dict[str, str]
+    context_enrichment: dict[str, str]
+    learning_extraction: dict[str, str]
 
 
 class ModelQualityRequirements(BaseModel):
     """Model for debug log quality standards."""
 
-    completeness: Dict[str, bool]
-    accuracy: Dict[str, bool]
-    clarity: Dict[str, bool]
-    actionability: Dict[str, bool]
+    completeness: dict[str, bool]
+    accuracy: dict[str, bool]
+    clarity: dict[str, bool]
+    actionability: dict[str, bool]
 
 
 class ModelIntegrations(BaseModel):
     """Model for external system integrations."""
 
-    monitoring_systems: List[str]
-    development_tools: List[str]
-    communication_channels: List[str]
-    knowledge_systems: List[str]
+    monitoring_systems: list[str]
+    development_tools: list[str]
+    communication_channels: list[str]
+    knowledge_systems: list[str]
 
 
 class ModelAutomation(BaseModel):
     """Model for automation triggers and processes."""
 
-    auto_creation_triggers: List[str]
-    context_auto_collection: List[str]
-    rag_auto_queries: List[str]
+    auto_creation_triggers: list[str]
+    context_auto_collection: list[str]
+    rag_auto_queries: list[str]
 
 
 class ModelTemplates(BaseModel):
     """Model for debug log templates."""
 
-    issue_summary: Dict[str, str]
-    root_cause_analysis: Dict[str, str]
-    lessons_learned: Dict[str, str]
+    issue_summary: dict[str, str]
+    root_cause_analysis: dict[str, str]
+    lessons_learned: dict[str, str]
 
 
 class ModelMetrics(BaseModel):
     """Model for debug logging performance metrics."""
 
-    investigation_efficiency: Dict[str, str]
-    quality_indicators: Dict[str, str]
-    learning_metrics: Dict[str, str]
+    investigation_efficiency: dict[str, str]
+    quality_indicators: dict[str, str]
+    learning_metrics: dict[str, str]
 
 
 class ModelMaintenance(BaseModel):
@@ -122,26 +122,29 @@ class ModelMaintenance(BaseModel):
     update_process: str
     version_control: bool
     backward_compatibility: str
-    stakeholders: List[str]
+    stakeholders: list[str]
 
     @validator("backward_compatibility")
-    def validate_semver(cls, v):
+    def validate_semver(self, v):
         """Validate that backward_compatibility follows semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"backward_compatibility must be valid semver: {v}")
+            msg = f"backward_compatibility must be valid semver: {v}"
+            raise ValueError(msg)
 
 
 class ModelDebugLoggingPolicy(BaseModel):
     """Complete model for ONEX Debug Logging Policy."""
 
     version: str = Field(
-        ..., description="Policy version following semantic versioning"
+        ...,
+        description="Policy version following semantic versioning",
     )
     schema_version: str = Field(
-        ..., description="Schema version following semantic versioning"
+        ...,
+        description="Schema version following semantic versioning",
     )
 
     philosophy: ModelDebugPhilosophy
@@ -159,16 +162,17 @@ class ModelDebugLoggingPolicy(BaseModel):
     maintenance: ModelMaintenance
 
     @validator("version", "schema_version")
-    def validate_semver_versions(cls, v):
+    def validate_semver_versions(self, v):
         """Validate that versions follow semantic versioning."""
         try:
             semver.VersionInfo.parse(v)
             return v
         except ValueError:
-            raise ValueError(f"Version must be valid semver: {v}")
+            msg = f"Version must be valid semver: {v}"
+            raise ValueError(msg)
 
     @validator("log_structure")
-    def validate_required_sections(cls, v):
+    def validate_required_sections(self, v):
         """Ensure all critical sections are included."""
         critical_sections = [
             "issue_summary",
@@ -184,19 +188,20 @@ class ModelDebugLoggingPolicy(BaseModel):
             if section not in v.required_sections
         ]
         if missing_sections:
-            raise ValueError(f"Missing critical sections: {missing_sections}")
+            msg = f"Missing critical sections: {missing_sections}"
+            raise ValueError(msg)
 
         return v
 
-    def get_severity_level(self, severity: str) -> Optional[str]:
+    def get_severity_level(self, severity: str) -> str | None:
         """Get description for a severity level."""
         return self.issue_classification.severity_levels.get(severity)
 
-    def get_issue_type(self, issue_type: str) -> Optional[str]:
+    def get_issue_type(self, issue_type: str) -> str | None:
         """Get description for an issue type."""
         return self.issue_classification.issue_types.get(issue_type)
 
-    def get_template(self, template_name: str) -> Optional[str]:
+    def get_template(self, template_name: str) -> str | None:
         """Get a template format string."""
         template_dict = getattr(self.templates, template_name, None)
         if template_dict and isinstance(template_dict, dict):
@@ -204,7 +209,9 @@ class ModelDebugLoggingPolicy(BaseModel):
         return None
 
     def format_debug_title(
-        self, issue_description: str, date: Optional[datetime] = None
+        self,
+        issue_description: str,
+        date: datetime | None = None,
     ) -> str:
         """Format a debug log title according to policy."""
         if date is None:
@@ -212,10 +219,11 @@ class ModelDebugLoggingPolicy(BaseModel):
 
         date_str = date.strftime("%Y_%m_%d")
         return self.log_structure.title_format.format(
-            issue_description=issue_description, date_yyyy_mm_dd=date_str
+            issue_description=issue_description,
+            date_yyyy_mm_dd=date_str,
         )
 
-    def validate_log_completeness(self, sections: List[str]) -> Dict[str, bool]:
+    def validate_log_completeness(self, sections: list[str]) -> dict[str, bool]:
         """Validate that a debug log has all required sections."""
         validation_result = {
             "has_all_required": True,
@@ -251,7 +259,7 @@ class ModelDebugLoggingPolicy(BaseModel):
 
         return validation_result
 
-    def get_investigation_phases(self) -> List[str]:
+    def get_investigation_phases(self) -> list[str]:
         """Get ordered list of investigation phase names."""
         return [
             "phase_1_detection",
@@ -263,7 +271,7 @@ class ModelDebugLoggingPolicy(BaseModel):
             "phase_7_learning_extraction",
         ]
 
-    def get_phase_activities(self, phase_name: str) -> List[str]:
+    def get_phase_activities(self, phase_name: str) -> list[str]:
         """Get activities for a specific investigation phase."""
         phase_data = getattr(self.investigation_process, phase_name, None)
         return phase_data if phase_data else []
@@ -272,7 +280,7 @@ class ModelDebugLoggingPolicy(BaseModel):
         """Check if a trigger should auto-create a debug log."""
         return trigger in self.automation.auto_creation_triggers
 
-    def get_rag_query_pattern(self, query_type: str) -> Optional[str]:
+    def get_rag_query_pattern(self, query_type: str) -> str | None:
         """Get RAG query pattern for a specific type."""
         return self.rag_integration.query_patterns.get(query_type)
 
@@ -282,7 +290,7 @@ class ModelDebugLoggingPolicy(BaseModel):
             current = semver.VersionInfo.parse(self.version)
             other = semver.VersionInfo.parse(other_version)
             backward_compat = semver.VersionInfo.parse(
-                self.maintenance.backward_compatibility
+                self.maintenance.backward_compatibility,
             )
 
             # Compatible if other version is within backward compatibility range
@@ -302,26 +310,26 @@ class ModelDebugEntry(BaseModel):
 
     # Core sections
     issue_summary: str
-    root_cause_analysis: Optional[str] = None
-    impact_assessment: Optional[str] = None
-    fix_implementation: Optional[str] = None
-    recommended_solutions: Optional[str] = None
-    lessons_learned: Optional[str] = None
-    action_items: Optional[List[str]] = None
-    test_cases: Optional[str] = None
+    root_cause_analysis: str | None = None
+    impact_assessment: str | None = None
+    fix_implementation: str | None = None
+    recommended_solutions: str | None = None
+    lessons_learned: str | None = None
+    action_items: list[str] | None = None
+    test_cases: str | None = None
 
     # Optional sections
-    timeline: Optional[str] = None
-    stakeholder_communication: Optional[str] = None
-    rollback_procedures: Optional[str] = None
-    monitoring_setup: Optional[str] = None
+    timeline: str | None = None
+    stakeholder_communication: str | None = None
+    rollback_procedures: str | None = None
+    monitoring_setup: str | None = None
 
     # Metadata
-    created_by: Optional[str] = None
-    assigned_to: Optional[str] = None
-    related_issues: Optional[List[str]] = None
-    related_prs: Optional[List[str]] = None
-    tags: Optional[List[str]] = None
+    created_by: str | None = None
+    assigned_to: str | None = None
+    related_issues: list[str] | None = None
+    related_prs: list[str] | None = None
+    tags: list[str] | None = None
 
     def get_filename(self) -> str:
         """Generate filename for this debug log entry."""
@@ -334,7 +342,7 @@ class ModelDebugEntry(BaseModel):
         date_str = self.date.strftime("%Y_%m_%d")
         return f"debug_log_{date_str}_{safe_title}.md"
 
-    def validate_completeness(self, policy: ModelDebugLoggingPolicy) -> Dict[str, bool]:
+    def validate_completeness(self, policy: ModelDebugLoggingPolicy) -> dict[str, bool]:
         """Validate this debug entry against policy requirements."""
         sections = []
 

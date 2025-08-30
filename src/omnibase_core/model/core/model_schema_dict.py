@@ -5,7 +5,7 @@ This model replaces dictionary usage in schema definitions by providing
 a structured representation of schema dictionaries.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -21,88 +21,118 @@ class ModelSchemaDict(BaseModel):
     """
 
     # Core schema fields
-    type: Optional[str] = Field(None, description="JSON Schema type")
-    schema_uri: Optional[str] = Field(
-        None, alias="$schema", description="Schema version URI"
+    type: str | None = Field(None, description="JSON Schema type")
+    schema_uri: str | None = Field(
+        None,
+        alias="$schema",
+        description="Schema version URI",
     )
-    title: Optional[str] = Field(None, description="Schema title")
-    description: Optional[str] = Field(None, description="Schema description")
-    ref: Optional[str] = Field(
-        None, alias="$ref", description="Reference to another schema"
+    title: str | None = Field(None, description="Schema title")
+    description: str | None = Field(None, description="Schema description")
+    ref: str | None = Field(
+        None,
+        alias="$ref",
+        description="Reference to another schema",
     )
 
     # String constraints
-    enum: Optional[List[str]] = Field(None, description="Enumeration values")
-    pattern: Optional[str] = Field(None, description="String pattern")
-    min_length: Optional[int] = Field(
-        None, alias="minLength", description="Minimum string length"
+    enum: list[str] | None = Field(None, description="Enumeration values")
+    pattern: str | None = Field(None, description="String pattern")
+    min_length: int | None = Field(
+        None,
+        alias="minLength",
+        description="Minimum string length",
     )
-    max_length: Optional[int] = Field(
-        None, alias="maxLength", description="Maximum string length"
+    max_length: int | None = Field(
+        None,
+        alias="maxLength",
+        description="Maximum string length",
     )
 
     # Numeric constraints
-    minimum: Optional[Union[int, float]] = Field(None, description="Minimum value")
-    maximum: Optional[Union[int, float]] = Field(None, description="Maximum value")
-    multiple_of: Optional[Union[int, float]] = Field(
-        None, alias="multipleOf", description="Multiple of constraint"
+    minimum: int | float | None = Field(None, description="Minimum value")
+    maximum: int | float | None = Field(None, description="Maximum value")
+    multiple_of: int | float | None = Field(
+        None,
+        alias="multipleOf",
+        description="Multiple of constraint",
     )
 
     # Array constraints
     items: Optional["ModelSchemaDict"] = Field(None, description="Array items schema")
-    min_items: Optional[int] = Field(
-        None, alias="minItems", description="Minimum array items"
+    min_items: int | None = Field(
+        None,
+        alias="minItems",
+        description="Minimum array items",
     )
-    max_items: Optional[int] = Field(
-        None, alias="maxItems", description="Maximum array items"
+    max_items: int | None = Field(
+        None,
+        alias="maxItems",
+        description="Maximum array items",
     )
-    unique_items: Optional[bool] = Field(
-        None, alias="uniqueItems", description="Unique items constraint"
+    unique_items: bool | None = Field(
+        None,
+        alias="uniqueItems",
+        description="Unique items constraint",
     )
 
     # Object constraints
-    properties: Optional[Dict[str, "ModelSchemaDict"]] = Field(
-        None, description="Object properties"
+    properties: dict[str, "ModelSchemaDict"] | None = Field(
+        None,
+        description="Object properties",
     )
-    required: Optional[List[str]] = Field(None, description="Required properties")
-    additional_properties: Optional[Union[bool, "ModelSchemaDict"]] = Field(
+    required: list[str] | None = Field(None, description="Required properties")
+    additional_properties: Union[bool, "ModelSchemaDict"] | None = Field(
         None,
         alias="additionalProperties",
         description="Additional properties constraint",
     )
-    min_properties: Optional[int] = Field(
-        None, alias="minProperties", description="Minimum properties"
+    min_properties: int | None = Field(
+        None,
+        alias="minProperties",
+        description="Minimum properties",
     )
-    max_properties: Optional[int] = Field(
-        None, alias="maxProperties", description="Maximum properties"
+    max_properties: int | None = Field(
+        None,
+        alias="maxProperties",
+        description="Maximum properties",
     )
 
     # General constraints
-    nullable: Optional[bool] = Field(None, description="Nullable constraint")
-    default: Optional[ModelSchemaValue] = Field(None, description="Default value")
+    nullable: bool | None = Field(None, description="Nullable constraint")
+    default: ModelSchemaValue | None = Field(None, description="Default value")
 
     # Schema composition
-    definitions: Optional[Dict[str, "ModelSchemaDict"]] = Field(
-        None, description="Schema definitions"
+    definitions: dict[str, "ModelSchemaDict"] | None = Field(
+        None,
+        description="Schema definitions",
     )
-    all_of: Optional[List["ModelSchemaDict"]] = Field(
-        None, alias="allOf", description="All of composition"
+    all_of: list["ModelSchemaDict"] | None = Field(
+        None,
+        alias="allOf",
+        description="All of composition",
     )
-    any_of: Optional[List["ModelSchemaDict"]] = Field(
-        None, alias="anyOf", description="Any of composition"
+    any_of: list["ModelSchemaDict"] | None = Field(
+        None,
+        alias="anyOf",
+        description="Any of composition",
     )
-    one_of: Optional[List["ModelSchemaDict"]] = Field(
-        None, alias="oneOf", description="One of composition"
+    one_of: list["ModelSchemaDict"] | None = Field(
+        None,
+        alias="oneOf",
+        description="One of composition",
     )
 
     # Examples
-    examples: Optional[List[ModelSchemaValue]] = Field(
-        None, description="Example values"
+    examples: list[ModelSchemaValue] | None = Field(
+        None,
+        description="Example values",
     )
 
     # Additional properties for completeness
-    additional_fields: Dict[str, ModelSchemaValue] = Field(
-        default_factory=dict, description="Additional schema fields"
+    additional_fields: dict[str, ModelSchemaValue] = Field(
+        default_factory=dict,
+        description="Additional schema fields",
     )
 
     def to_dict(self) -> dict:

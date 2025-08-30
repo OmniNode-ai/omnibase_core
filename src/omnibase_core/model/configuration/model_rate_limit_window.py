@@ -5,8 +5,6 @@ Rate limit window model for defining time-based rate limiting windows
 with sliding window, fixed window, and token bucket implementations.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -32,10 +30,13 @@ class ModelRateLimitWindow(BaseModel):
     )
 
     window_size: int = Field(
-        default=100, description="Maximum requests allowed in window", ge=1, le=1000000
+        default=100,
+        description="Maximum requests allowed in window",
+        ge=1,
+        le=1000000,
     )
 
-    sub_window_count: Optional[int] = Field(
+    sub_window_count: int | None = Field(
         None,
         description="Number of sub-windows for sliding window (granularity)",
         ge=1,
@@ -43,11 +44,13 @@ class ModelRateLimitWindow(BaseModel):
     )
 
     reset_on_window_boundary: bool = Field(
-        default=True, description="Whether to reset counters on window boundaries"
+        default=True,
+        description="Whether to reset counters on window boundaries",
     )
 
     allow_burst_above_limit: bool = Field(
-        default=False, description="Whether to allow bursts above the limit"
+        default=False,
+        description="Whether to allow bursts above the limit",
     )
 
     burst_multiplier: float = Field(
@@ -57,19 +60,25 @@ class ModelRateLimitWindow(BaseModel):
         le=10.0,
     )
 
-    token_refill_rate: Optional[float] = Field(
+    token_refill_rate: float | None = Field(
         None,
         description="Token refill rate per second (for token bucket)",
         ge=0.1,
         le=10000.0,
     )
 
-    bucket_capacity: Optional[int] = Field(
-        None, description="Bucket capacity (for token/leaky bucket)", ge=1, le=1000000
+    bucket_capacity: int | None = Field(
+        None,
+        description="Bucket capacity (for token/leaky bucket)",
+        ge=1,
+        le=1000000,
     )
 
-    leak_rate: Optional[float] = Field(
-        None, description="Leak rate per second (for leaky bucket)", ge=0.1, le=10000.0
+    leak_rate: float | None = Field(
+        None,
+        description="Leak rate per second (for leaky bucket)",
+        ge=0.1,
+        le=10000.0,
     )
 
     precision_seconds: int = Field(
@@ -141,7 +150,9 @@ class ModelRateLimitWindow(BaseModel):
 
     @classmethod
     def create_fixed_window(
-        cls, duration_seconds: int = 60, window_size: int = 100
+        cls,
+        duration_seconds: int = 60,
+        window_size: int = 100,
     ) -> "ModelRateLimitWindow":
         """Create fixed window rate limiting configuration"""
         return cls(
@@ -153,7 +164,10 @@ class ModelRateLimitWindow(BaseModel):
 
     @classmethod
     def create_sliding_window(
-        cls, duration_seconds: int = 60, window_size: int = 100, sub_windows: int = 12
+        cls,
+        duration_seconds: int = 60,
+        window_size: int = 100,
+        sub_windows: int = 12,
     ) -> "ModelRateLimitWindow":
         """Create sliding window rate limiting configuration"""
         return cls(
@@ -166,7 +180,9 @@ class ModelRateLimitWindow(BaseModel):
 
     @classmethod
     def create_token_bucket(
-        cls, bucket_capacity: int = 100, refill_rate: float = 10.0
+        cls,
+        bucket_capacity: int = 100,
+        refill_rate: float = 10.0,
     ) -> "ModelRateLimitWindow":
         """Create token bucket rate limiting configuration"""
         return cls(
@@ -180,7 +196,9 @@ class ModelRateLimitWindow(BaseModel):
 
     @classmethod
     def create_leaky_bucket(
-        cls, bucket_capacity: int = 100, leak_rate: float = 5.0
+        cls,
+        bucket_capacity: int = 100,
+        leak_rate: float = 5.0,
     ) -> "ModelRateLimitWindow":
         """Create leaky bucket rate limiting configuration"""
         return cls(
@@ -193,7 +211,9 @@ class ModelRateLimitWindow(BaseModel):
 
     @classmethod
     def create_burst_friendly(
-        cls, base_limit: int = 100, burst_multiplier: float = 2.0
+        cls,
+        base_limit: int = 100,
+        burst_multiplier: float = 2.0,
     ) -> "ModelRateLimitWindow":
         """Create burst-friendly rate limiting configuration"""
         return cls(

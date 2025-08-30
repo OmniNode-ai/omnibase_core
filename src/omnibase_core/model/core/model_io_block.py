@@ -2,7 +2,7 @@
 IO block model for ONEX node metadata.
 """
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, StringConstraints
 
@@ -12,6 +12,6 @@ class ModelIOBlock(BaseModel):
 
     name: Annotated[str, StringConstraints(min_length=1)]
     schema_ref: Annotated[str, StringConstraints(min_length=1)]
-    required: Optional[bool] = True
-    format_hint: Optional[str] = None
-    description: Optional[Annotated[str, StringConstraints(min_length=1)]] = None
+    required: bool | None = True
+    format_hint: str | None = None
+    description: Annotated[str, StringConstraints(min_length=1)] | None = None

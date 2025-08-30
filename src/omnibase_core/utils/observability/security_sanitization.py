@@ -14,7 +14,6 @@ import logging
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set, Union
 
 from opentelemetry import metrics, trace
 from opentelemetry.sdk.trace import ReadableSpan
@@ -27,18 +26,18 @@ logger = logging.getLogger(__name__)
 class ModelSpanAttributes(BaseModel):
     """Type-safe span attributes for OpenTelemetry."""
 
-    service_name: Optional[str] = Field(None, description="Name of the service")
-    operation_name: Optional[str] = Field(None, description="Name of the operation")
-    user_id: Optional[str] = Field(None, description="User identifier")
-    correlation_id: Optional[str] = Field(None, description="Correlation identifier")
-    request_id: Optional[str] = Field(None, description="Request identifier")
-    http_method: Optional[str] = Field(None, description="HTTP method")
-    http_url: Optional[str] = Field(None, description="HTTP URL")
-    http_status_code: Optional[int] = Field(None, description="HTTP status code")
-    database_name: Optional[str] = Field(None, description="Database name")
-    table_name: Optional[str] = Field(None, description="Table name")
+    service_name: str | None = Field(None, description="Name of the service")
+    operation_name: str | None = Field(None, description="Name of the operation")
+    user_id: str | None = Field(None, description="User identifier")
+    correlation_id: str | None = Field(None, description="Correlation identifier")
+    request_id: str | None = Field(None, description="Request identifier")
+    http_method: str | None = Field(None, description="HTTP method")
+    http_url: str | None = Field(None, description="HTTP URL")
+    http_status_code: int | None = Field(None, description="HTTP status code")
+    database_name: str | None = Field(None, description="Database name")
+    table_name: str | None = Field(None, description="Table name")
 
-    def to_dict(self) -> Dict[str, Union[str, int, float, bool]]:
+    def to_dict(self) -> dict[str, str | int | float | bool]:
         """Convert to dictionary with proper OpenTelemetry types."""
         result = {}
         for key, value in self.dict(exclude_unset=True).items():
@@ -50,12 +49,12 @@ class ModelSpanAttributes(BaseModel):
 class ModelMetricAttributes(BaseModel):
     """Type-safe metric attributes for OpenTelemetry."""
 
-    service_name: Optional[str] = Field(None, description="Name of the service")
-    operation_type: Optional[str] = Field(None, description="Type of operation")
-    status: Optional[str] = Field(None, description="Operation status")
-    error_type: Optional[str] = Field(None, description="Type of error if applicable")
+    service_name: str | None = Field(None, description="Name of the service")
+    operation_type: str | None = Field(None, description="Type of operation")
+    status: str | None = Field(None, description="Operation status")
+    error_type: str | None = Field(None, description="Type of error if applicable")
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Convert to dictionary with string values for metrics."""
         result = {}
         for key, value in self.dict(exclude_unset=True).items():
@@ -68,10 +67,12 @@ class ModelSanitizationStats(BaseModel):
     """Statistics about sanitization operations."""
 
     rules_configured: int = Field(
-        ..., description="Number of sanitization rules configured"
+        ...,
+        description="Number of sanitization rules configured",
     )
     audit_logging_enabled: bool = Field(
-        ..., description="Whether audit logging is enabled"
+        ...,
+        description="Whether audit logging is enabled",
     )
     total_detections: int = Field(0, description="Total PII detections")
     total_sanitizations: int = Field(0, description="Total sanitization operations")
@@ -81,10 +82,11 @@ class ModelSanitizationStats(BaseModel):
 
         name: str = Field(..., description="Rule name")
         sensitivity_level: str = Field(..., description="Sensitivity level")
-        applies_to: List[str] = Field(..., description="Contexts this rule applies to")
+        applies_to: list[str] = Field(..., description="Contexts this rule applies to")
 
-    sanitization_rules: List[ModelSanitizationRuleInfo] = Field(
-        default_factory=list, description="Configured sanitization rules"
+    sanitization_rules: list[ModelSanitizationRuleInfo] = Field(
+        default_factory=list,
+        description="Configured sanitization rules",
     )
 
 
@@ -105,7 +107,7 @@ class SanitizationRule:
     pattern: re.Pattern
     replacement: str
     sensitivity_level: SensitivityLevel
-    applies_to: Set[str]  # "spans", "metrics", "logs"
+    applies_to: set[str]  # "spans", "metrics", "logs"
 
 
 class ONEXObservabilitySanitizer:
@@ -129,14 +131,14 @@ class ONEXObservabilitySanitizer:
             unit="1",
         )
 
-    def _initialize_sanitization_rules(self) -> List[SanitizationRule]:
+    def _initialize_sanitization_rules(self) -> list[SanitizationRule]:
         """Initialize comprehensive sanitization rules for ONEX."""
         return [
             # Email addresses
             SanitizationRule(
                 name="email_addresses",
                 pattern=re.compile(
-                    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+                    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
                 ),
                 replacement="[EMAIL_REDACTED]",
                 sensitivity_level=SensitivityLevel.CONFIDENTIAL,
@@ -181,7 +183,8 @@ class ONEXObservabilitySanitizer:
             SanitizationRule(
                 name="db_connection_strings",
                 pattern=re.compile(
-                    r"(postgresql|mysql|mongodb)://[^:]+:[^@]+@[^/]+/", re.IGNORECASE
+                    r"(postgresql|mysql|mongodb)://[^:]+:[^@]+@[^/]+/",
+                    re.IGNORECASE,
                 ),
                 replacement=r"\1://[USER]:[PASSWORD_REDACTED]@[HOST]/",
                 sensitivity_level=SensitivityLevel.CONFIDENTIAL,
@@ -194,14 +197,15 @@ class ONEXObservabilitySanitizer:
                 replacement="[IP_REDACTED]",
                 sensitivity_level=SensitivityLevel.INTERNAL,
                 applies_to={
-                    "logs"
+                    "logs",
                 },  # Only sanitize in logs, allow in spans for debugging
             ),
             # ONEX-specific sensitive patterns
             SanitizationRule(
                 name="onex_correlation_ids",
                 pattern=re.compile(
-                    r'correlation_id["\s]*[:=]["\s]*([a-f0-9-]{32,})', re.IGNORECASE
+                    r'correlation_id["\s]*[:=]["\s]*([a-f0-9-]{32,})',
+                    re.IGNORECASE,
                 ),
                 replacement="correlation_id=[CORRELATION_ID_HASHED]",
                 sensitivity_level=SensitivityLevel.INTERNAL,
@@ -211,7 +215,8 @@ class ONEXObservabilitySanitizer:
             SanitizationRule(
                 name="user_agents",
                 pattern=re.compile(
-                    r'User-Agent["\s]*[:=]["\s]*([^"\n\r]+)', re.IGNORECASE
+                    r'User-Agent["\s]*[:=]["\s]*([^"\n\r]+)',
+                    re.IGNORECASE,
                 ),
                 replacement="User-Agent=[USER_AGENT_SANITIZED]",
                 sensitivity_level=SensitivityLevel.INTERNAL,
@@ -226,7 +231,7 @@ class ONEXObservabilitySanitizer:
         if not audit_logger.handlers and self.enable_audit_logging:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                "%(asctime)s - SECURITY_AUDIT - %(levelname)s - %(message)s"
+                "%(asctime)s - SECURITY_AUDIT - %(levelname)s - %(message)s",
             )
             handler.setFormatter(formatter)
             audit_logger.addHandler(handler)
@@ -235,8 +240,10 @@ class ONEXObservabilitySanitizer:
         return audit_logger
 
     def sanitize_span_attributes(
-        self, span: Span, attributes: Dict[str, Union[str, int, float, bool]]
-    ) -> Dict[str, Union[str, int, float, bool]]:
+        self,
+        span: Span,
+        attributes: dict[str, str | int | float | bool],
+    ) -> dict[str, str | int | float | bool]:
         """Sanitize span attributes for security compliance."""
         sanitized_attributes = {}
         sanitization_occurred = False
@@ -244,7 +251,9 @@ class ONEXObservabilitySanitizer:
         for key, value in attributes.items():
             original_value = str(value) if value is not None else ""
             sanitized_value = self._apply_sanitization_rules(
-                original_value, context_type="spans", attribute_name=key
+                original_value,
+                context_type="spans",
+                attribute_name=key,
             )
 
             if sanitized_value != original_value:
@@ -254,7 +263,7 @@ class ONEXObservabilitySanitizer:
                 if self.enable_audit_logging:
                     self.audit_logger.warning(
                         f"Sanitized span attribute - Span: {span.name}, "
-                        f"Attribute: {key}, Rule applied: {self._get_applied_rule_name(original_value, 'spans')}"
+                        f"Attribute: {key}, Rule applied: {self._get_applied_rule_name(original_value, 'spans')}",
                     )
 
             sanitized_attributes[key] = sanitized_value
@@ -271,8 +280,10 @@ class ONEXObservabilitySanitizer:
         return sanitized_attributes
 
     def sanitize_metric_attributes(
-        self, metric_name: str, attributes: Dict[str, str]
-    ) -> Dict[str, str]:
+        self,
+        metric_name: str,
+        attributes: dict[str, str],
+    ) -> dict[str, str]:
         """Sanitize metric attributes for security compliance."""
         sanitized_attributes = {}
         sanitization_occurred = False
@@ -280,7 +291,9 @@ class ONEXObservabilitySanitizer:
         for key, value in attributes.items():
             original_value = str(value) if value is not None else ""
             sanitized_value = self._apply_sanitization_rules(
-                original_value, context_type="metrics", attribute_name=key
+                original_value,
+                context_type="metrics",
+                attribute_name=key,
             )
 
             if sanitized_value != original_value:
@@ -293,7 +306,7 @@ class ONEXObservabilitySanitizer:
                 if self.enable_audit_logging:
                     self.audit_logger.info(
                         f"Sanitized metric attribute - Metric: {metric_name}, "
-                        f"Attribute: {key}, Rule applied: {self._get_applied_rule_name(original_value, 'metrics')}"
+                        f"Attribute: {key}, Rule applied: {self._get_applied_rule_name(original_value, 'metrics')}",
                     )
 
             sanitized_attributes[key] = sanitized_value
@@ -310,12 +323,15 @@ class ONEXObservabilitySanitizer:
         return sanitized_attributes
 
     def sanitize_log_record(
-        self, log_record: str, context: Optional[Dict[str, str]] = None
+        self,
+        log_record: str,
+        context: dict[str, str] | None = None,
     ) -> str:
         """Sanitize log record for security compliance."""
         original_record = log_record
         sanitized_record = self._apply_sanitization_rules(
-            log_record, context_type="logs"
+            log_record,
+            context_type="logs",
         )
 
         if sanitized_record != original_record:
@@ -330,13 +346,16 @@ class ONEXObservabilitySanitizer:
             if self.enable_audit_logging:
                 self.audit_logger.info(
                     f"Sanitized log record - Context: {context}, "
-                    f"Rule applied: {self._get_applied_rule_name(original_record, 'logs')}"
+                    f"Rule applied: {self._get_applied_rule_name(original_record, 'logs')}",
                 )
 
         return sanitized_record
 
     def _apply_sanitization_rules(
-        self, text: str, context_type: str, attribute_name: str = None
+        self,
+        text: str,
+        context_type: str,
+        attribute_name: str | None = None,
     ) -> str:
         """Apply sanitization rules to text based on context."""
         if not text:
@@ -367,7 +386,10 @@ class ONEXObservabilitySanitizer:
         return sanitized_text
 
     def _should_skip_rule(
-        self, rule: SanitizationRule, attribute_name: str, context_type: str
+        self,
+        rule: SanitizationRule,
+        attribute_name: str,
+        context_type: str,
     ) -> bool:
         """Determine if a sanitization rule should be skipped."""
         if not attribute_name:
@@ -384,10 +406,7 @@ class ONEXObservabilitySanitizer:
             return True
 
         # Skip correlation ID hashing in traces (needed for correlation)
-        if rule.name == "onex_correlation_ids" and context_type == "spans":
-            return True
-
-        return False
+        return bool(rule.name == "onex_correlation_ids" and context_type == "spans")
 
     def _get_applied_rule_name(self, text: str, context_type: str) -> str:
         """Get the name of the sanitization rule that was applied."""
@@ -434,7 +453,8 @@ class SecuritySpanProcessor:
         # Sanitize span attributes
         if hasattr(span, "_attributes") and span._attributes:
             sanitized_attributes = self.sanitizer.sanitize_span_attributes(
-                span, dict(span._attributes)
+                span,
+                dict(span._attributes),
             )
 
             # Update span attributes with sanitized versions
@@ -447,7 +467,8 @@ class SecuritySpanProcessor:
         # Additional sanitization of span name if needed
         if span.name:
             sanitized_name = self.sanitizer._apply_sanitization_rules(
-                span.name, context_type="spans"
+                span.name,
+                context_type="spans",
             )
             if sanitized_name != span.name:
                 # Note: Can't modify span name after creation, log the issue
@@ -455,15 +476,13 @@ class SecuritySpanProcessor:
 
     def shutdown(self):
         """Shutdown the processor."""
-        pass
 
-    def force_flush(self, timeout_millis: int = None):
+    def force_flush(self, timeout_millis: int | None = None):
         """Force flush the processor."""
-        pass
 
 
 # Convenience functions for easy integration
-_global_sanitizer: Optional[ONEXObservabilitySanitizer] = None
+_global_sanitizer: ONEXObservabilitySanitizer | None = None
 
 
 def get_sanitizer() -> ONEXObservabilitySanitizer:
@@ -484,7 +503,8 @@ def sanitize_span_attributes_decorator(func):
         current_span = trace.get_current_span()
         if current_span and hasattr(current_span, "_attributes"):
             sanitized_attributes = sanitizer.sanitize_span_attributes(
-                current_span, dict(current_span._attributes)
+                current_span,
+                dict(current_span._attributes),
             )
 
             # Update span with sanitized attributes
@@ -503,7 +523,7 @@ def create_secure_tracer(name: str, version: str = "1.0.0"):
 
     # Add security span processor to the tracer provider
     sanitizer = get_sanitizer()
-    security_processor = sanitizer.create_security_span_processor()
+    sanitizer.create_security_span_processor()
 
     # Note: This requires access to the tracer provider
     # In practice, this would be configured during OpenTelemetry initialization
@@ -523,11 +543,6 @@ if __name__ == "__main__":
         "client.address": "192.168.1.100",
     }
 
-    print("🔒 Testing ONEX Observability Security Sanitization")
-    print("=" * 60)
-
-    print("Original attributes:", test_attributes)
-
     # Mock span for testing
     class MockSpan:
         def __init__(self):
@@ -535,16 +550,11 @@ if __name__ == "__main__":
 
     mock_span = MockSpan()
     sanitized = sanitizer.sanitize_span_attributes(mock_span, test_attributes)
-    print("Sanitized attributes:", sanitized)
 
     # Test log sanitization
     test_log = (
         "User john.doe@company.com failed authentication with API key sk-abcdef123456"
     )
     sanitized_log = sanitizer.sanitize_log_record(test_log)
-    print(f"\nOriginal log: {test_log}")
-    print(f"Sanitized log: {sanitized_log}")
 
     # Print sanitization statistics
-    print(f"\nSanitization stats: {sanitizer.get_sanitization_stats()}")
-    print("✅ Security sanitization test complete")

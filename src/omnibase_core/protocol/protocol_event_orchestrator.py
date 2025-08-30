@@ -6,12 +6,11 @@ Agent Manager, Communication Bridge, and Agent Configuration services.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import AsyncIterator, Dict, List, Optional
 
 from omnibase_core.model.communication.model_agent_event import ModelAgentEvent
-from omnibase_core.model.communication.model_progress_update import \
-    ModelProgressUpdate
+from omnibase_core.model.communication.model_progress_update import ModelProgressUpdate
 from omnibase_core.model.communication.model_work_result import ModelWorkResult
 from omnibase_core.model.core.model_agent_status import ModelAgentStatus
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
@@ -35,11 +34,12 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
     async def assign_work_to_agent(
-        self, ticket: ModelWorkTicket, agent_id: Optional[str] = None
+        self,
+        ticket: ModelWorkTicket,
+        agent_id: str | None = None,
     ) -> str:
         """
         Assign work ticket to an available agent.
@@ -56,7 +56,6 @@ class ProtocolEventOrchestrator(ABC):
             AgentNotFoundError: If specified agent is not found
             AssignmentError: If assignment fails
         """
-        pass
 
     @abstractmethod
     async def handle_agent_progress_update(self, update: ModelProgressUpdate) -> bool:
@@ -72,7 +71,6 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
     async def handle_work_completion(self, result: ModelWorkResult) -> bool:
@@ -88,7 +86,6 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
     async def handle_agent_error(self, error_event: ModelAgentEvent) -> bool:
@@ -104,17 +101,15 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
-    async def monitor_agent_health(self) -> Dict[str, ModelAgentStatus]:
+    async def monitor_agent_health(self) -> dict[str, ModelAgentStatus]:
         """
         Monitor health of all active agents.
 
         Returns:
             Dictionary mapping agent IDs to their status
         """
-        pass
 
     @abstractmethod
     async def rebalance_workload(self) -> bool:
@@ -127,7 +122,6 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If rebalancing fails
         """
-        pass
 
     @abstractmethod
     async def handle_agent_spawn_request(self, agent_config_template: str) -> str:
@@ -144,11 +138,12 @@ class ProtocolEventOrchestrator(ABC):
             SpawnError: If agent spawning fails
             ConfigurationError: If configuration fails
         """
-        pass
 
     @abstractmethod
     async def handle_agent_termination_request(
-        self, agent_id: str, reason: str
+        self,
+        agent_id: str,
+        reason: str,
     ) -> bool:
         """
         Handle request to terminate agent and clean up resources.
@@ -163,17 +158,15 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             TerminationError: If termination fails
         """
-        pass
 
     @abstractmethod
-    async def get_workflow_metrics(self) -> Dict[str, float]:
+    async def get_workflow_metrics(self) -> dict[str, float]:
         """
         Get workflow performance metrics.
 
         Returns:
             Dictionary of workflow metrics
         """
-        pass
 
     @abstractmethod
     async def subscribe_to_orchestration_events(self) -> AsyncIterator[ModelOnexEvent]:
@@ -186,11 +179,12 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             SubscriptionError: If subscription fails
         """
-        pass
 
     @abstractmethod
     async def handle_ticket_priority_change(
-        self, ticket_id: str, new_priority: str
+        self,
+        ticket_id: str,
+        new_priority: str,
     ) -> bool:
         """
         Handle change in work ticket priority and adjust scheduling.
@@ -205,11 +199,12 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
     async def handle_agent_capacity_change(
-        self, agent_id: str, new_capacity: int
+        self,
+        agent_id: str,
+        new_capacity: int,
     ) -> bool:
         """
         Handle change in agent capacity and adjust workload distribution.
@@ -224,7 +219,6 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
     async def pause_agent_operations(self, agent_id: str) -> bool:
@@ -240,7 +234,6 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If pause fails
         """
-        pass
 
     @abstractmethod
     async def resume_agent_operations(self, agent_id: str) -> bool:
@@ -256,32 +249,30 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If resume fails
         """
-        pass
 
     @abstractmethod
-    async def get_pending_work_queue(self) -> List[ModelWorkTicket]:
+    async def get_pending_work_queue(self) -> list[ModelWorkTicket]:
         """
         Get list of pending work tickets in the queue.
 
         Returns:
             List of pending work tickets ordered by priority
         """
-        pass
 
     @abstractmethod
-    async def get_active_work_assignments(self) -> Dict[str, List[str]]:
+    async def get_active_work_assignments(self) -> dict[str, list[str]]:
         """
         Get current work assignments for all agents.
 
         Returns:
             Dictionary mapping agent IDs to lists of assigned ticket IDs
         """
-        pass
 
     @abstractmethod
     async def estimate_completion_time(
-        self, ticket: ModelWorkTicket
-    ) -> Optional[datetime]:
+        self,
+        ticket: ModelWorkTicket,
+    ) -> datetime | None:
         """
         Estimate completion time for a work ticket.
 
@@ -291,11 +282,12 @@ class ProtocolEventOrchestrator(ABC):
         Returns:
             Estimated completion datetime or None if cannot estimate
         """
-        pass
 
     @abstractmethod
     async def handle_dependency_resolution(
-        self, ticket_id: str, dependency_ticket_id: str
+        self,
+        ticket_id: str,
+        dependency_ticket_id: str,
     ) -> bool:
         """
         Handle resolution of work ticket dependencies.
@@ -310,17 +302,15 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             OrchestrationError: If handling fails
         """
-        pass
 
     @abstractmethod
-    async def create_orchestration_report(self) -> Dict[str, str]:
+    async def create_orchestration_report(self) -> dict[str, str]:
         """
         Create comprehensive orchestration status report.
 
         Returns:
             Dictionary containing orchestration status and metrics
         """
-        pass
 
     @abstractmethod
     async def handle_emergency_shutdown(self, reason: str) -> bool:
@@ -336,4 +326,3 @@ class ProtocolEventOrchestrator(ABC):
         Raises:
             ShutdownError: If shutdown fails
         """
-        pass

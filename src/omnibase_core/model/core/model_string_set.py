@@ -1,7 +1,5 @@
 """Model for managing sets of strings."""
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -13,8 +11,9 @@ class ModelStringSet(BaseModel):
     requiring specific typed models instead of generic types.
     """
 
-    elements: List[str] = Field(
-        default_factory=list, description="List of unique string elements"
+    elements: list[str] = Field(
+        default_factory=list,
+        description="List of unique string elements",
     )
 
     def __post_init__(self):
@@ -53,7 +52,7 @@ class ModelStringSet(BaseModel):
         """Check if set is empty."""
         return len(self.elements) == 0
 
-    def to_list(self) -> List[str]:
+    def to_list(self) -> list[str]:
         """Get list representation."""
         return self.elements.copy()
 

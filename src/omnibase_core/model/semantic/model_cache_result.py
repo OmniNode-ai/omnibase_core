@@ -4,8 +4,6 @@ Cache result model for cached search results.
 Provides strongly-typed cache result structure to replace Dict[str, Any] usage.
 """
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,32 +18,39 @@ class ModelCacheResult(BaseModel):
 
     content: str = Field(description="Result content")
 
-    title: Optional[str] = Field(default=None, description="Result title if available")
+    title: str | None = Field(default=None, description="Result title if available")
 
-    source: Optional[str] = Field(default=None, description="Source path or URL")
+    source: str | None = Field(default=None, description="Source path or URL")
 
-    score: Optional[float] = Field(default=None, description="Relevance score")
+    score: float | None = Field(default=None, description="Relevance score")
 
-    rank: Optional[int] = Field(
-        default=None, description="Rank in original search results"
+    rank: int | None = Field(
+        default=None,
+        description="Rank in original search results",
     )
 
-    timestamp: Optional[str] = Field(
-        default=None, description="When this result was generated (ISO format)"
+    timestamp: str | None = Field(
+        default=None,
+        description="When this result was generated (ISO format)",
     )
 
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata (string values only)"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional metadata (string values only)",
     )
 
-    embedding_model: Optional[str] = Field(
-        default=None, description="Model used for embedding generation"
+    embedding_model: str | None = Field(
+        default=None,
+        description="Model used for embedding generation",
     )
 
-    retrieval_method: Optional[str] = Field(
-        default=None, description="Method used to retrieve this result"
+    retrieval_method: str | None = Field(
+        default=None,
+        description="Method used to retrieve this result",
     )
 
     model_config = ConfigDict(
-        use_enum_values=True, validate_assignment=True, extra="forbid"
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid",
     )

@@ -5,7 +5,8 @@ Decorator to allow Any type usage in specific contexts where duck typing require
 Used sparingly and only for duck typing utility functions.
 """
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 F = TypeVar("F", bound=Callable)
 

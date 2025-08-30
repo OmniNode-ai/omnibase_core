@@ -31,11 +31,15 @@ LIFECYCLE = _create_and_register_category(
 )
 
 OPERATION = _create_and_register_category(
-    "operation", "Operation", "Core operational actions that process or manipulate data"
+    "operation",
+    "Operation",
+    "Core operational actions that process or manipulate data",
 )
 
 VALIDATION = _create_and_register_category(
-    "validation", "Validation", "Actions that validate, verify, or check data integrity"
+    "validation",
+    "Validation",
+    "Actions that validate, verify, or check data integrity",
 )
 
 MANAGEMENT = _create_and_register_category(
@@ -45,7 +49,9 @@ MANAGEMENT = _create_and_register_category(
 )
 
 QUERY = _create_and_register_category(
-    "query", "Query", "Read-only actions that retrieve or monitor data"
+    "query",
+    "Query",
+    "Read-only actions that retrieve or monitor data",
 )
 
 TRANSFORMATION = _create_and_register_category(

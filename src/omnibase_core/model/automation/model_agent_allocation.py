@@ -6,12 +6,10 @@ Tracks agent allocation within an operational window.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.automation.model_agent_metadata import \
-    ModelAgentMetadata
+from omnibase_core.model.automation.model_agent_metadata import ModelAgentMetadata
 
 
 class EnumAgentStatus(str, Enum):
@@ -30,15 +28,19 @@ class ModelAgentAllocation(BaseModel):
     agent_id: str = Field(..., description="Unique agent identifier")
     window_id: str = Field(..., description="Assigned window ID")
     status: EnumAgentStatus = Field(..., description="Current agent status")
-    current_task: Optional[str] = Field(None, description="Current task being executed")
+    current_task: str | None = Field(None, description="Current task being executed")
     tasks_completed: int = Field(0, ge=0, description="Number of tasks completed")
     tokens_consumed: int = Field(0, ge=0, description="Tokens consumed by this agent")
     efficiency_score: float = Field(
-        0.0, ge=0, le=100, description="Agent efficiency score"
+        0.0,
+        ge=0,
+        le=100,
+        description="Agent efficiency score",
     )
     last_heartbeat: datetime = Field(..., description="Last health check timestamp")
     error_count: int = Field(0, ge=0, description="Number of errors encountered")
 
-    metadata: Optional[ModelAgentMetadata] = Field(
-        default=None, description="Additional agent metrics"
+    metadata: ModelAgentMetadata | None = Field(
+        default=None,
+        description="Additional agent metrics",
     )

@@ -12,6 +12,7 @@ from .model_git_hub_issues_event import ModelGitHubIssuesEvent
 from .model_git_hub_release import ModelGitHubRelease
 from .model_git_hub_release_event import ModelGitHubReleaseEvent
 from .model_git_hub_repository import ModelGitHubRepository
+
 # Import separated models
 from .model_git_hub_user import ModelGitHubUser
 
@@ -27,21 +28,21 @@ GitHubReleaseEvent = ModelGitHubReleaseEvent
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelGitHubUser",
-    "ModelGitHubRepository",
-    "ModelGitHubRelease",
-    "ModelGitHubIssue",
-    "ModelGitHubIssueComment",
-    "ModelGitHubIssuesEvent",
-    "ModelGitHubIssueCommentEvent",
-    "ModelGitHubReleaseEvent",
-    # Backward compatibility
-    "GitHubUser",
-    "GitHubRepository",
-    "GitHubRelease",
     "GitHubIssue",
     "GitHubIssueComment",
-    "GitHubIssuesEvent",
     "GitHubIssueCommentEvent",
+    "GitHubIssuesEvent",
+    "GitHubRelease",
     "GitHubReleaseEvent",
+    "GitHubRepository",
+    # Backward compatibility
+    "GitHubUser",
+    "ModelGitHubIssue",
+    "ModelGitHubIssueComment",
+    "ModelGitHubIssueCommentEvent",
+    "ModelGitHubIssuesEvent",
+    "ModelGitHubRelease",
+    "ModelGitHubReleaseEvent",
+    "ModelGitHubRepository",
+    "ModelGitHubUser",
 ]

@@ -1,7 +1,5 @@
 """Model for agent capability list management."""
 
-from typing import List, Set
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
@@ -15,8 +13,9 @@ class ModelAgentCapabilityList(BaseModel):
     requiring specific typed models instead of generic types.
     """
 
-    capabilities: List[EnumAgentCapability] = Field(
-        default_factory=list, description="List of agent capabilities"
+    capabilities: list[EnumAgentCapability] = Field(
+        default_factory=list,
+        description="List of agent capabilities",
     )
 
     def add_capability(self, capability: EnumAgentCapability) -> None:
@@ -35,15 +34,15 @@ class ModelAgentCapabilityList(BaseModel):
         """Check if a capability exists in the list."""
         return capability in self.capabilities
 
-    def has_all_capabilities(self, required: List[EnumAgentCapability]) -> bool:
+    def has_all_capabilities(self, required: list[EnumAgentCapability]) -> bool:
         """Check if all required capabilities are present."""
         return all(cap in self.capabilities for cap in required)
 
-    def has_any_capability(self, required: List[EnumAgentCapability]) -> bool:
+    def has_any_capability(self, required: list[EnumAgentCapability]) -> bool:
         """Check if any of the required capabilities are present."""
         return any(cap in self.capabilities for cap in required)
 
-    def to_set(self) -> Set[EnumAgentCapability]:
+    def to_set(self) -> set[EnumAgentCapability]:
         """Convert to a set for efficient lookups."""
         return set(self.capabilities)
 
@@ -55,7 +54,7 @@ class ModelAgentCapabilityList(BaseModel):
         """Remove all capabilities."""
         self.capabilities.clear()
 
-    def extend(self, other_capabilities: List[EnumAgentCapability]) -> None:
+    def extend(self, other_capabilities: list[EnumAgentCapability]) -> None:
         """Add multiple capabilities at once."""
         for cap in other_capabilities:
             self.add_capability(cap)

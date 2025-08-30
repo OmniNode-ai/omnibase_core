@@ -1,13 +1,15 @@
 import os
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import Field, SecretStr, field_validator
 
-from omnibase_core.model.core.model_connection_properties import \
-    ModelConnectionProperties
-from omnibase_core.model.core.model_masked_connection_properties import \
-    ModelMaskedConnectionProperties
+from omnibase_core.model.core.model_connection_properties import (
+    ModelConnectionProperties,
+)
+from omnibase_core.model.core.model_masked_connection_properties import (
+    ModelMaskedConnectionProperties,
+)
 
 # Moved to TYPE_CHECKING import
 
@@ -17,8 +19,7 @@ if TYPE_CHECKING:
         ModelSecurityAssessment,
     )
 
-from omnibase_core.model.security.model_secure_credentials import \
-    ModelSecureCredentials
+from omnibase_core.model.security.model_secure_credentials import ModelSecureCredentials
 
 
 class ModelKafkaSecureConfig(ModelSecureCredentials):
@@ -48,38 +49,49 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         pattern=r"^(PLAINTEXT|SSL|SASL_PLAINTEXT|SASL_SSL)$",
     )
 
-    sasl_mechanism: Optional[str] = Field(
+    sasl_mechanism: str | None = Field(
         default=None,
         description="SASL mechanism (PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, GSSAPI, OAUTHBEARER)",
         pattern=r"^(PLAIN|SCRAM-SHA-256|SCRAM-SHA-512|GSSAPI|OAUTHBEARER)$",
     )
 
-    sasl_username: Optional[str] = Field(
-        default=None, description="SASL username", max_length=100
+    sasl_username: str | None = Field(
+        default=None,
+        description="SASL username",
+        max_length=100,
     )
 
-    sasl_password: Optional[SecretStr] = Field(
-        default=None, description="SASL password (secured)"
+    sasl_password: SecretStr | None = Field(
+        default=None,
+        description="SASL password (secured)",
     )
 
-    ssl_keyfile_path: Optional[str] = Field(
-        default=None, description="Path to SSL key file", max_length=500
+    ssl_keyfile_path: str | None = Field(
+        default=None,
+        description="Path to SSL key file",
+        max_length=500,
     )
 
-    ssl_keyfile_password: Optional[SecretStr] = Field(
-        default=None, description="SSL key file password (secured)"
+    ssl_keyfile_password: SecretStr | None = Field(
+        default=None,
+        description="SSL key file password (secured)",
     )
 
-    ssl_certfile_path: Optional[str] = Field(
-        default=None, description="Path to SSL certificate file", max_length=500
+    ssl_certfile_path: str | None = Field(
+        default=None,
+        description="Path to SSL certificate file",
+        max_length=500,
     )
 
-    ssl_cafile_path: Optional[str] = Field(
-        default=None, description="Path to SSL CA file", max_length=500
+    ssl_cafile_path: str | None = Field(
+        default=None,
+        description="Path to SSL CA file",
+        max_length=500,
     )
 
     ssl_check_hostname: bool = Field(
-        default=True, description="Whether to check SSL hostname"
+        default=True,
+        description="Whether to check SSL hostname",
     )
 
     ssl_verify_mode: str = Field(
@@ -88,20 +100,31 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         pattern=r"^(none|optional|required)$",
     )
 
-    client_id: Optional[str] = Field(
-        default=None, description="Kafka client ID for identification", max_length=100
+    client_id: str | None = Field(
+        default=None,
+        description="Kafka client ID for identification",
+        max_length=100,
     )
 
     request_timeout_ms: int = Field(
-        default=30000, description="Request timeout in milliseconds", ge=1000, le=300000
+        default=30000,
+        description="Request timeout in milliseconds",
+        ge=1000,
+        le=300000,
     )
 
     retry_backoff_ms: int = Field(
-        default=100, description="Retry backoff time in milliseconds", ge=0, le=10000
+        default=100,
+        description="Retry backoff time in milliseconds",
+        ge=0,
+        le=10000,
     )
 
     max_retries: int = Field(
-        default=3, description="Maximum number of retries", ge=0, le=10
+        default=3,
+        description="Maximum number of retries",
+        ge=0,
+        le=10,
     )
 
     compression_type: str = Field(
@@ -115,7 +138,8 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
     def validate_bootstrap_servers(cls, v: str) -> str:
         """Validate bootstrap servers format."""
         if not v or not v.strip():
-            raise ValueError("Bootstrap servers cannot be empty")
+            msg = "Bootstrap servers cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip()
 
@@ -129,25 +153,30 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
             # Basic format validation (host:port)
             if ":" not in server:
-                raise ValueError(f"Invalid server format (missing port): {server}")
+                msg = f"Invalid server format (missing port): {server}"
+                raise ValueError(msg)
 
             host, port_str = server.rsplit(":", 1)
 
             try:
                 port = int(port_str)
                 if not (1 <= port <= 65535):
-                    raise ValueError(f"Invalid port number: {port}")
+                    msg = f"Invalid port number: {port}"
+                    raise ValueError(msg)
             except ValueError:
-                raise ValueError(f"Invalid port in server: {server}")
+                msg = f"Invalid port in server: {server}"
+                raise ValueError(msg)
 
             # Basic hostname validation
             if not re.match(r"^[a-zA-Z0-9\-\.]+$", host):
-                raise ValueError(f"Invalid hostname: {host}")
+                msg = f"Invalid hostname: {host}"
+                raise ValueError(msg)
 
             validated_servers.append(f"{host}:{port}")
 
         if not validated_servers:
-            raise ValueError("No valid servers found in bootstrap_servers")
+            msg = "No valid servers found in bootstrap_servers"
+            raise ValueError(msg)
 
         return ",".join(validated_servers)
 
@@ -162,8 +191,9 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         valid_protocols = {"PLAINTEXT", "SSL", "SASL_PLAINTEXT", "SASL_SSL"}
 
         if v not in valid_protocols:
+            msg = f"Invalid security protocol: {v}. Must be one of: {valid_protocols}"
             raise ValueError(
-                f"Invalid security protocol: {v}. Must be one of: {valid_protocols}"
+                msg,
             )
 
         return v
@@ -189,13 +219,13 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
                 [
                     "No encryption - traffic sent in plaintext",
                     "No authentication - unauthorized access possible",
-                ]
+                ],
             )
             assessment["recommendations"].extend(
                 [
                     "Enable SSL/TLS encryption (security_protocol: SSL or SASL_SSL)",
                     "Enable SASL authentication for access control",
-                ]
+                ],
             )
 
         elif self.security_protocol == "SSL":
@@ -205,16 +235,16 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
             if not self.ssl_check_hostname:
                 assessment["vulnerabilities"].append(
-                    "SSL hostname verification disabled"
+                    "SSL hostname verification disabled",
                 )
                 assessment["recommendations"].append("Enable SSL hostname verification")
 
             if self.ssl_verify_mode == "none":
                 assessment["vulnerabilities"].append(
-                    "SSL certificate verification disabled"
+                    "SSL certificate verification disabled",
                 )
                 assessment["recommendations"].append(
-                    "Enable SSL certificate verification"
+                    "Enable SSL certificate verification",
                 )
 
         elif self.security_protocol in ["SASL_PLAINTEXT", "SASL_SSL"]:
@@ -227,19 +257,19 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
             else:
                 assessment["security_level"] = "medium"
                 assessment["vulnerabilities"].append(
-                    "SASL credentials sent in plaintext"
+                    "SASL credentials sent in plaintext",
                 )
                 assessment["recommendations"].append(
-                    "Use SASL_SSL for encrypted SASL authentication"
+                    "Use SASL_SSL for encrypted SASL authentication",
                 )
 
             # Assess SASL mechanism
             if self.sasl_mechanism == "PLAIN":
                 assessment["vulnerabilities"].append(
-                    "PLAIN SASL mechanism is less secure"
+                    "PLAIN SASL mechanism is less secure",
                 )
                 assessment["recommendations"].append(
-                    "Consider SCRAM-SHA-256 or SCRAM-SHA-512"
+                    "Consider SCRAM-SHA-256 or SCRAM-SHA-512",
                 )
             elif self.sasl_mechanism in ["SCRAM-SHA-256", "SCRAM-SHA-512"]:
                 assessment["security_level"] = (
@@ -251,7 +281,7 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         # Assess credentials
         if self.sasl_username and not self.sasl_password:
             assessment["vulnerabilities"].append(
-                "SASL username configured but password missing"
+                "SASL username configured but password missing",
             )
 
         # Compliance assessment
@@ -394,16 +424,14 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
     def get_performance_profile(self) -> "ModelPerformanceProfile":
         """Get performance characteristics and recommendations."""
-        profile = {
+        return {
             "compression_efficiency": self._get_compression_efficiency(),
             "latency_impact": self._get_latency_impact(),
             "throughput_optimization": self._get_throughput_recommendations(),
             "resource_usage": self._get_resource_usage_profile(),
         }
 
-        return profile
-
-    def _get_compression_efficiency(self) -> Dict[str, str]:
+    def _get_compression_efficiency(self) -> dict[str, str]:
         """Assess compression type efficiency."""
         compression_profiles = {
             "none": {
@@ -435,7 +463,7 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
         return compression_profiles.get(self.compression_type, {})
 
-    def _get_latency_impact(self) -> Dict[str, str]:
+    def _get_latency_impact(self) -> dict[str, str]:
         """Assess configuration impact on latency."""
         impact = {"overall": "low", "factors": []}
 
@@ -458,28 +486,28 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
         return impact
 
-    def _get_throughput_recommendations(self) -> List[str]:
+    def _get_throughput_recommendations(self) -> list[str]:
         """Get throughput optimization recommendations."""
         recommendations = []
 
         if self.compression_type == "none":
             recommendations.append(
-                "Enable compression (lz4 or snappy) for better throughput"
+                "Enable compression (lz4 or snappy) for better throughput",
             )
 
         if self.max_retries > 5:
             recommendations.append(
-                "Consider reducing max_retries for faster failure detection"
+                "Consider reducing max_retries for faster failure detection",
             )
 
         if self.retry_backoff_ms > 1000:
             recommendations.append(
-                "Consider reducing retry_backoff_ms for faster retries"
+                "Consider reducing retry_backoff_ms for faster retries",
             )
 
         return recommendations
 
-    def _get_resource_usage_profile(self) -> Dict[str, str]:
+    def _get_resource_usage_profile(self) -> dict[str, str]:
         """Get resource usage characteristics."""
         profile = {
             "memory_usage": "medium",
@@ -532,9 +560,9 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
         return True
 
-    def get_troubleshooting_guide(self) -> Dict[str, List[str]]:
+    def get_troubleshooting_guide(self) -> dict[str, list[str]]:
         """Get troubleshooting guide for common issues."""
-        guide = {
+        return {
             "connection_failures": [
                 "Verify bootstrap_servers are reachable",
                 "Check security_protocol matches broker configuration",
@@ -561,8 +589,6 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
             ],
         }
 
-        return guide
-
     # === Environment Integration ===
 
     @classmethod
@@ -570,10 +596,12 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         """Load Kafka configuration from environment variables."""
         config_data = {
             "bootstrap_servers": os.getenv(
-                f"{env_prefix}BOOTSTRAP_SERVERS", "localhost:9092"
+                f"{env_prefix}BOOTSTRAP_SERVERS",
+                "localhost:9092",
             ),
             "security_protocol": os.getenv(
-                f"{env_prefix}SECURITY_PROTOCOL", "PLAINTEXT"
+                f"{env_prefix}SECURITY_PROTOCOL",
+                "PLAINTEXT",
             ),
             "sasl_mechanism": os.getenv(f"{env_prefix}SASL_MECHANISM"),
             "sasl_username": os.getenv(f"{env_prefix}SASL_USERNAME"),
@@ -581,7 +609,8 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
             "ssl_certfile_path": os.getenv(f"{env_prefix}SSL_CERTFILE_PATH"),
             "ssl_cafile_path": os.getenv(f"{env_prefix}SSL_CAFILE_PATH"),
             "ssl_check_hostname": os.getenv(
-                f"{env_prefix}SSL_CHECK_HOSTNAME", "true"
+                f"{env_prefix}SSL_CHECK_HOSTNAME",
+                "true",
             ).lower()
             == "true",
             "ssl_verify_mode": os.getenv(f"{env_prefix}SSL_VERIFY_MODE", "required"),
@@ -607,7 +636,8 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
             if retries := os.getenv(f"{env_prefix}MAX_RETRIES"):
                 config_data["max_retries"] = int(retries)
         except ValueError as e:
-            raise ValueError(f"Invalid integer value in environment variables: {e}")
+            msg = f"Invalid integer value in environment variables: {e}"
+            raise ValueError(msg)
 
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
@@ -618,7 +648,8 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
 
     @classmethod
     def create_plaintext(
-        cls, bootstrap_servers: str = "localhost:9092"
+        cls,
+        bootstrap_servers: str = "localhost:9092",
     ) -> "ModelKafkaSecureConfig":
         """Create basic plaintext configuration for development."""
         return cls(bootstrap_servers=bootstrap_servers, security_protocol="PLAINTEXT")
@@ -649,7 +680,7 @@ class ModelKafkaSecureConfig(ModelSecureCredentials):
         keyfile_path: str,
         certfile_path: str,
         cafile_path: str,
-        keyfile_password: Optional[str] = None,
+        keyfile_password: str | None = None,
     ) -> "ModelKafkaSecureConfig":
         """Create SSL mutual authentication configuration."""
         config_data = {

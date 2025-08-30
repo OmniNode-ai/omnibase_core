@@ -11,7 +11,6 @@ Author: OmniNode Team
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
@@ -35,9 +34,11 @@ except ImportError:
 
 from .model_compose_service_dict import ModelComposeServiceDict
 from .model_docker_build_config import ModelDockerBuildConfig
-from .model_docker_deploy_config import (ModelDockerDeployConfig,
-                                         ModelDockerResourceLimits,
-                                         ModelDockerResources)
+from .model_docker_deploy_config import (
+    ModelDockerDeployConfig,
+    ModelDockerResourceLimits,
+    ModelDockerResources,
+)
 from .model_docker_healthcheck_config import ModelDockerHealthcheckConfig
 from .model_docker_network_config import ModelDockerNetworkConfig
 from .model_docker_volume_config import ModelDockerVolumeConfig
@@ -106,18 +107,18 @@ class ComposeServiceDefinition:
     """Complete service definition for Docker Compose."""
 
     name: str
-    image: Optional[str] = None
-    build: Optional[ModelDockerBuildConfig] = None
-    command: Optional[str] = None
-    environment: Dict[str, str] = None
-    ports: List[str] = None
-    volumes: List[str] = None
-    depends_on: Dict[str, Dict[str, str]] = None
-    healthcheck: Optional[ModelDockerHealthcheckConfig] = None
+    image: str | None = None
+    build: ModelDockerBuildConfig | None = None
+    command: str | None = None
+    environment: dict[str, str] = None
+    ports: list[str] = None
+    volumes: list[str] = None
+    depends_on: dict[str, dict[str, str]] = None
+    healthcheck: ModelDockerHealthcheckConfig | None = None
     restart: str = "unless-stopped"
-    networks: List[str] = None
-    labels: Dict[str, str] = None
-    deploy: Optional[ModelDockerDeployConfig] = None
+    networks: list[str] = None
+    labels: dict[str, str] = None
+    deploy: ModelDockerDeployConfig | None = None
 
     def __post_init__(self):
         """Initialize default values."""
@@ -140,7 +141,7 @@ class DockerComposeGenerator:
 
     def __init__(
         self,
-        services: List[ModelNodeServiceConfig],
+        services: list[ModelNodeServiceConfig],
         project_name: str = "onex-services",
         include_infrastructure: bool = True,
     ):
@@ -155,9 +156,9 @@ class DockerComposeGenerator:
         self.services = services
         self.project_name = project_name
         self.include_infrastructure = include_infrastructure
-        self.service_definitions: Dict[str, ComposeServiceDefinition] = {}
-        self.networks: Dict[str, ModelDockerNetworkConfig] = {}
-        self.volumes: Dict[str, ModelDockerVolumeConfig] = {}
+        self.service_definitions: dict[str, ComposeServiceDefinition] = {}
+        self.networks: dict[str, ModelDockerNetworkConfig] = {}
+        self.volumes: dict[str, ModelDockerVolumeConfig] = {}
 
     def generate_compose_file(self) -> str:
         """
@@ -171,8 +172,9 @@ class DockerComposeGenerator:
             ValueError: If configuration validation fails
         """
         if not HAS_YAML:
+            msg = "PyYAML is required for Docker Compose generation. Install with: pip install pyyaml"
             raise OnexError(
-                "PyYAML is required for Docker Compose generation. Install with: pip install pyyaml",
+                msg,
                 error_code=CoreErrorCode.DEPENDENCY_MISSING,
             )
 
@@ -226,17 +228,20 @@ class DockerComposeGenerator:
         """
         # Validate basic requirements
         if not self.services:
-            raise ValueError("No services provided for Docker Compose generation")
+            msg = "No services provided for Docker Compose generation"
+            raise ValueError(msg)
 
         if not self.project_name or not self.project_name.strip():
-            raise ValueError("Project name is required and cannot be empty")
+            msg = "Project name is required and cannot be empty"
+            raise ValueError(msg)
 
         # Validate project name format (Docker Compose requirements)
         import re
 
         if not re.match(r"^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$", self.project_name):
+            msg = f"Project name '{self.project_name}' is invalid. Must be lowercase alphanumeric with hyphens only."
             raise ValueError(
-                f"Project name '{self.project_name}' is invalid. Must be lowercase alphanumeric with hyphens only."
+                msg,
             )
 
         # Validate each service configuration
@@ -247,30 +252,35 @@ class DockerComposeGenerator:
             # Check for duplicate service names
             service_name = service.node_name.replace("_", "-")
             if service_name in service_names:
-                raise ValueError(f"Duplicate service name: {service_name}")
+                msg = f"Duplicate service name: {service_name}"
+                raise ValueError(msg)
             service_names.add(service_name)
 
             # Validate service has required fields
             if not hasattr(service, "node_name") or not service.node_name:
-                raise ValueError("Service must have a valid node_name")
+                msg = "Service must have a valid node_name"
+                raise ValueError(msg)
 
             if not hasattr(service, "network") or not service.network:
+                msg = f"Service {service_name} must have network configuration"
                 raise ValueError(
-                    f"Service {service_name} must have network configuration"
+                    msg,
                 )
 
             # Check for port conflicts
             if hasattr(service.network, "port") and service.network.port:
                 port = service.network.port
                 if port in port_conflicts:
+                    msg = f"Port conflict: {port} is used by both {port_conflicts[port]} and {service_name}"
                     raise ValueError(
-                        f"Port conflict: {port} is used by both {port_conflicts[port]} and {service_name}"
+                        msg,
                     )
                 port_conflicts[port] = service_name
 
                 # Validate port range
                 if not (1 <= port <= 65535):
-                    raise ValueError(f"Service {service_name} has invalid port: {port}")
+                    msg = f"Service {service_name} has invalid port: {port}"
+                    raise ValueError(msg)
 
             # Validate monitoring ports if enabled
             if (
@@ -285,14 +295,16 @@ class DockerComposeGenerator:
                 ):
                     metrics_port = service.monitoring.metrics_port
                     if metrics_port in port_conflicts:
+                        msg = f"Metrics port conflict: {metrics_port} is used by both {port_conflicts[metrics_port]} and {service_name}"
                         raise ValueError(
-                            f"Metrics port conflict: {metrics_port} is used by both {port_conflicts[metrics_port]} and {service_name}"
+                            msg,
                         )
                     port_conflicts[metrics_port] = f"{service_name}-metrics"
 
                     if not (1 <= metrics_port <= 65535):
+                        msg = f"Service {service_name} has invalid metrics port: {metrics_port}"
                         raise ValueError(
-                            f"Service {service_name} has invalid metrics port: {metrics_port}"
+                            msg,
                         )
 
     def _build_service_definitions(self) -> None:
@@ -302,7 +314,8 @@ class DockerComposeGenerator:
             self.service_definitions[service_def.name] = service_def
 
     def _create_service_definition(
-        self, config: ModelNodeServiceConfig
+        self,
+        config: ModelNodeServiceConfig,
     ) -> ComposeServiceDefinition:
         """Create a compose service definition from ONEX service config."""
         service_name = config.node_name.replace("_", "-")
@@ -326,7 +339,7 @@ class DockerComposeGenerator:
         service_def.ports.append(f"{config.network.port}:{config.network.port}")
         if config.monitoring.metrics_enabled:
             service_def.ports.append(
-                f"{config.monitoring.metrics_port}:{config.monitoring.metrics_port}"
+                f"{config.monitoring.metrics_port}:{config.monitoring.metrics_port}",
             )
 
         # Add health check
@@ -364,15 +377,15 @@ class DockerComposeGenerator:
         if config.security.enable_tls:
             if config.security.cert_file:
                 service_def.volumes.append(
-                    f"{config.security.cert_file}:/app/certs/cert.pem:ro"
+                    f"{config.security.cert_file}:/app/certs/cert.pem:ro",
                 )
             if config.security.key_file:
                 service_def.volumes.append(
-                    f"{config.security.key_file}:/app/certs/key.pem:ro"
+                    f"{config.security.key_file}:/app/certs/key.pem:ro",
                 )
             if config.security.ca_file:
                 service_def.volumes.append(
-                    f"{config.security.ca_file}:/app/certs/ca.pem:ro"
+                    f"{config.security.ca_file}:/app/certs/ca.pem:ro",
                 )
 
         # Add dependencies based on service type
@@ -381,7 +394,9 @@ class DockerComposeGenerator:
         return service_def
 
     def _add_service_dependencies(
-        self, service_def: ComposeServiceDefinition, config: ModelNodeServiceConfig
+        self,
+        service_def: ComposeServiceDefinition,
+        config: ModelNodeServiceConfig,
     ) -> None:
         """Add service dependencies based on configuration."""
         # All services depend on event bus
@@ -418,7 +433,7 @@ class DockerComposeGenerator:
                 "ZOOKEEPER_TICK_TIME": "2000",
             },
             ports=[
-                f"{DockerComposeConfig.ZOOKEEPER_PORT}:{DockerComposeConfig.ZOOKEEPER_PORT}"
+                f"{DockerComposeConfig.ZOOKEEPER_PORT}:{DockerComposeConfig.ZOOKEEPER_PORT}",
             ],
             healthcheck={
                 "test": [
@@ -450,7 +465,7 @@ class DockerComposeGenerator:
                 "KAFKA_AUTO_CREATE_TOPICS_ENABLE": "true",
             },
             ports=[
-                f"{DockerComposeConfig.KAFKA_PORT}:{DockerComposeConfig.KAFKA_PORT}"
+                f"{DockerComposeConfig.KAFKA_PORT}:{DockerComposeConfig.KAFKA_PORT}",
             ],
             depends_on={"zookeeper": {"condition": "service_healthy"}},
             healthcheck={
@@ -475,7 +490,7 @@ class DockerComposeGenerator:
             name="prometheus",
             image=DockerComposeConfig.PROMETHEUS_IMAGE,
             ports=[
-                f"{DockerComposeConfig.PROMETHEUS_PORT}:{DockerComposeConfig.PROMETHEUS_PORT}"
+                f"{DockerComposeConfig.PROMETHEUS_PORT}:{DockerComposeConfig.PROMETHEUS_PORT}",
             ],
             volumes=[
                 "./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml",
@@ -497,7 +512,7 @@ class DockerComposeGenerator:
             name="grafana",
             image=DockerComposeConfig.GRAFANA_IMAGE,
             ports=[
-                f"{DockerComposeConfig.GRAFANA_PORT}:{DockerComposeConfig.GRAFANA_PORT}"
+                f"{DockerComposeConfig.GRAFANA_PORT}:{DockerComposeConfig.GRAFANA_PORT}",
             ],
             environment={"GF_SECURITY_ADMIN_PASSWORD": "admin"},
             volumes=["grafana-data:/var/lib/grafana"],
@@ -511,7 +526,7 @@ class DockerComposeGenerator:
             name="redis",
             image=DockerComposeConfig.REDIS_IMAGE,
             ports=[
-                f"{DockerComposeConfig.REDIS_PORT}:{DockerComposeConfig.REDIS_PORT}"
+                f"{DockerComposeConfig.REDIS_PORT}:{DockerComposeConfig.REDIS_PORT}",
             ],
             command="redis-server --appendonly yes",
             volumes=["redis-data:/data"],
@@ -531,7 +546,7 @@ class DockerComposeGenerator:
             ModelDockerNetworkConfig(
                 driver="bridge",
                 driver_opts={
-                    "com.docker.network.bridge.name": DockerComposeConfig.DEFAULT_BRIDGE_NAME
+                    "com.docker.network.bridge.name": DockerComposeConfig.DEFAULT_BRIDGE_NAME,
                 },
             )
         )
@@ -550,9 +565,9 @@ class DockerComposeGenerator:
                 volume_name = f"{service_config.node_name.replace('_', '-')}-data"
                 self.volumes[volume_name] = ModelDockerVolumeConfig()
 
-    def _services_to_dict(self) -> Dict[str, ModelComposeServiceDict]:
+    def _services_to_dict(self) -> dict[str, ModelComposeServiceDict]:
         """Convert service definitions to dictionary format."""
-        services_dict: Dict[str, ModelComposeServiceDict] = {}
+        services_dict: dict[str, ModelComposeServiceDict] = {}
 
         for service_name, service_def in self.service_definitions.items():
             # Build the service dict model
@@ -585,7 +600,7 @@ class DockerComposeGenerator:
             # Add health check
             if service_def.healthcheck:
                 service_model.healthcheck = service_def.healthcheck.model_dump(
-                    exclude_none=True
+                    exclude_none=True,
                 )
 
             # Add restart policy
@@ -607,7 +622,7 @@ class DockerComposeGenerator:
 
         return services_dict
 
-    def generate_monitoring_config(self) -> Dict[str, str]:
+    def generate_monitoring_config(self) -> dict[str, str]:
         """Generate monitoring configuration files."""
         prometheus_config = {
             "global": {"scrape_interval": "15s", "evaluation_interval": "15s"},
@@ -622,18 +637,18 @@ class DockerComposeGenerator:
                     "static_configs": [
                         {
                             "targets": [
-                                f"{service_config.node_name.replace('_', '-')}:{service_config.monitoring.metrics_port}"
-                            ]
-                        }
+                                f"{service_config.node_name.replace('_', '-')}:{service_config.monitoring.metrics_port}",
+                            ],
+                        },
                     ],
                 }
                 prometheus_config["scrape_configs"].append(scrape_config)
 
         return {
-            "prometheus.yml": yaml.dump(prometheus_config, default_flow_style=False)
+            "prometheus.yml": yaml.dump(prometheus_config, default_flow_style=False),
         }
 
-    def validate_compose_file(self) -> List[str]:
+    def validate_compose_file(self) -> list[str]:
         """Validate the generated compose file for common issues."""
         issues = []
 
@@ -655,7 +670,7 @@ class DockerComposeGenerator:
             for dep_name in service_def.depends_on:
                 if dep_name not in self.service_definitions:
                     issues.append(
-                        f"Missing dependency: {dep_name} required by {service_def.name}"
+                        f"Missing dependency: {dep_name} required by {service_def.name}",
                     )
 
         return issues
@@ -681,18 +696,17 @@ class DockerComposeGenerator:
             return False
 
         for service_name in self.service_definitions:
-            if service_name not in visited:
-                if _has_cycle(service_name):
-                    return True
+            if service_name not in visited and _has_cycle(service_name):
+                return True
 
         return False
 
 
 def generate_complete_compose_stack(
-    services: List[ModelNodeServiceConfig],
+    services: list[ModelNodeServiceConfig],
     output_dir: Path,
     project_name: str = "onex-services",
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """
     Generate complete Docker Compose stack with all configurations.
 

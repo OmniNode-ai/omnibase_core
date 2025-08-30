@@ -3,7 +3,6 @@ Security policy model with structured data fields.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -29,59 +28,70 @@ class ModelSecurityPolicy(BaseModel):
 
     # Policy metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation time"
+        default_factory=datetime.utcnow,
+        description="Creation time",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update time"
+        default_factory=datetime.utcnow,
+        description="Last update time",
     )
-    created_by: Optional[str] = Field(None, description="Policy creator")
-    description: Optional[str] = Field(None, description="Policy description")
+    created_by: str | None = Field(None, description="Policy creator")
+    description: str | None = Field(None, description="Policy description")
 
     # Access control
     access_control_model: str = Field(
-        "RBAC", description="Access control model (RBAC/ABAC/etc)"
+        "RBAC",
+        description="Access control model (RBAC/ABAC/etc)",
     )
     default_action: str = Field("deny", description="Default action (allow/deny)")
 
     # Security rules
-    rules: List[ModelSecurityRule] = Field(
-        default_factory=list, description="Security rules"
+    rules: list[ModelSecurityRule] = Field(
+        default_factory=list,
+        description="Security rules",
     )
 
     # Authentication requirements
     require_authentication: bool = Field(True, description="Require authentication")
-    allowed_auth_methods: List[str] = Field(
-        default_factory=list, description="Allowed authentication methods"
+    allowed_auth_methods: list[str] = Field(
+        default_factory=list,
+        description="Allowed authentication methods",
     )
     require_mfa: bool = Field(False, description="Require multi-factor authentication")
 
     # Session management
-    session_timeout_minutes: Optional[int] = Field(30, description="Session timeout")
-    max_sessions_per_user: Optional[int] = Field(
-        5, description="Max concurrent sessions"
+    session_timeout_minutes: int | None = Field(30, description="Session timeout")
+    max_sessions_per_user: int | None = Field(
+        5,
+        description="Max concurrent sessions",
     )
 
     # IP restrictions
-    allowed_ip_ranges: List[str] = Field(
-        default_factory=list, description="Allowed IP ranges (CIDR notation)"
+    allowed_ip_ranges: list[str] = Field(
+        default_factory=list,
+        description="Allowed IP ranges (CIDR notation)",
     )
-    denied_ip_ranges: List[str] = Field(
-        default_factory=list, description="Denied IP ranges (CIDR notation)"
+    denied_ip_ranges: list[str] = Field(
+        default_factory=list,
+        description="Denied IP ranges (CIDR notation)",
     )
 
     # Time-based restrictions
-    valid_from: Optional[datetime] = Field(None, description="Policy valid from")
-    valid_until: Optional[datetime] = Field(None, description="Policy valid until")
-    time_restrictions: Optional[ModelTimeRestrictions] = Field(
-        None, description="Time-based access restrictions"
+    valid_from: datetime | None = Field(None, description="Policy valid from")
+    valid_until: datetime | None = Field(None, description="Policy valid until")
+    time_restrictions: ModelTimeRestrictions | None = Field(
+        None,
+        description="Time-based access restrictions",
     )
 
     # Compliance tags
-    compliance_frameworks: List[str] = Field(
-        default_factory=list, description="Compliance frameworks (SOC2, HIPAA, etc)"
+    compliance_frameworks: list[str] = Field(
+        default_factory=list,
+        description="Compliance frameworks (SOC2, HIPAA, etc)",
     )
-    data_classification: Optional[str] = Field(
-        None, description="Data classification level"
+    data_classification: str | None = Field(
+        None,
+        description="Data classification level",
     )
 
     model_config = ConfigDict()

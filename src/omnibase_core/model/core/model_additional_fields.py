@@ -4,8 +4,6 @@ Additional Fields Model for ONEX Configuration System.
 Strongly typed model for additional metadata fields.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -16,24 +14,29 @@ class ModelAdditionalFields(BaseModel):
     Represents additional fields passed to metadata block creation.
     """
 
-    uuid: Optional[str] = Field(default=None, description="Optional UUID override")
-    created_at: Optional[str] = Field(
-        default=None, description="Optional created_at override"
+    uuid: str | None = Field(default=None, description="Optional UUID override")
+    created_at: str | None = Field(
+        default=None,
+        description="Optional created_at override",
     )
-    tools: Optional[str] = Field(
-        default=None, description="Optional tools configuration"
+    tools: str | None = Field(
+        default=None,
+        description="Optional tools configuration",
     )
-    metadata_version: Optional[str] = Field(
-        default=None, description="Optional metadata version override"
+    metadata_version: str | None = Field(
+        default=None,
+        description="Optional metadata version override",
     )
-    protocol_version: Optional[str] = Field(
-        default=None, description="Optional protocol version override"
+    protocol_version: str | None = Field(
+        default=None,
+        description="Optional protocol version override",
     )
-    schema_version: Optional[str] = Field(
-        default=None, description="Optional schema version override"
+    schema_version: str | None = Field(
+        default=None,
+        description="Optional schema version override",
     )
 
-    def get_field(self, field_name: str) -> Optional[str]:
+    def get_field(self, field_name: str) -> str | None:
         """Get a field value by name."""
         return getattr(self, field_name, None)
 

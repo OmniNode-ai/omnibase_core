@@ -6,7 +6,6 @@ discovery and Container Adapter coordination throughout the ONEX ecosystem.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -132,78 +131,97 @@ class ModelEventDescriptor(BaseModel):
     event_id: str = Field(..., description="Unique identifier for this event")
     event_type: EventTypeEnum = Field(..., description="Type of event being described")
     event_name: str = Field(..., description="Human-readable event name")
-    correlation_id: Optional[str] = Field(
-        None, description="Correlation ID for request/response matching"
+    correlation_id: str | None = Field(
+        None,
+        description="Correlation ID for request/response matching",
     )
 
     # Service Identity
     service_id: str = Field(..., description="Unique service identifier")
     service_name: str = Field(..., description="Service name for Consul registration")
     service_version: str = Field(..., description="Service version")
-    node_id: Optional[str] = Field(None, description="Node ID hosting the service")
+    node_id: str | None = Field(None, description="Node ID hosting the service")
 
     # Discovery & Registry Information
     discovery_phase: DiscoveryPhaseEnum = Field(
-        ..., description="Current discovery implementation phase"
+        ...,
+        description="Current discovery implementation phase",
     )
     consul_service_name: str = Field(..., description="Consul service registry name")
-    consul_tags: List[str] = Field(
-        default_factory=list, description="Consul service tags"
+    consul_tags: list[str] = Field(
+        default_factory=list,
+        description="Consul service tags",
     )
-    consul_meta: Dict[str, str] = Field(
-        default_factory=dict, description="Consul service metadata"
+    consul_meta: dict[str, str] = Field(
+        default_factory=dict,
+        description="Consul service metadata",
     )
 
     # Container Adapter Coordination
     container_adapter_enabled: bool = Field(
-        True, description="Whether Container Adapter pattern is active"
+        True,
+        description="Whether Container Adapter pattern is active",
     )
     container_status: ServiceStatusEnum = Field(
-        ..., description="Current container/service status"
+        ...,
+        description="Current container/service status",
     )
-    health_check_endpoint: Optional[str] = Field(
-        None, description="Health check endpoint for Consul"
+    health_check_endpoint: str | None = Field(
+        None,
+        description="Health check endpoint for Consul",
     )
 
     # Event Data & Context
-    event_data: Dict[str, str] = Field(
-        default_factory=dict, description="Event-specific data payload"
+    event_data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Event-specific data payload",
     )
-    event_context: Dict[str, str] = Field(
-        default_factory=dict, description="Event execution context"
+    event_context: dict[str, str] = Field(
+        default_factory=dict,
+        description="Event execution context",
     )
     event_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Event creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Event creation timestamp",
     )
 
     # Hub Integration
-    hub_domain: Optional[str] = Field(None, description="Hub domain for integration")
+    hub_domain: str | None = Field(None, description="Hub domain for integration")
     hub_registration_required: bool = Field(
-        True, description="Whether hub should register in Consul"
+        True,
+        description="Whether hub should register in Consul",
     )
 
     # Networking & Coordination
-    service_endpoints: Dict[str, str] = Field(
-        default_factory=dict, description="Service endpoint mappings"
+    service_endpoints: dict[str, str] = Field(
+        default_factory=dict,
+        description="Service endpoint mappings",
     )
-    mesh_coordination_data: Dict[str, str] = Field(
-        default_factory=dict, description="Full mesh coordination data"
+    mesh_coordination_data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Full mesh coordination data",
     )
-    auto_provisioning_config: Optional[Dict[str, str]] = Field(
-        None, description="Auto-provisioning configuration"
+    auto_provisioning_config: dict[str, str] | None = Field(
+        None,
+        description="Auto-provisioning configuration",
     )
 
     # Quality & Validation
     trust_level: str = Field(
-        "medium", description="Trust level for service (high/medium/low)"
+        "medium",
+        description="Trust level for service (high/medium/low)",
     )
     validation_required: bool = Field(
-        True, description="Whether event requires validation"
+        True,
+        description="Whether event requires validation",
     )
     event_schema_version: str = Field(
-        "1.0.0", description="EventDescriptor schema version"
+        "1.0.0",
+        description="EventDescriptor schema version",
     )
 
     model_config = ConfigDict(
-        use_enum_values=True, validate_assignment=True, extra="forbid"
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid",
     )

@@ -18,4 +18,4 @@ class ModelGetVersionInputState(OnexInputState):
     - node_id: Source node identifier
     """
 
-    pass  # No additional fields needed for version request
+    # No additional fields needed for version request

@@ -1,7 +1,5 @@
 """Model for service discovery and registration test data."""
 
-from typing import Dict, List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -12,29 +10,35 @@ class ModelServiceRegistrationData(BaseModel):
     service_name: str = Field(description="Human-readable service name")
     service_address: str = Field(description="Service network address")
     service_port: int = Field(description="Service port number")
-    service_tags: List[str] = Field(
-        default_factory=list, description="Service tags for categorization"
+    service_tags: list[str] = Field(
+        default_factory=list,
+        description="Service tags for categorization",
     )
-    health_check_url: Optional[str] = Field(
-        default=None, description="URL for health check endpoint"
+    health_check_url: str | None = Field(
+        default=None,
+        description="URL for health check endpoint",
     )
-    metadata: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Additional service metadata"
+    metadata: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Additional service metadata",
     )
 
 
 class ModelServiceDiscoveryResult(BaseModel):
     """Strongly-typed model for service discovery results."""
 
-    services: Dict[str, List[str]] = Field(
-        default_factory=dict, description="Map of service names to their tags"
+    services: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Map of service names to their tags",
     )
-    service_details: List[ModelServiceRegistrationData] = Field(
-        default_factory=list, description="Detailed service information"
+    service_details: list[ModelServiceRegistrationData] = Field(
+        default_factory=list,
+        description="Detailed service information",
     )
     discovery_timestamp: float = Field(
-        description="Timestamp when discovery was performed"
+        description="Timestamp when discovery was performed",
     )
     consul_health: bool = Field(
-        default=True, description="Whether Consul was healthy during discovery"
+        default=True,
+        description="Whether Consul was healthy during discovery",
     )

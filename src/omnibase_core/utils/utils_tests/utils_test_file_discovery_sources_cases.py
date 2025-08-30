@@ -26,19 +26,20 @@ Test case registry for file discovery sources (filesystem, .tree, hybrid).
 Defines canonical test case classes and central registry for use in protocol-first tests.
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Set, Type
+from typing import Any
 
 import pytest
 
 # Central registry for test cases
-FILE_DISCOVERY_TEST_CASES: Dict[str, Type] = {}
+FILE_DISCOVERY_TEST_CASES: dict[str, type] = {}
 
 
-def register_file_discovery_test_case(name: str) -> Callable[[Type], Type]:
+def register_file_discovery_test_case(name: str) -> Callable[[type], type]:
     """Decorator to register a test case class in the file discovery test case registry."""
 
-    def decorator(cls: Type) -> Type:
+    def decorator(cls: type) -> type:
         FILE_DISCOVERY_TEST_CASES[name] = cls
         return cls
 
@@ -62,7 +63,7 @@ class FilesystemBasicCase:
         (tmp_path / ".git/hidden.yaml").write_text("should be ignored")
         return tmp_path
 
-    def expected(self, tmp_path: Path) -> Set[Path]:
+    def expected(self, tmp_path: Path) -> set[Path]:
         return {tmp_path / "a.yaml", tmp_path / "b.json"}
 
     def run(self, discovery_source: Any, tmp_path: Path) -> None:
@@ -94,7 +95,7 @@ class TreeBasicCase:
         (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
         return tmp_path
 
-    def expected(self, tmp_path: Path) -> Set[Path]:
+    def expected(self, tmp_path: Path) -> set[Path]:
         return {tmp_path / "a.yaml", tmp_path / "b.json"}
 
     def run(self, discovery_source: Any, tmp_path: Path) -> None:
@@ -127,7 +128,7 @@ class HybridWarnDriftCase:
         (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
         return tmp_path
 
-    def expected(self, tmp_path: Path) -> Set[Path]:
+    def expected(self, tmp_path: Path) -> set[Path]:
         # In warn mode, all eligible files are returned
         return {tmp_path / "a.yaml", tmp_path / "b.json", tmp_path / "extra.yaml"}
 
@@ -161,7 +162,7 @@ class HybridStrictDriftCase:
         (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
         return tmp_path
 
-    def expected(self, tmp_path: Path) -> Set[Path]:
+    def expected(self, tmp_path: Path) -> set[Path]:
         # In strict mode, only .tree files are returned
         return {tmp_path / "a.yaml", tmp_path / "b.json"}
 

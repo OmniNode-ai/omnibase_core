@@ -5,7 +5,7 @@ ONEX-compliant models for standardized data structures used in the
 idle compute integration for document freshness monitoring.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -47,19 +47,19 @@ class ModelImpactAnalysis(BaseModel):
     update_priority: str
     coverage_score: float
     confidence_score: float
-    suggested_actions: List[str]
+    suggested_actions: list[str]
 
 
 class ModelDependencyAnalysis(BaseModel):
     """Standardized dependency analysis results."""
 
-    graph_id: Optional[str] = None
+    graph_id: str | None = None
     total_dependencies: int
     critical_dependencies: int
     stale_dependencies: int
     missing_dependencies: int
     impact_analysis: Optional["ModelImpactAnalysis"] = None
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class ModelQualityAnalysis(BaseModel):
@@ -70,17 +70,17 @@ class ModelQualityAnalysis(BaseModel):
     completeness_score: float
     accuracy_score: float
     structure_score: float
-    issues_found: List[str]
-    error: Optional[str] = None
+    issues_found: list[str]
+    error: str | None = None
 
 
 class ModelCompletenessAnalysis(BaseModel):
     """Standardized completeness analysis results."""
 
     is_complete: bool
-    missing_sections: List[str]
+    missing_sections: list[str]
     coverage_percentage: float
-    suggestions: List[str]
+    suggestions: list[str]
 
 
 class ModelResourceUsage(BaseModel):
@@ -97,8 +97,8 @@ class ModelTaskExecutionResult(BaseModel):
     success: bool
     execution_time_seconds: float
     resource_usage: Optional["ModelResourceUsage"] = None
-    error_message: Optional[str] = None
-    output_summary: Optional[str] = None
+    error_message: str | None = None
+    output_summary: str | None = None
 
 
 class ModelTaskResult(BaseModel):
@@ -117,9 +117,9 @@ class ModelAnalysisStatus(BaseModel):
     is_running: bool
     registered_documents: int
     completed_analyses: int
-    target_directories: List[str] = Field(default_factory=list)
+    target_directories: list[str] = Field(default_factory=list)
     registry_status: ModelRegistryStatus
-    recent_completions: List[str] = Field(default_factory=list)
+    recent_completions: list[str] = Field(default_factory=list)
     monitoring_config: ModelMonitoringConfig
 
 
@@ -129,16 +129,16 @@ class ModelAnalysisResult(BaseModel):
     document_path: str
     analysis_type: str
     started_at: str
-    freshness_analysis: Optional[ModelFreshnessAnalysis] = None
-    dependency_analysis: Optional[ModelDependencyAnalysis] = None
-    ai_quality_analysis: Optional[ModelQualityAnalysis] = None
-    quality_analysis: Optional[ModelQualityAnalysis] = None
-    improvement_suggestions: Optional[List[str]] = None
-    completeness_analysis: Optional[ModelCompletenessAnalysis] = None
-    completed_at: Optional[str] = None
+    freshness_analysis: ModelFreshnessAnalysis | None = None
+    dependency_analysis: ModelDependencyAnalysis | None = None
+    ai_quality_analysis: ModelQualityAnalysis | None = None
+    quality_analysis: ModelQualityAnalysis | None = None
+    improvement_suggestions: list[str] | None = None
+    completeness_analysis: ModelCompletenessAnalysis | None = None
+    completed_at: str | None = None
     status: str = EnumAnalysisStatus.PENDING
-    error: Optional[str] = None
-    summary: Optional[str] = None
+    error: str | None = None
+    summary: str | None = None
 
 
 # Rebuild models to resolve forward references

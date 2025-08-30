@@ -2,8 +2,6 @@
 Node introspection response model for ONEX nodes.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
@@ -11,8 +9,7 @@ from omnibase_core.model.core.model_contract import ModelContract
 from omnibase_core.model.core.model_dependencies import ModelDependencies
 from omnibase_core.model.core.model_error_codes import ModelErrorCodes
 from omnibase_core.model.core.model_event_channels import ModelEventChannels
-from omnibase_core.model.core.model_node_metadata_info import \
-    ModelNodeMetadataInfo
+from omnibase_core.model.core.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.model.core.model_state_models import ModelStates
 
 
@@ -25,28 +22,36 @@ class ModelNodeIntrospectionResponse(BaseModel):
     """
 
     node_metadata: ModelNodeMetadataInfo = Field(
-        ..., description="Node metadata and identification"
+        ...,
+        description="Node metadata and identification",
     )
     contract: ModelContract = Field(
-        ..., description="Node contract and interface specification"
+        ...,
+        description="Node contract and interface specification",
     )
     state_models: ModelStates = Field(
-        ..., description="Input and output state model specifications"
+        ...,
+        description="Input and output state model specifications",
     )
     error_codes: ModelErrorCodes = Field(
-        ..., description="Error codes and exit code mapping"
+        ...,
+        description="Error codes and exit code mapping",
     )
     dependencies: ModelDependencies = Field(
-        ..., description="Runtime and optional dependencies"
+        ...,
+        description="Runtime and optional dependencies",
     )
-    capabilities: List[EnumNodeCapability] = Field(
-        default_factory=list, description="Node capabilities"
+    capabilities: list[EnumNodeCapability] = Field(
+        default_factory=list,
+        description="Node capabilities",
     )
-    event_channels: Optional[ModelEventChannels] = Field(
-        None, description="Event channels this node subscribes to and publishes to"
+    event_channels: ModelEventChannels | None = Field(
+        None,
+        description="Event channels this node subscribes to and publishes to",
     )
     introspection_version: str = Field(
-        "1.0.0", description="Introspection format version"
+        "1.0.0",
+        description="Introspection format version",
     )
 
     model_config = ConfigDict(
@@ -70,7 +75,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
                                 "type": "List[str]",
                                 "required": True,
                                 "description": "Files to stamp",
-                            }
+                            },
                         ],
                         "optional_args": [
                             {
@@ -78,7 +83,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
                                 "type": "str",
                                 "required": False,
                                 "description": "Author name for metadata",
-                            }
+                            },
                         ],
                         "exit_codes": [0, 1, 2],
                     },
@@ -96,6 +101,6 @@ class ModelNodeIntrospectionResponse(BaseModel):
                     ],
                     "publishes_to": ["onex.discovery.response", "onex.node.status"],
                 },
-            }
-        }
+            },
+        },
     )

@@ -7,13 +7,15 @@ Provides centralized structured logging with standardized formats.
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase_core.enums import EnumLogLevel as LogLevelEnum
 
 
 def emit_log_event_sync(
-    level: LogLevelEnum, message: str, context: Optional[Dict[str, Any]] = None
+    level: LogLevelEnum,
+    message: str,
+    context: dict[str, Any] | None = None,
 ) -> None:
     """
     Emit a structured log event synchronously.

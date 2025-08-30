@@ -3,7 +3,6 @@ Onextree validation result model.
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -23,7 +22,7 @@ class ModelOnextreeValidationResult(BaseModel):
     """Onextree validation result model."""
 
     status: ValidationStatusEnum
-    errors: List[ModelOnextreeValidationError] = []
-    warnings: List[ModelOnextreeValidationWarning] = []
-    summary: Optional[str] = None
-    tree: Optional[ModelOnextreeTreeNode] = None
+    errors: list[ModelOnextreeValidationError] = []
+    warnings: list[ModelOnextreeValidationWarning] = []
+    summary: str | None = None
+    tree: ModelOnextreeTreeNode | None = None

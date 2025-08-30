@@ -5,7 +5,6 @@ Replaces Dict[str, Any] usage with strongly typed batch processing information.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,12 +19,15 @@ class ModelBatchProcessingMetadata(BaseModel):
     retry_count: int = Field(default=0, description="Number of retry attempts")
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     timeout_seconds: int = Field(default=300, description="Processing timeout")
-    checkpoint_interval: Optional[int] = Field(
-        default=None, description="Checkpoint interval in seconds"
+    checkpoint_interval: int | None = Field(
+        default=None,
+        description="Checkpoint interval in seconds",
     )
-    dependencies: List[str] = Field(
-        default_factory=list, description="Batch dependency identifiers"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Batch dependency identifiers",
     )
-    scheduled_at: Optional[datetime] = Field(
-        default=None, description="Scheduled processing time"
+    scheduled_at: datetime | None = Field(
+        default=None,
+        description="Scheduled processing time",
     )

@@ -5,7 +5,6 @@ Type-safe additional context replacing Dict[str, Any]
 with structured context information.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,23 +22,29 @@ class ModelAdditionalContext(BaseModel):
     instead of using primitive dict types.
     """
 
-    request_id: Optional[UUID] = Field(None, description="Unique request identifier")
-    user_id: Optional[str] = Field(
-        None, description="User identifier", pattern="^[a-zA-Z0-9_-]+$"
+    request_id: UUID | None = Field(None, description="Unique request identifier")
+    user_id: str | None = Field(
+        None,
+        description="User identifier",
+        pattern="^[a-zA-Z0-9_-]+$",
     )
-    session_id: Optional[UUID] = Field(None, description="Session identifier")
-    environment: Optional[ModelEnvironment] = Field(
-        None, description="Execution environment"
+    session_id: UUID | None = Field(None, description="Session identifier")
+    environment: ModelEnvironment | None = Field(
+        None,
+        description="Execution environment",
     )
-    feature_flags: Optional[ModelFeatureFlags] = Field(
-        None, description="Feature flag configuration"
+    feature_flags: ModelFeatureFlags | None = Field(
+        None,
+        description="Feature flag configuration",
     )
-    custom_fields: Optional[ModelCustomFields] = Field(
-        None, description="Custom extension fields"
+    custom_fields: ModelCustomFields | None = Field(
+        None,
+        description="Custom extension fields",
     )
-    trace_id: Optional[str] = Field(None, description="Distributed tracing identifier")
-    parent_span_id: Optional[str] = Field(
-        None, description="Parent span identifier for tracing"
+    trace_id: str | None = Field(None, description="Distributed tracing identifier")
+    parent_span_id: str | None = Field(
+        None,
+        description="Parent span identifier for tracing",
     )
 
     def has_tracing_context(self) -> bool:

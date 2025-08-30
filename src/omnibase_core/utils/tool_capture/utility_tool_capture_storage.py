@@ -9,7 +9,6 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,10 +25,12 @@ class ModelStorageConfig(BaseModel):
         description="Base directory for storing tool capture data",
     )
     max_captures_per_file: int = Field(
-        default=10000, description="Maximum captures per daily file before rotation"
+        default=10000,
+        description="Maximum captures per daily file before rotation",
     )
     retention_days: int = Field(
-        default=30, description="Number of days to retain capture files"
+        default=30,
+        description="Number of days to retain capture files",
     )
 
 
@@ -43,7 +44,7 @@ class UtilityToolCaptureStorage:
     - Thread-safe operations
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: str | None = None):
         """Initialize storage utility.
 
         Args:
@@ -51,7 +52,8 @@ class UtilityToolCaptureStorage:
         """
         # Configuration with environment variable fallback
         config_path = storage_path or os.getenv(
-            "TOOL_CAPTURE_STORAGE", "./data/tool_captures"
+            "TOOL_CAPTURE_STORAGE",
+            "./data/tool_captures",
         )
         self.config = ModelStorageConfig(storage_path=Path(config_path))
 
@@ -59,11 +61,9 @@ class UtilityToolCaptureStorage:
         self.config.storage_path.mkdir(parents=True, exist_ok=True)
 
         # In-memory caches
-        self._captures_cache: List[ModelToolCapture] = []
-        self._stats_cache: Dict[str, ModelToolStats] = defaultdict(ModelToolStats)
+        self._captures_cache: list[ModelToolCapture] = []
+        self._stats_cache: dict[str, ModelToolStats] = defaultdict(ModelToolStats)
         self._cache_loaded = False
-
-        print(f"✅ Storage utility initialized at {self.config.storage_path}")
 
     async def save_capture(self, capture: ModelToolCapture) -> bool:
         """Save a tool capture to persistent storage.
@@ -86,13 +86,14 @@ class UtilityToolCaptureStorage:
 
             return True
 
-        except Exception as e:
-            print(f"❌ Failed to save capture {capture.id}: {e}")
+        except Exception:
             return False
 
     async def load_captures(
-        self, date: Optional[datetime] = None, limit: Optional[int] = None
-    ) -> List[ModelToolCapture]:
+        self,
+        date: datetime | None = None,
+        limit: int | None = None,
+    ) -> list[ModelToolCapture]:
         """Load tool captures from storage.
 
         Args:
@@ -118,8 +119,7 @@ class UtilityToolCaptureStorage:
 
             return captures
 
-        except Exception as e:
-            print(f"❌ Failed to load captures: {e}")
+        except Exception:
             return []
 
     async def get_statistics(self) -> ModelCaptureStats:
@@ -146,8 +146,7 @@ class UtilityToolCaptureStorage:
                 tool_stats=dict(self._stats_cache),
             )
 
-        except Exception as e:
-            print(f"❌ Failed to get statistics: {e}")
+        except Exception:
             return ModelCaptureStats(
                 total_captures=0,
                 total_calls=0,
@@ -179,19 +178,20 @@ class UtilityToolCaptureStorage:
                     if days_old > self.config.retention_days:
                         file_path.unlink()
                         cleanup_count += 1
-                        print(f"🗑️ Cleaned up old file: {file_path.name}")
 
-                except (ValueError, OSError) as e:
-                    print(f"⚠️ Failed to process file {file_path}: {e}")
+                except (ValueError, OSError):
+                    pass
 
             return cleanup_count
 
-        except Exception as e:
-            print(f"❌ Failed to cleanup old files: {e}")
+        except Exception:
             return 0
 
     async def update_capture_result(
-        self, tool_use_id: str, result: str, status: str = "completed"
+        self,
+        tool_use_id: str,
+        result: str,
+        status: str = "completed",
     ) -> bool:
         """Update a capture with execution result.
 
@@ -214,15 +214,15 @@ class UtilityToolCaptureStorage:
                     await self._save_to_daily_file(capture, update_mode=True)
                     return True
 
-            print(f"⚠️ Capture not found for update: {tool_use_id}")
             return False
 
-        except Exception as e:
-            print(f"❌ Failed to update capture {tool_use_id}: {e}")
+        except Exception:
             return False
 
     async def _save_to_daily_file(
-        self, capture: ModelToolCapture, update_mode: bool = False
+        self,
+        capture: ModelToolCapture,
+        update_mode: bool = False,
     ) -> None:
         """Save capture to daily JSON file.
 
@@ -248,7 +248,7 @@ class UtilityToolCaptureStorage:
         else:
             # Append to existing file (for performance)
             try:
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     existing_data = json.load(f)
 
                 existing_data.append(capture.model_dump(mode="json"))
@@ -271,7 +271,7 @@ class UtilityToolCaptureStorage:
             file_path = self.config.storage_path / f"captures_{date_str}.json"
 
             if file_path.exists():
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     capture_dicts = json.load(f)
                     self._captures_cache = [
                         ModelToolCapture(**c) for c in capture_dicts
@@ -282,12 +282,9 @@ class UtilityToolCaptureStorage:
                 for capture in self._captures_cache:
                     self._update_stats(capture)
 
-                print(f"📂 Loaded {len(self._captures_cache)} captures from cache")
-
             self._cache_loaded = True
 
-        except Exception as e:
-            print(f"❌ Failed to load cache: {e}")
+        except Exception:
             self._cache_loaded = True  # Prevent retry loops
 
     def _update_stats(self, capture: ModelToolCapture) -> None:

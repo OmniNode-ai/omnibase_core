@@ -18,23 +18,22 @@ Author: ONEX Framework Team
 import asyncio
 import time
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.node_compute import ModelComputeInput, NodeCompute
 from omnibase_core.core.node_core_base import NodeCoreBase
-from omnibase_core.core.node_effect import (EffectType, ModelEffectInput,
-                                            NodeEffect)
-from omnibase_core.core.node_orchestrator import (ExecutionMode,
-                                                  ModelOrchestratorInput,
-                                                  NodeOrchestrator,
-                                                  WorkflowStep)
-from omnibase_core.core.node_reducer import (ModelReducerInput, NodeReducer,
-                                             ReductionType)
+from omnibase_core.core.node_effect import NodeEffect
+from omnibase_core.core.node_orchestrator import (
+    NodeOrchestrator,
+)
+from omnibase_core.core.node_reducer import (
+    NodeReducer,
+)
 from omnibase_core.core.onex_container import ONEXContainer
 
 
@@ -52,7 +51,7 @@ class NodeArchitectureValidator:
         self.container = self._create_mock_container()
 
         # Test results tracking
-        self.validation_results: Dict[str, Dict[str, Any]] = {
+        self.validation_results: dict[str, dict[str, Any]] = {
             "foundation": {},
             "node_types": {},
             "type_safety": {},
@@ -61,7 +60,7 @@ class NodeArchitectureValidator:
             "standards_compliance": {},
         }
 
-    async def validate_all(self) -> Dict[str, Any]:
+    async def validate_all(self) -> dict[str, Any]:
         """
         Run complete validation suite for 4-node architecture.
 
@@ -170,7 +169,7 @@ class NodeArchitectureValidator:
         except Exception as e:
             self.validation_results["foundation"]["error"] = {
                 "passed": False,
-                "message": f"Foundation validation failed: {str(e)}",
+                "message": f"Foundation validation failed: {e!s}",
             }
 
     async def _validate_node_types(self) -> None:
@@ -198,7 +197,8 @@ class NodeArchitectureValidator:
 
                 # Test node-specific capabilities
                 node_specific_tests = await self._test_node_specific_capabilities(
-                    node_name, node_instance
+                    node_name,
+                    node_instance,
                 )
 
                 self.validation_results["node_types"][node_name] = {
@@ -220,14 +220,17 @@ class NodeArchitectureValidator:
                 }
 
     async def _test_node_specific_capabilities(
-        self, node_name: str, node_instance
-    ) -> Dict[str, Any]:
+        self,
+        node_name: str,
+        node_instance,
+    ) -> dict[str, Any]:
         """Test node-specific capabilities."""
         try:
             if node_name == "NodeCompute":
                 # Test computation capabilities
-                compute_input = ModelComputeInput(
-                    data={"test": "computation"}, computation_type="test_computation"
+                ModelComputeInput(
+                    data={"test": "computation"},
+                    computation_type="test_computation",
                 )
 
                 # Test that it has computation-specific methods
@@ -239,7 +242,7 @@ class NodeArchitectureValidator:
                     "details": {"has_cache": has_cache, "has_registry": has_registry},
                 }
 
-            elif node_name == "NodeEffect":
+            if node_name == "NodeEffect":
                 # Test effect capabilities
                 has_semaphore = hasattr(node_instance, "effect_semaphore")
                 has_transactions = hasattr(node_instance, "active_transactions")
@@ -256,7 +259,7 @@ class NodeArchitectureValidator:
                     },
                 }
 
-            elif node_name == "NodeReducer":
+            if node_name == "NodeReducer":
                 # Test reducer capabilities
                 has_functions = hasattr(node_instance, "reduction_functions")
                 has_windows = hasattr(node_instance, "active_windows")
@@ -269,7 +272,7 @@ class NodeArchitectureValidator:
                     },
                 }
 
-            elif node_name == "NodeOrchestrator":
+            if node_name == "NodeOrchestrator":
                 # Test orchestrator capabilities
                 has_workflows = hasattr(node_instance, "active_workflows")
                 has_load_balancer = hasattr(node_instance, "load_balancer")
@@ -326,8 +329,8 @@ class NodeArchitectureValidator:
             await compute_node.initialize()
 
             # Single operation test
-            start_time = time.time()
-            compute_input = ModelComputeInput(
+            time.time()
+            ModelComputeInput(
                 data={"test_value": 42},
                 computation_type="test_computation",
                 cache_enabled=False,
@@ -375,7 +378,6 @@ class NodeArchitectureValidator:
             await orchestrator.initialize()
 
             # Create a simple workflow
-            steps = []  # Would create actual workflow steps
 
             integration_tests = {
                 "orchestrator_initialized": True,
@@ -424,14 +426,14 @@ class NodeArchitectureValidator:
                 "message": "Standards compliance validation failed",
             }
 
-    def _generate_validation_summary(self) -> Dict[str, Any]:
+    def _generate_validation_summary(self) -> dict[str, Any]:
         """Generate validation summary."""
         passed_count = 0
         total_count = 0
 
-        for category, tests in self.validation_results.items():
+        for _category, tests in self.validation_results.items():
             if isinstance(tests, dict):
-                for test_name, result in tests.items():
+                for _test_name, result in tests.items():
                     if isinstance(result, dict) and "passed" in result:
                         total_count += 1
                         if result["passed"]:
@@ -448,7 +450,7 @@ class NodeArchitectureValidator:
             },
         }
 
-    def _get_category_summary(self, tests: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_category_summary(self, tests: dict[str, Any]) -> dict[str, Any]:
         """Get summary for a test category."""
         if not isinstance(tests, dict):
             return {"passed": False, "count": 0}
@@ -456,7 +458,7 @@ class NodeArchitectureValidator:
         passed = 0
         total = 0
 
-        for test_name, result in tests.items():
+        for _test_name, result in tests.items():
             if isinstance(result, dict) and "passed" in result:
                 total += 1
                 if result["passed"]:
@@ -483,25 +485,10 @@ async def main():
     validator = NodeArchitectureValidator()
     results = await validator.validate_all()
 
-    print("=" * 70)
-    print("4-Node Architecture Validation Results")
-    print("=" * 70)
-
     summary = results["summary"]
-    print(f"Overall Success: {summary['overall_success']}")
-    print(f"Passed: {summary['passed_validations']}/{summary['total_validations']}")
-    print(f"Success Rate: {summary['success_rate']:.1%}")
-    print()
 
-    print("Category Results:")
-    for category, result in summary["categories"].items():
-        status = "✅ PASS" if result["passed"] else "❌ FAIL"
-        print(f"  {category}: {status} ({result['count']})")
-
-    print()
-    print("=" * 70)
-    print("Validation Complete")
-    print("=" * 70)
+    for _category, result in summary["categories"].items():
+        "✅ PASS" if result["passed"] else "❌ FAIL"
 
     return results
 

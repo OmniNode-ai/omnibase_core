@@ -8,28 +8,23 @@ based on mathematical graph algorithms.
 
 import logging
 from collections import defaultdict, deque
-from typing import Dict, List, Set
 
 from omnibase_core.model.dependencies.model_dependency_graph import (
-    ModelDependencyGraph, ModelTopologicalSort)
+    ModelDependencyGraph,
+    ModelTopologicalSort,
+)
 
 
 class CircularDependencyError(Exception):
     """Exception raised when circular dependency is detected."""
 
-    pass
-
 
 class DependencyResolutionError(Exception):
     """Exception raised when dependency resolution fails."""
 
-    pass
-
 
 class TopologicalSortError(Exception):
     """Exception raised when topological sort fails."""
-
-    pass
 
 
 class UtilityDependencyResolver:
@@ -40,7 +35,8 @@ class UtilityDependencyResolver:
         self.logger = logging.getLogger(__name__)
 
     def perform_topological_sort(
-        self, graph: ModelDependencyGraph
+        self,
+        graph: ModelDependencyGraph,
     ) -> ModelTopologicalSort:
         """
         Perform topological sorting using Kahn's algorithm.
@@ -64,7 +60,7 @@ class UtilityDependencyResolver:
 
             # Initialize queue with nodes having no dependencies
             queue = deque(
-                [node_id for node_id, degree in in_degree.items() if degree == 0]
+                [node_id for node_id, degree in in_degree.items() if degree == 0],
             )
             sorted_nodes = []
             levels = []
@@ -117,12 +113,14 @@ class UtilityDependencyResolver:
             return result
 
         except Exception as e:
-            self.logger.error(f"Topological sort failed: {e}")
-            raise TopologicalSortError(f"Failed to perform topological sort: {e}")
+            self.logger.exception(f"Topological sort failed: {e}")
+            msg = f"Failed to perform topological sort: {e}"
+            raise TopologicalSortError(msg)
 
     def detect_circular_dependencies(
-        self, graph: ModelDependencyGraph
-    ) -> List[List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+    ) -> list[list[str]]:
         """
         Detect circular dependencies using DFS.
 
@@ -138,7 +136,7 @@ class UtilityDependencyResolver:
             black = set()  # Completed processing
             cycles = []
 
-            def dfs_visit(node_id: str, path: List[str]) -> None:
+            def dfs_visit(node_id: str, path: list[str]) -> None:
                 if node_id in gray:
                     # Found back edge - cycle detected
                     try:
@@ -147,7 +145,7 @@ class UtilityDependencyResolver:
                         cycles.append(cycle)
                     except ValueError:
                         # Node not in current path, add as potential cycle
-                        cycles.append(path + [node_id])
+                        cycles.append([*path, node_id])
                     return
 
                 if node_id in black:
@@ -158,7 +156,7 @@ class UtilityDependencyResolver:
 
                 # Visit all neighbors
                 for neighbor in graph.adjacency_list.get(node_id, []):
-                    dfs_visit(neighbor, path + [node_id])
+                    dfs_visit(neighbor, [*path, node_id])
 
                 gray.discard(node_id)
                 black.add(node_id)
@@ -171,12 +169,14 @@ class UtilityDependencyResolver:
             return cycles
 
         except Exception as e:
-            self.logger.error(f"Cycle detection failed: {e}")
+            self.logger.exception(f"Cycle detection failed: {e}")
             return []
 
     def resolve_dependencies_for_node(
-        self, graph: ModelDependencyGraph, node_id: str
-    ) -> List[str]:
+        self,
+        graph: ModelDependencyGraph,
+        node_id: str,
+    ) -> list[str]:
         """
         Get resolved dependency order for a specific node.
 
@@ -192,7 +192,8 @@ class UtilityDependencyResolver:
         """
         try:
             if node_id not in graph.nodes:
-                raise DependencyResolutionError(f"Node {node_id} not found in graph")
+                msg = f"Node {node_id} not found in graph"
+                raise DependencyResolutionError(msg)
 
             resolved_order = []
             visited = set()
@@ -200,8 +201,9 @@ class UtilityDependencyResolver:
 
             def resolve_recursive(current_node: str) -> None:
                 if current_node in temp_visited:
+                    msg = f"Circular dependency detected involving {current_node}"
                     raise CircularDependencyError(
-                        f"Circular dependency detected involving {current_node}"
+                        msg,
                     )
 
                 if current_node in visited:
@@ -225,10 +227,13 @@ class UtilityDependencyResolver:
         except CircularDependencyError:
             raise
         except Exception as e:
-            self.logger.error(f"Dependency resolution failed for node {node_id}: {e}")
-            raise DependencyResolutionError(f"Failed to resolve dependencies: {e}")
+            self.logger.exception(
+                f"Dependency resolution failed for node {node_id}: {e}"
+            )
+            msg = f"Failed to resolve dependencies: {e}"
+            raise DependencyResolutionError(msg)
 
-    def get_ready_work_items(self, graph: ModelDependencyGraph) -> List[str]:
+    def get_ready_work_items(self, graph: ModelDependencyGraph) -> list[str]:
         """
         Get work items that are ready for execution (all dependencies satisfied).
 
@@ -269,12 +274,13 @@ class UtilityDependencyResolver:
             return ready_items
 
         except Exception as e:
-            self.logger.error(f"Failed to get ready work items: {e}")
+            self.logger.exception(f"Failed to get ready work items: {e}")
             return []
 
     def calculate_work_levels(
-        self, graph: ModelDependencyGraph
-    ) -> Dict[int, List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+    ) -> dict[int, list[str]]:
         """
         Calculate work levels for parallel execution planning.
 
@@ -288,7 +294,7 @@ class UtilityDependencyResolver:
             levels = {}
             node_levels = {}
 
-            def calculate_level(node_id: str, visited: Set[str]) -> int:
+            def calculate_level(node_id: str, visited: set[str]) -> int:
                 if node_id in visited:
                     return 0  # Cycle detected - assign level 0
 
@@ -324,12 +330,14 @@ class UtilityDependencyResolver:
             return levels
 
         except Exception as e:
-            self.logger.error(f"Failed to calculate work levels: {e}")
+            self.logger.exception(f"Failed to calculate work levels: {e}")
             return {}
 
     def optimize_work_assignment(
-        self, graph: ModelDependencyGraph, agent_count: int
-    ) -> List[List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+        agent_count: int,
+    ) -> list[list[str]]:
         """
         Optimize work assignment for multiple agents.
 
@@ -359,7 +367,7 @@ class UtilityDependencyResolver:
                         -(
                             graph.nodes[x].estimated_duration or 1.0
                         ),  # Longer tasks first
-                    )
+                    ),
                 )
 
                 # Assign nodes to least loaded agents
@@ -372,7 +380,8 @@ class UtilityDependencyResolver:
 
                     # Find least loaded agent
                     min_load_agent = min(
-                        range(agent_count), key=lambda i: agent_loads[i]
+                        range(agent_count),
+                        key=lambda i: agent_loads[i],
                     )
 
                     # Assign to agent
@@ -382,12 +391,13 @@ class UtilityDependencyResolver:
             return agent_assignments
 
         except Exception as e:
-            self.logger.error(f"Failed to optimize work assignment: {e}")
+            self.logger.exception(f"Failed to optimize work assignment: {e}")
             return [[] for _ in range(agent_count)]
 
     def validate_dependency_consistency(
-        self, graph: ModelDependencyGraph
-    ) -> Dict[str, List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+    ) -> dict[str, list[str]]:
         """
         Validate dependency graph for consistency issues.
 
@@ -410,11 +420,11 @@ class UtilityDependencyResolver:
             for edge_id, edge in graph.edges.items():
                 if edge.source_id not in graph.nodes:
                     issues["missing_nodes"].append(
-                        f"Edge {edge_id} references missing source node {edge.source_id}"
+                        f"Edge {edge_id} references missing source node {edge.source_id}",
                     )
                 if edge.target_id not in graph.nodes:
                     issues["missing_nodes"].append(
-                        f"Edge {edge_id} references missing target node {edge.target_id}"
+                        f"Edge {edge_id} references missing target node {edge.target_id}",
                     )
 
             # Check for orphaned edges in node references
@@ -422,20 +432,20 @@ class UtilityDependencyResolver:
                 for edge_id in node.dependencies_in + node.dependencies_out:
                     if edge_id not in graph.edges:
                         issues["orphaned_edges"].append(
-                            f"Node {node_id} references missing edge {edge_id}"
+                            f"Node {node_id} references missing edge {edge_id}",
                         )
 
             # Check adjacency list consistency
             for node_id, neighbors in graph.adjacency_list.items():
                 if node_id not in graph.nodes:
                     issues["inconsistent_adjacency"].append(
-                        f"Adjacency list contains missing node {node_id}"
+                        f"Adjacency list contains missing node {node_id}",
                     )
 
                 for neighbor in neighbors:
                     if neighbor not in graph.nodes:
                         issues["inconsistent_adjacency"].append(
-                            f"Node {node_id} has missing neighbor {neighbor}"
+                            f"Node {node_id} has missing neighbor {neighbor}",
                         )
 
             # Check in-degree consistency
@@ -449,33 +459,35 @@ class UtilityDependencyResolver:
                 actual_degree = graph.in_degree.get(node_id, 0)
                 if expected_degree != actual_degree:
                     issues["invalid_in_degrees"].append(
-                        f"Node {node_id} in-degree mismatch: expected {expected_degree}, got {actual_degree}"
+                        f"Node {node_id} in-degree mismatch: expected {expected_degree}, got {actual_degree}",
                     )
 
             # Check for self-dependencies
             for edge_id, edge in graph.edges.items():
                 if edge.source_id == edge.target_id:
                     issues["self_dependencies"].append(
-                        f"Edge {edge_id} creates self-dependency for node {edge.source_id}"
+                        f"Edge {edge_id} creates self-dependency for node {edge.source_id}",
                     )
 
             return issues
 
         except Exception as e:
-            self.logger.error(f"Dependency validation failed: {e}")
+            self.logger.exception(f"Dependency validation failed: {e}")
             return {"validation_error": [str(e)]}
 
     # Private helper methods
 
     def _detect_cycles_in_subgraph(
-        self, graph: ModelDependencyGraph, nodes: Set[str]
-    ) -> List[List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+        nodes: set[str],
+    ) -> list[list[str]]:
         """Detect cycles in a subgraph of nodes."""
         cycles = []
         visited = set()
         rec_stack = set()
 
-        def dfs_cycle(node_id: str, path: List[str]) -> None:
+        def dfs_cycle(node_id: str, path: list[str]) -> None:
             if node_id in rec_stack:
                 # Cycle found
                 try:
@@ -494,7 +506,7 @@ class UtilityDependencyResolver:
 
             for neighbor in graph.adjacency_list.get(node_id, []):
                 if neighbor in nodes:
-                    dfs_cycle(neighbor, path + [node_id])
+                    dfs_cycle(neighbor, [*path, node_id])
 
             rec_stack.remove(node_id)
 
@@ -505,8 +517,10 @@ class UtilityDependencyResolver:
         return cycles
 
     def _calculate_parallel_groups(
-        self, graph: ModelDependencyGraph, levels: List[List[str]]
-    ) -> List[List[str]]:
+        self,
+        graph: ModelDependencyGraph,
+        levels: list[list[str]],
+    ) -> list[list[str]]:
         """Calculate groups of nodes that can be executed in parallel."""
         parallel_groups = []
 
@@ -525,7 +539,7 @@ class UtilityDependencyResolver:
                         conflicts = False
                         for group_node in current_group:
                             if node_id in graph.get_node_dependencies(
-                                group_node
+                                group_node,
                             ) or group_node in graph.get_node_dependencies(node_id):
                                 conflicts = True
                                 break
@@ -536,11 +550,10 @@ class UtilityDependencyResolver:
 
                     if current_group:
                         independent_groups.append(current_group)
-                    else:
-                        # Fallback: add remaining nodes individually
-                        if remaining_nodes:
-                            node = remaining_nodes.pop()
-                            independent_groups.append([node])
+                    # Fallback: add remaining nodes individually
+                    elif remaining_nodes:
+                        node = remaining_nodes.pop()
+                        independent_groups.append([node])
 
                 parallel_groups.extend(independent_groups)
             else:
@@ -549,8 +562,10 @@ class UtilityDependencyResolver:
         return parallel_groups
 
     def _calculate_critical_path(
-        self, graph: ModelDependencyGraph, sorted_nodes: List[str]
-    ) -> List[str]:
+        self,
+        graph: ModelDependencyGraph,
+        sorted_nodes: list[str],
+    ) -> list[str]:
         """Calculate the critical path through the dependency graph."""
         # Calculate earliest and latest start times
         earliest_start = {}

@@ -1,7 +1,5 @@
 """Execution result model for Workflow node execution tracking."""
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
@@ -14,27 +12,42 @@ class ModelExecutionResult(BaseModel):
     status: EnumExecutionStatus = Field(..., description="Execution status")
     output: str = Field(..., description="Primary output message")
     details: str = Field(default="", description="Additional execution details")
-    execution_time_seconds: Optional[float] = Field(
-        None, description="Execution duration", ge=0
+    execution_time_seconds: float | None = Field(
+        None,
+        description="Execution duration",
+        ge=0,
     )
-    discovered_tools: Optional[int] = Field(
-        None, description="Number of tools discovered", ge=0
+    discovered_tools: int | None = Field(
+        None,
+        description="Number of tools discovered",
+        ge=0,
     )
-    models_generated: Optional[int] = Field(
-        None, description="Number of models generated", ge=0
+    models_generated: int | None = Field(
+        None,
+        description="Number of models generated",
+        ge=0,
     )
-    failed_tools: List[str] = Field(
-        default_factory=list, description="List of failed tools"
+    failed_tools: list[str] = Field(
+        default_factory=list,
+        description="List of failed tools",
     )
-    tool_directories: List[str] = Field(
-        default_factory=list, description="Processed directories"
+    tool_directories: list[str] = Field(
+        default_factory=list,
+        description="Processed directories",
     )
-    success_rate: Optional[float] = Field(
-        None, description="Success rate percentage", ge=0.0, le=100.0
+    success_rate: float | None = Field(
+        None,
+        description="Success rate percentage",
+        ge=0.0,
+        le=100.0,
     )
-    scenarios_passed: Optional[int] = Field(
-        None, description="Number of scenarios passed", ge=0
+    scenarios_passed: int | None = Field(
+        None,
+        description="Number of scenarios passed",
+        ge=0,
     )
-    scenarios_total: Optional[int] = Field(
-        None, description="Total number of scenarios", ge=0
+    scenarios_total: int | None = Field(
+        None,
+        description="Total number of scenarios",
+        ge=0,
     )

@@ -9,14 +9,19 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from functools import wraps
-from typing import Awaitable, Callable, List, Optional, TypeVar
+from typing import TypeVar
 
-from omnibase_core.core.monadic.model_node_result import (ErrorInfo, ErrorType,
-                                                          Event,
-                                                          ExecutionContext,
-                                                          LogEntry, NodeResult)
+from omnibase_core.core.monadic.model_node_result import (
+    ErrorInfo,
+    ErrorType,
+    Event,
+    ExecutionContext,
+    LogEntry,
+    NodeResult,
+)
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -28,8 +33,6 @@ X = TypeVar("X")
 class MonadicCompositionError(Exception):
     """Exception raised during monadic composition operations."""
 
-    pass
-
 
 class MonadicComposer:
     """
@@ -39,7 +42,7 @@ class MonadicComposer:
     and performance optimization for complex monadic workflows.
     """
 
-    def __init__(self, correlation_id: Optional[str] = None):
+    def __init__(self, correlation_id: str | None = None):
         self.correlation_id = correlation_id or f"composer_{int(time.time())}"
         self.operation_count = 0
 
@@ -47,11 +50,11 @@ class MonadicComposer:
 
     async def sequence(
         self,
-        operations: List[Callable[[T], Awaitable[NodeResult[U]]]],
+        operations: list[Callable[[T], Awaitable[NodeResult[U]]]],
         initial_value: T,
         fail_fast: bool = True,
         collect_errors: bool = False,
-    ) -> NodeResult[List[U]]:
+    ) -> NodeResult[list[U]]:
         """
         Execute operations sequentially with monadic composition.
 
@@ -95,23 +98,25 @@ class MonadicComposer:
                                 "WARNING",
                                 f"Step {i} failed: {step_result.error.message}",
                                 datetime.now(),
-                            )
+                            ),
                         )
                         continue
-                    elif fail_fast:
+                    if fail_fast:
                         # Return immediate failure
                         execution_context.logs.append(
                             LogEntry(
                                 "ERROR",
                                 f"Sequence failed at step {i}: {step_result.error.message}",
                                 datetime.now(),
-                            )
+                            ),
                         )
 
                         return NodeResult.failure(
                             error=step_result.error,
-                            provenance=execution_context.provenance
-                            + [f"step.{i}.failed"],
+                            provenance=[
+                                *execution_context.provenance,
+                                f"step.{i}.failed",
+                            ],
                             correlation_id=self.correlation_id,
                         )
 
@@ -121,18 +126,21 @@ class MonadicComposer:
                 # Update execution context with successful step
                 execution_context.provenance.append(f"step.{i}.completed")
                 execution_context.logs.append(
-                    LogEntry("INFO", f"Step {i} completed successfully", datetime.now())
+                    LogEntry(
+                        "INFO", f"Step {i} completed successfully", datetime.now()
+                    ),
                 )
 
                 # Combine trust scores (minimum propagation)
                 execution_context.trust_score = min(
-                    execution_context.trust_score, step_result.context.trust_score
+                    execution_context.trust_score,
+                    step_result.context.trust_score,
                 )
 
             except Exception as e:
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Sequence step {i} raised exception: {str(e)}",
+                    message=f"Sequence step {i} raised exception: {e!s}",
                     trace=str(e.__traceback__) if e.__traceback__ else None,
                     correlation_id=self.correlation_id,
                     retryable=False,
@@ -141,12 +149,13 @@ class MonadicComposer:
                 if fail_fast:
                     return NodeResult.failure(
                         error=error_info,
-                        provenance=execution_context.provenance
-                        + [f"step.{i}.exception"],
+                        provenance=[
+                            *execution_context.provenance,
+                            f"step.{i}.exception",
+                        ],
                         correlation_id=self.correlation_id,
                     )
-                else:
-                    errors.append(error_info)
+                errors.append(error_info)
 
         end_time = datetime.now()
         duration_ms = int((end_time - start_time).total_seconds() * 1000)
@@ -171,7 +180,7 @@ class MonadicComposer:
 
             return NodeResult.failure(
                 error=aggregated_error,
-                provenance=execution_context.provenance + ["sequence.partial_failure"],
+                provenance=[*execution_context.provenance, "sequence.partial_failure"],
                 correlation_id=self.correlation_id,
             )
 
@@ -191,7 +200,7 @@ class MonadicComposer:
                     },
                     timestamp=end_time,
                     correlation_id=self.correlation_id,
-                )
+                ),
             ],
             correlation_id=self.correlation_id,
         )
@@ -200,12 +209,12 @@ class MonadicComposer:
 
     async def parallel(
         self,
-        operations: List[Callable[[T], Awaitable[NodeResult[U]]]],
-        input_values: List[T],
-        max_concurrency: Optional[int] = None,
+        operations: list[Callable[[T], Awaitable[NodeResult[U]]]],
+        input_values: list[T],
+        max_concurrency: int | None = None,
         fail_fast: bool = True,
-        timeout_seconds: Optional[float] = None,
-    ) -> NodeResult[List[U]]:
+        timeout_seconds: float | None = None,
+    ) -> NodeResult[list[U]]:
         """
         Execute operations in parallel with monadic composition.
 
@@ -247,7 +256,7 @@ class MonadicComposer:
         # Create tasks for parallel execution
         tasks = [
             run_with_semaphore(op, value, i)
-            for i, (op, value) in enumerate(zip(operations, input_values))
+            for i, (op, value) in enumerate(zip(operations, input_values, strict=False))
         ]
 
         try:
@@ -260,7 +269,7 @@ class MonadicComposer:
             else:
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_info = ErrorInfo(
                 error_type=ErrorType.TIMEOUT,
                 message=f"Parallel execution timed out after {timeout_seconds}s",
@@ -283,7 +292,7 @@ class MonadicComposer:
             if isinstance(result, Exception):
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Parallel operation raised exception: {str(result)}",
+                    message=f"Parallel operation raised exception: {result!s}",
                     trace=str(result.__traceback__) if result.__traceback__ else None,
                     correlation_id=self.correlation_id,
                     retryable=False,
@@ -306,7 +315,7 @@ class MonadicComposer:
                         return NodeResult.failure(
                             error=node_result.error,
                             provenance=[
-                                f"parallel.{self.correlation_id}.operation.{index}.failed"
+                                f"parallel.{self.correlation_id}.operation.{index}.failed",
                             ],
                             correlation_id=self.correlation_id,
                         )
@@ -343,7 +352,7 @@ class MonadicComposer:
                     },
                     timestamp=end_time,
                     correlation_id=self.correlation_id,
-                )
+                ),
             ],
             correlation_id=self.correlation_id,
         )
@@ -355,7 +364,7 @@ class MonadicComposer:
         condition: Callable[[T], Awaitable[bool]],
         true_operation: Callable[[T], Awaitable[NodeResult[U]]],
         input_value: T,
-        false_operation: Optional[Callable[[T], Awaitable[NodeResult[U]]]] = None,
+        false_operation: Callable[[T], Awaitable[NodeResult[U]]] | None = None,
     ) -> NodeResult[U]:
         """
         Execute operations based on conditional logic.
@@ -401,7 +410,7 @@ class MonadicComposer:
                         "conditional_branch": operation_type,
                         "condition_result": condition_result,
                         "duration_ms": duration_ms,
-                    }
+                    },
                 )
                 result.context.provenance.append(f"conditional.{operation_type}")
 
@@ -410,7 +419,7 @@ class MonadicComposer:
         except Exception as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Conditional operation failed: {str(e)}",
+                message=f"Conditional operation failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 correlation_id=self.correlation_id,
                 retryable=False,
@@ -432,7 +441,7 @@ class MonadicComposer:
         backoff_strategy: str = "exponential",  # "linear", "exponential", "fixed"
         base_delay_seconds: float = 1.0,
         max_delay_seconds: float = 60.0,
-        retry_predicate: Optional[Callable[[ErrorInfo], bool]] = None,
+        retry_predicate: Callable[[ErrorInfo], bool] | None = None,
     ) -> NodeResult[U]:
         """
         Execute operation with retry logic and backoff strategies.
@@ -465,10 +474,10 @@ class MonadicComposer:
                             "retry_attempts": attempts,
                             "max_attempts": max_attempts,
                             "backoff_strategy": backoff_strategy,
-                        }
+                        },
                     )
                     result.context.provenance.append(
-                        f"retry.success.attempt_{attempts}"
+                        f"retry.success.attempt_{attempts}",
                     )
                     return result
 
@@ -491,7 +500,7 @@ class MonadicComposer:
             except Exception as e:
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Retry operation raised exception on attempt {attempts}: {str(e)}",
+                    message=f"Retry operation raised exception on attempt {attempts}: {e!s}",
                     trace=str(e.__traceback__) if e.__traceback__ else None,
                     correlation_id=self.correlation_id,
                     retryable=attempts < max_attempts,
@@ -528,25 +537,28 @@ class MonadicComposer:
         )
 
     def _calculate_backoff_delay(
-        self, attempt: int, strategy: str, base_delay: float, max_delay: float
+        self,
+        attempt: int,
+        strategy: str,
+        base_delay: float,
+        max_delay: float,
     ) -> float:
         """Calculate backoff delay based on strategy."""
         if strategy == "fixed":
             return min(base_delay, max_delay)
-        elif strategy == "linear":
+        if strategy == "linear":
             return min(base_delay * attempt, max_delay)
-        elif strategy == "exponential":
+        if strategy == "exponential":
             return min(base_delay * (2 ** (attempt - 1)), max_delay)
-        else:
-            return base_delay
+        return base_delay
 
     # === PIPELINE COMPOSITION ===
 
     async def pipeline(
         self,
-        operations: List[Callable[[V], Awaitable[NodeResult[W]]]],
+        operations: list[Callable[[V], Awaitable[NodeResult[W]]]],
         input_value: V,
-        checkpoint_interval: Optional[int] = None,
+        checkpoint_interval: int | None = None,
         enable_rollback: bool = False,
     ) -> NodeResult[W]:
         """
@@ -581,7 +593,7 @@ class MonadicComposer:
                             "rollback_to_checkpoint": checkpoint_index,
                             "pipeline_position": i,
                             "checkpoint_count": len(checkpoints),
-                        }
+                        },
                     )
 
                 return result
@@ -647,7 +659,7 @@ def monadic_operation(correlation_id_prefix: str = "op"):
             except Exception as e:
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Decorated function {func.__name__} failed: {str(e)}",
+                    message=f"Decorated function {func.__name__} failed: {e!s}",
                     trace=str(e.__traceback__) if e.__traceback__ else None,
                     correlation_id=correlation_id,
                     retryable=False,
@@ -680,20 +692,22 @@ def with_timeout(timeout_seconds: float):
         async def wrapper(*args, **kwargs):
             try:
                 result = await asyncio.wait_for(
-                    func(*args, **kwargs), timeout=timeout_seconds
+                    func(*args, **kwargs),
+                    timeout=timeout_seconds,
                 )
 
                 # Add timeout metadata to successful results
                 if hasattr(result, "is_success") and result.is_success:
                     if hasattr(result, "context") and hasattr(
-                        result.context, "metadata"
+                        result.context,
+                        "metadata",
                     ):
                         result.context.metadata["timeout_seconds"] = timeout_seconds
                         result.context.metadata["timed_out"] = False
 
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 error_info = ErrorInfo(
                     error_type=ErrorType.TIMEOUT,
                     message=f"Operation {func.__name__} timed out after {timeout_seconds}s",
@@ -718,10 +732,10 @@ def with_timeout(timeout_seconds: float):
 
 
 async def sequence_operations(
-    operations: List[Callable[[T], Awaitable[NodeResult[U]]]],
+    operations: list[Callable[[T], Awaitable[NodeResult[U]]]],
     initial_value: T,
-    correlation_id: Optional[str] = None,
-) -> NodeResult[List[U]]:
+    correlation_id: str | None = None,
+) -> NodeResult[list[U]]:
     """
     Helper function for sequential monadic composition.
 
@@ -738,11 +752,11 @@ async def sequence_operations(
 
 
 async def parallel_operations(
-    operations: List[Callable[[T], Awaitable[NodeResult[U]]]],
-    input_values: List[T],
-    max_concurrency: Optional[int] = None,
-    correlation_id: Optional[str] = None,
-) -> NodeResult[List[U]]:
+    operations: list[Callable[[T], Awaitable[NodeResult[U]]]],
+    input_values: list[T],
+    max_concurrency: int | None = None,
+    correlation_id: str | None = None,
+) -> NodeResult[list[U]]:
     """
     Helper function for parallel monadic composition.
 
@@ -777,7 +791,8 @@ def create_retry_operation(
     """
 
     async def retry_wrapper(
-        operation: Callable[[T], Awaitable[NodeResult[U]]], input_value: T
+        operation: Callable[[T], Awaitable[NodeResult[U]]],
+        input_value: T,
     ) -> NodeResult[U]:
         composer = MonadicComposer()
         return await composer.retry(

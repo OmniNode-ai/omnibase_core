@@ -6,14 +6,14 @@ Eliminates boilerplate code for reading node.onex.yaml and tool contracts.
 """
 
 from pathlib import Path
-from typing import Dict, Optional, Union
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.constants import constants_contract_fields as cf
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_node_metadata import ModelNodeMetadata
 
 
@@ -39,12 +39,12 @@ class MixinContractMetadata:
         super().__init__(**kwargs)
 
         # Initialize properties
-        self._node_metadata: Optional[ModelNodeMetadata] = None
-        self._contract_data: Optional[Dict[str, Union[str, int, dict]]] = None
-        self._node_name: Optional[str] = None
-        self._node_version: Optional[str] = None
-        self._description: Optional[str] = None
-        self._tool_type: Optional[str] = None
+        self._node_metadata: ModelNodeMetadata | None = None
+        self._contract_data: dict[str, str | int | dict] | None = None
+        self._node_name: str | None = None
+        self._node_version: str | None = None
+        self._description: str | None = None
+        self._tool_type: str | None = None
 
         # Load metadata
         self._load_metadata()
@@ -67,7 +67,7 @@ class MixinContractMetadata:
         if contract_path:
             self._load_contract(contract_path)
 
-    def _find_node_metadata(self) -> Optional[Path]:
+    def _find_node_metadata(self) -> Path | None:
         """Find node.onex.yaml file."""
         # Start from current module location
         current_file = Path(__file__)
@@ -94,7 +94,7 @@ class MixinContractMetadata:
         )
         return None
 
-    def _find_contract(self) -> Optional[Path]:
+    def _find_contract(self) -> Path | None:
         """Find contract YAML file."""
         # Start from current module location
         current_file = Path(__file__)
@@ -126,7 +126,7 @@ class MixinContractMetadata:
     def _load_node_metadata(self, path: Path) -> None:
         """Load node.onex.yaml metadata."""
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = yaml.safe_load(f)
 
             # Create ModelNodeMetadata instance
@@ -154,7 +154,7 @@ class MixinContractMetadata:
     def _load_contract(self, path: Path) -> None:
         """Load tool contract YAML."""
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 self._contract_data = yaml.safe_load(f)
 
             # Extract key fields
@@ -202,16 +202,16 @@ class MixinContractMetadata:
         return self._tool_type or "generic"
 
     @property
-    def contract_data(self) -> Optional[Dict[str, Union[str, int, dict]]]:
+    def contract_data(self) -> dict[str, str | int | dict] | None:
         """Get full contract data."""
         return self._contract_data
 
     @property
-    def node_metadata(self) -> Optional[ModelNodeMetadata]:
+    def node_metadata(self) -> ModelNodeMetadata | None:
         """Get node metadata model."""
         return self._node_metadata
 
     @property
-    def contract_path(self) -> Optional[Path]:
+    def contract_path(self) -> Path | None:
         """Get path to contract file."""
         return self._find_contract()

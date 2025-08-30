@@ -30,7 +30,6 @@ This mixin handles:
 import atexit
 import datetime
 from pathlib import Path
-from typing import Optional, Union
 from uuid import UUID, uuid4
 
 from omnibase.enums.enum_log_level import LogLevelEnum
@@ -38,16 +37,16 @@ from omnibase.enums.enum_node_status import EnumNodeStatus
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.enums.enum_registry_execution_mode import \
-    RegistryExecutionModeEnum
-from omnibase_core.model.core.model_event_type import \
-    create_event_type_from_string
+from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
+from omnibase_core.model.core.model_event_type import create_event_type_from_string
 from omnibase_core.model.core.model_log_context import ModelLogContext
-from omnibase_core.model.core.model_node_announce_metadata import \
-    ModelNodeAnnounceMetadata
+from omnibase_core.model.core.model_node_announce_metadata import (
+    ModelNodeAnnounceMetadata,
+)
 from omnibase_core.model.core.model_onex_event import OnexEvent
-from omnibase_core.model.discovery.model_node_shutdown_event import \
-    ModelNodeShutdownEvent
+from omnibase_core.model.discovery.model_node_shutdown_event import (
+    ModelNodeShutdownEvent,
+)
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -76,8 +75,9 @@ class MixinNodeLifecycle:
                 metadata_block = metadata_loader.metadata
             else:
                 # Create minimal metadata block
-                from omnibase_core.model.core.model_node_metadata import \
-                    NodeMetadataBlock
+                from omnibase_core.model.core.model_node_metadata import (
+                    NodeMetadataBlock,
+                )
 
                 metadata_block = NodeMetadataBlock(
                     name=self.__class__.__name__.lower(),
@@ -107,11 +107,15 @@ class MixinNodeLifecycle:
                 metadata_block=metadata_block,
                 status=getattr(self, "status", EnumNodeStatus.ACTIVE),
                 execution_mode=getattr(
-                    self, "execution_mode", RegistryExecutionModeEnum.MEMORY
+                    self,
+                    "execution_mode",
+                    RegistryExecutionModeEnum.MEMORY,
                 ),
                 inputs=getattr(self, "inputs", getattr(metadata_block, "inputs", None)),
                 outputs=getattr(
-                    self, "outputs", getattr(metadata_block, "outputs", None)
+                    self,
+                    "outputs",
+                    getattr(metadata_block, "outputs", None),
                 ),
                 graph_binding=getattr(self, "graph_binding", None),
                 trust_state=getattr(self, "trust_state", None),
@@ -120,7 +124,9 @@ class MixinNodeLifecycle:
                 timestamp=datetime.datetime.now(),
                 signature_block=getattr(self, "signature_block", None),
                 node_version=getattr(
-                    self, "node_version", getattr(metadata_block, "version", "1.0.0")
+                    self,
+                    "node_version",
+                    getattr(metadata_block, "version", "1.0.0"),
                 ),
                 correlation_id=uuid4(),
             )
@@ -216,8 +222,8 @@ class MixinNodeLifecycle:
 
     def emit_node_start(
         self,
-        metadata: Optional[dict] = None,
-        correlation_id: Optional[Union[str, UUID]] = None,
+        metadata: dict | None = None,
+        correlation_id: str | UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_START event.
@@ -270,8 +276,8 @@ class MixinNodeLifecycle:
 
     def emit_node_success(
         self,
-        metadata: Optional[dict] = None,
-        correlation_id: Optional[Union[str, UUID]] = None,
+        metadata: dict | None = None,
+        correlation_id: str | UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_SUCCESS event.
@@ -328,8 +334,8 @@ class MixinNodeLifecycle:
 
     def emit_node_failure(
         self,
-        metadata: Optional[dict] = None,
-        correlation_id: Optional[Union[str, UUID]] = None,
+        metadata: dict | None = None,
+        correlation_id: str | UUID | None = None,
     ) -> UUID:
         """
         Emit NODE_FAILURE event.

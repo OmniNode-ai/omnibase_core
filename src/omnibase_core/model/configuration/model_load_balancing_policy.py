@@ -9,12 +9,11 @@ Load balancing policy model that combines algorithm selection, node weights,
 health checks, session affinity, and circuit breaker configurations.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.health.model_health_check_config import \
-    ModelHealthCheckConfig
+from omnibase_core.model.health.model_health_check_config import ModelHealthCheckConfig
 
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing_algorithm import ModelLoadBalancingAlgorithm
@@ -39,62 +38,80 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     display_name: str = Field(..., description="Human-readable policy name")
 
-    description: Optional[str] = Field(
-        None, description="Policy description and usage guidelines"
+    description: str | None = Field(
+        None,
+        description="Policy description and usage guidelines",
     )
 
     enabled: bool = Field(default=True, description="Whether this policy is enabled")
 
     algorithm: ModelLoadBalancingAlgorithm = Field(
-        ..., description="Load balancing algorithm configuration"
+        ...,
+        description="Load balancing algorithm configuration",
     )
 
     node_weights: Optional["ModelNodeWeights"] = Field(
-        None, description="Node weights for weighted algorithms"
+        None,
+        description="Node weights for weighted algorithms",
     )
 
     health_check: ModelHealthCheckConfig = Field(
-        ..., description="Health check configuration"
+        ...,
+        description="Health check configuration",
     )
 
-    session_affinity: Optional[ModelSessionAffinity] = Field(
-        None, description="Session affinity configuration"
+    session_affinity: ModelSessionAffinity | None = Field(
+        None,
+        description="Session affinity configuration",
     )
 
     circuit_breaker: ModelCircuitBreaker = Field(
-        default_factory=ModelCircuitBreaker, description="Circuit breaker configuration"
+        default_factory=ModelCircuitBreaker,
+        description="Circuit breaker configuration",
     )
 
     retry_policy: ModelRetryPolicy = Field(
-        default_factory=ModelRetryPolicy, description="Retry policy for failed requests"
+        default_factory=ModelRetryPolicy,
+        description="Retry policy for failed requests",
     )
 
-    excluded_nodes: List[str] = Field(
-        default_factory=list, description="Nodes to exclude from load balancing"
+    excluded_nodes: list[str] = Field(
+        default_factory=list,
+        description="Nodes to exclude from load balancing",
     )
 
-    preferred_nodes: List[str] = Field(
-        default_factory=list, description="Preferred nodes for routing"
+    preferred_nodes: list[str] = Field(
+        default_factory=list,
+        description="Preferred nodes for routing",
     )
 
     prefer_local: bool = Field(
-        default=True, description="Prefer local nodes when available"
+        default=True,
+        description="Prefer local nodes when available",
     )
 
-    max_nodes_per_request: Optional[int] = Field(
-        None, description="Maximum nodes to consider per request", ge=1, le=100
+    max_nodes_per_request: int | None = Field(
+        None,
+        description="Maximum nodes to consider per request",
+        ge=1,
+        le=100,
     )
 
     enable_metrics_collection: bool = Field(
-        default=True, description="Whether to collect load balancing metrics"
+        default=True,
+        description="Whether to collect load balancing metrics",
     )
 
     enable_request_logging: bool = Field(
-        default=False, description="Whether to log individual requests"
+        default=False,
+        description="Whether to log individual requests",
     )
 
     priority: int = Field(
-        default=0, description="Policy priority (higher = preferred)", ge=0, le=100
+        default=0,
+        description="Policy priority (higher = preferred)",
+        ge=0,
+        le=100,
     )
 
     def is_node_excluded(self, node_id: str) -> bool:
@@ -105,7 +122,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         """Check if a node is in the preferred list"""
         return node_id in self.preferred_nodes
 
-    def get_effective_nodes(self, available_nodes: List[str]) -> List[str]:
+    def get_effective_nodes(self, available_nodes: list[str]) -> list[str]:
         """Get effective nodes after applying exclusions and preferences"""
         # Remove excluded nodes
         effective_nodes = [
@@ -155,7 +172,7 @@ class ModelLoadBalancingPolicy(BaseModel):
             return 1.0
         return self.node_weights.get_weight(node_id)
 
-    def calculate_policy_score(self, performance_metrics: dict = None) -> float:
+    def calculate_policy_score(self, performance_metrics: dict | None = None) -> float:
         """Calculate overall policy performance score"""
         score = 0.0
         factors = 0
@@ -195,7 +212,7 @@ class ModelLoadBalancingPolicy(BaseModel):
 
         return score / factors if factors > 0 else 0.0
 
-    def validate_configuration(self) -> List[str]:
+    def validate_configuration(self) -> list[str]:
         """Validate policy configuration and return any issues"""
         issues = []
 
@@ -204,7 +221,7 @@ class ModelLoadBalancingPolicy(BaseModel):
 
         if self.should_use_weights() and not self.algorithm.supports_weights:
             issues.append(
-                "Algorithm does not support weights but weights are configured"
+                "Algorithm does not support weights but weights are configured",
             )
 
         if (
@@ -212,7 +229,7 @@ class ModelLoadBalancingPolicy(BaseModel):
             and not self.algorithm.session_affinity_support
         ):
             issues.append(
-                "Algorithm does not support session affinity but affinity is configured"
+                "Algorithm does not support session affinity but affinity is configured",
             )
 
         if self.session_affinity and self.session_affinity.enabled:
@@ -251,7 +268,8 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     @classmethod
     def create_round_robin_policy(
-        cls, policy_name: str = "round_robin_basic"
+        cls,
+        policy_name: str = "round_robin_basic",
     ) -> "ModelLoadBalancingPolicy":
         """Create basic round-robin load balancing policy"""
         return cls(
@@ -265,11 +283,12 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     @classmethod
     def create_weighted_policy(
-        cls, node_weights: dict, policy_name: str = "weighted_round_robin"
+        cls,
+        node_weights: dict,
+        policy_name: str = "weighted_round_robin",
     ) -> "ModelLoadBalancingPolicy":
         """Create weighted round-robin load balancing policy"""
-        from omnibase_core.model.service.model_node_weights import \
-            ModelNodeWeights
+        from omnibase_core.model.service.model_node_weights import ModelNodeWeights
 
         return cls(
             policy_name=policy_name,
@@ -283,7 +302,8 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     @classmethod
     def create_least_connections_policy(
-        cls, policy_name: str = "least_connections"
+        cls,
+        policy_name: str = "least_connections",
     ) -> "ModelLoadBalancingPolicy":
         """Create least-connections load balancing policy"""
         return cls(
@@ -297,7 +317,9 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     @classmethod
     def create_sticky_session_policy(
-        cls, cookie_name: str = "SESSION_ID", policy_name: str = "sticky_sessions"
+        cls,
+        cookie_name: str = "SESSION_ID",
+        policy_name: str = "sticky_sessions",
     ) -> "ModelLoadBalancingPolicy":
         """Create session affinity load balancing policy"""
         return cls(
@@ -312,7 +334,8 @@ class ModelLoadBalancingPolicy(BaseModel):
 
     @classmethod
     def create_high_availability_policy(
-        cls, policy_name: str = "high_availability"
+        cls,
+        policy_name: str = "high_availability",
     ) -> "ModelLoadBalancingPolicy":
         """Create high-availability load balancing policy with comprehensive fault tolerance"""
         return cls(

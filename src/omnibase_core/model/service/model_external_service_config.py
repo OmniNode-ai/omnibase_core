@@ -1,19 +1,21 @@
-from typing import Dict, Optional, Union
-
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from omnibase_core.model.configuration.model_database_connection_config import \
-    ModelDatabaseConnectionConfig
-from omnibase_core.model.configuration.model_generic_connection_config import \
-    ModelGenericConnectionConfig
+from omnibase_core.model.configuration.model_database_connection_config import (
+    ModelDatabaseConnectionConfig,
+)
+from omnibase_core.model.configuration.model_generic_connection_config import (
+    ModelGenericConnectionConfig,
+)
+
 # Import our newly extracted models
-from omnibase_core.model.configuration.model_kafka_connection_config import \
-    ModelKafkaConnectionConfig
-from omnibase_core.model.configuration.model_rest_api_connection_config import \
-    ModelRestApiConnectionConfig
+from omnibase_core.model.configuration.model_kafka_connection_config import (
+    ModelKafkaConnectionConfig,
+)
+from omnibase_core.model.configuration.model_rest_api_connection_config import (
+    ModelRestApiConnectionConfig,
+)
 from omnibase_core.model.core.model_retry_config import ModelRetryConfig
-from omnibase_core.model.security.model_security_utils import \
-    ModelSecurityUtils
+from omnibase_core.model.security.model_security_utils import ModelSecurityUtils
 from omnibase_core.model.service.model_masked_config import ModelMaskedConfig
 
 
@@ -44,118 +46,124 @@ class ModelExternalServiceConfig(BaseModel):
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=50,
     )
-    connection_config: Union[
-        ModelKafkaConnectionConfig,
-        ModelDatabaseConnectionConfig,
-        ModelRestApiConnectionConfig,
-        ModelGenericConnectionConfig,  # Fallback for unknown service types
-    ] = Field(
+    connection_config: (
+        ModelKafkaConnectionConfig
+        | ModelDatabaseConnectionConfig
+        | ModelRestApiConnectionConfig
+        | ModelGenericConnectionConfig
+    ) = Field(
         default_factory=ModelGenericConnectionConfig,
         description="Service-specific connection configuration with validation",
     )
     health_check_enabled: bool = Field(
-        True, description="Whether to perform health checks before using this service"
+        True,
+        description="Whether to perform health checks before using this service",
     )
     health_check_timeout: int = Field(
-        5, description="Timeout in seconds for health check operations", ge=1, le=300
+        5,
+        description="Timeout in seconds for health check operations",
+        ge=1,
+        le=300,
     )
     required: bool = Field(
         True,
         description="Whether this service is required for the scenario. If False, gracefully degrade if unavailable.",
     )
-    retry_config: Optional[ModelRetryConfig] = Field(
-        None, description="Retry configuration for service operations"
+    retry_config: ModelRetryConfig | None = Field(
+        None,
+        description="Retry configuration for service operations",
     )
-    tags: Dict[str, str] = Field(
-        default_factory=dict, description="Service tags for categorization and metadata"
+    tags: dict[str, str] = Field(
+        default_factory=dict,
+        description="Service tags for categorization and metadata",
     )
 
     @model_validator(mode="before")
     @classmethod
     def validate_service_config(cls, values):
         """Validate that connection_config matches service_type and convert to typed models."""
-        if hasattr(values, "get") and callable(getattr(values, "get")):
+        if hasattr(values, "get") and callable(values.get):
             service_type = values.get("service_type", "").lower()
             connection_config = values.get("connection_config", {})
 
             # If connection_config is already a typed model, keep it - use duck typing
             if hasattr(connection_config, "model_dump") and callable(
-                getattr(connection_config, "model_dump")
+                connection_config.model_dump,
             ):
                 return values
 
             # Convert dict to appropriate typed model based on service_type - use duck typing
             if hasattr(connection_config, "get") and callable(
-                getattr(connection_config, "get")
+                connection_config.get,
             ):
                 if service_type in ["event_bus", "kafka", "message_queue"]:
                     try:
                         values["connection_config"] = ModelKafkaConnectionConfig(
-                            **connection_config
+                            **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
                         # Temporary: Import here to avoid circular import until refactoring is complete
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Invalid Kafka connection config: {e!s}"
                         raise OnexError(
-                            f"Invalid Kafka connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Failed to create Kafka connection config: {e!s}"
                         raise OnexError(
-                            f"Failed to create Kafka connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.OPERATION_FAILED,
                         ) from e
                 elif service_type in ["database", "db", "postgresql", "mysql"]:
                     try:
                         values["connection_config"] = ModelDatabaseConnectionConfig(
-                            **connection_config
+                            **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Invalid database connection config: {e!s}"
                         raise OnexError(
-                            f"Invalid database connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Failed to create database connection config: {e!s}"
                         raise OnexError(
-                            f"Failed to create database connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.OPERATION_FAILED,
                         ) from e
                 elif service_type in ["rest_api", "api", "http", "https"]:
                     try:
                         values["connection_config"] = ModelRestApiConnectionConfig(
-                            **connection_config
+                            **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Invalid REST API connection config: {e!s}"
                         raise OnexError(
-                            f"Invalid REST API connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.core.core_error_codes import \
-                            CoreErrorCode
+                        from omnibase_core.core.core_error_codes import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
+                        msg = f"Failed to create REST API connection config: {e!s}"
                         raise OnexError(
-                            f"Failed to create REST API connection config: {str(e)}",
+                            msg,
                             error_code=CoreErrorCode.OPERATION_FAILED,
                         ) from e
 
@@ -190,18 +198,17 @@ class ModelExternalServiceConfig(BaseModel):
             # Kafka connection config
             servers = self.connection_config.get_bootstrap_server_list()
             return f"kafka://{servers[0] if servers else 'unknown'}"
-        elif (
+        if (
             hasattr(self.connection_config, "host")
             and hasattr(self.connection_config, "port")
             and hasattr(self.connection_config, "database")
         ):
             # Database connection config
             return f"db://{self.connection_config.host}:{self.connection_config.port}/{self.connection_config.database}"
-        elif hasattr(self.connection_config, "get_base_domain"):
+        if hasattr(self.connection_config, "get_base_domain"):
             # REST API connection config
             return f"api://{self.connection_config.get_base_domain()}"
-        else:
-            return f"{self.service_type}://[configured]"
+        return f"{self.service_type}://[configured]"
 
     def apply_environment_overrides(self) -> "ModelExternalServiceConfig":
         """Apply environment variable overrides for CI/local testing."""
@@ -220,7 +227,10 @@ class ModelExternalServiceConfig(BaseModel):
 
     @classmethod
     def create_kafka_service(
-        cls, service_name: str, bootstrap_servers: str, required: bool = True
+        cls,
+        service_name: str,
+        bootstrap_servers: str,
+        required: bool = True,
     ) -> "ModelExternalServiceConfig":
         """Create Kafka service configuration."""
         kafka_config = ModelKafkaConnectionConfig(

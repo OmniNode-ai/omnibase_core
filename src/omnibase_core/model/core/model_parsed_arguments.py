@@ -5,17 +5,17 @@ Type-safe parsed CLI arguments with validation results, command definition,
 and parsing metadata for complete argument handling.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_argument_map import ModelArgumentMap
-from omnibase_core.model.core.model_cli_command_definition import \
-    ModelCliCommandDefinition
+from omnibase_core.model.core.model_cli_command_definition import (
+    ModelCliCommandDefinition,
+)
 from omnibase_core.model.core.model_node_reference import ModelNodeReference
 from omnibase_core.model.core.model_parse_metadata import ModelParseMetadata
-from omnibase_core.model.validation.model_validation_error import \
-    ModelValidationError
+from omnibase_core.model.validation.model_validation_error import ModelValidationError
 
 
 class ModelParsedArguments(BaseModel):
@@ -27,43 +27,53 @@ class ModelParsedArguments(BaseModel):
     """
 
     arguments: ModelArgumentMap = Field(
-        ..., description="Parsed argument values in type-safe container"
+        ...,
+        description="Parsed argument values in type-safe container",
     )
 
     command_definition: ModelCliCommandDefinition = Field(
-        ..., description="Command definition used for parsing"
+        ...,
+        description="Command definition used for parsing",
     )
 
     target_node: ModelNodeReference = Field(
-        ..., description="Target node reference for execution"
+        ...,
+        description="Target node reference for execution",
     )
 
-    validation_errors: List[ModelValidationError] = Field(
-        default_factory=list, description="Validation errors encountered during parsing"
+    validation_errors: list[ModelValidationError] = Field(
+        default_factory=list,
+        description="Validation errors encountered during parsing",
     )
 
-    validation_warnings: List[ModelValidationError] = Field(
-        default_factory=list, description="Validation warnings (non-blocking issues)"
+    validation_warnings: list[ModelValidationError] = Field(
+        default_factory=list,
+        description="Validation warnings (non-blocking issues)",
     )
 
-    parse_metadata: Optional[ModelParseMetadata] = Field(
-        None, description="Parsing metadata and performance information"
+    parse_metadata: ModelParseMetadata | None = Field(
+        None,
+        description="Parsing metadata and performance information",
     )
 
     is_help_request: bool = Field(
-        default=False, description="Whether this was a help request (--help, -h)"
+        default=False,
+        description="Whether this was a help request (--help, -h)",
     )
 
     is_version_request: bool = Field(
-        default=False, description="Whether this was a version request (--version)"
+        default=False,
+        description="Whether this was a version request (--version)",
     )
 
     raw_command_line: str = Field(
-        default="", description="Original command line string"
+        default="",
+        description="Original command line string",
     )
 
     parsed_successfully: bool = Field(
-        default=True, description="Whether parsing completed without critical errors"
+        default=True,
+        description="Whether parsing completed without critical errors",
     )
 
     def is_valid(self) -> bool:
@@ -78,33 +88,33 @@ class ModelParsedArguments(BaseModel):
         """Check if there are critical validation errors."""
         return any(error.is_critical() for error in self.validation_errors)
 
-    def get_error_summary(self) -> Dict[str, int]:
+    def get_error_summary(self) -> dict[str, int]:
         """Get summary of validation issues."""
         return {
             "errors": len(self.validation_errors),
             "warnings": len(self.validation_warnings),
             "critical_errors": len(
-                [e for e in self.validation_errors if e.is_critical()]
+                [e for e in self.validation_errors if e.is_critical()],
             ),
             "total_issues": len(self.validation_errors) + len(self.validation_warnings),
         }
 
-    def get_all_errors(self) -> List[ModelValidationError]:
+    def get_all_errors(self) -> list[ModelValidationError]:
         """Get all validation errors and warnings combined."""
         return self.validation_errors + self.validation_warnings
 
-    def get_critical_errors(self) -> List[ModelValidationError]:
+    def get_critical_errors(self) -> list[ModelValidationError]:
         """Get only critical validation errors."""
         return [error for error in self.validation_errors if error.is_critical()]
 
-    def get_error_messages(self) -> List[str]:
+    def get_error_messages(self) -> list[str]:
         """Get formatted error messages for display."""
         messages = []
         for error in self.validation_errors:
             messages.append(error.get_display_message())
         return messages
 
-    def get_warning_messages(self) -> List[str]:
+    def get_warning_messages(self) -> list[str]:
         """Get formatted warning messages for display."""
         messages = []
         for warning in self.validation_warnings:
@@ -120,10 +130,11 @@ class ModelParsedArguments(BaseModel):
             if error.is_critical():
                 self.parsed_successfully = False
 
-    def to_execution_dict(self) -> Dict[str, Any]:
+    def to_execution_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for node execution."""
         if not self.is_valid():
-            raise ValueError("Cannot convert invalid arguments to execution dict")
+            msg = "Cannot convert invalid arguments to execution dict"
+            raise ValueError(msg)
 
         # Start with the argument map dictionary
         result = self.arguments.to_dict()
@@ -146,11 +157,11 @@ class ModelParsedArguments(BaseModel):
             return self.arguments.named_args[name].value
         return default
 
-    def get_required_arguments(self) -> List[str]:
+    def get_required_arguments(self) -> list[str]:
         """Get list of required argument names from command definition."""
         return [arg.name for arg in self.command_definition.arguments if arg.required]
 
-    def validate_required_arguments(self) -> List[ModelValidationError]:
+    def validate_required_arguments(self) -> list[ModelValidationError]:
         """Validate that all required arguments are present."""
         errors = []
         required_args = self.get_required_arguments()
@@ -204,7 +215,7 @@ class ModelParsedArguments(BaseModel):
         cls,
         command_definition: ModelCliCommandDefinition,
         target_node: ModelNodeReference,
-        errors: List[ModelValidationError],
+        errors: list[ModelValidationError],
         raw_command_line: str = "",
     ) -> "ModelParsedArguments":
         """Create parsed arguments for invalid input."""

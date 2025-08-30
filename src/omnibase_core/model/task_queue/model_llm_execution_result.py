@@ -5,7 +5,6 @@ Provides strongly-typed success and error result models for LLM task
 execution, replacing Dict[str, Any] usage with proper type safety.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -27,7 +26,7 @@ class ModelLLMExecutionSuccess(BaseModel):
     task_id: UUID = Field(description="Unique identifier of the completed task")
 
     task_result: ModelLLMTaskResult = Field(
-        description="Complete LLM task result with response and metadata"
+        description="Complete LLM task result with response and metadata",
     )
 
     message: str = Field(
@@ -36,7 +35,8 @@ class ModelLLMExecutionSuccess(BaseModel):
     )
 
     execution_time_seconds: float = Field(
-        ge=0.0, description="Total execution time in seconds"
+        ge=0.0,
+        description="Total execution time in seconds",
     )
 
     model_config = ConfigDict(
@@ -61,7 +61,7 @@ class ModelLLMExecutionSuccess(BaseModel):
                 },
                 "message": "LLM task completed successfully",
                 "execution_time_seconds": 143.2,
-            }
+            },
         },
     )
 
@@ -75,36 +75,42 @@ class ModelLLMExecutionError(BaseModel):
 
     success: bool = Field(default=False, description="Always False for error results")
 
-    task_id: Optional[UUID] = Field(
-        default=None, description="Unique identifier of the failed task (if available)"
+    task_id: UUID | None = Field(
+        default=None,
+        description="Unique identifier of the failed task (if available)",
     )
 
     error_message: str = Field(description="Human-readable error description")
 
     error_code: str = Field(
-        description="Structured error code for programmatic handling"
+        description="Structured error code for programmatic handling",
     )
 
     error_type: str = Field(description="Type of error that occurred")
 
     error_phase: str = Field(
-        description="Phase where error occurred: 'validation', 'execution', 'finalization'"
+        description="Phase where error occurred: 'validation', 'execution', 'finalization'",
     )
 
-    task_status: Optional[EnumTaskStatus] = Field(
-        default=None, description="Final task status (if task was created)"
+    task_status: EnumTaskStatus | None = Field(
+        default=None,
+        description="Final task status (if task was created)",
     )
 
     execution_time_seconds: float = Field(
-        default=0.0, ge=0.0, description="Time spent before failure occurred"
+        default=0.0,
+        ge=0.0,
+        description="Time spent before failure occurred",
     )
 
-    error_traceback: Optional[str] = Field(
-        default=None, description="Full error traceback for debugging"
+    error_traceback: str | None = Field(
+        default=None,
+        description="Full error traceback for debugging",
     )
 
     retry_suggested: bool = Field(
-        default=False, description="Whether retrying this task is recommended"
+        default=False,
+        description="Whether retrying this task is recommended",
     )
 
     model_config = ConfigDict(
@@ -122,7 +128,7 @@ class ModelLLMExecutionError(BaseModel):
                 "task_status": "FAILED",
                 "execution_time_seconds": 12.3,
                 "retry_suggested": True,
-            }
+            },
         },
     )
 

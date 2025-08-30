@@ -8,7 +8,6 @@ working on parallel tickets.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -81,16 +80,20 @@ class ModelAgentCapability(BaseModel):
 
     capability_name: str = Field(description="Name of the capability")
     proficiency_level: float = Field(
-        default=1.0, description="Proficiency level (0.0 to 5.0)"
+        default=1.0,
+        description="Proficiency level (0.0 to 5.0)",
     )
-    last_used: Optional[datetime] = Field(
-        default=None, description="When this capability was last used"
+    last_used: datetime | None = Field(
+        default=None,
+        description="When this capability was last used",
     )
     usage_count: int = Field(
-        default=0, description="Number of times this capability has been used"
+        default=0,
+        description="Number of times this capability has been used",
     )
     success_rate: float = Field(
-        default=1.0, description="Success rate for this capability (0.0 to 1.0)"
+        default=1.0,
+        description="Success rate for this capability (0.0 to 1.0)",
     )
 
 
@@ -98,20 +101,25 @@ class ModelAgentPerformance(BaseModel):
     """Agent performance metrics model."""
 
     tasks_completed: int = Field(
-        default=0, description="Total number of tasks completed"
+        default=0,
+        description="Total number of tasks completed",
     )
     tasks_failed: int = Field(default=0, description="Total number of tasks failed")
-    average_completion_time: Optional[float] = Field(
-        default=None, description="Average completion time in hours"
+    average_completion_time: float | None = Field(
+        default=None,
+        description="Average completion time in hours",
     )
     quality_score: float = Field(
-        default=1.0, description="Quality score based on work quality (0.0 to 1.0)"
+        default=1.0,
+        description="Quality score based on work quality (0.0 to 1.0)",
     )
     reliability_score: float = Field(
-        default=1.0, description="Reliability score based on consistency (0.0 to 1.0)"
+        default=1.0,
+        description="Reliability score based on consistency (0.0 to 1.0)",
     )
     efficiency_score: float = Field(
-        default=1.0, description="Efficiency score based on speed (0.0 to 1.0)"
+        default=1.0,
+        description="Efficiency score based on speed (0.0 to 1.0)",
     )
     last_performance_update: datetime = Field(
         default_factory=datetime.now,
@@ -140,43 +148,56 @@ class ModelCoordinatedAgent(BaseModel):
     agent_id: str = Field(description="Unique identifier for the agent")
     agent_name: str = Field(description="Human-readable name for the agent")
     status: AgentStatus = Field(
-        default=AgentStatus.IDLE, description="Current status of the agent"
+        default=AgentStatus.IDLE,
+        description="Current status of the agent",
     )
-    capabilities: List[ModelAgentCapability] = Field(
-        default_factory=list, description="Agent capabilities and skills"
+    capabilities: list[ModelAgentCapability] = Field(
+        default_factory=list,
+        description="Agent capabilities and skills",
     )
     max_concurrent_work: int = Field(
-        default=3, description="Maximum concurrent work items"
+        default=3,
+        description="Maximum concurrent work items",
     )
     current_work_count: int = Field(
-        default=0, description="Current number of assigned work items"
+        default=0,
+        description="Current number of assigned work items",
     )
-    assigned_tickets: List[str] = Field(
-        default_factory=list, description="Currently assigned ticket IDs"
+    assigned_tickets: list[str] = Field(
+        default_factory=list,
+        description="Currently assigned ticket IDs",
     )
     performance: ModelAgentPerformance = Field(
-        default_factory=ModelAgentPerformance, description="Agent performance metrics"
+        default_factory=ModelAgentPerformance,
+        description="Agent performance metrics",
     )
-    last_heartbeat: Optional[datetime] = Field(
-        default=None, description="Last heartbeat timestamp"
+    last_heartbeat: datetime | None = Field(
+        default=None,
+        description="Last heartbeat timestamp",
     )
     registered_at: datetime = Field(
-        default_factory=datetime.now, description="When the agent was registered"
+        default_factory=datetime.now,
+        description="When the agent was registered",
     )
-    last_assignment: Optional[datetime] = Field(
-        default=None, description="When the agent was last assigned work"
+    last_assignment: datetime | None = Field(
+        default=None,
+        description="When the agent was last assigned work",
     )
     total_work_time: timedelta = Field(
-        default=timedelta(), description="Total time spent on work"
+        default=timedelta(),
+        description="Total time spent on work",
     )
-    preferred_work_types: List[str] = Field(
-        default_factory=list, description="Preferred types of work for this agent"
+    preferred_work_types: list[str] = Field(
+        default_factory=list,
+        description="Preferred types of work for this agent",
     )
-    blacklisted_work_types: List[str] = Field(
-        default_factory=list, description="Work types this agent should avoid"
+    blacklisted_work_types: list[str] = Field(
+        default_factory=list,
+        description="Work types this agent should avoid",
     )
-    configuration_overrides: Optional[Dict[str, str]] = Field(
-        default=None, description="Agent-specific configuration overrides"
+    configuration_overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Agent-specific configuration overrides",
     )
 
     @property
@@ -207,7 +228,9 @@ class ModelCoordinatedAgent(BaseModel):
         return datetime.now() - self.last_heartbeat < timedelta(minutes=5)
 
     def has_capability(
-        self, capability_name: str, min_proficiency: float = 1.0
+        self,
+        capability_name: str,
+        min_proficiency: float = 1.0,
     ) -> bool:
         """Check if agent has a specific capability at minimum proficiency."""
         for cap in self.capabilities:
@@ -218,7 +241,7 @@ class ModelCoordinatedAgent(BaseModel):
                 return True
         return False
 
-    def get_capability_score(self, required_capabilities: List[str]) -> float:
+    def get_capability_score(self, required_capabilities: list[str]) -> float:
         """Get capability match score for required capabilities."""
         if not required_capabilities:
             return 1.0
@@ -293,32 +316,41 @@ class ModelWorkBatch(BaseModel):
     batch_id: str = Field(description="Unique identifier for the work batch")
     batch_name: str = Field(description="Human-readable name for the batch")
     status: WorkBatchStatus = Field(
-        default=WorkBatchStatus.CREATED, description="Current status of the batch"
+        default=WorkBatchStatus.CREATED,
+        description="Current status of the batch",
     )
-    ticket_ids: List[str] = Field(description="List of ticket IDs in this batch")
-    assigned_agents: Dict[str, str] = Field(
-        default_factory=dict, description="Mapping of ticket_id to agent_id"
+    ticket_ids: list[str] = Field(description="List of ticket IDs in this batch")
+    assigned_agents: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping of ticket_id to agent_id",
     )
     priority: WorkTicketPriority = Field(
-        default=WorkTicketPriority.MEDIUM, description="Priority level of the batch"
+        default=WorkTicketPriority.MEDIUM,
+        description="Priority level of the batch",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the batch was created"
+        default_factory=datetime.now,
+        description="When the batch was created",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="When batch execution started"
+    started_at: datetime | None = Field(
+        default=None,
+        description="When batch execution started",
     )
-    completed_at: Optional[datetime] = Field(
-        default=None, description="When batch execution completed"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="When batch execution completed",
     )
-    estimated_duration: Optional[float] = Field(
-        default=None, description="Estimated duration in hours"
+    estimated_duration: float | None = Field(
+        default=None,
+        description="Estimated duration in hours",
     )
-    dependencies: List[str] = Field(
-        default_factory=list, description="List of batch IDs this batch depends on"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="List of batch IDs this batch depends on",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata for the batch"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata for the batch",
     )
 
     @property
@@ -360,49 +392,63 @@ class ModelCoordinationState(BaseModel):
     """Model for overall coordination system state."""
 
     coordination_id: str = Field(
-        description="Unique identifier for this coordination instance"
+        description="Unique identifier for this coordination instance",
     )
     mode: CoordinationMode = Field(
-        default=CoordinationMode.ACTIVE, description="Current coordination mode"
+        default=CoordinationMode.ACTIVE,
+        description="Current coordination mode",
     )
     strategy: str = Field(
-        default="dependency_first", description="Current coordination strategy"
+        default="dependency_first",
+        description="Current coordination strategy",
     )
-    active_agents: Dict[str, ModelCoordinatedAgent] = Field(
-        default_factory=dict, description="Currently active agents"
+    active_agents: dict[str, ModelCoordinatedAgent] = Field(
+        default_factory=dict,
+        description="Currently active agents",
     )
-    work_batches: Dict[str, ModelWorkBatch] = Field(
-        default_factory=dict, description="Active work batches"
+    work_batches: dict[str, ModelWorkBatch] = Field(
+        default_factory=dict,
+        description="Active work batches",
     )
-    ticket_assignments: Dict[str, str] = Field(
-        default_factory=dict, description="Mapping of ticket_id to agent_id"
+    ticket_assignments: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping of ticket_id to agent_id",
     )
-    agent_workloads: Dict[str, int] = Field(
-        default_factory=dict, description="Current workload count per agent"
+    agent_workloads: dict[str, int] = Field(
+        default_factory=dict,
+        description="Current workload count per agent",
     )
-    coordination_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Coordination performance metrics"
+    coordination_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Coordination performance metrics",
     )
-    last_balance_time: Optional[datetime] = Field(
-        default=None, description="When workload was last balanced"
+    last_balance_time: datetime | None = Field(
+        default=None,
+        description="When workload was last balanced",
     )
-    last_assignment_time: Optional[datetime] = Field(
-        default=None, description="When work was last assigned"
+    last_assignment_time: datetime | None = Field(
+        default=None,
+        description="When work was last assigned",
     )
     total_tickets_processed: int = Field(
-        default=0, description="Total number of tickets processed"
+        default=0,
+        description="Total number of tickets processed",
     )
     total_assignments_made: int = Field(
-        default=0, description="Total number of assignments made"
+        default=0,
+        description="Total number of assignments made",
     )
-    average_assignment_time: Optional[float] = Field(
-        default=None, description="Average time to assign work in seconds"
+    average_assignment_time: float | None = Field(
+        default=None,
+        description="Average time to assign work in seconds",
     )
     system_efficiency: float = Field(
-        default=1.0, description="Overall system efficiency score"
+        default=1.0,
+        description="Overall system efficiency score",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When coordination system was created"
+        default_factory=datetime.now,
+        description="When coordination system was created",
     )
     last_updated: datetime = Field(
         default_factory=datetime.now,
@@ -418,7 +464,7 @@ class ModelCoordinationState(BaseModel):
     def available_agents(self) -> int:
         """Get number of available agents."""
         return len(
-            [agent for agent in self.active_agents.values() if agent.is_available]
+            [agent for agent in self.active_agents.values() if agent.is_available],
         )
 
     @property
@@ -429,14 +475,14 @@ class ModelCoordinationState(BaseModel):
                 agent
                 for agent in self.active_agents.values()
                 if agent.status == AgentStatus.BUSY
-            ]
+            ],
         )
 
     @property
     def overloaded_agents(self) -> int:
         """Get number of overloaded agents."""
         return len(
-            [agent for agent in self.active_agents.values() if agent.is_overloaded]
+            [agent for agent in self.active_agents.values() if agent.is_overloaded],
         )
 
     @property
@@ -477,7 +523,7 @@ class ModelCoordinationState(BaseModel):
         self.agent_workloads[agent.agent_id] = agent.current_work_count
         self.last_updated = datetime.now()
 
-    def remove_agent(self, agent_id: str) -> Optional[ModelCoordinatedAgent]:
+    def remove_agent(self, agent_id: str) -> ModelCoordinatedAgent | None:
         """Remove an agent from the coordination system."""
         agent = self.active_agents.pop(agent_id, None)
         self.agent_workloads.pop(agent_id, None)
@@ -529,7 +575,7 @@ class ModelCoordinationState(BaseModel):
 
         return True
 
-    def get_least_loaded_agent(self) -> Optional[str]:
+    def get_least_loaded_agent(self) -> str | None:
         """Get the agent with the least workload."""
         available_agents = [
             (agent_id, agent)
@@ -543,8 +589,9 @@ class ModelCoordinationState(BaseModel):
         return min(available_agents, key=lambda x: x[1].workload_percentage)[0]
 
     def get_best_agent_for_capabilities(
-        self, required_capabilities: List[str]
-    ) -> Optional[str]:
+        self,
+        required_capabilities: list[str],
+    ) -> str | None:
         """Get the best agent for specific capabilities."""
         available_agents = [
             (agent_id, agent)
@@ -590,7 +637,7 @@ class ModelCoordinationState(BaseModel):
                 - max(
                     abs(
                         agent.workload_percentage
-                        - (self.capacity_utilization / self.total_agents)
+                        - (self.capacity_utilization / self.total_agents),
                     )
                     for agent in self.active_agents.values()
                 )

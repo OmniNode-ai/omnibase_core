@@ -21,11 +21,14 @@ class ModelTicketNode(BaseModel):
     ticket_id: str = Field(description="Unique ticket identifier")
 
     priority_score: float = Field(
-        description="Calculated priority score (0.0-100.0)", ge=0.0, le=100.0
+        description="Calculated priority score (0.0-100.0)",
+        ge=0.0,
+        le=100.0,
     )
 
     node_size: float = Field(
-        description="Visual size of node based on importance", gt=0.0
+        description="Visual size of node based on importance",
+        gt=0.0,
     )
 
     position_x: float = Field(description="X coordinate for graph layout")

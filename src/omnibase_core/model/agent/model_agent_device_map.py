@@ -1,7 +1,5 @@
 """Model for mapping devices to agent instances."""
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_device_type import EnumDeviceType
@@ -16,7 +14,7 @@ class ModelAgentDeviceMap(BaseModel):
     with ONEX standards requiring specific typed models.
     """
 
-    device_agents: Dict[EnumDeviceType, List[ModelAgentInstance]] = Field(
+    device_agents: dict[EnumDeviceType, list[ModelAgentInstance]] = Field(
         default_factory=lambda: {
             EnumDeviceType.MAC_STUDIO: [],
             EnumDeviceType.MACBOOK_AIR: [],
@@ -31,7 +29,7 @@ class ModelAgentDeviceMap(BaseModel):
             self.device_agents[device] = []
         self.device_agents[device].append(agent)
 
-    def get_agents(self, device: EnumDeviceType) -> List[ModelAgentInstance]:
+    def get_agents(self, device: EnumDeviceType) -> list[ModelAgentInstance]:
         """Get all agents for a specific device."""
         return self.device_agents.get(device, [])
 
@@ -47,7 +45,7 @@ class ModelAgentDeviceMap(BaseModel):
             return len(self.device_agents[device]) < original_count
         return False
 
-    def find_agent(self, agent_id: str) -> Optional[ModelAgentInstance]:
+    def find_agent(self, agent_id: str) -> ModelAgentInstance | None:
         """Find an agent across all devices by ID."""
         for agents in self.device_agents.values():
             for agent in agents:
@@ -55,7 +53,7 @@ class ModelAgentDeviceMap(BaseModel):
                     return agent
         return None
 
-    def get_device_for_agent(self, agent_id: str) -> Optional[EnumDeviceType]:
+    def get_device_for_agent(self, agent_id: str) -> EnumDeviceType | None:
         """Get the device type where an agent is running."""
         for device, agents in self.device_agents.items():
             for agent in agents:
@@ -63,13 +61,13 @@ class ModelAgentDeviceMap(BaseModel):
                     return device
         return None
 
-    def count_agents(self, device: Optional[EnumDeviceType] = None) -> int:
+    def count_agents(self, device: EnumDeviceType | None = None) -> int:
         """Count agents on a specific device or all devices."""
         if device:
             return len(self.device_agents.get(device, []))
         return sum(len(agents) for agents in self.device_agents.values())
 
-    def get_all_agents(self) -> List[ModelAgentInstance]:
+    def get_all_agents(self) -> list[ModelAgentInstance]:
         """Get all agents across all devices."""
         all_agents = []
         for agents in self.device_agents.values():

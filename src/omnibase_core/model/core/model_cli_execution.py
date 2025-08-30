@@ -6,18 +6,16 @@ of command execution from start to finish.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.core.model_cli_command_definition import \
-    ModelCliCommandDefinition
-from omnibase_core.model.core.model_execution_context import \
-    ModelExecutionContext
+from omnibase_core.model.core.model_cli_command_definition import (
+    ModelCliCommandDefinition,
+)
+from omnibase_core.model.core.model_execution_context import ModelExecutionContext
 from omnibase_core.model.core.model_node_reference import ModelNodeReference
-from omnibase_core.model.core.model_parsed_arguments import \
-    ModelParsedArguments
+from omnibase_core.model.core.model_parsed_arguments import ModelParsedArguments
 from omnibase_core.model.core.model_schema_value import ModelSchemaValue
 
 
@@ -25,34 +23,40 @@ class ModelExecutionMetadata(BaseModel):
     """Execution metadata for CLI commands."""
 
     # Command metadata
-    command_source: Optional[str] = Field(
-        None, description="Source of command (user, script, api)"
+    command_source: str | None = Field(
+        None,
+        description="Source of command (user, script, api)",
     )
-    command_version: Optional[str] = Field(
-        None, description="Version of CLI interface used"
+    command_version: str | None = Field(
+        None,
+        description="Version of CLI interface used",
     )
-    command_group: Optional[str] = Field(None, description="Command group/category")
+    command_group: str | None = Field(None, description="Command group/category")
 
     # Execution environment
-    host_name: Optional[str] = Field(None, description="Host executing the command")
-    process_id: Optional[int] = Field(None, description="Process ID of execution")
-    thread_id: Optional[str] = Field(None, description="Thread ID of execution")
+    host_name: str | None = Field(None, description="Host executing the command")
+    process_id: int | None = Field(None, description="Process ID of execution")
+    thread_id: str | None = Field(None, description="Thread ID of execution")
 
     # Performance tracking
-    queue_time_ms: Optional[int] = Field(
-        None, description="Time spent in queue before execution"
+    queue_time_ms: int | None = Field(
+        None,
+        description="Time spent in queue before execution",
     )
-    init_time_ms: Optional[int] = Field(None, description="Initialization time")
-    validation_time_ms: Optional[int] = Field(
-        None, description="Argument validation time"
+    init_time_ms: int | None = Field(None, description="Initialization time")
+    validation_time_ms: int | None = Field(
+        None,
+        description="Argument validation time",
     )
 
     # Resource usage
-    memory_usage_mb: Optional[float] = Field(
-        None, description="Peak memory usage in MB"
+    memory_usage_mb: float | None = Field(
+        None,
+        description="Peak memory usage in MB",
     )
-    cpu_usage_percent: Optional[float] = Field(
-        None, description="Average CPU usage percentage"
+    cpu_usage_percent: float | None = Field(
+        None,
+        description="Average CPU usage percentage",
     )
 
     # Error tracking
@@ -61,22 +65,26 @@ class ModelExecutionMetadata(BaseModel):
     retry_count: int = Field(0, description="Number of retries performed")
 
     # Feature flags
-    features_enabled: List[str] = Field(
-        default_factory=list, description="Enabled feature flags"
+    features_enabled: list[str] = Field(
+        default_factory=list,
+        description="Enabled feature flags",
     )
-    features_disabled: List[str] = Field(
-        default_factory=list, description="Disabled feature flags"
+    features_disabled: list[str] = Field(
+        default_factory=list,
+        description="Disabled feature flags",
     )
 
     # Custom tags for filtering/grouping
-    tags: Dict[str, str] = Field(default_factory=dict, description="Custom tags")
+    tags: dict[str, str] = Field(default_factory=dict, description="Custom tags")
 
     # Extensibility for command-specific data
-    custom_metrics: Optional[Dict[str, float]] = Field(
-        None, description="Command-specific metrics"
+    custom_metrics: dict[str, float] | None = Field(
+        None,
+        description="Command-specific metrics",
     )
-    custom_properties: Optional[Dict[str, str]] = Field(
-        None, description="Command-specific properties"
+    custom_properties: dict[str, str] | None = Field(
+        None,
+        description="Command-specific properties",
     )
 
 
@@ -89,61 +97,75 @@ class ModelCliExecution(BaseModel):
     """
 
     execution_id: UUID = Field(
-        default_factory=uuid4, description="Unique execution identifier"
+        default_factory=uuid4,
+        description="Unique execution identifier",
     )
 
     command_definition: ModelCliCommandDefinition = Field(
-        ..., description="Command being executed"
+        ...,
+        description="Command being executed",
     )
 
     parsed_arguments: ModelParsedArguments = Field(
-        ..., description="Parsed and validated arguments"
+        ...,
+        description="Parsed and validated arguments",
     )
 
     execution_context: ModelExecutionContext = Field(
-        ..., description="Execution environment and settings"
+        ...,
+        description="Execution environment and settings",
     )
 
     target_node: ModelNodeReference = Field(
-        ..., description="Node that will execute the command"
+        ...,
+        description="Node that will execute the command",
     )
 
     start_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Execution start timestamp"
+        default_factory=datetime.utcnow,
+        description="Execution start timestamp",
     )
 
-    end_time: Optional[datetime] = Field(None, description="Execution end timestamp")
+    end_time: datetime | None = Field(None, description="Execution end timestamp")
 
     correlation_id: UUID = Field(
-        default_factory=uuid4, description="Correlation ID for distributed tracing"
+        default_factory=uuid4,
+        description="Correlation ID for distributed tracing",
     )
 
-    parent_execution_id: Optional[UUID] = Field(
-        None, description="Parent execution ID for nested commands"
+    parent_execution_id: UUID | None = Field(
+        None,
+        description="Parent execution ID for nested commands",
     )
 
-    user_id: Optional[str] = Field(
-        None, description="User ID for audit and permissions"
+    user_id: str | None = Field(
+        None,
+        description="User ID for audit and permissions",
     )
 
-    session_id: Optional[str] = Field(
-        None, description="Session ID for tracking related commands"
+    session_id: str | None = Field(
+        None,
+        description="Session ID for tracking related commands",
     )
 
-    source_location: Optional[str] = Field(
-        None, description="Source location (CLI, API, script, etc.)"
+    source_location: str | None = Field(
+        None,
+        description="Source location (CLI, API, script, etc.)",
     )
 
     execution_metadata: ModelExecutionMetadata = Field(
-        default_factory=ModelExecutionMetadata, description="Execution metadata"
+        default_factory=ModelExecutionMetadata,
+        description="Execution metadata",
     )
 
     is_dry_run: bool = Field(
-        default=False, description="Whether this is a dry run execution"
+        default=False,
+        description="Whether this is a dry run execution",
     )
 
     is_test_execution: bool = Field(
-        default=False, description="Whether this is a test execution"
+        default=False,
+        description="Whether this is a test execution",
     )
 
     priority: int = Field(
@@ -161,7 +183,7 @@ class ModelCliExecution(BaseModel):
         """Check if execution is completed."""
         return self.end_time is not None
 
-    def get_duration_ms(self) -> Optional[int]:
+    def get_duration_ms(self) -> int | None:
         """Get execution duration in milliseconds."""
         if self.end_time is None:
             return None
@@ -188,8 +210,10 @@ class ModelCliExecution(BaseModel):
             self.execution_metadata.custom_properties[key] = str(value.to_value())
 
     def get_metadata(
-        self, key: str, default: Optional[ModelSchemaValue] = None
-    ) -> Optional[ModelSchemaValue]:
+        self,
+        key: str,
+        default: ModelSchemaValue | None = None,
+    ) -> ModelSchemaValue | None:
         """Get execution metadata."""
         # Check known fields first
         if hasattr(self.execution_metadata, key):
@@ -263,7 +287,7 @@ class ModelCliExecution(BaseModel):
                 "trace_enabled": self.is_trace_enabled(),
                 "timeout_ms": self.get_timeout_ms(),
                 "retry_attempts": self.execution_context.retry_attempts,
-            }
+            },
         )
 
         # Add environment variables from execution context
@@ -309,9 +333,9 @@ class ModelCliExecution(BaseModel):
         parsed_arguments: ModelParsedArguments,
         execution_context: ModelExecutionContext,
         target_node: ModelNodeReference,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        parent_execution_id: Optional[UUID] = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
+        parent_execution_id: UUID | None = None,
         **kwargs,
     ) -> "ModelCliExecution":
         """Create execution for a specific command."""

@@ -3,7 +3,7 @@ PerformanceSummary model.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -15,46 +15,54 @@ class ModelPerformanceSummary(BaseModel):
     """
 
     total_execution_time_ms: float = Field(..., description="Total execution time")
-    average_response_time_ms: Optional[float] = Field(
-        None, description="Average response time"
+    average_response_time_ms: float | None = Field(
+        None,
+        description="Average response time",
     )
-    min_response_time_ms: Optional[float] = Field(
-        None, description="Minimum response time"
+    min_response_time_ms: float | None = Field(
+        None,
+        description="Minimum response time",
     )
-    max_response_time_ms: Optional[float] = Field(
-        None, description="Maximum response time"
+    max_response_time_ms: float | None = Field(
+        None,
+        description="Maximum response time",
     )
-    p50_response_time_ms: Optional[float] = Field(
-        None, description="50th percentile response time"
+    p50_response_time_ms: float | None = Field(
+        None,
+        description="50th percentile response time",
     )
-    p95_response_time_ms: Optional[float] = Field(
-        None, description="95th percentile response time"
+    p95_response_time_ms: float | None = Field(
+        None,
+        description="95th percentile response time",
     )
-    p99_response_time_ms: Optional[float] = Field(
-        None, description="99th percentile response time"
+    p99_response_time_ms: float | None = Field(
+        None,
+        description="99th percentile response time",
     )
-    requests_per_second: Optional[float] = Field(
-        None, description="Requests per second"
+    requests_per_second: float | None = Field(
+        None,
+        description="Requests per second",
     )
-    bytes_per_second: Optional[float] = Field(None, description="Bytes per second")
+    bytes_per_second: float | None = Field(None, description="Bytes per second")
     total_requests: int = Field(0, description="Total number of requests")
     successful_requests: int = Field(0, description="Number of successful requests")
     failed_requests: int = Field(0, description="Number of failed requests")
-    cpu_usage_percent: Optional[float] = Field(None, description="CPU usage percentage")
-    memory_usage_mb: Optional[float] = Field(None, description="Memory usage in MB")
-    cache_hits: Optional[int] = Field(None, description="Number of cache hits")
-    cache_misses: Optional[int] = Field(None, description="Number of cache misses")
-    cache_hit_rate: Optional[float] = Field(
-        None, description="Cache hit rate percentage"
+    cpu_usage_percent: float | None = Field(None, description="CPU usage percentage")
+    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
+    cache_hits: int | None = Field(None, description="Number of cache hits")
+    cache_misses: int | None = Field(None, description="Number of cache misses")
+    cache_hit_rate: float | None = Field(
+        None,
+        description="Cache hit rate percentage",
     )
-    error_rate: Optional[float] = Field(None, description="Error rate percentage")
-    timeout_count: Optional[int] = Field(None, description="Number of timeouts")
+    error_rate: float | None = Field(None, description="Error rate percentage")
+    timeout_count: int | None = Field(None, description="Number of timeouts")
     measurement_start: datetime = Field(..., description="Measurement start time")
     measurement_end: datetime = Field(..., description="Measurement end time")
     measurement_duration_seconds: float = Field(..., description="Measurement duration")
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
@@ -64,7 +72,7 @@ class ModelPerformanceSummary(BaseModel):
             return 0.0
         return self.successful_requests / self.total_requests * 100
 
-    def calculate_average_response_time(self) -> Optional[float]:
+    def calculate_average_response_time(self) -> float | None:
         """Calculate average response time if not already set."""
         if self.average_response_time_ms is not None:
             return self.average_response_time_ms

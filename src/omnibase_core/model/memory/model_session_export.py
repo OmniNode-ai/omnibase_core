@@ -7,7 +7,6 @@ type-safe ONEX-compliant model architecture.
 """
 
 from datetime import datetime
-from typing import Dict
 
 from pydantic import BaseModel, Field
 
@@ -25,19 +24,22 @@ class ModelSessionExport(BaseModel):
     and type safety throughout the process.
     """
 
-    sessions: Dict[str, ModelSessionData] = Field(
-        ..., description="Dictionary mapping session IDs to session data models"
+    sessions: dict[str, ModelSessionData] = Field(
+        ...,
+        description="Dictionary mapping session IDs to session data models",
     )
     current_session: str = Field(..., description="ID of the currently active session")
     exported_at: str = Field(..., description="ISO timestamp when export was created")
     export_version: str = Field(
-        default="1.0", description="Export format version for compatibility"
+        default="1.0",
+        description="Export format version for compatibility",
     )
     total_sessions: int = Field(..., description="Total number of sessions in export")
 
     # Optional metadata for enhanced export tracking
     exported_by: str = Field(
-        default="Universal Memory CLI", description="Tool that created the export"
+        default="Universal Memory CLI",
+        description="Tool that created the export",
     )
     export_format: str = Field(default="json", description="Export file format")
 
@@ -52,12 +54,14 @@ class ModelSessionExport(BaseModel):
         """Post-initialization validation."""
         # Ensure current_session exists in sessions
         if self.current_session not in self.sessions:
+            msg = f"Current session '{self.current_session}' not found in sessions"
             raise ValueError(
-                f"Current session '{self.current_session}' not found in sessions"
+                msg,
             )
 
         # Validate total_sessions matches actual count
         if self.total_sessions != len(self.sessions):
+            msg = f"Total sessions mismatch: expected {self.total_sessions}, got {len(self.sessions)}"
             raise ValueError(
-                f"Total sessions mismatch: expected {self.total_sessions}, got {len(self.sessions)}"
+                msg,
             )

@@ -5,8 +5,6 @@ Defines the structure for CLI arguments discovered from node contracts.
 This enables dynamic CLI argument parsing based on contract specifications.
 """
 
-from typing import List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_argument_type import EnumArgumentType
@@ -32,29 +30,35 @@ class ModelArgumentDescription(BaseModel):
 
     required: bool = Field(default=False, description="Whether argument is required")
 
-    default_value: Optional[Union[str, int, bool, float, List[str]]] = Field(
-        None, description="Default value if not provided"
+    default_value: str | int | bool | float | list[str] | None = Field(
+        None,
+        description="Default value if not provided",
     )
 
-    choices: Optional[List[str]] = Field(
-        None, description="Valid choices for enum-like arguments"
+    choices: list[str] | None = Field(
+        None,
+        description="Valid choices for enum-like arguments",
     )
 
-    validation_pattern: Optional[str] = Field(
-        None, description="Regex validation pattern"
+    validation_pattern: str | None = Field(
+        None,
+        description="Regex validation pattern",
     )
 
-    examples: List[str] = Field(default_factory=list, description="Usage examples")
+    examples: list[str] = Field(default_factory=list, description="Usage examples")
 
-    short_name: Optional[str] = Field(
-        None, description="Short argument name (single letter)", pattern=r"^[a-z]$"
+    short_name: str | None = Field(
+        None,
+        description="Short argument name (single letter)",
+        pattern=r"^[a-z]$",
     )
 
     hidden: bool = Field(
-        default=False, description="Hide from help display (for internal/debug args)"
+        default=False,
+        description="Hide from help display (for internal/debug args)",
     )
 
-    def get_cli_flags(self) -> List[str]:
+    def get_cli_flags(self) -> list[str]:
         """Get CLI flags for this argument (--name and -n if short_name exists)."""
         flags = [f"--{self.name}"]
         if self.short_name:
@@ -76,34 +80,37 @@ class ModelArgumentDescription(BaseModel):
 
         return f"{flags}{type_hint}: {self.description}{required_hint}{default_hint}"
 
-    def validate_value(self, value: str) -> Union[str, int, bool, float, List[str]]:
+    def validate_value(self, value: str) -> str | int | bool | float | list[str]:
         """Validate and convert a string value to the appropriate type."""
         if self.type == EnumArgumentType.STRING:
             if self.choices and value not in self.choices:
+                msg = f"Value '{value}' not in valid choices: {self.choices}"
                 raise ValueError(
-                    f"Value '{value}' not in valid choices: {self.choices}"
+                    msg,
                 )
             return value
 
-        elif self.type == EnumArgumentType.INTEGER:
+        if self.type == EnumArgumentType.INTEGER:
             try:
                 return int(value)
             except ValueError:
-                raise ValueError(f"Invalid integer value: '{value}'")
+                msg = f"Invalid integer value: '{value}'"
+                raise ValueError(msg)
 
         elif self.type == EnumArgumentType.FLOAT:
             try:
                 return float(value)
             except ValueError:
-                raise ValueError(f"Invalid float value: '{value}'")
+                msg = f"Invalid float value: '{value}'"
+                raise ValueError(msg)
 
         elif self.type == EnumArgumentType.BOOLEAN:
             if value.lower() in ("true", "1", "yes", "on"):
                 return True
-            elif value.lower() in ("false", "0", "no", "off"):
+            if value.lower() in ("false", "0", "no", "off"):
                 return False
-            else:
-                raise ValueError(f"Invalid boolean value: '{value}'")
+            msg = f"Invalid boolean value: '{value}'"
+            raise ValueError(msg)
 
         elif self.type == EnumArgumentType.LIST:
             # Assume comma-separated values

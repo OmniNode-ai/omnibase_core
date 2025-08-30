@@ -7,10 +7,12 @@ including configurable chunking, overlap handling, and language-aware processing
 
 from typing import Protocol
 
-from omnibase_core.model.semantic.model_preprocessing_input_state import \
-    ModelPreprocessingInputState
-from omnibase_core.model.semantic.model_preprocessing_output_state import \
-    ModelPreprocessingOutputState
+from omnibase_core.model.semantic.model_preprocessing_input_state import (
+    ModelPreprocessingInputState,
+)
+from omnibase_core.model.semantic.model_preprocessing_output_state import (
+    ModelPreprocessingOutputState,
+)
 
 
 class ProtocolAdvancedPreprocessor(Protocol):
@@ -22,7 +24,8 @@ class ProtocolAdvancedPreprocessor(Protocol):
     """
 
     def process(
-        self, input_state: ModelPreprocessingInputState
+        self,
+        input_state: ModelPreprocessingInputState,
     ) -> ModelPreprocessingOutputState:
         """
         Process documents with advanced preprocessing strategies.

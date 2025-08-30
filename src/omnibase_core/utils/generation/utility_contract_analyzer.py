@@ -7,20 +7,17 @@ Provides consistent contract processing across all ONEX tools.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_schema import ModelSchema
-from omnibase_core.model.generation.model_contract_document import \
-    ModelContractDocument
-from omnibase_core.utils.generation.utility_schema_composer import \
-    UtilitySchemaComposer
-from omnibase_core.utils.generation.utility_schema_loader import \
-    UtilitySchemaLoader
+from omnibase_core.model.generation.model_contract_document import ModelContractDocument
+from omnibase_core.utils.generation.utility_schema_composer import UtilitySchemaComposer
+from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 
 @dataclass
@@ -46,7 +43,7 @@ class ReferenceInfo:
     ref_type: str  # "internal", "external", "subcontract"
     resolved_type: str
     source_location: str
-    target_file: Optional[str] = None
+    target_file: str | None = None
 
 
 @dataclass
@@ -54,9 +51,9 @@ class ContractValidationResult:
     """Result of contract validation."""
 
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
-    info: List[str]
+    errors: list[str]
+    warnings: list[str]
+    info: list[str]
 
 
 class UtilityContractAnalyzer:
@@ -122,12 +119,9 @@ class UtilityContractAnalyzer:
         # Use file reader if available, otherwise fall back to direct file access
         if self.file_reader:
             # CRITICAL: Need to compose schemas even when using file reader
-            print(
-                f"🔍 CRITICAL: Contract analyzer using file reader path for {contract_path}"
-            )
 
             # Load raw contract data first
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 contract_data = yaml.safe_load(f)
 
             # Compose schemas before creating ModelContractDocument
@@ -142,21 +136,14 @@ class UtilityContractAnalyzer:
                     original_count = len(contract_data["definitions"])
                     composed_definitions = (
                         self.schema_composer.compose_contract_definitions(
-                            contract_data, contract_path
+                            contract_data,
+                            contract_path,
                         )
                     )
 
                     # DEBUG: Check what we got from composition
                     if "SemVerModel" in composed_definitions:
                         semver_composed = composed_definitions["SemVerModel"]
-                        print(
-                            "🔍 DEBUG: SemVerModel after composition (file reader path)"
-                        )
-                        print(f"   Type: {semver_composed.get('type')}")
-                        print(
-                            f"   Properties: {list(semver_composed.get('properties', {}).keys())}"
-                        )
-                        print(f"   Required: {semver_composed.get('required', [])}")
 
                     contract_data["definitions"] = composed_definitions
 
@@ -180,16 +167,14 @@ class UtilityContractAnalyzer:
                         "error_type": type(e).__name__,
                     },
                 )
-                print(f"🔍 ERROR: Schema composition failed: {e}")
 
             # Convert to ModelContractDocument
             contract = ModelContractDocument(**contract_data)
         else:
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 contract_data = yaml.safe_load(f)
 
             # CRITICAL: Compose schemas before creating ModelContractDocument
-            print(f"🔍 CRITICAL: Contract analyzer loading {contract_path}")
             emit_log_event(
                 LogLevelEnum.INFO,
                 "🔍 TRACE: Composing external schema references",
@@ -202,7 +187,8 @@ class UtilityContractAnalyzer:
                     original_count = len(contract_data["definitions"])
                     composed_definitions = (
                         self.schema_composer.compose_contract_definitions(
-                            contract_data, contract_path
+                            contract_data,
+                            contract_path,
                         )
                     )
 
@@ -215,10 +201,11 @@ class UtilityContractAnalyzer:
                             {
                                 "composed_type": semver_composed.get("type"),
                                 "composed_properties": list(
-                                    semver_composed.get("properties", {}).keys()
+                                    semver_composed.get("properties", {}).keys(),
                                 ),
                                 "composed_required": semver_composed.get(
-                                    "required", []
+                                    "required",
+                                    [],
                                 ),
                             },
                         )
@@ -294,13 +281,14 @@ class UtilityContractAnalyzer:
             # Schema validation
             if not contract.input_state and not contract.output_state:
                 warnings.append(
-                    "Contract has neither input_state nor output_state defined"
+                    "Contract has neither input_state nor output_state defined",
                 )
 
             # Validate input_state if present
             if contract.input_state:
                 input_issues = self._validate_schema(
-                    contract.input_state, "input_state"
+                    contract.input_state,
+                    "input_state",
                 )
                 errors.extend(input_issues["errors"])
                 warnings.extend(input_issues["warnings"])
@@ -309,7 +297,8 @@ class UtilityContractAnalyzer:
             # Validate output_state if present
             if contract.output_state:
                 output_issues = self._validate_schema(
-                    contract.output_state, "output_state"
+                    contract.output_state,
+                    "output_state",
                 )
                 errors.extend(output_issues["errors"])
                 warnings.extend(output_issues["warnings"])
@@ -319,7 +308,8 @@ class UtilityContractAnalyzer:
             if contract.definitions:
                 for def_name, def_schema in contract.definitions.items():
                     def_issues = self._validate_schema(
-                        def_schema, f"definitions.{def_name}"
+                        def_schema,
+                        f"definitions.{def_name}",
                     )
                     errors.extend(def_issues["errors"])
                     warnings.extend(def_issues["warnings"])
@@ -334,11 +324,14 @@ class UtilityContractAnalyzer:
             is_valid = len(errors) == 0
 
         except Exception as e:
-            errors.append(f"Failed to load contract: {str(e)}")
+            errors.append(f"Failed to load contract: {e!s}")
             is_valid = False
 
         return ContractValidationResult(
-            is_valid=is_valid, errors=errors, warnings=warnings, info=info
+            is_valid=is_valid,
+            errors=errors,
+            warnings=warnings,
+            info=info,
         )
 
     def analyze_contract(self, contract_path: Path) -> ContractInfo:
@@ -386,8 +379,9 @@ class UtilityContractAnalyzer:
         )
 
     def discover_all_references(
-        self, contract: ModelContractDocument
-    ) -> List[ReferenceInfo]:
+        self,
+        contract: ModelContractDocument,
+    ) -> list[ReferenceInfo]:
         """
         Discover all $ref references in a contract.
 
@@ -402,14 +396,16 @@ class UtilityContractAnalyzer:
         # Check input_state
         if contract.input_state:
             refs = self._collect_references_from_schema(
-                contract.input_state, "input_state"
+                contract.input_state,
+                "input_state",
             )
             references.extend(refs)
 
         # Check output_state
         if contract.output_state:
             refs = self._collect_references_from_schema(
-                contract.output_state, "output_state"
+                contract.output_state,
+                "output_state",
             )
             references.extend(refs)
 
@@ -417,13 +413,14 @@ class UtilityContractAnalyzer:
         if contract.definitions:
             for def_name, def_schema in contract.definitions.items():
                 refs = self._collect_references_from_schema(
-                    def_schema, f"definitions.{def_name}"
+                    def_schema,
+                    f"definitions.{def_name}",
                 )
                 references.extend(refs)
 
         return references
 
-    def get_external_dependencies(self, contract: ModelContractDocument) -> Set[str]:
+    def get_external_dependencies(self, contract: ModelContractDocument) -> set[str]:
         """
         Get all external file dependencies of a contract.
 
@@ -442,7 +439,7 @@ class UtilityContractAnalyzer:
 
         return external_files
 
-    def get_dependency_graph(self, contract_path: Path) -> Dict[str, Set[str]]:
+    def get_dependency_graph(self, contract_path: Path) -> dict[str, set[str]]:
         """
         Build a dependency graph starting from a contract.
 
@@ -488,8 +485,10 @@ class UtilityContractAnalyzer:
     # Private helper methods
 
     def _validate_schema(
-        self, schema: ModelSchema, location: str
-    ) -> Dict[str, List[str]]:
+        self,
+        schema: ModelSchema,
+        location: str,
+    ) -> dict[str, list[str]]:
         """Validate a schema object and return issues."""
         errors = []
         warnings = []
@@ -511,7 +510,8 @@ class UtilityContractAnalyzer:
         if schema.properties:
             for prop_name, prop_schema in schema.properties.items():
                 nested_issues = self._validate_schema(
-                    prop_schema, f"{location}.{prop_name}"
+                    prop_schema,
+                    f"{location}.{prop_name}",
                 )
                 errors.extend(nested_issues["errors"])
                 warnings.extend(nested_issues["warnings"])
@@ -537,8 +537,10 @@ class UtilityContractAnalyzer:
         return count
 
     def _collect_references_from_schema(
-        self, schema: ModelSchema, location: str
-    ) -> List[ReferenceInfo]:
+        self,
+        schema: ModelSchema,
+        location: str,
+    ) -> list[ReferenceInfo]:
         """Collect all references from a schema object."""
         references = []
 
@@ -551,7 +553,8 @@ class UtilityContractAnalyzer:
         if schema.properties:
             for prop_name, prop_schema in schema.properties.items():
                 refs = self._collect_references_from_schema(
-                    prop_schema, f"{location}.{prop_name}"
+                    prop_schema,
+                    f"{location}.{prop_name}",
                 )
                 references.extend(refs)
 
@@ -596,8 +599,9 @@ class UtilityContractAnalyzer:
         )
 
     def _check_circular_references(
-        self, contract: ModelContractDocument
-    ) -> List[List[str]]:
+        self,
+        contract: ModelContractDocument,
+    ) -> list[list[str]]:
         """Check for circular references in the contract."""
         cycles = []
 
@@ -615,7 +619,7 @@ class UtilityContractAnalyzer:
         visited = set()
         rec_stack = []
 
-        def find_cycle(node: str) -> Optional[List[str]]:
+        def find_cycle(node: str) -> list[str] | None:
             if node in rec_stack:
                 # Found cycle
                 cycle_start = rec_stack.index(node)
@@ -645,7 +649,7 @@ class UtilityContractAnalyzer:
 
         return cycles
 
-    def _get_refs_from_schema(self, schema: ModelSchema) -> List[str]:
+    def _get_refs_from_schema(self, schema: ModelSchema) -> list[str]:
         """Get all direct references from a schema."""
         refs = []
 

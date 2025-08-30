@@ -7,12 +7,10 @@ for cache management and performance optimization.
 
 import time
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 
 
 class ModelContractCacheEntry(BaseModel):
@@ -20,20 +18,24 @@ class ModelContractCacheEntry(BaseModel):
 
     contract_path: str = Field(..., description="Original contract file path")
     contract_content: ModelContractContent = Field(
-        ..., description="Cached contract data"
+        ...,
+        description="Cached contract data",
     )
     cached_at: float = Field(
-        default_factory=time.time, description="Timestamp when cached"
+        default_factory=time.time,
+        description="Timestamp when cached",
     )
     access_count: int = Field(default=0, description="Number of cache accesses")
     last_accessed: float = Field(
-        default_factory=time.time, description="Last access timestamp"
+        default_factory=time.time,
+        description="Last access timestamp",
     )
-    file_modified_time: Optional[float] = Field(
-        None, description="File modification time when cached"
+    file_modified_time: float | None = Field(
+        None,
+        description="File modification time when cached",
     )
 
-    def is_stale(self, current_file_time: Optional[float] = None) -> bool:
+    def is_stale(self, current_file_time: float | None = None) -> bool:
         """
         Check if cache entry is stale.
 
@@ -63,7 +65,7 @@ class ModelContractCacheEntry(BaseModel):
         cls,
         contract_path: Path,
         contract_content: ModelContractContent,
-        file_modified_time: Optional[float] = None,
+        file_modified_time: float | None = None,
     ) -> "ModelContractCacheEntry":
         """
         Create cache entry from contract data.

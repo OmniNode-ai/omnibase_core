@@ -12,11 +12,15 @@ Author: OmniNode Team
 # NOTE: ModelRegistryConfig import removed to break circular dependency
 # Import it directly from omnibase_core.model.registry.model_registry_config instead
 from omnibase_core.model.core.model_fallback_strategy import (
-    FallbackStrategyType, ModelFallbackStrategy)
-from omnibase_core.model.service.model_service_configuration_single import \
-    ModelServiceConfiguration
-from omnibase_core.model.service.model_service_registry_config import \
-    ModelServiceRegistryConfig
+    FallbackStrategyType,
+    ModelFallbackStrategy,
+)
+from omnibase_core.model.service.model_service_configuration_single import (
+    ModelServiceConfiguration,
+)
+from omnibase_core.model.service.model_service_registry_config import (
+    ModelServiceRegistryConfig,
+)
 
 # Re-export for backward compatibility (excluding ModelRegistryConfig due to circular import)
 __all__ = [

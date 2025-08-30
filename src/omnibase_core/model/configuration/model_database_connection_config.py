@@ -1,6 +1,5 @@
 import os
 import re
-from typing import Dict, List
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
@@ -21,17 +20,26 @@ class ModelDatabaseConnectionConfig(BaseModel):
     """
 
     host: str = Field(
-        ..., description="Database host", pattern=r"^[a-zA-Z0-9\-\.]+$", max_length=255
+        ...,
+        description="Database host",
+        pattern=r"^[a-zA-Z0-9\-\.]+$",
+        max_length=255,
     )
     port: int = Field(..., description="Database port", ge=1, le=65535)
     database: str = Field(
-        ..., description="Database name", pattern=r"^[a-zA-Z0-9_\-]+$", max_length=100
+        ...,
+        description="Database name",
+        pattern=r"^[a-zA-Z0-9_\-]+$",
+        max_length=100,
     )
     username: str = Field(..., description="Database username", max_length=100)
     password: SecretStr = Field(..., description="Database password (secured)")
     ssl_enabled: bool = Field(False, description="Whether to use SSL connection")
     connection_timeout: int = Field(
-        30, description="Connection timeout in seconds", ge=1, le=300
+        30,
+        description="Connection timeout in seconds",
+        ge=1,
+        le=300,
     )
 
     @field_validator("host", mode="before")
@@ -39,21 +47,25 @@ class ModelDatabaseConnectionConfig(BaseModel):
     def validate_host(cls, v: str) -> str:
         """Validate database host format."""
         if not v or not v.strip():
-            raise ValueError("Database host cannot be empty")
+            msg = "Database host cannot be empty"
+            raise ValueError(msg)
 
         # Remove leading/trailing whitespace
         v = v.strip()
 
         # Basic hostname validation
         if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
-            raise ValueError(f"Invalid host format: {v}")
+            msg = f"Invalid host format: {v}"
+            raise ValueError(msg)
 
         # Check for common invalid patterns
         if v.startswith("-") or v.endswith("-"):
-            raise ValueError(f"Host cannot start or end with hyphen: {v}")
+            msg = f"Host cannot start or end with hyphen: {v}"
+            raise ValueError(msg)
 
         if ".." in v:
-            raise ValueError(f"Host cannot contain consecutive dots: {v}")
+            msg = f"Host cannot contain consecutive dots: {v}"
+            raise ValueError(msg)
 
         return v
 
@@ -62,7 +74,8 @@ class ModelDatabaseConnectionConfig(BaseModel):
     def validate_database_name(cls, v: str) -> str:
         """Validate database name format."""
         if not v or not v.strip():
-            raise ValueError("Database name cannot be empty")
+            msg = "Database name cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip()
 
@@ -81,8 +94,9 @@ class ModelDatabaseConnectionConfig(BaseModel):
         v_upper = v.upper()
         for pattern in dangerous_patterns:
             if pattern in v_upper:
+                msg = f"Database name contains potentially dangerous pattern: {pattern}"
                 raise ValueError(
-                    f"Database name contains potentially dangerous pattern: {pattern}"
+                    msg,
                 )
 
         return v
@@ -92,13 +106,15 @@ class ModelDatabaseConnectionConfig(BaseModel):
     def validate_username(cls, v: str) -> str:
         """Validate database username."""
         if not v or not v.strip():
-            raise ValueError("Database username cannot be empty")
+            msg = "Database username cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip()
 
         # Check for SQL injection patterns
         if any(pattern in v.upper() for pattern in ["--", ";", "'", '"']):
-            raise ValueError("Username contains potentially dangerous characters")
+            msg = "Username contains potentially dangerous characters"
+            raise ValueError(msg)
 
         return v
 
@@ -118,10 +134,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         protocol = protocol_map.get(driver.lower(), driver)
 
         # Basic connection string format
-        if self.ssl_enabled:
-            ssl_params = "?sslmode=require"
-        else:
-            ssl_params = ""
+        ssl_params = "?sslmode=require" if self.ssl_enabled else ""
 
         return f"{protocol}://{self.username}:***@{self.host}:{self.port}/{self.database}{ssl_params}"
 
@@ -143,14 +156,11 @@ class ModelDatabaseConnectionConfig(BaseModel):
         protocol = protocol_map.get(driver.lower(), driver)
         password = self.password.get_secret_value()
 
-        if self.ssl_enabled:
-            ssl_params = "?sslmode=require"
-        else:
-            ssl_params = ""
+        ssl_params = "?sslmode=require" if self.ssl_enabled else ""
 
         return f"{protocol}://{self.username}:{password}@{self.host}:{self.port}/{self.database}{ssl_params}"
 
-    def get_connection_parameters(self) -> Dict[str, str]:
+    def get_connection_parameters(self) -> dict[str, str]:
         """Get connection parameters as key-value pairs."""
         params = {
             "host": self.host,
@@ -168,7 +178,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
         return params
 
-    def get_masked_connection_parameters(self) -> Dict[str, str]:
+    def get_masked_connection_parameters(self) -> dict[str, str]:
         """Get connection parameters with password masked."""
         params = self.get_connection_parameters()
         params["password"] = "***MASKED***"
@@ -203,7 +213,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
         return True
 
-    def get_security_recommendations(self) -> List[str]:
+    def get_security_recommendations(self) -> list[str]:
         """Get security recommendations for this configuration."""
         recommendations = []
 
@@ -213,12 +223,12 @@ class ModelDatabaseConnectionConfig(BaseModel):
         password = self.password.get_secret_value()
         if len(password) < 12:
             recommendations.append(
-                "Use stronger passwords (12+ characters) for production"
+                "Use stronger passwords (12+ characters) for production",
             )
 
         if self.host.lower() in ("localhost", "127.0.0.1"):
             recommendations.append(
-                "Use dedicated database server instead of localhost for production"
+                "Use dedicated database server instead of localhost for production",
             )
 
         default_ports = {
@@ -229,12 +239,12 @@ class ModelDatabaseConnectionConfig(BaseModel):
         }
         if self.port in default_ports:
             recommendations.append(
-                f"Consider using non-default port instead of {self.port} ({default_ports[self.port]} default)"
+                f"Consider using non-default port instead of {self.port} ({default_ports[self.port]} default)",
             )
 
         if self.connection_timeout > 60:
             recommendations.append(
-                "Long connection timeouts may lead to resource exhaustion"
+                "Long connection timeouts may lead to resource exhaustion",
             )
 
         return recommendations
@@ -243,7 +253,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         """Check if SSL is enabled for this connection."""
         return self.ssl_enabled
 
-    def get_security_profile(self) -> Dict[str, str]:
+    def get_security_profile(self) -> dict[str, str]:
         """Get security profile assessment."""
         password = self.password.get_secret_value()
 
@@ -275,7 +285,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     # === Performance Assessment ===
 
-    def get_performance_profile(self) -> Dict[str, str]:
+    def get_performance_profile(self) -> dict[str, str]:
         """Get performance characteristics of this configuration."""
         profile = {
             "connection_latency": "low" if self.connection_timeout <= 10 else "high",
@@ -293,18 +303,18 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
         return profile
 
-    def get_performance_recommendations(self) -> List[str]:
+    def get_performance_recommendations(self) -> list[str]:
         """Get performance tuning recommendations."""
         recommendations = []
 
         if self.connection_timeout < 5:
             recommendations.append(
-                "Very short timeout may cause connection failures under load"
+                "Very short timeout may cause connection failures under load",
             )
 
         if self.connection_timeout > 60:
             recommendations.append(
-                "Long timeout may cause resource exhaustion - consider reducing"
+                "Long timeout may cause resource exhaustion - consider reducing",
             )
 
         if self.ssl_enabled:
@@ -312,14 +322,14 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
         if self.host.lower() not in ("localhost", "127.0.0.1"):
             recommendations.append(
-                "Consider connection pooling for remote database connections"
+                "Consider connection pooling for remote database connections",
             )
 
         return recommendations
 
     # === Connection Pool Recommendations ===
 
-    def get_pool_recommendations(self) -> Dict[str, int]:
+    def get_pool_recommendations(self) -> dict[str, int]:
         """Get connection pool size recommendations based on configuration."""
         base_pool_size = 5
         max_pool_size = 20
@@ -477,7 +487,8 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     @classmethod
     def create_testing(
-        cls, database: str = "test_db"
+        cls,
+        database: str = "test_db",
     ) -> "ModelDatabaseConnectionConfig":
         """Create configuration for automated testing."""
         return cls(

@@ -4,8 +4,6 @@ ONEX Model: JWT Payload Model
 Strongly typed model for JWT payload with proper type safety.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -13,15 +11,15 @@ class ModelJWTPayload(BaseModel):
     """Model for JWT token payload."""
 
     sub: str = Field(..., description="Subject (user ID)")
-    username: Optional[str] = Field(None, description="Username")
-    roles: List[str] = Field(default_factory=list, description="User roles")
-    permissions: List[str] = Field(default_factory=list, description="User permissions")
-    groups: List[str] = Field(default_factory=list, description="User groups")
-    session_id: Optional[str] = Field(None, description="Session ID")
-    iat: Optional[int] = Field(None, description="Issued at timestamp")
-    exp: Optional[int] = Field(None, description="Expiration timestamp")
-    iss: Optional[str] = Field(None, description="Issuer")
-    mfa_verified: Optional[bool] = Field(None, description="MFA verification status")
+    username: str | None = Field(None, description="Username")
+    roles: list[str] = Field(default_factory=list, description="User roles")
+    permissions: list[str] = Field(default_factory=list, description="User permissions")
+    groups: list[str] = Field(default_factory=list, description="User groups")
+    session_id: str | None = Field(None, description="Session ID")
+    iat: int | None = Field(None, description="Issued at timestamp")
+    exp: int | None = Field(None, description="Expiration timestamp")
+    iss: str | None = Field(None, description="Issuer")
+    mfa_verified: bool | None = Field(None, description="MFA verification status")
 
     @classmethod
     def from_jwt_dict(cls, payload_dict: dict) -> "ModelJWTPayload":

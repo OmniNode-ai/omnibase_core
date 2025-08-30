@@ -2,8 +2,6 @@
 Metadata context model for intelligence system.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +11,7 @@ class ModelMetadataContext(BaseModel):
     file_path: str = Field(..., description="Path to file being processed")
     content_type: str = Field(..., description="Type of content")
     processing_timestamp: str = Field(..., description="When processing occurred")
-    metadata: Optional[str] = Field(
-        None, description="Additional metadata as JSON string"
+    metadata: str | None = Field(
+        None,
+        description="Additional metadata as JSON string",
     )

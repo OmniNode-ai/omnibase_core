@@ -7,15 +7,14 @@ that are extracted from ModelNodeBase as part of NODEBASE-001 Phase 2.
 Author: ONEX Framework Team
 """
 
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.decorators import allow_any_type
 
 
 @allow_any_type(
-    "Protocol interfaces require Any types for generic container and service handling"
+    "Protocol interfaces require Any types for generic container and service handling",
 )
 class ProtocolContainerService(Protocol):
     """
@@ -29,7 +28,7 @@ class ProtocolContainerService(Protocol):
         self,
         contract_content: ModelContractContent,
         node_id: str,
-        nodebase_ref: Optional[Any] = None,
+        nodebase_ref: Any | None = None,
     ) -> Any:
         """
         Create and configure ONEXContainer from contract dependencies.
@@ -47,7 +46,7 @@ class ProtocolContainerService(Protocol):
         """
         ...
 
-    def create_service_from_dependency(self, dependency: Any) -> Optional[Any]:
+    def create_service_from_dependency(self, dependency: Any) -> Any | None:
         """
         Create service instance from contract dependency specification.
 
@@ -75,7 +74,9 @@ class ProtocolContainerService(Protocol):
         ...
 
     def get_registry_wrapper(
-        self, container: Any, nodebase_ref: Optional[Any] = None
+        self,
+        container: Any,
+        nodebase_ref: Any | None = None,
     ) -> Any:
         """
         Create registry wrapper around container for backward compatibility.

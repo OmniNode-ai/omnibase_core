@@ -5,16 +5,15 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 """
 
 import asyncio
+import contextlib
 import json
 import os
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
-from omnibase_core.model.hook_events.model_onex_hook_event import \
-    ModelOnexHookEvent
+from omnibase_core.model.hook_events.model_onex_hook_event import ModelOnexHookEvent
 from omnibase_core.models.model_event_statistics import ModelEventStatistics
 from omnibase_core.models.model_kafka_config import ModelKafkaConfig
-from omnibase_core.models.model_kafka_config_response import \
-    ModelKafkaConfigResponse
+from omnibase_core.models.model_kafka_config_response import ModelKafkaConfigResponse
 
 try:
     from aiokafka import AIOKafkaConsumer
@@ -36,7 +35,9 @@ class UtilityKafkaHookProcessor:
     """
 
     def __init__(
-        self, bootstrap_servers: Optional[str] = None, group_id: Optional[str] = None
+        self,
+        bootstrap_servers: str | None = None,
+        group_id: str | None = None,
     ):
         """Initialize Kafka hook processor.
 
@@ -46,50 +47,40 @@ class UtilityKafkaHookProcessor:
         """
         try:
             # Initialize basic state FIRST - this must always succeed
-            self.consumer: Optional[AIOKafkaConsumer] = None
-            self.hook_events: List[ModelOnexHookEvent] = []  # Now using unified model
-            self.event_callbacks: List[Callable[[ModelOnexHookEvent], None]] = []
-            self.consumer_task: Optional[asyncio.Task[None]] = None
+            self.consumer: AIOKafkaConsumer | None = None
+            self.hook_events: list[ModelOnexHookEvent] = []  # Now using unified model
+            self.event_callbacks: list[Callable[[ModelOnexHookEvent], None]] = []
+            self.consumer_task: asyncio.Task[None] | None = None
             self.enabled = False  # Start disabled, enable only if everything works
             self.config = None
 
             if not AIOKAFKA_AVAILABLE:
-                print("⚠️ aiokafka not available, Kafka functionality disabled")
                 return
 
             # Configuration from environment or parameters
             servers = bootstrap_servers or os.getenv("KAFKA_BOOTSTRAP_SERVERS")
             if not servers:
-                print("⚠️ KAFKA_BOOTSTRAP_SERVERS not set, Kafka functionality disabled")
                 return
 
             # Use a fixed consumer group for the causal graph service
             # This ensures a single consumer gets ALL partitions
             default_group_id = "omnimemory-causal-graph-capture"
             self.config = ModelKafkaConfig(
-                bootstrap_servers=servers, group_id=group_id or default_group_id
+                bootstrap_servers=servers,
+                group_id=group_id or default_group_id,
             )
-            print(f"📊 Using consumer group: {self.config.group_id}")
 
             # Only enable if all configuration succeeds
             self.enabled = True
 
-            print(
-                f"✅ Kafka hook processor initialized: {self.config.bootstrap_servers}"
-            )
-
-        except Exception as e:
+        except Exception:
             # CRITICAL: Ensure basic state is always initialized even if config fails
-            print(f"⚠️ Kafka hook processor initialization failed: {e}")
             self.consumer = None
             self.hook_events = []
             self.event_callbacks = []
             self.consumer_task = None
             self.enabled = False
             self.config = None
-            print(
-                "🛡️ Kafka processor initialized in safe mode - Claude Code will continue working"
-            )
 
     async def start(self) -> bool:
         """Start the Kafka consumer and event processing.
@@ -98,13 +89,11 @@ class UtilityKafkaHookProcessor:
             True if started successfully, False otherwise
         """
         if not self.enabled:
-            print("⚠️ Kafka processor disabled, skipping start")
             return False
 
         try:
             # Initialize consumer
             if not self.config:
-                print("❌ Configuration not available")
                 return False
 
             self.consumer = AIOKafkaConsumer(
@@ -132,43 +121,29 @@ class UtilityKafkaHookProcessor:
             await self.consumer.start()
 
             # Log partition assignments
-            print("📊 Partition assignments:")
             try:
                 assignment = self.consumer.assignment()
-                print(f"   Assignment type: {type(assignment)}")
-                print(f"   Assignment: {assignment}")
                 # Assignment is a set of TopicPartition objects
-                topics_dict: dict[str, List[int]] = {}
+                topics_dict: dict[str, list[int]] = {}
                 for tp in assignment:
                     if tp.topic not in topics_dict:
                         topics_dict[tp.topic] = []
                     topics_dict[tp.topic].append(tp.partition)
 
-                for topic, partitions in topics_dict.items():
-                    print(f"   Topic: {topic} -> Partitions: {sorted(partitions)}")
+                for _topic, _partitions in topics_dict.items():
+                    pass
 
                 if not assignment:
-                    print(
-                        "   ⚠️ No partitions assigned yet - will be assigned after first poll"
-                    )
-            except Exception as e:
-                print(f"   Could not get assignment yet: {e}")
+                    pass
+            except Exception:
+                pass
 
             # Start background processing task
             self.consumer_task = asyncio.create_task(self._consume_events())
 
-            print(
-                f"🎉 Kafka consumer started for topics: {self.config.topics if self.config else []}"
-            )
             return True
 
-        except Exception as e:
-            print(f"❌ Failed to start Kafka consumer: {e}")
-            print(
-                f"   Bootstrap servers: {self.config.bootstrap_servers if self.config else 'None'}"
-            )
-            print(f"   Group ID: {self.config.group_id if self.config else 'None'}")
-            print(f"   Topics: {self.config.topics if self.config else 'None'}")
+        except Exception:
             self.consumer = None
             return False
 
@@ -181,10 +156,8 @@ class UtilityKafkaHookProcessor:
             # Cancel background task
             if self.consumer_task:
                 self.consumer_task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await self.consumer_task
-                except asyncio.CancelledError:
-                    pass
                 self.consumer_task = None
 
             # Stop consumer
@@ -192,13 +165,12 @@ class UtilityKafkaHookProcessor:
                 await self.consumer.stop()
                 self.consumer = None
 
-            print("🛑 Kafka consumer stopped")
-
-        except Exception as e:
-            print(f"❌ Error stopping Kafka consumer: {e}")
+        except Exception:
+            pass
 
     def add_event_callback(
-        self, callback: Callable[[ModelOnexHookEvent], None]
+        self,
+        callback: Callable[[ModelOnexHookEvent], None],
     ) -> None:
         """Add a callback function to receive hook events.
 
@@ -206,10 +178,10 @@ class UtilityKafkaHookProcessor:
             callback: Function to call when events are processed
         """
         self.event_callbacks.append(callback)
-        print(f"📢 Added event callback: {callback.__name__}")
 
     def remove_event_callback(
-        self, callback: Callable[[ModelOnexHookEvent], None]
+        self,
+        callback: Callable[[ModelOnexHookEvent], None],
     ) -> None:
         """Remove an event callback.
 
@@ -218,9 +190,8 @@ class UtilityKafkaHookProcessor:
         """
         if callback in self.event_callbacks:
             self.event_callbacks.remove(callback)
-            print(f"🗑️ Removed event callback: {callback.__name__}")
 
-    def get_recent_events(self, limit: int = 100) -> List[ModelOnexHookEvent]:
+    def get_recent_events(self, limit: int = 100) -> list[ModelOnexHookEvent]:
         """Get recent hook events.
 
         Args:
@@ -236,8 +207,7 @@ class UtilityKafkaHookProcessor:
                 return []
 
             return self.hook_events[-limit:] if self.hook_events else []
-        except Exception as e:
-            print(f"⚠️ Error getting recent events: {e}")
+        except Exception:
             # Ensure hook_events is properly initialized
             if not hasattr(self, "hook_events") or self.hook_events is None:
                 self.hook_events = []
@@ -275,11 +245,11 @@ class UtilityKafkaHookProcessor:
                 if hasattr(event, "event_type") and event.event_type == "post-execution"
             )
             unique_tools = len(
-                set(
+                {
                     event.tool_name
                     for event in self.hook_events
                     if hasattr(event, "tool_name") and event.tool_name
-                )
+                },
             )
 
             return ModelEventStatistics(
@@ -291,8 +261,7 @@ class UtilityKafkaHookProcessor:
                 enabled=self.enabled,
             )
 
-        except Exception as e:
-            print(f"⚠️ Error getting event statistics: {e}")
+        except Exception:
             # Ensure hook_events is properly initialized
             if not hasattr(self, "hook_events") or self.hook_events is None:
                 self.hook_events = []
@@ -306,7 +275,7 @@ class UtilityKafkaHookProcessor:
                 enabled=self.enabled,
             )
 
-    def filter_events_by_tool(self, tool_name: str) -> List[ModelOnexHookEvent]:
+    def filter_events_by_tool(self, tool_name: str) -> list[ModelOnexHookEvent]:
         """Filter events by tool name.
 
         Args:
@@ -326,14 +295,13 @@ class UtilityKafkaHookProcessor:
                 for event in self.hook_events
                 if hasattr(event, "tool_name") and event.tool_name == tool_name
             ]
-        except Exception as e:
-            print(f"⚠️ Error filtering events by tool '{tool_name}': {e}")
+        except Exception:
             # Ensure hook_events is properly initialized
             if not hasattr(self, "hook_events") or self.hook_events is None:
                 self.hook_events = []
             return []
 
-    def filter_events_by_session(self, session_id: str) -> List[ModelOnexHookEvent]:
+    def filter_events_by_session(self, session_id: str) -> list[ModelOnexHookEvent]:
         """Filter events by session ID.
 
         Args:
@@ -353,8 +321,7 @@ class UtilityKafkaHookProcessor:
                 for event in self.hook_events
                 if hasattr(event, "session_id") and event.session_id == session_id
             ]
-        except Exception as e:
-            print(f"⚠️ Error filtering events by session '{session_id}': {e}")
+        except Exception:
             # Ensure hook_events is properly initialized
             if not hasattr(self, "hook_events") or self.hook_events is None:
                 self.hook_events = []
@@ -369,22 +336,11 @@ class UtilityKafkaHookProcessor:
             async for message in self.consumer:
                 try:
                     # DEBUG: Log raw Kafka message
-                    print("=== KAFKA MESSAGE DEBUG ===")
-                    print(f"Topic: {message.topic}")
-                    print(f"Raw message.value: {json.dumps(message.value, indent=2)}")
-                    print("==============================")
 
                     # Parse as unified ModelOnexHookEvent (all events should use this format)
                     try:
                         unified_event = ModelOnexHookEvent.model_validate(message.value)
-                        print(
-                            f"✅ Parsed unified event: topic={message.topic}, event_type={unified_event.event_type}, tool={unified_event.tool_name or 'N/A'}"
-                        )
-                    except Exception as parse_error:
-                        print(
-                            f"❌ Failed to parse message from topic {message.topic}: {parse_error}"
-                        )
-                        print(f"   Raw message: {message.value}")
+                    except Exception:
                         # Skip malformed messages
                         continue
 
@@ -400,32 +356,25 @@ class UtilityKafkaHookProcessor:
                             and len(self.hook_events) > self.config.max_events_in_memory
                         ):
                             self.hook_events.pop(0)
-                    except Exception as store_error:
-                        print(f"⚠️ Error storing hook event: {store_error}")
+                    except Exception:
                         # Reinitialize hook_events if there's an issue
                         self.hook_events = [
-                            unified_event
+                            unified_event,
                         ]  # At least store the current event
 
                     # Notify callbacks with unified event
                     for callback in self.event_callbacks:
-                        try:
+                        with contextlib.suppress(Exception):
                             callback(unified_event)
-                        except Exception as e:
-                            print(
-                                f"❌ Error in event callback {callback.__name__}: {e}"
-                            )
 
-                except Exception as parse_error:
-                    print(f"❌ FAILED TO PARSE MESSAGE FROM TOPIC {message.topic}:")
-                    print(f"   Parse error: {parse_error}")
-                    print(f"   Raw message: {message.value}")
+                except Exception:
+                    pass
                     # Continue processing other messages
 
         except asyncio.CancelledError:
-            print("🛑 Event consumption cancelled")
-        except Exception as e:
-            print(f"❌ Error consuming Kafka events: {e}")
+            pass
+        except Exception:
+            pass
 
     def is_connected(self) -> bool:
         """Check if Kafka consumer is connected and running.
@@ -448,7 +397,8 @@ class UtilityKafkaHookProcessor:
         """
         if not self.enabled:
             return ModelKafkaConfigResponse(
-                enabled=False, reason="Kafka not available or configured"
+                enabled=False,
+                reason="Kafka not available or configured",
             )
 
         return ModelKafkaConfigResponse(

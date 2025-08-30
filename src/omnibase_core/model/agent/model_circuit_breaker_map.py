@@ -1,7 +1,5 @@
 """Model for managing circuit breakers."""
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.patterns.circuit_breaker import CircuitBreaker
@@ -15,8 +13,9 @@ class ModelCircuitBreakerMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    breakers: Dict[str, CircuitBreaker] = Field(
-        default_factory=dict, description="Map of service names to circuit breakers"
+    breakers: dict[str, CircuitBreaker] = Field(
+        default_factory=dict,
+        description="Map of service names to circuit breakers",
     )
 
     class Config:
@@ -27,7 +26,7 @@ class ModelCircuitBreakerMap(BaseModel):
         """Add a circuit breaker for a service."""
         self.breakers[service_name] = breaker
 
-    def get_breaker(self, service_name: str) -> Optional[CircuitBreaker]:
+    def get_breaker(self, service_name: str) -> CircuitBreaker | None:
         """Get circuit breaker for a specific service."""
         return self.breakers.get(service_name)
 
@@ -38,7 +37,7 @@ class ModelCircuitBreakerMap(BaseModel):
             return True
         return False
 
-    def get_open_breakers(self) -> List[str]:
+    def get_open_breakers(self) -> list[str]:
         """Get list of services with open circuit breakers."""
         open_services = []
         for service_name, breaker in self.breakers.items():
@@ -46,7 +45,7 @@ class ModelCircuitBreakerMap(BaseModel):
                 open_services.append(service_name)
         return open_services
 
-    def get_closed_breakers(self) -> List[str]:
+    def get_closed_breakers(self) -> list[str]:
         """Get list of services with closed circuit breakers."""
         closed_services = []
         for service_name, breaker in self.breakers.items():
@@ -54,7 +53,7 @@ class ModelCircuitBreakerMap(BaseModel):
                 closed_services.append(service_name)
         return closed_services
 
-    def get_half_open_breakers(self) -> List[str]:
+    def get_half_open_breakers(self) -> list[str]:
         """Get list of services with half-open circuit breakers."""
         half_open_services = []
         for service_name, breaker in self.breakers.items():
@@ -79,7 +78,7 @@ class ModelCircuitBreakerMap(BaseModel):
         """Get total number of circuit breakers."""
         return len(self.breakers)
 
-    def get_health_summary(self) -> Dict[str, int]:
+    def get_health_summary(self) -> dict[str, int]:
         """Get summary of circuit breaker states."""
         return {
             "open": len(self.get_open_breakers()),

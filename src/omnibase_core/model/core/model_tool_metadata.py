@@ -4,7 +4,6 @@ Tool metadata model.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -62,52 +61,64 @@ class ModelToolMetadata(BaseModel):
     tool_class: str = Field(..., description="Tool class name")
     module_path: str = Field(..., description="Tool module path")
     registration_time: datetime = Field(
-        default_factory=datetime.now, description="When tool was registered"
+        default_factory=datetime.now,
+        description="When tool was registered",
     )
     status: ToolRegistrationStatus = Field(
-        ToolRegistrationStatus.REGISTERED, description="Registration status"
+        ToolRegistrationStatus.REGISTERED,
+        description="Registration status",
     )
     category: ToolCategory = Field(ToolCategory.CUSTOM, description="Tool category")
     capability_level: ToolCapabilityLevel = Field(
-        ToolCapabilityLevel.BASIC, description="Capability level"
+        ToolCapabilityLevel.BASIC,
+        description="Capability level",
     )
     compatibility_mode: ToolCompatibilityMode = Field(
-        ToolCompatibilityMode.COMPATIBLE, description="Compatibility mode"
+        ToolCompatibilityMode.COMPATIBLE,
+        description="Compatibility mode",
     )
 
     # Performance and usage tracking
     performance_metrics: ModelToolPerformanceMetrics = Field(
-        default_factory=ModelToolPerformanceMetrics, description="Performance metrics"
+        default_factory=ModelToolPerformanceMetrics,
+        description="Performance metrics",
     )
     validation_result: ModelToolValidationResult = Field(
-        default_factory=ModelToolValidationResult, description="Validation results"
+        default_factory=ModelToolValidationResult,
+        description="Validation results",
     )
 
     # Documentation and configuration
     description: str = Field("", description="Tool description")
     version: str = Field("1.0.0", description="Tool version")
     author: str = Field("Unknown", description="Tool author")
-    documentation_url: Optional[str] = Field(None, description="Documentation URL")
+    documentation_url: str | None = Field(None, description="Documentation URL")
     configuration_schema: ModelSchema = Field(
-        default_factory=dict, description="Configuration schema"
+        default_factory=dict,
+        description="Configuration schema",
     )
 
     # Dependencies and requirements
-    dependencies: List[str] = Field(
-        default_factory=list, description="Tool dependencies"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Tool dependencies",
     )
-    required_protocols: List[str] = Field(
-        default_factory=list, description="Required protocol interfaces"
+    required_protocols: list[str] = Field(
+        default_factory=list,
+        description="Required protocol interfaces",
     )
-    optional_protocols: List[str] = Field(
-        default_factory=list, description="Optional protocol interfaces"
+    optional_protocols: list[str] = Field(
+        default_factory=list,
+        description="Optional protocol interfaces",
     )
 
     # Security and compliance
     security_level: str = Field("standard", description="Security clearance level")
-    compliance_tags: List[str] = Field(
-        default_factory=list, description="Compliance tags"
+    compliance_tags: list[str] = Field(
+        default_factory=list,
+        description="Compliance tags",
     )
-    audit_trail: List[ModelAuditEntry] = Field(
-        default_factory=list, description="Audit trail entries"
+    audit_trail: list[ModelAuditEntry] = Field(
+        default_factory=list,
+        description="Audit trail entries",
     )

@@ -5,8 +5,6 @@ Typed model for network access restrictions,
 replacing Dict[str, Any] with structured fields.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,13 +17,14 @@ class ModelNetworkRestrictions(BaseModel):
     """
 
     # IP-based restrictions
-    allowed_ip_ranges: List[str] = Field(
+    allowed_ip_ranges: list[str] = Field(
         default_factory=list,
         description="Allowed IP ranges in CIDR notation (e.g., 192.168.1.0/24)",
     )
 
-    blocked_ip_ranges: List[str] = Field(
-        default_factory=list, description="Blocked IP ranges in CIDR notation"
+    blocked_ip_ranges: list[str] = Field(
+        default_factory=list,
+        description="Blocked IP ranges in CIDR notation",
     )
 
     whitelist_mode: bool = Field(
@@ -34,117 +33,145 @@ class ModelNetworkRestrictions(BaseModel):
     )
 
     # Port restrictions
-    allowed_ports: List[int] = Field(
-        default_factory=lambda: [443, 8443], description="Allowed network ports"
+    allowed_ports: list[int] = Field(
+        default_factory=lambda: [443, 8443],
+        description="Allowed network ports",
     )
 
-    blocked_ports: List[int] = Field(
+    blocked_ports: list[int] = Field(
         default_factory=lambda: [21, 22, 23, 25, 110, 139, 445],
         description="Blocked network ports",
     )
 
     # Protocol restrictions
-    allowed_protocols: List[str] = Field(
+    allowed_protocols: list[str] = Field(
         default_factory=lambda: ["https", "wss"],
         description="Allowed network protocols",
     )
 
-    blocked_protocols: List[str] = Field(
+    blocked_protocols: list[str] = Field(
         default_factory=lambda: ["http", "ftp", "telnet"],
         description="Blocked network protocols",
     )
 
     # Geographic restrictions
     geo_blocking_enabled: bool = Field(
-        default=False, description="Enable geographic-based blocking"
+        default=False,
+        description="Enable geographic-based blocking",
     )
 
-    allowed_countries: List[str] = Field(
-        default_factory=list, description="Allowed countries (ISO 3166-1 alpha-2 codes)"
+    allowed_countries: list[str] = Field(
+        default_factory=list,
+        description="Allowed countries (ISO 3166-1 alpha-2 codes)",
     )
 
-    blocked_countries: List[str] = Field(
-        default_factory=list, description="Blocked countries (ISO 3166-1 alpha-2 codes)"
+    blocked_countries: list[str] = Field(
+        default_factory=list,
+        description="Blocked countries (ISO 3166-1 alpha-2 codes)",
     )
 
-    allowed_regions: List[str] = Field(
-        default_factory=list, description="Allowed regions/states"
+    allowed_regions: list[str] = Field(
+        default_factory=list,
+        description="Allowed regions/states",
     )
 
-    blocked_regions: List[str] = Field(
-        default_factory=list, description="Blocked regions/states"
+    blocked_regions: list[str] = Field(
+        default_factory=list,
+        description="Blocked regions/states",
     )
 
     # DNS restrictions
-    allowed_domains: List[str] = Field(
-        default_factory=list, description="Allowed domain names for connections"
+    allowed_domains: list[str] = Field(
+        default_factory=list,
+        description="Allowed domain names for connections",
     )
 
-    blocked_domains: List[str] = Field(
-        default_factory=list, description="Blocked domain names"
+    blocked_domains: list[str] = Field(
+        default_factory=list,
+        description="Blocked domain names",
     )
 
     # Rate limiting
     rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
 
-    requests_per_minute: Optional[int] = Field(
-        default=60, description="Maximum requests per minute per IP", ge=1
+    requests_per_minute: int | None = Field(
+        default=60,
+        description="Maximum requests per minute per IP",
+        ge=1,
     )
 
-    requests_per_hour: Optional[int] = Field(
-        default=1000, description="Maximum requests per hour per IP", ge=1
+    requests_per_hour: int | None = Field(
+        default=1000,
+        description="Maximum requests per hour per IP",
+        ge=1,
     )
 
     burst_size: int = Field(
-        default=10, description="Burst size for rate limiting", ge=1
+        default=10,
+        description="Burst size for rate limiting",
+        ge=1,
     )
 
     # Connection limits
-    max_connections_per_ip: Optional[int] = Field(
-        default=10, description="Maximum concurrent connections per IP", ge=1
+    max_connections_per_ip: int | None = Field(
+        default=10,
+        description="Maximum concurrent connections per IP",
+        ge=1,
     )
 
-    max_total_connections: Optional[int] = Field(
-        default=1000, description="Maximum total concurrent connections", ge=1
+    max_total_connections: int | None = Field(
+        default=1000,
+        description="Maximum total concurrent connections",
+        ge=1,
     )
 
     connection_timeout_seconds: int = Field(
-        default=30, description="Connection timeout in seconds", ge=1
+        default=30,
+        description="Connection timeout in seconds",
+        ge=1,
     )
 
     # VPN/Proxy detection
     block_vpn_connections: bool = Field(
-        default=False, description="Block connections from known VPNs"
+        default=False,
+        description="Block connections from known VPNs",
     )
 
     block_proxy_connections: bool = Field(
-        default=False, description="Block connections from known proxies"
+        default=False,
+        description="Block connections from known proxies",
     )
 
     block_tor_connections: bool = Field(
-        default=False, description="Block connections from Tor network"
+        default=False,
+        description="Block connections from Tor network",
     )
 
     # Additional security
     require_reverse_dns: bool = Field(
-        default=False, description="Require valid reverse DNS for connections"
+        default=False,
+        description="Require valid reverse DNS for connections",
     )
 
     block_cloud_providers: bool = Field(
-        default=False, description="Block connections from cloud provider IP ranges"
+        default=False,
+        description="Block connections from cloud provider IP ranges",
     )
 
     block_hosting_providers: bool = Field(
-        default=False, description="Block connections from hosting provider IP ranges"
+        default=False,
+        description="Block connections from hosting provider IP ranges",
     )
 
     # Exceptions
-    exception_ips: List[str] = Field(
-        default_factory=list, description="IPs exempt from all restrictions"
+    exception_ips: list[str] = Field(
+        default_factory=list,
+        description="IPs exempt from all restrictions",
     )
 
-    exception_tokens: List[str] = Field(
-        default_factory=list, description="Access tokens that bypass restrictions"
+    exception_tokens: list[str] = Field(
+        default_factory=list,
+        description="Access tokens that bypass restrictions",
     )
 
     def to_dict(self) -> dict:

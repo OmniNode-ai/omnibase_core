@@ -18,7 +18,6 @@ complexity by ~85% (from 100+ lines to ~15 lines per node).
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, field_validator
@@ -39,11 +38,11 @@ class ModelOnexInputState(BaseModel):
     version: ModelSemVer
 
     # Standard traceability fields (ONEX standard)
-    event_id: Optional[UUID] = None
-    correlation_id: Optional[UUID] = None
-    node_name: Optional[str] = None
-    node_version: Optional[ModelSemVer] = None
-    timestamp: Optional[datetime] = None
+    event_id: UUID | None = None
+    correlation_id: UUID | None = None
+    node_name: str | None = None
+    node_version: ModelSemVer | None = None
+    timestamp: datetime | None = None
 
     @field_validator("version", mode="before")
     @classmethod
@@ -55,7 +54,8 @@ class ModelOnexInputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("version must be a string, dict, or ModelSemVer")
+        msg = "version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("node_version", mode="before")
     @classmethod
@@ -69,7 +69,8 @@ class ModelOnexInputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("node_version must be a string, dict, or ModelSemVer")
+        msg = "node_version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("event_id", "correlation_id")
     @classmethod
@@ -97,7 +98,8 @@ class ModelOnexInputState(BaseModel):
         Returns:
             ModelOnexInternalInputState: Internal state with all required UUIDs populated
         """
-        from omnibase_core.model.core.model_onex_internal_state import \
-            ModelOnexInternalInputState
+        from omnibase_core.model.core.model_onex_internal_state import (
+            ModelOnexInternalInputState,
+        )
 
         return ModelOnexInternalInputState.from_boundary_state(self)

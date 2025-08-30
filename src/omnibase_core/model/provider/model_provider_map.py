@@ -1,12 +1,9 @@
 """Model for managing LLM providers."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
-from omnibase_core.protocol.llm.protocol_llm_provider import \
-    ProtocolLLMProvider
+from omnibase_core.protocol.llm.protocol_llm_provider import ProtocolLLMProvider
 
 
 class ModelProviderMap(BaseModel):
@@ -17,8 +14,9 @@ class ModelProviderMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    providers: Dict[EnumLLMProvider, ProtocolLLMProvider] = Field(
-        default_factory=dict, description="Map of provider types to provider instances"
+    providers: dict[EnumLLMProvider, ProtocolLLMProvider] = Field(
+        default_factory=dict,
+        description="Map of provider types to provider instances",
     )
 
     class Config:
@@ -26,7 +24,9 @@ class ModelProviderMap(BaseModel):
         arbitrary_types_allowed = True
 
     def add_provider(
-        self, provider_type: EnumLLMProvider, provider: ProtocolLLMProvider
+        self,
+        provider_type: EnumLLMProvider,
+        provider: ProtocolLLMProvider,
     ) -> None:
         """Add an LLM provider."""
         self.providers[provider_type] = provider
@@ -46,7 +46,7 @@ class ModelProviderMap(BaseModel):
         """Check if provider exists."""
         return provider_type in self.providers
 
-    def get_all_providers(self) -> Dict[EnumLLMProvider, ProtocolLLMProvider]:
+    def get_all_providers(self) -> dict[EnumLLMProvider, ProtocolLLMProvider]:
         """Get all providers."""
         return self.providers
 

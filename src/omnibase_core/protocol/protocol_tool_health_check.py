@@ -1,7 +1,9 @@
 from typing import Protocol
 
 from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.tools.tool_kafka_event_bus import (
-    KafkaHealthCheckResult, ModelModelEventBusConfig)
+    KafkaHealthCheckResult,
+    ModelModelEventBusConfig,
+)
 
 
 class ProtocolToolHealthCheck(Protocol):

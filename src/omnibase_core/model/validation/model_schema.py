@@ -2,8 +2,6 @@
 Schema validation models.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field, RootModel
 
 from .model_schema_property import ModelSchemaProperty
@@ -18,7 +16,7 @@ class ModelSchemaPropertiesModel(RootModel):
     Wraps a dict of property names to SchemaPropertyModel.
     """
 
-    root: Dict[str, ModelSchemaProperty]
+    root: dict[str, ModelSchemaProperty]
 
 
 class ModelRequiredFieldsModel(RootModel):
@@ -27,7 +25,7 @@ class ModelRequiredFieldsModel(RootModel):
     Wraps a list of required property names.
     """
 
-    root: List[str]
+    root: list[str]
 
 
 class ModelSchema(BaseModel):
@@ -36,11 +34,11 @@ class ModelSchema(BaseModel):
     Includes canonical fields and is extensible for M1+.
     """
 
-    schema_uri: Optional[str] = Field(None)
-    title: Optional[str] = None
-    type: Optional[str] = None
-    properties: Optional[ModelSchemaPropertiesModel] = None
-    required: Optional[ModelRequiredFieldsModel] = None
+    schema_uri: str | None = Field(None)
+    title: str | None = None
+    type: str | None = None
+    properties: ModelSchemaPropertiesModel | None = None
+    required: ModelRequiredFieldsModel | None = None
     # TODO: Add more fields and validation logic in M1+
 
 

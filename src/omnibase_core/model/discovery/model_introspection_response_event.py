@@ -5,7 +5,6 @@ Event sent by nodes in response to REQUEST_REAL_TIME_INTROSPECTION events.
 Provides real-time node status and capabilities for discovery coordination.
 """
 
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -13,13 +12,13 @@ from pydantic import Field
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery.model_node_introspection_event import \
-    ModelNodeCapabilities
+from omnibase_core.model.discovery.model_node_introspection_event import (
+    ModelNodeCapabilities,
+)
 
 from .enum_node_current_status import NodeCurrentStatusEnum
 from .model_current_tool_availability import ModelCurrentToolAvailability
-from .model_introspection_additional_info import \
-    ModelIntrospectionAdditionalInfo
+from .model_introspection_additional_info import ModelIntrospectionAdditionalInfo
 from .model_performance_metrics import ModelPerformanceMetrics
 from .model_resource_usage import ModelResourceUsage
 
@@ -40,7 +39,8 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Response correlation
     correlation_id: UUID = Field(
-        ..., description="Correlation ID matching the original request"
+        ...,
+        description="Correlation ID matching the original request",
     )
 
     # Node identification
@@ -49,26 +49,30 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
 
     # Current status
     current_status: NodeCurrentStatusEnum = Field(
-        ..., description="Current operational status of the node"
+        ...,
+        description="Current operational status of the node",
     )
 
     # Node capabilities (from introspection)
     capabilities: ModelNodeCapabilities = Field(
-        ..., description="Node capabilities including actions, protocols, and metadata"
+        ...,
+        description="Node capabilities including actions, protocols, and metadata",
     )
 
     # Real-time information
-    tools: List[ModelCurrentToolAvailability] = Field(
+    tools: list[ModelCurrentToolAvailability] = Field(
         default_factory=list,
         description="Current availability status of tools within the node",
     )
 
     # Optional detailed information
-    resource_usage: Optional[ModelResourceUsage] = Field(
-        None, description="Current resource usage (if requested)"
+    resource_usage: ModelResourceUsage | None = Field(
+        None,
+        description="Current resource usage (if requested)",
     )
-    performance_metrics: Optional[ModelPerformanceMetrics] = Field(
-        None, description="Performance metrics (if requested)"
+    performance_metrics: ModelPerformanceMetrics | None = Field(
+        None,
+        description="Performance metrics (if requested)",
     )
 
     # Response metadata
@@ -79,17 +83,19 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     )
 
     # Discovery metadata
-    health_endpoint: Optional[str] = Field(
-        None, description="Health check endpoint if available"
+    health_endpoint: str | None = Field(
+        None,
+        description="Health check endpoint if available",
     )
-    tags: List[str] = Field(
+    tags: list[str] = Field(
         default_factory=list,
         description="Tags for categorization and discovery filtering",
     )
 
     # Additional context
-    additional_info: Optional[ModelIntrospectionAdditionalInfo] = Field(
-        None, description="Additional node-specific information"
+    additional_info: ModelIntrospectionAdditionalInfo | None = Field(
+        None,
+        description="Additional node-specific information",
     )
 
     @classmethod
@@ -102,9 +108,9 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         current_status: NodeCurrentStatusEnum,
         capabilities: ModelNodeCapabilities,
         response_time_ms: float,
-        tools: List[ModelCurrentToolAvailability] = None,
-        resource_usage: Optional[ModelResourceUsage] = None,
-        performance_metrics: Optional[ModelPerformanceMetrics] = None,
+        tools: list[ModelCurrentToolAvailability] | None = None,
+        resource_usage: ModelResourceUsage | None = None,
+        performance_metrics: ModelPerformanceMetrics | None = None,
         **kwargs,
     ) -> "ModelIntrospectionResponseEvent":
         """
@@ -205,7 +211,9 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         """
         # Create minimal capabilities for error response
         capabilities = ModelNodeCapabilities(
-            actions=[], protocols=[], metadata={"error": error_message}
+            actions=[],
+            protocols=[],
+            metadata={"error": error_message},
         )
 
         return cls(
@@ -217,7 +225,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
             capabilities=capabilities,
             response_time_ms=response_time_ms,
             additional_info=ModelIntrospectionAdditionalInfo(
-                error_message=error_message
+                error_message=error_message,
             ),
             **kwargs,
         )

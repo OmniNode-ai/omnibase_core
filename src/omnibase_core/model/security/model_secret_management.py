@@ -22,18 +22,17 @@ Original models migrated to:
 
 # === Backward Compatibility Imports ===
 
-from typing import TYPE_CHECKING
 
 # Import all extracted models for backward compatibility
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_config import ModelSecretConfig
-from .model_secret_manager import (ModelSecretManager, get_secret_manager,
-                                   init_secret_manager,
-                                   init_secret_manager_from_manager)
+from .model_secret_manager import (
+    ModelSecretManager,
+    get_secret_manager,
+    init_secret_manager,
+    init_secret_manager_from_manager,
+)
 from .model_secure_credentials import ModelSecureCredentials
-
-if TYPE_CHECKING:
-    pass
 
 # === Legacy Compatibility Layer ===
 
@@ -102,14 +101,14 @@ def create_secret_manager_for_environment(
     """
     if environment == "auto":
         return ModelSecretManager.create_auto_configured()
-    elif environment == "development":
+    if environment == "development":
         return ModelSecretManager.create_for_development()
-    elif environment == "production":
+    if environment == "production":
         return ModelSecretManager.create_for_production()
-    elif environment == "kubernetes":
+    if environment == "kubernetes":
         return ModelSecretManager.create_for_kubernetes()
-    else:
-        raise ValueError(f"Unknown environment: {environment}")
+    msg = f"Unknown environment: {environment}"
+    raise ValueError(msg)
 
 
 def validate_secret_configuration(config_type: str, **kwargs) -> dict:
@@ -125,8 +124,9 @@ def validate_secret_configuration(config_type: str, **kwargs) -> dict:
     """
     if config_type == "kafka":
         try:
-            from omnibase_core.model.configuration.model_kafka_secure_config import \
-                ModelKafkaSecureConfig
+            from omnibase_core.model.configuration.model_kafka_secure_config import (
+                ModelKafkaSecureConfig,
+            )
 
             config = ModelKafkaSecureConfig(**kwargs)
             return config.validate_credentials()
@@ -135,8 +135,9 @@ def validate_secret_configuration(config_type: str, **kwargs) -> dict:
 
     elif config_type == "database":
         try:
-            from omnibase_core.model.configuration.model_database_secure_config import \
-                ModelDatabaseSecureConfig
+            from omnibase_core.model.configuration.model_database_secure_config import (
+                ModelDatabaseSecureConfig,
+            )
 
             config = ModelDatabaseSecureConfig(**kwargs)
             return config.validate_credentials()
@@ -167,27 +168,28 @@ def get_security_recommendations(config_type: str, config_dict: dict) -> list:
     """
     try:
         if config_type == "kafka":
-            from omnibase_core.model.configuration.model_kafka_secure_config import \
-                ModelKafkaSecureConfig
+            from omnibase_core.model.configuration.model_kafka_secure_config import (
+                ModelKafkaSecureConfig,
+            )
 
             config = ModelKafkaSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
             return assessment.get("recommendations", [])
 
-        elif config_type == "database":
-            from omnibase_core.model.configuration.model_database_secure_config import \
-                ModelDatabaseSecureConfig
+        if config_type == "database":
+            from omnibase_core.model.configuration.model_database_secure_config import (
+                ModelDatabaseSecureConfig,
+            )
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
             return assessment.get("recommendations", [])
 
-        elif config_type == "backend":
+        if config_type == "backend":
             backend = ModelSecretBackend(**config_dict)
             return backend.get_security_recommendations()
 
-        else:
-            return [f"Unknown config type: {config_type}"]
+        return [f"Unknown config type: {config_type}"]
 
     except Exception as e:
         return [f"Error getting recommendations: {e}"]
@@ -199,17 +201,17 @@ __all__ = [
     # New enhanced models
     "ModelSecretBackend",
     "ModelSecretConfig",
-    "ModelSecureCredentials",
     "ModelSecretManager",
-    # Global functions
-    "get_secret_manager",
-    "init_secret_manager",
-    "init_secret_manager_from_manager",
-    # Enhanced utility functions
-    "create_secret_manager_for_environment",
-    "validate_secret_configuration",
-    "get_security_recommendations",
+    "ModelSecureCredentials",
     # Legacy compatibility (deprecated)
     "SecretBackendEnum",
     "SecretManager",
+    # Enhanced utility functions
+    "create_secret_manager_for_environment",
+    # Global functions
+    "get_secret_manager",
+    "get_security_recommendations",
+    "init_secret_manager",
+    "init_secret_manager_from_manager",
+    "validate_secret_configuration",
 ]

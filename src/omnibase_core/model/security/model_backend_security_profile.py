@@ -19,7 +19,9 @@ class ModelBackendSecurityProfile(BaseModel):
     )
 
     encryption_in_transit: str = Field(
-        "none", description="Encryption in transit: none, tls", pattern=r"^(none|tls)$"
+        "none",
+        description="Encryption in transit: none, tls",
+        pattern=r"^(none|tls)$",
     )
 
     access_control: str = Field(
@@ -41,5 +43,6 @@ class ModelBackendSecurityProfile(BaseModel):
     )
 
     security_level: EnumSecurityLevel = Field(
-        EnumSecurityLevel.BASIC, description="Overall security level"
+        EnumSecurityLevel.BASIC,
+        description="Overall security level",
     )

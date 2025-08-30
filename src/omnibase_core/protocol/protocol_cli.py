@@ -23,7 +23,7 @@
 
 
 import argparse
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from pydantic import BaseModel
 
@@ -33,8 +33,8 @@ from omnibase_core.model.core.model_result_cli import ModelResultCLI
 class CLIFlagDescriptionModel(BaseModel):
     name: str
     type: str
-    default: Optional[str] = None
-    help: Optional[str] = None
+    default: str | None = None
+    help: str | None = None
     required: bool = False
     # Add more fields as needed
 
@@ -73,11 +73,11 @@ class ProtocolCLI(Protocol):
 
     def get_parser(self) -> argparse.ArgumentParser: ...
 
-    def main(self, argv: Optional[List[str]] = None) -> ModelResultCLI: ...
+    def main(self, argv: list[str] | None = None) -> ModelResultCLI: ...
 
-    def run(self, args: List[str]) -> ModelResultCLI: ...
+    def run(self, args: list[str]) -> ModelResultCLI: ...
 
-    def describe_flags(self, format: str = "json") -> List[CLIFlagDescriptionModel]:
+    def describe_flags(self, format: str = "json") -> list[CLIFlagDescriptionModel]:
         """
         Return a structured description of all CLI flags (name, type, default, help, etc.).
         Args:

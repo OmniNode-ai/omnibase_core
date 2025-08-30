@@ -5,8 +5,6 @@ Provides strongly-typed results for query enhancement operations
 including intent detection and enhancement metadata.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_query_type import EnumQueryType
@@ -18,10 +16,14 @@ class ModelQueryIntent(BaseModel):
 
     primary_intent: EnumQueryType = Field(..., description="Primary detected intent")
     confidence: float = Field(
-        ..., ge=0.0, le=1.0, description="Confidence score for intent"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score for intent",
     )
-    secondary_intents: List[EnumQueryType] = Field(
-        default_factory=list, description="Secondary detected intents"
+    secondary_intents: list[EnumQueryType] = Field(
+        default_factory=list,
+        description="Secondary detected intents",
     )
     complexity_score: float = Field(
         ...,
@@ -42,22 +44,28 @@ class ModelQueryEnhancementResult(ModelOnexInputState):
     original_query: str = Field(..., description="Original user query")
     enhanced_query: str = Field(..., description="Enhanced query for retrieval")
     query_intent: ModelQueryIntent = Field(
-        ..., description="Detected query intent and classification"
+        ...,
+        description="Detected query intent and classification",
     )
-    keywords_extracted: List[str] = Field(
-        default_factory=list, description="Key terms extracted from query"
+    keywords_extracted: list[str] = Field(
+        default_factory=list,
+        description="Key terms extracted from query",
     )
-    suggested_filters: List[str] = Field(
-        default_factory=list, description="Suggested filters for retrieval"
+    suggested_filters: list[str] = Field(
+        default_factory=list,
+        description="Suggested filters for retrieval",
     )
-    enhancement_reasoning: Optional[str] = Field(
-        default=None, description="Explanation of enhancement decisions"
+    enhancement_reasoning: str | None = Field(
+        default=None,
+        description="Explanation of enhancement decisions",
     )
     processing_time_ms: int = Field(
-        ..., ge=0, description="Enhancement processing time in milliseconds"
+        ...,
+        ge=0,
+        description="Enhancement processing time in milliseconds",
     )
     model_used: str = Field(..., description="Model used for enhancement")
-    enhancement_quality_score: Optional[float] = Field(
+    enhancement_quality_score: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,

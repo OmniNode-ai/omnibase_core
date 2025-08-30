@@ -6,14 +6,13 @@ tool executions, and Claude responses in chronological order.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_timeline_event_type import EnumTimelineEventType
-from omnibase_core.model.core.model_node_metadata_block import \
-    ModelNodeMetadataBlock
+from omnibase_core.model.core.model_node_metadata_block import ModelNodeMetadataBlock
 
 
 class ModelTimelineEvent(BaseModel):
@@ -30,134 +29,164 @@ class ModelTimelineEvent(BaseModel):
 
     # Core event identification
     id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique event identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique event identifier",
     )
     timestamp: datetime = Field(
-        description="Event timestamp for chronological ordering"
+        description="Event timestamp for chronological ordering",
     )
     event_type: EnumTimelineEventType = Field(description="Type of timeline event")
     session_id: str = Field(description="Claude Code session identifier")
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Correlation ID linking related events (user request → tool → response)",
     )
 
     # User message data
-    user_message: Optional[str] = Field(
-        default=None, description="User message content for USER_MESSAGE events"
+    user_message: str | None = Field(
+        default=None,
+        description="User message content for USER_MESSAGE events",
     )
-    message_length: Optional[int] = Field(
-        default=None, description="Character count of user message"
+    message_length: int | None = Field(
+        default=None,
+        description="Character count of user message",
     )
 
     # Tool execution data
-    tool_name: Optional[str] = Field(
-        default=None, description="Tool name for TOOL_EXECUTION events"
+    tool_name: str | None = Field(
+        default=None,
+        description="Tool name for TOOL_EXECUTION events",
     )
-    tool_parameters: Optional[Dict[str, Any]] = Field(
-        default=None, description="Tool parameters as JSON object"
+    tool_parameters: dict[str, Any] | None = Field(
+        default=None,
+        description="Tool parameters as JSON object",
     )
-    tool_result: Optional[str] = Field(
-        default=None, description="Tool execution result or output"
+    tool_result: str | None = Field(
+        default=None,
+        description="Tool execution result or output",
     )
-    tool_duration_ms: Optional[int] = Field(
-        default=None, description="Tool execution duration in milliseconds"
+    tool_duration_ms: int | None = Field(
+        default=None,
+        description="Tool execution duration in milliseconds",
     )
-    tool_success: Optional[bool] = Field(
-        default=None, description="Whether tool execution was successful"
+    tool_success: bool | None = Field(
+        default=None,
+        description="Whether tool execution was successful",
     )
 
     # Claude response data
-    response_text: Optional[str] = Field(
-        default=None, description="Claude response content for CLAUDE_RESPONSE events"
+    response_text: str | None = Field(
+        default=None,
+        description="Claude response content for CLAUDE_RESPONSE events",
     )
-    token_count: Optional[int] = Field(
-        default=None, description="Token count for Claude response"
+    token_count: int | None = Field(
+        default=None,
+        description="Token count for Claude response",
     )
-    conversation_id: Optional[str] = Field(
-        default=None, description="Anthropic conversation identifier"
+    conversation_id: str | None = Field(
+        default=None,
+        description="Anthropic conversation identifier",
     )
-    response_time_ms: Optional[int] = Field(
-        default=None, description="Claude response generation time in milliseconds"
+    response_time_ms: int | None = Field(
+        default=None,
+        description="Claude response generation time in milliseconds",
     )
 
     # Rich Metadata (claude-trace inspired)
-    system_prompt: Optional[str] = Field(
-        default=None, description="System prompt content for context tracking"
+    system_prompt: str | None = Field(
+        default=None,
+        description="System prompt content for context tracking",
     )
-    tool_definitions: Optional[List[Dict[str, Any]]] = Field(
-        default=None, description="Available tool definitions at time of event"
+    tool_definitions: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Available tool definitions at time of event",
     )
-    claude_code_version: Optional[str] = Field(
-        default=None, description="Claude Code version for behavior change tracking"
+    claude_code_version: str | None = Field(
+        default=None,
+        description="Claude Code version for behavior change tracking",
     )
-    context_window_size: Optional[int] = Field(
-        default=None, description="Context window size used for this event"
+    context_window_size: int | None = Field(
+        default=None,
+        description="Context window size used for this event",
     )
-    memory_usage_mb: Optional[float] = Field(
-        default=None, description="Memory usage at event time in MB"
+    memory_usage_mb: float | None = Field(
+        default=None,
+        description="Memory usage at event time in MB",
     )
 
     # ONEX NodeMetadataBlock integration
-    node_metadata: Optional[ModelNodeMetadataBlock] = Field(
-        default=None, description="Rich ONEX metadata block for comprehensive context"
+    node_metadata: ModelNodeMetadataBlock | None = Field(
+        default=None,
+        description="Rich ONEX metadata block for comprehensive context",
     )
 
     # Environment context
-    environment_info: Optional[Dict[str, Any]] = Field(
-        default=None, description="Environment information (OS, Python version, etc.)"
+    environment_info: dict[str, Any] | None = Field(
+        default=None,
+        description="Environment information (OS, Python version, etc.)",
     )
 
     # Performance metrics
-    cpu_usage_percent: Optional[float] = Field(
-        default=None, description="CPU usage percentage at event time"
+    cpu_usage_percent: float | None = Field(
+        default=None,
+        description="CPU usage percentage at event time",
     )
-    disk_usage_mb: Optional[float] = Field(default=None, description="Disk usage in MB")
+    disk_usage_mb: float | None = Field(default=None, description="Disk usage in MB")
 
     # User context
-    user_preferences: Optional[Dict[str, Any]] = Field(
-        default=None, description="User preferences and settings affecting behavior"
+    user_preferences: dict[str, Any] | None = Field(
+        default=None,
+        description="User preferences and settings affecting behavior",
     )
 
     # Workflow metadata
-    workflow_stage: Optional[str] = Field(
+    workflow_stage: str | None = Field(
         default=None,
         description="Current workflow stage (planning, implementation, validation)",
     )
-    active_personas: Optional[List[str]] = Field(
-        default=None, description="List of active personas during this event"
+    active_personas: list[str] | None = Field(
+        default=None,
+        description="List of active personas during this event",
     )
-    mcp_servers_active: Optional[List[str]] = Field(
-        default=None, description="List of active MCP servers during this event"
+    mcp_servers_active: list[str] | None = Field(
+        default=None,
+        description="List of active MCP servers during this event",
     )
 
     # Error context
-    error_code: Optional[str] = Field(
-        default=None, description="Error code if event represents an error"
+    error_code: str | None = Field(
+        default=None,
+        description="Error code if event represents an error",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if applicable"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if applicable",
     )
-    stack_trace: Optional[str] = Field(
-        default=None, description="Stack trace for debugging failures"
+    stack_trace: str | None = Field(
+        default=None,
+        description="Stack trace for debugging failures",
     )
 
     # Diff and versioning (claude-trace pattern)
-    content_diff: Optional[Dict[str, Any]] = Field(
-        default=None, description="Content differences from previous similar events"
+    content_diff: dict[str, Any] | None = Field(
+        default=None,
+        description="Content differences from previous similar events",
     )
-    version_changes: Optional[List[Dict[str, Any]]] = Field(
-        default=None, description="Version changes in dependencies or tools"
+    version_changes: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Version changes in dependencies or tools",
     )
 
     # Custom metadata
-    custom_metadata: Optional[Dict[str, Any]] = Field(
-        default=None, description="Custom metadata for specific use cases"
+    custom_metadata: dict[str, Any] | None = Field(
+        default=None,
+        description="Custom metadata for specific use cases",
     )
 
     # Standard metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Event creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Event creation timestamp",
     )
 
     class Config:
@@ -205,7 +234,7 @@ class ModelTimelineEvent(BaseModel):
                     "conversation_id": "conv_anthropic_xyz789",
                     "response_time_ms": 1500,
                 },
-            ]
+            ],
         }
 
     def get_display_summary(self) -> str:
@@ -223,7 +252,7 @@ class ModelTimelineEvent(BaseModel):
             )
             return f"📝 User: {preview}"
 
-        elif self.event_type == EnumTimelineEventType.TOOL_EXECUTION:
+        if self.event_type == EnumTimelineEventType.TOOL_EXECUTION:
             status = (
                 "✅"
                 if self.tool_success
@@ -232,7 +261,7 @@ class ModelTimelineEvent(BaseModel):
             duration = f" ({self.tool_duration_ms}ms)" if self.tool_duration_ms else ""
             return f"🔧 {status} {self.tool_name}{duration}"
 
-        elif self.event_type == EnumTimelineEventType.CLAUDE_RESPONSE:
+        if self.event_type == EnumTimelineEventType.CLAUDE_RESPONSE:
             preview = (
                 self.response_text[:50] + "..."
                 if self.response_text and len(self.response_text) > 50
@@ -259,7 +288,7 @@ class ModelTimelineEvent(BaseModel):
             and self.correlation_id == other.correlation_id
         )
 
-    def get_metadata_summary(self) -> Dict[str, Any]:
+    def get_metadata_summary(self) -> dict[str, Any]:
         """
         Get a summary of rich metadata for debugging.
 
@@ -280,7 +309,7 @@ class ModelTimelineEvent(BaseModel):
             "has_error": bool(self.error_code or self.error_message),
         }
 
-    def get_performance_metrics(self) -> Dict[str, Optional[float]]:
+    def get_performance_metrics(self) -> dict[str, float | None]:
         """
         Extract performance metrics for analysis.
 
@@ -312,7 +341,7 @@ class ModelTimelineEvent(BaseModel):
         """
         return bool(self.version_changes and len(self.version_changes) > 0)
 
-    def get_tool_context(self) -> Optional[Dict[str, Any]]:
+    def get_tool_context(self) -> dict[str, Any] | None:
         """
         Get comprehensive tool execution context.
 

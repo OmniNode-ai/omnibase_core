@@ -2,10 +2,12 @@
 Namespace model.
 """
 
-from pathlib import Path
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class ModelNamespace(BaseModel):
@@ -36,15 +38,15 @@ class ModelNamespace(BaseModel):
 
     @classmethod
     def from_path(cls, path: "Path") -> "ModelNamespace":
-        from omnibase_core.model.core.model_project_metadata import \
-            get_canonical_namespace_prefix
+        from omnibase_core.model.core.model_project_metadata import (
+            get_canonical_namespace_prefix,
+        )
 
         # Always use Path for safety
         if not hasattr(path, "parts"):
             from pathlib import Path as _Path
 
             path = _Path(path)
-        stem = path.stem
         raw_ext = path.suffix[1:] if path.suffix.startswith(".") else path.suffix
         # Canonical extension mapping
         ext_map = {
@@ -78,10 +80,9 @@ class ModelNamespace(BaseModel):
                 if ns_parts[-1].endswith(f".{raw_ext}"):
                     ns_parts[-1] = ns_parts[-1][: -(len(raw_ext) + 1)]
                 ns_parts[-1] = f"{ns_parts[-1]}_{ext}"
-        else:
-            # For python files, strip the extension
-            if raw_ext and ns_parts[-1].endswith(f".{raw_ext}"):
-                ns_parts[-1] = ns_parts[-1][: -(len(raw_ext) + 1)]
+        # For python files, strip the extension
+        elif raw_ext and ns_parts[-1].endswith(f".{raw_ext}"):
+            ns_parts[-1] = ns_parts[-1][: -(len(raw_ext) + 1)]
         # Remove any accidental double dots
         ns = f"{ext}://{'.'.join(ns_parts)}"
         return cls(value=ns)

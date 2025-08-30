@@ -7,7 +7,6 @@ for distributed system resource allocation.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -54,13 +53,16 @@ class ModelResourcePool(BaseModel):
     """
 
     pool_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique pool identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique pool identifier",
     )
     resource_type: EnumResourceType = Field(
-        ..., description="Type of resources in this pool"
+        ...,
+        description="Type of resources in this pool",
     )
     status: EnumPoolStatus = Field(
-        EnumPoolStatus.ACTIVE, description="Current pool status"
+        EnumPoolStatus.ACTIVE,
+        description="Current pool status",
     )
 
     # Pool sizing
@@ -70,31 +72,38 @@ class ModelResourcePool(BaseModel):
     available_count: int = Field(0, description="Number of available resources")
 
     # Factory configuration
-    factory_function: Optional[str] = Field(
-        None, description="Function to create new resources"
+    factory_function: str | None = Field(
+        None,
+        description="Function to create new resources",
     )
     factory_params: dict = Field(
-        default_factory=dict, description="Parameters for resource factory"
+        default_factory=dict,
+        description="Parameters for resource factory",
     )
 
     # Lifecycle management
     max_idle_time: int = Field(
-        1800, description="Max idle time before cleanup (seconds)"
+        1800,
+        description="Max idle time before cleanup (seconds)",
     )
     max_lifetime: int = Field(7200, description="Max resource lifetime (seconds)")
     health_check_interval: int = Field(
-        300, description="Health check interval (seconds)"
+        300,
+        description="Health check interval (seconds)",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Pool creation time"
+        default_factory=datetime.now,
+        description="Pool creation time",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="Last update time"
+        default_factory=datetime.now,
+        description="Last update time",
     )
-    last_health_check: Optional[datetime] = Field(
-        None, description="Last health check time"
+    last_health_check: datetime | None = Field(
+        None,
+        description="Last health check time",
     )
 
     class Config:
@@ -116,7 +125,7 @@ class ModelResourcePool(BaseModel):
                 "health_check_interval": 300,
                 "created_at": "2025-07-30T12:00:00Z",
                 "updated_at": "2025-07-30T12:30:00Z",
-            }
+            },
         }
 
 
@@ -140,25 +149,30 @@ class ModelResourceMetrics(BaseModel):
 
     # Performance metrics
     average_acquisition_time: float = Field(
-        0.0, description="Average resource acquisition time (ms)"
+        0.0,
+        description="Average resource acquisition time (ms)",
     )
     average_release_time: float = Field(
-        0.0, description="Average resource release time (ms)"
+        0.0,
+        description="Average resource release time (ms)",
     )
 
     # Health indicators
     allocation_failures: int = Field(0, description="Number of allocation failures")
     resource_leaks: int = Field(0, description="Number of detected resource leaks")
     cleanup_operations: int = Field(
-        0, description="Number of cleanup operations performed"
+        0,
+        description="Number of cleanup operations performed",
     )
 
     # Timestamps
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="Last metrics update"
+        default_factory=datetime.now,
+        description="Last metrics update",
     )
     monitoring_started: datetime = Field(
-        default_factory=datetime.now, description="Monitoring start time"
+        default_factory=datetime.now,
+        description="Monitoring start time",
     )
 
     class Config:
@@ -179,7 +193,7 @@ class ModelResourceMetrics(BaseModel):
                 "cleanup_operations": 45,
                 "last_updated": "2025-07-30T12:35:00Z",
                 "monitoring_started": "2025-07-30T10:00:00Z",
-            }
+            },
         }
 
 
@@ -192,13 +206,16 @@ class ModelResourceAllocation(BaseModel):
     """
 
     allocation_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique allocation identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique allocation identifier",
     )
     resource_type: EnumResourceType = Field(
-        ..., description="Type of resource requested"
+        ...,
+        description="Type of resource requested",
     )
     requested_at: datetime = Field(
-        default_factory=datetime.now, description="Request timestamp"
+        default_factory=datetime.now,
+        description="Request timestamp",
     )
 
     # Requirements
@@ -208,23 +225,27 @@ class ModelResourceAllocation(BaseModel):
 
     # Constraints
     tags: dict = Field(
-        default_factory=dict, description="Resource tags and constraints"
+        default_factory=dict,
+        description="Resource tags and constraints",
     )
     priority: int = Field(5, description="Allocation priority (1-10, 1=highest)")
 
     # Allocation result
     allocated_resource_ids: list = Field(
-        default_factory=list, description="IDs of allocated resources"
+        default_factory=list,
+        description="IDs of allocated resources",
     )
     status: str = Field("pending", description="Allocation status")
-    error_message: Optional[str] = Field(
-        None, description="Error message if allocation failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if allocation failed",
     )
 
     # Lifecycle
-    expires_at: Optional[datetime] = Field(None, description="When allocation expires")
-    completed_at: Optional[datetime] = Field(
-        None, description="When allocation completed"
+    expires_at: datetime | None = Field(None, description="When allocation expires")
+    completed_at: datetime | None = Field(
+        None,
+        description="When allocation completed",
     )
 
     class Config:
@@ -244,5 +265,5 @@ class ModelResourceAllocation(BaseModel):
                 "status": "completed",
                 "expires_at": "2025-07-30T14:00:00Z",
                 "completed_at": "2025-07-30T12:00:15Z",
-            }
+            },
         }

@@ -1,6 +1,6 @@
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -18,22 +18,22 @@ class ModelSemVerConstraint(BaseModel):
     """
 
     # Range constraint fields
-    min_version: Optional[ModelSemVer] = Field(None, alias="min")
-    max_version: Optional[ModelSemVer] = Field(None, alias="max")
+    min_version: ModelSemVer | None = Field(None, alias="min")
+    max_version: ModelSemVer | None = Field(None, alias="max")
     min_inclusive: bool = True
     max_inclusive: bool = False
 
     # Shorthand fields (processed by validator)
-    exact: Optional[ModelSemVer] = None
-    compatible: Optional[ModelSemVer] = None
-    minimum: Optional[ModelSemVer] = None
+    exact: ModelSemVer | None = None
+    compatible: ModelSemVer | None = None
+    minimum: ModelSemVer | None = None
 
     # Optional constraints
     allow_prerelease: bool = False
     allow_unstable: bool = False
 
     model_config = ConfigDict(
-        populate_by_name=True
+        populate_by_name=True,
     )  # Allow both "min_version" and "min"
 
     @model_validator(mode="before")
@@ -65,24 +65,23 @@ class ModelSemVerConstraint(BaseModel):
                         # Assume exact match
                         result["exact"] = ModelSemVer.parse(part)
                 return result
-            elif v.startswith(">="):
+            if v.startswith(">="):
                 return {"min_version": ModelSemVer.parse(v[2:]), "min_inclusive": True}
-            elif v.startswith(">"):
+            if v.startswith(">"):
                 return {"min_version": ModelSemVer.parse(v[1:]), "min_inclusive": False}
-            elif v.startswith("<="):
+            if v.startswith("<="):
                 return {"max_version": ModelSemVer.parse(v[2:]), "max_inclusive": True}
-            elif v.startswith("<"):
+            if v.startswith("<"):
                 return {"max_version": ModelSemVer.parse(v[1:]), "max_inclusive": False}
-            elif v.startswith("^"):
+            if v.startswith("^"):
                 return {"compatible": ModelSemVer.parse(v[1:])}
-            elif v.startswith("~"):
+            if v.startswith("~"):
                 return {"minimum": ModelSemVer.parse(v[1:])}
-            else:
-                # Assume exact version
-                return {"exact": ModelSemVer.parse(v)}
-        elif isinstance(v, dict):
+            # Assume exact version
+            return {"exact": ModelSemVer.parse(v)}
+        if isinstance(v, dict):
             return v
-        elif hasattr(v, "__dict__"):
+        if hasattr(v, "__dict__"):
             return v.__dict__
         return v
 
@@ -120,24 +119,19 @@ class ModelSemVerConstraint(BaseModel):
             if self.min_inclusive:
                 if version < self.min_version:
                     return False
-            else:
-                if version <= self.min_version:
-                    return False
+            elif version <= self.min_version:
+                return False
 
         # Check maximum bound
         if self.max_version:
             if self.max_inclusive:
                 if version > self.max_version:
                     return False
-            else:
-                if version >= self.max_version:
-                    return False
+            elif version >= self.max_version:
+                return False
 
         # Check prerelease policy
-        if not self.allow_prerelease and version.prerelease:
-            return False
-
-        return True
+        return not (not self.allow_prerelease and version.prerelease)
 
     def __str__(self) -> str:
         """Human-readable constraint representation."""
@@ -145,11 +139,10 @@ class ModelSemVerConstraint(BaseModel):
             min_op = ">=" if self.min_inclusive else ">"
             max_op = "<=" if self.max_inclusive else "<"
             return f"{min_op}{self.min_version},{max_op}{self.max_version}"
-        elif self.min_version:
+        if self.min_version:
             op = ">=" if self.min_inclusive else ">"
             return f"{op}{self.min_version}"
-        elif self.max_version:
+        if self.max_version:
             op = "<=" if self.max_inclusive else "<"
             return f"{op}{self.max_version}"
-        else:
-            return "any version"
+        return "any version"

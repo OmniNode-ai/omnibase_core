@@ -13,6 +13,7 @@ class ModelMCPToolsCapability(BaseModel):
     """
 
     listChanged: bool = Field(
-        default=False, description="Whether tools list can change"
+        default=False,
+        description="Whether tools list can change",
     )
     call: bool = Field(default=True, description="Whether tools can be called")

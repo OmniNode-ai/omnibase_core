@@ -6,7 +6,6 @@ Strongly-typed event data model for trigger context, replacing Union types.
 Generated from contract: rsd_metadata_types_contract.yaml
 """
 
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,18 +22,21 @@ class ModelEventData(BaseModel):
 
     event_type: str = Field(description="Type of event that occurred")
 
-    severity: Optional[str] = Field(None, description="Event severity level")
+    severity: str | None = Field(None, description="Event severity level")
 
-    affected_components: List[str] = Field(
-        default_factory=list, description="List of affected component names"
+    affected_components: list[str] = Field(
+        default_factory=list,
+        description="List of affected component names",
     )
 
-    numeric_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Numeric metrics from the event"
+    numeric_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Numeric metrics from the event",
     )
 
-    text_details: Dict[str, str] = Field(
-        default_factory=dict, description="Text-based event details"
+    text_details: dict[str, str] = Field(
+        default_factory=dict,
+        description="Text-based event details",
     )
 
     class Config:

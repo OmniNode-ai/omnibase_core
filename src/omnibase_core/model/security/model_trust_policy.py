@@ -6,7 +6,6 @@ certificate validation, and compliance rules for secure envelope routing.
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional, Set
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -24,10 +23,11 @@ class PolicyRule(BaseModel):
     """Individual policy rule with conditions and actions."""
 
     rule_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique rule identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique rule identifier",
     )
     name: str = Field(..., description="Human-readable rule name")
-    description: Optional[str] = Field(None, description="Rule description")
+    description: str | None = Field(None, description="Rule description")
 
     # Rule conditions
     conditions: ModelRuleCondition = Field(
@@ -38,16 +38,19 @@ class PolicyRule(BaseModel):
     # Rule actions
     require_signatures: bool = Field(default=True, description="Require signatures")
     minimum_signatures: int = Field(default=1, description="Minimum signature count")
-    required_algorithms: List[str] = Field(
-        default_factory=list, description="Required signature algorithms"
+    required_algorithms: list[str] = Field(
+        default_factory=list,
+        description="Required signature algorithms",
     )
-    trusted_nodes: Set[str] = Field(
-        default_factory=set, description="Nodes trusted for this rule"
+    trusted_nodes: set[str] = Field(
+        default_factory=set,
+        description="Nodes trusted for this rule",
     )
 
     # Compliance requirements
-    compliance_tags: List[str] = Field(
-        default_factory=list, description="Required compliance tags"
+    compliance_tags: list[str] = Field(
+        default_factory=list,
+        description="Required compliance tags",
     )
     audit_level: str = Field(default="standard", description="Audit detail level")
 
@@ -57,17 +60,19 @@ class PolicyRule(BaseModel):
         description="Severity of policy violations",
     )
     allow_override: bool = Field(
-        default=False, description="Allow manual override of violations"
+        default=False,
+        description="Allow manual override of violations",
     )
 
     # Rule lifecycle
     enabled: bool = Field(default=True, description="Whether rule is active")
-    valid_from: Optional[datetime] = Field(
-        None, description="Rule effective start time"
+    valid_from: datetime | None = Field(
+        None,
+        description="Rule effective start time",
     )
-    valid_until: Optional[datetime] = Field(None, description="Rule expiration time")
+    valid_until: datetime | None = Field(None, description="Rule expiration time")
 
-    def is_active(self, check_time: datetime = None) -> bool:
+    def is_active(self, check_time: datetime | None = None) -> bool:
         """Check if rule is currently active."""
         if not self.enabled:
             return False
@@ -78,10 +83,7 @@ class PolicyRule(BaseModel):
         if self.valid_from and check_time < self.valid_from:
             return False
 
-        if self.valid_until and check_time > self.valid_until:
-            return False
-
-        return True
+        return not (self.valid_until and check_time > self.valid_until)
 
     def matches_condition(self, context: ModelRuleCondition) -> bool:
         """Check if context matches rule conditions."""
@@ -94,12 +96,11 @@ class PolicyRule(BaseModel):
 
         # Check operation type with conditions
         if self.conditions.operation_type_condition:
-            if self.conditions.operation_type_condition.in_values:
-                if (
-                    context.operation_type
-                    not in self.conditions.operation_type_condition.in_values
-                ):
-                    return False
+            if self.conditions.operation_type_condition.in_values and (
+                context.operation_type
+                not in self.conditions.operation_type_condition.in_values
+            ):
+                return False
             if self.conditions.operation_type_condition.regex:
                 import re
 
@@ -118,18 +119,16 @@ class PolicyRule(BaseModel):
 
         # Check security level with conditions
         if self.conditions.security_level_condition:
-            if self.conditions.security_level_condition.gte:
-                if (
-                    not context.hop_count
-                    or context.hop_count < self.conditions.security_level_condition.gte
-                ):
-                    return False
-            if self.conditions.security_level_condition.lte:
-                if (
-                    not context.hop_count
-                    or context.hop_count > self.conditions.security_level_condition.lte
-                ):
-                    return False
+            if self.conditions.security_level_condition.gte and (
+                not context.hop_count
+                or context.hop_count < self.conditions.security_level_condition.gte
+            ):
+                return False
+            if self.conditions.security_level_condition.lte and (
+                not context.hop_count
+                or context.hop_count > self.conditions.security_level_condition.lte
+            ):
+                return False
 
         # Check environment
         if (
@@ -159,13 +158,10 @@ class PolicyRule(BaseModel):
             and context.is_encrypted != self.conditions.is_encrypted
         ):
             return False
-        if (
+        return not (
             self.conditions.signature_count is not None
             and context.signature_count != self.conditions.signature_count
-        ):
-            return False
-
-        return True
+        )
 
 
 class ModelTrustPolicy(BaseModel):
@@ -178,18 +174,20 @@ class ModelTrustPolicy(BaseModel):
 
     # Policy identification
     policy_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique policy identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique policy identifier",
     )
     name: str = Field(..., description="Policy name")
     version: str = Field(default="1.0", description="Policy version")
-    description: Optional[str] = Field(None, description="Policy description")
+    description: str | None = Field(None, description="Policy description")
 
     # Policy metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When policy was created"
+        default_factory=datetime.utcnow,
+        description="When policy was created",
     )
     created_by: str = Field(..., description="Policy creator")
-    organization: Optional[str] = Field(None, description="Organization name")
+    organization: str | None = Field(None, description="Organization name")
 
     # Global policy settings
     default_trust_level: ModelTrustLevel = Field(
@@ -207,64 +205,79 @@ class ModelTrustPolicy(BaseModel):
 
     # Signature requirements
     global_minimum_signatures: int = Field(
-        default=1, description="Global minimum signature requirement"
+        default=1,
+        description="Global minimum signature requirement",
     )
     maximum_signature_age_hours: int = Field(
-        default=24, description="Maximum age of signatures in hours"
+        default=24,
+        description="Maximum age of signatures in hours",
     )
     require_timestamp_verification: bool = Field(
-        default=True, description="Require timestamp signature verification"
+        default=True,
+        description="Require timestamp signature verification",
     )
 
     # Certificate and PKI settings
-    trusted_certificate_authorities: List[str] = Field(
-        default_factory=list, description="Trusted CA certificate fingerprints"
+    trusted_certificate_authorities: list[str] = Field(
+        default_factory=list,
+        description="Trusted CA certificate fingerprints",
     )
     certificate_revocation_check: bool = Field(
-        default=True, description="Enable certificate revocation checking"
+        default=True,
+        description="Enable certificate revocation checking",
     )
     require_certificate_transparency: bool = Field(
-        default=False, description="Require certificates to be in CT logs"
+        default=False,
+        description="Require certificates to be in CT logs",
     )
 
     # Node trust settings
-    globally_trusted_nodes: Set[str] = Field(
-        default_factory=set, description="Globally trusted node IDs"
+    globally_trusted_nodes: set[str] = Field(
+        default_factory=set,
+        description="Globally trusted node IDs",
     )
-    blocked_nodes: Set[str] = Field(default_factory=set, description="Blocked node IDs")
+    blocked_nodes: set[str] = Field(default_factory=set, description="Blocked node IDs")
     require_node_registration: bool = Field(
-        default=True, description="Require nodes to be registered"
+        default=True,
+        description="Require nodes to be registered",
     )
 
     # Policy rules
-    rules: List[PolicyRule] = Field(
-        default_factory=list, description="Ordered list of policy rules"
+    rules: list[PolicyRule] = Field(
+        default_factory=list,
+        description="Ordered list of policy rules",
     )
 
     # Compliance and audit
-    compliance_frameworks: List[str] = Field(
-        default_factory=list, description="Required compliance frameworks"
+    compliance_frameworks: list[str] = Field(
+        default_factory=list,
+        description="Required compliance frameworks",
     )
     audit_retention_days: int = Field(
         default=2555,  # 7 years for SOX compliance
         description="Audit log retention period in days",
     )
     require_audit_trail: bool = Field(
-        default=True, description="Require complete audit trail"
+        default=True,
+        description="Require complete audit trail",
     )
 
     # Performance settings
     signature_timeout_ms: int = Field(
-        default=15000, description="Maximum signature operation time in milliseconds"
+        default=15000,
+        description="Maximum signature operation time in milliseconds",
     )
     verification_timeout_ms: int = Field(
-        default=10000, description="Maximum verification time in milliseconds"
+        default=10000,
+        description="Maximum verification time in milliseconds",
     )
     cache_verification_results: bool = Field(
-        default=True, description="Cache signature verification results"
+        default=True,
+        description="Cache signature verification results",
     )
     verification_cache_ttl_seconds: int = Field(
-        default=3600, description="Verification cache TTL in seconds"
+        default=3600,
+        description="Verification cache TTL in seconds",
     )
 
     # Policy enforcement
@@ -273,17 +286,20 @@ class ModelTrustPolicy(BaseModel):
         description="Enforcement mode: 'strict', 'permissive', 'monitor'",
     )
     allow_emergency_override: bool = Field(
-        default=False, description="Allow emergency policy override"
+        default=False,
+        description="Allow emergency policy override",
     )
-    emergency_override_roles: List[str] = Field(
-        default_factory=list, description="Roles authorized for emergency override"
+    emergency_override_roles: list[str] = Field(
+        default_factory=list,
+        description="Roles authorized for emergency override",
     )
 
     # Policy lifecycle
     effective_from: datetime = Field(
-        default_factory=datetime.utcnow, description="When policy becomes effective"
+        default_factory=datetime.utcnow,
+        description="When policy becomes effective",
     )
-    expires_at: Optional[datetime] = Field(None, description="When policy expires")
+    expires_at: datetime | None = Field(None, description="When policy expires")
     auto_renewal: bool = Field(default=False, description="Automatically renew policy")
 
     model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
@@ -293,9 +309,11 @@ class ModelTrustPolicy(BaseModel):
     def validate_minimum_signatures(cls, v):
         """Validate minimum signature count."""
         if v < 0:
-            raise ValueError("Minimum signatures cannot be negative")
+            msg = "Minimum signatures cannot be negative"
+            raise ValueError(msg)
         if v > 100:
-            raise ValueError("Minimum signatures cannot exceed 100")
+            msg = "Minimum signatures cannot exceed 100"
+            raise ValueError(msg)
         return v
 
     @field_validator("enforcement_mode")
@@ -304,10 +322,11 @@ class ModelTrustPolicy(BaseModel):
         """Validate enforcement mode."""
         valid_modes = ["strict", "permissive", "monitor"]
         if v not in valid_modes:
-            raise ValueError(f"Invalid enforcement mode. Must be one of: {valid_modes}")
+            msg = f"Invalid enforcement mode. Must be one of: {valid_modes}"
+            raise ValueError(msg)
         return v
 
-    def is_active(self, check_time: datetime = None) -> bool:
+    def is_active(self, check_time: datetime | None = None) -> bool:
         """Check if policy is currently active."""
         if check_time is None:
             check_time = datetime.utcnow()
@@ -315,16 +334,13 @@ class ModelTrustPolicy(BaseModel):
         if check_time < self.effective_from:
             return False
 
-        if self.expires_at and check_time > self.expires_at:
-            return False
-
-        return True
+        return not (self.expires_at and check_time > self.expires_at)
 
     def add_rule(self, rule: PolicyRule) -> None:
         """Add a new policy rule."""
         self.rules.append(rule)
 
-    def get_applicable_rules(self, context: ModelRuleCondition) -> List[PolicyRule]:
+    def get_applicable_rules(self, context: ModelRuleCondition) -> list[PolicyRule]:
         """Get rules that apply to the given context."""
         applicable_rules = []
 
@@ -335,7 +351,8 @@ class ModelTrustPolicy(BaseModel):
         return applicable_rules
 
     def evaluate_signature_requirements(
-        self, context: ModelRuleCondition
+        self,
+        context: ModelRuleCondition,
     ) -> ModelSignatureRequirements:
         """Evaluate signature requirements for given context."""
         applicable_rules = self.get_applicable_rules(context)
@@ -354,8 +371,9 @@ class ModelTrustPolicy(BaseModel):
 
         # Apply rules in order (later rules override earlier ones)
         for rule in applicable_rules:
-            if rule.minimum_signatures > requirements.minimum_signatures:
-                requirements.minimum_signatures = rule.minimum_signatures
+            requirements.minimum_signatures = max(
+                requirements.minimum_signatures, rule.minimum_signatures
+            )
 
             if rule.required_algorithms:
                 requirements.required_algorithms.extend(rule.required_algorithms)
@@ -373,7 +391,9 @@ class ModelTrustPolicy(BaseModel):
         return requirements
 
     def validate_signature_chain(
-        self, chain, context: Optional[ModelRuleCondition] = None
+        self,
+        chain,
+        context: ModelRuleCondition | None = None,
     ) -> ModelPolicyValidationResult:
         """Validate signature chain against policy."""
         if context is None:
@@ -386,7 +406,7 @@ class ModelTrustPolicy(BaseModel):
         # Check minimum signatures
         if len(chain.signatures) < requirements.minimum_signatures:
             violations.append(
-                f"Insufficient signatures: {len(chain.signatures)} < {requirements.minimum_signatures}"
+                f"Insufficient signatures: {len(chain.signatures)} < {requirements.minimum_signatures}",
             )
 
         # Check signature algorithms
@@ -395,7 +415,7 @@ class ModelTrustPolicy(BaseModel):
             required_set = set(requirements.required_algorithms)
             if not required_set.intersection(chain_algorithms):
                 violations.append(
-                    f"Required algorithms not found: {required_set} not in {chain_algorithms}"
+                    f"Required algorithms not found: {required_set} not in {chain_algorithms}",
                 )
 
         # Check trusted nodes
@@ -419,7 +439,7 @@ class ModelTrustPolicy(BaseModel):
             age = current_time - signature.signed_at
             if age > max_age:
                 warnings.append(
-                    f"Signature {signature.signature_id} is too old: {age} > {max_age}"
+                    f"Signature {signature.signature_id} is too old: {age} > {max_age}",
                 )
 
         # Check compliance requirements
@@ -463,10 +483,10 @@ class ModelTrustPolicy(BaseModel):
             description="Require multiple signatures for sensitive operations",
             conditions=ModelRuleCondition(
                 operation_type_condition=ModelRuleConditionValue(
-                    in_values=["financial", "healthcare", "pii"]
+                    in_values=["financial", "healthcare", "pii"],
                 ),
                 security_level_condition=ModelRuleConditionValue(
-                    gte=3  # Assuming "high" maps to level 3
+                    gte=3,  # Assuming "high" maps to level 3
                 ),
             ),
             minimum_signatures=3,

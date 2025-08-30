@@ -32,7 +32,6 @@ import fnmatch
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
@@ -67,17 +66,17 @@ class MixinEventHandler:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
                     asyncio.create_task(
-                        subscribe_async(self._handle_introspection_request)
+                        subscribe_async(self._handle_introspection_request),
                     )
                     asyncio.create_task(
-                        subscribe_async(self._handle_node_discovery_request)
+                        subscribe_async(self._handle_node_discovery_request),
                     )
                 else:
                     loop.run_until_complete(
-                        subscribe_async(self._handle_introspection_request)
+                        subscribe_async(self._handle_introspection_request),
                     )
                     loop.run_until_complete(
-                        subscribe_async(self._handle_node_discovery_request)
+                        subscribe_async(self._handle_node_discovery_request),
                     )
             except RuntimeError:
                 # No event loop, fallback to sync
@@ -122,11 +121,12 @@ class MixinEventHandler:
         """
         # Check if this event is an introspection request
         try:
-            from omnibase_core.model.core.model_event_type import \
-                create_event_type_from_string
+            from omnibase_core.model.core.model_event_type import (
+                create_event_type_from_string,
+            )
 
             introspection_request_type = create_event_type_from_string(
-                "NODE_INTROSPECTION_REQUEST"
+                "NODE_INTROSPECTION_REQUEST",
             )
 
             if not is_event_equal(event.event_type, introspection_request_type):
@@ -162,7 +162,8 @@ class MixinEventHandler:
             )
             if requested_types:
                 introspection_data = self._filter_introspection_data(
-                    introspection_data, requested_types
+                    introspection_data,
+                    requested_types,
                 )
 
             # Emit response event (simplified - would need full implementation)
@@ -203,11 +204,12 @@ class MixinEventHandler:
         """
         # Check if this event is a discovery request
         try:
-            from omnibase_core.model.core.model_event_type import \
-                create_event_type_from_string
+            from omnibase_core.model.core.model_event_type import (
+                create_event_type_from_string,
+            )
 
             discovery_request_type = create_event_type_from_string(
-                "NODE_DISCOVERY_REQUEST"
+                "NODE_DISCOVERY_REQUEST",
             )
 
             if not is_event_equal(event.event_type, discovery_request_type):
@@ -288,9 +290,9 @@ class MixinEventHandler:
 
     def _filter_introspection_data(
         self,
-        introspection_data: Dict[str, str | List[str] | Dict[str, str]],
-        requested_types: List[str],
-    ) -> Dict[str, str | List[str] | Dict[str, str]]:
+        introspection_data: dict[str, str | list[str] | dict[str, str]],
+        requested_types: list[str],
+    ) -> dict[str, str | list[str] | dict[str, str]]:
         """
         Filter introspection data based on requested types.
 

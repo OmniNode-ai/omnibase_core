@@ -6,13 +6,14 @@ Provides proper file resolution and YAML parsing.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 
 class UtilitySchemaLoader:
@@ -26,7 +27,7 @@ class UtilitySchemaLoader:
     - Error handling for missing/invalid schemas
     """
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         """
         Initialize the schema loader.
 
@@ -34,11 +35,13 @@ class UtilitySchemaLoader:
             base_path: Base directory for resolving relative schema paths
         """
         self.base_path = base_path or Path.cwd()
-        self._schema_cache: Dict[str, Dict[str, Any]] = {}
+        self._schema_cache: dict[str, dict[str, Any]] = {}
 
     def load_schema(
-        self, schema_path: str, contract_dir: Optional[Path] = None
-    ) -> Dict[str, Any]:
+        self,
+        schema_path: str,
+        contract_dir: Path | None = None,
+    ) -> dict[str, Any]:
         """
         Load a schema file from the given path.
 
@@ -83,14 +86,16 @@ class UtilitySchemaLoader:
         try:
             # Check if file exists
             if not full_path.exists():
-                raise FileNotFoundError(f"Schema file not found: {full_path}")
+                msg = f"Schema file not found: {full_path}"
+                raise FileNotFoundError(msg)
 
             # Load and parse YAML
-            with open(full_path, "r", encoding="utf-8") as f:
+            with open(full_path, encoding="utf-8") as f:
                 schema_data = yaml.safe_load(f)
 
             if not isinstance(schema_data, dict):
-                raise ValueError(f"Schema file must contain a YAML object: {full_path}")
+                msg = f"Schema file must contain a YAML object: {full_path}"
+                raise ValueError(msg)
 
             # Cache the loaded schema
             self._schema_cache[cache_key] = schema_data
@@ -151,7 +156,7 @@ class UtilitySchemaLoader:
         if ref_path.startswith("/"):
             # Absolute path
             return Path(ref_path)
-        elif ref_path.startswith("omnibase/"):
+        if ref_path.startswith("omnibase/"):
             # ONEX-relative path - resolve from project root
             # Find the omnibase root by looking for src/omnibase
             current = contract_dir.resolve()
@@ -161,13 +166,14 @@ class UtilitySchemaLoader:
                 current = current.parent
             # Fallback to relative resolution
             return contract_dir / ref_path
-        else:
-            # Relative path
-            return contract_dir / ref_path
+        # Relative path
+        return contract_dir / ref_path
 
     def extract_schema_fragment(
-        self, schema_data: Dict[str, Any], fragment: str
-    ) -> Dict[str, Any]:
+        self,
+        schema_data: dict[str, Any],
+        fragment: str,
+    ) -> dict[str, Any]:
         """
         Extract a specific fragment from a schema using JSON Pointer syntax.
 
@@ -178,7 +184,7 @@ class UtilitySchemaLoader:
         Returns:
             Extracted schema fragment
         """
-        if not fragment or fragment == "#/" or fragment == "#":
+        if not fragment or fragment in {"#/", "#"}:
             # Return the root schema
             return schema_data
 
@@ -194,11 +200,12 @@ class UtilitySchemaLoader:
                 if isinstance(current, dict) and part in current:
                     current = current[part]
                 else:
-                    raise KeyError(f"Schema fragment not found: {fragment}")
+                    msg = f"Schema fragment not found: {fragment}"
+                    raise KeyError(msg)
 
             return current
-        else:
-            raise ValueError(f"Invalid schema fragment syntax: {fragment}")
+        msg = f"Invalid schema fragment syntax: {fragment}"
+        raise ValueError(msg)
 
     def clear_cache(self):
         """Clear the schema cache."""

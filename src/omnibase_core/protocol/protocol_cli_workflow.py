@@ -5,10 +5,9 @@ Defines the protocol interface for CLI workflow discovery and execution,
 providing abstracted workflow operations without direct tool imports.
 """
 
-from typing import Dict, Optional, Protocol
+from typing import Protocol
 
-from omnibase_core.model.core.model_cli_execution_result import \
-    ModelCliExecutionResult
+from omnibase_core.model.core.model_cli_execution_result import ModelCliExecutionResult
 
 
 class ProtocolCliWorkflow(Protocol):
@@ -19,7 +18,7 @@ class ProtocolCliWorkflow(Protocol):
     for the CLI without requiring direct tool imports.
     """
 
-    def list_workflows(self, domain: Optional[str] = None) -> ModelCliExecutionResult:
+    def list_workflows(self, domain: str | None = None) -> ModelCliExecutionResult:
         """
         List available workflows for a domain.
 
@@ -36,8 +35,8 @@ class ProtocolCliWorkflow(Protocol):
         domain: str,
         workflow_name: str,
         dry_run: bool = False,
-        timeout: Optional[int] = None,
-        parameters: Optional[Dict] = None,
+        timeout: int | None = None,
+        parameters: dict | None = None,
     ) -> ModelCliExecutionResult:
         """
         Execute a workflow in the specified domain.
@@ -55,7 +54,9 @@ class ProtocolCliWorkflow(Protocol):
         ...
 
     def get_workflow_info(
-        self, domain: str, workflow_name: str
+        self,
+        domain: str,
+        workflow_name: str,
     ) -> ModelCliExecutionResult:
         """
         Get detailed information about a specific workflow.

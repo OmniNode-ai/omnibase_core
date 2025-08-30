@@ -6,7 +6,7 @@ replacing ugly Dict-based patterns with clean, type-safe ONEX-compliant
 model architecture.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -27,24 +27,30 @@ class ModelSessionStats(BaseModel):
     created_at: str = Field(..., description="ISO timestamp when session was created")
     last_used: str = Field(..., description="ISO timestamp when session was last used")
     conversation_count: int = Field(
-        ..., description="Number of conversations in session"
+        ...,
+        description="Number of conversations in session",
     )
     is_current: bool = Field(
-        ..., description="Whether this is the currently active session"
+        ...,
+        description="Whether this is the currently active session",
     )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional session metadata"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional session metadata",
     )
 
     # Additional statistics
     total_messages: int = Field(
-        default=0, description="Total messages across all conversations"
+        default=0,
+        description="Total messages across all conversations",
     )
     avg_conversation_length: float = Field(
-        default=0.0, description="Average conversation length"
+        default=0.0,
+        description="Average conversation length",
     )
     session_duration_hours: float = Field(
-        default=0.0, description="Hours between creation and last use"
+        default=0.0,
+        description="Hours between creation and last use",
     )
 
     class Config:

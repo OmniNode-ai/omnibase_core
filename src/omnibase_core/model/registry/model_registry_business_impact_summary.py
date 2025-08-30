@@ -19,15 +19,24 @@ class ModelRegistryBusinessImpactSummary(BaseModel):
     operational_status: str = Field(..., description="Current operational status")
 
     availability_percentage: float = Field(
-        ..., description="Tool availability percentage", ge=0.0, le=100.0
+        ...,
+        description="Tool availability percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     service_availability_percentage: float = Field(
-        ..., description="Service availability percentage", ge=0.0, le=100.0
+        ...,
+        description="Service availability percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     reliability_score: float = Field(
-        ..., description="Overall reliability score (0.0 to 1.0)", ge=0.0, le=1.0
+        ...,
+        description="Overall reliability score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     reliability_category: str = Field(
@@ -37,7 +46,9 @@ class ModelRegistryBusinessImpactSummary(BaseModel):
     )
 
     critical_components_count: int = Field(
-        ..., description="Number of critical components", ge=0
+        ...,
+        description="Number of critical components",
+        ge=0,
     )
 
     performance_impact: str = Field(
@@ -53,5 +64,6 @@ class ModelRegistryBusinessImpactSummary(BaseModel):
     )
 
     sla_compliance: ModelRegistrySlaCompliance = Field(
-        ..., description="SLA compliance status details"
+        ...,
+        description="SLA compliance status details",
     )

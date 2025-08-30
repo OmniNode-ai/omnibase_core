@@ -6,16 +6,16 @@ including resource hierarchies, temporal constraints, and geographic limitations
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.security.model_context_variables import \
-    ModelContextVariables
-from omnibase_core.model.security.model_permission_evaluation_context import \
-    ModelPermissionEvaluationContext
-from omnibase_core.model.security.model_permission_metadata import \
-    ModelPermissionMetadata
+from omnibase_core.model.security.model_context_variables import ModelContextVariables
+from omnibase_core.model.security.model_permission_evaluation_context import (
+    ModelPermissionEvaluationContext,
+)
+from omnibase_core.model.security.model_permission_metadata import (
+    ModelPermissionMetadata,
+)
 
 
 class ModelPermissionScope(BaseModel):
@@ -27,7 +27,9 @@ class ModelPermissionScope(BaseModel):
     """
 
     scope_id: str = Field(
-        ..., description="Unique scope identifier", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Unique scope identifier",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     scope_type: str = Field(
@@ -36,75 +38,84 @@ class ModelPermissionScope(BaseModel):
         pattern="^(resource|organizational|temporal|geographic|conditional)$",
     )
 
-    resource_hierarchy: List[str] = Field(
+    resource_hierarchy: list[str] = Field(
         default_factory=list,
         description="Resource hierarchy path (e.g., ['organization', 'project', 'resource'])",
     )
 
-    organizational_units: List[str] = Field(
-        default_factory=list, description="Organizational units within scope"
+    organizational_units: list[str] = Field(
+        default_factory=list,
+        description="Organizational units within scope",
     )
 
-    resource_types: List[str] = Field(
-        default_factory=list, description="Types of resources covered by this scope"
+    resource_types: list[str] = Field(
+        default_factory=list,
+        description="Types of resources covered by this scope",
     )
 
-    resource_patterns: List[str] = Field(
+    resource_patterns: list[str] = Field(
         default_factory=list,
         description="Resource name patterns (glob or regex patterns)",
     )
 
     include_subresources: bool = Field(
-        default=True, description="Whether permission applies to subresources"
+        default=True,
+        description="Whether permission applies to subresources",
     )
 
     temporal_constraints_enabled: bool = Field(
-        default=False, description="Whether temporal constraints are enabled"
+        default=False,
+        description="Whether temporal constraints are enabled",
     )
 
-    valid_from: Optional[datetime] = Field(
-        None, description="Permission valid from this timestamp"
+    valid_from: datetime | None = Field(
+        None,
+        description="Permission valid from this timestamp",
     )
 
-    valid_until: Optional[datetime] = Field(
-        None, description="Permission valid until this timestamp"
+    valid_until: datetime | None = Field(
+        None,
+        description="Permission valid until this timestamp",
     )
 
-    time_of_day_start: Optional[str] = Field(
+    time_of_day_start: str | None = Field(
         None,
         description="Daily validity start time (HH:MM format)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
-    time_of_day_end: Optional[str] = Field(
+    time_of_day_end: str | None = Field(
         None,
         description="Daily validity end time (HH:MM format)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
-    days_of_week: List[int] = Field(
+    days_of_week: list[int] = Field(
         default_factory=lambda: list(range(7)),  # All days by default
         description="Days of week when permission is valid (0=Monday, 6=Sunday)",
     )
 
     geographic_constraints_enabled: bool = Field(
-        default=False, description="Whether geographic constraints are enabled"
+        default=False,
+        description="Whether geographic constraints are enabled",
     )
 
-    allowed_countries: List[str] = Field(
-        default_factory=list, description="ISO country codes where permission is valid"
+    allowed_countries: list[str] = Field(
+        default_factory=list,
+        description="ISO country codes where permission is valid",
     )
 
-    allowed_regions: List[str] = Field(
-        default_factory=list, description="Geographic regions where permission is valid"
+    allowed_regions: list[str] = Field(
+        default_factory=list,
+        description="Geographic regions where permission is valid",
     )
 
-    allowed_ip_ranges: List[str] = Field(
+    allowed_ip_ranges: list[str] = Field(
         default_factory=list,
         description="IP address ranges (CIDR notation) where permission is valid",
     )
 
-    conditional_expressions: List[str] = Field(
+    conditional_expressions: list[str] = Field(
         default_factory=list,
         description="Conditional expressions that must evaluate to true",
     )
@@ -115,7 +126,8 @@ class ModelPermissionScope(BaseModel):
     )
 
     metadata: ModelPermissionMetadata = Field(
-        default_factory=ModelPermissionMetadata, description="Additional scope metadata"
+        default_factory=ModelPermissionMetadata,
+        description="Additional scope metadata",
     )
 
     def matches_resource(self, resource_path: str) -> bool:
@@ -130,7 +142,8 @@ class ModelPermissionScope(BaseModel):
 
             for i, hierarchy_part in enumerate(self.resource_hierarchy):
                 if i >= len(resource_parts) or not self._matches_pattern(
-                    resource_parts[i], hierarchy_part
+                    resource_parts[i],
+                    hierarchy_part,
                 ):
                     hierarchy_matches = False
                     break
@@ -138,7 +151,7 @@ class ModelPermissionScope(BaseModel):
             if hierarchy_matches:
                 # If include_subresources is True, allow longer paths
                 if self.include_subresources or len(resource_parts) == len(
-                    self.resource_hierarchy
+                    self.resource_hierarchy,
                 ):
                     return True
 
@@ -152,7 +165,7 @@ class ModelPermissionScope(BaseModel):
 
         return False
 
-    def is_temporally_valid(self, current_time: Optional[datetime] = None) -> bool:
+    def is_temporally_valid(self, current_time: datetime | None = None) -> bool:
         """Check if permission is temporally valid"""
         if not self.temporal_constraints_enabled:
             return True
@@ -174,16 +187,13 @@ class ModelPermissionScope(BaseModel):
 
         # Check day of week (0=Monday, 6=Sunday)
         current_day = current_time.weekday()
-        if current_day not in self.days_of_week:
-            return False
-
-        return True
+        return current_day in self.days_of_week
 
     def is_geographically_valid(
         self,
-        country_code: Optional[str] = None,
-        region: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        country_code: str | None = None,
+        region: str | None = None,
+        ip_address: str | None = None,
     ) -> bool:
         """Check if permission is geographically valid"""
         if not self.geographic_constraints_enabled:
@@ -302,10 +312,7 @@ class ModelPermissionScope(BaseModel):
             return True
 
         # Conditional expressions = more restrictive
-        if len(self.conditional_expressions) > len(other.conditional_expressions):
-            return True
-
-        return False
+        return len(self.conditional_expressions) > len(other.conditional_expressions)
 
     @classmethod
     def create_global_scope(cls) -> "ModelPermissionScope":
@@ -314,7 +321,8 @@ class ModelPermissionScope(BaseModel):
 
     @classmethod
     def create_organizational_scope(
-        cls, org_units: List[str]
+        cls,
+        org_units: list[str],
     ) -> "ModelPermissionScope":
         """Create organizational permission scope"""
         return cls(
@@ -326,7 +334,8 @@ class ModelPermissionScope(BaseModel):
 
     @classmethod
     def create_resource_scope(
-        cls, resource_hierarchy: List[str]
+        cls,
+        resource_hierarchy: list[str],
     ) -> "ModelPermissionScope":
         """Create resource-specific permission scope"""
         return cls(
@@ -338,7 +347,9 @@ class ModelPermissionScope(BaseModel):
 
     @classmethod
     def create_temporal_scope(
-        cls, valid_from: datetime, valid_until: datetime
+        cls,
+        valid_from: datetime,
+        valid_until: datetime,
     ) -> "ModelPermissionScope":
         """Create temporal permission scope"""
         return cls(
@@ -351,7 +362,9 @@ class ModelPermissionScope(BaseModel):
 
     @classmethod
     def create_business_hours_scope(
-        cls, start_time: str = "09:00", end_time: str = "17:00"
+        cls,
+        start_time: str = "09:00",
+        end_time: str = "17:00",
     ) -> "ModelPermissionScope":
         """Create business hours permission scope"""
         return cls(

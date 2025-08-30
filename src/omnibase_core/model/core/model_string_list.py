@@ -1,7 +1,5 @@
 """Model for managing lists of strings."""
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +11,7 @@ class ModelStringList(BaseModel):
     standards requiring specific typed models.
     """
 
-    items: List[str] = Field(default_factory=list, description="List of string items")
+    items: list[str] = Field(default_factory=list, description="List of string items")
 
     def add(self, item: str) -> None:
         """Add an item to the list."""
@@ -30,7 +28,7 @@ class ModelStringList(BaseModel):
         """Check if item is in the list."""
         return item in self.items
 
-    def get_all(self) -> List[str]:
+    def get_all(self) -> list[str]:
         """Get all items."""
         return self.items.copy()
 
@@ -46,11 +44,11 @@ class ModelStringList(BaseModel):
         """Remove all items."""
         self.items.clear()
 
-    def extend(self, other_items: List[str]) -> None:
+    def extend(self, other_items: list[str]) -> None:
         """Add multiple items."""
         self.items.extend(other_items)
 
-    def to_list(self) -> List[str]:
+    def to_list(self) -> list[str]:
         """Convert to list representation."""
         return self.items.copy()
 

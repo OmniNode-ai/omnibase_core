@@ -6,7 +6,6 @@ metric-aware routing system for intelligent model selection and load balancing.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -75,7 +74,7 @@ class ModelAIRoutingPreferences(BaseModel):
         description="Cost optimization strategy for model selection",
     )
 
-    max_cost_per_request: Optional[float] = Field(
+    max_cost_per_request: float | None = Field(
         default=None,
         description="Maximum cost per request in USD (None = no limit)",
         ge=0.0,
@@ -87,8 +86,11 @@ class ModelAIRoutingPreferences(BaseModel):
         description="Required accuracy level for task completion",
     )
 
-    min_accuracy_threshold: Optional[float] = Field(
-        default=None, description="Minimum accuracy threshold (0.0-1.0)", ge=0.0, le=1.0
+    min_accuracy_threshold: float | None = Field(
+        default=None,
+        description="Minimum accuracy threshold (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     # Performance requirements
@@ -97,7 +99,7 @@ class ModelAIRoutingPreferences(BaseModel):
         description="Maximum acceptable response latency",
     )
 
-    max_latency_seconds: Optional[float] = Field(
+    max_latency_seconds: float | None = Field(
         default=None,
         description="Maximum latency in seconds (None = use enum default)",
         gt=0.0,
@@ -109,23 +111,25 @@ class ModelAIRoutingPreferences(BaseModel):
         description="Data privacy requirements for model routing",
     )
 
-    allowed_regions: Optional[List[str]] = Field(
-        default=None, description="Allowed geographic regions for cloud providers"
+    allowed_regions: list[str] | None = Field(
+        default=None,
+        description="Allowed geographic regions for cloud providers",
     )
 
     # Model preferences
-    model_preferences: Optional[List[str]] = Field(
+    model_preferences: list[str] | None = Field(
         default=None,
         description="Ordered list of preferred models (e.g., ['deepseek-coder', 'mistral'])",
     )
 
-    provider_preferences: Optional[List[str]] = Field(
+    provider_preferences: list[str] | None = Field(
         default=None,
         description="Ordered list of preferred providers (e.g., ['ollama', 'openai'])",
     )
 
-    excluded_models: Optional[List[str]] = Field(
-        default=None, description="Models to exclude from routing decisions"
+    excluded_models: list[str] | None = Field(
+        default=None,
+        description="Models to exclude from routing decisions",
     )
 
     # Load balancing and distribution
@@ -134,17 +138,19 @@ class ModelAIRoutingPreferences(BaseModel):
         description="Load balancing strategy for distributed requests",
     )
 
-    max_concurrent_requests: Optional[int] = Field(
-        default=None, description="Maximum concurrent requests per provider", gt=0
+    max_concurrent_requests: int | None = Field(
+        default=None,
+        description="Maximum concurrent requests per provider",
+        gt=0,
     )
 
     # Advanced routing options
-    task_type_hint: Optional[str] = Field(
+    task_type_hint: str | None = Field(
         default=None,
         description="Task type hint for accuracy-based routing (e.g., 'code_generation', 'text_analysis')",
     )
 
-    context_size_hint: Optional[int] = Field(
+    context_size_hint: int | None = Field(
         default=None,
         description="Expected context size in tokens for capacity planning",
         gt=0,
@@ -157,15 +163,19 @@ class ModelAIRoutingPreferences(BaseModel):
     )
 
     max_retries: int = Field(
-        default=2, description="Maximum retry attempts per provider", ge=0, le=5
+        default=2,
+        description="Maximum retry attempts per provider",
+        ge=0,
+        le=5,
     )
 
     # Quality and validation preferences
     enable_quality_validation: bool = Field(
-        default=False, description="Whether to enable output quality validation"
+        default=False,
+        description="Whether to enable output quality validation",
     )
 
-    quality_validation_threshold: Optional[float] = Field(
+    quality_validation_threshold: float | None = Field(
         default=None,
         description="Quality threshold for validation (0.0-1.0)",
         ge=0.0,
@@ -174,59 +184,69 @@ class ModelAIRoutingPreferences(BaseModel):
 
     # Monitoring and observability
     enable_metrics_collection: bool = Field(
-        default=True, description="Whether to collect routing and performance metrics"
+        default=True,
+        description="Whether to collect routing and performance metrics",
     )
 
-    custom_tags: Optional[Dict[str, str]] = Field(
-        default=None, description="Custom tags for metrics and monitoring"
+    custom_tags: dict[str, str] | None = Field(
+        default=None,
+        description="Custom tags for metrics and monitoring",
     )
 
     @validator("max_latency_seconds")
-    def validate_latency_consistency(cls, v, values):
+    def validate_latency_consistency(self, v, values):
         """Ensure max_latency_seconds is consistent with latency_requirements enum."""
         if v is None:
             return v
 
         latency_req = values.get("latency_requirements")
         if latency_req == EnumLatencyRequirements.REAL_TIME and v > 1.0:
+            msg = "max_latency_seconds must be ≤ 1.0 for REAL_TIME requirements"
             raise ValueError(
-                "max_latency_seconds must be ≤ 1.0 for REAL_TIME requirements"
+                msg,
             )
-        elif latency_req == EnumLatencyRequirements.FAST and v > 3.0:
-            raise ValueError("max_latency_seconds must be ≤ 3.0 for FAST requirements")
-        elif latency_req == EnumLatencyRequirements.MODERATE and v > 5.0:
+        if latency_req == EnumLatencyRequirements.FAST and v > 3.0:
+            msg = "max_latency_seconds must be ≤ 3.0 for FAST requirements"
+            raise ValueError(msg)
+        if latency_req == EnumLatencyRequirements.MODERATE and v > 5.0:
+            msg = "max_latency_seconds must be ≤ 5.0 for MODERATE requirements"
             raise ValueError(
-                "max_latency_seconds must be ≤ 5.0 for MODERATE requirements"
+                msg,
             )
-        elif latency_req == EnumLatencyRequirements.RELAXED and v > 10.0:
+        if latency_req == EnumLatencyRequirements.RELAXED and v > 10.0:
+            msg = "max_latency_seconds must be ≤ 10.0 for RELAXED requirements"
             raise ValueError(
-                "max_latency_seconds must be ≤ 10.0 for RELAXED requirements"
+                msg,
             )
-        elif latency_req == EnumLatencyRequirements.BACKGROUND and v > 30.0:
+        if latency_req == EnumLatencyRequirements.BACKGROUND and v > 30.0:
+            msg = "max_latency_seconds must be ≤ 30.0 for BACKGROUND requirements"
             raise ValueError(
-                "max_latency_seconds must be ≤ 30.0 for BACKGROUND requirements"
+                msg,
             )
 
         return v
 
     @validator("min_accuracy_threshold")
-    def validate_accuracy_consistency(cls, v, values):
+    def validate_accuracy_consistency(self, v, values):
         """Ensure min_accuracy_threshold is consistent with accuracy_requirements enum."""
         if v is None:
             return v
 
         accuracy_req = values.get("accuracy_requirements")
         if accuracy_req == EnumAccuracyRequirements.LOW and v > 0.7:
+            msg = "min_accuracy_threshold should be ≤ 0.7 for LOW requirements"
             raise ValueError(
-                "min_accuracy_threshold should be ≤ 0.7 for LOW requirements"
+                msg,
             )
-        elif accuracy_req == EnumAccuracyRequirements.VERY_HIGH and v < 0.95:
+        if accuracy_req == EnumAccuracyRequirements.VERY_HIGH and v < 0.95:
+            msg = "min_accuracy_threshold should be ≥ 0.95 for VERY_HIGH requirements"
             raise ValueError(
-                "min_accuracy_threshold should be ≥ 0.95 for VERY_HIGH requirements"
+                msg,
             )
-        elif accuracy_req == EnumAccuracyRequirements.CRITICAL and v < 0.99:
+        if accuracy_req == EnumAccuracyRequirements.CRITICAL and v < 0.99:
+            msg = "min_accuracy_threshold should be ≥ 0.99 for CRITICAL requirements"
             raise ValueError(
-                "min_accuracy_threshold should be ≥ 0.99 for CRITICAL requirements"
+                msg,
             )
 
         return v
@@ -242,68 +262,79 @@ class ModelAIRoutingResult(BaseModel):
 
     # Routing decision
     selected_provider: str = Field(
-        description="Selected provider name (e.g., 'ollama', 'openai')"
+        description="Selected provider name (e.g., 'ollama', 'openai')",
     )
 
     selected_model: str = Field(
-        description="Selected model name (e.g., 'mistral', 'gpt-4')"
+        description="Selected model name (e.g., 'mistral', 'gpt-4')",
     )
 
     routing_reason: str = Field(
-        description="Human-readable explanation for routing decision"
+        description="Human-readable explanation for routing decision",
     )
 
     # Performance predictions
-    predicted_latency: Optional[float] = Field(
-        default=None, description="Predicted response latency in seconds"
+    predicted_latency: float | None = Field(
+        default=None,
+        description="Predicted response latency in seconds",
     )
 
-    predicted_accuracy: Optional[float] = Field(
-        default=None, description="Predicted accuracy score (0.0-1.0)"
+    predicted_accuracy: float | None = Field(
+        default=None,
+        description="Predicted accuracy score (0.0-1.0)",
     )
 
-    predicted_quality: Optional[float] = Field(
-        default=None, description="Predicted output quality score (0.0-1.0)"
+    predicted_quality: float | None = Field(
+        default=None,
+        description="Predicted output quality score (0.0-1.0)",
     )
 
     # Cost estimation
-    estimated_cost: Optional[float] = Field(
-        default=None, description="Estimated cost in USD for this request"
+    estimated_cost: float | None = Field(
+        default=None,
+        description="Estimated cost in USD for this request",
     )
 
-    cost_breakdown: Optional[Dict[str, float]] = Field(
-        default=None, description="Detailed cost breakdown by component"
+    cost_breakdown: dict[str, float] | None = Field(
+        default=None,
+        description="Detailed cost breakdown by component",
     )
 
     # Routing confidence and alternatives
     confidence_score: float = Field(
-        description="Confidence in routing decision (0.0-1.0)", ge=0.0, le=1.0
+        description="Confidence in routing decision (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
-    alternative_options: Optional[List[Dict[str, Union[str, int, float, bool]]]] = (
-        Field(default=None, description="Alternative routing options considered")
+    alternative_options: list[dict[str, str | int | float | bool]] | None = Field(
+        default=None, description="Alternative routing options considered"
     )
 
     # Capacity and load information
-    provider_load: Optional[float] = Field(
-        default=None, description="Current load on selected provider (0.0-1.0)"
+    provider_load: float | None = Field(
+        default=None,
+        description="Current load on selected provider (0.0-1.0)",
     )
 
-    queue_position: Optional[int] = Field(
-        default=None, description="Position in provider queue (if applicable)"
+    queue_position: int | None = Field(
+        default=None,
+        description="Position in provider queue (if applicable)",
     )
 
     # Routing metadata
     routing_timestamp: float = Field(
-        description="Unix timestamp when routing decision was made"
+        description="Unix timestamp when routing decision was made",
     )
 
     routing_version: str = Field(
-        default="1.0.0", description="Version of routing algorithm used"
+        default="1.0.0",
+        description="Version of routing algorithm used",
     )
 
-    routing_session_id: Optional[str] = Field(
-        default=None, description="Session ID for routing correlation"
+    routing_session_id: str | None = Field(
+        default=None,
+        description="Session ID for routing correlation",
     )
 
 
@@ -318,13 +349,13 @@ class ModelAIWorkflowContext(BaseModel):
     workflow_id: str = Field(description="Unique workflow execution identifier")
 
     workflow_type: str = Field(
-        description="Type of workflow (e.g., 'document_regeneration', 'code_analysis')"
+        description="Type of workflow (e.g., 'document_regeneration', 'code_analysis')",
     )
 
     step_id: str = Field(description="Current workflow step identifier")
 
     step_type: str = Field(
-        description="Type of workflow step (e.g., 'llm_inference', 'validation')"
+        description="Type of workflow step (e.g., 'llm_inference', 'validation')",
     )
 
     # Execution context
@@ -333,46 +364,56 @@ class ModelAIWorkflowContext(BaseModel):
         description="Execution environment (production, staging, development)",
     )
 
-    user_id: Optional[str] = Field(
-        default=None, description="User ID for personalized routing (if applicable)"
+    user_id: str | None = Field(
+        default=None,
+        description="User ID for personalized routing (if applicable)",
     )
 
-    organization_id: Optional[str] = Field(
-        default=None, description="Organization ID for billing and quotas"
+    organization_id: str | None = Field(
+        default=None,
+        description="Organization ID for billing and quotas",
     )
 
     # Dependencies and relationships
-    dependent_steps: Optional[List[str]] = Field(
-        default=None, description="Steps that depend on this routing decision"
+    dependent_steps: list[str] | None = Field(
+        default=None,
+        description="Steps that depend on this routing decision",
     )
 
-    input_dependencies: Optional[List[str]] = Field(
-        default=None, description="Previous steps this decision depends on"
+    input_dependencies: list[str] | None = Field(
+        default=None,
+        description="Previous steps this decision depends on",
     )
 
     # Resource context
-    available_budget: Optional[float] = Field(
-        default=None, description="Available budget for this workflow execution"
+    available_budget: float | None = Field(
+        default=None,
+        description="Available budget for this workflow execution",
     )
 
-    deadline: Optional[float] = Field(
-        default=None, description="Unix timestamp deadline for workflow completion"
+    deadline: float | None = Field(
+        default=None,
+        description="Unix timestamp deadline for workflow completion",
     )
 
     # Historical context
-    similar_workflows: Optional[List[str]] = Field(
-        default=None, description="IDs of similar workflows for learning-based routing"
+    similar_workflows: list[str] | None = Field(
+        default=None,
+        description="IDs of similar workflows for learning-based routing",
     )
 
-    previous_routing_decisions: Optional[List[ModelAIRoutingResult]] = Field(
-        default=None, description="Previous routing decisions in this workflow"
+    previous_routing_decisions: list[ModelAIRoutingResult] | None = Field(
+        default=None,
+        description="Previous routing decisions in this workflow",
     )
 
     # Quality and feedback context
-    quality_feedback: Optional[Dict[str, float]] = Field(
-        default=None, description="Quality feedback from previous similar workflows"
+    quality_feedback: dict[str, float] | None = Field(
+        default=None,
+        description="Quality feedback from previous similar workflows",
     )
 
-    user_preferences: Optional[ModelAIRoutingPreferences] = Field(
-        default=None, description="User-specific routing preferences"
+    user_preferences: ModelAIRoutingPreferences | None = Field(
+        default=None,
+        description="User-specific routing preferences",
     )

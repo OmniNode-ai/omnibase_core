@@ -1,21 +1,22 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel, Field
 
 from .model_configuration_summary import ModelConfigurationSummary
-from .model_credentials_analysis import (ModelCredentialsAnalysis,
-                                         ModelManagerAssessment)
+from .model_credentials_analysis import ModelCredentialsAnalysis, ModelManagerAssessment
 from .model_mask_data import ModelMaskData
 from .model_secret_config import ModelSecretConfig
 from .model_secure_credentials import ModelSecureCredentials
 
 if TYPE_CHECKING:
-    from omnibase_core.model.configuration.model_database_secure_config import \
-        ModelDatabaseSecureConfig
-    from omnibase_core.model.configuration.model_kafka_secure_config import \
-        ModelKafkaSecureConfig
+    from omnibase_core.model.configuration.model_database_secure_config import (
+        ModelDatabaseSecureConfig,
+    )
+    from omnibase_core.model.configuration.model_kafka_secure_config import (
+        ModelKafkaSecureConfig,
+    )
     from omnibase_core.model.core import ModelHealthCheckResult
 
 try:
@@ -41,18 +42,21 @@ class ModelSecretManager(BaseModel):
     """
 
     config: ModelSecretConfig = Field(
-        default_factory=ModelSecretConfig, description="Secret management configuration"
+        default_factory=ModelSecretConfig,
+        description="Secret management configuration",
     )
 
     audit_enabled: bool = Field(
-        default=True, description="Enable audit logging for security monitoring"
+        default=True,
+        description="Enable audit logging for security monitoring",
     )
 
     fallback_enabled: bool = Field(
-        default=True, description="Enable fallback to secondary backends on failure"
+        default=True,
+        description="Enable fallback to secondary backends on failure",
     )
 
-    def model_post_init(self, __context: Optional[object] = None) -> None:
+    def model_post_init(self, __context: object | None = None) -> None:
         """Initialize secret manager after model creation."""
         self._initialize_environment()
 
@@ -62,7 +66,7 @@ class ModelSecretManager(BaseModel):
             if self.config.backend.backend_type == "dotenv":
                 self._load_dotenv_environment()
         except Exception as e:
-            logging.error(f"Failed to initialize secret manager: {e}")
+            logging.exception(f"Failed to initialize secret manager: {e}")
 
     def _load_dotenv_environment(self) -> None:
         """Load environment variables from .env file if configured."""
@@ -80,7 +84,7 @@ class ModelSecretManager(BaseModel):
                     Path(".env.local"),
                     Path("config/.env"),
                     Path(".env.development"),
-                ]
+                ],
             )
 
         for env_path in env_paths:
@@ -92,11 +96,13 @@ class ModelSecretManager(BaseModel):
     # === Core Secret Management ===
 
     def get_kafka_config(
-        self, env_prefix: str = "ONEX_KAFKA_"
+        self,
+        env_prefix: str = "ONEX_KAFKA_",
     ) -> "ModelKafkaSecureConfig":
         """Get secure Kafka configuration with validation."""
-        from omnibase_core.model.configuration.model_kafka_secure_config import \
-            ModelKafkaSecureConfig
+        from omnibase_core.model.configuration.model_kafka_secure_config import (
+            ModelKafkaSecureConfig,
+        )
 
         try:
             config = self._load_with_fallback(ModelKafkaSecureConfig, env_prefix)
@@ -104,7 +110,8 @@ class ModelSecretManager(BaseModel):
             # Validate configuration
             validation = config.validate_credentials()
             if not validation["is_valid"]:
-                raise ValueError(f"Invalid Kafka configuration: {validation['issues']}")
+                msg = f"Invalid Kafka configuration: {validation['issues']}"
+                raise ValueError(msg)
 
             return config
 
@@ -112,11 +119,13 @@ class ModelSecretManager(BaseModel):
             raise
 
     def get_database_config(
-        self, env_prefix: str = "ONEX_DB_"
+        self,
+        env_prefix: str = "ONEX_DB_",
     ) -> "ModelDatabaseSecureConfig":
         """Get secure database configuration with validation."""
-        from omnibase_core.model.configuration.model_database_secure_config import \
-            ModelDatabaseSecureConfig
+        from omnibase_core.model.configuration.model_database_secure_config import (
+            ModelDatabaseSecureConfig,
+        )
 
         try:
             config = self._load_with_fallback(ModelDatabaseSecureConfig, env_prefix)
@@ -124,8 +133,9 @@ class ModelSecretManager(BaseModel):
             # Validate configuration
             validation = config.validate_credentials()
             if not validation["is_valid"]:
+                msg = f"Invalid database configuration: {validation['issues']}"
                 raise ValueError(
-                    f"Invalid database configuration: {validation['issues']}"
+                    msg,
                 )
 
             return config
@@ -133,15 +143,15 @@ class ModelSecretManager(BaseModel):
         except Exception:
             raise
 
-    def _load_with_fallback(self, config_class: Type[T], env_prefix: str) -> T:
+    def _load_with_fallback(self, config_class: type[T], env_prefix: str) -> T:
         """Load configuration with fallback support."""
         try:
             # Try primary backend
             return config_class.load_from_env(env_prefix)
 
-        except Exception as primary_error:
+        except Exception:
             if not self.fallback_enabled or not self.config.fallback_backends:
-                raise primary_error
+                raise
 
             # Try fallback backends
             for fallback_backend in self.config.fallback_backends:
@@ -165,12 +175,14 @@ class ModelSecretManager(BaseModel):
                     self.config.backend = original_backend
 
             # All fallbacks failed
-            raise primary_error
+            raise
 
     # === Credential Analysis ===
 
     def mask_sensitive_data(
-        self, data: ModelMaskData, mask_level: str = "standard"
+        self,
+        data: ModelMaskData,
+        mask_level: str = "standard",
     ) -> ModelMaskData:
         """Enhanced sensitive data masking with multiple security levels."""
         sensitive_keys = {
@@ -195,14 +207,14 @@ class ModelSecretManager(BaseModel):
                 if len(value) <= 4:
                     return "*" * len(value)
                 return f"{value[:2]}{'*' * (len(value) - 4)}{value[-2:]}"
-            elif level == "aggressive":
+            if level == "aggressive":
                 return "***REDACTED***"
-            else:  # standard
-                return "***MASKED***"
+            # standard
+            return "***MASKED***"
 
         def mask_recursive(
-            obj: Union[str, int, bool, List, Dict, ModelMaskData],
-        ) -> Union[str, int, bool, List, Dict, ModelMaskData]:
+            obj: str | int | bool | list | dict | ModelMaskData,
+        ) -> str | int | bool | list | dict | ModelMaskData:
             if isinstance(obj, dict):
                 return {
                     key: (
@@ -214,10 +226,9 @@ class ModelSecretManager(BaseModel):
                     )
                     for key, value in obj.items()
                 }
-            elif isinstance(obj, list):
+            if isinstance(obj, list):
                 return [mask_recursive(item) for item in obj]
-            else:
-                return obj
+            return obj
 
         if isinstance(data, ModelMaskData):
             masked_dict = mask_recursive(data.to_dict())
@@ -229,7 +240,8 @@ class ModelSecretManager(BaseModel):
         return data
 
     def analyze_credentials_strength(
-        self, credentials: ModelSecureCredentials
+        self,
+        credentials: ModelSecureCredentials,
     ) -> ModelCredentialsAnalysis:
         """Comprehensive credential strength analysis."""
         base_analysis = credentials.get_credential_strength_assessment()
@@ -237,7 +249,8 @@ class ModelSecretManager(BaseModel):
         # Create manager-specific assessment
         manager_assessment = ModelManagerAssessment(
             backend_security_level=self.config.backend.get_security_profile().get(
-                "security_level", "unknown"
+                "security_level",
+                "unknown",
             ),
             audit_compliance="compliant" if self.audit_enabled else "non_compliant",
             fallback_resilience=(
@@ -264,7 +277,9 @@ class ModelSecretManager(BaseModel):
     def health_check(self) -> "ModelHealthCheckResult":
         """Comprehensive health check of secret management system."""
         from omnibase_core.model.core.model_health_check_result import (
-            HealthCheckComponent, ModelHealthCheckResult)
+            HealthCheckComponent,
+            ModelHealthCheckResult,
+        )
 
         components = []
         warnings = []
@@ -295,7 +310,7 @@ class ModelSecretManager(BaseModel):
                     name="secret_backend",
                     status="unhealthy",
                     message=f"Health check failed: {e}",
-                )
+                ),
             )
             warnings.append(f"Health check failed: {e}")
 
@@ -328,7 +343,8 @@ class ModelSecretManager(BaseModel):
 
     @classmethod
     def create_for_development(
-        cls, dotenv_path: Optional[str] = None
+        cls,
+        dotenv_path: str | None = None,
     ) -> "ModelSecretManager":
         """Create secret manager optimized for development environment."""
         config = ModelSecretConfig.create_for_development(dotenv_path)
@@ -344,7 +360,9 @@ class ModelSecretManager(BaseModel):
 
     @classmethod
     def create_for_kubernetes(
-        cls, namespace: str = "default", secret_name: str = "onex-secrets"
+        cls,
+        namespace: str = "default",
+        secret_name: str = "onex-secrets",
     ) -> "ModelSecretManager":
         """Create secret manager for Kubernetes environment."""
         config = ModelSecretConfig.create_for_kubernetes(namespace, secret_name)
@@ -360,7 +378,7 @@ class ModelSecretManager(BaseModel):
 
 
 # Global secret manager instance
-_secret_manager: Optional[ModelSecretManager] = None
+_secret_manager: ModelSecretManager | None = None
 
 
 def get_secret_manager() -> ModelSecretManager:

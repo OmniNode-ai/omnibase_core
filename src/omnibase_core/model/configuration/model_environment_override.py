@@ -4,8 +4,6 @@ Environment Override Model for ONEX Configuration System.
 Strongly typed model for environment variable overrides.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,8 +15,9 @@ class ModelEnvironmentOverride(BaseModel):
     with proper Pydantic validation and type safety.
     """
 
-    registry_mode: Optional[str] = Field(
-        default=None, description="Override for ONEX_REGISTRY_MODE environment variable"
+    registry_mode: str | None = Field(
+        default=None,
+        description="Override for ONEX_REGISTRY_MODE environment variable",
     )
 
     def to_config_dict(self) -> dict:

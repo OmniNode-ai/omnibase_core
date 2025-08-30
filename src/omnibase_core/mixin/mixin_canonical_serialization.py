@@ -22,22 +22,23 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 import yaml
 
 from omnibase_core.enums import NodeMetadataField
-from omnibase_core.model.core.model_project_metadata import \
-    get_canonical_versions
-from omnibase_core.protocol.protocol_canonical_serializer import \
-    ProtocolCanonicalSerializer
+from omnibase_core.model.core.model_project_metadata import get_canonical_versions
+from omnibase_core.protocol.protocol_canonical_serializer import (
+    ProtocolCanonicalSerializer,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
 
 
 def _strip_comment_prefix(
-    block: str, comment_prefixes: Tuple[str, ...] = ("# ", "#")
+    block: str,
+    comment_prefixes: tuple[str, ...] = ("# ", "#"),
 ) -> str:
     """
     Remove leading comment prefixes from each line of a block.
@@ -76,8 +77,8 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_metadata_block(
         self,
-        block: Union[Dict[str, object], "NodeMetadataBlock"],
-        volatile_fields: Tuple[NodeMetadataField, ...] = (
+        block: Union[dict[str, object], "NodeMetadataBlock"],
+        volatile_fields: tuple[NodeMetadataField, ...] = (
             NodeMetadataField.HASH,
             NodeMetadataField.LAST_MODIFIED_AT,
         ),
@@ -108,14 +109,12 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         import pydantic
 
-        from omnibase_core.model.core.model_node_metadata import \
-            NodeMetadataBlock
+        from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
 
         if isinstance(block, dict):
             # Convert dict to NodeMetadataBlock, handling type conversions
             if "entrypoint" in block and isinstance(block["entrypoint"], str):
-                from omnibase_core.model.core.model_entrypoint import \
-                    EntrypointBlock
+                from omnibase_core.model.core.model_entrypoint import EntrypointBlock
 
                 if "://" in block["entrypoint"]:
                     type_, target = block["entrypoint"].split("://", 1)
@@ -154,7 +153,7 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             elif annotation is list:
                 list_fields.add(name)
 
-        normalized_dict: Dict[str, object] = {}
+        normalized_dict: dict[str, object] = {}
         # Always emit all fields in model_fields order, using value from block_dict or default if missing/None
         for k, field in NodeMetadataBlock.model_fields.items():
             v = block_dict.get(k, None)
@@ -215,14 +214,13 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten entrypoint to URI string
             if k == "entrypoint":
-                from omnibase_core.model.core.model_entrypoint import \
-                    EntrypointBlock
+                from omnibase_core.model.core.model_entrypoint import EntrypointBlock
 
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
                 elif isinstance(v, dict) and "type" in v and "target" in v:
                     filtered_dict[k] = EntrypointBlock.from_serializable_dict(
-                        v
+                        v,
                     ).to_uri()
                 elif isinstance(v, str):
                     filtered_dict[k] = (
@@ -235,8 +233,7 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten namespace to URI string
             if k == "namespace":
-                from omnibase_core.model.core.model_node_metadata import \
-                    Namespace
+                from omnibase_core.model.core.model_node_metadata import Namespace
 
                 if isinstance(v, Namespace):
                     filtered_dict[k] = str(v)
@@ -248,9 +245,7 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     filtered_dict[k] = str(v)
                 continue
             # PATCH: Omit all None/null/empty fields (except protocol-required)
-            if (
-                v == "" or v is None or v == {} or v == []
-            ) and k not in protocol_required:
+            if (v == "" or v is None or v in ({}, [])) and k not in protocol_required:
                 continue
             filtered_dict[k] = v
         # PATCH: Remove all None values before YAML dump
@@ -292,9 +287,9 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_for_hash(
         self,
-        block: Union[Dict[str, object], "NodeMetadataBlock"],
+        block: Union[dict[str, object], "NodeMetadataBlock"],
         body: str,
-        volatile_fields: Tuple[NodeMetadataField, ...] = (
+        volatile_fields: tuple[NodeMetadataField, ...] = (
             NodeMetadataField.HASH,
             NodeMetadataField.LAST_MODIFIED_AT,
         ),
@@ -323,16 +318,18 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             comment_prefix=comment_prefix,
         )
         norm_body = self.normalize_body(body)
-        canonical = meta_yaml.rstrip("\n") + "\n\n" + norm_body.lstrip("\n")
-        return canonical
+        return meta_yaml.rstrip("\n") + "\n\n" + norm_body.lstrip("\n")
 
 
 normalize_body = CanonicalYAMLSerializer().normalize_body
 
 
 def extract_metadata_block_and_body(
-    content: str, open_delim: str, close_delim: str, event_bus=None
-) -> tuple[Optional[str], str]:
+    content: str,
+    open_delim: str,
+    close_delim: str,
+    event_bus=None,
+) -> tuple[str | None, str]:
     """
     Canonical utility: Extract the metadata block (if present) and the rest of the file content.
     Returns (block_str or None, rest_of_content).
@@ -348,8 +345,7 @@ def extract_metadata_block_and_body(
     import re
     from pathlib import Path
 
-    from omnibase_core.metadata.metadata_constants import (MD_META_CLOSE,
-                                                           MD_META_OPEN)
+    from omnibase_core.metadata.metadata_constants import MD_META_CLOSE, MD_META_OPEN
 
     _component_name = Path(__file__).stem
 
@@ -379,10 +375,8 @@ def extract_metadata_block_and_body(
             if yaml_match:
                 yaml_block = f"---\n{yaml_match.group(1)}\n..."
                 return yaml_block, rest
-            else:
-                return None, rest
-        else:
-            return None, content
+            return None, rest
+        return None, content
     # Default: Accept both commented and non-commented delimiter forms
     pattern = (
         rf"(?ms)"  # multiline, dotall
@@ -402,13 +396,14 @@ def extract_metadata_block_and_body(
             _strip_comment_prefix(line) for line in block_lines
         )
         return block_str_stripped, rest
-    else:
-        # Fallback: treat the whole content as the block (plain YAML file)
-        return content, ""
+    # Fallback: treat the whole content as the block (plain YAML file)
+    return content, ""
 
 
 def strip_block_delimiters_and_assert(
-    lines: list[str], delimiters: set[str], context: str = ""
+    lines: list[str],
+    delimiters: set[str],
+    context: str = "",
 ) -> str:
     """
     Canonical utility: Remove all lines that exactly match any delimiter. Assert none remain after filtering.
@@ -424,7 +419,8 @@ def strip_block_delimiters_and_assert(
     cleaned = [line for line in lines if line.strip() not in delimiters]
     remaining = [line for line in cleaned if line.strip() in delimiters]
     if remaining:
+        msg = f"Delimiter(s) still present after filtering in {context}: {remaining}"
         raise AssertionError(
-            f"Delimiter(s) still present after filtering in {context}: {remaining}"
+            msg,
         )
     return "\n".join(cleaned).strip()

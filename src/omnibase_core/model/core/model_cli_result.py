@@ -6,15 +6,14 @@ outcome of CLI command execution.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_cli_execution import ModelCliExecution
 from omnibase_core.model.core.model_cli_output_data import ModelCliOutputData
 from omnibase_core.model.core.model_duration import ModelDuration
-from omnibase_core.model.validation.model_validation_error import \
-    ModelValidationError
+from omnibase_core.model.validation.model_validation_error import ModelValidationError
 
 
 class ModelCliResult(BaseModel):
@@ -26,13 +25,17 @@ class ModelCliResult(BaseModel):
     """
 
     execution: ModelCliExecution = Field(
-        ..., description="Execution details and context"
+        ...,
+        description="Execution details and context",
     )
 
     success: bool = Field(..., description="Whether execution was successful")
 
     exit_code: int = Field(
-        ..., description="Process exit code (0 = success, >0 = error)", ge=0, le=255
+        ...,
+        description="Process exit code (0 = success, >0 = error)",
+        ge=0,
+        le=255,
     )
 
     output_data: ModelCliOutputData = Field(
@@ -40,44 +43,49 @@ class ModelCliResult(BaseModel):
         description="Structured output data from execution",
     )
 
-    output_text: Optional[str] = Field(None, description="Human-readable output text")
+    output_text: str | None = Field(None, description="Human-readable output text")
 
-    error_message: Optional[str] = Field(
-        None, description="Primary error message if execution failed"
+    error_message: str | None = Field(
+        None,
+        description="Primary error message if execution failed",
     )
 
-    error_details: Optional[str] = Field(None, description="Detailed error information")
+    error_details: str | None = Field(None, description="Detailed error information")
 
-    validation_errors: List[ModelValidationError] = Field(
-        default_factory=list, description="Validation errors encountered"
+    validation_errors: list[ModelValidationError] = Field(
+        default_factory=list,
+        description="Validation errors encountered",
     )
 
-    warnings: List[str] = Field(default_factory=list, description="Warning messages")
+    warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
     execution_time: ModelDuration = Field(..., description="Total execution time")
 
     end_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Execution completion time"
+        default_factory=datetime.utcnow,
+        description="Execution completion time",
     )
 
     retry_count: int = Field(default=0, description="Number of retries attempted", ge=0)
 
-    performance_metrics: Dict[str, Any] = Field(
-        default_factory=dict, description="Performance metrics and timing data"
+    performance_metrics: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Performance metrics and timing data",
     )
 
-    debug_info: Dict[str, Any] = Field(
+    debug_info: dict[str, Any] = Field(
         default_factory=dict,
         description="Debug information (only included if debug enabled)",
     )
 
-    trace_data: Dict[str, Any] = Field(
+    trace_data: dict[str, Any] = Field(
         default_factory=dict,
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional result metadata"
+    result_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional result metadata",
     )
 
     def is_success(self) -> bool:
@@ -108,7 +116,7 @@ class ModelCliResult(BaseModel):
         """Get execution duration in seconds."""
         return self.execution_time.total_seconds()
 
-    def get_primary_error(self) -> Optional[str]:
+    def get_primary_error(self) -> str | None:
         """Get the primary error message."""
         if self.error_message:
             return self.error_message
@@ -119,7 +127,7 @@ class ModelCliResult(BaseModel):
             return self.validation_errors[0].message
         return None
 
-    def get_all_errors(self) -> List[str]:
+    def get_all_errors(self) -> list[str]:
         """Get all error messages."""
         errors = []
         if self.error_message:
@@ -128,11 +136,11 @@ class ModelCliResult(BaseModel):
             errors.append(validation_error.message)
         return errors
 
-    def get_critical_errors(self) -> List[ModelValidationError]:
+    def get_critical_errors(self) -> list[ModelValidationError]:
         """Get all critical validation errors."""
         return [error for error in self.validation_errors if error.is_critical()]
 
-    def get_non_critical_errors(self) -> List[ModelValidationError]:
+    def get_non_critical_errors(self) -> list[ModelValidationError]:
         """Get all non-critical validation errors."""
         return [error for error in self.validation_errors if not error.is_critical()]
 
@@ -191,7 +199,7 @@ class ModelCliResult(BaseModel):
 
         return ""
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get result summary for logging/monitoring."""
         return {
             "execution_id": str(self.execution.execution_id),
@@ -216,9 +224,9 @@ class ModelCliResult(BaseModel):
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: Optional[Dict[str, Any]] = None,
-        output_text: Optional[str] = None,
-        execution_time: Optional[ModelDuration] = None,
+        output_data: dict[str, Any] | None = None,
+        output_text: str | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a successful result."""
         if execution_time is None:
@@ -248,9 +256,9 @@ class ModelCliResult(BaseModel):
         execution: ModelCliExecution,
         error_message: str,
         exit_code: int = 1,
-        error_details: Optional[str] = None,
-        validation_errors: Optional[List[ModelValidationError]] = None,
-        execution_time: Optional[ModelDuration] = None,
+        error_details: str | None = None,
+        validation_errors: list[ModelValidationError] | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a failure result."""
         if execution_time is None:
@@ -273,8 +281,8 @@ class ModelCliResult(BaseModel):
     def create_validation_failure(
         cls,
         execution: ModelCliExecution,
-        validation_errors: List[ModelValidationError],
-        execution_time: Optional[ModelDuration] = None,
+        validation_errors: list[ModelValidationError],
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a result for validation failures."""
         if execution_time is None:

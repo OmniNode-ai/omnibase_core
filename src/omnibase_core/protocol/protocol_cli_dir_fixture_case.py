@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from pydantic import BaseModel
 
@@ -34,10 +34,10 @@ class FileEntryModel(BaseModel):
 
 class SubdirEntryModel(BaseModel):
     subdir: str
-    files: List[FileEntryModel]
+    files: list[FileEntryModel]
 
 
 class ProtocolCLIDirFixtureCase(Protocol):
     id: str
-    files: List[FileEntryModel]
-    subdirs: Optional[List[SubdirEntryModel]]
+    files: list[FileEntryModel]
+    subdirs: list[SubdirEntryModel] | None

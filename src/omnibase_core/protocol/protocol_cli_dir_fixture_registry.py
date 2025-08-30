@@ -22,23 +22,26 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Callable, List, Protocol
+from collections.abc import Callable
+from typing import Protocol
 from unittest import mock
 
 import pytest
 
-from omnibase_core.protocol.protocol_cli_dir_fixture_case import \
-    ProtocolCLIDirFixtureCase
+from omnibase_core.protocol.protocol_cli_dir_fixture_case import (
+    ProtocolCLIDirFixtureCase,
+)
 
 
 class ProtocolCLIDirFixtureRegistry(Protocol):
-    def all_cases(self) -> List[ProtocolCLIDirFixtureCase]: ...
+    def all_cases(self) -> list[ProtocolCLIDirFixtureCase]: ...
 
     def get_case(self, case_id: str) -> ProtocolCLIDirFixtureCase: ...
 
     def filter_cases(
-        self, predicate: Callable[[ProtocolCLIDirFixtureCase], bool]
-    ) -> List[ProtocolCLIDirFixtureCase]: ...
+        self,
+        predicate: Callable[[ProtocolCLIDirFixtureCase], bool],
+    ) -> list[ProtocolCLIDirFixtureCase]: ...
 
 
 @pytest.fixture

@@ -1,11 +1,8 @@
 """Model for managing active task requests."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.events.model_agent_task_event import \
-    ModelAgentTaskRequest
+from omnibase_core.model.events.model_agent_task_event import ModelAgentTaskRequest
 
 
 class ModelTaskRequestMap(BaseModel):
@@ -16,8 +13,9 @@ class ModelTaskRequestMap(BaseModel):
     standards requiring specific typed models.
     """
 
-    tasks: Dict[str, ModelAgentTaskRequest] = Field(
-        default_factory=dict, description="Map of task IDs to task requests"
+    tasks: dict[str, ModelAgentTaskRequest] = Field(
+        default_factory=dict,
+        description="Map of task IDs to task requests",
     )
 
     def add_task(self, task_id: str, task: ModelAgentTaskRequest) -> None:
@@ -43,7 +41,7 @@ class ModelTaskRequestMap(BaseModel):
         """Get total number of active tasks."""
         return len(self.tasks)
 
-    def get_all_tasks(self) -> Dict[str, ModelAgentTaskRequest]:
+    def get_all_tasks(self) -> dict[str, ModelAgentTaskRequest]:
         """Get all tasks."""
         return self.tasks
 

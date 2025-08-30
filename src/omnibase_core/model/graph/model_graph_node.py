@@ -7,8 +7,7 @@ including files, symbols, and documentation nodes.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,8 +19,9 @@ class ModelGraphNodeBase(BaseModel):
     node_type: str = Field(..., description="Type of node (file/symbol/documentation)")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional metadata",
     )
 
 
@@ -30,30 +30,36 @@ class ModelFileNode(ModelGraphNodeBase):
 
     file_path: Path = Field(..., description="Absolute file path")
     file_type: str = Field(..., description="Type of file (code/doc/config/test)")
-    language: Optional[str] = Field(
-        None, description="Programming language (python/yaml/markdown)"
+    language: str | None = Field(
+        None,
+        description="Programming language (python/yaml/markdown)",
     )
     size_bytes: int = Field(0, description="File size in bytes")
     line_count: int = Field(0, description="Number of lines in file")
     content_hash: str = Field(
-        ..., description="Hash of file content for change detection"
+        ...,
+        description="Hash of file content for change detection",
     )
     last_modified: datetime = Field(..., description="Last modification timestamp")
 
     # OnexTree integration fields
-    stamped_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Metadata from stamper"
+    stamped_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata from stamper",
     )
     tree_validated: bool = Field(
-        False, description="Whether file structure was validated by OnexTree"
+        False,
+        description="Whether file structure was validated by OnexTree",
     )
 
     # Vector embeddings for semantic search
-    embedding_vector: Optional[List[float]] = Field(
-        None, description="Vector representation for semantic search"
+    embedding_vector: list[float] | None = Field(
+        None,
+        description="Vector representation for semantic search",
     )
-    embedding_model: Optional[str] = Field(
-        None, description="Model used to generate embedding"
+    embedding_model: str | None = Field(
+        None,
+        description="Model used to generate embedding",
     )
 
 
@@ -62,36 +68,43 @@ class ModelSymbolNode(ModelGraphNodeBase):
 
     symbol_name: str = Field(..., description="Name of the symbol")
     symbol_type: str = Field(
-        ..., description="Type: class/function/variable/constant/import"
+        ...,
+        description="Type: class/function/variable/constant/import",
     )
     file_node_id: str = Field(..., description="ID of the file containing this symbol")
     line_number: int = Field(..., description="Line number where symbol is defined")
-    column_number: Optional[int] = Field(
-        None, description="Column number where symbol starts"
+    column_number: int | None = Field(
+        None,
+        description="Column number where symbol starts",
     )
 
     # Symbol-specific metadata
     scope: str = Field("module", description="Scope: module/class/function")
-    access_modifier: Optional[str] = Field(
-        None, description="Access modifier: public/private/protected"
+    access_modifier: str | None = Field(
+        None,
+        description="Access modifier: public/private/protected",
     )
     is_exported: bool = Field(False, description="Whether symbol is exported/public")
-    docstring: Optional[str] = Field(
-        None, description="Symbol's docstring if available"
+    docstring: str | None = Field(
+        None,
+        description="Symbol's docstring if available",
     )
 
     # Type information
-    return_type: Optional[str] = Field(None, description="Return type for functions")
-    parameter_types: List[str] = Field(
-        default_factory=list, description="Parameter types for functions"
+    return_type: str | None = Field(None, description="Return type for functions")
+    parameter_types: list[str] = Field(
+        default_factory=list,
+        description="Parameter types for functions",
     )
-    base_classes: List[str] = Field(
-        default_factory=list, description="Base classes for class symbols"
+    base_classes: list[str] = Field(
+        default_factory=list,
+        description="Base classes for class symbols",
     )
 
     # Vector embedding for semantic search
-    embedding_vector: Optional[List[float]] = Field(
-        None, description="Vector representation for semantic search"
+    embedding_vector: list[float] | None = Field(
+        None,
+        description="Vector representation for semantic search",
     )
 
 
@@ -100,38 +113,46 @@ class ModelDocumentationNode(ModelGraphNodeBase):
 
     content: str = Field(..., description="Documentation text content")
     doc_type: str = Field(
-        ..., description="Type: module/class/function/inline/standalone"
+        ...,
+        description="Type: module/class/function/inline/standalone",
     )
     format_type: str = Field(
-        "markdown", description="Format: markdown/docstring/comment/rst"
+        "markdown",
+        description="Format: markdown/docstring/comment/rst",
     )
 
     # Location information
-    file_node_id: Optional[str] = Field(
-        None, description="ID of file containing this documentation"
+    file_node_id: str | None = Field(
+        None,
+        description="ID of file containing this documentation",
     )
-    line_start: Optional[int] = Field(None, description="Starting line number")
-    line_end: Optional[int] = Field(None, description="Ending line number")
+    line_start: int | None = Field(None, description="Starting line number")
+    line_end: int | None = Field(None, description="Ending line number")
 
     # References to symbols this documentation describes
-    documented_symbols: List[str] = Field(
-        default_factory=list, description="Symbol node IDs this doc describes"
+    documented_symbols: list[str] = Field(
+        default_factory=list,
+        description="Symbol node IDs this doc describes",
     )
 
     # Extracted metadata from documentation
-    tags: List[str] = Field(
-        default_factory=list, description="Tags extracted from documentation"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags extracted from documentation",
     )
-    examples: List[str] = Field(
-        default_factory=list, description="Code examples in documentation"
+    examples: list[str] = Field(
+        default_factory=list,
+        description="Code examples in documentation",
     )
 
     # Vector embedding for semantic search
-    embedding_vector: Optional[List[float]] = Field(
-        None, description="Vector representation for semantic search"
+    embedding_vector: list[float] | None = Field(
+        None,
+        description="Vector representation for semantic search",
     )
-    embedding_model: Optional[str] = Field(
-        None, description="Model used to generate embedding"
+    embedding_model: str | None = Field(
+        None,
+        description="Model used to generate embedding",
     )
 
 

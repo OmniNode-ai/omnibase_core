@@ -8,18 +8,19 @@ for modular architecture compliance.
 Author: OmniNode Team
 """
 
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.model.configuration.model_cache_settings import \
-    ModelCacheSettings
-from omnibase_core.model.service.model_service_configuration_single import \
-    ModelServiceConfiguration
+from omnibase_core.model.configuration.model_cache_settings import ModelCacheSettings
+from omnibase_core.model.service.model_service_configuration_single import (
+    ModelServiceConfiguration,
+)
 
 if TYPE_CHECKING:
-    from omnibase_core.model.service.model_service_registry_config import \
-        ModelServiceRegistryConfig
+    from omnibase_core.model.service.model_service_registry_config import (
+        ModelServiceRegistryConfig,
+    )
 
 
 class ModelRegistryConfig(BaseModel):
@@ -30,36 +31,47 @@ class ModelRegistryConfig(BaseModel):
         description="Registry mode (production, development, bootstrap, etc.)",
     )
     service_config: "ModelServiceRegistryConfig" = Field(
-        ..., description="Service registry configuration"
+        ...,
+        description="Service registry configuration",
     )
-    consul_endpoint: Optional[str] = Field(
-        None, description="Consul endpoint for service discovery"
+    consul_endpoint: str | None = Field(
+        None,
+        description="Consul endpoint for service discovery",
     )
-    kafka_brokers: List[str] = Field(
-        default_factory=list, description="Kafka broker endpoints"
+    kafka_brokers: list[str] = Field(
+        default_factory=list,
+        description="Kafka broker endpoints",
     )
-    redis_endpoint: Optional[str] = Field(
-        None, description="Redis endpoint for caching"
+    redis_endpoint: str | None = Field(
+        None,
+        description="Redis endpoint for caching",
     )
     enable_circuit_breaker: bool = Field(
-        True, description="Enable circuit breaker for service failures"
+        True,
+        description="Enable circuit breaker for service failures",
     )
     enable_health_checks: bool = Field(
-        True, description="Enable health checks for services"
+        True,
+        description="Enable health checks for services",
     )
     cache_ttl: int = Field(300, description="Cache TTL in seconds", ge=60, le=3600)
 
     # Tool registry configuration fields (contract-driven defaults)
     cache_enabled: bool = Field(True, description="Enable tool instance caching")
     validation_required: bool = Field(
-        True, description="Require tool validation on creation"
+        True,
+        description="Require tool validation on creation",
     )
     health_check_timeout_ms: int = Field(
-        1000, description="Health check timeout in milliseconds", ge=100, le=30000
+        1000,
+        description="Health check timeout in milliseconds",
+        ge=100,
+        le=30000,
     )
     tool_class: str = Field("", description="Tool class name override for testing")
-    tool_config: Dict[str, str] = Field(
-        default_factory=dict, description="Configuration passed to tool constructor"
+    tool_config: dict[str, str] = Field(
+        default_factory=dict,
+        description="Configuration passed to tool constructor",
     )
 
     @field_validator("mode")
@@ -69,8 +81,9 @@ class ModelRegistryConfig(BaseModel):
         if info.data:
             service_config = info.data.get("service_config")
             if service_config and not service_config.has_mode(v):
+                msg = f"Mode '{v}' not found in service_config.registry_modes"
                 raise ValueError(
-                    f"Mode '{v}' not found in service_config.registry_modes"
+                    msg,
                 )
         return v
 
@@ -78,7 +91,7 @@ class ModelRegistryConfig(BaseModel):
         """Get configuration value with default fallback (dict-like interface)."""
         return getattr(self, key, default)
 
-    def get_required_services_for_mode(self, mode: str) -> List[str]:
+    def get_required_services_for_mode(self, mode: str) -> list[str]:
         """Get list of required services for a specific mode."""
         mode_config = self.service_config.registry_modes.get(mode)
         if not mode_config:
@@ -86,18 +99,19 @@ class ModelRegistryConfig(BaseModel):
         return mode_config.required_services
 
     def get_service_config(
-        self, service_name: str
-    ) -> Optional[ModelServiceConfiguration]:
+        self,
+        service_name: str,
+    ) -> ModelServiceConfiguration | None:
         """Get configuration for a specific service."""
         return self.service_config.services.get(service_name)
 
-    def is_service_required(self, service_name: str, mode: str = None) -> bool:
+    def is_service_required(self, service_name: str, mode: str | None = None) -> bool:
         """Check if a service is required for a specific mode (defaults to current mode)."""
         target_mode = mode or self.mode
         required_services = self.get_required_services_for_mode(target_mode)
         return service_name in required_services
 
-    def get_current_mode_services(self) -> List[str]:
+    def get_current_mode_services(self) -> list[str]:
         """Get required services for the current mode."""
         return self.get_required_services_for_mode(self.mode)
 
@@ -120,7 +134,7 @@ class ModelRegistryConfig(BaseModel):
         """Check if this is a development/testing mode."""
         return self.mode in ["development", "testing", "bootstrap"]
 
-    def get_kafka_connection_strings(self) -> List[str]:
+    def get_kafka_connection_strings(self) -> list[str]:
         """Get formatted Kafka connection strings."""
         return self.kafka_brokers
 
@@ -144,7 +158,7 @@ class ModelRegistryConfig(BaseModel):
             ttl_seconds=self.cache_ttl,
         )
 
-    def get_circuit_breaker_settings(self) -> Dict[str, bool]:
+    def get_circuit_breaker_settings(self) -> dict[str, bool]:
         """Get circuit breaker configuration."""
         return {
             "enabled": self.enable_circuit_breaker,
@@ -167,11 +181,11 @@ class ModelRegistryConfig(BaseModel):
             return True
         return False
 
-    def get_service_names(self) -> List[str]:
+    def get_service_names(self) -> list[str]:
         """Get all configured service names."""
         return self.service_config.get_service_names()
 
-    def get_critical_services(self) -> List[str]:
+    def get_critical_services(self) -> list[str]:
         """Get critical services for the current mode."""
         return [
             name

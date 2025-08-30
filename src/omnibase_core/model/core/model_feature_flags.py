@@ -5,7 +5,7 @@ Type-safe feature flag configuration model for enabling/disabling
 features across different environments and contexts.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,19 +18,22 @@ class ModelFeatureFlags(BaseModel):
     across different environments and contexts.
     """
 
-    flags: Dict[str, bool] = Field(
-        default_factory=dict, description="Feature flag states (name -> enabled)"
+    flags: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Feature flag states (name -> enabled)",
     )
 
-    flag_metadata: Dict[str, Dict[str, Any]] = Field(
-        default_factory=dict, description="Metadata for each feature flag"
+    flag_metadata: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Metadata for each feature flag",
     )
 
     default_enabled: bool = Field(
-        default=False, description="Default state for undefined flags"
+        default=False,
+        description="Default state for undefined flags",
     )
 
-    def is_enabled(self, flag: str, default: Optional[bool] = None) -> bool:
+    def is_enabled(self, flag: str, default: bool | None = None) -> bool:
         """
         Check if a feature flag is enabled.
 
@@ -45,13 +48,13 @@ class ModelFeatureFlags(BaseModel):
             return self.flags[flag]
         return default if default is not None else self.default_enabled
 
-    def enable(self, flag: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def enable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
         """Enable a feature flag with optional metadata."""
         self.flags[flag] = True
         if metadata:
             self.flag_metadata[flag] = metadata
 
-    def disable(self, flag: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def disable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
         """Disable a feature flag with optional metadata."""
         self.flags[flag] = False
         if metadata:
@@ -65,7 +68,10 @@ class ModelFeatureFlags(BaseModel):
         return new_state
 
     def set_flag(
-        self, flag: str, enabled: bool, metadata: Optional[Dict[str, Any]] = None
+        self,
+        flag: str,
+        enabled: bool,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Set a feature flag to a specific state."""
         self.flags[flag] = enabled
@@ -79,23 +85,23 @@ class ModelFeatureFlags(BaseModel):
         self.flag_metadata.pop(flag, None)
         return existed
 
-    def get_enabled_flags(self) -> List[str]:
+    def get_enabled_flags(self) -> list[str]:
         """Get list of all enabled feature flags."""
         return [flag for flag, enabled in self.flags.items() if enabled]
 
-    def get_disabled_flags(self) -> List[str]:
+    def get_disabled_flags(self) -> list[str]:
         """Get list of all disabled feature flags."""
         return [flag for flag, enabled in self.flags.items() if not enabled]
 
-    def get_all_flags(self) -> List[str]:
+    def get_all_flags(self) -> list[str]:
         """Get list of all defined feature flags."""
         return list(self.flags.keys())
 
-    def get_flag_metadata(self, flag: str) -> Optional[Dict[str, Any]]:
+    def get_flag_metadata(self, flag: str) -> dict[str, Any] | None:
         """Get metadata for a specific flag."""
         return self.flag_metadata.get(flag)
 
-    def set_flag_metadata(self, flag: str, metadata: Dict[str, Any]) -> None:
+    def set_flag_metadata(self, flag: str, metadata: dict[str, Any]) -> None:
         """Set metadata for a specific flag."""
         self.flag_metadata[flag] = metadata
 
@@ -136,7 +142,7 @@ class ModelFeatureFlags(BaseModel):
             if override or flag not in self.flag_metadata:
                 self.flag_metadata[flag] = metadata
 
-    def to_environment_dict(self, prefix: str = "ONEX_FEATURE_") -> Dict[str, str]:
+    def to_environment_dict(self, prefix: str = "ONEX_FEATURE_") -> dict[str, str]:
         """Convert to environment variables dictionary."""
         env_dict = {}
         for flag, enabled in self.flags.items():
@@ -144,7 +150,7 @@ class ModelFeatureFlags(BaseModel):
             env_dict[env_var_name] = str(enabled).lower()
         return env_dict
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary of feature flag state."""
         return {
             "total_flags": self.get_flag_count(),
@@ -194,7 +200,9 @@ class ModelFeatureFlags(BaseModel):
 
     @classmethod
     def from_environment_dict(
-        cls, env_dict: Dict[str, str], prefix: str = "ONEX_FEATURE_"
+        cls,
+        env_dict: dict[str, str],
+        prefix: str = "ONEX_FEATURE_",
     ) -> "ModelFeatureFlags":
         """Create feature flags from environment variables."""
         flags = cls()

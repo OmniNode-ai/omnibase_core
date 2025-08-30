@@ -5,12 +5,13 @@ Comprehensive validator for node actions with security and trust scoring.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from omnibase_core.model.core.action_payload_types import SpecificActionPayload
 from omnibase_core.model.core.model_action_metadata import ModelActionMetadata
-from omnibase_core.model.core.model_action_validation_result import \
-    ModelActionValidationResult
+from omnibase_core.model.core.model_action_validation_result import (
+    ModelActionValidationResult,
+)
 from omnibase_core.model.core.model_node_action import ModelNodeAction
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
 
@@ -25,7 +26,7 @@ class ModelNodeActionValidator:
     def __init__(
         self,
         node_name: str,
-        supported_actions: List[ModelNodeActionType],
+        supported_actions: list[ModelNodeActionType],
         validation_cache_size: int = 100,
     ):
         """
@@ -38,17 +39,17 @@ class ModelNodeActionValidator:
         """
         self.node_name = node_name
         self.supported_actions = supported_actions
-        self.validation_history: List[ModelActionValidationResult] = []
+        self.validation_history: list[ModelActionValidationResult] = []
         self.validation_cache_size = validation_cache_size
-        self._validation_cache: Dict[str, ModelActionValidationResult] = {}
-        self._cache_keys: List[str] = []
+        self._validation_cache: dict[str, ModelActionValidationResult] = {}
+        self._cache_keys: list[str] = []
 
     def validate_action(
         self,
         action: ModelNodeAction,
-        payload: Optional[SpecificActionPayload] = None,
-        metadata: Optional[ModelActionMetadata] = None,
-        context: Optional[Dict[str, Any]] = None,
+        payload: SpecificActionPayload | None = None,
+        metadata: ModelActionMetadata | None = None,
+        context: dict[str, Any] | None = None,
         use_cache: bool = True,
     ) -> ModelActionValidationResult:
         """
@@ -86,7 +87,9 @@ class ModelNodeActionValidator:
         return f"{action.action_name}:{action.action_type}:{hash(str(action.dict()))}"
 
     def _cache_validation_result(
-        self, cache_key: str, result: ModelActionValidationResult
+        self,
+        cache_key: str,
+        result: ModelActionValidationResult,
     ) -> None:
         """Cache validation result with size limit."""
         if len(self._cache_keys) >= self.validation_cache_size:
@@ -104,9 +107,9 @@ class ModelNodeActionValidator:
     def _perform_validation(
         self,
         action: ModelNodeAction,
-        payload: Optional[SpecificActionPayload] = None,
-        metadata: Optional[ModelActionMetadata] = None,
-        context: Optional[Dict[str, Any]] = None,
+        payload: SpecificActionPayload | None = None,
+        metadata: ModelActionMetadata | None = None,
+        context: dict[str, Any] | None = None,
     ) -> ModelActionValidationResult:
         """Perform the actual validation logic."""
         result = ModelActionValidationResult(is_valid=True)
@@ -138,20 +141,24 @@ class ModelNodeActionValidator:
         return result
 
     def _validate_action_type(
-        self, action: ModelNodeAction, result: ModelActionValidationResult
+        self,
+        action: ModelNodeAction,
+        result: ModelActionValidationResult,
     ) -> None:
         """Validate that the action type is supported by this node."""
         if action.action_type not in self.supported_actions:
             result.validation_errors.append(
                 f"Action type '{action.action_type.name}' not supported by {self.node_name} node. "
-                f"Supported: {[a.name for a in self.supported_actions]}"
+                f"Supported: {[a.name for a in self.supported_actions]}",
             )
             result.security_checks["action_type_supported"] = False
         else:
             result.security_checks["action_type_supported"] = True
 
     def _validate_action_structure(
-        self, action: ModelNodeAction, result: ModelActionValidationResult
+        self,
+        action: ModelNodeAction,
+        result: ModelActionValidationResult,
     ) -> None:
         """Validate the structure and content of the action."""
         # Check required fields
@@ -169,13 +176,13 @@ class ModelNodeActionValidator:
             action.estimated_duration_ms and action.estimated_duration_ms > 600000
         ):  # 10 minutes
             result.validation_warnings.append(
-                f"Action duration estimate ({action.estimated_duration_ms}ms) is very high"
+                f"Action duration estimate ({action.estimated_duration_ms}ms) is very high",
             )
 
         # Validate destructive actions have proper flags
         if action.is_destructive and not action.requires_confirmation:
             result.validation_warnings.append(
-                "Destructive actions should typically require confirmation"
+                "Destructive actions should typically require confirmation",
             )
 
         result.security_checks["structure_valid"] = len(result.validation_errors) == 0
@@ -190,7 +197,7 @@ class ModelNodeActionValidator:
         if payload.action_type != action.action_type:
             result.validation_errors.append(
                 f"Payload action type '{payload.action_type.name}' does not match "
-                f"action type '{action.action_type.name}'"
+                f"action type '{action.action_type.name}'",
             )
             result.security_checks["payload_type_match"] = False
         else:
@@ -209,7 +216,7 @@ class ModelNodeActionValidator:
         # Check trust score bounds
         if not metadata.validate_trust_score():
             result.validation_errors.append(
-                f"Invalid trust score: {metadata.trust_score} (must be 0.0-1.0)"
+                f"Invalid trust score: {metadata.trust_score} (must be 0.0-1.0)",
             )
             result.security_checks["trust_score_valid"] = False
         else:
@@ -226,7 +233,7 @@ class ModelNodeActionValidator:
         if metadata.action_type != action.action_type:
             result.validation_errors.append(
                 f"Metadata action type '{metadata.action_type.name}' does not match "
-                f"action type '{action.action_type.name}'"
+                f"action type '{action.action_type.name}'",
             )
             result.security_checks["metadata_consistency"] = False
         else:
@@ -235,9 +242,9 @@ class ModelNodeActionValidator:
     def _validate_security(
         self,
         action: ModelNodeAction,
-        payload: Optional[SpecificActionPayload],
-        metadata: Optional[ModelActionMetadata],
-        context: Optional[Dict[str, Any]],
+        payload: SpecificActionPayload | None,
+        metadata: ModelActionMetadata | None,
+        context: dict[str, Any] | None,
         result: ModelActionValidationResult,
     ) -> None:
         """Perform security validation checks."""
@@ -248,19 +255,19 @@ class ModelNodeActionValidator:
         for pattern in suspicious_patterns:
             if pattern in action_content:
                 result.validation_warnings.append(
-                    f"Potentially suspicious pattern detected: {pattern}"
+                    f"Potentially suspicious pattern detected: {pattern}",
                 )
 
         # Validate destructive action handling
         if action.is_destructive:
             if not action.requires_confirmation:
                 result.recommendations.append(
-                    "Consider requiring confirmation for destructive actions"
+                    "Consider requiring confirmation for destructive actions",
                 )
 
             if metadata and metadata.trust_score < 0.8:
                 result.validation_warnings.append(
-                    f"Destructive action with low trust score: {metadata.trust_score}"
+                    f"Destructive action with low trust score: {metadata.trust_score}",
                 )
 
         result.security_checks["security_validated"] = True
@@ -268,9 +275,9 @@ class ModelNodeActionValidator:
     def _calculate_trust_score(
         self,
         action: ModelNodeAction,
-        payload: Optional[SpecificActionPayload],
-        metadata: Optional[ModelActionMetadata],
-        context: Optional[Dict[str, Any]],
+        payload: SpecificActionPayload | None,
+        metadata: ModelActionMetadata | None,
+        context: dict[str, Any] | None,
         result: ModelActionValidationResult,
     ) -> None:
         """Calculate a trust score for the action based on various factors."""
@@ -296,8 +303,10 @@ class ModelNodeActionValidator:
         result.trust_score = max(0.0, min(1.0, base_score))
 
     def can_execute_action(
-        self, action: ModelNodeAction, minimum_trust_score: float = 0.5
-    ) -> Tuple[bool, List[str]]:
+        self,
+        action: ModelNodeAction,
+        minimum_trust_score: float = 0.5,
+    ) -> tuple[bool, list[str]]:
         """
         Check if an action can be executed based on validation.
 
@@ -315,12 +324,12 @@ class ModelNodeActionValidator:
 
         if validation_result.trust_score < minimum_trust_score:
             return False, [
-                f"Trust score {validation_result.trust_score} below minimum {minimum_trust_score}"
+                f"Trust score {validation_result.trust_score} below minimum {minimum_trust_score}",
             ]
 
         return True, []
 
-    def get_validation_statistics(self) -> Dict[str, Any]:
+    def get_validation_statistics(self) -> dict[str, Any]:
         """Get statistics about validation history."""
         if not self.validation_history:
             return {"total_validations": 0}
@@ -343,7 +352,7 @@ class ModelNodeActionValidator:
 
 def create_node_validator(
     node_name: str,
-    supported_actions: List[ModelNodeActionType],
+    supported_actions: list[ModelNodeActionType],
     validation_cache_size: int = 100,
 ) -> ModelNodeActionValidator:
     """

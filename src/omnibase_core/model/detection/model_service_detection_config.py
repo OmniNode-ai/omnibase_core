@@ -7,12 +7,9 @@ Extracted from model_service_configuration.py for modular architecture complianc
 Author: OmniNode Team
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.endpoints.model_service_endpoint import \
-    ModelServiceEndpoint
+from omnibase_core.model.endpoints.model_service_endpoint import ModelServiceEndpoint
 from omnibase_core.model.health.model_health_check import ModelHealthCheck
 from omnibase_core.model.service.model_kafka_broker import ModelKafkaBroker
 
@@ -20,21 +17,24 @@ from omnibase_core.model.service.model_kafka_broker import ModelKafkaBroker
 class ModelServiceDetectionConfig(BaseModel):
     """Configuration for service detection and health checking."""
 
-    endpoints: List[ModelServiceEndpoint] = Field(
-        ..., description="List of service endpoints for detection"
+    endpoints: list[ModelServiceEndpoint] = Field(
+        ...,
+        description="List of service endpoints for detection",
     )
-    health_check: Optional[ModelHealthCheck] = Field(
-        None, description="Strongly typed health check configuration"
+    health_check: ModelHealthCheck | None = Field(
+        None,
+        description="Strongly typed health check configuration",
     )
     timeout: int = Field(5, description="Connection timeout in seconds", ge=1, le=300)
-    admin_timeout: Optional[int] = Field(
+    admin_timeout: int | None = Field(
         None,
         description="Admin operation timeout in seconds (for Kafka, etc.)",
         ge=1,
         le=300,
     )
-    brokers: Optional[List[ModelKafkaBroker]] = Field(
-        None, description="Kafka broker configurations (for event_bus services)"
+    brokers: list[ModelKafkaBroker] | None = Field(
+        None,
+        description="Kafka broker configurations (for event_bus services)",
     )
 
     def get_effective_timeout(self) -> int:

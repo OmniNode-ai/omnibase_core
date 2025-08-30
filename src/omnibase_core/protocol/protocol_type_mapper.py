@@ -5,7 +5,7 @@ Defines the interface for mapping JSON Schema types to Python type strings.
 Used for contract generation and model creation.
 """
 
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from omnibase_core.model.core.model_schema import ModelSchema
 
@@ -50,7 +50,7 @@ class ProtocolTypeMapper(Protocol):
         """
         ...
 
-    def generate_enum_name_from_values(self, enum_values: List[str]) -> str:
+    def generate_enum_name_from_values(self, enum_values: list[str]) -> str:
         """Generate enum class name from enum values.
 
         Args:
@@ -61,7 +61,7 @@ class ProtocolTypeMapper(Protocol):
         """
         ...
 
-    def get_import_for_type(self, type_string: str) -> Optional[str]:
+    def get_import_for_type(self, type_string: str) -> str | None:
         """Get the import statement needed for a type string.
 
         Args:

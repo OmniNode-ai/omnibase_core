@@ -13,19 +13,18 @@
 import hashlib
 import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import (BaseModel, ConfigDict, Field, field_validator,
-                      model_validator)
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.enums.enum_intelligence_priority_level import \
-    EnumIntelligencePriorityLevel
+from omnibase_core.enums.enum_intelligence_priority_level import (
+    EnumIntelligencePriorityLevel,
+)
 from omnibase_core.exceptions import OnexError
 
-from .model_event_audit_trail import (ModelEventAuditTrail,
-                                      ModelEventSecurityContext)
+from .model_event_audit_trail import ModelEventAuditTrail, ModelEventSecurityContext
 from .model_secure_event_payload import ModelSecureEventPayload
 
 
@@ -51,11 +50,13 @@ class ModelSecureEventEnvelope(BaseModel):
 
     # Core envelope metadata
     envelope_id: UUID = Field(
-        default_factory=uuid4, description="Unique envelope identifier"
+        default_factory=uuid4,
+        description="Unique envelope identifier",
     )
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")
-    correlation_id: Optional[UUID] = Field(
-        None, description="Request correlation identifier"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Request correlation identifier",
     )
 
     # Event classification
@@ -68,47 +69,56 @@ class ModelSecureEventEnvelope(BaseModel):
 
     # Timing and lifecycle
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Event creation time"
+        default_factory=datetime.utcnow,
+        description="Event creation time",
     )
-    expires_at: Optional[datetime] = Field(None, description="Event expiration time")
-    retry_until: Optional[datetime] = Field(None, description="Retry deadline")
+    expires_at: datetime | None = Field(None, description="Event expiration time")
+    retry_until: datetime | None = Field(None, description="Retry deadline")
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     current_retry: int = Field(default=0, description="Current retry attempt")
 
     # Source and routing information
     source_node_id: str = Field(..., description="Source node identifier")
-    target_node_ids: Optional[list[str]] = Field(
-        None, description="Target node identifiers"
+    target_node_ids: list[str] | None = Field(
+        None,
+        description="Target node identifiers",
     )
-    routing_metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Routing metadata"
+    routing_metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Routing metadata",
     )
 
     # Secure payload
     payload: ModelSecureEventPayload = Field(
-        ..., description="Secure validated payload"
+        ...,
+        description="Secure validated payload",
     )
 
     # Audit and security
     audit_trail: ModelEventAuditTrail = Field(
-        ..., description="Comprehensive audit trail"
+        ...,
+        description="Comprehensive audit trail",
     )
     integrity_hash: str = Field(..., description="Payload integrity hash")
     security_verified: bool = Field(
-        default=False, description="Security validation status"
+        default=False,
+        description="Security validation status",
     )
 
     # Error handling and recovery
-    processing_errors: list[Dict[str, Any]] = Field(
-        default_factory=list, description="Processing errors encountered"
+    processing_errors: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Processing errors encountered",
     )
-    recovery_state: Dict[str, Any] = Field(
-        default_factory=dict, description="Recovery state information"
+    recovery_state: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Recovery state information",
     )
 
     # Performance tracking
-    performance_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Performance metrics"
+    performance_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Performance metrics",
     )
 
     @field_validator("event_type")
@@ -127,8 +137,9 @@ class ModelSecureEventEnvelope(BaseModel):
             OnexError: If event type format is invalid
         """
         if not isinstance(v, str) or len(v) < 3 or len(v) > 128:
+            msg = f"Invalid event type format: {v}"
             raise OnexError(
-                f"Invalid event type format: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_event_type",
@@ -137,8 +148,9 @@ class ModelSecureEventEnvelope(BaseModel):
         # Validate namespace.category.action format
         parts = v.split(".")
         if len(parts) < 2 or len(parts) > 4:
+            msg = f"Event type must follow namespace.category[.subcategory].action format: {v}"
             raise OnexError(
-                f"Event type must follow namespace.category[.subcategory].action format: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_event_type",
@@ -148,8 +160,9 @@ class ModelSecureEventEnvelope(BaseModel):
         import re
 
         if not re.match(r"^[a-zA-Z0-9._-]+$", v):
+            msg = f"Event type contains invalid characters: {v}"
             raise OnexError(
-                f"Event type contains invalid characters: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_event_type",
@@ -173,8 +186,9 @@ class ModelSecureEventEnvelope(BaseModel):
             OnexError: If source node ID is invalid
         """
         if not isinstance(v, str) or len(v) < 1 or len(v) > 128:
+            msg = f"Invalid source node ID: {v}"
             raise OnexError(
-                f"Invalid source node ID: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_source_node_id",
@@ -187,7 +201,7 @@ class ModelSecureEventEnvelope(BaseModel):
 
     @field_validator("target_node_ids")
     @classmethod
-    def validate_target_node_ids(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+    def validate_target_node_ids(cls, v: list[str] | None) -> list[str] | None:
         """
         Validate target node identifiers.
 
@@ -204,8 +218,9 @@ class ModelSecureEventEnvelope(BaseModel):
             return v
 
         if not isinstance(v, list) or len(v) == 0 or len(v) > 100:
+            msg = f"Invalid target node IDs list: {len(v) if isinstance(v, list) else 'not a list'}"
             raise OnexError(
-                f"Invalid target node IDs list: {len(v) if isinstance(v, list) else 'not a list'}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_target_node_ids",
@@ -213,8 +228,9 @@ class ModelSecureEventEnvelope(BaseModel):
 
         for node_id in v:
             if not isinstance(node_id, str) or len(node_id) < 1 or len(node_id) > 128:
+                msg = f"Invalid target node ID: {node_id}"
                 raise OnexError(
-                    f"Invalid target node ID: {node_id}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventEnvelope",
                     operation="validate_target_node_ids",
@@ -224,7 +240,7 @@ class ModelSecureEventEnvelope(BaseModel):
 
     @field_validator("expires_at", "retry_until")
     @classmethod
-    def validate_future_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_future_datetime(cls, v: datetime | None) -> datetime | None:
         """
         Validate that datetime is in the future.
 
@@ -238,8 +254,9 @@ class ModelSecureEventEnvelope(BaseModel):
             OnexError: If datetime is in the past
         """
         if v is not None and v <= datetime.utcnow():
+            msg = f"Datetime must be in the future: {v}"
             raise OnexError(
-                f"Datetime must be in the future: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_future_datetime",
@@ -260,8 +277,9 @@ class ModelSecureEventEnvelope(BaseModel):
         """
         # Ensure source node IDs match between envelope and payload
         if self.source_node_id != self.payload.source_node_id:
+            msg = f"Source node ID mismatch: envelope={self.source_node_id}, payload={self.payload.source_node_id}"
             raise OnexError(
-                f"Source node ID mismatch: envelope={self.source_node_id}, payload={self.payload.source_node_id}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_envelope_integrity",
@@ -270,8 +288,9 @@ class ModelSecureEventEnvelope(BaseModel):
         # Ensure correlation IDs match if both are present
         if self.correlation_id and self.payload.correlation_id:
             if self.correlation_id != self.payload.correlation_id:
+                msg = f"Correlation ID mismatch: envelope={self.correlation_id}, payload={self.payload.correlation_id}"
                 raise OnexError(
-                    f"Correlation ID mismatch: envelope={self.correlation_id}, payload={self.payload.correlation_id}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventEnvelope",
                     operation="validate_envelope_integrity",
@@ -279,8 +298,9 @@ class ModelSecureEventEnvelope(BaseModel):
 
         # Validate retry logic
         if self.current_retry > self.max_retries:
+            msg = f"Current retry {self.current_retry} exceeds max retries {self.max_retries}"
             raise OnexError(
-                f"Current retry {self.current_retry} exceeds max retries {self.max_retries}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_envelope_integrity",
@@ -288,8 +308,9 @@ class ModelSecureEventEnvelope(BaseModel):
 
         # Ensure audit trail has matching event ID
         if self.audit_trail.event_id != self.event_id:
+            msg = f"Audit trail event ID mismatch: audit={self.audit_trail.event_id}, envelope={self.event_id}"
             raise OnexError(
-                f"Audit trail event ID mismatch: audit={self.audit_trail.event_id}, envelope={self.event_id}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventEnvelope",
                 operation="validate_envelope_integrity",
@@ -302,10 +323,10 @@ class ModelSecureEventEnvelope(BaseModel):
         cls,
         event_type: str,
         source_node_id: str,
-        payload_data: Dict[str, Any],
-        correlation_id: Optional[UUID] = None,
+        payload_data: dict[str, Any],
+        correlation_id: UUID | None = None,
         priority: EnumIntelligencePriorityLevel = EnumIntelligencePriorityLevel.HIGH,
-        target_node_ids: Optional[list[str]] = None,
+        target_node_ids: list[str] | None = None,
         ttl_hours: int = 24,
     ) -> "ModelSecureEventEnvelope":
         """
@@ -360,10 +381,10 @@ class ModelSecureEventEnvelope(BaseModel):
             # Set expiration
             expires_at = datetime.utcnow() + timedelta(hours=ttl_hours)
             retry_until = datetime.utcnow() + timedelta(
-                hours=min(ttl_hours, 6)
+                hours=min(ttl_hours, 6),
             )  # Max 6 hours retry window
 
-            envelope = cls(
+            return cls(
                 event_id=event_id,
                 correlation_id=correlation_id,
                 event_type=event_type,
@@ -378,11 +399,10 @@ class ModelSecureEventEnvelope(BaseModel):
                 security_verified=True,
             )
 
-            return envelope
-
         except Exception as e:
+            msg = f"Failed to create secure envelope: {e}"
             raise OnexError(
-                f"Failed to create secure envelope: {e}",
+                msg,
                 error_code=CoreErrorCode.OPERATION_FAILED,
                 component="ModelSecureEventEnvelope",
                 operation="create_secure_envelope",
@@ -486,7 +506,11 @@ class ModelSecureEventEnvelope(BaseModel):
 
         self.processing_errors.append(error_entry)
         self.audit_trail.add_error(
-            error_type, error_message, component, operation, recoverable
+            error_type,
+            error_message,
+            component,
+            operation,
+            recoverable,
         )
 
     def update_performance_metric(self, metric_name: str, value: float) -> None:
@@ -500,7 +524,7 @@ class ModelSecureEventEnvelope(BaseModel):
         self.performance_metrics[metric_name] = value
         self.audit_trail.performance_metrics[metric_name] = value
 
-    def get_processing_summary(self) -> Dict[str, Any]:
+    def get_processing_summary(self) -> dict[str, Any]:
         """
         Get comprehensive processing summary.
 
@@ -524,7 +548,7 @@ class ModelSecureEventEnvelope(BaseModel):
             "performance_metrics": dict(self.performance_metrics),
         }
 
-    def to_secure_dict(self) -> Dict[str, Any]:
+    def to_secure_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary with sensitive data removed.
 

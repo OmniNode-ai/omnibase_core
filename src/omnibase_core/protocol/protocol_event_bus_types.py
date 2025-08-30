@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -11,14 +12,15 @@ class EventBusCredentialsModel(BaseModel):
     Supports token, username/password, and TLS certs for future event bus support.
     """
 
-    token: Optional[str] = Field(None, description="Bearer token or NATS token")
-    username: Optional[str] = Field(None, description="Username for authentication")
-    password: Optional[str] = Field(None, description="Password for authentication")
-    cert: Optional[str] = Field(None, description="PEM-encoded client certificate")
-    key: Optional[str] = Field(None, description="PEM-encoded client private key")
-    ca: Optional[str] = Field(None, description="PEM-encoded CA certificate")
-    extra: Optional[Dict[str, Any]] = Field(
-        None, description="Additional credentials or options"
+    token: str | None = Field(None, description="Bearer token or NATS token")
+    username: str | None = Field(None, description="Username for authentication")
+    password: str | None = Field(None, description="Password for authentication")
+    cert: str | None = Field(None, description="PEM-encoded client certificate")
+    key: str | None = Field(None, description="PEM-encoded client private key")
+    ca: str | None = Field(None, description="PEM-encoded CA certificate")
+    extra: dict[str, Any] | None = Field(
+        None,
+        description="Additional credentials or options",
     )
 
 
@@ -35,7 +37,9 @@ class ProtocolEventBus(Protocol):
     """
 
     def __init__(
-        self, credentials: Optional[EventBusCredentialsModel] = None, **kwargs
+        self,
+        credentials: EventBusCredentialsModel | None = None,
+        **kwargs,
     ): ...
 
     def publish(self, event: OnexEvent) -> None: ...
@@ -49,7 +53,8 @@ class ProtocolEventBus(Protocol):
     def unsubscribe(self, callback: Callable[[OnexEvent], None]) -> None: ...
 
     async def unsubscribe_async(
-        self, callback: Callable[[OnexEvent], None]
+        self,
+        callback: Callable[[OnexEvent], None],
     ) -> None: ...
 
     def clear(self) -> None: ...

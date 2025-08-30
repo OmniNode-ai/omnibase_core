@@ -5,18 +5,16 @@ Extensible security configuration model that replaces hardcoded
 security enums with flexible, nuanced security settings.
 """
 
-from typing import Dict, List
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.security.model_custom_security_settings import \
-    ModelCustomSecuritySettings
-from omnibase_core.model.security.model_network_restrictions import \
-    ModelNetworkRestrictions
-from omnibase_core.model.security.model_password_policy import \
-    ModelPasswordPolicy
-from omnibase_core.model.security.model_session_policy import \
-    ModelSessionPolicy
+from omnibase_core.model.security.model_custom_security_settings import (
+    ModelCustomSecuritySettings,
+)
+from omnibase_core.model.security.model_network_restrictions import (
+    ModelNetworkRestrictions,
+)
+from omnibase_core.model.security.model_password_policy import ModelPasswordPolicy
+from omnibase_core.model.security.model_session_policy import ModelSessionPolicy
 
 
 class ModelSecurityLevel(BaseModel):
@@ -34,7 +32,8 @@ class ModelSecurityLevel(BaseModel):
     )
 
     display_name: str = Field(
-        default="Standard Security", description="Human-readable security level name"
+        default="Standard Security",
+        description="Human-readable security level name",
     )
 
     security_score: float = Field(
@@ -45,41 +44,48 @@ class ModelSecurityLevel(BaseModel):
     )
 
     encryption_required: bool = Field(
-        default=True, description="Whether encryption is required"
+        default=True,
+        description="Whether encryption is required",
     )
 
     authentication_required: bool = Field(
-        default=True, description="Whether authentication is required"
+        default=True,
+        description="Whether authentication is required",
     )
 
     authorization_required: bool = Field(
-        default=True, description="Whether authorization is required"
+        default=True,
+        description="Whether authorization is required",
     )
 
     audit_logging_required: bool = Field(
-        default=True, description="Whether audit logging is required"
+        default=True,
+        description="Whether audit logging is required",
     )
 
     input_validation_strict: bool = Field(
-        default=True, description="Whether strict input validation is required"
+        default=True,
+        description="Whether strict input validation is required",
     )
 
     rate_limiting_enabled: bool = Field(
-        default=True, description="Whether rate limiting is enabled"
+        default=True,
+        description="Whether rate limiting is enabled",
     )
 
-    allowed_protocols: List[str] = Field(
+    allowed_protocols: list[str] = Field(
         default_factory=lambda: ["https", "tls"],
         description="List of allowed communication protocols",
     )
 
-    blocked_protocols: List[str] = Field(
+    blocked_protocols: list[str] = Field(
         default_factory=lambda: ["http", "ftp", "telnet"],
         description="List of blocked communication protocols",
     )
 
     minimum_tls_version: str = Field(
-        default="1.2", description="Minimum TLS version required"
+        default="1.2",
+        description="Minimum TLS version required",
     )
 
     password_policy: ModelPasswordPolicy = Field(
@@ -97,11 +103,12 @@ class ModelSecurityLevel(BaseModel):
         description="Network access restrictions",
     )
 
-    compliance_requirements: List[str] = Field(
-        default_factory=list, description="Compliance standards that must be met"
+    compliance_requirements: list[str] = Field(
+        default_factory=list,
+        description="Compliance standards that must be met",
     )
 
-    security_headers: Dict[str, str] = Field(
+    security_headers: dict[str, str] = Field(
         default_factory=lambda: {
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
@@ -181,11 +188,11 @@ class ModelSecurityLevel(BaseModel):
         """Get a custom security setting."""
         return self.custom_security_settings.get_setting(key, default)
 
-    def meets_compliance(self, required_standards: List[str]) -> bool:
+    def meets_compliance(self, required_standards: list[str]) -> bool:
         """Check if this security level meets required compliance standards."""
         return all(std in self.compliance_requirements for std in required_standards)
 
-    def to_environment_dict(self) -> Dict[str, str]:
+    def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dictionary."""
         return {
             "ONEX_SECURITY_LEVEL": self.level_name,

@@ -6,7 +6,6 @@ Strongly-typed model for failure surface calculations in RSD algorithm.
 """
 
 from datetime import datetime
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -21,26 +20,30 @@ class ModelFailureSurface(BaseModel):
 
     ticket_id: str = Field(description="Ticket ID for failure surface calculation")
 
-    validator_dependencies: List[str] = Field(
+    validator_dependencies: list[str] = Field(
         description="List of validator components that depend on this ticket",
         default_factory=list,
     )
 
-    replay_log_references: List[str] = Field(
+    replay_log_references: list[str] = Field(
         description="List of replay logs that reference this ticket",
         default_factory=list,
     )
 
-    test_suite_impacts: List[str] = Field(
-        description="List of test suites impacted by this ticket", default_factory=list
+    test_suite_impacts: list[str] = Field(
+        description="List of test suites impacted by this ticket",
+        default_factory=list,
     )
 
     calculated_score: float = Field(
-        description="Calculated failure surface score (0.0-1.0)", ge=0.0, le=1.0
+        description="Calculated failure surface score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     last_calculated: datetime = Field(
-        description="When the score was last calculated", default_factory=datetime.now
+        description="When the score was last calculated",
+        default_factory=datetime.now,
     )
 
     class Config:

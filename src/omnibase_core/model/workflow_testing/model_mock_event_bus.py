@@ -7,7 +7,6 @@ to replace Dict[str, Any] usage with proper type safety.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
@@ -22,10 +21,12 @@ class ModelMockEventBusConfig(BaseModel):
         description="Deterministic responses for different methods",
     )
     failure_injection: dict[str, bool] = Field(
-        default_factory=dict, description="Failure injection configuration"
+        default_factory=dict,
+        description="Failure injection configuration",
     )
     response_delays: dict[str, float] = Field(
-        default_factory=dict, description="Response delay configuration in seconds"
+        default_factory=dict,
+        description="Response delay configuration in seconds",
     )
 
 
@@ -49,8 +50,9 @@ class ModelEmittedLog(BaseModel):
     correlation_id: UUID = Field(description="Correlation ID for tracing")
     timestamp: datetime = Field(description="When the log was emitted")
     sequence_number: int = Field(description="Log sequence number")
-    additional_data: Optional[dict] = Field(
-        default=None, description="Additional log data"
+    additional_data: dict | None = Field(
+        default=None,
+        description="Additional log data",
     )
 
 
@@ -81,10 +83,11 @@ class ModelMockState(BaseModel):
     event_sequence: int = Field(description="Current event sequence number")
     log_sequence: int = Field(description="Current log sequence number")
     failure_injection_enabled: bool = Field(
-        description="Whether failure injection is enabled"
+        description="Whether failure injection is enabled",
     )
-    failure_injection_type: Optional[str] = Field(
-        default=None, description="Type of failure injection active"
+    failure_injection_type: str | None = Field(
+        default=None,
+        description="Type of failure injection active",
     )
     emitted_events_count: int = Field(description="Count of emitted events")
     emitted_logs_count: int = Field(description="Count of emitted logs")

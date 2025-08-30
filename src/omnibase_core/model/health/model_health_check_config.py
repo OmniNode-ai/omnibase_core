@@ -5,8 +5,6 @@ Health check configuration model for monitoring node health in a load
 balancing system with configurable intervals, timeouts, and failure handling.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from .model_health_check_metadata import ModelHealthCheckMetadata
@@ -30,7 +28,10 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     timeout_seconds: int = Field(
-        default=5, description="Health check timeout in seconds", ge=1, le=60
+        default=5,
+        description="Health check timeout in seconds",
+        ge=1,
+        le=60,
     )
 
     healthy_threshold: int = Field(
@@ -48,7 +49,8 @@ class ModelHealthCheckConfig(BaseModel):
     )
 
     check_path: str = Field(
-        default="/health", description="HTTP path for health checks"
+        default="/health",
+        description="HTTP path for health checks",
     )
 
     check_method: str = Field(
@@ -57,37 +59,44 @@ class ModelHealthCheckConfig(BaseModel):
         pattern="^(GET|POST|HEAD|OPTIONS)$",
     )
 
-    expected_status_codes: List[int] = Field(
+    expected_status_codes: list[int] = Field(
         default_factory=lambda: [200],
         description="HTTP status codes considered healthy",
     )
 
-    expected_response_body: Optional[str] = Field(
-        None, description="Expected response body content (substring match)"
+    expected_response_body: str | None = Field(
+        None,
+        description="Expected response body content (substring match)",
     )
 
-    check_headers: Dict[str, str] = Field(
-        default_factory=dict, description="HTTP headers to send with health checks"
+    check_headers: dict[str, str] = Field(
+        default_factory=dict,
+        description="HTTP headers to send with health checks",
     )
 
-    check_body: Optional[str] = Field(
-        None, description="HTTP body to send with health checks (for POST)"
+    check_body: str | None = Field(
+        None,
+        description="HTTP body to send with health checks (for POST)",
     )
 
     follow_redirects: bool = Field(
-        default=False, description="Whether to follow HTTP redirects"
+        default=False,
+        description="Whether to follow HTTP redirects",
     )
 
     validate_ssl: bool = Field(
-        default=True, description="Whether to validate SSL certificates"
+        default=True,
+        description="Whether to validate SSL certificates",
     )
 
-    custom_validator: Optional[str] = Field(
-        None, description="Custom health check validator function name"
+    custom_validator: str | None = Field(
+        None,
+        description="Custom health check validator function name",
     )
 
-    health_check_metadata: Optional[ModelHealthCheckMetadata] = Field(
-        None, description="Additional health check metadata"
+    health_check_metadata: ModelHealthCheckMetadata | None = Field(
+        None,
+        description="Additional health check metadata",
     )
 
     def is_response_healthy(self, status_code: int, response_body: str = "") -> bool:
@@ -112,7 +121,7 @@ class ModelHealthCheckConfig(BaseModel):
         check_path = self.check_path.lstrip("/")
         return f"{base_url}/{check_path}"
 
-    def get_check_headers_with_defaults(self) -> Dict[str, str]:
+    def get_check_headers_with_defaults(self) -> dict[str, str]:
         """Get health check headers with defaults"""
         headers = {
             "User-Agent": "ONEX-LoadBalancer/1.0",
@@ -122,7 +131,9 @@ class ModelHealthCheckConfig(BaseModel):
         return headers
 
     def should_check_now(
-        self, last_check_timestamp: float, current_timestamp: float
+        self,
+        last_check_timestamp: float,
+        current_timestamp: float,
     ) -> bool:
         """Check if a health check should be performed now"""
         if not self.enabled:
@@ -131,15 +142,16 @@ class ModelHealthCheckConfig(BaseModel):
         return (current_timestamp - last_check_timestamp) >= self.check_interval_seconds
 
     def calculate_health_status(
-        self, consecutive_successes: int, consecutive_failures: int
+        self,
+        consecutive_successes: int,
+        consecutive_failures: int,
     ) -> str:
         """Calculate health status based on consecutive results"""
         if consecutive_failures >= self.unhealthy_threshold:
             return "unhealthy"
-        elif consecutive_successes >= self.healthy_threshold:
+        if consecutive_successes >= self.healthy_threshold:
             return "healthy"
-        else:
-            return "degraded"  # In transition state
+        return "degraded"  # In transition state
 
     def get_effective_timeout(self) -> float:
         """Get effective timeout considering check interval"""

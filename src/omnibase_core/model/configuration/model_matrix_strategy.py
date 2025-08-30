@@ -2,7 +2,7 @@
 Matrix strategy model.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -10,10 +10,12 @@ from pydantic import BaseModel, Field
 class ModelMatrixStrategy(BaseModel):
     """Matrix strategy configuration."""
 
-    matrix: Dict[str, List[Any]] = Field(..., description="Matrix dimensions")
-    include: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Matrix inclusions"
+    matrix: dict[str, list[Any]] = Field(..., description="Matrix dimensions")
+    include: list[dict[str, Any]] | None = Field(
+        None,
+        description="Matrix inclusions",
     )
-    exclude: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Matrix exclusions"
+    exclude: list[dict[str, Any]] | None = Field(
+        None,
+        description="Matrix exclusions",
     )

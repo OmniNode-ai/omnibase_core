@@ -9,8 +9,6 @@ with multiplicative boost/penalty system.
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.rsd.model_factor_detail import ModelFactorDetail
-from omnibase_core.model.rsd.model_priority_factor_breakdown import \
-    ModelPriorityFactorBreakdown
 
 
 class ModelOrchestratorFactorDetail(BaseModel):
@@ -22,11 +20,13 @@ class ModelOrchestratorFactorDetail(BaseModel):
     """
 
     base_factor: ModelFactorDetail = Field(
-        description="Base 5-factor RSD calculation detail"
+        description="Base 5-factor RSD calculation detail",
     )
 
     orchestrator_multiplier: float = Field(
-        description="Orchestrator-specific multiplier (0.5-2.0)", ge=0.5, le=2.0
+        description="Orchestrator-specific multiplier (0.5-2.0)",
+        ge=0.5,
+        le=2.0,
     )
 
     boost_penalty_type: str = Field(
@@ -35,15 +35,18 @@ class ModelOrchestratorFactorDetail(BaseModel):
     )
 
     orchestrator_contribution: float = Field(
-        description="Additional contribution from orchestrator factors", ge=0.0
+        description="Additional contribution from orchestrator factors",
+        ge=0.0,
     )
 
     final_contribution: float = Field(
-        description="Final contribution after orchestrator adjustments", ge=0.0
+        description="Final contribution after orchestrator adjustments",
+        ge=0.0,
     )
 
     orchestrator_explanation: str = Field(
-        description="Explanation of orchestrator-specific adjustments", min_length=1
+        description="Explanation of orchestrator-specific adjustments",
+        min_length=1,
     )
 
 
@@ -56,33 +59,36 @@ class ModelOrchestratorPriorityFactorBreakdown(BaseModel):
     """
 
     ticket_id: str = Field(
-        description="Ticket ID this breakdown applies to", min_length=1
+        description="Ticket ID this breakdown applies to",
+        min_length=1,
     )
 
     # Enhanced 5-factor breakdown with orchestrator adjustments
     dependency_distance: ModelOrchestratorFactorDetail = Field(
-        description="Enhanced dependency distance factor with orchestrator adjustments"
+        description="Enhanced dependency distance factor with orchestrator adjustments",
     )
 
     failure_surface: ModelOrchestratorFactorDetail = Field(
-        description="Enhanced failure surface factor with orchestrator adjustments"
+        description="Enhanced failure surface factor with orchestrator adjustments",
     )
 
     time_decay: ModelOrchestratorFactorDetail = Field(
-        description="Enhanced time decay factor with orchestrator adjustments"
+        description="Enhanced time decay factor with orchestrator adjustments",
     )
 
     agent_utility: ModelOrchestratorFactorDetail = Field(
-        description="Enhanced agent utility factor with orchestrator adjustments"
+        description="Enhanced agent utility factor with orchestrator adjustments",
     )
 
     user_weighting: ModelOrchestratorFactorDetail = Field(
-        description="Enhanced user weighting factor with orchestrator adjustments"
+        description="Enhanced user weighting factor with orchestrator adjustments",
     )
 
     # Orchestrator-specific factor contributions
     critical_path_boost: float = Field(
-        description="Critical path priority boost multiplier (1.0-1.5)", ge=1.0, le=1.5
+        description="Critical path priority boost multiplier (1.0-1.5)",
+        ge=1.0,
+        le=1.5,
     )
 
     lane_contention_penalty: float = Field(
@@ -92,20 +98,28 @@ class ModelOrchestratorPriorityFactorBreakdown(BaseModel):
     )
 
     lease_ttl_pressure: float = Field(
-        description="Lease TTL pressure multiplier (1.0-2.0)", ge=1.0, le=2.0
+        description="Lease TTL pressure multiplier (1.0-2.0)",
+        ge=1.0,
+        le=2.0,
     )
 
     coordination_overhead_penalty: float = Field(
-        description="Coordination overhead penalty multiplier (0.8-1.0)", ge=0.8, le=1.0
+        description="Coordination overhead penalty multiplier (0.8-1.0)",
+        ge=0.8,
+        le=1.0,
     )
 
     event_dependency_factor: float = Field(
-        description="Event dependency factor multiplier (0.9-1.2)", ge=0.9, le=1.2
+        description="Event dependency factor multiplier (0.9-1.2)",
+        ge=0.9,
+        le=1.2,
     )
 
     # Summary metrics
     base_score: float = Field(
-        description="Original 5-factor RSD score (0.0-100.0)", ge=0.0, le=100.0
+        description="Original 5-factor RSD score (0.0-100.0)",
+        ge=0.0,
+        le=100.0,
     )
 
     orchestrator_adjusted_score: float = Field(
@@ -121,7 +135,7 @@ class ModelOrchestratorPriorityFactorBreakdown(BaseModel):
     )
 
     orchestrator_mode_enabled: bool = Field(
-        description="Whether orchestrator mode was enabled for this calculation"
+        description="Whether orchestrator mode was enabled for this calculation",
     )
 
     algorithm_version: str = Field(

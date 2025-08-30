@@ -5,7 +5,6 @@ Validation message model.
 import datetime
 import hashlib
 import uuid
-from typing import Optional
 
 from pydantic import Field
 
@@ -18,18 +17,18 @@ from .model_validate_message_context import ModelValidateMessageContext
 class ModelValidateMessage(ModelBaseError):
     """Model for validation messages."""
 
-    file: Optional[str] = None
-    line: Optional[int] = None
+    file: str | None = None
+    line: int | None = None
     severity: SeverityLevelEnum = Field(
         default=SeverityLevelEnum.ERROR,
         description="error|warning|info|debug|critical|success|unknown",
     )
     code: str = "unknown"
-    context: Optional[ModelValidateMessageContext] = None
+    context: ModelValidateMessageContext | None = None
     uid: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    hash: Optional[str] = None
+    hash: str | None = None
     timestamp: str = Field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
+        default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat(),
     )
     # message is inherited from ModelBaseError and must always be str (not Optional)
     # All instantiations must provide a non-None str for message

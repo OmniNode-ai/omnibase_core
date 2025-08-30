@@ -4,12 +4,11 @@ Model for quota allocation.
 Quota allocation for a specific operational window.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.optimization.model_allocation_metadata import \
-    ModelAllocationMetadata
+from omnibase_core.model.optimization.model_allocation_metadata import (
+    ModelAllocationMetadata,
+)
 
 
 class ModelQuotaAllocation(BaseModel):
@@ -22,7 +21,7 @@ class ModelQuotaAllocation(BaseModel):
     failed_tasks: int = Field(0, ge=0, description="Failed tasks")
     priority: str = Field(..., description="Window priority level")
 
-    metadata: Optional[ModelAllocationMetadata] = Field(
+    metadata: ModelAllocationMetadata | None = Field(
         default_factory=ModelAllocationMetadata,
         description="Additional allocation data",
     )

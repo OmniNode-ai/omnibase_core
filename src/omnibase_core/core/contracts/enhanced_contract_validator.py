@@ -11,14 +11,21 @@ Author: ONEX Framework Team
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
-from omnibase_core.core.monadic.model_node_result import (ErrorInfo, ErrorType,
-                                                          Event, NodeResult)
+from omnibase_core.core.monadic.model_node_result import (
+    ErrorInfo,
+    ErrorType,
+    Event,
+    NodeResult,
+)
 from omnibase_core.core.monadic.monadic_composition_utils import (
-    MonadicComposer, monadic_operation, with_timeout)
+    MonadicComposer,
+    monadic_operation,
+    with_timeout,
+)
 
 
 @dataclass
@@ -32,9 +39,9 @@ class ContractValidationRule:
     severity: str  # "error", "warning", "info"
     category: str  # "structure", "schema", "dependencies", "security"
     validator_function: str
-    required_fields: List[str] = field(default_factory=list)
-    pattern_checks: Dict[str, str] = field(default_factory=dict)
-    custom_logic: Optional[str] = None
+    required_fields: list[str] = field(default_factory=list)
+    pattern_checks: dict[str, str] = field(default_factory=dict)
+    custom_logic: str | None = None
 
 
 @dataclass
@@ -48,9 +55,9 @@ class ValidationResult:
     message: str
     severity: str
     category: str
-    location: Optional[str] = None
-    suggested_fix: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    location: str | None = None
+    suggested_fix: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -65,7 +72,7 @@ class TypeGenerationSpec:
     naming_convention: str  # "snake_case", "camelCase", "PascalCase"
     include_validation: bool = True
     include_documentation: bool = True
-    custom_templates: Optional[Dict[str, str]] = None
+    custom_templates: dict[str, str] | None = None
 
 
 class EnhancedContractValidator:
@@ -82,7 +89,7 @@ class EnhancedContractValidator:
     - Integration with Enhanced ModelNodeBase patterns
     """
 
-    def __init__(self, correlation_id: Optional[str] = None):
+    def __init__(self, correlation_id: str | None = None):
         self.correlation_id = (
             correlation_id or f"contract_validator_{int(datetime.now().timestamp())}"
         )
@@ -102,7 +109,7 @@ class EnhancedContractValidator:
             "types_generated": 0,
         }
 
-    def _initialize_validation_rules(self) -> List[ContractValidationRule]:
+    def _initialize_validation_rules(self) -> list[ContractValidationRule]:
         """Initialize standard validation rules for ONEX contracts."""
         return [
             ContractValidationRule(
@@ -166,7 +173,7 @@ class EnhancedContractValidator:
             ),
         ]
 
-    def _initialize_type_templates(self) -> Dict[str, str]:
+    def _initialize_type_templates(self) -> dict[str, str]:
         """Initialize type generation templates."""
         return {
             "pydantic_model": '''"""
@@ -260,9 +267,9 @@ class {class_name}(Enum):
     async def validate_contract(
         self,
         contract_path: Path,
-        custom_rules: Optional[List[ContractValidationRule]] = None,
+        custom_rules: list[ContractValidationRule] | None = None,
         fail_fast: bool = False,
-    ) -> NodeResult[List[ValidationResult]]:
+    ) -> NodeResult[list[ValidationResult]]:
         """
         Validate a contract file with comprehensive rule checking.
 
@@ -301,7 +308,9 @@ class {class_name}(Enum):
         # Execute validations with appropriate strategy
         if fail_fast:
             results = await self.composer.sequence(
-                validation_operations, initial_value=None, fail_fast=True
+                validation_operations,
+                initial_value=None,
+                fail_fast=True,
             )
         else:
             results = await self.composer.parallel(
@@ -367,7 +376,7 @@ class {class_name}(Enum):
                     },
                     timestamp=end_time,
                     correlation_id=self.correlation_id,
-                )
+                ),
             ],
             correlation_id=self.correlation_id,
         )
@@ -375,13 +384,13 @@ class {class_name}(Enum):
     def _create_validation_operation(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
     ):
         """Create a validation operation for a specific rule."""
 
         @monadic_operation(f"validation_rule_{rule.rule_id}")
-        async def validate_rule(_: Any) -> List[ValidationResult]:
+        async def validate_rule(_: Any) -> list[ValidationResult]:
             """Execute a single validation rule."""
             try:
                 # Get validator function
@@ -395,7 +404,7 @@ class {class_name}(Enum):
                             severity="error",
                             category="internal",
                             location=str(contract_path),
-                        )
+                        ),
                     ]
 
                 # Execute validation
@@ -406,17 +415,17 @@ class {class_name}(Enum):
                     ValidationResult(
                         rule_id=rule.rule_id,
                         status="failed",
-                        message=f"Validation rule execution failed: {str(e)}",
+                        message=f"Validation rule execution failed: {e!s}",
                         severity="error",
                         category="internal",
                         location=str(contract_path),
                         metadata={"exception": str(e)},
-                    )
+                    ),
                 ]
 
         return validate_rule
 
-    async def _load_contract(self, contract_path: Path) -> NodeResult[Dict[str, Any]]:
+    async def _load_contract(self, contract_path: Path) -> NodeResult[dict[str, Any]]:
         """Load and parse contract YAML file."""
         try:
             if not contract_path.exists():
@@ -431,7 +440,7 @@ class {class_name}(Enum):
                     provenance=[f"load_contract.{self.correlation_id}.file_not_found"],
                 )
 
-            with open(contract_path, "r", encoding="utf-8") as file:
+            with open(contract_path, encoding="utf-8") as file:
                 contract_data = yaml.safe_load(file)
 
             if not isinstance(contract_data, dict):
@@ -457,7 +466,7 @@ class {class_name}(Enum):
         except yaml.YAMLError as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.VALIDATION,
-                message=f"YAML parsing error: {str(e)}",
+                message=f"YAML parsing error: {e!s}",
                 trace=str(e),
                 correlation_id=self.correlation_id,
                 retryable=False,
@@ -469,7 +478,7 @@ class {class_name}(Enum):
         except Exception as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Failed to load contract: {str(e)}",
+                message=f"Failed to load contract: {e!s}",
                 trace=str(e),
                 correlation_id=self.correlation_id,
                 retryable=False,
@@ -484,9 +493,9 @@ class {class_name}(Enum):
     async def validate_contract_version(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate contract version structure."""
         results = []
 
@@ -501,7 +510,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="root.contract_version",
                     suggested_fix="Add contract_version: { major: 1, minor: 0, patch: 0 }",
-                )
+                ),
             )
             return results
 
@@ -520,7 +529,7 @@ class {class_name}(Enum):
                         category=rule.category,
                         location=f"contract_version.{version_field}",
                         suggested_fix=f"Add {version_field}: 0 to contract_version",
-                    )
+                    ),
                 )
             elif (
                 not isinstance(version[version_field], int)
@@ -535,7 +544,7 @@ class {class_name}(Enum):
                         category=rule.category,
                         location=f"contract_version.{version_field}",
                         suggested_fix=f"Set {version_field} to a non-negative integer (e.g., 0, 1, 2)",
-                    )
+                    ),
                 )
 
         if not results:
@@ -548,7 +557,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="contract_version",
                     metadata={"version": version},
-                )
+                ),
             )
 
         return results
@@ -556,9 +565,9 @@ class {class_name}(Enum):
     async def validate_node_name(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate node name format and conventions."""
         results = []
 
@@ -572,7 +581,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="root.node_name",
                     suggested_fix="Add node_name: 'your_node_name'",
-                )
+                ),
             )
             return results
 
@@ -587,7 +596,7 @@ class {class_name}(Enum):
                     severity=rule.severity,
                     category=rule.category,
                     location="node_name",
-                )
+                ),
             )
             return results
 
@@ -605,7 +614,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="node_name",
                     suggested_fix="Use snake_case format: lowercase letters, numbers, underscores only",
-                )
+                ),
             )
         else:
             results.append(
@@ -617,7 +626,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="node_name",
                     metadata={"node_name": node_name},
-                )
+                ),
             )
 
         return results
@@ -625,9 +634,9 @@ class {class_name}(Enum):
     async def validate_tool_specification(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate tool specification for ModelNodeBase integration."""
         results = []
 
@@ -641,7 +650,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="root.tool_specification",
                     suggested_fix="Add tool_specification with main_tool_class and business_logic_pattern",
-                )
+                ),
             )
             return results
 
@@ -660,7 +669,7 @@ class {class_name}(Enum):
                         category=rule.category,
                         location=f"tool_specification.{spec_field}",
                         suggested_fix=f"Add {spec_field} to tool_specification",
-                    )
+                    ),
                 )
 
         # Validate business logic pattern
@@ -677,7 +686,7 @@ class {class_name}(Enum):
                         category=rule.category,
                         location="tool_specification.business_logic_pattern",
                         suggested_fix=f"Use one of: {', '.join(valid_patterns)}",
-                    )
+                    ),
                 )
 
         if not any(result.status == "failed" for result in results):
@@ -690,7 +699,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="tool_specification",
                     metadata={"tool_specification": tool_spec},
-                )
+                ),
             )
 
         return results
@@ -698,9 +707,9 @@ class {class_name}(Enum):
     async def validate_dependencies_structure(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate dependencies structure for DI container."""
         results = []
 
@@ -713,7 +722,7 @@ class {class_name}(Enum):
                     severity="info",
                     category=rule.category,
                     location="root.dependencies",
-                )
+                ),
             )
             return results
 
@@ -728,7 +737,7 @@ class {class_name}(Enum):
                     severity=rule.severity,
                     category=rule.category,
                     location="dependencies",
-                )
+                ),
             )
             return results
 
@@ -746,7 +755,7 @@ class {class_name}(Enum):
                             category=rule.category,
                             location=f"dependencies[{i}].{dep_field}",
                             suggested_fix=f"Add {dep_field} to dependency specification",
-                        )
+                        ),
                     )
 
         if not any(result.status == "failed" for result in results):
@@ -759,7 +768,7 @@ class {class_name}(Enum):
                     category=rule.category,
                     location="dependencies",
                     metadata={"dependency_count": len(dependencies)},
-                )
+                ),
             )
 
         return results
@@ -767,15 +776,15 @@ class {class_name}(Enum):
     async def validate_security_sensitive_data(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate contract doesn't contain sensitive information."""
         import re
 
         results = []
 
-        def check_dict_for_sensitive_data(data: Dict[str, Any], path: str = "root"):
+        def check_dict_for_sensitive_data(data: dict[str, Any], path: str = "root"):
             """Recursively check dictionary for sensitive patterns."""
             for key, value in data.items():
                 current_path = f"{path}.{key}"
@@ -792,7 +801,7 @@ class {class_name}(Enum):
                                 category=rule.category,
                                 location=current_path,
                                 suggested_fix="Remove sensitive information or use environment variables",
-                            )
+                            ),
                         )
 
                 # Check string values
@@ -808,7 +817,7 @@ class {class_name}(Enum):
                                     category=rule.category,
                                     location=current_path,
                                     suggested_fix="Remove sensitive information or use environment variables",
-                                )
+                                ),
                             )
 
                 # Recursively check nested dictionaries
@@ -830,7 +839,7 @@ class {class_name}(Enum):
                     severity="info",
                     category=rule.category,
                     location="contract",
-                )
+                ),
             )
 
         return results
@@ -838,9 +847,9 @@ class {class_name}(Enum):
     async def validate_monadic_compatibility(
         self,
         rule: ContractValidationRule,
-        contract_data: Dict[str, Any],
+        contract_data: dict[str, Any],
         contract_path: Path,
-    ) -> List[ValidationResult]:
+    ) -> list[ValidationResult]:
         """Validate compatibility with monadic ModelNodeBase patterns."""
         results = []
 
@@ -859,7 +868,7 @@ class {class_name}(Enum):
                 checks.append("Business logic pattern supports monadic composition")
             else:
                 checks.append(
-                    "Business logic pattern may need adaptation for monadic patterns"
+                    "Business logic pattern may need adaptation for monadic patterns",
                 )
 
         # Check dependencies structure
@@ -886,7 +895,7 @@ class {class_name}(Enum):
                         "compatibility_score": compatibility_score,
                         "checks_passed": checks,
                     },
-                )
+                ),
             )
         elif compatibility_score >= 2:
             results.append(
@@ -902,7 +911,7 @@ class {class_name}(Enum):
                         "compatibility_score": compatibility_score,
                         "checks_passed": checks,
                     },
-                )
+                ),
             )
         else:
             results.append(
@@ -918,7 +927,7 @@ class {class_name}(Enum):
                         "compatibility_score": compatibility_score,
                         "checks_passed": checks,
                     },
-                )
+                ),
             )
 
         return results
@@ -930,8 +939,8 @@ class {class_name}(Enum):
         self,
         contract_path: Path,
         output_directory: Path,
-        generation_specs: Optional[List[TypeGenerationSpec]] = None,
-    ) -> NodeResult[List[Path]]:
+        generation_specs: list[TypeGenerationSpec] | None = None,
+    ) -> NodeResult[list[Path]]:
         """
         Generate type definitions from contract specifications.
 
@@ -988,7 +997,9 @@ class {class_name}(Enum):
         # Generate default specs if not provided
         if not generation_specs:
             generation_specs = self._create_default_generation_specs(
-                contract_data, contract_path, output_directory
+                contract_data,
+                contract_path,
+                output_directory,
             )
 
         # Create type generation operations
@@ -1043,14 +1054,17 @@ class {class_name}(Enum):
                     },
                     timestamp=end_time,
                     correlation_id=self.correlation_id,
-                )
+                ),
             ],
             correlation_id=self.correlation_id,
         )
 
     def _create_default_generation_specs(
-        self, contract_data: Dict[str, Any], contract_path: Path, output_directory: Path
-    ) -> List[TypeGenerationSpec]:
+        self,
+        contract_data: dict[str, Any],
+        contract_path: Path,
+        output_directory: Path,
+    ) -> list[TypeGenerationSpec]:
         """Create default type generation specifications."""
         specs = []
         node_name = contract_data.get("node_name", "unknown_node")
@@ -1063,7 +1077,7 @@ class {class_name}(Enum):
                     target_path=output_directory / f"model_{node_name}_input_state.py",
                     generation_mode="pydantic",
                     naming_convention="snake_case",
-                )
+                ),
             )
 
         if "output_state" in contract_data:
@@ -1073,7 +1087,7 @@ class {class_name}(Enum):
                     target_path=output_directory / f"model_{node_name}_output_state.py",
                     generation_mode="pydantic",
                     naming_convention="snake_case",
-                )
+                ),
             )
 
         # Generate protocol if tool specification exists
@@ -1084,13 +1098,15 @@ class {class_name}(Enum):
                     target_path=output_directory / f"protocol_{node_name}.py",
                     generation_mode="protocol",
                     naming_convention="PascalCase",
-                )
+                ),
             )
 
         return specs
 
     def _create_type_generation_operation(
-        self, spec: TypeGenerationSpec, contract_data: Dict[str, Any]
+        self,
+        spec: TypeGenerationSpec,
+        contract_data: dict[str, Any],
     ):
         """Create a type generation operation."""
 
@@ -1105,7 +1121,8 @@ class {class_name}(Enum):
             elif spec.generation_mode == "enum":
                 content = self._generate_enum(contract_data, spec)
             else:
-                raise ValueError(f"Unsupported generation mode: {spec.generation_mode}")
+                msg = f"Unsupported generation mode: {spec.generation_mode}"
+                raise ValueError(msg)
 
             # Write generated content to file
             with open(spec.target_path, "w", encoding="utf-8") as f:
@@ -1116,12 +1133,15 @@ class {class_name}(Enum):
         return generate_type
 
     def _generate_pydantic_model(
-        self, contract_data: Dict[str, Any], spec: TypeGenerationSpec
+        self,
+        contract_data: dict[str, Any],
+        spec: TypeGenerationSpec,
     ) -> str:
         """Generate Pydantic model from contract data."""
         node_name = contract_data.get("node_name", "unknown")
         class_name = self._format_class_name(
-            f"Model{node_name}InputState", spec.naming_convention
+            f"Model{node_name}InputState",
+            spec.naming_convention,
         )
 
         # Generate field definitions (simplified for example)
@@ -1137,12 +1157,15 @@ class {class_name}(Enum):
         )
 
     def _generate_protocol(
-        self, contract_data: Dict[str, Any], spec: TypeGenerationSpec
+        self,
+        contract_data: dict[str, Any],
+        spec: TypeGenerationSpec,
     ) -> str:
         """Generate Protocol from contract data."""
         node_name = contract_data.get("node_name", "unknown")
         class_name = self._format_class_name(
-            f"Protocol{node_name}", spec.naming_convention
+            f"Protocol{node_name}",
+            spec.naming_convention,
         )
 
         # Generate method definitions (simplified for example)
@@ -1158,7 +1181,9 @@ class {class_name}(Enum):
         )
 
     def _generate_enum(
-        self, contract_data: Dict[str, Any], spec: TypeGenerationSpec
+        self,
+        contract_data: dict[str, Any],
+        spec: TypeGenerationSpec,
     ) -> str:
         """Generate Enum from contract data."""
         node_name = contract_data.get("node_name", "unknown")
@@ -1180,15 +1205,15 @@ class {class_name}(Enum):
         """Format class name according to naming convention."""
         if convention == "PascalCase":
             return "".join(word.capitalize() for word in name.split("_"))
-        elif convention == "camelCase":
+        if convention == "camelCase":
             words = name.split("_")
             return words[0].lower() + "".join(word.capitalize() for word in words[1:])
-        else:  # snake_case
-            return name.lower()
+        # snake_case
+        return name.lower()
 
     # === UTILITY METHODS ===
 
-    def get_validation_statistics(self) -> Dict[str, Any]:
+    def get_validation_statistics(self) -> dict[str, Any]:
         """Get current validation statistics."""
         return self.validation_stats.copy()
 

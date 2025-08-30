@@ -16,15 +16,15 @@ Author: ONEX Framework Team
 """
 
 import importlib
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.decorators import allow_any_type
 
 from .models.model_container_config import ModelContainerConfig
@@ -32,7 +32,7 @@ from .models.model_container_result import ModelContainerResult
 
 
 @allow_any_type(
-    "Service interfaces require Any types for generic container and service handling"
+    "Service interfaces require Any types for generic container and service handling",
 )
 class ContainerService:
     """
@@ -48,7 +48,7 @@ class ContainerService:
     This service implements the ProtocolContainerService interface for duck typing.
     """
 
-    def __init__(self, config: Optional[ModelContainerConfig] = None):
+    def __init__(self, config: ModelContainerConfig | None = None):
         """
         Initialize container service with configuration.
 
@@ -56,14 +56,14 @@ class ContainerService:
             config: Optional configuration for container operations
         """
         self._config = config
-        self._service_cache: Dict[str, Any] = {}
-        self._validation_cache: Dict[str, bool] = {}
+        self._service_cache: dict[str, Any] = {}
+        self._validation_cache: dict[str, bool] = {}
 
     def create_container_from_contract(
         self,
         contract_content: ModelContractContent,
         node_id: str,
-        nodebase_ref: Optional[Any] = None,
+        nodebase_ref: Any | None = None,
     ) -> ModelContainerResult:
         """
         Create and configure ONEXContainer from contract dependencies.
@@ -101,10 +101,10 @@ class ContainerService:
             from omnibase_core.core.onex_container import ONEXContainer
 
             container = ONEXContainer()
-            registered_services: List[str] = []
-            failed_services: List[str] = []
-            service_metadata: Dict[str, dict] = {}
-            validation_results: Dict[str, bool] = {}
+            registered_services: list[str] = []
+            failed_services: list[str] = []
+            service_metadata: dict[str, dict] = {}
+            validation_results: dict[str, bool] = {}
 
             # Register dependencies from contract
             dep_list = contract_content.dependencies
@@ -195,7 +195,7 @@ class ContainerService:
                     {
                         "validation_enabled": self._config.enable_service_validation,
                         "lifecycle_logging_enabled": self._config.enable_lifecycle_logging,
-                    }
+                    },
                 )
 
             result = ModelContainerResult(
@@ -229,14 +229,14 @@ class ContainerService:
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to create container from contract: {str(e)}",
+                message=f"Failed to create container from contract: {e!s}",
                 context={
                     "node_id": node_id,
                     "has_dependencies": hasattr(contract_content, "dependencies"),
                 },
             ) from e
 
-    def create_service_from_dependency(self, dependency: Any) -> Optional[Any]:
+    def create_service_from_dependency(self, dependency: Any) -> Any | None:
         """
         Create service instance from contract dependency specification.
 
@@ -331,7 +331,8 @@ class ContainerService:
                     "error": str(e),
                     "module": getattr(dependency, "module", "unknown"),
                     "class": getattr(dependency, "__dict__", {}).get(
-                        "class", "unknown"
+                        "class",
+                        "unknown",
                     ),
                 },
             )
@@ -383,13 +384,15 @@ class ContainerService:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Container validation failed: {str(e)}",
+                f"Container validation failed: {e!s}",
                 {"error": str(e)},
             )
             return False
 
     def get_registry_wrapper(
-        self, container: Any, nodebase_ref: Optional[Any] = None
+        self,
+        container: Any,
+        nodebase_ref: Any | None = None,
     ) -> Any:
         """
         Create registry wrapper around container for backward compatibility.
@@ -418,7 +421,7 @@ class ContainerService:
                     return getattr(self._container, service_attr)
                 # Fallback to container's get_service method if it exists
                 if hasattr(self._container, "get_service") and callable(
-                    getattr(self._container, "get_service")
+                    self._container.get_service,
                 ):
                     return self._container.get_service(service_type, service_name)
                 return None
@@ -435,16 +438,16 @@ class ContainerService:
                 """
                 if self._nodebase_ref and hasattr(self._nodebase_ref, "node_version"):
                     return self._nodebase_ref.node_version
-                elif (
+                if (
                     hasattr(self._container, "_node_version")
                     and self._container._node_version
                 ):
                     return self._container._node_version
-                else:
-                    raise OnexError(
-                        "Node version not available in container",
-                        CoreErrorCode.OPERATION_FAILED,
-                    )
+                msg = "Node version not available in container"
+                raise OnexError(
+                    msg,
+                    CoreErrorCode.OPERATION_FAILED,
+                )
 
             def validate_tool_dependencies(self):
                 """Validate tool dependencies are available."""
@@ -505,7 +508,7 @@ class ContainerService:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to update container lifecycle: {str(e)}",
+                f"Failed to update container lifecycle: {e!s}",
                 {"error": str(e)},
             )
             # Non-critical operation, don't raise exception

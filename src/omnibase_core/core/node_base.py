@@ -12,32 +12,37 @@ import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from uuid import uuid4
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.models.model_node_base import ModelNodeBase
-from omnibase_core.core.monadic.model_node_result import (ErrorInfo, ErrorType,
-                                                          Event,
-                                                          ExecutionContext,
-                                                          LogEntry, NodeResult)
+from omnibase_core.core.monadic.model_node_result import (
+    ErrorInfo,
+    ErrorType,
+    Event,
+    ExecutionContext,
+    LogEntry,
+    NodeResult,
+)
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.mixin.mixin_event_listener import MixinEventListener
-from omnibase_core.mixin.mixin_introspection_publisher import \
-    MixinIntrospectionPublisher
-from omnibase_core.mixin.mixin_node_id_from_contract import \
-    MixinNodeIdFromContract
-from omnibase_core.mixin.mixin_request_response_introspection import \
-    MixinRequestResponseIntrospection
+from omnibase_core.mixin.mixin_introspection_publisher import (
+    MixinIntrospectionPublisher,
+)
+from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
+from omnibase_core.mixin.mixin_request_response_introspection import (
+    MixinRequestResponseIntrospection,
+)
 from omnibase_core.mixin.mixin_tool_execution import MixinToolExecution
 from omnibase_core.model.core.model_reducer import ActionModel, ModelState
-from omnibase_core.protocol.protocol_workflow_reducer import \
-    ProtocolWorkflowReducer
+from omnibase_core.protocol.protocol_workflow_reducer import ProtocolWorkflowReducer
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -91,11 +96,11 @@ class ModelNodeBase(
     def __init__(
         self,
         contract_path: Path,
-        node_id: Optional[str] = None,
-        event_bus: Optional[object] = None,
-        container: Optional[ONEXContainer] = None,
-        workflow_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        node_id: str | None = None,
+        event_bus: object | None = None,
+        container: ONEXContainer | None = None,
+        workflow_id: str | None = None,
+        session_id: str | None = None,
         **kwargs,
     ):
         """
@@ -120,15 +125,18 @@ class ModelNodeBase(
 
         # Store initialization parameters
         self._contract_path = contract_path
-        self._container: Optional[ONEXContainer] = None
+        self._container: ONEXContainer | None = None
         self._main_tool = None
-        self._reducer_state: Optional[ModelState] = None
+        self._reducer_state: ModelState | None = None
         self._workflow_instance = None
 
         try:
             # Load and validate contract
             self._load_contract_and_initialize(
-                contract_path, node_id, event_bus, container
+                contract_path,
+                node_id,
+                event_bus,
+                container,
             )
 
             # Initialize reducer state
@@ -144,7 +152,7 @@ class ModelNodeBase(
             self._emit_initialization_failure(e)
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to initialize ModelNodeBase: {str(e)}",
+                message=f"Failed to initialize ModelNodeBase: {e!s}",
                 context={
                     "contract_path": str(contract_path),
                     "node_id": node_id,
@@ -156,17 +164,20 @@ class ModelNodeBase(
     def _load_contract_and_initialize(
         self,
         contract_path: Path,
-        node_id: Optional[str],
-        event_bus: Optional[object],
-        container: Optional[ONEXContainer],
+        node_id: str | None,
+        event_bus: object | None,
+        container: ONEXContainer | None,
     ):
         """Load contract and initialize core components."""
         # Load contract service
-        from omnibase_core.core.services.contract_service.v1_0_0.contract_service import \
-            ContractService
+        from omnibase_core.core.services.contract_service.v1_0_0.contract_service import (
+            ContractService,
+        )
 
         contract_service = ContractService(
-            cache_enabled=True, cache_max_size=100, base_path=contract_path.parent
+            cache_enabled=True,
+            cache_max_size=100,
+            base_path=contract_path.parent,
         )
         contract_content = contract_service.load_contract(contract_path)
 
@@ -184,10 +195,12 @@ class ModelNodeBase(
             ):
 
                 # Create container from contract dependencies
-                from omnibase_core.core.services.container_service.v1_0_0.container_service import \
-                    ContainerService
-                from omnibase_core.core.services.container_service.v1_0_0.models.model_container_config import \
-                    ModelContainerConfig
+                from omnibase_core.core.services.container_service.v1_0_0.container_service import (
+                    ContainerService,
+                )
+                from omnibase_core.core.services.container_service.v1_0_0.models.model_container_config import (
+                    ModelContainerConfig,
+                )
 
                 container_config = ModelContainerConfig(
                     node_id=node_id,
@@ -233,10 +246,12 @@ class ModelNodeBase(
     def _resolve_main_tool(self) -> object:
         """Resolve and instantiate the main tool class from contract."""
         try:
-            from omnibase_core.core.services.tool_discovery_service.v1_0_0.models.model_tool_discovery_config import \
-                ModelToolDiscoveryConfig
-            from omnibase_core.core.services.tool_discovery_service.v1_0_0.tool_discovery_service import \
-                ToolDiscoveryService
+            from omnibase_core.core.services.tool_discovery_service.v1_0_0.models.model_tool_discovery_config import (
+                ModelToolDiscoveryConfig,
+            )
+            from omnibase_core.core.services.tool_discovery_service.v1_0_0.tool_discovery_service import (
+                ToolDiscoveryService,
+            )
 
             discovery_config = ModelToolDiscoveryConfig(
                 enable_module_caching=True,
@@ -258,7 +273,7 @@ class ModelNodeBase(
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to resolve main tool: {str(e)}",
+                message=f"Failed to resolve main tool: {e!s}",
                 context={
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "node_id": self.state.node_id,
@@ -350,7 +365,7 @@ class ModelNodeBase(
 
             # Update execution context
             execution_context.logs.append(
-                LogEntry("INFO", "Node execution completed successfully", end_time)
+                LogEntry("INFO", "Node execution completed successfully", end_time),
             )
             execution_context.metadata["duration_ms"] = duration_ms
             execution_context.timestamp = end_time
@@ -390,7 +405,9 @@ class ModelNodeBase(
             )
 
             execution_context.logs.append(
-                LogEntry("ERROR", f"Node execution failed: {e.message}", datetime.now())
+                LogEntry(
+                    "ERROR", f"Node execution failed: {e.message}", datetime.now()
+                ),
             )
 
             return NodeResult(
@@ -404,7 +421,7 @@ class ModelNodeBase(
             # Handle generic exceptions
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Node execution failed: {str(e)}",
+                message=f"Node execution failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 correlation_id=correlation_id,
                 retryable=False,
@@ -426,7 +443,7 @@ class ModelNodeBase(
             )
 
             execution_context.logs.append(
-                LogEntry("ERROR", f"Node execution exception: {str(e)}", datetime.now())
+                LogEntry("ERROR", f"Node execution exception: {e!s}", datetime.now()),
             )
 
             return NodeResult(
@@ -466,27 +483,30 @@ class ModelNodeBase(
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 return await main_tool.process_async(input_state)
-            elif hasattr(main_tool, "process"):
+            if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
                 return await asyncio.get_event_loop().run_in_executor(
-                    None, main_tool.process, input_state
+                    None,
+                    main_tool.process,
+                    input_state,
                 )
-            elif hasattr(main_tool, "run"):
+            if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
                 return await asyncio.get_event_loop().run_in_executor(
-                    None, main_tool.run, input_state
+                    None,
+                    main_tool.run,
+                    input_state,
                 )
-            else:
-                raise OnexError(
-                    error_code=CoreErrorCode.OPERATION_FAILED,
-                    message="Main tool does not implement process_async(), process(), or run() method",
-                    context={
-                        "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
-                        "node_name": self.state.node_name,
-                        "workflow_id": self.workflow_id,
-                    },
-                    correlation_id=self.correlation_id,
-                )
+            raise OnexError(
+                error_code=CoreErrorCode.OPERATION_FAILED,
+                message="Main tool does not implement process_async(), process(), or run() method",
+                context={
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
+                    "node_name": self.state.node_name,
+                    "workflow_id": self.workflow_id,
+                },
+                correlation_id=self.correlation_id,
+            )
 
         except OnexError:
             # Re-raise ONEX errors (fail-fast)
@@ -495,7 +515,7 @@ class ModelNodeBase(
             # Convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Error in ModelNodeBase processing: {str(e)}",
+                f"Error in ModelNodeBase processing: {e!s}",
                 {
                     "node_name": self.state.node_name,
                     "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
@@ -504,7 +524,7 @@ class ModelNodeBase(
                 },
             )
             raise OnexError(
-                message=f"ModelNodeBase processing error: {str(e)}",
+                message=f"ModelNodeBase processing error: {e!s}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
                 context={
                     "node_name": self.state.node_name,
@@ -542,12 +562,11 @@ class ModelNodeBase(
                     context=result.error.context,
                     correlation_id=result.error.correlation_id,
                 )
-            else:
-                raise OnexError(
-                    message="Node execution failed without error details",
-                    error_code=CoreErrorCode.OPERATION_FAILED,
-                    correlation_id=self.correlation_id,
-                )
+            raise OnexError(
+                message="Node execution failed without error details",
+                error_code=CoreErrorCode.OPERATION_FAILED,
+                correlation_id=self.correlation_id,
+            )
 
         return result.value
 
@@ -586,7 +605,9 @@ class ModelNodeBase(
         return state
 
     async def dispatch_async(
-        self, state: ModelState, action: ActionModel
+        self,
+        state: ModelState,
+        action: ActionModel,
     ) -> NodeResult[ModelState]:
         """
         Asynchronous workflow-based state transition.
@@ -625,7 +646,7 @@ class ModelNodeBase(
         except Exception as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"State dispatch failed: {str(e)}",
+                message=f"State dispatch failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 correlation_id=self.correlation_id,
                 retryable=False,
@@ -647,7 +668,7 @@ class ModelNodeBase(
         Default implementation returns None (no workflow needed).
         Override in subclasses that need workflow orchestration.
         """
-        return None
+        return
 
     # ===== HELPER METHODS =====
 
@@ -692,7 +713,7 @@ class ModelNodeBase(
 
         emit_log_event(
             LogLevelEnum.ERROR,
-            f"ModelNodeBase initialization failed: {str(error)}",
+            f"ModelNodeBase initialization failed: {error!s}",
             event.payload,
         )
 

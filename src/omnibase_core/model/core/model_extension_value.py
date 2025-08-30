@@ -2,7 +2,7 @@
 Extension value model.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -13,8 +13,8 @@ class ModelExtensionValue(BaseModel):
     Accepts any type for value (str, int, float, bool, dict, list, etc.) for protocol and legacy compatibility.
     """
 
-    value: Optional[Any] = None
-    description: Optional[str] = None
+    value: Any | None = None
+    description: str | None = None
     # Add more fields as needed for extension use cases
 
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}

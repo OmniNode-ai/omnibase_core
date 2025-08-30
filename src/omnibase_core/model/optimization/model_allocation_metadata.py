@@ -5,7 +5,6 @@ Metadata for quota allocation tracking.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,8 +12,9 @@ from pydantic import BaseModel, Field
 class ModelAllocationMetadata(BaseModel):
     """Metadata for quota allocation."""
 
-    last_optimization: Optional[datetime] = Field(
-        None, description="Last optimization timestamp"
+    last_optimization: datetime | None = Field(
+        None,
+        description="Last optimization timestamp",
     )
     optimization_count: int = Field(0, description="Number of optimizations")
     peak_usage: int = Field(0, description="Peak token usage")

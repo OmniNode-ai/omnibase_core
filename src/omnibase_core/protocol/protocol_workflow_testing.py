@@ -7,27 +7,38 @@ ensuring consistent behavior across different implementations.
 """
 
 from abc import abstractmethod
-from typing import List, Protocol, Union
+from typing import Protocol
 
 from omnibase_core.enums.enum_workflow_testing import (
-    EnumAccommodationStrategy, EnumTestContext)
+    EnumAccommodationStrategy,
+    EnumTestContext,
+)
 from omnibase_core.model.core.model_generic_value import ModelGenericValue
-from omnibase_core.model.workflow_testing.model_accommodation_override_map import \
-    ModelAccommodationOverrideMap
-from omnibase_core.model.workflow_testing.model_dependency_accommodation_map import \
-    ModelDependencyAccommodationMap
-from omnibase_core.model.workflow_testing.model_mock_event_bus import \
-    ModelMockEventBusConfig
-from omnibase_core.model.workflow_testing.model_mock_registry import \
-    ModelMockRegistryConfig
-from omnibase_core.model.workflow_testing.model_service_availability_map import \
-    ModelServiceAvailabilityMap
+from omnibase_core.model.workflow_testing.model_accommodation_override_map import (
+    ModelAccommodationOverrideMap,
+)
+from omnibase_core.model.workflow_testing.model_dependency_accommodation_map import (
+    ModelDependencyAccommodationMap,
+)
+from omnibase_core.model.workflow_testing.model_mock_event_bus import (
+    ModelMockEventBusConfig,
+)
+from omnibase_core.model.workflow_testing.model_mock_registry import (
+    ModelMockRegistryConfig,
+)
+from omnibase_core.model.workflow_testing.model_service_availability_map import (
+    ModelServiceAvailabilityMap,
+)
 from omnibase_core.model.workflow_testing.model_workflow_testing_configuration import (
-    ModelMockDependencyConfig, ModelTestWorkflow,
-    ModelWorkflowTestingConfiguration)
+    ModelMockDependencyConfig,
+    ModelTestWorkflow,
+    ModelWorkflowTestingConfiguration,
+)
 from omnibase_core.model.workflow_testing.model_workflow_testing_results import (
-    ModelAccommodationResult, ModelTestWorkflowResult,
-    ModelWorkflowTestingResults)
+    ModelAccommodationResult,
+    ModelTestWorkflowResult,
+    ModelWorkflowTestingResults,
+)
 
 
 class ProtocolWorkflowTestingExecutor(Protocol):
@@ -58,7 +69,7 @@ class ProtocolWorkflowTestingExecutor(Protocol):
     def execute_test_scenario(
         self,
         scenario: ModelTestWorkflow,
-        accommodation_results: List[ModelAccommodationResult],
+        accommodation_results: list[ModelAccommodationResult],
     ) -> ModelTestWorkflowResult:
         """
         Execute a single test scenario with accommodated dependencies.
@@ -77,7 +88,8 @@ class ProtocolWorkflowTestingExecutor(Protocol):
 
     @abstractmethod
     def validate_testing_configuration(
-        self, configuration: ModelWorkflowTestingConfiguration
+        self,
+        configuration: ModelWorkflowTestingConfiguration,
     ) -> bool:
         """
         Validate workflow testing configuration for completeness and correctness.
@@ -124,7 +136,7 @@ class ProtocolDependencyAccommodationManager(Protocol):
         dependency_accommodations: ModelDependencyAccommodationMap,
         accommodation_strategy: EnumAccommodationStrategy,
         accommodation_overrides: ModelAccommodationOverrideMap,
-    ) -> List[ModelAccommodationResult]:
+    ) -> list[ModelAccommodationResult]:
         """
         Accommodate dependencies for a tool instance based on strategy.
 
@@ -144,7 +156,8 @@ class ProtocolDependencyAccommodationManager(Protocol):
 
     @abstractmethod
     def cleanup_accommodated_dependencies(
-        self, accommodation_results: List[ModelAccommodationResult]
+        self,
+        accommodation_results: list[ModelAccommodationResult],
     ) -> None:
         """
         Clean up resources from accommodated dependencies.
@@ -163,7 +176,9 @@ class ProtocolMockServiceProvider(Protocol):
 
     @abstractmethod
     def create_mock_service(
-        self, service_interface: str, mock_configuration: ModelMockDependencyConfig
+        self,
+        service_interface: str,
+        mock_configuration: ModelMockDependencyConfig,
     ) -> object:
         """
         Create a mock service instance based on interface and configuration.
@@ -182,7 +197,9 @@ class ProtocolMockServiceProvider(Protocol):
 
     @abstractmethod
     def validate_mock_behavior(
-        self, mock_instance: object, expected_interface: str
+        self,
+        mock_instance: object,
+        expected_interface: str,
     ) -> bool:
         """
         Validate that mock service implements expected interface correctly.
@@ -203,7 +220,7 @@ class ProtocolMockServiceProvider(Protocol):
     def configure_mock_responses(
         self,
         mock_instance: object,
-        response_configuration: Union[ModelMockRegistryConfig, ModelMockEventBusConfig],
+        response_configuration: ModelMockRegistryConfig | ModelMockEventBusConfig,
     ) -> None:
         """
         Configure deterministic responses for mock service.
@@ -266,7 +283,10 @@ class ProtocolDeterministicResponseService(Protocol):
 
     @abstractmethod
     def validate_response_consistency(
-        self, service_type: str, request_hash: str, expected_response: ModelGenericValue
+        self,
+        service_type: str,
+        request_hash: str,
+        expected_response: ModelGenericValue,
     ) -> bool:
         """
         Validate that responses are consistent for the same request.
@@ -342,35 +362,42 @@ class ProtocolWorkflowTestingRegistry(Protocol):
 
     @abstractmethod
     def get_accommodation_manager(
-        self, manager_name: str
+        self,
+        manager_name: str,
     ) -> ProtocolDependencyAccommodationManager:
         """Get accommodation manager from registry"""
         ...
 
     @abstractmethod
     def register_mock_service_provider(
-        self, provider_name: str, provider_instance: ProtocolMockServiceProvider
+        self,
+        provider_name: str,
+        provider_instance: ProtocolMockServiceProvider,
     ) -> None:
         """Register mock service provider in the registry"""
         ...
 
     @abstractmethod
     def get_mock_service_provider(
-        self, provider_name: str
+        self,
+        provider_name: str,
     ) -> ProtocolMockServiceProvider:
         """Get mock service provider from registry"""
         ...
 
     @abstractmethod
     def register_deterministic_response_service(
-        self, service_name: str, service_instance: ProtocolDeterministicResponseService
+        self,
+        service_name: str,
+        service_instance: ProtocolDeterministicResponseService,
     ) -> None:
         """Register deterministic response service in the registry"""
         ...
 
     @abstractmethod
     def get_deterministic_response_service(
-        self, service_name: str
+        self,
+        service_name: str,
     ) -> ProtocolDeterministicResponseService:
         """Get deterministic response service from registry"""
         ...

@@ -5,7 +5,7 @@ Replaces hand-written result classes with proper Pydantic models
 for CLI tool execution operations.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,35 +24,40 @@ class ModelCliExecutionResult(BaseModel):
 
     # Core result information
     success: bool = Field(..., description="Whether the operation succeeded")
-    error_message: Optional[str] = Field(
-        None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if operation failed",
     )
 
     # Output data
-    output_data: Dict[str, Any] = Field(
-        default_factory=dict, description="Tool execution output data"
+    output_data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Tool execution output data",
     )
 
     # Execution metadata
-    tool_name: Optional[str] = Field(
-        None, description="Name of the tool that was executed"
+    tool_name: str | None = Field(
+        None,
+        description="Name of the tool that was executed",
     )
-    execution_time_ms: Optional[float] = Field(
-        None, description="Execution time in milliseconds"
+    execution_time_ms: float | None = Field(
+        None,
+        description="Execution time in milliseconds",
     )
 
     # Status information
     status_code: int = Field(0, description="Numeric status code (0 = success)")
-    warning_message: Optional[str] = Field(
-        None, description="Warning message if applicable"
+    warning_message: str | None = Field(
+        None,
+        description="Warning message if applicable",
     )
 
     @classmethod
     def create_success(
         cls,
-        output_data: Dict[str, Any] = None,
-        tool_name: str = None,
-        execution_time_ms: float = None,
+        output_data: dict[str, Any] | None = None,
+        tool_name: str | None = None,
+        execution_time_ms: float | None = None,
         **kwargs,
     ) -> "ModelCliExecutionResult":
         """
@@ -80,9 +85,9 @@ class ModelCliExecutionResult(BaseModel):
     def create_error(
         cls,
         error_message: str,
-        tool_name: str = None,
+        tool_name: str | None = None,
         status_code: int = 1,
-        output_data: Dict[str, Any] = None,
+        output_data: dict[str, Any] | None = None,
         **kwargs,
     ) -> "ModelCliExecutionResult":
         """
@@ -120,5 +125,5 @@ class ModelCliExecutionResult(BaseModel):
                 "execution_time_ms": 150.5,
                 "status_code": 0,
                 "warning_message": None,
-            }
+            },
         }

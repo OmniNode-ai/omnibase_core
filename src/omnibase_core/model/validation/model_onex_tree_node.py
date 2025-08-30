@@ -3,13 +3,16 @@ OnexTreeNode model.
 """
 
 from pathlib import Path
-from typing import Any, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.enums.enum_onex_tree_node_type import EnumOnexTreeNodeType
 from omnibase_core.exceptions import OnexError
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class ModelOnexTreeNode(BaseModel):
@@ -22,24 +25,30 @@ class ModelOnexTreeNode(BaseModel):
 
     name: str = Field(..., description="Name of the file or directory")
     type: EnumOnexTreeNodeType = Field(..., description="Type of the node")
-    namespace: Optional[str] = Field(
-        default=None, description="Canonical namespace for file nodes"
+    namespace: str | None = Field(
+        default=None,
+        description="Canonical namespace for file nodes",
     )
-    children: Optional[List["ModelOnexTreeNode"]] = Field(
-        default=None, description="Child nodes (only for directories)"
+    children: list["ModelOnexTreeNode"] | None = Field(
+        default=None,
+        description="Child nodes (only for directories)",
     )
 
     @field_validator("children")
     @classmethod
     def validate_children(
-        cls, v: Optional[List["ModelOnexTreeNode"]], info: Any
-    ) -> Optional[List["ModelOnexTreeNode"]]:
+        cls,
+        v: list["ModelOnexTreeNode"] | None,
+        info: Any,
+    ) -> list["ModelOnexTreeNode"] | None:
         """Validate that only directories can have children."""
         if info.data:
             node_type = info.data.get("type")
             if node_type == EnumOnexTreeNodeType.FILE and v is not None:
+                msg = "Files cannot have children"
                 raise OnexError(
-                    "Files cannot have children", CoreErrorCode.INVALID_PARAMETER
+                    msg,
+                    CoreErrorCode.INVALID_PARAMETER,
                 )
             if node_type == EnumOnexTreeNodeType.DIRECTORY and v is None:
                 return []
@@ -85,14 +94,15 @@ class ModelOnexTreeNode(BaseModel):
             None,
         )
 
-    def get_path(self, root_path: Optional[Path] = None) -> Path:
+    def get_path(self, root_path: Path | None = None) -> Path:
         """Get the full path of this node."""
         if root_path:
             return root_path / self.name
         return Path(self.name)
 
     def walk(
-        self, path_prefix: Optional[Path] = None
+        self,
+        path_prefix: Path | None = None,
     ) -> "Generator[tuple[Path, ModelOnexTreeNode], None, None]":
         """
         Walk the tree yielding (path, node) tuples.

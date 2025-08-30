@@ -5,7 +5,6 @@ Represents event data for conversation turn completed events.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,13 +13,15 @@ class ModelConversationTurnEvent(BaseModel):
     """Event payload for conversation turn completed events."""
 
     event_type: str = Field(
-        default="conversation_turn_completed", description="Type of event"
+        default="conversation_turn_completed",
+        description="Type of event",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When the event occurred"
+        default_factory=datetime.utcnow,
+        description="When the event occurred",
     )
     conversation_id: str = Field(..., description="Associated conversation ID")
-    session_id: Optional[str] = Field(None, description="Session identifier")
+    session_id: str | None = Field(None, description="Session identifier")
     turn_id: str = Field(..., description="Unique turn identifier")
     turn_number: int = Field(..., description="Turn number in conversation")
     user_message_id: str = Field(..., description="User message ID")

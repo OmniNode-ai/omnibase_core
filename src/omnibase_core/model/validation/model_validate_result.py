@@ -5,7 +5,6 @@ Validation result model.
 import datetime
 import hashlib
 import uuid
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,23 +16,23 @@ from .model_validate_message import ModelValidateMessage
 class ModelValidateResult(BaseModel):
     """Model for validation results."""
 
-    messages: List[ModelValidateMessage]
+    messages: list[ModelValidateMessage]
     status: EnumOnexStatus = Field(
         default=EnumOnexStatus.ERROR,
         description="success|warning|error|skipped|fixed|partial|info|unknown",
     )
-    summary: Optional[str] = None
+    summary: str | None = None
     uid: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    hash: Optional[str] = None
+    hash: str | None = None
     timestamp: str = Field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
+        default_factory=lambda: datetime.datetime.now(datetime.UTC).isoformat(),
     )
 
     def compute_hash(self) -> str:
         h = hashlib.sha256()
         for msg in self.messages:
             h.update(
-                msg.hash.encode("utf-8") if msg.hash else msg.message.encode("utf-8")
+                msg.hash.encode("utf-8") if msg.hash else msg.message.encode("utf-8"),
             )
         h.update(self.status.value.encode("utf-8"))
         if self.summary:

@@ -5,7 +5,6 @@ Represents file metadata records as stored in PostgreSQL database.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -28,10 +27,11 @@ class model_database_file_record(BaseModel):
 
     file_size: int = Field(..., description="File size in bytes")
 
-    language: Optional[str] = Field(None, description="Detected programming language")
+    language: str | None = Field(None, description="Detected programming language")
 
-    comment_style: Optional[str] = Field(
-        None, description="Comment style used for stamps"
+    comment_style: str | None = Field(
+        None,
+        description="Comment style used for stamps",
     )
 
     stamp_format: str = Field(..., description="Stamp format version")
@@ -44,10 +44,11 @@ class model_database_file_record(BaseModel):
 
     is_deleted: bool = Field(False, description="Soft deletion flag")
 
-    intelligence_metadata: Optional[str] = Field(
-        None, description="JSON-encoded intelligence metadata"
+    intelligence_metadata: str | None = Field(
+        None,
+        description="JSON-encoded intelligence metadata",
     )
 
     model_config = ConfigDict(
-        json_encoders={datetime: lambda v: v.isoformat(), UUID: lambda v: str(v)}
+        json_encoders={datetime: lambda v: v.isoformat(), UUID: lambda v: str(v)},
     )

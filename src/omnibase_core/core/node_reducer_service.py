@@ -8,13 +8,15 @@ Handles boilerplate initialization for NodeReducer + MixinNodeService + MixinNod
 from omnibase_core.core.node_reducer import NodeReducer
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
-from omnibase_core.mixin.mixin_node_id_from_contract import \
-    MixinNodeIdFromContract
+from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService
 
 
 class NodeReducerService(
-    NodeReducer, MixinNodeService, MixinNodeIdFromContract, MixinHealthCheck
+    NodeReducer,
+    MixinNodeService,
+    MixinNodeIdFromContract,
+    MixinHealthCheck,
 ):
     """
     Base class for reducer nodes that need service capabilities.

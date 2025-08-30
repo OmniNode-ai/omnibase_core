@@ -29,7 +29,7 @@ class ModelIntrospectionNodeInfo(BaseModel):
         """Convert various version formats to ModelSemVer."""
         if isinstance(v, ModelSemVer):
             return v
-        elif isinstance(v, dict):
+        if isinstance(v, dict):
             # Convert dict to ModelSemVer
             return ModelSemVer(
                 major=int(v.get("major", 1)),
@@ -38,12 +38,11 @@ class ModelIntrospectionNodeInfo(BaseModel):
                 prerelease=v.get("prerelease"),
                 build=v.get("build"),
             )
-        elif isinstance(v, str):
+        if isinstance(v, str):
             # Parse string version to ModelSemVer
             return ModelSemVer.parse(v)
-        else:
-            # Fallback to default version
-            return ModelSemVer(major=1, minor=0, patch=0)
+        # Fallback to default version
+        return ModelSemVer(major=1, minor=0, patch=0)
 
     class Config:
         json_schema_extra = {
@@ -54,5 +53,5 @@ class ModelIntrospectionNodeInfo(BaseModel):
                 "author": "ONEX System",
                 "tool_type": "generation",
                 "created_at": "2024-01-01T00:00:00",
-            }
+            },
         }

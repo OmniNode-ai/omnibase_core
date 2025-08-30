@@ -6,16 +6,13 @@ including usage limits, approval requirements, delegation rules, and audit requi
 """
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from .model_approval_requirements import ModelApprovalRequirements
 from .model_audit_requirements import ModelAuditRequirements
-from .model_permission_constraint_metadata import \
-    ModelPermissionConstraintMetadata
-from .model_permission_custom_constraints import \
-    ModelPermissionCustomConstraints
+from .model_permission_constraint_metadata import ModelPermissionConstraintMetadata
+from .model_permission_custom_constraints import ModelPermissionCustomConstraints
 from .model_permission_session_info import ModelPermissionSessionInfo
 from .model_risk_assessment import ModelRiskAssessment
 
@@ -29,77 +26,104 @@ class ModelPermissionConstraints(BaseModel):
     """
 
     constraints_id: str = Field(
-        ..., description="Unique constraints identifier", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Unique constraints identifier",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     usage_limits_enabled: bool = Field(
-        default=False, description="Whether usage limits are enabled"
+        default=False,
+        description="Whether usage limits are enabled",
     )
 
-    max_uses_total: Optional[int] = Field(
-        None, description="Maximum total uses of this permission", ge=0
+    max_uses_total: int | None = Field(
+        None,
+        description="Maximum total uses of this permission",
+        ge=0,
     )
 
-    max_uses_per_day: Optional[int] = Field(
-        None, description="Maximum uses per day", ge=0
+    max_uses_per_day: int | None = Field(
+        None,
+        description="Maximum uses per day",
+        ge=0,
     )
 
-    max_uses_per_hour: Optional[int] = Field(
-        None, description="Maximum uses per hour", ge=0
+    max_uses_per_hour: int | None = Field(
+        None,
+        description="Maximum uses per hour",
+        ge=0,
     )
 
-    max_concurrent_uses: Optional[int] = Field(
-        None, description="Maximum concurrent uses", ge=1
+    max_concurrent_uses: int | None = Field(
+        None,
+        description="Maximum concurrent uses",
+        ge=1,
     )
 
-    cooldown_period_minutes: Optional[int] = Field(
-        None, description="Cooldown period between uses in minutes", ge=0
+    cooldown_period_minutes: int | None = Field(
+        None,
+        description="Cooldown period between uses in minutes",
+        ge=0,
     )
 
-    usage_window_minutes: Optional[int] = Field(
-        None, description="Time window for usage tracking in minutes", ge=1
+    usage_window_minutes: int | None = Field(
+        None,
+        description="Time window for usage tracking in minutes",
+        ge=1,
     )
 
     approval_required: bool = Field(
-        default=False, description="Whether approval is required before use"
+        default=False,
+        description="Whether approval is required before use",
     )
 
-    approval_types: List[str] = Field(
+    approval_types: list[str] = Field(
         default_factory=list,
         description="Types of approval required (e.g., 'manager', 'security', 'admin')",
     )
 
     min_approvals_required: int = Field(
-        default=1, description="Minimum number of approvals required", ge=0
+        default=1,
+        description="Minimum number of approvals required",
+        ge=0,
     )
 
-    approval_timeout_hours: Optional[int] = Field(
-        None, description="Hours after which approval request expires", ge=1
+    approval_timeout_hours: int | None = Field(
+        None,
+        description="Hours after which approval request expires",
+        ge=1,
     )
 
-    auto_approve_conditions: List[str] = Field(
-        default_factory=list, description="Conditions under which approval is automatic"
+    auto_approve_conditions: list[str] = Field(
+        default_factory=list,
+        description="Conditions under which approval is automatic",
     )
 
     delegation_allowed: bool = Field(
-        default=False, description="Whether this permission can be delegated"
+        default=False,
+        description="Whether this permission can be delegated",
     )
 
     max_delegation_depth: int = Field(
-        default=1, description="Maximum depth of delegation chain", ge=0, le=10
+        default=1,
+        description="Maximum depth of delegation chain",
+        ge=0,
+        le=10,
     )
 
     delegation_requires_approval: bool = Field(
-        default=True, description="Whether delegation requires approval"
+        default=True,
+        description="Whether delegation requires approval",
     )
 
-    delegate_inheritance_rules: List[str] = Field(
+    delegate_inheritance_rules: list[str] = Field(
         default_factory=list,
         description="Rules for what delegates inherit (e.g., 'subset_only', 'time_limited')",
     )
 
     audit_logging_enabled: bool = Field(
-        default=True, description="Whether audit logging is enabled for this permission"
+        default=True,
+        description="Whether audit logging is enabled for this permission",
     )
 
     audit_detail_level: str = Field(
@@ -109,7 +133,9 @@ class ModelPermissionConstraints(BaseModel):
     )
 
     audit_retention_days: int = Field(
-        default=365, description="Days to retain audit logs", ge=1
+        default=365,
+        description="Days to retain audit logs",
+        ge=1,
     )
 
     audit_export_required: bool = Field(
@@ -122,12 +148,15 @@ class ModelPermissionConstraints(BaseModel):
         description="Whether notifications are enabled for permission use",
     )
 
-    notification_recipients: List[str] = Field(
-        default_factory=list, description="Recipients for permission use notifications"
+    notification_recipients: list[str] = Field(
+        default_factory=list,
+        description="Recipients for permission use notifications",
     )
 
-    notification_threshold: Optional[int] = Field(
-        None, description="Usage threshold that triggers notifications", ge=1
+    notification_threshold: int | None = Field(
+        None,
+        description="Usage threshold that triggers notifications",
+        ge=1,
     )
 
     risk_level: str = Field(
@@ -136,75 +165,91 @@ class ModelPermissionConstraints(BaseModel):
         pattern="^(low|medium|high|critical)$",
     )
 
-    compliance_tags: List[str] = Field(
+    compliance_tags: list[str] = Field(
         default_factory=list,
         description="Compliance frameworks this permission relates to",
     )
 
-    data_classification_required: Optional[str] = Field(
+    data_classification_required: str | None = Field(
         None,
         description="Required data classification level for resources",
         pattern="^(public|internal|confidential|restricted|top_secret)$",
     )
 
     emergency_override_allowed: bool = Field(
-        default=False, description="Whether emergency override is allowed"
+        default=False,
+        description="Whether emergency override is allowed",
     )
 
-    emergency_override_approvers: List[str] = Field(
-        default_factory=list, description="Who can approve emergency overrides"
+    emergency_override_approvers: list[str] = Field(
+        default_factory=list,
+        description="Who can approve emergency overrides",
     )
 
-    break_glass_conditions: List[str] = Field(
+    break_glass_conditions: list[str] = Field(
         default_factory=list,
         description="Conditions under which break glass access is allowed",
     )
 
     session_constraints_enabled: bool = Field(
-        default=False, description="Whether session-specific constraints are enabled"
+        default=False,
+        description="Whether session-specific constraints are enabled",
     )
 
-    max_session_duration_minutes: Optional[int] = Field(
-        None, description="Maximum session duration in minutes", ge=1
+    max_session_duration_minutes: int | None = Field(
+        None,
+        description="Maximum session duration in minutes",
+        ge=1,
     )
 
-    session_idle_timeout_minutes: Optional[int] = Field(
-        None, description="Session idle timeout in minutes", ge=1
+    session_idle_timeout_minutes: int | None = Field(
+        None,
+        description="Session idle timeout in minutes",
+        ge=1,
     )
 
     require_mfa: bool = Field(
-        default=False, description="Whether multi-factor authentication is required"
+        default=False,
+        description="Whether multi-factor authentication is required",
     )
 
-    mfa_validity_minutes: Optional[int] = Field(
-        None, description="How long MFA verification is valid in minutes", ge=1
+    mfa_validity_minutes: int | None = Field(
+        None,
+        description="How long MFA verification is valid in minutes",
+        ge=1,
     )
 
     network_constraints_enabled: bool = Field(
-        default=False, description="Whether network constraints are enabled"
+        default=False,
+        description="Whether network constraints are enabled",
     )
 
-    allowed_networks: List[str] = Field(
-        default_factory=list, description="CIDR blocks of allowed networks"
+    allowed_networks: list[str] = Field(
+        default_factory=list,
+        description="CIDR blocks of allowed networks",
     )
 
-    blocked_networks: List[str] = Field(
-        default_factory=list, description="CIDR blocks of blocked networks"
+    blocked_networks: list[str] = Field(
+        default_factory=list,
+        description="CIDR blocks of blocked networks",
     )
 
     require_secure_connection: bool = Field(
-        default=False, description="Whether secure connection (TLS) is required"
+        default=False,
+        description="Whether secure connection (TLS) is required",
     )
 
-    custom_constraints: Optional[ModelPermissionCustomConstraints] = Field(
-        None, description="Custom constraint definitions"
+    custom_constraints: ModelPermissionCustomConstraints | None = Field(
+        None,
+        description="Custom constraint definitions",
     )
 
-    constraint_metadata: Optional[ModelPermissionConstraintMetadata] = Field(
-        None, description="Additional constraint metadata"
+    constraint_metadata: ModelPermissionConstraintMetadata | None = Field(
+        None,
+        description="Additional constraint metadata",
     )
 
-    def is_usage_allowed(self, current_usage: Dict[str, int]) -> bool:
+    def is_usage_allowed(self, current_usage: dict[str, int]) -> bool:
         """Check if usage is allowed based on current usage statistics"""
         if not self.usage_limits_enabled:
             return True
@@ -228,22 +273,19 @@ class ModelPermissionConstraints(BaseModel):
             return False
 
         # Check concurrent usage
-        if (
+        return not (
             self.max_concurrent_uses
             and current_usage.get("concurrent", 0) >= self.max_concurrent_uses
-        ):
-            return False
+        )
 
-        return True
-
-    def calculate_cooldown_end(self, last_use: datetime) -> Optional[datetime]:
+    def calculate_cooldown_end(self, last_use: datetime) -> datetime | None:
         """Calculate when cooldown period ends"""
         if not self.cooldown_period_minutes:
             return None
 
         return last_use + timedelta(minutes=self.cooldown_period_minutes)
 
-    def is_cooldown_satisfied(self, last_use: Optional[datetime]) -> bool:
+    def is_cooldown_satisfied(self, last_use: datetime | None) -> bool:
         """Check if cooldown period is satisfied"""
         if not self.cooldown_period_minutes or not last_use:
             return True
@@ -287,10 +329,9 @@ class ModelPermissionConstraints(BaseModel):
         if not self.notification_enabled:
             return False
 
-        if self.notification_threshold and usage_count >= self.notification_threshold:
-            return True
-
-        return False
+        return bool(
+            self.notification_threshold and usage_count >= self.notification_threshold
+        )
 
     def get_risk_assessment(self) -> ModelRiskAssessment:
         """Get risk assessment information"""
@@ -305,7 +346,8 @@ class ModelPermissionConstraints(BaseModel):
         )
 
     def validate_session_constraints(
-        self, session_info: ModelPermissionSessionInfo
+        self,
+        session_info: ModelPermissionSessionInfo,
     ) -> bool:
         """Validate session-specific constraints"""
         if not self.session_constraints_enabled:
@@ -363,7 +405,8 @@ class ModelPermissionConstraints(BaseModel):
 
     @classmethod
     def create_standard_constraints(
-        cls, risk_level: str = "medium"
+        cls,
+        risk_level: str = "medium",
     ) -> "ModelPermissionConstraints":
         """Create standard permission constraints"""
         audit_detail = "standard" if risk_level in ["low", "medium"] else "detailed"

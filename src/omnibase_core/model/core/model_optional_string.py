@@ -1,7 +1,5 @@
 """Model for optional string values."""
 
-from typing import Union
-
 from pydantic import BaseModel, Field
 
 
@@ -13,13 +11,13 @@ class ModelOptionalString(BaseModel):
     requiring specific typed models instead of generic types.
     """
 
-    value: Union[str, None] = Field(default=None, description="Optional string value")
+    value: str | None = Field(default=None, description="Optional string value")
 
-    def get(self) -> Union[str, None]:
+    def get(self) -> str | None:
         """Get the optional value."""
         return self.value
 
-    def set(self, value: Union[str, None]) -> None:
+    def set(self, value: str | None) -> None:
         """Set the optional value."""
         self.value = value
 

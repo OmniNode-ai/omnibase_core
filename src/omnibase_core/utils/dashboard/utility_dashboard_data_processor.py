@@ -5,22 +5,22 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from omnibase_core.models.model_dashboard_tool_capture import \
-    ModelDashboardToolCapture
-from omnibase_core.models.model_dashboard_web_socket_event_data import \
-    ModelDashboardWebSocketEventData
-from omnibase_core.services.omnimemory.graph.factories.factory_claude_code_event import \
-    FactoryClaudeCodeEvent
-from omnibase_core.services.postgres_debug_knowledge_base import \
-    ServicePostgresDebugKnowledgeBase
-from omnibase_core.utils.session.utility_session_manager import \
-    UtilitySessionManager
+from omnibase_core.models.model_dashboard_tool_capture import ModelDashboardToolCapture
+from omnibase_core.models.model_dashboard_web_socket_event_data import (
+    ModelDashboardWebSocketEventData,
+)
+from omnibase_core.services.omnimemory.graph.factories.factory_claude_code_event import (
+    FactoryClaudeCodeEvent,
+)
+from omnibase_core.services.postgres_debug_knowledge_base import (
+    ServicePostgresDebugKnowledgeBase,
+)
+from omnibase_core.utils.session.utility_session_manager import UtilitySessionManager
 
 if TYPE_CHECKING:
-    from omnibase_core.utils.kafka.utility_kafka_hook_processor import \
-        ModelHookEvent
+    from omnibase_core.utils.kafka.utility_kafka_hook_processor import ModelHookEvent
 
 
 class UtilityDashboardDataProcessor:
@@ -35,8 +35,8 @@ class UtilityDashboardDataProcessor:
 
     def __init__(
         self,
-        db_service: Optional[ServicePostgresDebugKnowledgeBase] = None,
-        session_manager: Optional[UtilitySessionManager] = None,
+        db_service: ServicePostgresDebugKnowledgeBase | None = None,
+        session_manager: UtilitySessionManager | None = None,
     ):
         """Initialize data processor.
 
@@ -71,7 +71,8 @@ class UtilityDashboardDataProcessor:
         return tool_name
 
     def build_capture_data(
-        self, hook_event: "ModelHookEvent"
+        self,
+        hook_event: "ModelHookEvent",
     ) -> ModelDashboardToolCapture:
         """Build capture data structure for database storage.
 
@@ -130,7 +131,9 @@ class UtilityDashboardDataProcessor:
         )
 
     def build_websocket_event_data(
-        self, hook_event: "ModelHookEvent", message_content: Optional[str] = None
+        self,
+        hook_event: "ModelHookEvent",
+        message_content: str | None = None,
     ) -> ModelDashboardWebSocketEventData:
         """Build event data structure for WebSocket broadcasting.
 
@@ -156,7 +159,7 @@ class UtilityDashboardDataProcessor:
         if message_content:
             event_dict["claude_message"] = message_content
             # Also add to nested data if it exists
-            if "data" in event_dict and event_dict["data"]:
+            if event_dict.get("data"):
                 event_dict["data"]["claude_message"] = message_content
 
         return ModelDashboardWebSocketEventData(
@@ -170,8 +173,9 @@ class UtilityDashboardDataProcessor:
         )
 
     async def process_and_store_hook_event(
-        self, hook_event: "ModelHookEvent"
-    ) -> Optional[ModelDashboardWebSocketEventData]:
+        self,
+        hook_event: "ModelHookEvent",
+    ) -> ModelDashboardWebSocketEventData | None:
         """Process hook event and store in database.
 
         Args:
@@ -188,15 +192,13 @@ class UtilityDashboardDataProcessor:
 
         # Store asynchronously with proper error handling
         storage_task = asyncio.create_task(
-            self.db_service.store_tool_capture(capture_data)
+            self.db_service.store_tool_capture(capture_data),
         )
         storage_task.add_done_callback(self._handle_storage_task_completion)
 
         # Build WebSocket event data for broadcasting
         message_content = FactoryClaudeCodeEvent.extract_display_content(hook_event)
-        websocket_data = self.build_websocket_event_data(hook_event, message_content)
-
-        return websocket_data
+        return self.build_websocket_event_data(hook_event, message_content)
 
     def _handle_storage_task_completion(self, task):
         """Handle completion of async storage task with proper error handling.
@@ -207,13 +209,12 @@ class UtilityDashboardDataProcessor:
         try:
             # Check if task completed successfully
             if task.exception() is not None:
-                error = task.exception()
+                task.exception()
                 # Log error but don't fail the main hook processing
-                print(f"Database storage task failed: {error}")
                 # In production, you might want to add retry logic or alerting here
             else:
                 # Task completed successfully
                 pass
-        except Exception as e:
+        except Exception:
             # Handle any errors in the callback itself
-            print(f"Error in storage task callback: {e}")
+            pass

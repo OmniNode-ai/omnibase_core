@@ -8,18 +8,15 @@ connection management, and operational insights for ONEX registry services.
 import re
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_business_impact import \
-        ModelBusinessImpact
-    from omnibase_core.model.core.model_generic_properties import \
-        ModelGenericProperties
-    from omnibase_core.model.core.model_monitoring_metrics import \
-        ModelMonitoringMetrics
+    from omnibase_core.model.core.model_business_impact import ModelBusinessImpact
+    from omnibase_core.model.core.model_generic_properties import ModelGenericProperties
+    from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
 
 
 class ServiceHealthStatus(str, Enum):
@@ -68,13 +65,17 @@ class ModelServiceHealth(BaseModel):
     """
 
     service_name: str = Field(
-        ..., description="Name of the external service", min_length=1, max_length=100
+        ...,
+        description="Name of the external service",
+        min_length=1,
+        max_length=100,
     )
 
     service_type: ServiceType = Field(..., description="Type of the service")
 
     status: ServiceHealthStatus = Field(
-        ..., description="Current health status of the service"
+        ...,
+        description="Current health status of the service",
     )
 
     connection_string: str = Field(
@@ -84,62 +85,84 @@ class ModelServiceHealth(BaseModel):
         max_length=500,
     )
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         None,
         description="Detailed error message if service is unhealthy",
         max_length=1000,
     )
 
-    error_code: Optional[str] = Field(
-        None, description="Specific error code for programmatic handling", max_length=50
+    error_code: str | None = Field(
+        None,
+        description="Specific error code for programmatic handling",
+        max_length=50,
     )
 
-    last_check_time: Optional[str] = Field(
-        default=None, description="ISO timestamp of last health check"
+    last_check_time: str | None = Field(
+        default=None,
+        description="ISO timestamp of last health check",
     )
 
-    response_time_ms: Optional[int] = Field(
-        default=None, description="Response time in milliseconds for health check", ge=0
+    response_time_ms: int | None = Field(
+        default=None,
+        description="Response time in milliseconds for health check",
+        ge=0,
     )
 
-    consecutive_failures: Optional[int] = Field(
-        default=0, description="Number of consecutive health check failures", ge=0
+    consecutive_failures: int | None = Field(
+        default=0,
+        description="Number of consecutive health check failures",
+        ge=0,
     )
 
-    uptime_seconds: Optional[int] = Field(
-        default=None, description="Service uptime in seconds", ge=0
+    uptime_seconds: int | None = Field(
+        default=None,
+        description="Service uptime in seconds",
+        ge=0,
     )
 
-    version: Optional[str] = Field(
-        default=None, description="Service version if available", max_length=50
+    version: str | None = Field(
+        default=None,
+        description="Service version if available",
+        max_length=50,
     )
 
-    endpoint_url: Optional[str] = Field(
-        default=None, description="Primary service endpoint URL", max_length=500
+    endpoint_url: str | None = Field(
+        default=None,
+        description="Primary service endpoint URL",
+        max_length=500,
     )
 
-    port: Optional[int] = Field(
-        default=None, description="Service port number", ge=1, le=65535
+    port: int | None = Field(
+        default=None,
+        description="Service port number",
+        ge=1,
+        le=65535,
     )
 
-    ssl_enabled: Optional[bool] = Field(
-        default=None, description="Whether SSL/TLS is enabled"
+    ssl_enabled: bool | None = Field(
+        default=None,
+        description="Whether SSL/TLS is enabled",
     )
 
-    authentication_type: Optional[str] = Field(
-        default=None, description="Type of authentication used", max_length=50
+    authentication_type: str | None = Field(
+        default=None,
+        description="Type of authentication used",
+        max_length=50,
     )
 
     configuration: Optional["ModelGenericProperties"] = Field(
-        None, description="Service configuration summary"
+        None,
+        description="Service configuration summary",
     )
 
     metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None, description="Performance and operational metrics"
+        None,
+        description="Performance and operational metrics",
     )
 
-    dependencies: Optional[List[str]] = Field(
-        default_factory=list, description="List of service dependencies"
+    dependencies: list[str] | None = Field(
+        default_factory=list,
+        description="List of service dependencies",
     )
 
     @field_validator("service_name")
@@ -147,14 +170,16 @@ class ModelServiceHealth(BaseModel):
     def validate_service_name(cls, v: str) -> str:
         """Validate service name format."""
         if not v or not v.strip():
-            raise ValueError("service_name cannot be empty or whitespace")
+            msg = "service_name cannot be empty or whitespace"
+            raise ValueError(msg)
 
         v = v.strip()
 
         # Check for valid service name pattern
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9_\-\.]*$", v):
+            msg = "service_name must start with letter and contain only alphanumeric, underscore, hyphen, and dot characters"
             raise ValueError(
-                "service_name must start with letter and contain only alphanumeric, underscore, hyphen, and dot characters"
+                msg,
             )
 
         return v
@@ -164,7 +189,8 @@ class ModelServiceHealth(BaseModel):
     def validate_connection_string(cls, v: str) -> str:
         """Validate and sanitize connection string."""
         if not v or not v.strip():
-            raise ValueError("connection_string cannot be empty or whitespace")
+            msg = "connection_string cannot be empty or whitespace"
+            raise ValueError(msg)
 
         v = v.strip()
 
@@ -192,7 +218,7 @@ class ModelServiceHealth(BaseModel):
 
     @field_validator("endpoint_url")
     @classmethod
-    def validate_endpoint_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_endpoint_url(cls, v: str | None) -> str | None:
         """Validate endpoint URL format."""
         if v is None:
             return v
@@ -204,17 +230,19 @@ class ModelServiceHealth(BaseModel):
         try:
             parsed = urlparse(v)
             if not parsed.scheme or not parsed.netloc:
+                msg = "endpoint_url must be a valid URL with scheme and host"
                 raise ValueError(
-                    "endpoint_url must be a valid URL with scheme and host"
+                    msg,
                 )
         except Exception:
-            raise ValueError("endpoint_url must be a valid URL")
+            msg = "endpoint_url must be a valid URL"
+            raise ValueError(msg)
 
         return v
 
     @field_validator("last_check_time")
     @classmethod
-    def validate_last_check_time(cls, v: Optional[str]) -> Optional[str]:
+    def validate_last_check_time(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return v
@@ -223,7 +251,8 @@ class ModelServiceHealth(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("last_check_time must be a valid ISO timestamp")
+            msg = "last_check_time must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Health Status Analysis ===
 
@@ -257,17 +286,16 @@ class ModelServiceHealth(BaseModel):
         """Get human-readable severity level."""
         if self.status == ServiceHealthStatus.ERROR:
             return "critical"
-        elif self.status in [
+        if self.status in [
             ServiceHealthStatus.UNREACHABLE,
             ServiceHealthStatus.TIMEOUT,
         ]:
             return "high"
-        elif self.status == ServiceHealthStatus.DEGRADED:
+        if self.status == ServiceHealthStatus.DEGRADED:
             return "medium"
-        elif self.requires_attention():
+        if self.requires_attention():
             return "low"
-        else:
-            return "info"
+        return "info"
 
     # === Connection Analysis ===
 
@@ -281,20 +309,19 @@ class ModelServiceHealth(BaseModel):
             or conn_lower.startswith("https://")
         ):
             return "secure"
-        elif conn_lower.startswith("http://"):
+        if conn_lower.startswith("http://"):
             return "insecure"
-        elif self.ssl_enabled is True:
+        if self.ssl_enabled is True:
             return "secure"
-        elif self.ssl_enabled is False:
+        if self.ssl_enabled is False:
             return "insecure"
-        else:
-            return "unknown"
+        return "unknown"
 
     def is_secure_connection(self) -> bool:
         """Check if the connection uses secure protocols."""
         return self.get_connection_type() == "secure"
 
-    def get_security_recommendations(self) -> List[str]:
+    def get_security_recommendations(self) -> list[str]:
         """Get security recommendations for the service connection."""
         recommendations = []
 
@@ -305,7 +332,7 @@ class ModelServiceHealth(BaseModel):
             recommendations.append("Implement authentication for enhanced security")
         elif self.authentication_type.lower() in ["basic", "plaintext"]:
             recommendations.append(
-                "Consider upgrading to stronger authentication methods"
+                "Consider upgrading to stronger authentication methods",
             )
 
         # Check for sensitive data in connection string
@@ -314,7 +341,7 @@ class ModelServiceHealth(BaseModel):
             for pattern in ["password=", "secret=", "token="]
         ):
             recommendations.append(
-                "Credentials detected in connection string - ensure they are properly masked"
+                "Credentials detected in connection string - ensure they are properly masked",
             )
 
         return recommendations
@@ -329,14 +356,13 @@ class ModelServiceHealth(BaseModel):
         # Service thresholds are typically higher than tool thresholds
         if self.response_time_ms < 100:
             return "excellent"
-        elif self.response_time_ms < 500:
+        if self.response_time_ms < 500:
             return "good"
-        elif self.response_time_ms < 2000:
+        if self.response_time_ms < 2000:
             return "acceptable"
-        elif self.response_time_ms < 10000:
+        if self.response_time_ms < 10000:
             return "slow"
-        else:
-            return "very_slow"
+        return "very_slow"
 
     def is_performance_concerning(self) -> bool:
         """Check if performance metrics indicate potential issues."""
@@ -349,9 +375,8 @@ class ModelServiceHealth(BaseModel):
 
         if self.response_time_ms < 1000:
             return f"{self.response_time_ms}ms"
-        else:
-            seconds = self.response_time_ms / 1000
-            return f"{seconds:.2f}s"
+        seconds = self.response_time_ms / 1000
+        return f"{seconds:.2f}s"
 
     def get_uptime_human(self) -> str:
         """Get human-readable uptime."""
@@ -360,15 +385,14 @@ class ModelServiceHealth(BaseModel):
 
         if self.uptime_seconds < 60:
             return f"{self.uptime_seconds}s"
-        elif self.uptime_seconds < 3600:
+        if self.uptime_seconds < 3600:
             minutes = self.uptime_seconds // 60
             return f"{minutes}m"
-        elif self.uptime_seconds < 86400:
+        if self.uptime_seconds < 86400:
             hours = self.uptime_seconds // 3600
             return f"{hours}h"
-        else:
-            days = self.uptime_seconds // 86400
-            return f"{days}d"
+        days = self.uptime_seconds // 86400
+        return f"{days}d"
 
     # === Reliability Analysis ===
 
@@ -399,19 +423,20 @@ class ModelServiceHealth(BaseModel):
         """Get availability category based on consecutive failures."""
         if not self.consecutive_failures:
             return "highly_available"
-        elif self.consecutive_failures < 2:
+        if self.consecutive_failures < 2:
             return "available"
-        elif self.consecutive_failures < 5:
+        if self.consecutive_failures < 5:
             return "unstable"
-        else:
-            return "unavailable"
+        return "unavailable"
 
     # === Business Intelligence ===
 
     def get_business_impact(self) -> "ModelBusinessImpact":
         """Assess business impact of the service health."""
         from omnibase_core.model.core.model_business_impact import (
-            ImpactSeverity, ModelBusinessImpact)
+            ImpactSeverity,
+            ModelBusinessImpact,
+        )
 
         severity = (
             ImpactSeverity.CRITICAL
@@ -441,37 +466,36 @@ class ModelServiceHealth(BaseModel):
         """Assess impact on system performance."""
         if self.is_unhealthy():
             return "high_negative"
-        elif self.is_performance_concerning():
+        if self.is_performance_concerning():
             return "medium_negative"
-        elif self.get_performance_category() in ["excellent", "good"]:
+        if self.get_performance_category() in ["excellent", "good"]:
             return "positive"
-        else:
-            return "neutral"
+        return "neutral"
 
     def _assess_security_risk(self) -> str:
         """Assess security risk level."""
         if not self.is_secure_connection():
             return "high"
-        elif self.authentication_type and self.authentication_type.lower() in [
-            "basic",
-            "plaintext",
-        ]:
+        if (
+            self.authentication_type
+            and self.authentication_type.lower()
+            in [
+                "basic",
+                "plaintext",
+            ]
+        ) or not self.authentication_type:
             return "medium"
-        elif not self.authentication_type:
-            return "medium"
-        else:
-            return "low"
+        return "low"
 
     def _estimate_operational_cost(self) -> str:
         """Estimate operational cost impact."""
         if self.consecutive_failures and self.consecutive_failures >= 5:
             return "high"
-        elif self.response_time_ms and self.response_time_ms > 30000:
+        if self.response_time_ms and self.response_time_ms > 30000:
             return "medium"
-        elif self.is_degraded():
+        if self.is_degraded():
             return "low"
-        else:
-            return "minimal"
+        return "minimal"
 
     # === Factory Methods ===
 
@@ -501,7 +525,7 @@ class ModelServiceHealth(BaseModel):
         service_type: str,
         connection_string: str,
         error_message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
     ) -> "ModelServiceHealth":
         """Create an error service health status."""
         return cls(

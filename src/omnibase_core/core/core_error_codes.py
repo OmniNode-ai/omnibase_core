@@ -42,20 +42,14 @@ Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
 """
 
 import re
-import sys
 from collections.abc import Mapping
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Type, Union
 
-from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
 # Model imports moved to be local to avoid circular dependencies
 
-if TYPE_CHECKING:
-    pass
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -359,22 +353,25 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
 # === Backward Compatibility Imports ===
 # Import OnexError and utilities from new locations to maintain compatibility
 # These imports allow existing code to continue working without changes
-from omnibase_core.exceptions import (CLIAdapter, OnexError,
-                                      get_error_codes_for_component,
-                                      list_registered_components,
-                                      register_error_codes)
+from omnibase_core.exceptions import (
+    CLIAdapter,
+    OnexError,
+    get_error_codes_for_component,
+    list_registered_components,
+    register_error_codes,
+)
 
 # Re-export for compatibility
 __all__ = [
-    "CLIExitCode",
-    "get_exit_code_for_status",
-    "OnexErrorCode",
-    "CoreErrorCode",
-    "get_exit_code_for_core_error",
-    "get_core_error_description",
-    "OnexError",  # Re-exported from exceptions module
     "CLIAdapter",  # Re-exported from exceptions module
-    "register_error_codes",  # Re-exported from exceptions module
+    "CLIExitCode",
+    "CoreErrorCode",
+    "OnexError",  # Re-exported from exceptions module
+    "OnexErrorCode",
+    "get_core_error_description",
     "get_error_codes_for_component",  # Re-exported from exceptions module
+    "get_exit_code_for_core_error",
+    "get_exit_code_for_status",
     "list_registered_components",  # Re-exported from exceptions module
+    "register_error_codes",  # Re-exported from exceptions module
 ]

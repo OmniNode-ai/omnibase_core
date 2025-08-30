@@ -2,7 +2,7 @@
 Workflow services model.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -15,11 +15,12 @@ class ModelWorkflowServices(BaseModel):
     Replaces Dict[str, Any] for services fields.
     """
 
-    services: Dict[str, ModelServiceContainer] = Field(
-        default_factory=dict, description="Service definitions"
+    services: dict[str, ModelServiceContainer] = Field(
+        default_factory=dict,
+        description="Service definitions",
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return {
             name: service.dict(exclude_none=True)

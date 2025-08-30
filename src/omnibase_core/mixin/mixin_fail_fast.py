@@ -7,15 +7,17 @@ Ensures tools crash early with clear error messages rather than continuing in in
 
 import sys
 import traceback
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, Union
+from typing import TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_onex_error import ModelOnexError
 
@@ -30,7 +32,7 @@ class FailFastError(Exception):
         self,
         message: str,
         error_code: str = "FAIL_FAST",
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ):
         super().__init__(message)
         self.error_code = error_code
@@ -44,8 +46,8 @@ class ValidationFailedError(FailFastError):
     def __init__(
         self,
         message: str,
-        field: Optional[str] = None,
-        value: Optional[Union[str, int, float]] = None,
+        field: str | None = None,
+        value: str | int | float | None = None,
     ):
         details = {}
         if field:
@@ -68,7 +70,9 @@ class ContractViolationError(FailFastError):
 
     def __init__(self, message: str, contract_field: str):
         super().__init__(
-            message, "CONTRACT_VIOLATION", {"contract_field": contract_field}
+            message,
+            "CONTRACT_VIOLATION",
+            {"contract_field": contract_field},
         )
 
 
@@ -131,7 +135,7 @@ class MixinFailFast:
             except Exception as e:
                 # Convert other exceptions to fail fast
                 self._handle_critical_error(
-                    f"Critical error in {func.__name__}: {str(e)}",
+                    f"Critical error in {func.__name__}: {e!s}",
                     error_type=type(e).__name__,
                     function=func.__name__,
                     traceback=traceback.format_exc(),
@@ -139,7 +143,7 @@ class MixinFailFast:
 
         return wrapper
 
-    def validate_required(self, value: Optional[T], field_name: str) -> T:
+    def validate_required(self, value: T | None, field_name: str) -> T:
         """
         Validate that a required field is not None.
 
@@ -154,15 +158,18 @@ class MixinFailFast:
             ValidationFailedError if value is None
         """
         if value is None:
+            msg = f"Required field '{field_name}' is missing"
             raise OnexError(
-                f"Required field '{field_name}' is missing",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def validate_not_empty(
-        self, value: Union[str, list, dict], field_name: str
-    ) -> Union[str, list, dict]:
+        self,
+        value: str | list | dict,
+        field_name: str,
+    ) -> str | list | dict:
         """
         Validate that a field is not empty.
 
@@ -177,14 +184,18 @@ class MixinFailFast:
             ValidationFailedError if value is empty
         """
         if not value:
+            msg = f"Field '{field_name}' cannot be empty"
             raise OnexError(
-                f"Field '{field_name}' cannot be empty",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def validate_type(
-        self, value: object, expected_type: Type, field_name: str
+        self,
+        value: object,
+        expected_type: type,
+        field_name: str,
     ) -> object:
         """
         Validate that a field has the expected type using duck typing.
@@ -223,32 +234,38 @@ class MixinFailFast:
                 if (
                     len(key_missing) > len(expected_methods) * 0.5
                 ):  # More than 50% missing
+                    msg = f"Field '{field_name}' must be compatible with type {expected_type.__name__}, got {actual_type.__name__}"
                     raise OnexError(
-                        f"Field '{field_name}' must be compatible with type {expected_type.__name__}, got {actual_type.__name__}",
+                        msg,
                         error_code=CoreErrorCode.VALIDATION_FAILED,
                     )
-            else:
-                # For basic types, check essential characteristics
-                if expected_type == str and not hasattr(value, "split"):
-                    raise OnexError(
-                        f"Field '{field_name}' must be string-like, got {actual_type.__name__}",
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                    )
-                elif expected_type == int and not hasattr(value, "__add__"):
-                    raise OnexError(
-                        f"Field '{field_name}' must be numeric, got {actual_type.__name__}",
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                    )
-                elif expected_type == list and not hasattr(value, "append"):
-                    raise OnexError(
-                        f"Field '{field_name}' must be list-like, got {actual_type.__name__}",
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                    )
-                elif expected_type == dict and not hasattr(value, "keys"):
-                    raise OnexError(
-                        f"Field '{field_name}' must be dict-like, got {actual_type.__name__}",
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                    )
+            # For basic types, check essential characteristics
+            elif expected_type == str and not hasattr(value, "split"):
+                msg = f"Field '{field_name}' must be string-like, got {actual_type.__name__}"
+                raise OnexError(
+                    msg,
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                )
+            elif expected_type == int and not hasattr(value, "__add__"):
+                msg = (
+                    f"Field '{field_name}' must be numeric, got {actual_type.__name__}"
+                )
+                raise OnexError(
+                    msg,
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                )
+            elif expected_type == list and not hasattr(value, "append"):
+                msg = f"Field '{field_name}' must be list-like, got {actual_type.__name__}"
+                raise OnexError(
+                    msg,
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                )
+            elif expected_type == dict and not hasattr(value, "keys"):
+                msg = f"Field '{field_name}' must be dict-like, got {actual_type.__name__}"
+                raise OnexError(
+                    msg,
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                )
 
         return value
 
@@ -268,14 +285,17 @@ class MixinFailFast:
             ValidationFailedError if value not allowed
         """
         if value not in allowed_values:
+            msg = f"Field '{field_name}' must be one of {allowed_values}, got '{value}'"
             raise OnexError(
-                f"Field '{field_name}' must be one of {allowed_values}, got '{value}'",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_FAILED,
             )
         return value
 
     def require_dependency(
-        self, dependency_name: str, check_func: Callable[[], bool]
+        self,
+        dependency_name: str,
+        check_func: Callable[[], bool],
     ) -> None:
         """
         Require that a dependency is available.
@@ -289,18 +309,23 @@ class MixinFailFast:
         """
         try:
             if not check_func():
+                msg = f"Required dependency '{dependency_name}' is not available"
                 raise OnexError(
-                    f"Required dependency '{dependency_name}' is not available",
+                    msg,
                     error_code=CoreErrorCode.DEPENDENCY_FAILED,
                 )
         except Exception as e:
+            msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise OnexError(
-                f"Failed to check dependency '{dependency_name}': {str(e)}",
+                msg,
                 error_code=CoreErrorCode.DEPENDENCY_FAILED,
             )
 
     def enforce_contract(
-        self, condition: bool, message: str, contract_field: str
+        self,
+        condition: bool,
+        message: str,
+        contract_field: str,
     ) -> None:
         """
         Enforce a contract requirement.
@@ -332,7 +357,7 @@ class MixinFailFast:
         )
 
         # Create error model for structured output
-        error = ModelOnexError(
+        ModelOnexError(
             error_code="FAIL_FAST",
             message=message,
             details=details,
@@ -342,19 +367,10 @@ class MixinFailFast:
         )
 
         # Print to stderr for visibility
-        print(f"\n{'='*60}", file=sys.stderr)
-        print("CRITICAL ERROR - FAIL FAST", file=sys.stderr)
-        print(f"{'='*60}", file=sys.stderr)
-        print(f"Node: {error.node_name}", file=sys.stderr)
-        print(f"Time: {error.timestamp}", file=sys.stderr)
-        print(f"Message: {message}", file=sys.stderr)
 
         if details:
-            print("\nDetails:", file=sys.stderr)
-            for key, value in details.items():
-                print(f"  {key}: {value}", file=sys.stderr)
-
-        print(f"{'='*60}\n", file=sys.stderr)
+            for _key, _value in details.items():
+                pass
 
         # Exit with error code
         sys.exit(1)
@@ -380,7 +396,7 @@ class MixinFailFast:
         else:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Error in {context}: {str(error)}",
+                f"Error in {context}: {error!s}",
                 {
                     "node_class": self.__class__.__name__,
                     "error_type": type(error).__name__,

@@ -7,19 +7,15 @@ Provides security validation and sanitization functions.
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Union
-
-from pydantic import BaseModel
 
 
 class SecurityError(Exception):
     """Raised when security validation fails."""
 
-    pass
-
 
 def validate_file_path(
-    file_path: str, allowed_dirs: Optional[List[str]] = None
+    file_path: str,
+    allowed_dirs: list[str] | None = None,
 ) -> Path:
     """
     Validate and sanitize file path to prevent directory traversal attacks.
@@ -35,7 +31,8 @@ def validate_file_path(
         SecurityError: If path is invalid or unsafe
     """
     if not file_path:
-        raise SecurityError("Empty file path provided")
+        msg = "Empty file path provided"
+        raise SecurityError(msg)
 
     # Convert to Path and resolve to absolute path
     path = Path(file_path).resolve()
@@ -47,7 +44,8 @@ def validate_file_path(
     try:
         path.relative_to(project_root)
     except ValueError:
-        raise SecurityError(f"Path {path} is outside project directory")
+        msg = f"Path {path} is outside project directory"
+        raise SecurityError(msg)
 
     # Check against allowed directories if specified
     if allowed_dirs:
@@ -62,8 +60,9 @@ def validate_file_path(
                 continue
 
         if not allowed:
+            msg = f"Path {path} not in allowed directories: {allowed_dirs}"
             raise SecurityError(
-                f"Path {path} not in allowed directories: {allowed_dirs}"
+                msg,
             )
 
     return path
@@ -81,15 +80,19 @@ def validate_file_size(file_path: Path, max_size_mb: float = 10.0) -> None:
         SecurityError: If file is too large
     """
     if not file_path.exists():
-        raise SecurityError(f"File does not exist: {file_path}")
+        msg = f"File does not exist: {file_path}"
+        raise SecurityError(msg)
 
     file_size = file_path.stat().st_size
     max_size_bytes = max_size_mb * 1024 * 1024
 
     if file_size > max_size_bytes:
-        raise SecurityError(
+        msg = (
             f"File {file_path} is {file_size / 1024 / 1024:.2f}MB, "
             f"exceeds limit of {max_size_mb}MB"
+        )
+        raise SecurityError(
+            msg,
         )
 
 
@@ -107,7 +110,8 @@ def sanitize_branch_name(branch_name: str) -> str:
         SecurityError: If branch name is invalid
     """
     if not branch_name:
-        raise SecurityError("Empty branch name provided")
+        msg = "Empty branch name provided"
+        raise SecurityError(msg)
 
     # Remove dangerous characters
     sanitized = re.sub(r"[^a-zA-Z0-9\-_/]", "", branch_name)
@@ -116,16 +120,20 @@ def sanitize_branch_name(branch_name: str) -> str:
     sanitized = sanitized.lstrip("-/")
 
     if not sanitized:
-        raise SecurityError("Branch name contains only invalid characters")
+        msg = "Branch name contains only invalid characters"
+        raise SecurityError(msg)
 
     if len(sanitized) > 100:
-        raise SecurityError("Branch name too long (max 100 characters)")
+        msg = "Branch name too long (max 100 characters)"
+        raise SecurityError(msg)
 
     return sanitized
 
 
 def safe_read_file(
-    file_path: Path, max_size_mb: float = 10.0, encoding: str = "utf-8"
+    file_path: Path,
+    max_size_mb: float = 10.0,
+    encoding: str = "utf-8",
 ) -> str:
     """
     Safely read file with size and encoding validation.
@@ -146,13 +154,17 @@ def safe_read_file(
     try:
         return file_path.read_text(encoding=encoding)
     except UnicodeDecodeError as e:
-        raise SecurityError(f"Failed to decode file {file_path}: {e}")
+        msg = f"Failed to decode file {file_path}: {e}"
+        raise SecurityError(msg)
     except OSError as e:
-        raise SecurityError(f"Failed to read file {file_path}: {e}")
+        msg = f"Failed to read file {file_path}: {e}"
+        raise SecurityError(msg)
 
 
 def safe_subprocess_run(
-    cmd: List[str], check: bool = True, capture_output: bool = False
+    cmd: list[str],
+    check: bool = True,
+    capture_output: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """
     Safely execute subprocess with input validation.
@@ -169,36 +181,45 @@ def safe_subprocess_run(
         SecurityError: If command is unsafe
     """
     if not cmd or not isinstance(cmd, list):
-        raise SecurityError("Command must be a non-empty list")
+        msg = "Command must be a non-empty list"
+        raise SecurityError(msg)
 
     # Validate command name
     command = cmd[0]
     allowed_commands = ["git", "gh"]  # Only allow specific commands
 
     if command not in allowed_commands:
-        raise SecurityError(f"Command '{command}' not allowed")
+        msg = f"Command '{command}' not allowed"
+        raise SecurityError(msg)
 
     # Validate arguments for dangerous patterns
     for arg in cmd[1:]:
         if not isinstance(arg, str):
-            raise SecurityError("All arguments must be strings")
+            msg = "All arguments must be strings"
+            raise SecurityError(msg)
 
         # Check for shell injection patterns
         dangerous_patterns = [";", "&&", "||", "|", ">", "<", "`", "$"]
         if any(pattern in arg for pattern in dangerous_patterns):
-            raise SecurityError(f"Dangerous pattern detected in argument: {arg}")
+            msg = f"Dangerous pattern detected in argument: {arg}"
+            raise SecurityError(msg)
 
     try:
         return subprocess.run(
-            cmd, check=check, capture_output=capture_output, text=True
+            cmd,
+            check=check,
+            capture_output=capture_output,
+            text=True,
         )
     except subprocess.CalledProcessError as e:
-        raise SecurityError(f"Command failed: {' '.join(cmd)}: {e}")
+        msg = f"Command failed: {' '.join(cmd)}: {e}"
+        raise SecurityError(msg)
     except OSError as e:
-        raise SecurityError(f"Failed to execute command: {e}")
+        msg = f"Failed to execute command: {e}"
+        raise SecurityError(msg)
 
 
-def validate_scenario_content(content: Dict[str, str]) -> None:
+def validate_scenario_content(content: dict[str, str]) -> None:
     """
     Validate scenario content to prevent injection attacks.
 
@@ -209,7 +230,8 @@ def validate_scenario_content(content: Dict[str, str]) -> None:
         SecurityError: If content is unsafe
     """
     if not isinstance(content, dict):
-        raise SecurityError("Scenario content must be a dictionary")
+        msg = "Scenario content must be a dictionary"
+        raise SecurityError(msg)
 
     # Check for dangerous patterns in string values
     dangerous_patterns = [
@@ -224,9 +246,10 @@ def validate_scenario_content(content: Dict[str, str]) -> None:
     def check_string_safety(s: str) -> None:
         for pattern in dangerous_patterns:
             if re.search(pattern, s, re.IGNORECASE):
-                raise SecurityError(f"Dangerous pattern detected: {pattern}")
+                msg = f"Dangerous pattern detected: {pattern}"
+                raise SecurityError(msg)
 
-    def check_recursive(obj: Union[str, Dict[str, str], List[str]]) -> None:
+    def check_recursive(obj: str | dict[str, str] | list[str]) -> None:
         if isinstance(obj, str):
             check_string_safety(obj)
         elif isinstance(obj, dict):
@@ -242,7 +265,7 @@ def validate_scenario_content(content: Dict[str, str]) -> None:
 def safe_write_file(
     file_path: str,
     content: str,
-    allowed_dirs: Optional[List[str]] = None,
+    allowed_dirs: list[str] | None = None,
     max_size_mb: float = 10.0,
 ) -> Path:
     """
@@ -261,13 +284,15 @@ def safe_write_file(
         SecurityError: If file path or content is invalid
     """
     if not content:
-        raise SecurityError("Cannot write empty content")
+        msg = "Cannot write empty content"
+        raise SecurityError(msg)
 
     # Validate content size
     content_size_mb = len(content.encode("utf-8")) / (1024 * 1024)
     if content_size_mb > max_size_mb:
+        msg = f"Content too large: {content_size_mb:.2f}MB > {max_size_mb}MB"
         raise SecurityError(
-            f"Content too large: {content_size_mb:.2f}MB > {max_size_mb}MB"
+            msg,
         )
 
     # Validate file path
@@ -281,4 +306,5 @@ def safe_write_file(
         validated_path.write_text(content, encoding="utf-8")
         return validated_path
     except Exception as e:
-        raise SecurityError(f"Failed to write file {validated_path}: {e}")
+        msg = f"Failed to write file {validated_path}: {e}"
+        raise SecurityError(msg)

@@ -4,8 +4,6 @@ Custom Resource Limits Model.
 Custom resource limits for specific resources.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,38 +15,57 @@ class ModelCustomResourceLimits(BaseModel):
     platform or deployment specific.
     """
 
-    network_bandwidth_mbps: Optional[int] = Field(
-        None, description="Network bandwidth limit in Mbps", ge=1
+    network_bandwidth_mbps: int | None = Field(
+        None,
+        description="Network bandwidth limit in Mbps",
+        ge=1,
     )
 
-    disk_iops: Optional[int] = Field(
-        None, description="Disk I/O operations per second limit", ge=1
+    disk_iops: int | None = Field(
+        None,
+        description="Disk I/O operations per second limit",
+        ge=1,
     )
 
-    gpu_shares: Optional[int] = Field(
-        None, description="GPU compute shares (0-100)", ge=0, le=100
+    gpu_shares: int | None = Field(
+        None,
+        description="GPU compute shares (0-100)",
+        ge=0,
+        le=100,
     )
 
-    ephemeral_storage_gb: Optional[int] = Field(
-        None, description="Ephemeral storage limit in GB", ge=1
+    ephemeral_storage_gb: int | None = Field(
+        None,
+        description="Ephemeral storage limit in GB",
+        ge=1,
     )
 
-    max_open_files: Optional[int] = Field(
-        None, description="Maximum number of open file descriptors", ge=1
+    max_open_files: int | None = Field(
+        None,
+        description="Maximum number of open file descriptors",
+        ge=1,
     )
 
-    max_threads: Optional[int] = Field(
-        None, description="Maximum number of threads", ge=1
+    max_threads: int | None = Field(
+        None,
+        description="Maximum number of threads",
+        ge=1,
     )
 
-    swap_limit_mb: Optional[int] = Field(
-        None, description="Swap memory limit in MB", ge=0
+    swap_limit_mb: int | None = Field(
+        None,
+        description="Swap memory limit in MB",
+        ge=0,
     )
 
-    cpu_quota_us: Optional[int] = Field(
-        None, description="CPU quota in microseconds per period", ge=1000
+    cpu_quota_us: int | None = Field(
+        None,
+        description="CPU quota in microseconds per period",
+        ge=1000,
     )
 
-    cpu_period_us: Optional[int] = Field(
-        None, description="CPU quota period in microseconds", ge=1000
+    cpu_period_us: int | None = Field(
+        None,
+        description="CPU quota period in microseconds",
+        ge=1000,
     )

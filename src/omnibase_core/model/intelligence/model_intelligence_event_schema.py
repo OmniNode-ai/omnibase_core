@@ -14,19 +14,25 @@ Key Features:
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.intelligence.models.model_context_learning import (
-    EnumLearningEventType, ModelLearnedRule, ModelLearningEvent,
-    ModelLearningPattern)
+    EnumLearningEventType,
+)
 from omnibase_core.model.intelligence.model_event_payload_data import (
-    ModelBatchProcessingMetadata, ModelComponentContext, ModelDebugContext,
-    ModelErrorContext, ModelEventMetadata, ModelEventPayloadData,
-    ModelOperationContext, ModelSuccessCriteria, ModelValidationResult,
-    ModelWorkflowContextData)
+    ModelBatchProcessingMetadata,
+    ModelComponentContext,
+    ModelDebugContext,
+    ModelErrorContext,
+    ModelEventMetadata,
+    ModelEventPayloadData,
+    ModelOperationContext,
+    ModelSuccessCriteria,
+    ModelValidationResult,
+    ModelWorkflowContextData,
+)
 
 
 class EnumIntelligencePriority(str, Enum):
@@ -70,20 +76,25 @@ class ModelCorrelationContext(BaseModel):
         default_factory=lambda: str(uuid4()),
         description="Primary correlation identifier",
     )
-    parent_correlation_id: Optional[str] = Field(
-        default=None, description="Parent correlation for nested operations"
+    parent_correlation_id: str | None = Field(
+        default=None,
+        description="Parent correlation for nested operations",
     )
-    root_correlation_id: Optional[str] = Field(
-        default=None, description="Root correlation for workflow chains"
+    root_correlation_id: str | None = Field(
+        default=None,
+        description="Root correlation for workflow chains",
     )
-    traceparent: Optional[str] = Field(
-        default=None, description="W3C trace context for distributed tracing"
+    traceparent: str | None = Field(
+        default=None,
+        description="W3C trace context for distributed tracing",
     )
-    session_id: Optional[str] = Field(
-        default=None, description="Session identifier for user interactions"
+    session_id: str | None = Field(
+        default=None,
+        description="Session identifier for user interactions",
     )
-    operation_id: Optional[str] = Field(
-        default=None, description="Specific operation identifier"
+    operation_id: str | None = Field(
+        default=None,
+        description="Specific operation identifier",
     )
 
 
@@ -92,31 +103,37 @@ class ModelEventSource(BaseModel):
 
     component_id: str = Field(description="Source component identifier")
     service_name: str = Field(
-        description="Service name (langextract, context-rules, etc.)"
+        description="Service name (langextract, context-rules, etc.)",
     )
     version: str = Field(default="1.0.0", description="Component version")
-    instance_id: Optional[str] = Field(
-        default=None, description="Specific instance identifier for load balancing"
+    instance_id: str | None = Field(
+        default=None,
+        description="Specific instance identifier for load balancing",
     )
-    node_id: Optional[str] = Field(
-        default=None, description="Physical or virtual node identifier"
+    node_id: str | None = Field(
+        default=None,
+        description="Physical or virtual node identifier",
     )
 
 
 class ModelEventTarget(BaseModel):
     """Standardized event target specification."""
 
-    target_components: List[str] = Field(
-        default_factory=list, description="Specific target component IDs"
+    target_components: list[str] = Field(
+        default_factory=list,
+        description="Specific target component IDs",
     )
-    target_categories: List[EnumIntelligenceCategory] = Field(
-        default_factory=list, description="Target component categories"
+    target_categories: list[EnumIntelligenceCategory] = Field(
+        default_factory=list,
+        description="Target component categories",
     )
     broadcast_to_all: bool = Field(
-        default=False, description="Whether to broadcast to all registered components"
+        default=False,
+        description="Whether to broadcast to all registered components",
     )
     exclude_source: bool = Field(
-        default=True, description="Whether to exclude source component from targets"
+        default=True,
+        description="Whether to exclude source component from targets",
     )
 
 
@@ -124,19 +141,24 @@ class ModelPerformanceMetrics(BaseModel):
     """Performance metrics for intelligence events."""
 
     processing_time_ms: float = Field(
-        ge=0.0, description="Total processing time in milliseconds"
+        ge=0.0,
+        description="Total processing time in milliseconds",
     )
-    queue_time_ms: Optional[float] = Field(
-        default=None, description="Time spent in queue before processing"
+    queue_time_ms: float | None = Field(
+        default=None,
+        description="Time spent in queue before processing",
     )
-    distribution_time_ms: Optional[float] = Field(
-        default=None, description="Time spent distributing to components"
+    distribution_time_ms: float | None = Field(
+        default=None,
+        description="Time spent distributing to components",
     )
-    memory_usage_bytes: Optional[int] = Field(
-        default=None, description="Memory usage for processing this event"
+    memory_usage_bytes: int | None = Field(
+        default=None,
+        description="Memory usage for processing this event",
     )
-    cpu_usage_percent: Optional[float] = Field(
-        default=None, description="CPU usage percentage during processing"
+    cpu_usage_percent: float | None = Field(
+        default=None,
+        description="CPU usage percentage during processing",
     )
 
 
@@ -146,17 +168,21 @@ class ModelLearningWorkflowState(BaseModel):
     workflow_id: str = Field(description="Unique workflow identifier")
     workflow_type: str = Field(description="Type of learning workflow")
     current_stage: EnumWorkflowStage = Field(description="Current workflow stage")
-    participants: List[str] = Field(
-        default_factory=list, description="Component IDs participating in workflow"
+    participants: list[str] = Field(
+        default_factory=list,
+        description="Component IDs participating in workflow",
     )
-    learned_patterns: List[str] = Field(
-        default_factory=list, description="Pattern IDs discovered in workflow"
+    learned_patterns: list[str] = Field(
+        default_factory=list,
+        description="Pattern IDs discovered in workflow",
     )
-    generated_rules: List[str] = Field(
-        default_factory=list, description="Rule IDs generated in workflow"
+    generated_rules: list[str] = Field(
+        default_factory=list,
+        description="Rule IDs generated in workflow",
     )
-    validation_results: Dict[str, ModelValidationResult] = Field(
-        default_factory=dict, description="Validation results for generated rules"
+    validation_results: dict[str, ModelValidationResult] = Field(
+        default_factory=dict,
+        description="Validation results for generated rules",
     )
     context_data: ModelWorkflowContextData = Field(
         default_factory=ModelWorkflowContextData,
@@ -164,8 +190,9 @@ class ModelLearningWorkflowState(BaseModel):
     )
     started_at: datetime = Field(description="Workflow start time")
     updated_at: datetime = Field(description="Last update time")
-    expires_at: Optional[datetime] = Field(
-        default=None, description="Workflow expiration time"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Workflow expiration time",
     )
 
 
@@ -179,13 +206,14 @@ class ModelIntelligenceEventEnvelope(BaseModel):
 
     # Event identification
     event_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique event identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique event identifier",
     )
-    event_type: Union[EnumLearningEventType, str] = Field(
-        description="Type of intelligence event"
+    event_type: EnumLearningEventType | str = Field(
+        description="Type of intelligence event",
     )
     event_category: EnumIntelligenceCategory = Field(
-        description="Event category for routing"
+        description="Event category for routing",
     )
 
     # Correlation and tracing
@@ -197,23 +225,28 @@ class ModelIntelligenceEventEnvelope(BaseModel):
     # Source and target information
     source: ModelEventSource = Field(description="Event source information")
     target: ModelEventTarget = Field(
-        default_factory=ModelEventTarget, description="Event target specification"
+        default_factory=ModelEventTarget,
+        description="Event target specification",
     )
 
     # Event properties
     priority: EnumIntelligencePriority = Field(
-        default=EnumIntelligencePriority.MEDIUM, description="Processing priority"
+        default=EnumIntelligencePriority.MEDIUM,
+        description="Processing priority",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Event creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Event creation timestamp",
     )
-    expires_at: Optional[datetime] = Field(
-        default=None, description="Event expiration time"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Event expiration time",
     )
 
     # Event payload
     payload: ModelEventPayloadData = Field(
-        default_factory=ModelEventPayloadData, description="Event-specific payload data"
+        default_factory=ModelEventPayloadData,
+        description="Event-specific payload data",
     )
     metadata: ModelEventMetadata = Field(
         default_factory=ModelEventMetadata,
@@ -221,21 +254,25 @@ class ModelIntelligenceEventEnvelope(BaseModel):
     )
 
     # Performance tracking
-    performance: Optional[ModelPerformanceMetrics] = Field(
-        default=None, description="Performance metrics for this event"
+    performance: ModelPerformanceMetrics | None = Field(
+        default=None,
+        description="Performance metrics for this event",
     )
 
     # Learning workflow context
-    workflow_state: Optional[ModelLearningWorkflowState] = Field(
-        default=None, description="Learning workflow state if applicable"
+    workflow_state: ModelLearningWorkflowState | None = Field(
+        default=None,
+        description="Learning workflow state if applicable",
     )
 
     # Error and debugging context
-    error_context: Optional[ModelErrorContext] = Field(
-        default=None, description="Error context for failed operations"
+    error_context: ModelErrorContext | None = Field(
+        default=None,
+        description="Error context for failed operations",
     )
-    debug_context: Optional[ModelDebugContext] = Field(
-        default=None, description="Debug context for troubleshooting"
+    debug_context: ModelDebugContext | None = Field(
+        default=None,
+        description="Debug context for troubleshooting",
     )
 
 
@@ -243,16 +280,19 @@ class ModelIntelligenceEventBatch(BaseModel):
     """Batch container for multiple intelligence events."""
 
     batch_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique batch identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique batch identifier",
     )
-    events: List[ModelIntelligenceEventEnvelope] = Field(
-        description="Events in this batch"
+    events: list[ModelIntelligenceEventEnvelope] = Field(
+        description="Events in this batch",
     )
     batch_metadata: ModelBatchProcessingMetadata = Field(
-        default_factory=ModelBatchProcessingMetadata, description="Batch-level metadata"
+        default_factory=ModelBatchProcessingMetadata,
+        description="Batch-level metadata",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Batch creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Batch creation timestamp",
     )
     processing_hints: ModelBatchProcessingMetadata = Field(
         default_factory=ModelBatchProcessingMetadata,
@@ -265,20 +305,25 @@ class ModelEventProcessingResult(BaseModel):
 
     event_id: str = Field(description="Processed event ID")
     processing_status: str = Field(description="success, partial_success, failed")
-    components_reached: List[str] = Field(
-        default_factory=list, description="Components that successfully received event"
+    components_reached: list[str] = Field(
+        default_factory=list,
+        description="Components that successfully received event",
     )
-    components_failed: List[str] = Field(
-        default_factory=list, description="Components that failed to receive event"
+    components_failed: list[str] = Field(
+        default_factory=list,
+        description="Components that failed to receive event",
     )
-    error_details: Optional[Dict[str, str]] = Field(
-        default=None, description="Error details for failed components"
+    error_details: dict[str, str] | None = Field(
+        default=None,
+        description="Error details for failed components",
     )
-    performance_metrics: Optional[ModelPerformanceMetrics] = Field(
-        default=None, description="Processing performance metrics"
+    performance_metrics: ModelPerformanceMetrics | None = Field(
+        default=None,
+        description="Processing performance metrics",
     )
     processed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Processing completion time"
+        default_factory=datetime.utcnow,
+        description="Processing completion time",
     )
 
 
@@ -291,11 +336,12 @@ class ModelIntelligenceCoordinationSchema(BaseModel):
         default_factory=ModelOperationContext,
         description="Context for coordination operation",
     )
-    expected_participants: List[str] = Field(
-        description="Expected participating components"
+    expected_participants: list[str] = Field(
+        description="Expected participating components",
     )
     coordination_timeout_seconds: float = Field(
-        default=30.0, description="Timeout for coordination completion"
+        default=30.0,
+        description="Timeout for coordination completion",
     )
     success_criteria: ModelSuccessCriteria = Field(
         default_factory=ModelSuccessCriteria,
@@ -307,16 +353,19 @@ class ModelAnalyticsEventSchema(BaseModel):
     """Schema for intelligence analytics and monitoring events."""
 
     metric_name: str = Field(description="Name of the metric being reported")
-    metric_value: Union[int, float, str, bool] = Field(description="Metric value")
+    metric_value: int | float | str | bool = Field(description="Metric value")
     metric_type: str = Field(description="counter, gauge, histogram, summary")
-    metric_tags: Dict[str, str] = Field(
-        default_factory=dict, description="Tags for metric categorization"
+    metric_tags: dict[str, str] = Field(
+        default_factory=dict,
+        description="Tags for metric categorization",
     )
     metric_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Metric measurement timestamp"
+        default_factory=datetime.utcnow,
+        description="Metric measurement timestamp",
     )
-    aggregation_period: Optional[str] = Field(
-        default=None, description="Period for metric aggregation (1m, 5m, 1h, etc.)"
+    aggregation_period: str | None = Field(
+        default=None,
+        description="Period for metric aggregation (1m, 5m, 1h, etc.)",
     )
     component_context: ModelComponentContext = Field(
         default_factory=ModelComponentContext,
@@ -332,7 +381,7 @@ def create_learning_event(
     source_component: str,
     payload: ModelEventPayloadData,
     priority: EnumIntelligencePriority = EnumIntelligencePriority.MEDIUM,
-    correlation_id: Optional[str] = None,
+    correlation_id: str | None = None,
 ) -> ModelIntelligenceEventEnvelope:
     """Factory function to create learning intelligence events."""
 
@@ -365,7 +414,7 @@ def create_workflow_event(
     stage: EnumWorkflowStage,
     source_component: str,
     workflow_context: ModelWorkflowContextData,
-    participants: Optional[List[str]] = None,
+    participants: list[str] | None = None,
 ) -> ModelIntelligenceEventEnvelope:
     """Factory function to create workflow coordination events."""
 
@@ -380,7 +429,8 @@ def create_workflow_event(
     )
 
     source_info = ModelEventSource(
-        component_id=source_component, service_name="workflow-coordinator"
+        component_id=source_component,
+        service_name="workflow-coordinator",
     )
 
     return ModelIntelligenceEventEnvelope(
@@ -400,14 +450,14 @@ def create_workflow_event(
 
 def create_analytics_event(
     metric_name: str,
-    metric_value: Union[int, float, str, bool],
+    metric_value: int | float | str | bool,
     source_component: str,
     metric_type: str = "gauge",
-    tags: Optional[Dict[str, str]] = None,
+    tags: dict[str, str] | None = None,
 ) -> ModelIntelligenceEventEnvelope:
     """Factory function to create analytics events."""
 
-    analytics_schema = ModelAnalyticsEventSchema(
+    ModelAnalyticsEventSchema(
         metric_name=metric_name,
         metric_value=metric_value,
         metric_type=metric_type,
@@ -437,7 +487,8 @@ def create_analytics_event(
         priority=EnumIntelligencePriority.LOW,
         payload=analytics_payload,
         metadata=ModelEventMetadata(
-            source_type="analytics", tags=["metric", "analytics", metric_type]
+            source_type="analytics",
+            tags=["metric", "analytics", metric_type],
         ),
     )
 
@@ -445,7 +496,7 @@ def create_analytics_event(
 def create_error_event(
     error_context: ModelErrorContext,
     source_component: str,
-    correlation_id: Optional[str] = None,
+    correlation_id: str | None = None,
     priority: EnumIntelligencePriority = EnumIntelligencePriority.HIGH,
 ) -> ModelIntelligenceEventEnvelope:
     """Factory function to create error intelligence events."""
@@ -491,7 +542,7 @@ def create_debug_event(
     debug_context: ModelDebugContext,
     source_component: str,
     operation_name: str,
-    correlation_id: Optional[str] = None,
+    correlation_id: str | None = None,
     priority: EnumIntelligencePriority = EnumIntelligencePriority.LOW,
 ) -> ModelIntelligenceEventEnvelope:
     """Factory function to create debug intelligence events."""

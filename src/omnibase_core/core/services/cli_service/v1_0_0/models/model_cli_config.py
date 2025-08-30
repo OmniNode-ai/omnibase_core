@@ -7,8 +7,6 @@ as part of NODEBASE-001 Phase 4 deconstruction.
 Author: ONEX Framework Team
 """
 
-from typing import Dict, List
-
 from pydantic import BaseModel, Field
 
 
@@ -20,35 +18,43 @@ class ModelCliConfig(BaseModel):
     """
 
     enable_health_check_flag: bool = Field(
-        default=True, description="Enable --health-check flag handling"
+        default=True,
+        description="Enable --health-check flag handling",
     )
 
     enable_introspect_flag: bool = Field(
-        default=True, description="Enable --introspect flag handling"
+        default=True,
+        description="Enable --introspect flag handling",
     )
 
     enable_help_flag: bool = Field(
-        default=True, description="Enable --help flag handling"
+        default=True,
+        description="Enable --help flag handling",
     )
 
     enable_version_flag: bool = Field(
-        default=True, description="Enable --version flag handling"
+        default=True,
+        description="Enable --version flag handling",
     )
 
-    custom_flags: List[str] = Field(
-        default_factory=list, description="List of additional custom flags to recognize"
+    custom_flags: list[str] = Field(
+        default_factory=list,
+        description="List of additional custom flags to recognize",
     )
 
     enable_argument_validation: bool = Field(
-        default=True, description="Enable CLI argument validation"
+        default=True,
+        description="Enable CLI argument validation",
     )
 
     enable_error_handling: bool = Field(
-        default=True, description="Enable comprehensive CLI error handling"
+        default=True,
+        description="Enable comprehensive CLI error handling",
     )
 
     enable_help_generation: bool = Field(
-        default=True, description="Enable automatic help text generation"
+        default=True,
+        description="Enable automatic help text generation",
     )
 
     enable_input_state_conversion: bool = Field(
@@ -64,32 +70,41 @@ class ModelCliConfig(BaseModel):
     )
 
     default_exit_code_error: int = Field(
-        default=1, description="Default exit code for error operations", ge=0, le=255
+        default=1,
+        description="Default exit code for error operations",
+        ge=0,
+        le=255,
     )
 
     enable_performance_timing: bool = Field(
-        default=True, description="Enable performance timing for CLI operations"
+        default=True,
+        description="Enable performance timing for CLI operations",
     )
 
     max_help_text_length: int = Field(
-        default=2000, description="Maximum length for generated help text", gt=0
+        default=2000,
+        description="Maximum length for generated help text",
+        gt=0,
     )
 
-    exit_code_mappings: Dict[str, int] = Field(
+    exit_code_mappings: dict[str, int] = Field(
         default_factory=dict,
         description="Custom exit code mappings for specific errors",
     )
 
     enable_debug_output: bool = Field(
-        default=False, description="Enable debug output for CLI operations"
+        default=False,
+        description="Enable debug output for CLI operations",
     )
 
     enable_json_output: bool = Field(
-        default=False, description="Enable JSON output format for CLI results"
+        default=False,
+        description="Enable JSON output format for CLI results",
     )
 
     output_format: str = Field(
-        default="text", description="Default output format (text|json|yaml)"
+        default="text",
+        description="Default output format (text|json|yaml)",
     )
 
     class Config:

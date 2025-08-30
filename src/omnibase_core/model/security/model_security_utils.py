@@ -1,11 +1,9 @@
 import re
-from typing import Dict, List, Optional
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
 
 from .model_credential_audit_report import ModelCredentialAuditReport
-from .model_credential_strength_assessment import \
-    ModelCredentialStrengthAssessment
+from .model_credential_strength_assessment import ModelCredentialStrengthAssessment
 from .model_masked_data import ModelMaskedDataValue
 from .model_secure_mask_config import ModelSecureMaskConfig
 
@@ -77,10 +75,10 @@ class ModelSecurityUtils:
 
     @staticmethod
     def mask_dict_credentials(
-        data: Dict[str, ModelMaskedDataValue],
-        sensitive_patterns: Optional[set] = None,
+        data: dict[str, ModelMaskedDataValue],
+        sensitive_patterns: set | None = None,
         recursive: bool = True,
-    ) -> Dict[str, ModelMaskedDataValue]:
+    ) -> dict[str, ModelMaskedDataValue]:
         """
         Recursively mask credential fields in a dictionary.
 
@@ -99,14 +97,18 @@ class ModelSecurityUtils:
         for key, value in data.items():
             if isinstance(value, dict) and recursive:
                 masked_data[key] = ModelSecurityUtils.mask_dict_credentials(
-                    value, sensitive_patterns, recursive
+                    value,
+                    sensitive_patterns,
+                    recursive,
                 )
             elif isinstance(value, list) and recursive:
                 masked_data[key] = ModelSecurityUtils._mask_list_credentials(
-                    value, sensitive_patterns
+                    value,
+                    sensitive_patterns,
                 )
             elif isinstance(value, str) and ModelSecurityUtils._is_sensitive_field(
-                key, sensitive_patterns
+                key,
+                sensitive_patterns,
             ):
                 masked_data[key] = ModelSecurityUtils.mask_credential(value)
             else:
@@ -116,20 +118,23 @@ class ModelSecurityUtils:
 
     @staticmethod
     def _mask_list_credentials(
-        data: List[ModelMaskedDataValue], sensitive_patterns: set
-    ) -> List[ModelMaskedDataValue]:
+        data: list[ModelMaskedDataValue],
+        sensitive_patterns: set,
+    ) -> list[ModelMaskedDataValue]:
         """Mask credentials in a list (may contain dicts)."""
         masked_list = []
         for item in data:
             if isinstance(item, dict):
                 masked_list.append(
                     ModelSecurityUtils.mask_dict_credentials(
-                        item, sensitive_patterns, recursive=True
-                    )
+                        item,
+                        sensitive_patterns,
+                        recursive=True,
+                    ),
                 )
             elif isinstance(item, list):
                 masked_list.append(
-                    ModelSecurityUtils._mask_list_credentials(item, sensitive_patterns)
+                    ModelSecurityUtils._mask_list_credentials(item, sensitive_patterns),
                 )
             else:
                 masked_list.append(item)
@@ -143,7 +148,7 @@ class ModelSecurityUtils:
         return any(pattern in field_lower for pattern in sensitive_patterns)
 
     @staticmethod
-    def detect_credential_patterns(value: str) -> List[str]:
+    def detect_credential_patterns(value: str) -> list[str]:
         """
         Detect potential credential patterns in a string.
 
@@ -207,7 +212,8 @@ class ModelSecurityUtils:
         """
         if not isinstance(value, str):
             return ModelCredentialStrengthAssessment(
-                strength=EnumCredentialStrength.INVALID, issues=["Not a string"]
+                strength=EnumCredentialStrength.INVALID,
+                issues=["Not a string"],
             )
 
         issues = []
@@ -272,7 +278,7 @@ class ModelSecurityUtils:
     def create_secure_mask_config(
         mask_char: str = "*",
         visible_chars: int = 2,
-        additional_patterns: Optional[set] = None,
+        additional_patterns: set | None = None,
     ) -> ModelSecureMaskConfig:
         """
         Create a secure masking configuration.
@@ -299,8 +305,8 @@ class ModelSecurityUtils:
 
     @staticmethod
     def audit_credential_usage(
-        data: Dict[str, ModelMaskedDataValue],
-        config: Optional[ModelSecureMaskConfig] = None,
+        data: dict[str, ModelMaskedDataValue],
+        config: ModelSecureMaskConfig | None = None,
     ) -> ModelCredentialAuditReport:
         """
         Audit credential usage in data structure.
@@ -333,7 +339,7 @@ class ModelSecurityUtils:
 
                         if isinstance(value, str):
                             patterns = ModelSecurityUtils.detect_credential_patterns(
-                                value
+                                value,
                             )
                             if patterns:
                                 audit_report.credential_patterns[current_path] = (
@@ -341,14 +347,14 @@ class ModelSecurityUtils:
                                 )
 
                             strength = ModelSecurityUtils.assess_credential_strength(
-                                value
+                                value,
                             )
                             if strength.strength in [
                                 EnumCredentialStrength.WEAK,
                                 EnumCredentialStrength.VERY_WEAK,
                             ]:
                                 audit_report.security_issues.append(
-                                    f"Weak credential at {current_path}: {strength.strength.value}"
+                                    f"Weak credential at {current_path}: {strength.strength.value}",
                                 )
 
                     _audit_recursive(value, current_path)

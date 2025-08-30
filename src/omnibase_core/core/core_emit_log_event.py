@@ -11,7 +11,6 @@ Python's logging module to maintain architectural purity and centralized process
 import inspect
 import os
 from datetime import datetime
-from typing import Dict, Optional, Union
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
@@ -26,9 +25,9 @@ def emit_log_event(
     event_type: str,
     message: str,
     correlation_id: UUID,
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, Union[str, int, float, bool, None]]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Emit a structured log event through the logger node.
@@ -77,9 +76,9 @@ def emit_log_event_with_new_correlation(
     level: LogLevelEnum,
     event_type: str,
     message: str,
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, Union[str, int, float, bool, None]]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> UUID:
     """
     Emit a structured log event with a new correlation ID.
@@ -116,9 +115,9 @@ def emit_log_event_sync(
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, Union[str, int, float, bool, None]]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Synchronous version of emit_log_event for compatibility.
@@ -148,9 +147,9 @@ async def emit_log_event_async(
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, Union[str, int, float, bool, None]]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Asynchronous version of emit_log_event.
@@ -239,7 +238,7 @@ def trace_function_lifecycle(func):
             emit_log_event(
                 level=LogLevelEnum.TRACE,
                 event_type="function_exception",
-                message=f"Exception in {function_name}: {str(e)}",
+                message=f"Exception in {function_name}: {e!s}",
                 correlation_id=correlation_id,
                 data={
                     "function": function_name,
@@ -271,7 +270,7 @@ class log_code_block:
         block_name: str,
         correlation_id: UUID,
         level: LogLevelEnum = LogLevelEnum.DEBUG,
-        data: Optional[Dict[str, Union[str, int, float, bool, None]]] = None,
+        data: dict[str, str | int | float | bool | None] | None = None,
     ):
         self.block_name = block_name
         self.correlation_id = correlation_id
@@ -321,7 +320,7 @@ class log_code_block:
             emit_log_event(
                 level=LogLevelEnum.ERROR,
                 event_type="code_block_exception",
-                message=f"Exception in code block {self.block_name}: {str(exc_val)}",
+                message=f"Exception in code block {self.block_name}: {exc_val!s}",
                 correlation_id=self.correlation_id,
                 data={
                     "block_name": self.block_name,
@@ -395,6 +394,7 @@ def log_performance_metrics(threshold_ms: int = 1000):
 # Private helper functions
 
 import threading
+
 # Global cache for protocol services to reduce lookup overhead
 import time
 
@@ -423,7 +423,8 @@ _SENSITIVE_PATTERNS = [
     ),  # Secrets
     (
         re.compile(
-            r'\baccess[_-]?token["\']?\s*[:=]\s*["\']?[^,}\s]+["}]?', re.IGNORECASE
+            r'\baccess[_-]?token["\']?\s*[:=]\s*["\']?[^,}\s]+["}]?',
+            re.IGNORECASE,
         ),
         "access_token=[REDACTED]",
     ),  # Access tokens
@@ -451,8 +452,8 @@ def _sanitize_sensitive_data(text: str) -> str:
 
 
 def _sanitize_data_dict(
-    data: Dict[str, Union[str, int, float, bool, None]],
-) -> Dict[str, Union[str, int, float, bool, None]]:
+    data: dict[str, str | int | float | bool | None],
+) -> dict[str, str | int | float | bool | None]:
     """
     Sanitize sensitive data in a data dictionary and ensure JSON compatibility.
 
@@ -473,7 +474,7 @@ def _sanitize_data_dict(
         # Validate and sanitize values to ensure JSON compatibility
         if isinstance(value, str):
             sanitized_value = _sanitize_sensitive_data(value)
-        elif isinstance(value, (int, float, bool)) or value is None:
+        elif isinstance(value, int | float | bool) or value is None:
             sanitized_value = value
         else:
             # Convert non-JSON-compatible types to string representation
@@ -512,7 +513,7 @@ def _detect_node_id_from_context() -> str:
                 obj = frame.f_locals["self"]
                 if hasattr(obj, "node_id"):
                     return obj.node_id
-                elif (
+                if (
                     hasattr(obj, "__class__")
                     and "node" in obj.__class__.__name__.lower()
                 ):
@@ -549,23 +550,22 @@ def _create_log_context_from_frame() -> LogModelContext:
             timestamp=datetime.utcnow().isoformat(),
             node_id=_detect_node_id_from_context(),
         )
-    else:
-        return LogModelContext(
-            calling_function="unknown",
-            calling_module="unknown",
-            calling_line=0,
-            timestamp=datetime.utcnow().isoformat(),
-            node_id="unknown",
-        )
+    return LogModelContext(
+        calling_function="unknown",
+        calling_module="unknown",
+        calling_line=0,
+        timestamp=datetime.utcnow().isoformat(),
+        node_id="unknown",
+    )
 
 
-def _get_default_event_bus() -> Optional[ProtocolEventBus]:
+def _get_default_event_bus() -> ProtocolEventBus | None:
     """Get the default event bus for logging using protocol-based discovery."""
     try:
-        from omnibase_core.core.core_registry_factory import \
-            create_development_registry
-        from omnibase_core.nodes.node_runtime.protocols.protocol_event_bus_factory import \
-            ProtocolEventBusFactory
+        from omnibase_core.core.core_registry_factory import create_development_registry
+        from omnibase_core.nodes.node_runtime.protocols.protocol_event_bus_factory import (
+            ProtocolEventBusFactory,
+        )
 
         # Use registry-based discovery for event bus factory
         registry = create_development_registry()
@@ -588,8 +588,8 @@ def _route_to_logger_node(
     node_id: str,
     correlation_id: UUID,
     context: LogModelContext,
-    data: Dict[str, Union[str, int, float, bool, None]],
-    event_bus: Optional[ProtocolEventBus],
+    data: dict[str, str | int | float | bool | None],
+    event_bus: ProtocolEventBus | None,
 ) -> None:
     """
     Route log event to logger node for processing using protocol-based discovery.
@@ -619,21 +619,24 @@ def _route_to_logger_node(
                     or _cached_output_handler is None
                     or cache_expired
                 ):
-                    from omnibase_core.core.core_registry_factory import \
-                        create_development_registry
-                    from omnibase_core.nodes.node_logger.protocols.protocol_context_aware_output_handler import \
-                        ProtocolContextAwareOutputHandler
-                    from omnibase_core.nodes.node_logger.protocols.protocol_smart_log_formatter import \
-                        ProtocolSmartLogFormatter
+                    from omnibase_core.core.core_registry_factory import (
+                        create_development_registry,
+                    )
+                    from omnibase_core.nodes.node_logger.protocols.protocol_context_aware_output_handler import (
+                        ProtocolContextAwareOutputHandler,
+                    )
+                    from omnibase_core.nodes.node_logger.protocols.protocol_smart_log_formatter import (
+                        ProtocolSmartLogFormatter,
+                    )
 
                     # Use registry-based discovery for logger components
                     try:
                         registry = create_development_registry()
                         _cached_formatter = registry.get_service(
-                            ProtocolSmartLogFormatter
+                            ProtocolSmartLogFormatter,
                         )
                         _cached_output_handler = registry.get_service(
-                            ProtocolContextAwareOutputHandler
+                            ProtocolContextAwareOutputHandler,
                         )
                         _cache_timestamp = current_time
                     except Exception:
@@ -660,10 +663,8 @@ def _route_to_logger_node(
             output_handler.output_log_entry(formatted_log, level.name)
         else:
             # Fallback to simple output if protocol services unavailable
-            fallback_message = f"[{level.name}] {message} [{str(correlation_id)}]"
-            print(fallback_message)
+            pass
 
     except Exception:
         # Fallback to simple output if logger node routing fails
-        fallback_message = f"[{level.name}] {message} [{str(correlation_id)}]"
-        print(fallback_message)
+        pass

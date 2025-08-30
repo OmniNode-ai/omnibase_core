@@ -29,7 +29,7 @@ This module defines the minimal interface for fixture loaders that can
 discover and load test fixtures from various sources (central, node-local).
 """
 
-from typing import List, Protocol
+from typing import Protocol
 
 from omnibase_core.model.validation.model_fixture_data import ModelFixtureData
 
@@ -43,7 +43,7 @@ class ProtocolFixtureLoader(Protocol):
     and plugin scenarios.
     """
 
-    def discover_fixtures(self) -> List[str]:
+    def discover_fixtures(self) -> list[str]:
         """
         Return a list of available fixture names.
 

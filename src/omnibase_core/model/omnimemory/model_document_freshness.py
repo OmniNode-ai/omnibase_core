@@ -8,7 +8,6 @@ information is injected into conversations.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -63,55 +62,64 @@ class ModelDocumentFreshness(BaseModel):
 
     # Freshness status
     status: EnumDocumentFreshnessStatus = Field(
-        description="Current freshness status of the document"
+        description="Current freshness status of the document",
     )
     freshness_score: float = Field(
-        description="Numeric freshness score (0.0=stale, 1.0=fresh)"
+        description="Numeric freshness score (0.0=stale, 1.0=fresh)",
     )
 
     # Timestamp information
     last_modified: datetime = Field(description="When the document was last modified")
     last_checked: datetime = Field(
-        default_factory=datetime.utcnow, description="When freshness was last checked"
+        default_factory=datetime.utcnow,
+        description="When freshness was last checked",
     )
-    last_accessed: Optional[datetime] = Field(
+    last_accessed: datetime | None = Field(
         default=None,
         description="When the document was last accessed for context injection",
     )
 
     # Content tracking
-    content_hash: Optional[str] = Field(
-        default=None, description="Hash of document content for change detection"
+    content_hash: str | None = Field(
+        default=None,
+        description="Hash of document content for change detection",
     )
-    content_size: Optional[int] = Field(
-        default=None, description="Size of document content in bytes"
+    content_size: int | None = Field(
+        default=None,
+        description="Size of document content in bytes",
     )
 
     # Freshness policy
     policy: EnumFreshnessPolicy = Field(
-        description="Policy used to determine freshness"
+        description="Policy used to determine freshness",
     )
-    ttl_seconds: Optional[int] = Field(
-        default=None, description="Time-to-live for this document in seconds"
+    ttl_seconds: int | None = Field(
+        default=None,
+        description="Time-to-live for this document in seconds",
     )
-    expires_at: Optional[datetime] = Field(
-        default=None, description="When this document expires (calculated from TTL)"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="When this document expires (calculated from TTL)",
     )
 
     # Dependencies and relationships
-    depends_on: List[str] = Field(
-        default_factory=list, description="List of files this document depends on"
+    depends_on: list[str] = Field(
+        default_factory=list,
+        description="List of files this document depends on",
     )
-    dependents: List[str] = Field(
-        default_factory=list, description="List of files that depend on this document"
+    dependents: list[str] = Field(
+        default_factory=list,
+        description="List of files that depend on this document",
     )
 
     # Usage tracking
     injection_count: int = Field(
-        default=0, description="Number of times this document has been injected"
+        default=0,
+        description="Number of times this document has been injected",
     )
     success_rate: float = Field(
-        default=1.0, description="Success rate when this document is used"
+        default=1.0,
+        description="Success rate when this document is used",
     )
 
     # Override settings
@@ -119,8 +127,9 @@ class ModelDocumentFreshness(BaseModel):
         default=False,
         description="Whether this document should always be considered fresh",
     )
-    manual_override: Optional[EnumDocumentFreshnessStatus] = Field(
-        default=None, description="Manual override for freshness status"
+    manual_override: EnumDocumentFreshnessStatus | None = Field(
+        default=None,
+        description="Manual override for freshness status",
     )
 
     # Metadata
@@ -143,36 +152,39 @@ class ModelDocumentChange(BaseModel):
 
     # Change details
     change_type: EnumDocumentChangeType = Field(
-        description="Type of change that occurred"
+        description="Type of change that occurred",
     )
     change_description: str = Field(
-        description="Human-readable description of the change"
+        description="Human-readable description of the change",
     )
 
     # Change content
-    old_content_hash: Optional[str] = Field(
-        default=None, description="Content hash before the change"
+    old_content_hash: str | None = Field(
+        default=None,
+        description="Content hash before the change",
     )
-    new_content_hash: Optional[str] = Field(
-        default=None, description="Content hash after the change"
+    new_content_hash: str | None = Field(
+        default=None,
+        description="Content hash after the change",
     )
 
     # Timestamp and source
     detected_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this change was detected"
+        default_factory=datetime.utcnow,
+        description="When this change was detected",
     )
     detection_method: str = Field(description="Method used to detect this change")
 
     # Impact assessment
     impacts_freshness: bool = Field(
-        description="Whether this change affects document freshness"
+        description="Whether this change affects document freshness",
     )
     requires_refresh: bool = Field(
-        description="Whether dependent documents need refreshing"
+        description="Whether dependent documents need refreshing",
     )
 
     # Related changes
-    cascade_changes: List[str] = Field(
+    cascade_changes: list[str] = Field(
         default_factory=list,
         description="IDs of related changes triggered by this change",
     )
@@ -189,38 +201,45 @@ class ModelFreshnessPolicy(BaseModel):
     policy_type: EnumFreshnessPolicy = Field(description="Type of freshness policy")
 
     # Time-based policy settings
-    default_ttl_seconds: Optional[int] = Field(
-        default=None, description="Default TTL for documents under this policy"
+    default_ttl_seconds: int | None = Field(
+        default=None,
+        description="Default TTL for documents under this policy",
     )
-    max_age_seconds: Optional[int] = Field(
-        default=None, description="Maximum age before document is considered stale"
+    max_age_seconds: int | None = Field(
+        default=None,
+        description="Maximum age before document is considered stale",
     )
 
     # File pattern matching
-    file_patterns: List[str] = Field(
-        default_factory=list, description="File patterns this policy applies to"
+    file_patterns: list[str] = Field(
+        default_factory=list,
+        description="File patterns this policy applies to",
     )
-    exclude_patterns: List[str] = Field(
-        default_factory=list, description="File patterns to exclude from this policy"
+    exclude_patterns: list[str] = Field(
+        default_factory=list,
+        description="File patterns to exclude from this policy",
     )
 
     # Policy behavior
     check_dependencies: bool = Field(
-        default=False, description="Whether to check dependency freshness"
+        default=False,
+        description="Whether to check dependency freshness",
     )
     cascade_staleness: bool = Field(
-        default=True, description="Whether staleness should cascade to dependents"
+        default=True,
+        description="Whether staleness should cascade to dependents",
     )
 
     # Override settings
-    always_fresh_patterns: List[str] = Field(
+    always_fresh_patterns: list[str] = Field(
         default_factory=list,
         description="Patterns for files that should always be fresh",
     )
 
     # Policy metadata
     enabled: bool = Field(
-        default=True, description="Whether this policy is currently active"
+        default=True,
+        description="Whether this policy is currently active",
     )
     priority: int = Field(
         default=100,
@@ -228,10 +247,12 @@ class ModelFreshnessPolicy(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this policy was created"
+        default_factory=datetime.utcnow,
+        description="When this policy was created",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this policy was last updated"
+        default_factory=datetime.utcnow,
+        description="When this policy was last updated",
     )
 
 
@@ -243,10 +264,10 @@ class ModelFreshnessCheckResult(BaseModel):
 
     # Check results
     previous_status: EnumDocumentFreshnessStatus = Field(
-        description="Document status before the check"
+        description="Document status before the check",
     )
     current_status: EnumDocumentFreshnessStatus = Field(
-        description="Document status after the check"
+        description="Document status after the check",
     )
     status_changed: bool = Field(description="Whether the freshness status changed")
 
@@ -256,36 +277,41 @@ class ModelFreshnessCheckResult(BaseModel):
 
     # Check details
     policy_applied: str = Field(
-        description="ID of the freshness policy that was applied"
+        description="ID of the freshness policy that was applied",
     )
     check_method: str = Field(description="Method used for freshness check")
 
     # Changes detected
-    changes_detected: List[ModelDocumentChange] = Field(
-        default_factory=list, description="Changes detected during this check"
+    changes_detected: list[ModelDocumentChange] = Field(
+        default_factory=list,
+        description="Changes detected during this check",
     )
 
     # Dependencies checked
     dependencies_checked: int = Field(
-        default=0, description="Number of dependencies that were checked"
+        default=0,
+        description="Number of dependencies that were checked",
     )
     stale_dependencies: int = Field(
-        default=0, description="Number of dependencies that are stale"
+        default=0,
+        description="Number of dependencies that are stale",
     )
 
     # Check metadata
     check_duration_ms: float = Field(description="Time taken for the freshness check")
     checked_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this check was performed"
+        default_factory=datetime.utcnow,
+        description="When this check was performed",
     )
 
     # Actions taken
-    actions_required: List[str] = Field(
+    actions_required: list[str] = Field(
         default_factory=list,
         description="Actions that need to be taken based on check results",
     )
     refresh_triggered: bool = Field(
-        default=False, description="Whether a refresh was triggered by this check"
+        default=False,
+        description="Whether a refresh was triggered by this check",
     )
 
 
@@ -294,53 +320,56 @@ class ModelFreshnessMonitorStatus(BaseModel):
 
     # System status
     monitoring_active: bool = Field(
-        description="Whether freshness monitoring is active"
+        description="Whether freshness monitoring is active",
     )
-    last_scan_completed: Optional[datetime] = Field(
-        default=None, description="When the last full scan was completed"
+    last_scan_completed: datetime | None = Field(
+        default=None,
+        description="When the last full scan was completed",
     )
-    next_scan_scheduled: Optional[datetime] = Field(
-        default=None, description="When the next scan is scheduled"
+    next_scan_scheduled: datetime | None = Field(
+        default=None,
+        description="When the next scan is scheduled",
     )
 
     # Document statistics
     total_documents: int = Field(
-        description="Total number of documents being monitored"
+        description="Total number of documents being monitored",
     )
     fresh_documents: int = Field(description="Number of documents that are fresh")
     stale_documents: int = Field(description="Number of documents that are stale")
     deprecated_documents: int = Field(
-        description="Number of documents that are deprecated"
+        description="Number of documents that are deprecated",
     )
 
     # Recent activity
     changes_detected_24h: int = Field(
-        description="Number of changes detected in the last 24 hours"
+        description="Number of changes detected in the last 24 hours",
     )
     checks_performed_24h: int = Field(
-        description="Number of freshness checks performed in last 24 hours"
+        description="Number of freshness checks performed in last 24 hours",
     )
     refreshes_triggered_24h: int = Field(
-        description="Number of refreshes triggered in last 24 hours"
+        description="Number of refreshes triggered in last 24 hours",
     )
 
     # System health
     average_freshness_score: float = Field(
-        description="Average freshness score across all documents"
+        description="Average freshness score across all documents",
     )
     staleness_trend: str = Field(
-        description="Trend in staleness over time (improving, degrading, stable)"
+        description="Trend in staleness over time (improving, degrading, stable)",
     )
 
     # Performance metrics
     average_check_time_ms: float = Field(
-        description="Average time for freshness checks"
+        description="Average time for freshness checks",
     )
     system_load: float = Field(
-        description="Current system load for freshness monitoring"
+        description="Current system load for freshness monitoring",
     )
 
     # Status metadata
     status_generated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this status was generated"
+        default_factory=datetime.utcnow,
+        description="When this status was generated",
     )

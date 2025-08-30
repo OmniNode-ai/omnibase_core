@@ -6,13 +6,11 @@ providing cross-group message coordination, intelligent aggregation strategies,
 and PostgreSQL-based state persistence.
 """
 
-import asyncio
 import json
 import logging
 import time
 import uuid
 from datetime import datetime, timedelta
-from typing import Callable, Dict, List, Optional, Union
 
 import asyncpg
 from omnibase.enums.enum_health_status import EnumHealthStatus
@@ -32,10 +30,11 @@ class ModelGroupMessage(BaseModel):
 
     group_id: str = Field(..., description="Tool group identifier")
     message_content: str = Field(..., description="Message content")
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Message metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Message metadata",
     )
-    timestamp: Optional[str] = Field(None, description="Message timestamp")
+    timestamp: str | None = Field(None, description="Message timestamp")
 
 
 class ModelAggregationResult(BaseModel):
@@ -43,11 +42,13 @@ class ModelAggregationResult(BaseModel):
 
     strategy_used: str = Field(..., description="Aggregation strategy used")
     total_messages: int = Field(..., description="Total number of messages processed")
-    result_data: Dict[str, str] = Field(
-        default_factory=dict, description="Aggregated result"
+    result_data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Aggregated result",
     )
     processing_time_ms: float = Field(
-        ..., description="Processing time in milliseconds"
+        ...,
+        description="Processing time in milliseconds",
     )
 
 
@@ -55,18 +56,22 @@ class ModelAggregationMetrics(BaseModel):
     """Model for aggregation performance metrics."""
 
     total_operations: int = Field(
-        ..., description="Total number of aggregation operations"
+        ...,
+        description="Total number of aggregation operations",
     )
     successful_operations: int = Field(
-        ..., description="Number of successful operations"
+        ...,
+        description="Number of successful operations",
     )
     failed_operations: int = Field(..., description="Number of failed operations")
     average_processing_time_ms: float = Field(
-        ..., description="Average processing time"
+        ...,
+        description="Average processing time",
     )
     groups_processed: int = Field(..., description="Number of groups processed")
     state_persistence_count: int = Field(
-        ..., description="Number of state persistence operations"
+        ...,
+        description="Number of state persistence operations",
     )
 
 
@@ -74,10 +79,11 @@ class ModelStateData(BaseModel):
     """Model for state persistence data."""
 
     operation_type: str = Field(..., description="Type of state operation")
-    data: Dict[str, str] = Field(default_factory=dict, description="State data content")
+    data: dict[str, str] = Field(default_factory=dict, description="State data content")
     timestamp: str = Field(..., description="State creation timestamp")
-    correlation_id: Optional[str] = Field(
-        default=None, description="State correlation ID"
+    correlation_id: str | None = Field(
+        default=None,
+        description="State correlation ID",
     )
 
 
@@ -86,13 +92,15 @@ class ModelGroupMessageData(BaseModel):
 
     group_id: str = Field(..., description="Tool group identifier")
     message_content: str = Field(..., description="Message content")
-    data: Dict[str, str] = Field(default_factory=dict, description="Message data")
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Message metadata"
+    data: dict[str, str] = Field(default_factory=dict, description="Message data")
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Message metadata",
     )
     timestamp: str = Field(..., description="Message timestamp")
-    message_hash: Optional[int] = Field(
-        default=None, description="Message content hash"
+    message_hash: int | None = Field(
+        default=None,
+        description="Message content hash",
     )
 
 
@@ -100,33 +108,42 @@ class ModelAggregatedData(BaseModel):
     """Model for aggregated message data."""
 
     aggregation_strategy: str = Field(..., description="Strategy used for aggregation")
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation identifier"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Correlation identifier",
     )
     timestamp: str = Field(..., description="Aggregation timestamp")
-    groups_processed: List[str] = Field(
-        default_factory=list, description="List of processed groups"
+    groups_processed: list[str] = Field(
+        default_factory=list,
+        description="List of processed groups",
     )
-    merged_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Merged data for merge strategy"
+    merged_data: dict[str, str] | None = Field(
+        default=None,
+        description="Merged data for merge strategy",
     )
-    combined_messages: Optional[List[ModelGroupMessageData]] = Field(
-        default=None, description="Combined messages for combine strategy"
+    combined_messages: list[ModelGroupMessageData] | None = Field(
+        default=None,
+        description="Combined messages for combine strategy",
     )
-    reduced_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Reduced data for reduce strategy"
+    reduced_data: dict[str, str] | None = Field(
+        default=None,
+        description="Reduced data for reduce strategy",
     )
-    collected_messages: Optional[Dict[str, str]] = Field(
-        default=None, description="Collected messages for collect strategy"
+    collected_messages: dict[str, str] | None = Field(
+        default=None,
+        description="Collected messages for collect strategy",
     )
-    conflicts_resolved: Optional[int] = Field(
-        default=None, description="Number of conflicts resolved"
+    conflicts_resolved: int | None = Field(
+        default=None,
+        description="Number of conflicts resolved",
     )
-    total_messages: Optional[int] = Field(
-        default=None, description="Total number of messages processed"
+    total_messages: int | None = Field(
+        default=None,
+        description="Total number of messages processed",
     )
-    collection_metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Collection metadata"
+    collection_metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Collection metadata",
     )
 
 
@@ -152,7 +169,7 @@ class StateManager:
         self,
         state_key: str,
         state_data: ModelStateData,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> bool:
         """Persist aggregation state to PostgreSQL."""
         try:
@@ -193,10 +210,10 @@ class StateManager:
             return True
 
         except Exception as e:
-            self.logger.error(f"State persistence failed: {e}")
+            self.logger.exception(f"State persistence failed: {e}")
             return False
 
-    async def restore_state(self, state_key: str) -> Optional[ModelStateData]:
+    async def restore_state(self, state_key: str) -> ModelStateData | None:
         """Restore aggregation state from PostgreSQL."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -214,7 +231,7 @@ class StateManager:
                 if row:
                     snapshot_data = row["snapshot_data"]
                     self.logger.info(
-                        f"State restored successfully for key: {state_key}"
+                        f"State restored successfully for key: {state_key}",
                     )
                     return ModelStateData(
                         operation_type="restore",
@@ -226,7 +243,7 @@ class StateManager:
                 return None
 
         except Exception as e:
-            self.logger.error(f"State restoration failed: {e}")
+            self.logger.exception(f"State restoration failed: {e}")
             return None
 
     async def cleanup_expired_state(self, retention_days: int = 7) -> int:
@@ -255,11 +272,10 @@ class StateManager:
                     cutoff_date,
                 )
 
-                cleaned_count = int(result1.split()[-1]) if result1 else 0
-                return cleaned_count
+                return int(result1.split()[-1]) if result1 else 0
 
         except Exception as e:
-            self.logger.error(f"State cleanup failed: {e}")
+            self.logger.exception(f"State cleanup failed: {e}")
             return 0
 
 
@@ -273,30 +289,31 @@ class MessageAggregator:
 
     async def aggregate_messages(
         self,
-        group_messages: List[Dict[str, str]],
+        group_messages: list[dict[str, str]],
         strategy: str,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> ModelAggregatedData:
         """Aggregate messages from multiple groups using specified strategy."""
         try:
             if strategy == "merge":
                 return await self._merge_aggregation(group_messages, correlation_id)
-            elif strategy == "combine":
+            if strategy == "combine":
                 return await self._combine_aggregation(group_messages, correlation_id)
-            elif strategy == "reduce":
+            if strategy == "reduce":
                 return await self._reduce_aggregation(group_messages, correlation_id)
-            elif strategy == "collect":
+            if strategy == "collect":
                 return await self._collect_aggregation(group_messages, correlation_id)
-            else:
-                raise OnexError(f"Unknown aggregation strategy: {strategy}")
+            msg = f"Unknown aggregation strategy: {strategy}"
+            raise OnexError(msg)
 
         except Exception as e:
-            raise OnexError(f"Message aggregation failed: {str(e)}") from e
+            msg = f"Message aggregation failed: {e!s}"
+            raise OnexError(msg) from e
 
     async def _merge_aggregation(
         self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
+        group_messages: list[dict[str, str]],
+        correlation_id: str | None,
     ) -> ModelAggregatedData:
         """Merge messages with deep object merging and conflict resolution."""
         merged_data = {}
@@ -320,8 +337,8 @@ class MessageAggregator:
 
     async def _combine_aggregation(
         self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
+        group_messages: list[dict[str, str]],
+        correlation_id: str | None,
     ) -> ModelAggregatedData:
         """Combine messages into collections with metadata preservation."""
         combined_messages = []
@@ -354,8 +371,8 @@ class MessageAggregator:
 
     async def _reduce_aggregation(
         self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
+        group_messages: list[dict[str, str]],
+        correlation_id: str | None,
     ) -> ModelAggregatedData:
         """Reduce messages using aggregation functions."""
         groups_processed = [
@@ -391,7 +408,7 @@ class MessageAggregator:
                     "min": str(stats.min),
                     "max": str(stats.max),
                     "numeric_count": str(stats.numeric_count),
-                }
+                },
             )
 
         return ModelAggregatedData(
@@ -404,8 +421,8 @@ class MessageAggregator:
 
     async def _collect_aggregation(
         self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
+        group_messages: list[dict[str, str]],
+        correlation_id: str | None,
     ) -> ModelAggregatedData:
         """Collect messages without processing, preserving original structure."""
         collected_messages = {}
@@ -433,8 +450,11 @@ class MessageAggregator:
         )
 
     def _deep_merge(
-        self, dict1: Dict[str, str], dict2: Dict[str, str], source_prefix: str
-    ) -> Dict[str, str]:
+        self,
+        dict1: dict[str, str],
+        dict2: dict[str, str],
+        source_prefix: str,
+    ) -> dict[str, str]:
         """Deep merge two dictionaries with conflict tracking."""
         result = dict1.copy()
 
@@ -461,9 +481,9 @@ class ToolMessageAggregator(NodeComputeService):
         """Initialize Message Aggregator with container injection."""
         super().__init__(container)
         self.domain = "infrastructure"
-        self.db_pool: Optional[asyncpg.Pool] = None
-        self.state_manager: Optional[StateManager] = None
-        self.message_aggregator: Optional[MessageAggregator] = None
+        self.db_pool: asyncpg.Pool | None = None
+        self.state_manager: StateManager | None = None
+        self.message_aggregator: MessageAggregator | None = None
         self.operation_metrics = {
             "total_operations": 0,
             "successful_operations": 0,
@@ -494,7 +514,8 @@ class ToolMessageAggregator(NodeComputeService):
             self.logger.info("Message Aggregator initialized successfully")
 
         except Exception as e:
-            raise OnexError(f"Failed to initialize Message Aggregator: {str(e)}") from e
+            msg = f"Failed to initialize Message Aggregator: {e!s}"
+            raise OnexError(msg) from e
 
     async def cleanup(self) -> None:
         """Clean up database connections."""
@@ -544,45 +565,44 @@ class ToolMessageAggregator(NodeComputeService):
                     ),
                     message=f"Critical components failed: {', '.join(issues)}",
                 )
-            elif failed_ops > 0 and success_rate < 95:
+            if failed_ops > 0 and success_rate < 95:
                 return ModelHealthStatus(
                     status=EnumHealthStatus.DEGRADED,
                     message=f"High error rate: {success_rate:.1f}% success, {failed_ops} failures, avg time: {avg_processing_time:.1f}ms",
                 )
-            elif avg_processing_time > 10000:  # 10 seconds
+            if avg_processing_time > 10000:  # 10 seconds
                 return ModelHealthStatus(
                     status=EnumHealthStatus.WARNING,
                     message=f"Slow processing detected: avg {avg_processing_time:.1f}ms, success rate: {success_rate:.1f}%",
                 )
-            else:
-                # Get pool info if available
-                pool_info = ""
-                if self.db_pool and hasattr(self.db_pool, "get_size"):
-                    try:
-                        pool_size = self.db_pool.get_size()
-                        min_size = self.db_pool.get_min_size()
-                        max_size = self.db_pool.get_max_size()
-                        pool_info = f", DB pool: {pool_size}/{min_size}-{max_size}"
-                    except:
-                        pool_info = ", DB pool: active"
+            # Get pool info if available
+            pool_info = ""
+            if self.db_pool and hasattr(self.db_pool, "get_size"):
+                try:
+                    pool_size = self.db_pool.get_size()
+                    min_size = self.db_pool.get_min_size()
+                    max_size = self.db_pool.get_max_size()
+                    pool_info = f", DB pool: {pool_size}/{min_size}-{max_size}"
+                except:
+                    pool_info = ", DB pool: active"
 
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.HEALTHY,
-                    message=f"Message aggregator healthy: {total_ops} ops, {success_rate:.1f}% success, avg: {avg_processing_time:.1f}ms{pool_info}",
-                )
+            return ModelHealthStatus(
+                status=EnumHealthStatus.HEALTHY,
+                message=f"Message aggregator healthy: {total_ops} ops, {success_rate:.1f}% success, avg: {avg_processing_time:.1f}ms{pool_info}",
+            )
 
         except Exception as e:
-            self.logger.error(f"Message aggregator health check failed: {e}")
+            self.logger.exception(f"Message aggregator health check failed: {e}")
             return ModelHealthStatus(
                 status=EnumHealthStatus.ERROR,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
             )
 
     async def aggregate_messages(
         self,
-        group_messages: List[Dict[str, str]],
+        group_messages: list[dict[str, str]],
         aggregation_strategy: str,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
         timeout_ms: int = 60000,
     ) -> ModelMessageAggregatorOutput:
         """Aggregate messages from multiple tool groups."""
@@ -594,7 +614,9 @@ class ToolMessageAggregator(NodeComputeService):
 
             # Execute aggregation
             aggregated_result = await self.message_aggregator.aggregate_messages(
-                group_messages, aggregation_strategy, correlation_id
+                group_messages,
+                aggregation_strategy,
+                correlation_id,
             )
 
             # Update metrics
@@ -619,7 +641,7 @@ class ToolMessageAggregator(NodeComputeService):
 
         except Exception as e:
             self.operation_metrics["failed_operations"] += 1
-            self.logger.error(f"Message aggregation failed: {e}")
+            self.logger.exception(f"Message aggregation failed: {e}")
 
             return ModelMessageAggregatorOutput(
                 status="error",
@@ -637,12 +659,14 @@ class ToolMessageAggregator(NodeComputeService):
         self,
         state_key: str,
         state_data: ModelStateData,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> ModelMessageAggregatorOutput:
         """Persist aggregation state to PostgreSQL."""
         try:
             success = await self.state_manager.persist_state(
-                state_key, state_data, correlation_id
+                state_key,
+                state_data,
+                correlation_id,
             )
 
             if success:
@@ -659,17 +683,16 @@ class ToolMessageAggregator(NodeComputeService):
                         processing_time_ms=0.0,
                     ),
                 )
-            else:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="persist",
-                        total_messages=0,
-                        result_data={},
-                        processing_time_ms=0.0,
-                    ),
-                    error_message="State persistence failed",
-                )
+            return ModelMessageAggregatorOutput(
+                status="error",
+                aggregated_result=ModelAggregationResult(
+                    strategy_used="persist",
+                    total_messages=0,
+                    result_data={},
+                    processing_time_ms=0.0,
+                ),
+                error_message="State persistence failed",
+            )
 
         except Exception as e:
             return ModelMessageAggregatorOutput(
@@ -699,17 +722,16 @@ class ToolMessageAggregator(NodeComputeService):
                     ),
                     state_snapshot=state_data.data,
                 )
-            else:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="restore",
-                        total_messages=0,
-                        result_data={},
-                        processing_time_ms=0.0,
-                    ),
-                    error_message=f"No state found for key: {state_key}",
-                )
+            return ModelMessageAggregatorOutput(
+                status="error",
+                aggregated_result=ModelAggregationResult(
+                    strategy_used="restore",
+                    total_messages=0,
+                    result_data={},
+                    processing_time_ms=0.0,
+                ),
+                error_message=f"No state found for key: {state_key}",
+            )
 
         except Exception as e:
             return ModelMessageAggregatorOutput(
@@ -728,7 +750,7 @@ class ToolMessageAggregator(NodeComputeService):
         avg_processing_time = 0
         if self.operation_metrics["processing_times"]:
             avg_processing_time = sum(self.operation_metrics["processing_times"]) / len(
-                self.operation_metrics["processing_times"]
+                self.operation_metrics["processing_times"],
             )
 
         return ModelAggregationMetrics(
@@ -742,7 +764,8 @@ class ToolMessageAggregator(NodeComputeService):
 
     # Main processing method for NodeBase
     async def process(
-        self, input_data: ModelMessageAggregatorInput
+        self,
+        input_data: ModelMessageAggregatorInput,
     ) -> ModelMessageAggregatorOutput:
         """Process Message Aggregator requests."""
         if input_data.operation_type == "aggregate":
@@ -752,7 +775,7 @@ class ToolMessageAggregator(NodeComputeService):
                 correlation_id=input_data.correlation_id,
                 timeout_ms=input_data.timeout_ms or 60000,
             )
-        elif input_data.operation_type == "persist":
+        if input_data.operation_type == "persist":
             if not input_data.state_key:
                 return ModelMessageAggregatorOutput(
                     status="error",
@@ -774,7 +797,7 @@ class ToolMessageAggregator(NodeComputeService):
                 state_data=state_data,
                 correlation_id=input_data.correlation_id,
             )
-        elif input_data.operation_type == "restore":
+        if input_data.operation_type == "restore":
             if not input_data.state_key:
                 return ModelMessageAggregatorOutput(
                     status="error",
@@ -782,18 +805,18 @@ class ToolMessageAggregator(NodeComputeService):
                     error_message="state_key required for restore operation",
                 )
             return await self.restore_state(input_data.state_key)
-        else:
-            return ModelMessageAggregatorOutput(
-                status="error",
-                aggregated_result={},
-                error_message=f"Unknown operation type: {input_data.operation_type}",
-            )
+        return ModelMessageAggregatorOutput(
+            status="error",
+            aggregated_result={},
+            error_message=f"Unknown operation type: {input_data.operation_type}",
+        )
 
 
 def main():
     """Main entry point for Message Aggregator - returns node instance with infrastructure container"""
-    from omnibase_core.tools.infrastructure.container import \
-        create_infrastructure_container
+    from omnibase_core.tools.infrastructure.container import (
+        create_infrastructure_container,
+    )
 
     container = create_infrastructure_container()
     return ToolMessageAggregator(container)

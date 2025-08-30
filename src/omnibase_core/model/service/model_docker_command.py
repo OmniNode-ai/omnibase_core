@@ -2,15 +2,13 @@
 Model for Docker command configuration.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
 class ModelDockerCommand(BaseModel):
     """Docker command configuration."""
 
-    command: List[str] = Field(description="Command as list of strings")
+    command: list[str] = Field(description="Command as list of strings")
 
     @classmethod
     def from_string(cls, cmd_string: str) -> "ModelDockerCommand":

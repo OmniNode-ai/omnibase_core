@@ -8,8 +8,9 @@ ONEX-compliant model architecture.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.memory.model_universal_conversation import \
-    ModelConversationChunk
+from omnibase_core.model.memory.model_universal_conversation import (
+    ModelConversationChunk,
+)
 
 
 class ModelSearchResult(BaseModel):
@@ -25,19 +26,26 @@ class ModelSearchResult(BaseModel):
 
     chunk: ModelConversationChunk = Field(..., description="Matched conversation chunk")
     similarity_score: float = Field(
-        ..., ge=0.0, le=1.0, description="Similarity score between 0.0 and 1.0"
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Similarity score between 0.0 and 1.0",
     )
     conversation_id: str = Field(
-        ..., description="ID of the conversation containing this chunk"
+        ...,
+        description="ID of the conversation containing this chunk",
     )
 
     # Additional search metadata
     rank: int = Field(default=0, ge=0, description="Result ranking (0-based)")
     highlight_snippet: str = Field(
-        default="", description="Highlighted text snippet showing the match"
+        default="",
+        description="Highlighted text snippet showing the match",
     )
     search_time_ms: float = Field(
-        default=0.0, ge=0.0, description="Time taken for this search in milliseconds"
+        default=0.0,
+        ge=0.0,
+        description="Time taken for this search in milliseconds",
     )
 
     class Config:
@@ -50,9 +58,8 @@ class ModelSearchResult(BaseModel):
         """Get human-readable relevance category based on similarity score."""
         if self.similarity_score >= 0.9:
             return "Highly Relevant"
-        elif self.similarity_score >= 0.7:
+        if self.similarity_score >= 0.7:
             return "Relevant"
-        elif self.similarity_score >= 0.5:
+        if self.similarity_score >= 0.5:
             return "Somewhat Relevant"
-        else:
-            return "Potentially Relevant"
+        return "Potentially Relevant"

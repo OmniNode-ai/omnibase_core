@@ -21,11 +21,11 @@ class ModelPriorityFactorBreakdown(BaseModel):
     ticket_id: str = Field(description="Ticket ID this breakdown applies to")
 
     dependency_distance: ModelFactorDetail = Field(
-        description="Dependency distance factor details"
+        description="Dependency distance factor details",
     )
 
     failure_surface: ModelFactorDetail = Field(
-        description="Failure surface factor details"
+        description="Failure surface factor details",
     )
 
     time_decay: ModelFactorDetail = Field(description="Time decay factor details")
@@ -33,7 +33,7 @@ class ModelPriorityFactorBreakdown(BaseModel):
     agent_utility: ModelFactorDetail = Field(description="Agent utility factor details")
 
     user_weighting: ModelFactorDetail = Field(
-        description="User weighting factor details"
+        description="User weighting factor details",
     )
 
     class Config:

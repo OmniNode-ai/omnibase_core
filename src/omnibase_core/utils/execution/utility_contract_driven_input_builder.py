@@ -6,22 +6,23 @@ Creates proper input states for tools based on their contracts,
 following ONEX canonical patterns without hardcoded tool logic.
 """
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.discovery.model_node_introspection_event import \
-    ModelNodeCapabilities
+from omnibase_core.model.discovery.model_node_introspection_event import (
+    ModelNodeCapabilities,
+)
 
 
 @allow_any_type(
-    "Contract-driven input builder needs to handle arbitrary contract structures and user parameters"
+    "Contract-driven input builder needs to handle arbitrary contract structures and user parameters",
 )
 class UtilityContractDrivenInputBuilder:
     """
@@ -34,18 +35,20 @@ class UtilityContractDrivenInputBuilder:
     def __init__(self):
         """Initialize the input builder."""
         emit_log_event(
-            LogLevelEnum.INFO, "UtilityContractDrivenInputBuilder initialized", {}
+            LogLevelEnum.INFO,
+            "UtilityContractDrivenInputBuilder initialized",
+            {},
         )
 
     def build_input(
         self,
         tool_name: str,
         tool_path: Path,
-        user_parameters: Optional[
-            Dict[str, Union[str, int, float, bool, List, Dict]]
-        ] = None,
+        user_parameters: (
+            dict[str, str | int | float | bool | list | dict] | None
+        ) = None,
         execution_mode: str = "standard",
-    ) -> Dict[str, Union[str, int, float, bool, List, Dict]]:
+    ) -> dict[str, str | int | float | bool | list | dict]:
         """
         Build input state for a tool based on its contract.
 
@@ -95,7 +98,11 @@ class UtilityContractDrivenInputBuilder:
             # Add action field with proper structure that tools expect
             if "action" not in input_data:
                 action_name = self._get_field_default(
-                    "action", tool_name, tool_path, primary_actions, execution_mode
+                    "action",
+                    tool_name,
+                    tool_path,
+                    primary_actions,
+                    execution_mode,
                 )
                 if action_name:
                     # Create a generic action object with the structure tools expect
@@ -121,14 +128,15 @@ class UtilityContractDrivenInputBuilder:
                                         f"{enum_module_path}.{enum_module_name}"
                                     )
                                     enum_module = importlib.import_module(
-                                        full_module_path
+                                        full_module_path,
                                     )
 
                                     # Look for enum classes and try to match action name
                                     for attr_name in dir(enum_module):
                                         attr = getattr(enum_module, attr_name)
                                         if hasattr(attr, "__members__") and hasattr(
-                                            attr, "_value_"
+                                            attr,
+                                            "_value_",
                                         ):
                                             # This is an enum class
                                             for enum_value in attr.__members__.values():
@@ -145,14 +153,19 @@ class UtilityContractDrivenInputBuilder:
                         pass
 
                     input_data["action"] = SimpleNamespace(
-                        action_name=action_name, action_type=action_type
+                        action_name=action_name,
+                        action_type=action_type,
                     )
 
             # Ensure required fields are present
             for field in required_fields:
                 if field not in input_data:
                     default_value = self._get_field_default(
-                        field, tool_name, tool_path, primary_actions, execution_mode
+                        field,
+                        tool_name,
+                        tool_path,
+                        primary_actions,
+                        execution_mode,
                     )
                     if default_value is not None:
                         input_data[field] = default_value
@@ -179,21 +192,22 @@ class UtilityContractDrivenInputBuilder:
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to build input for tool {tool_name}: {str(e)}",
+                message=f"Failed to build input for tool {tool_name}: {e!s}",
                 details={"tool": tool_name, "error": str(e)},
             ) from e
 
     def _load_contract(
-        self, contract_path: Path
-    ) -> Dict[str, Union[str, int, float, bool, List, Dict]]:
+        self,
+        contract_path: Path,
+    ) -> dict[str, str | int | float | bool | list | dict]:
         """Load and parse a contract file."""
         try:
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 return yaml.safe_load(f)
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to load contract: {str(e)}",
+                message=f"Failed to load contract: {e!s}",
                 details={"contract_path": str(contract_path)},
             ) from e
 
@@ -202,9 +216,9 @@ class UtilityContractDrivenInputBuilder:
         field: str,
         tool_name: str,
         tool_path: Path,
-        primary_actions: List[str],
+        primary_actions: list[str],
         execution_mode: str,
-    ) -> Optional[Union[str, int, float, bool, List, Dict]]:
+    ) -> str | int | float | bool | list | dict | None:
         """
         Get default value for a field based on ONEX canonical patterns.
 
@@ -218,30 +232,29 @@ class UtilityContractDrivenInputBuilder:
                     if "introspect" in primary_actions
                     else primary_actions[0] if primary_actions else "introspect"
                 )
-            elif execution_mode == "dry_run":
+            if execution_mode == "dry_run":
                 return (
                     "validate"
                     if "validate" in primary_actions
                     else primary_actions[0] if primary_actions else "validate"
                 )
-            else:
-                return primary_actions[0] if primary_actions else "process"
+            return primary_actions[0] if primary_actions else "process"
 
         # Contract path - common pattern for validation tools
-        elif field == "contract_path":
+        if field == "contract_path":
             contract_file = tool_path / "contract.yaml"
             return str(contract_file) if contract_file.exists() else None
 
         # Target path - common pattern for analysis/management tools
-        elif field == "target_path":
+        if field == "target_path":
             return str(tool_path)
 
         # Tool patterns - common for discovery/scanning tools
-        elif field == "tool_patterns":
+        if field == "tool_patterns":
             return ["**/tool_*/v*_*_*/node.py"]
 
         # Schema validation - common boolean flags
-        elif field in [
+        if field in [
             "schema_validation",
             "reference_validation",
             "strict_mode",
@@ -250,11 +263,11 @@ class UtilityContractDrivenInputBuilder:
             return execution_mode != "dry_run"  # Enable validation unless dry run
 
         # Check imports only - common for validation tools
-        elif field == "check_imports_only":
+        if field == "check_imports_only":
             return execution_mode == "dry_run"
 
         # Version - semantic version default
-        elif field == "version":
+        if field == "version":
             return {"major": 1, "minor": 0, "patch": 0}
 
         # No default available
@@ -275,7 +288,9 @@ class UtilityContractDrivenInputBuilder:
 
             if not contract_path.exists():
                 return ModelNodeCapabilities(
-                    actions=[], protocols=[], metadata={"error": "Contract not found"}
+                    actions=[],
+                    protocols=[],
+                    metadata={"error": "Contract not found"},
                 )
 
             contract = self._load_contract(contract_path)
@@ -310,10 +325,14 @@ class UtilityContractDrivenInputBuilder:
             }
 
             return ModelNodeCapabilities(
-                actions=actions, protocols=protocols, metadata=metadata
+                actions=actions,
+                protocols=protocols,
+                metadata=metadata,
             )
 
         except Exception as e:
             return ModelNodeCapabilities(
-                actions=[], protocols=[], metadata={"error": str(e)}
+                actions=[],
+                protocols=[],
+                metadata={"error": str(e)},
             )

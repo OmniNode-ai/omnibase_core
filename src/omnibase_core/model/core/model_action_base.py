@@ -6,7 +6,6 @@ Provides UUID correlation tracking, trust scores, and service metadata.
 """
 
 from datetime import datetime
-from typing import Dict, List, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -28,7 +27,8 @@ class ModelActionBase(BaseModel):
         description="Unique correlation ID for tracking action definition",
     )
     action_created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Action model creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Action model creation timestamp",
     )
     trust_level: float = Field(
         default=1.0,
@@ -38,17 +38,21 @@ class ModelActionBase(BaseModel):
     )
 
     # Service metadata for tool-as-a-service with strong typing
-    service_metadata: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
-        default_factory=dict, description="Service discovery and composition metadata"
+    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
+        default_factory=dict,
+        description="Service discovery and composition metadata",
     )
-    tool_discovery_tags: List[str] = Field(
-        default_factory=list, description="Tags for tool discovery and categorization"
+    tool_discovery_tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for tool discovery and categorization",
     )
 
     # MCP/GraphQL compatibility with strong typing
     mcp_schema_version: str = Field(
-        default="1.0.0", description="MCP schema version for compatibility"
+        default="1.0.0",
+        description="MCP schema version for compatibility",
     )
     graphql_compatible: bool = Field(
-        default=True, description="Whether action supports GraphQL serialization"
+        default=True,
+        description="Whether action supports GraphQL serialization",
     )

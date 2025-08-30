@@ -5,8 +5,6 @@ Type-safe performance optimization hints for node operations
 and load balancing decisions.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,31 +17,45 @@ class ModelPerformanceHints(BaseModel):
     """
 
     cpu_intensive: bool = Field(
-        default=False, description="Whether operations are CPU intensive"
+        default=False,
+        description="Whether operations are CPU intensive",
     )
     memory_intensive: bool = Field(
-        default=False, description="Whether operations are memory intensive"
+        default=False,
+        description="Whether operations are memory intensive",
     )
     io_intensive: bool = Field(
-        default=False, description="Whether operations are I/O intensive"
+        default=False,
+        description="Whether operations are I/O intensive",
     )
     network_intensive: bool = Field(
-        default=False, description="Whether operations are network intensive"
+        default=False,
+        description="Whether operations are network intensive",
     )
-    preferred_batch_size: Optional[int] = Field(
-        None, description="Preferred batch size for operations", ge=1, le=10000
+    preferred_batch_size: int | None = Field(
+        None,
+        description="Preferred batch size for operations",
+        ge=1,
+        le=10000,
     )
-    max_concurrent_operations: Optional[int] = Field(
-        None, description="Maximum concurrent operations", ge=1, le=1000
+    max_concurrent_operations: int | None = Field(
+        None,
+        description="Maximum concurrent operations",
+        ge=1,
+        le=1000,
     )
     cache_friendly: bool = Field(
-        default=True, description="Whether operations benefit from caching"
+        default=True,
+        description="Whether operations benefit from caching",
     )
     stateless: bool = Field(
-        default=True, description="Whether operations are stateless"
+        default=True,
+        description="Whether operations are stateless",
     )
-    warm_up_time_ms: Optional[int] = Field(
-        None, description="Time needed for warm-up in milliseconds", ge=0
+    warm_up_time_ms: int | None = Field(
+        None,
+        description="Time needed for warm-up in milliseconds",
+        ge=0,
     )
 
     def is_resource_intensive(self) -> bool:
@@ -54,5 +66,5 @@ class ModelPerformanceHints(BaseModel):
                 self.memory_intensive,
                 self.io_intensive,
                 self.network_intensive,
-            ]
+            ],
         )

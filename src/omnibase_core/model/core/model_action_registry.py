@@ -6,7 +6,6 @@ enabling third-party nodes to register their own actions dynamically.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 import yaml
 
@@ -17,9 +16,9 @@ class ActionRegistry:
     """Registry for dynamically discovered CLI actions."""
 
     def __init__(self):
-        self._actions: Dict[str, ModelCliAction] = {}
-        self._node_actions: Dict[str, Set[str]] = {}
-        self._qualified_actions: Dict[str, ModelCliAction] = {}
+        self._actions: dict[str, ModelCliAction] = {}
+        self._node_actions: dict[str, set[str]] = {}
+        self._qualified_actions: dict[str, ModelCliAction] = {}
 
     def register_action(self, action: ModelCliAction) -> None:
         """Register a CLI action from a node contract."""
@@ -32,21 +31,22 @@ class ActionRegistry:
         qualified_name = action.get_qualified_name()
         self._qualified_actions[qualified_name] = action
 
-    def get_action(self, action_name: str) -> Optional[ModelCliAction]:
+    def get_action(self, action_name: str) -> ModelCliAction | None:
         """Get action by name."""
         return self._actions.get(action_name)
 
     def get_action_by_qualified_name(
-        self, qualified_name: str
-    ) -> Optional[ModelCliAction]:
+        self,
+        qualified_name: str,
+    ) -> ModelCliAction | None:
         """Get action by qualified name (node:action)."""
         return self._qualified_actions.get(qualified_name)
 
-    def get_all_actions(self) -> List[ModelCliAction]:
+    def get_all_actions(self) -> list[ModelCliAction]:
         """Get all registered actions."""
         return list(self._actions.values())
 
-    def get_actions_for_node(self, node_name: str) -> List[ModelCliAction]:
+    def get_actions_for_node(self, node_name: str) -> list[ModelCliAction]:
         """Get all actions for a specific node."""
         if node_name not in self._node_actions:
             return []
@@ -78,8 +78,7 @@ class ActionRegistry:
         for contract_file in contract_files:
             try:
                 actions_discovered += self._discover_from_contract(contract_file)
-            except Exception as e:
-                print(f"Warning: Failed to discover actions from {contract_file}: {e}")
+            except Exception:
                 continue
 
         return actions_discovered
@@ -97,7 +96,7 @@ class ActionRegistry:
         actions_discovered = 0
 
         try:
-            with open(contract_file, "r") as f:
+            with open(contract_file) as f:
                 contract = yaml.safe_load(f)
 
             if not contract:
@@ -128,7 +127,8 @@ class ActionRegistry:
                     action_name=action_name,
                     node_name=node_name,
                     description=command.get(
-                        "description", f"{action_name} action for {node_name}"
+                        "description",
+                        f"{action_name} action for {node_name}",
                     ),
                     category=command.get("category", "cli"),
                 )
@@ -156,7 +156,8 @@ class ActionRegistry:
                     actions_discovered += 1
 
         except Exception as e:
-            raise Exception(f"Failed to parse contract {contract_file}: {e}")
+            msg = f"Failed to parse contract {contract_file}: {e}"
+            raise Exception(msg)
 
         return actions_discovered
 
@@ -188,7 +189,7 @@ class ActionRegistry:
         self._node_actions.clear()
         self._qualified_actions.clear()
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get registry statistics."""
         return {
             "total_actions": len(self._actions),
@@ -198,7 +199,7 @@ class ActionRegistry:
 
 
 # Global registry instance
-_global_action_registry: Optional[ActionRegistry] = None
+_global_action_registry: ActionRegistry | None = None
 
 
 def get_action_registry() -> ActionRegistry:

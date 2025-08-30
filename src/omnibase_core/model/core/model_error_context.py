@@ -5,8 +5,6 @@ This model replaces dictionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_schema_value import ModelSchemaValue
@@ -20,21 +18,24 @@ class ModelErrorContext(BaseModel):
     """
 
     # Common error context fields
-    file_path: Optional[str] = Field(None, description="File path related to the error")
-    line_number: Optional[int] = Field(
-        None, description="Line number where error occurred"
+    file_path: str | None = Field(None, description="File path related to the error")
+    line_number: int | None = Field(
+        None,
+        description="Line number where error occurred",
     )
-    column_number: Optional[int] = Field(
-        None, description="Column number where error occurred"
+    column_number: int | None = Field(
+        None,
+        description="Column number where error occurred",
     )
-    function_name: Optional[str] = Field(
-        None, description="Function where error occurred"
+    function_name: str | None = Field(
+        None,
+        description="Function where error occurred",
     )
-    module_name: Optional[str] = Field(None, description="Module where error occurred")
-    stack_trace: Optional[str] = Field(None, description="Stack trace if available")
+    module_name: str | None = Field(None, description="Module where error occurred")
+    stack_trace: str | None = Field(None, description="Stack trace if available")
 
     # Additional context as schema values
-    additional_context: Dict[str, ModelSchemaValue] = Field(
+    additional_context: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional context information as schema values",
     )

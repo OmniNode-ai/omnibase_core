@@ -4,8 +4,6 @@ ONEX-compliant model for connection pool configuration.
 Configuration model for managing HTTP connection pools to external services.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +17,8 @@ class ModelConnectionPoolConfig(BaseModel):
 
     service_name: str = Field(..., description="Name of the service")
     max_connections: int = Field(
-        10, description="Maximum number of connections in pool"
+        10,
+        description="Maximum number of connections in pool",
     )
     max_idle_connections: int = Field(5, description="Maximum idle connections to keep")
     connection_timeout: float = Field(30.0, description="Connection timeout in seconds")
@@ -29,13 +28,14 @@ class ModelConnectionPoolConfig(BaseModel):
     retry_backoff_factor: float = Field(0.5, description="Backoff factor for retries")
     keepalive_enabled: bool = Field(True, description="Enable HTTP keepalive")
     pool_cleanup_interval: int = Field(
-        30, description="Pool cleanup interval in seconds"
+        30,
+        description="Pool cleanup interval in seconds",
     )
 
     # SSL/TLS settings
     verify_ssl: bool = Field(True, description="Verify SSL certificates")
-    ssl_cert_path: Optional[str] = Field(None, description="Path to SSL certificate")
-    ssl_key_path: Optional[str] = Field(None, description="Path to SSL private key")
+    ssl_cert_path: str | None = Field(None, description="Path to SSL certificate")
+    ssl_key_path: str | None = Field(None, description="Path to SSL private key")
 
     class Config:
         """Pydantic configuration."""
@@ -55,5 +55,5 @@ class ModelConnectionPoolConfig(BaseModel):
                 "verify_ssl": True,
                 "ssl_cert_path": None,
                 "ssl_key_path": None,
-            }
+            },
         }

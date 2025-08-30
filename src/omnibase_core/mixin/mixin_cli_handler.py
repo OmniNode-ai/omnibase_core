@@ -9,12 +9,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Generic, List, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 # Type variables for input/output states
 InputStateT = TypeVar("InputStateT")
@@ -60,7 +61,8 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """Process method that should be implemented by the tool."""
-        raise NotImplementedError("Tool must implement process method")
+        msg = "Tool must implement process method"
+        raise NotImplementedError(msg)
 
     def get_cli_description(self) -> str:
         """Get CLI description. Override to customize."""
@@ -70,7 +72,6 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
     def add_custom_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add custom CLI arguments. Override to add tool-specific args."""
-        pass
 
     def create_parser(self) -> argparse.ArgumentParser:
         """Create argument parser with standard ONEX flags."""
@@ -81,15 +82,21 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         # Standard input/output arguments
         parser.add_argument(
-            "--input", type=str, help="Input data as JSON string or file path"
+            "--input",
+            type=str,
+            help="Input data as JSON string or file path",
         )
 
         parser.add_argument(
-            "--input-file", type=str, help="Path to input JSON/YAML file"
+            "--input-file",
+            type=str,
+            help="Path to input JSON/YAML file",
         )
 
         parser.add_argument(
-            "--output", type=str, help="Output file path (default: stdout)"
+            "--output",
+            type=str,
+            help="Output file path (default: stdout)",
         )
 
         parser.add_argument(
@@ -113,11 +120,17 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         )
 
         parser.add_argument(
-            "--verbose", "-v", action="store_true", help="Enable verbose logging"
+            "--verbose",
+            "-v",
+            action="store_true",
+            help="Enable verbose logging",
         )
 
         parser.add_argument(
-            "--quiet", "-q", action="store_true", help="Suppress non-error output"
+            "--quiet",
+            "-q",
+            action="store_true",
+            help="Suppress non-error output",
         )
 
         # Add custom arguments from tool
@@ -125,7 +138,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         return parser
 
-    def parse_input(self, args: argparse.Namespace) -> Optional[Dict]:
+    def parse_input(self, args: argparse.Namespace) -> dict | None:
         """Parse input from CLI arguments."""
         input_data = None
 
@@ -145,8 +158,9 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 if input_path.exists():
                     input_data = self._load_file(input_path)
                 else:
+                    msg = f"Input is neither valid JSON nor existing file: {args.input}"
                     raise ValueError(
-                        f"Input is neither valid JSON nor existing file: {args.input}"
+                        msg,
                     )
 
         # Try --input-file
@@ -174,11 +188,12 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                         {"size": len(stdin_data)},
                     )
                 except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON from stdin: {e}")
+                    msg = f"Invalid JSON from stdin: {e}"
+                    raise ValueError(msg)
 
         return input_data
 
-    def _load_file(self, path: Path) -> Dict:
+    def _load_file(self, path: Path) -> dict:
         """Load JSON or YAML file."""
         content = path.read_text()
 
@@ -214,10 +229,9 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             import yaml
 
             return yaml.dump(output_dict, default_flow_style=False)
-        else:
-            return json.dumps(output_dict, indent=2)
+        return json.dumps(output_dict, indent=2)
 
-    def main(self, argv: Optional[List[str]] = None) -> int:
+    def main(self, argv: list[str] | None = None) -> int:
         """Main entry point for CLI execution."""
         try:
             # Parse arguments
@@ -245,7 +259,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                     {"tool": self.__class__.__name__},
                 )
                 parser.error(
-                    "No input provided. Use --input, --input-file, or pipe to stdin"
+                    "No input provided. Use --input, --input-file, or pipe to stdin",
                 )
 
             # Create input state
@@ -282,7 +296,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                         {"size": len(output_str), "format": args.format},
                     )
                 else:
-                    print(output_str)
+                    pass
 
             return 0
 
@@ -305,10 +319,10 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
                 },
             )
             if not (hasattr(args, "quiet") and args.quiet):
-                print(f"Error: {e}", file=sys.stderr)
+                pass
             return 1
 
-    def _create_input_state(self, data: Dict) -> InputStateT:
+    def _create_input_state(self, data: dict) -> InputStateT:
         """Create input state from dictionary data."""
         # Get input state class from type hints
         if hasattr(self.process, "__annotations__"):
@@ -324,21 +338,14 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         """Handle introspection request."""
         if hasattr(self, "introspect"):
             # Use tool's introspection method
-            result = self.introspect()
-            print(
-                json.dumps(
-                    result.model_dump() if hasattr(result, "model_dump") else result,
-                    indent=2,
-                )
-            )
+            self.introspect()
         else:
             # Basic introspection
-            info = {
+            {
                 "tool_name": self.__class__.__name__,
                 "description": self.get_cli_description(),
                 "version": getattr(self, "node_version", "1.0.0"),
                 "status": "healthy",
             }
-            print(json.dumps(info, indent=2))
 
         return 0

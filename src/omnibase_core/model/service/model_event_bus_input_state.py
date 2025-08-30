@@ -1,6 +1,6 @@
+import contextlib
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -25,7 +25,8 @@ class ModelEventBusInputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        ..., description="Schema version for input state (semantic version)"
+        ...,
+        description="Schema version for input state (semantic version)",
     )
 
     input_field: str = Field(
@@ -35,36 +36,46 @@ class ModelEventBusInputState(BaseModel):
         max_length=1000,
     )
 
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
         max_length=100,
     )
 
-    event_id: Optional[str] = Field(
-        default=None, description="Unique event identifier", max_length=100
+    event_id: str | None = Field(
+        default=None,
+        description="Unique event identifier",
+        max_length=100,
     )
 
-    integration: Optional[bool] = Field(
-        default=None, description="Integration mode flag for testing and validation"
+    integration: bool | None = Field(
+        default=None,
+        description="Integration mode flag for testing and validation",
     )
 
-    custom: Optional[ModelCustomFields] = Field(
-        default_factory=dict, description="Custom metadata and configuration"
+    custom: ModelCustomFields | None = Field(
+        default_factory=dict,
+        description="Custom metadata and configuration",
     )
 
-    priority: Optional[str] = Field(
+    priority: str | None = Field(
         default="normal",
         description="Processing priority level",
         pattern=r"^(low|normal|high|critical)$",
     )
 
-    timeout_seconds: Optional[int] = Field(
-        default=30, description="Processing timeout in seconds", ge=1, le=3600
+    timeout_seconds: int | None = Field(
+        default=30,
+        description="Processing timeout in seconds",
+        ge=1,
+        le=3600,
     )
 
-    retry_count: Optional[int] = Field(
-        default=3, description="Maximum retry attempts", ge=0, le=10
+    retry_count: int | None = Field(
+        default=3,
+        description="Maximum retry attempts",
+        ge=0,
+        le=10,
     )
 
     @field_validator("version", mode="before")
@@ -77,14 +88,16 @@ class ModelEventBusInputState(BaseModel):
             return ModelSemVer.parse(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        raise ValueError("version must be a string, dict, or ModelSemVer")
+        msg = "version must be a string, dict, or ModelSemVer"
+        raise ValueError(msg)
 
     @field_validator("input_field")
     @classmethod
     def validate_input_field(cls, v: str) -> str:
         """Validate input field content."""
         if not v or not v.strip():
-            raise ValueError("input_field cannot be empty or whitespace")
+            msg = "input_field cannot be empty or whitespace"
+            raise ValueError(msg)
 
         # Remove any potential script injection patterns
         dangerous_patterns = [
@@ -97,15 +110,16 @@ class ModelEventBusInputState(BaseModel):
         v_lower = v.lower()
         for pattern in dangerous_patterns:
             if pattern in v_lower:
+                msg = f"input_field contains potentially dangerous pattern: {pattern}"
                 raise ValueError(
-                    f"input_field contains potentially dangerous pattern: {pattern}"
+                    msg,
                 )
 
         return v.strip()
 
     @field_validator("correlation_id")
     @classmethod
-    def validate_correlation_id(cls, v: Optional[str]) -> Optional[str]:
+    def validate_correlation_id(cls, v: str | None) -> str | None:
         """Validate correlation ID format."""
         if v is None:
             return v
@@ -118,8 +132,9 @@ class ModelEventBusInputState(BaseModel):
         import re
 
         if not re.match(r"^[a-zA-Z0-9\-_]+$", v):
+            msg = "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
             raise ValueError(
-                "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
+                msg,
             )
 
         return v
@@ -160,7 +175,7 @@ class ModelEventBusInputState(BaseModel):
             retry_on_timeout=True,
         )
 
-    def get_tracking_metadata(self) -> Dict[str, str]:
+    def get_tracking_metadata(self) -> dict[str, str]:
         """Get metadata for operation tracking."""
         metadata = {
             "version": str(self.version),
@@ -176,7 +191,7 @@ class ModelEventBusInputState(BaseModel):
 
         return metadata
 
-    def validate_for_processing(self) -> List[str]:
+    def validate_for_processing(self) -> list[str]:
         """Validate state is ready for processing."""
         issues = []
 
@@ -194,7 +209,7 @@ class ModelEventBusInputState(BaseModel):
 
         if self.retry_count and self.retry_count > 5 and not self.is_high_priority():
             issues.append(
-                "High retry_count should be reserved for high priority operations"
+                "High retry_count should be reserved for high priority operations",
             )
 
         return issues
@@ -206,27 +221,24 @@ class ModelEventBusInputState(BaseModel):
     # === Configuration Integration ===
 
     def apply_environment_overrides(
-        self, env_prefix: str = "ONEX_EVENT_BUS_"
+        self,
+        env_prefix: str = "ONEX_EVENT_BUS_",
     ) -> "ModelEventBusInputState":
         """Apply environment variable overrides."""
         updates = {}
 
         # Check for environment variable overrides
         if timeout := os.getenv(f"{env_prefix}TIMEOUT_SECONDS"):
-            try:
+            with contextlib.suppress(ValueError):
                 updates["timeout_seconds"] = int(timeout)
-            except ValueError:
-                pass
 
         if priority := os.getenv(f"{env_prefix}PRIORITY"):
             if priority.lower() in ["low", "normal", "high", "critical"]:
                 updates["priority"] = priority.lower()
 
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
-            try:
+            with contextlib.suppress(ValueError):
                 updates["retry_count"] = int(retry_count)
-            except ValueError:
-                pass
 
         if updates:
             return self.model_copy(update=updates)
@@ -234,8 +246,9 @@ class ModelEventBusInputState(BaseModel):
         return self
 
     def get_environment_mapping(
-        self, env_prefix: str = "ONEX_EVENT_BUS_"
-    ) -> Dict[str, str]:
+        self,
+        env_prefix: str = "ONEX_EVENT_BUS_",
+    ) -> dict[str, str]:
         """Get mapping of fields to environment variable names."""
         return {
             "timeout_seconds": f"{env_prefix}TIMEOUT_SECONDS",
@@ -258,7 +271,7 @@ class ModelEventBusInputState(BaseModel):
         version: str,
         input_field: str,
         correlation_id: str,
-        event_id: Optional[str] = None,
+        event_id: str | None = None,
     ) -> "ModelEventBusInputState":
         """Create input state with tracking information."""
         return cls(
@@ -270,7 +283,10 @@ class ModelEventBusInputState(BaseModel):
 
     @classmethod
     def create_high_priority(
-        cls, version: str, input_field: str, timeout_seconds: int = 60
+        cls,
+        version: str,
+        input_field: str,
+        timeout_seconds: int = 60,
     ) -> "ModelEventBusInputState":
         """Create high priority input state with extended timeout."""
         return cls(
@@ -283,15 +299,17 @@ class ModelEventBusInputState(BaseModel):
 
     @classmethod
     def create_from_environment(
-        cls, env_prefix: str = "ONEX_EVENT_BUS_"
+        cls,
+        env_prefix: str = "ONEX_EVENT_BUS_",
     ) -> "ModelEventBusInputState":
         """Create input state from environment variables."""
         version = os.getenv(f"{env_prefix}VERSION", "1.0.0")
         input_field = os.getenv(f"{env_prefix}INPUT_FIELD", "")
 
         if not input_field:
+            msg = f"Environment variable {env_prefix}INPUT_FIELD is required"
             raise ValueError(
-                f"Environment variable {env_prefix}INPUT_FIELD is required"
+                msg,
             )
 
         config_data = {"version": version, "input_field": input_field}

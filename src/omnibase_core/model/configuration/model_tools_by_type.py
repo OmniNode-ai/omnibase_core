@@ -4,8 +4,6 @@ Tools by Type Collection Model for ONEX Configuration System.
 Strongly typed model for tools filtered by type.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -16,8 +14,9 @@ class ModelToolsByType(BaseModel):
     Represents a collection of tools of a specific type with proper type safety.
     """
 
-    tools: Dict[str, str] = Field(
-        default_factory=dict, description="Tools by name with their type information"
+    tools: dict[str, str] = Field(
+        default_factory=dict,
+        description="Tools by name with their type information",
     )
 
     def get_tool(self, tool_name: str) -> str:

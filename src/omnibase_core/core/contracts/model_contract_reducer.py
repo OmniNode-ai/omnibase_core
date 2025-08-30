@@ -11,17 +11,19 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.model_contract_base import ModelContractBase
-from omnibase_core.core.subcontracts import (ModelAggregationSubcontract,
-                                             ModelCachingSubcontract,
-                                             ModelEventTypeSubcontract,
-                                             ModelFSMSubcontract,
-                                             ModelStateManagementSubcontract)
+from omnibase_core.core.subcontracts import (
+    ModelAggregationSubcontract,
+    ModelCachingSubcontract,
+    ModelEventTypeSubcontract,
+    ModelFSMSubcontract,
+    ModelStateManagementSubcontract,
+)
 
 
 class ModelDependencySpec(BaseModel):
@@ -35,13 +37,17 @@ class ModelDependencySpec(BaseModel):
     name: str = Field(..., description="Dependency identifier name", min_length=1)
 
     type: str = Field(
-        ..., description="Dependency type (protocol, service, utility)", min_length=1
+        ...,
+        description="Dependency type (protocol, service, utility)",
+        min_length=1,
     )
 
     class_name: str = Field(..., description="Implementation class name", min_length=1)
 
     module: str = Field(
-        ..., description="Full module path for the implementation", min_length=1
+        ...,
+        description="Full module path for the implementation",
+        min_length=1,
     )
 
 
@@ -60,31 +66,40 @@ class ModelReductionConfig(BaseModel):
     )
 
     reduction_function: str = Field(
-        ..., description="Reduction function identifier", min_length=1
+        ...,
+        description="Reduction function identifier",
+        min_length=1,
     )
 
     associative: bool = Field(
-        default=True, description="Whether the reduction operation is associative"
+        default=True,
+        description="Whether the reduction operation is associative",
     )
 
     commutative: bool = Field(
-        default=False, description="Whether the reduction operation is commutative"
+        default=False,
+        description="Whether the reduction operation is commutative",
     )
 
-    identity_element: Optional[str] = Field(
-        default=None, description="Identity element for the reduction operation"
+    identity_element: str | None = Field(
+        default=None,
+        description="Identity element for the reduction operation",
     )
 
     chunk_size: int = Field(
-        default=1000, description="Chunk size for batch reduction operations", ge=1
+        default=1000,
+        description="Chunk size for batch reduction operations",
+        ge=1,
     )
 
     parallel_enabled: bool = Field(
-        default=True, description="Enable parallel reduction processing"
+        default=True,
+        description="Enable parallel reduction processing",
     )
 
     intermediate_results_caching: bool = Field(
-        default=True, description="Cache intermediate reduction results"
+        default=True,
+        description="Cache intermediate reduction results",
     )
 
 
@@ -99,7 +114,9 @@ class ModelStreamingConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable streaming processing")
 
     buffer_size: int = Field(
-        default=8192, description="Stream buffer size in bytes", ge=1024
+        default=8192,
+        description="Stream buffer size in bytes",
+        ge=1024,
     )
 
     window_size: int = Field(
@@ -109,11 +126,14 @@ class ModelStreamingConfig(BaseModel):
     )
 
     memory_threshold_mb: int = Field(
-        default=512, description="Memory threshold for streaming activation in MB", ge=1
+        default=512,
+        description="Memory threshold for streaming activation in MB",
+        ge=1,
     )
 
     backpressure_enabled: bool = Field(
-        default=True, description="Enable backpressure handling for streaming"
+        default=True,
+        description="Enable backpressure handling for streaming",
     )
 
 
@@ -131,15 +151,18 @@ class ModelConflictResolutionConfig(BaseModel):
     )
 
     detection_enabled: bool = Field(
-        default=True, description="Enable automatic conflict detection"
+        default=True,
+        description="Enable automatic conflict detection",
     )
 
     timestamp_based_resolution: bool = Field(
-        default=True, description="Use timestamps for conflict resolution"
+        default=True,
+        description="Use timestamps for conflict resolution",
     )
 
     conflict_logging_enabled: bool = Field(
-        default=True, description="Enable detailed conflict logging"
+        default=True,
+        description="Enable detailed conflict logging",
     )
 
 
@@ -152,7 +175,9 @@ class ModelMemoryManagementConfig(BaseModel):
     """
 
     max_memory_mb: int = Field(
-        default=1024, description="Maximum memory allocation in MB", ge=1
+        default=1024,
+        description="Maximum memory allocation in MB",
+        ge=1,
     )
 
     gc_threshold: float = Field(
@@ -163,11 +188,13 @@ class ModelMemoryManagementConfig(BaseModel):
     )
 
     lazy_loading_enabled: bool = Field(
-        default=True, description="Enable lazy loading for large datasets"
+        default=True,
+        description="Enable lazy loading for large datasets",
     )
 
     spill_to_disk_enabled: bool = Field(
-        default=True, description="Enable spilling to disk when memory is full"
+        default=True,
+        description="Enable spilling to disk when memory is full",
     )
 
 
@@ -191,117 +218,137 @@ class ModelContractReducer(ModelContractBase):
     # These fields support infrastructure patterns and YAML variations
 
     # Flexible dependency field supporting multiple formats
-    dependencies: Optional[List[Union[str, Dict[str, str], ModelDependencySpec]]] = (
-        Field(
-            default=None,
-            description="Dependencies supporting string, dict, and object formats",
-        )
+    dependencies: list[str | dict[str, str] | ModelDependencySpec] | None = Field(
+        default=None,
+        description="Dependencies supporting string, dict, and object formats",
     )
 
     # Infrastructure-specific fields for backward compatibility
-    node_name: Optional[str] = Field(
-        default=None, description="Node name for infrastructure patterns"
+    node_name: str | None = Field(
+        default=None,
+        description="Node name for infrastructure patterns",
     )
 
-    tool_specification: Optional[Dict[str, Any]] = Field(
-        default=None, description="Tool specification for infrastructure patterns"
+    tool_specification: dict[str, Any] | None = Field(
+        default=None,
+        description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: Optional[Dict[str, Any]] = Field(
-        default=None, description="Service configuration for infrastructure patterns"
+    service_configuration: dict[str, Any] | None = Field(
+        default=None,
+        description="Service configuration for infrastructure patterns",
     )
 
-    input_state: Optional[Dict[str, Any]] = Field(
-        default=None, description="Input state specification"
+    input_state: dict[str, Any] | None = Field(
+        default=None,
+        description="Input state specification",
     )
 
-    output_state: Optional[Dict[str, Any]] = Field(
-        default=None, description="Output state specification"
+    output_state: dict[str, Any] | None = Field(
+        default=None,
+        description="Output state specification",
     )
 
-    actions: Optional[List[Dict[str, Any]]] = Field(
-        default=None, description="Action definitions"
+    actions: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Action definitions",
     )
 
-    infrastructure: Optional[Dict[str, Any]] = Field(
-        default=None, description="Infrastructure configuration"
+    infrastructure: dict[str, Any] | None = Field(
+        default=None,
+        description="Infrastructure configuration",
     )
 
-    infrastructure_services: Optional[Dict[str, Any]] = Field(
-        default=None, description="Infrastructure services configuration"
+    infrastructure_services: dict[str, Any] | None = Field(
+        default=None,
+        description="Infrastructure services configuration",
     )
 
-    validation_rules: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(
-        default=None, description="Validation rules in flexible format"
+    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Validation rules in flexible format",
     )
 
     # === CORE REDUCTION FUNCTIONALITY ===
     # These fields define the core reduction behavior
 
-    reduction_operations: Optional[List[ModelReductionConfig]] = Field(
-        default=None, description="Data reduction operation specifications"
+    reduction_operations: list[ModelReductionConfig] | None = Field(
+        default=None,
+        description="Data reduction operation specifications",
     )
 
-    streaming: Optional[ModelStreamingConfig] = Field(
-        default=None, description="Streaming configuration"
+    streaming: ModelStreamingConfig | None = Field(
+        default=None,
+        description="Streaming configuration",
     )
 
-    conflict_resolution: Optional[ModelConflictResolutionConfig] = Field(
-        default=None, description="Conflict resolution strategies"
+    conflict_resolution: ModelConflictResolutionConfig | None = Field(
+        default=None,
+        description="Conflict resolution strategies",
     )
 
-    memory_management: Optional[ModelMemoryManagementConfig] = Field(
-        default=None, description="Memory management configuration"
+    memory_management: ModelMemoryManagementConfig | None = Field(
+        default=None,
+        description="Memory management configuration",
     )
 
     # Reducer-specific settings
     order_preserving: bool = Field(
-        default=False, description="Whether to preserve input order in reduction"
+        default=False,
+        description="Whether to preserve input order in reduction",
     )
 
     incremental_processing: bool = Field(
-        default=True, description="Enable incremental processing for efficiency"
+        default=True,
+        description="Enable incremental processing for efficiency",
     )
 
     result_caching_enabled: bool = Field(
-        default=True, description="Enable caching of reduction results"
+        default=True,
+        description="Enable caching of reduction results",
     )
 
     partial_results_enabled: bool = Field(
-        default=True, description="Enable returning partial results for long operations"
+        default=True,
+        description="Enable returning partial results for long operations",
     )
 
     # === SUBCONTRACT COMPOSITION ===
     # These fields provide clean subcontract integration
 
     # FSM subcontract (supports both embedded and $ref patterns)
-    state_transitions: Optional[Union[ModelFSMSubcontract, Dict[str, str]]] = Field(
+    state_transitions: ModelFSMSubcontract | dict[str, str] | None = Field(
         default=None,
         description="FSM subcontract (embedded definition or $ref reference)",
     )
 
     # Event-driven architecture subcontract
-    event_type: Optional[ModelEventTypeSubcontract] = Field(
-        default=None, description="Event type subcontract for event-driven architecture"
+    event_type: ModelEventTypeSubcontract | None = Field(
+        default=None,
+        description="Event type subcontract for event-driven architecture",
     )
 
     # Aggregation subcontract (reuses aggregation functionality)
-    aggregation: Optional[ModelAggregationSubcontract] = Field(
-        default=None, description="Aggregation subcontract for data processing"
+    aggregation: ModelAggregationSubcontract | None = Field(
+        default=None,
+        description="Aggregation subcontract for data processing",
     )
 
     # State management subcontract
-    state_management: Optional[ModelStateManagementSubcontract] = Field(
-        default=None, description="State management subcontract for persistence"
+    state_management: ModelStateManagementSubcontract | None = Field(
+        default=None,
+        description="State management subcontract for persistence",
     )
 
     # Caching subcontract
-    caching: Optional[ModelCachingSubcontract] = Field(
-        default=None, description="Caching subcontract for performance optimization"
+    caching: ModelCachingSubcontract | None = Field(
+        default=None,
+        description="Caching subcontract for performance optimization",
     )
 
     def validate_node_specific_config(
-        self, original_contract_data: Optional[Dict] = None
+        self,
+        original_contract_data: dict | None = None,
     ) -> None:
         """
         Validate reducer node-specific configuration requirements.
@@ -316,36 +363,46 @@ class ModelContractReducer(ModelContractBase):
             ValidationError: If reducer-specific validation fails
         """
         # Validate reduction operations if present
-        if self.reduction_operations and self.aggregation:
-            if (
+        if (
+            self.reduction_operations
+            and self.aggregation
+            and (
                 hasattr(self.aggregation, "aggregation_functions")
                 and not self.aggregation.aggregation_functions
-            ):
-                raise ValueError(
-                    "Reducer with aggregation must define aggregation functions"
-                )
+            )
+        ):
+            msg = "Reducer with aggregation must define aggregation functions"
+            raise ValueError(
+                msg,
+            )
 
         # Validate memory management consistency if present
         if self.memory_management and self.memory_management.spill_to_disk_enabled:
             if self.memory_management.gc_threshold >= 0.9:
-                raise ValueError(
+                msg = (
                     "GC threshold should be less than 0.9 when spill to disk is enabled"
+                )
+                raise ValueError(
+                    msg,
                 )
 
         # Validate streaming configuration if present
         if self.streaming and self.streaming.enabled and self.streaming.window_size < 1:
-            raise ValueError("Streaming requires positive window_size")
+            msg = "Streaming requires positive window_size"
+            raise ValueError(msg)
 
         # Validate tool specification if present (infrastructure pattern)
         if self.tool_specification:
             required_fields = ["tool_name", "main_tool_class"]
             for field in required_fields:
                 if field not in self.tool_specification:
-                    raise ValueError(f"tool_specification must include '{field}'")
+                    msg = f"tool_specification must include '{field}'"
+                    raise ValueError(msg)
 
         # Validate FSM subcontract if it's not a $ref
         if self.state_transitions and isinstance(
-            self.state_transitions, ModelFSMSubcontract
+            self.state_transitions,
+            ModelFSMSubcontract,
         ):
             self._validate_fsm_subcontract()
 
@@ -353,7 +410,8 @@ class ModelContractReducer(ModelContractBase):
         self.validate_subcontract_constraints(original_contract_data)
 
     def validate_subcontract_constraints(
-        self, original_contract_data: Optional[Dict] = None
+        self,
+        original_contract_data: dict | None = None,
     ) -> None:
         """
         Validate REDUCER node subcontract architectural constraints.
@@ -374,19 +432,19 @@ class ModelContractReducer(ModelContractBase):
         # REDUCER nodes should have state_transitions for proper state management
         if "state_transitions" not in contract_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: REDUCER nodes should have state_transitions subcontracts"
+                "⚠️ MISSING SUBCONTRACT: REDUCER nodes should have state_transitions subcontracts",
             )
             violations.append(
-                "   💡 Add state_transitions for proper stateful workflow management"
+                "   💡 Add state_transitions for proper stateful workflow management",
             )
 
         # All nodes should have event_type subcontracts
         if "event_type" not in contract_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts"
+                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
             )
             violations.append(
-                "   💡 Add event_type configuration for event-driven architecture"
+                "   💡 Add event_type configuration for event-driven architecture",
             )
 
         if violations:
@@ -404,13 +462,15 @@ class ModelContractReducer(ModelContractBase):
 
         # Basic structural validation
         if not fsm.initial_state:
-            raise ValueError("FSM subcontract must define initial_state")
+            msg = "FSM subcontract must define initial_state"
+            raise ValueError(msg)
 
         # Validate initial state exists in states list
         state_names = [state.state_name for state in fsm.states]
         if fsm.initial_state not in state_names:
+            msg = f"Initial state '{fsm.initial_state}' must be in states list"
             raise ValueError(
-                f"Initial state '{fsm.initial_state}' must be in states list"
+                msg,
             )
 
         # Validate operations have proper atomic guarantees for critical operations
@@ -418,19 +478,22 @@ class ModelContractReducer(ModelContractBase):
         for operation in fsm.operations:
             if operation.operation_name in critical_operations:
                 if not operation.requires_atomic_execution:
+                    msg = f"Critical operation '{operation.operation_name}' must require atomic execution"
                     raise ValueError(
-                        f"Critical operation '{operation.operation_name}' must require atomic execution"
+                        msg,
                     )
                 if not operation.supports_rollback:
+                    msg = f"Critical operation '{operation.operation_name}' must support rollback"
                     raise ValueError(
-                        f"Critical operation '{operation.operation_name}' must support rollback"
+                        msg,
                     )
 
     @field_validator("dependencies", mode="before")
     @classmethod
     def parse_flexible_dependencies(
-        cls, v: Optional[List[Union[str, Dict[str, str], ModelDependencySpec]]]
-    ) -> Optional[List[Union[str, Dict[str, str], ModelDependencySpec]]]:
+        cls,
+        v: list[str | dict[str, str] | ModelDependencySpec] | None,
+    ) -> list[str | dict[str, str] | ModelDependencySpec] | None:
         """Parse dependencies in flexible formats (string, dict, object)."""
         if not v:
             return v

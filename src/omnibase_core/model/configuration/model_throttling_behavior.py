@@ -5,7 +5,7 @@ Throttling behavior model for defining how to handle requests when rate limits
 are exceeded, including blocking, queuing, delay, and custom responses.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -37,10 +37,11 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     include_retry_after_header: bool = Field(
-        default=True, description="Whether to include Retry-After header in response"
+        default=True,
+        description="Whether to include Retry-After header in response",
     )
 
-    retry_after_seconds: Optional[int] = Field(
+    retry_after_seconds: int | None = Field(
         None,
         description="Value for Retry-After header (auto-calculated if None)",
         ge=1,
@@ -54,15 +55,24 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     base_delay_ms: int = Field(
-        default=100, description="Base delay in milliseconds", ge=10, le=10000
+        default=100,
+        description="Base delay in milliseconds",
+        ge=10,
+        le=10000,
     )
 
     max_delay_ms: int = Field(
-        default=5000, description="Maximum delay in milliseconds", ge=100, le=60000
+        default=5000,
+        description="Maximum delay in milliseconds",
+        ge=100,
+        le=60000,
     )
 
     delay_multiplier: float = Field(
-        default=2.0, description="Multiplier for exponential delay", ge=1.0, le=10.0
+        default=2.0,
+        description="Multiplier for exponential delay",
+        ge=1.0,
+        le=10.0,
     )
 
     jitter_factor: float = Field(
@@ -73,7 +83,8 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     queue_enabled: bool = Field(
-        default=False, description="Whether to queue requests when rate limited"
+        default=False,
+        description="Whether to queue requests when rate limited",
     )
 
     queue_max_size: int = Field(
@@ -84,7 +95,10 @@ class ModelThrottlingBehavior(BaseModel):
     )
 
     queue_timeout_seconds: int = Field(
-        default=30, description="Maximum time to keep requests in queue", ge=1, le=300
+        default=30,
+        description="Maximum time to keep requests in queue",
+        ge=1,
+        le=300,
     )
 
     queue_priority_method: str = Field(
@@ -105,7 +119,7 @@ class ModelThrottlingBehavior(BaseModel):
         le=1.0,
     )
 
-    degradation_features: Dict[str, bool] = Field(
+    degradation_features: dict[str, bool] = Field(
         default_factory=lambda: {
             "detailed_responses": False,
             "real_time_data": False,
@@ -120,11 +134,12 @@ class ModelThrottlingBehavior(BaseModel):
         description="Whether to use custom response for throttled requests",
     )
 
-    custom_response_body: Optional[str] = Field(
-        None, description="Custom response body for throttled requests"
+    custom_response_body: str | None = Field(
+        None,
+        description="Custom response body for throttled requests",
     )
 
-    custom_response_headers: Dict[str, str] = Field(
+    custom_response_headers: dict[str, str] = Field(
         default_factory=dict,
         description="Custom headers to include with throttled responses",
     )
@@ -184,17 +199,16 @@ class ModelThrottlingBehavior(BaseModel):
         violation_ratio = current_rate / allowed_rate
         return violation_ratio >= self.escalation_threshold
 
-    def get_retry_after_value(self, window_reset_seconds: Optional[int] = None) -> int:
+    def get_retry_after_value(self, window_reset_seconds: int | None = None) -> int:
         """Get Retry-After header value in seconds"""
         if self.retry_after_seconds:
             return self.retry_after_seconds
-        elif window_reset_seconds:
+        if window_reset_seconds:
             return window_reset_seconds
-        else:
-            # Default: suggest retry after a reasonable interval
-            return 60
+        # Default: suggest retry after a reasonable interval
+        return 60
 
-    def get_response_headers(self, retry_after: Optional[int] = None) -> Dict[str, str]:
+    def get_response_headers(self, retry_after: int | None = None) -> dict[str, str]:
         """Get response headers for throttled requests"""
         headers = {}
 
@@ -222,18 +236,19 @@ class ModelThrottlingBehavior(BaseModel):
         """Check if service should be degraded instead of blocked"""
         return self.degradation_enabled and self.behavior_type == "degrade"
 
-    def get_enabled_features(self) -> Dict[str, bool]:
+    def get_enabled_features(self) -> dict[str, bool]:
         """Get features that should remain enabled during degradation"""
         if not self.should_degrade_service():
             # All features enabled when not degrading
-            return {feature: True for feature in self.degradation_features.keys()}
+            return dict.fromkeys(self.degradation_features.keys(), True)
 
         # During degradation, return the configured feature states
         return self.degradation_features.copy()
 
     def get_throttle_response(
-        self, retry_after: Optional[int] = None
-    ) -> Dict[str, Any]:
+        self,
+        retry_after: int | None = None,
+    ) -> dict[str, Any]:
         """Get complete response for throttled requests"""
         response = {
             "status_code": self.reject_status_code,

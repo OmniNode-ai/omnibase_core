@@ -5,7 +5,6 @@ Replaces Dict[str, Any] with strongly typed Pydantic model following ONEX standa
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -25,16 +24,20 @@ class ModelHubStatus(BaseModel):
     tools_loaded: int = Field(..., description="Number of currently loaded tools")
     tools_available: int = Field(..., description="Total number of available tools")
     active_sessions: int = Field(
-        default=0, description="Number of active processing sessions"
+        default=0,
+        description="Number of active processing sessions",
     )
     last_health_check: datetime = Field(
-        ..., description="Timestamp of last health check"
+        ...,
+        description="Timestamp of last health check",
     )
-    memory_usage_mb: Optional[float] = Field(
-        None, description="Current memory usage in MB"
+    memory_usage_mb: float | None = Field(
+        None,
+        description="Current memory usage in MB",
     )
-    cpu_usage_percent: Optional[float] = Field(
-        None, description="Current CPU usage percentage"
+    cpu_usage_percent: float | None = Field(
+        None,
+        description="Current CPU usage percentage",
     )
     error_count: int = Field(default=0, description="Number of errors since startup")
     version: str = Field(..., description="Hub service version")
@@ -55,5 +58,5 @@ class ModelHubStatus(BaseModel):
                 "cpu_usage_percent": 12.3,
                 "error_count": 0,
                 "version": "1.0.0",
-            }
+            },
         }

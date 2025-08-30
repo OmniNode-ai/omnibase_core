@@ -1,7 +1,5 @@
 """Model for tool configuration settings."""
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,18 +15,22 @@ class ModelToolConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Whether the tool is enabled")
 
-    timeout_seconds: Optional[int] = Field(
-        default=None, description="Timeout for tool operations in seconds"
+    timeout_seconds: int | None = Field(
+        default=None,
+        description="Timeout for tool operations in seconds",
     )
 
-    max_retries: Optional[int] = Field(
-        default=None, description="Maximum number of retries for failed operations"
+    max_retries: int | None = Field(
+        default=None,
+        description="Maximum number of retries for failed operations",
     )
 
-    custom_settings: Optional[Dict[str, str]] = Field(
-        default=None, description="Custom string-based settings specific to the tool"
+    custom_settings: dict[str, str] | None = Field(
+        default=None,
+        description="Custom string-based settings specific to the tool",
     )
 
-    environment_overrides: Optional[Dict[str, str]] = Field(
-        default=None, description="Environment variable overrides for the tool"
+    environment_overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Environment variable overrides for the tool",
     )

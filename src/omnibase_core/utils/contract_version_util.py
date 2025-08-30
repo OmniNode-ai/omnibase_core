@@ -67,8 +67,9 @@ class ContractVersionUtil:
             elif hasattr(contract, "contract_version"):
                 version_field = contract.contract_version
             else:
+                msg = f"Contract missing version field (node_version or contract_version): {contract_path}"
                 raise OnexError(
-                    f"Contract missing version field (node_version or contract_version): {contract_path}",
+                    msg,
                     CoreErrorCode.VALIDATION_ERROR,
                 )
 
@@ -93,8 +94,9 @@ class ContractVersionUtil:
         except OnexError:
             raise
         except Exception as e:
+            msg = f"Failed to load version from contract {contract_path}: {e!s}"
             raise OnexError(
-                f"Failed to load version from contract {contract_path}: {str(e)}",
+                msg,
                 CoreErrorCode.OPERATION_FAILED,
             ) from e
 
@@ -134,8 +136,9 @@ class ContractVersionUtil:
             contract = loader.load_contract(contract_path)
 
             if not hasattr(contract, "contract_version"):
+                msg = f"Contract missing contract_version field: {contract_path}"
                 raise OnexError(
-                    f"Contract missing contract_version field: {contract_path}",
+                    msg,
                     CoreErrorCode.VALIDATION_ERROR,
                 )
 
@@ -156,8 +159,9 @@ class ContractVersionUtil:
         except OnexError:
             raise
         except Exception as e:
+            msg = f"Failed to load contract version from {contract_path}: {e!s}"
             raise OnexError(
-                f"Failed to load contract version from {contract_path}: {str(e)}",
+                msg,
                 CoreErrorCode.OPERATION_FAILED,
             ) from e
 

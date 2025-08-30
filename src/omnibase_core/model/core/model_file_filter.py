@@ -3,7 +3,6 @@ FileFilter model.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,18 +21,19 @@ class ModelFileFilter(BaseModel):
         default=TraversalModeEnum.RECURSIVE,
         description="Mode for traversing directories",
     )
-    include_patterns: List[str] = Field(
+    include_patterns: list[str] = Field(
         default_factory=list,
         description="Glob patterns to include (e.g., ['**/*.yaml', '**/*.json'])",
     )
-    exclude_patterns: List[str] = Field(
+    exclude_patterns: list[str] = Field(
         default_factory=list,
         description="Glob patterns to exclude (e.g., ['**/.git/**'])",
     )
-    ignore_file: Optional[Path] = Field(
-        None, description="Path to ignore file (e.g., .onexignore)"
+    ignore_file: Path | None = Field(
+        None,
+        description="Path to ignore file (e.g., .onexignore)",
     )
-    ignore_pattern_sources: List[IgnorePatternSourceEnum] = Field(
+    ignore_pattern_sources: list[IgnorePatternSourceEnum] = Field(
         default_factory=lambda: [
             IgnorePatternSourceEnum.FILE,
             IgnorePatternSourceEnum.DEFAULT,
@@ -41,14 +41,17 @@ class ModelFileFilter(BaseModel):
         description="Sources to look for ignore patterns",
     )
     max_file_size: int = Field(
-        5 * 1024 * 1024, description="Maximum file size in bytes to process"
+        5 * 1024 * 1024,
+        description="Maximum file size in bytes to process",
     )
-    max_files: Optional[int] = Field(
-        None, description="Maximum number of files to process"
+    max_files: int | None = Field(
+        None,
+        description="Maximum number of files to process",
     )
     follow_symlinks: bool = Field(False, description="Whether to follow symbolic links")
     case_sensitive: bool = Field(
-        True, description="Whether pattern matching is case sensitive"
+        True,
+        description="Whether pattern matching is case sensitive",
     )
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

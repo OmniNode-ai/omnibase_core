@@ -7,7 +7,6 @@ to provide real-time status information to the ONEX system.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,16 +29,19 @@ class ModelStepProgress(BaseModel):
     step_name: str = Field(description="Human-readable step name")
     status: ProgressStatus = Field(description="Current status of this step")
     progress_percent: float = Field(
-        description="Progress percentage (0-100) for this step"
+        description="Progress percentage (0-100) for this step",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="Step start timestamp"
+    started_at: datetime | None = Field(
+        default=None,
+        description="Step start timestamp",
     )
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time for this step"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time for this step",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if step failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if step failed",
     )
 
 
@@ -49,50 +51,63 @@ class ModelProgressUpdate(BaseModel):
     update_id: str = Field(description="Unique identifier for this progress update")
     agent_id: str = Field(description="ID of the agent sending this update")
     task_id: str = Field(description="ID of the task being executed")
-    ticket_id: Optional[str] = Field(
-        default=None, description="ID of the work ticket being processed"
+    ticket_id: str | None = Field(
+        default=None,
+        description="ID of the work ticket being processed",
     )
     overall_progress: float = Field(description="Overall progress percentage (0-100)")
     status: ProgressStatus = Field(description="Current overall status")
     current_operation: str = Field(description="Description of current operation")
-    steps: List[ModelStepProgress] = Field(
-        default_factory=list, description="Progress of individual steps"
+    steps: list[ModelStepProgress] = Field(
+        default_factory=list,
+        description="Progress of individual steps",
     )
-    files_modified: List[str] = Field(
-        default_factory=list, description="List of files modified so far"
+    files_modified: list[str] = Field(
+        default_factory=list,
+        description="List of files modified so far",
     )
-    files_created: List[str] = Field(
-        default_factory=list, description="List of files created so far"
+    files_created: list[str] = Field(
+        default_factory=list,
+        description="List of files created so far",
     )
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time for entire task"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time for entire task",
     )
     elapsed_time_seconds: int = Field(
-        description="Elapsed time since task start in seconds"
+        description="Elapsed time since task start in seconds",
     )
-    remaining_time_seconds: Optional[int] = Field(
-        default=None, description="Estimated remaining time in seconds"
+    remaining_time_seconds: int | None = Field(
+        default=None,
+        description="Estimated remaining time in seconds",
     )
-    resource_usage: Optional[Dict[str, float]] = Field(
-        default=None, description="Current resource usage metrics"
+    resource_usage: dict[str, float] | None = Field(
+        default=None,
+        description="Current resource usage metrics",
     )
-    validation_results: Optional[Dict[str, bool]] = Field(
-        default=None, description="Validation results so far"
+    validation_results: dict[str, bool] | None = Field(
+        default=None,
+        description="Validation results so far",
     )
-    warnings: List[str] = Field(
-        default_factory=list, description="Any warnings encountered"
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="Any warnings encountered",
     )
-    blockers: List[str] = Field(
-        default_factory=list, description="Current blocking issues"
+    blockers: list[str] = Field(
+        default_factory=list,
+        description="Current blocking issues",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Update timestamp"
+        default_factory=datetime.now,
+        description="Update timestamp",
     )
-    session_id: Optional[str] = Field(
-        default=None, description="Agent session identifier"
+    session_id: str | None = Field(
+        default=None,
+        description="Agent session identifier",
     )
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation ID for tracking related events"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Correlation ID for tracking related events",
     )
 
     @property
@@ -111,7 +126,7 @@ class ModelProgressUpdate(BaseModel):
         return int(min(100, max(0, self.overall_progress)))
 
     @property
-    def current_step(self) -> Optional[ModelStepProgress]:
+    def current_step(self) -> ModelStepProgress | None:
         """Get the currently active step."""
         for step in self.steps:
             if step.status == ProgressStatus.IN_PROGRESS:
@@ -119,6 +134,6 @@ class ModelProgressUpdate(BaseModel):
         return None
 
     @property
-    def completed_steps(self) -> List[ModelStepProgress]:
+    def completed_steps(self) -> list[ModelStepProgress]:
         """Get list of completed steps."""
         return [step for step in self.steps if step.progress_percent >= 100]

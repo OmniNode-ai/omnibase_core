@@ -2,8 +2,6 @@
 Error state model for defining error responses in ONEX contracts.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from .model_generic_properties import ModelGenericProperties
@@ -22,7 +20,7 @@ class ModelErrorState(BaseModel):
         json_schema_extra={"example": "object"},
     )
 
-    properties: Optional[ModelGenericProperties] = Field(
+    properties: ModelGenericProperties | None = Field(
         default=None,
         description="Properties of the error state",
         json_schema_extra={
@@ -33,6 +31,6 @@ class ModelErrorState(BaseModel):
                 },
                 "error_message": {"type": "string"},
                 "details": {"type": "object"},
-            }
+            },
         },
     )

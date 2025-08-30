@@ -24,15 +24,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from omnibase.enums.enum_log_level import LogLevelEnum, SeverityLevelEnum
 from pydantic import BaseModel, Field
 
-from .model_onex_message_context import ModelOnexMessageContext
+if TYPE_CHECKING:
+    from datetime import datetime
 
-__all__ = ["LogLevelEnum", "SeverityLevelEnum", "ModelOnexMessage"]
+    from .model_onex_message_context import ModelOnexMessageContext
+
+__all__ = ["LogLevelEnum", "ModelOnexMessage", "SeverityLevelEnum"]
 
 
 class ModelOnexMessage(BaseModel):
@@ -42,29 +44,33 @@ class ModelOnexMessage(BaseModel):
     """
 
     summary: str = Field(..., description="Short summary of the message.")
-    suggestions: Optional[List[str]] = None
-    remediation: Optional[str] = None
-    rendered_markdown: Optional[str] = None
-    doc_link: Optional[str] = None
+    suggestions: list[str] | None = None
+    remediation: str | None = None
+    rendered_markdown: str | None = None
+    doc_link: str | None = None
     level: LogLevelEnum = Field(
-        LogLevelEnum.INFO, description="Message level: info, warning, error, etc."
+        LogLevelEnum.INFO,
+        description="Message level: info, warning, error, etc.",
     )
-    file: Optional[str] = Field(None, description="File path related to the message.")
-    line: Optional[int] = Field(
-        None, description="Line number in the file, if applicable."
+    file: str | None = Field(None, description="File path related to the message.")
+    line: int | None = Field(
+        None,
+        description="Line number in the file, if applicable.",
     )
-    column: Optional[int] = None
-    details: Optional[str] = Field(None, description="Detailed message or context.")
-    severity: Optional[SeverityLevelEnum] = None
-    code: Optional[str] = Field(None, description="Error or warning code, if any.")
-    context: Optional[ModelOnexMessageContext] = Field(
-        None, description="Additional context for the message."
+    column: int | None = None
+    details: str | None = Field(None, description="Detailed message or context.")
+    severity: SeverityLevelEnum | None = None
+    code: str | None = Field(None, description="Error or warning code, if any.")
+    context: ModelOnexMessageContext | None = Field(
+        None,
+        description="Additional context for the message.",
     )
-    timestamp: Optional[datetime] = Field(None, description="Timestamp of the message.")
-    fixable: Optional[bool] = None
-    origin: Optional[str] = None
-    example: Optional[str] = None
-    localized_text: Optional[Dict[str, str]] = None
-    type: Optional[str] = Field(
-        None, description="Type of message (error, warning, note, etc.)"
+    timestamp: datetime | None = Field(None, description="Timestamp of the message.")
+    fixable: bool | None = None
+    origin: str | None = None
+    example: str | None = None
+    localized_text: dict[str, str] | None = None
+    type: str | None = Field(
+        None,
+        description="Type of message (error, warning, note, etc.)",
     )

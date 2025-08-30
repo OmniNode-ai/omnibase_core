@@ -8,7 +8,6 @@ multi-agent Claude Code environments.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -55,35 +54,44 @@ class ModelSkillProficiency(BaseModel):
     skill_type: CapabilityType = Field(description="Type/category of the skill")
     level: SkillLevel = Field(description="Proficiency level for this skill")
     confidence_score: float = Field(
-        default=1.0, description="Confidence in the proficiency assessment (0.0-1.0)"
+        default=1.0,
+        description="Confidence in the proficiency assessment (0.0-1.0)",
     )
-    experience_years: Optional[float] = Field(
-        default=None, description="Years of experience with this skill"
+    experience_years: float | None = Field(
+        default=None,
+        description="Years of experience with this skill",
     )
-    last_used: Optional[datetime] = Field(
-        default=None, description="When this skill was last used"
+    last_used: datetime | None = Field(
+        default=None,
+        description="When this skill was last used",
     )
     usage_frequency: int = Field(
-        default=0, description="Number of times this skill has been used"
+        default=0,
+        description="Number of times this skill has been used",
     )
     success_rate: float = Field(
-        default=1.0, description="Success rate when using this skill (0.0-1.0)"
+        default=1.0,
+        description="Success rate when using this skill (0.0-1.0)",
     )
     learning_curve: float = Field(
-        default=0.0, description="Rate of improvement in this skill"
+        default=0.0,
+        description="Rate of improvement in this skill",
     )
-    related_skills: List[str] = Field(
-        default_factory=list, description="List of related skill names"
+    related_skills: list[str] = Field(
+        default_factory=list,
+        description="List of related skill names",
     )
-    certifications: List[str] = Field(
-        default_factory=list, description="Relevant certifications for this skill"
+    certifications: list[str] = Field(
+        default_factory=list,
+        description="Relevant certifications for this skill",
     )
-    evidence: List[str] = Field(
+    evidence: list[str] = Field(
         default_factory=list,
         description="Evidence of proficiency (projects, tickets, etc.)",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata about the skill"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata about the skill",
     )
 
     @property
@@ -138,7 +146,9 @@ class ModelSkillProficiency(BaseModel):
             self.success_rate = alpha * new_success + (1 - alpha) * self.success_rate
 
     def calculate_match_score(
-        self, required_level: SkillLevel, importance_weight: float = 1.0
+        self,
+        required_level: SkillLevel,
+        importance_weight: float = 1.0,
     ) -> float:
         """Calculate match score for a required skill level."""
         required_scores = {
@@ -174,45 +184,55 @@ class ModelWorkRequirement(BaseModel):
     """Model for work requirements and skill needs."""
 
     requirement_id: str = Field(description="Unique identifier for the requirement")
-    required_skills: Dict[str, SkillLevel] = Field(
-        description="Required skills and their minimum levels"
+    required_skills: dict[str, SkillLevel] = Field(
+        description="Required skills and their minimum levels",
     )
-    optional_skills: Dict[str, SkillLevel] = Field(
-        default_factory=dict, description="Optional skills that would be beneficial"
+    optional_skills: dict[str, SkillLevel] = Field(
+        default_factory=dict,
+        description="Optional skills that would be beneficial",
     )
-    skill_weights: Dict[str, float] = Field(
-        default_factory=dict, description="Importance weights for each skill (0.0-1.0)"
+    skill_weights: dict[str, float] = Field(
+        default_factory=dict,
+        description="Importance weights for each skill (0.0-1.0)",
     )
     complexity_level: SkillLevel = Field(
-        description="Overall complexity level of the work"
+        description="Overall complexity level of the work",
     )
-    estimated_duration: Optional[float] = Field(
-        default=None, description="Estimated duration in hours"
+    estimated_duration: float | None = Field(
+        default=None,
+        description="Estimated duration in hours",
     )
-    domain_context: List[str] = Field(
-        default_factory=list, description="Domain contexts relevant to the work"
+    domain_context: list[str] = Field(
+        default_factory=list,
+        description="Domain contexts relevant to the work",
     )
-    tools_required: List[str] = Field(
-        default_factory=list, description="Specific tools required for the work"
+    tools_required: list[str] = Field(
+        default_factory=list,
+        description="Specific tools required for the work",
     )
-    platforms_supported: List[str] = Field(
-        default_factory=list, description="Platforms this work should support"
+    platforms_supported: list[str] = Field(
+        default_factory=list,
+        description="Platforms this work should support",
     )
-    quality_requirements: Dict[str, float] = Field(
+    quality_requirements: dict[str, float] = Field(
         default_factory=dict,
         description="Quality requirements (testing, documentation, etc.)",
     )
     collaboration_needs: bool = Field(
-        default=False, description="Whether the work requires collaboration"
+        default=False,
+        description="Whether the work requires collaboration",
     )
     learning_opportunity: bool = Field(
-        default=False, description="Whether this work offers learning opportunities"
+        default=False,
+        description="Whether this work offers learning opportunities",
     )
     urgency_level: int = Field(
-        default=1, description="Urgency level (1-5, higher is more urgent)"
+        default=1,
+        description="Urgency level (1-5, higher is more urgent)",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional requirement metadata"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional requirement metadata",
     )
 
     @property
@@ -239,51 +259,62 @@ class ModelAgentCapabilities(BaseModel):
 
     agent_id: str = Field(description="Unique identifier for the agent")
     agent_name: str = Field(description="Human-readable name for the agent")
-    skills: Dict[str, ModelSkillProficiency] = Field(
-        default_factory=dict, description="Dictionary of skills by skill name"
+    skills: dict[str, ModelSkillProficiency] = Field(
+        default_factory=dict,
+        description="Dictionary of skills by skill name",
     )
-    specializations: List[str] = Field(
-        default_factory=list, description="Areas of specialization"
+    specializations: list[str] = Field(
+        default_factory=list,
+        description="Areas of specialization",
     )
-    preferred_work_types: List[str] = Field(
-        default_factory=list, description="Types of work this agent prefers"
+    preferred_work_types: list[str] = Field(
+        default_factory=list,
+        description="Types of work this agent prefers",
     )
-    avoided_work_types: List[str] = Field(
-        default_factory=list, description="Types of work this agent should avoid"
+    avoided_work_types: list[str] = Field(
+        default_factory=list,
+        description="Types of work this agent should avoid",
     )
-    learning_preferences: List[str] = Field(
-        default_factory=list, description="Skills the agent is interested in learning"
+    learning_preferences: list[str] = Field(
+        default_factory=list,
+        description="Skills the agent is interested in learning",
     )
-    availability_hours: Optional[Dict[str, str]] = Field(
-        default=None, description="Availability schedule"
+    availability_hours: dict[str, str] | None = Field(
+        default=None,
+        description="Availability schedule",
     )
-    timezone: Optional[str] = Field(default=None, description="Agent's timezone")
+    timezone: str | None = Field(default=None, description="Agent's timezone")
     workload_capacity: float = Field(
         default=1.0,
         description="Relative workload capacity (0.5 = half capacity, 2.0 = double)",
     )
-    performance_history: Dict[str, float] = Field(
-        default_factory=dict, description="Historical performance metrics"
+    performance_history: dict[str, float] = Field(
+        default_factory=dict,
+        description="Historical performance metrics",
     )
     collaboration_score: float = Field(
         default=1.0,
         description="How well the agent works in collaborative environments",
     )
     adaptability_score: float = Field(
-        default=1.0, description="How well the agent adapts to new technologies"
+        default=1.0,
+        description="How well the agent adapts to new technologies",
     )
     reliability_score: float = Field(
-        default=1.0, description="Reliability score based on past performance"
+        default=1.0,
+        description="Reliability score based on past performance",
     )
     created_at: datetime = Field(
         default_factory=datetime.now,
         description="When the capability profile was created",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="When the profile was last updated"
+        default_factory=datetime.now,
+        description="When the profile was last updated",
     )
-    last_assessment: Optional[datetime] = Field(
-        default=None, description="When capabilities were last assessed"
+    last_assessment: datetime | None = Field(
+        default=None,
+        description="When capabilities were last assessed",
     )
 
     @property
@@ -292,7 +323,7 @@ class ModelAgentCapabilities(BaseModel):
         return len(self.skills)
 
     @property
-    def expert_skills(self) -> List[str]:
+    def expert_skills(self) -> list[str]:
         """Get list of expert-level skills."""
         return [
             name
@@ -301,7 +332,7 @@ class ModelAgentCapabilities(BaseModel):
         ]
 
     @property
-    def primary_capabilities(self) -> List[str]:
+    def primary_capabilities(self) -> list[str]:
         """Get primary capabilities (advanced+ skills)."""
         return [
             name
@@ -326,7 +357,9 @@ class ModelAgentCapabilities(BaseModel):
         return datetime.now() - self.last_assessment < timedelta(days=90)
 
     def has_skill(
-        self, skill_name: str, min_level: SkillLevel = SkillLevel.BEGINNER
+        self,
+        skill_name: str,
+        min_level: SkillLevel = SkillLevel.BEGINNER,
     ) -> bool:
         """Check if agent has a skill at minimum level."""
         if skill_name not in self.skills:
@@ -384,7 +417,8 @@ class ModelAgentCapabilities(BaseModel):
 
             if skill_name in self.skills:
                 skill_score = self.skills[skill_name].calculate_match_score(
-                    required_level, weight
+                    required_level,
+                    weight,
                 )
                 total_score += skill_score
             else:
@@ -400,15 +434,13 @@ class ModelAgentCapabilities(BaseModel):
                     requirements.get_skill_weight(skill_name) * 0.5
                 )  # Less weight for optional
                 skill_score = self.skills[skill_name].calculate_match_score(
-                    preferred_level, weight
+                    preferred_level,
+                    weight,
                 )
                 optional_bonus += skill_score * 0.2  # 20% bonus for optional skills
 
         # Calculate base match score
-        if total_weight > 0:
-            base_score = total_score / total_weight
-        else:
-            base_score = 1.0
+        base_score = total_score / total_weight if total_weight > 0 else 1.0
 
         # Apply penalties and bonuses
         final_score = base_score + optional_bonus
@@ -437,8 +469,9 @@ class ModelAgentCapabilities(BaseModel):
         return min(2.0, max(0.0, final_score))
 
     def get_learning_opportunities(
-        self, requirements: ModelWorkRequirement
-    ) -> List[str]:
+        self,
+        requirements: ModelWorkRequirement,
+    ) -> list[str]:
         """Identify learning opportunities from work requirements."""
         opportunities = []
 
@@ -465,12 +498,12 @@ class ModelAgentCapabilities(BaseModel):
 
                 if required_index > current_index:
                     opportunities.append(
-                        f"Improve {skill_name} from {current_skill.level.value} to {required_level.value}"
+                        f"Improve {skill_name} from {current_skill.level.value} to {required_level.value}",
                     )
 
         return opportunities
 
-    def suggest_skill_development(self) -> List[str]:
+    def suggest_skill_development(self) -> list[str]:
         """Suggest skills for development based on current profile."""
         suggestions = []
 
@@ -487,7 +520,7 @@ class ModelAgentCapabilities(BaseModel):
                 for related_skill in related:
                     if related_skill not in self.skills:
                         suggestions.append(
-                            f"Learn related skill: {related_skill} (complements {expert_skill})"
+                            f"Learn related skill: {related_skill} (complements {expert_skill})",
                         )
 
         return suggestions[:5]  # Limit to top 5 suggestions
@@ -501,32 +534,41 @@ class ModelCapabilityMatch(BaseModel):
     requirement_id: str = Field(description="ID of the work requirement")
     overall_score: float = Field(description="Overall match score (0.0-2.0)")
     confidence: float = Field(description="Confidence in the match (0.0-1.0)")
-    skill_matches: Dict[str, float] = Field(
-        default_factory=dict, description="Individual skill match scores"
+    skill_matches: dict[str, float] = Field(
+        default_factory=dict,
+        description="Individual skill match scores",
     )
-    missing_skills: List[str] = Field(
-        default_factory=list, description="Required skills the agent doesn't have"
+    missing_skills: list[str] = Field(
+        default_factory=list,
+        description="Required skills the agent doesn't have",
     )
-    bonus_skills: List[str] = Field(
-        default_factory=list, description="Optional skills the agent possesses"
+    bonus_skills: list[str] = Field(
+        default_factory=list,
+        description="Optional skills the agent possesses",
     )
-    learning_opportunities: List[str] = Field(
-        default_factory=list, description="Learning opportunities for the agent"
+    learning_opportunities: list[str] = Field(
+        default_factory=list,
+        description="Learning opportunities for the agent",
     )
-    risk_factors: List[str] = Field(
-        default_factory=list, description="Potential risk factors for the match"
+    risk_factors: list[str] = Field(
+        default_factory=list,
+        description="Potential risk factors for the match",
     )
-    recommendations: List[str] = Field(
-        default_factory=list, description="Recommendations for the match"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recommendations for the match",
     )
     estimated_success_probability: float = Field(
-        default=0.5, description="Estimated probability of successful completion"
+        default=0.5,
+        description="Estimated probability of successful completion",
     )
-    estimated_completion_time: Optional[float] = Field(
-        default=None, description="Estimated completion time in hours"
+    estimated_completion_time: float | None = Field(
+        default=None,
+        description="Estimated completion time in hours",
     )
     match_timestamp: datetime = Field(
-        default_factory=datetime.now, description="When the match was calculated"
+        default_factory=datetime.now,
+        description="When the match was calculated",
     )
     algorithm_used: MatchingAlgorithm = Field(
         default=MatchingAlgorithm.WEIGHTED_SCORE,
@@ -553,14 +595,13 @@ class ModelCapabilityMatch(BaseModel):
         """Get qualitative match quality assessment."""
         if self.overall_score >= 1.5:
             return "excellent"
-        elif self.overall_score >= 1.2:
+        if self.overall_score >= 1.2:
             return "very_good"
-        elif self.overall_score >= 0.8:
+        if self.overall_score >= 0.8:
             return "good"
-        elif self.overall_score >= 0.6:
+        if self.overall_score >= 0.6:
             return "acceptable"
-        else:
-            return "poor"
+        return "poor"
 
 
 class ModelCapabilityAssessment(BaseModel):
@@ -569,35 +610,42 @@ class ModelCapabilityAssessment(BaseModel):
     assessment_id: str = Field(description="Unique identifier for the assessment")
     agent_id: str = Field(description="ID of the assessed agent")
     assessment_type: str = Field(
-        description="Type of assessment (initial, periodic, performance-based)"
+        description="Type of assessment (initial, periodic, performance-based)",
     )
-    skills_assessed: List[str] = Field(description="List of skills that were assessed")
-    assessment_results: Dict[str, Dict[str, float]] = Field(
-        default_factory=dict, description="Assessment results by skill"
+    skills_assessed: list[str] = Field(description="List of skills that were assessed")
+    assessment_results: dict[str, dict[str, float]] = Field(
+        default_factory=dict,
+        description="Assessment results by skill",
     )
     overall_competency: float = Field(description="Overall competency score (0.0-1.0)")
-    strength_areas: List[str] = Field(
-        default_factory=list, description="Identified strength areas"
+    strength_areas: list[str] = Field(
+        default_factory=list,
+        description="Identified strength areas",
     )
-    improvement_areas: List[str] = Field(
-        default_factory=list, description="Areas needing improvement"
+    improvement_areas: list[str] = Field(
+        default_factory=list,
+        description="Areas needing improvement",
     )
-    learning_recommendations: List[str] = Field(
-        default_factory=list, description="Recommended learning paths"
+    learning_recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recommended learning paths",
     )
     assessment_confidence: float = Field(
-        description="Confidence in the assessment results"
+        description="Confidence in the assessment results",
     )
     assessor: str = Field(description="Who or what performed the assessment")
     assessment_date: datetime = Field(
-        default_factory=datetime.now, description="When the assessment was performed"
+        default_factory=datetime.now,
+        description="When the assessment was performed",
     )
-    next_assessment_due: Optional[datetime] = Field(
-        default=None, description="When the next assessment is due"
+    next_assessment_due: datetime | None = Field(
+        default=None,
+        description="When the next assessment is due",
     )
     assessment_methodology: str = Field(description="Methodology used for assessment")
-    evidence_sources: List[str] = Field(
-        default_factory=list, description="Sources of evidence used in assessment"
+    evidence_sources: list[str] = Field(
+        default_factory=list,
+        description="Sources of evidence used in assessment",
     )
 
     @property

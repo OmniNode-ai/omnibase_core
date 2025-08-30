@@ -1,13 +1,11 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 
 from .model_config_validation_result import ModelConfigValidationResult
-from .model_performance_optimization_config import \
-    ModelPerformanceOptimizationConfig
+from .model_performance_optimization_config import ModelPerformanceOptimizationConfig
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_health_check_result import ModelSecretHealthCheckResult
 
@@ -38,67 +36,82 @@ class ModelSecretConfig(BaseModel):
         description="Secret backend configuration",
     )
 
-    dotenv_path: Optional[Path] = Field(
-        default=None, description="Path to .env file for development"
+    dotenv_path: Path | None = Field(
+        default=None,
+        description="Path to .env file for development",
     )
 
-    vault_url: Optional[str] = Field(
+    vault_url: str | None = Field(
         default=None,
         description="Vault server URL",
         pattern=r"^https?://[a-zA-Z0-9\-\.]+(?::\d+)?(?:/.*)?$",
     )
 
-    vault_token: Optional[SecretStr] = Field(
-        default=None, description="Vault authentication token"
+    vault_token: SecretStr | None = Field(
+        default=None,
+        description="Vault authentication token",
     )
 
-    vault_namespace: Optional[str] = Field(
-        default=None, description="Vault namespace for multi-tenancy"
+    vault_namespace: str | None = Field(
+        default=None,
+        description="Vault namespace for multi-tenancy",
     )
 
-    vault_path: Optional[str] = Field(
-        default="secret/", description="Vault secret path prefix"
+    vault_path: str | None = Field(
+        default="secret/",
+        description="Vault secret path prefix",
     )
 
-    kubernetes_namespace: Optional[str] = Field(
-        default="default", description="Kubernetes namespace for secrets"
+    kubernetes_namespace: str | None = Field(
+        default="default",
+        description="Kubernetes namespace for secrets",
     )
 
-    kubernetes_secret_name: Optional[str] = Field(
-        default="onex-secrets", description="Kubernetes secret resource name"
+    kubernetes_secret_name: str | None = Field(
+        default="onex-secrets",
+        description="Kubernetes secret resource name",
     )
 
-    file_path: Optional[Path] = Field(
-        default=None, description="Path to file-based secret storage"
+    file_path: Path | None = Field(
+        default=None,
+        description="Path to file-based secret storage",
     )
 
-    encryption_key: Optional[SecretStr] = Field(
-        default=None, description="Encryption key for file-based storage"
+    encryption_key: SecretStr | None = Field(
+        default=None,
+        description="Encryption key for file-based storage",
     )
 
     auto_load_dotenv: bool = Field(
-        default=True, description="Automatically load .env file if present"
+        default=True,
+        description="Automatically load .env file if present",
     )
 
     env_prefix: str = Field(
-        default="ONEX_", description="Environment variable prefix for secret loading"
+        default="ONEX_",
+        description="Environment variable prefix for secret loading",
     )
 
-    fallback_backends: List[ModelSecretBackend] = Field(
-        default_factory=list, description="Fallback backends if primary fails"
+    fallback_backends: list[ModelSecretBackend] = Field(
+        default_factory=list,
+        description="Fallback backends if primary fails",
     )
 
     cache_enabled: bool = Field(
-        default=True, description="Enable secret caching for performance"
+        default=True,
+        description="Enable secret caching for performance",
     )
 
     cache_ttl_seconds: int = Field(
-        default=300, description="Secret cache TTL in seconds", ge=0, le=3600
+        default=300,
+        description="Secret cache TTL in seconds",
+        ge=0,
+        le=3600,
     )
 
     @field_validator("dotenv_path")
     @classmethod
-    def validate_dotenv_path(cls, v: Optional[Path]) -> Optional[Path]:
+    def validate_dotenv_path(cls, v: Path | None) -> Path | None:
         """Validate dotenv path exists if specified."""
         if v is not None:
             if not isinstance(v, Path):
@@ -112,12 +125,13 @@ class ModelSecretConfig(BaseModel):
 
     @field_validator("vault_url")
     @classmethod
-    def validate_vault_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_vault_url(cls, v: str | None) -> str | None:
         """Validate Vault URL format."""
         if v is not None:
             v = v.strip()
             if not v.startswith(("http://", "https://")):
-                raise ValueError("Vault URL must start with http:// or https://")
+                msg = "Vault URL must start with http:// or https://"
+                raise ValueError(msg)
 
             # Remove trailing slash for consistency
             v = v.rstrip("/")
@@ -129,7 +143,8 @@ class ModelSecretConfig(BaseModel):
     def validate_env_prefix(cls, v: str) -> str:
         """Validate environment variable prefix."""
         if not v:
-            raise ValueError("Environment prefix cannot be empty")
+            msg = "Environment prefix cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip().upper()
 
@@ -138,7 +153,8 @@ class ModelSecretConfig(BaseModel):
 
         # Validate prefix format
         if not v.replace("_", "").isalnum():
-            raise ValueError("Environment prefix must be alphanumeric with underscores")
+            msg = "Environment prefix must be alphanumeric with underscores"
+            raise ValueError(msg)
 
         return v
 
@@ -161,12 +177,12 @@ class ModelSecretConfig(BaseModel):
         if self.backend.backend_type == EnumBackendType.DOTENV:
             if not DOTENV_AVAILABLE:
                 validation_result.warnings.append(
-                    "python-dotenv not available, .env file support disabled"
+                    "python-dotenv not available, .env file support disabled",
                 )
 
             if self.dotenv_path and not self.dotenv_path.exists():
                 validation_result.issues.append(
-                    f"Dotenv file not found: {self.dotenv_path}"
+                    f"Dotenv file not found: {self.dotenv_path}",
                 )
                 validation_result.is_valid = False
 
@@ -177,7 +193,7 @@ class ModelSecretConfig(BaseModel):
 
             if not self.vault_token:
                 validation_result.issues.append(
-                    "Vault token required for vault backend"
+                    "Vault token required for vault backend",
                 )
                 validation_result.is_valid = False
 
@@ -187,7 +203,7 @@ class ModelSecretConfig(BaseModel):
                 validation_result.is_valid = False
             elif self.file_path.exists() and not self.file_path.is_file():
                 validation_result.issues.append(
-                    f"File path is not a file: {self.file_path}"
+                    f"File path is not a file: {self.file_path}",
                 )
                 validation_result.is_valid = False
 
@@ -195,24 +211,24 @@ class ModelSecretConfig(BaseModel):
         security_profile = self.backend.get_security_profile()
         if security_profile.security_level == "development_only":
             validation_result.warnings.append(
-                f"Backend '{self.backend.backend_type.value}' is for development only"
+                f"Backend '{self.backend.backend_type.value}' is for development only",
             )
 
         if security_profile.security_level == "not_recommended":
             validation_result.warnings.append(
-                f"Backend '{self.backend.backend_type.value}' is not recommended for production"
+                f"Backend '{self.backend.backend_type.value}' is not recommended for production",
             )
 
         # Performance recommendations
         performance_profile = self.backend.get_performance_profile()
         if performance_profile.latency == "moderate" and self.cache_enabled:
             validation_result.recommendations.append(
-                "Consider enabling caching for better performance with this backend"
+                "Consider enabling caching for better performance with this backend",
             )
 
         return validation_result
 
-    def get_backend_config_dict(self) -> Dict[str, Optional[Union[str, bool]]]:
+    def get_backend_config_dict(self) -> dict[str, str | bool | None]:
         """Get configuration dictionary for backend validation."""
         config = {}
 
@@ -277,7 +293,7 @@ class ModelSecretConfig(BaseModel):
         elif environment_type == "kubernetes":
             # Auto-detect namespace
             namespace_file = Path(
-                "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+                "/var/run/secrets/kubernetes.io/serviceaccount/namespace",
             )
             if namespace_file.exists():
                 try:
@@ -285,12 +301,12 @@ class ModelSecretConfig(BaseModel):
                         namespace_file.read_text().strip()
                     )
                 except Exception as e:
-                    from omnibase_core.core.core_error_codes import \
-                        CoreErrorCode
+                    from omnibase_core.core.core_error_codes import CoreErrorCode
                     from omnibase_core.exceptions import OnexError
 
+                    msg = f"Failed to read Kubernetes namespace file: {e}"
                     raise OnexError(
-                        f"Failed to read Kubernetes namespace file: {e}",
+                        msg,
                         error_code=CoreErrorCode.CONFIGURATION_ERROR,
                         component="secret_config",
                         operation="detect_environment_config",
@@ -298,7 +314,7 @@ class ModelSecretConfig(BaseModel):
 
         return self.model_copy(update=config_updates)
 
-    def get_environment_recommendations(self) -> List[str]:
+    def get_environment_recommendations(self) -> list[str]:
         """Get environment-specific recommendations."""
         environment_type = self.backend.detect_environment_type()
         recommendations = []
@@ -309,7 +325,7 @@ class ModelSecretConfig(BaseModel):
                     "Use .env files for local development",
                     "Never commit .env files to version control",
                     "Consider using .env.example for team templates",
-                ]
+                ],
             )
 
         elif environment_type == "production":
@@ -318,7 +334,7 @@ class ModelSecretConfig(BaseModel):
                     "Use Vault or Kubernetes secrets for production",
                     "Enable audit logging for compliance",
                     "Consider secret rotation policies",
-                ]
+                ],
             )
 
         elif environment_type == "ci":
@@ -327,7 +343,7 @@ class ModelSecretConfig(BaseModel):
                     "Use environment variables in CI/CD pipelines",
                     "Ensure secrets are not logged in build outputs",
                     "Use CI/CD secret management features",
-                ]
+                ],
             )
 
         return recommendations
@@ -430,17 +446,17 @@ class ModelSecretConfig(BaseModel):
 
     @classmethod
     def create_for_development(
-        cls, dotenv_path: Optional[str] = None
+        cls,
+        dotenv_path: str | None = None,
     ) -> "ModelSecretConfig":
         """Create configuration optimized for development environment."""
-        config = cls(
+        return cls(
             backend=ModelSecretBackend.create_dotenv(),
             dotenv_path=Path(dotenv_path) if dotenv_path else Path(".env"),
             auto_load_dotenv=True,
             fallback_backends=[ModelSecretBackend.create_environment()],
             cache_enabled=False,  # Disable cache for development
         )
-        return config
 
     @classmethod
     def create_for_production(cls, backend_type: str = "vault") -> "ModelSecretConfig":
@@ -460,7 +476,9 @@ class ModelSecretConfig(BaseModel):
 
     @classmethod
     def create_for_kubernetes(
-        cls, namespace: str = "default", secret_name: str = "onex-secrets"
+        cls,
+        namespace: str = "default",
+        secret_name: str = "onex-secrets",
     ) -> "ModelSecretConfig":
         """Create configuration for Kubernetes environment."""
         return cls(

@@ -10,7 +10,7 @@ ONEX Core Framework (omnibase-core) provides foundational implementations for th
 - **Type Checking**: mypy
 - **Linting**: ruff with comprehensive rule set
 - **Formatting**: black, isort
-- **Dependencies**: 
+- **Dependencies**:
   - omnibase-spi (via git SSH)
   - pydantic 2.0+
   - llama-index 0.10+

@@ -9,7 +9,7 @@ All complex functionality has been moved to service nodes following the
 registry-centric architecture pattern.
 """
 
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
@@ -17,7 +17,7 @@ from omnibase.enums.enum_log_level import LogLevelEnum
 T = TypeVar("T")
 
 
-def get_service(protocol_type: Type[T]) -> Optional[T]:
+def get_service(protocol_type: type[T]) -> T | None:
     """
     Get a service implementation for the given protocol type.
 
@@ -79,10 +79,13 @@ def get_logging_service() -> Any:
                         return self._protocol.ToolLoggerCodeBlock
 
                     def tool_logger_performance_metrics(
-                        self, *args: Any, **kwargs: Any
+                        self,
+                        *args: Any,
+                        **kwargs: Any,
                     ) -> Any:
                         return self._protocol.tool_logger_performance_metrics(
-                            *args, **kwargs
+                            *args,
+                            **kwargs,
                         )
 
                 return LoggingService(logger_protocol)
@@ -96,7 +99,10 @@ def get_logging_service() -> Any:
 
 
 def emit_log_event(
-    level: LogLevelEnum, event_type: str, message: str, **kwargs
+    level: LogLevelEnum,
+    event_type: str,
+    message: str,
+    **kwargs,
 ) -> None:
     """
     Bootstrap emit_log_event function.
@@ -107,23 +113,18 @@ def emit_log_event(
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event"):
             return logging_service.emit_log_event(level, event_type, message, **kwargs)
-    except Exception as e:
+    except Exception:
         # Log to stderr as fallback when structured logging fails
-        import sys
-
-        print(
-            f"Bootstrap logging fallback: {level.name}: {message} (error: {e})",
-            file=sys.stderr,
-        )
+        pass
 
     # Fallback to stderr when structured logging unavailable
-    import sys
-
-    print(f"[{level.name}] {message}", file=sys.stderr)
 
 
 def emit_log_event_sync(
-    level: LogLevelEnum, message: str, event_type: str = "generic", **kwargs
+    level: LogLevelEnum,
+    message: str,
+    event_type: str = "generic",
+    **kwargs,
 ) -> None:
     """
     Bootstrap emit_log_event_sync function.
@@ -134,21 +135,21 @@ def emit_log_event_sync(
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event_sync"):
             return logging_service.emit_log_event_sync(
-                level, message, event_type, **kwargs
+                level,
+                message,
+                event_type,
+                **kwargs,
             )
     except Exception:
         pass
 
     # Fallback to stderr when structured logging unavailable
-    import sys
-
-    print(f"[{level.name}] {message}", file=sys.stderr)
 
 
 # Private helper functions
 
 
-def _get_registry_node() -> Optional[Any]:
+def _get_registry_node() -> Any | None:
     """
     Attempt to find and return the registry node.
 
@@ -158,17 +159,17 @@ def _get_registry_node() -> Optional[Any]:
     try:
         # Use modern tools registry directly (no migration complexity)
         from omnibase_core.tools.registry.tool_node_discovery.v1_0_0 import (
-            RegistryToolNodeDiscovery, ToolNodeDiscoveryNode)
+            RegistryToolNodeDiscovery,
+            ToolNodeDiscoveryNode,
+        )
 
         registry = RegistryToolNodeDiscovery()
-        node = ToolNodeDiscoveryNode(registry=registry)
-        return node
+        return ToolNodeDiscoveryNode(registry=registry)
 
     except ImportError:
         # Fallback to legacy if modern tools not available
         try:
-            from omnibase_core.nodes.node_registry.v1_0_0.node import \
-                NodeRegistry
+            from omnibase_core.nodes.node_registry.v1_0_0.node import NodeRegistry
 
             return NodeRegistry()
         except ImportError:
@@ -176,7 +177,7 @@ def _get_registry_node() -> Optional[Any]:
             return None
 
 
-def _get_fallback_service(protocol_type: Type[T]) -> Optional[T]:
+def _get_fallback_service(protocol_type: type[T]) -> T | None:
     """
     Get fallback service implementation for bootstrap scenarios.
 
@@ -205,11 +206,12 @@ def _get_minimal_logging_service() -> Any:
     class MinimalLoggingService:
         @staticmethod
         def emit_log_event(
-            level: LogLevelEnum, event_type: str, message: str, **kwargs: Any
+            level: LogLevelEnum,
+            event_type: str,
+            message: str,
+            **kwargs: Any,
         ) -> None:
-            import sys
-
-            print(f"[{level.name}] {message}", file=sys.stderr)
+            pass
 
         @staticmethod
         def emit_log_event_sync(
@@ -218,9 +220,7 @@ def _get_minimal_logging_service() -> Any:
             event_type: str = "generic",
             **kwargs: Any,
         ) -> None:
-            import sys
-
-            print(f"[{level.name}] {message}", file=sys.stderr)
+            pass
 
         @staticmethod
         async def emit_log_event_async(
@@ -229,9 +229,7 @@ def _get_minimal_logging_service() -> Any:
             event_type: str = "generic",
             **kwargs: Any,
         ) -> None:
-            import sys
-
-            print(f"[{level.name}] {message}", file=sys.stderr)
+            pass
 
         @staticmethod
         def trace_function_lifecycle(func: Any) -> Any:
@@ -258,7 +256,7 @@ def _get_minimal_logging_service() -> Any:
     return MinimalLoggingService()
 
 
-def is_service_available(protocol_type: Type[T]) -> bool:
+def is_service_available(protocol_type: type[T]) -> bool:
     """
     Check if a service is available for the given protocol type.
 
@@ -271,7 +269,7 @@ def is_service_available(protocol_type: Type[T]) -> bool:
     return get_service(protocol_type) is not None
 
 
-def get_available_services() -> List[str]:
+def get_available_services() -> list[str]:
     """
     Get list of available services.
 

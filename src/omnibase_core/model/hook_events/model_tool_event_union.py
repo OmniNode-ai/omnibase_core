@@ -5,8 +5,12 @@ from typing import Union
 from pydantic import BaseModel, Discriminator, Field
 
 from omnibase_core.model.hook_events.model_read_tool_event import (
-    ModelBashToolEvent, ModelEditToolEvent, ModelGrepToolEvent,
-    ModelReadToolEvent, ModelWriteToolEvent)
+    ModelBashToolEvent,
+    ModelEditToolEvent,
+    ModelGrepToolEvent,
+    ModelReadToolEvent,
+    ModelWriteToolEvent,
+)
 
 
 def get_tool_discriminator(v) -> str:
@@ -31,7 +35,8 @@ class ModelToolPreExecutionEvent(BaseModel):
 
     event_type: str = Field("pre-execution", description="Event type")
     tool_event: ToolEventUnion = Field(
-        ..., discriminator=Discriminator(get_tool_discriminator)
+        ...,
+        discriminator=Discriminator(get_tool_discriminator),
     )
 
 

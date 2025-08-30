@@ -6,7 +6,7 @@ and event handling in the Consul watcher system.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -21,13 +21,16 @@ class ModelWatchPattern(BaseModel):
 
     pattern: str = Field(..., description="Glob or regex pattern for key matching")
     pattern_type: str = Field(
-        default="glob", description="Type of pattern: 'glob' or 'regex'"
+        default="glob",
+        description="Type of pattern: 'glob' or 'regex'",
     )
     exclude: bool = Field(
-        default=False, description="Whether this is an exclusion pattern"
+        default=False,
+        description="Whether this is an exclusion pattern",
     )
-    description: Optional[str] = Field(
-        default=None, description="Human-readable description"
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description",
     )
 
 
@@ -38,23 +41,29 @@ class ModelWatchConfig(BaseModel):
 
     key_prefix: str = Field(..., description="KV key prefix to watch")
     recursive: bool = Field(
-        default=True, description="Watch all keys under prefix recursively"
+        default=True,
+        description="Watch all keys under prefix recursively",
     )
     timeout: int = Field(default=300, description="Watch timeout in seconds")
-    patterns: List[ModelWatchPattern] = Field(
-        default_factory=list, description="Filtering patterns"
+    patterns: list[ModelWatchPattern] = Field(
+        default_factory=list,
+        description="Filtering patterns",
     )
     enable_cache_invalidation: bool = Field(
-        default=True, description="Enable cache invalidation on changes"
+        default=True,
+        description="Enable cache invalidation on changes",
     )
     enable_event_publishing: bool = Field(
-        default=True, description="Enable event publishing"
+        default=True,
+        description="Enable event publishing",
     )
     max_reconnect_attempts: int = Field(
-        default=5, description="Maximum reconnection attempts"
+        default=5,
+        description="Maximum reconnection attempts",
     )
     reconnect_delay: int = Field(
-        default=5, description="Delay between reconnection attempts"
+        default=5,
+        description="Delay between reconnection attempts",
     )
 
 
@@ -67,16 +76,20 @@ class ModelWatchState(BaseModel):
     watch_id: str = Field(..., description="Unique identifier for this watch")
     last_index: int = Field(default=0, description="Last Consul index processed")
     start_time: datetime = Field(
-        default_factory=datetime.now, description="When the watch started"
+        default_factory=datetime.now,
+        description="When the watch started",
     )
     reconnect_count: int = Field(
-        default=0, description="Number of reconnection attempts"
+        default=0,
+        description="Number of reconnection attempts",
     )
-    last_event_time: Optional[datetime] = Field(
-        default=None, description="Time of last event received"
+    last_event_time: datetime | None = Field(
+        default=None,
+        description="Time of last event received",
     )
     is_active: bool = Field(
-        default=True, description="Whether the watch is currently active"
+        default=True,
+        description="Whether the watch is currently active",
     )
     error_count: int = Field(default=0, description="Number of errors encountered")
 
@@ -88,22 +101,27 @@ class ModelWatchEvent(BaseModel):
 
     event_type: EnumWatchEventType = Field(..., description="Type of watch event")
     key: str = Field(..., description="KV key that changed")
-    operation: Optional[EnumKVOperationType] = Field(
-        default=None, description="KV operation type"
+    operation: EnumKVOperationType | None = Field(
+        default=None,
+        description="KV operation type",
     )
-    old_value: Optional[Union[str, Dict[str, Any]]] = Field(
-        default=None, description="Previous value"
+    old_value: str | dict[str, Any] | None = Field(
+        default=None,
+        description="Previous value",
     )
-    new_value: Optional[Union[str, Dict[str, Any]]] = Field(
-        default=None, description="New value"
+    new_value: str | dict[str, Any] | None = Field(
+        default=None,
+        description="New value",
     )
     modify_index: int = Field(..., description="Consul modify index")
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Event timestamp"
+        default_factory=datetime.now,
+        description="Event timestamp",
     )
     watch_id: str = Field(..., description="ID of the watch that generated this event")
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional event metadata"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional event metadata",
     )
 
 
@@ -113,18 +131,22 @@ class ModelWatchCallback(BaseModel):
     """
 
     callback_id: str = Field(..., description="Unique identifier for the callback")
-    description: Optional[str] = Field(
-        default=None, description="Human-readable description"
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description",
     )
-    event_types: List[EnumWatchEventType] = Field(
-        default_factory=list, description="Event types to handle"
+    event_types: list[EnumWatchEventType] = Field(
+        default_factory=list,
+        description="Event types to handle",
     )
-    key_patterns: List[ModelWatchPattern] = Field(
-        default_factory=list, description="Key patterns to match"
+    key_patterns: list[ModelWatchPattern] = Field(
+        default_factory=list,
+        description="Key patterns to match",
     )
     is_async: bool = Field(default=True, description="Whether the callback is async")
     timeout: int = Field(
-        default=30, description="Callback execution timeout in seconds"
+        default=30,
+        description="Callback execution timeout in seconds",
     )
 
 
@@ -134,16 +156,19 @@ class ModelWatchStatistics(BaseModel):
     """
 
     total_events: int = Field(default=0, description="Total events processed")
-    events_by_type: Dict[str, int] = Field(
-        default_factory=dict, description="Events grouped by type"
+    events_by_type: dict[str, int] = Field(
+        default_factory=dict,
+        description="Events grouped by type",
     )
     total_errors: int = Field(default=0, description="Total errors encountered")
     total_reconnects: int = Field(default=0, description="Total reconnection attempts")
     average_latency_ms: float = Field(
-        default=0.0, description="Average event processing latency"
+        default=0.0,
+        description="Average event processing latency",
     )
-    last_event_time: Optional[datetime] = Field(
-        default=None, description="Time of last event"
+    last_event_time: datetime | None = Field(
+        default=None,
+        description="Time of last event",
     )
     uptime_seconds: float = Field(default=0.0, description="Total uptime in seconds")
 
@@ -156,14 +181,16 @@ class ModelWatchHealthCheck(BaseModel):
     watch_id: str = Field(..., description="Watch identifier")
     is_healthy: bool = Field(..., description="Overall health status")
     consul_connectivity: bool = Field(..., description="Consul connection status")
-    last_heartbeat: Optional[datetime] = Field(
-        default=None, description="Last successful communication"
+    last_heartbeat: datetime | None = Field(
+        default=None,
+        description="Last successful communication",
     )
     active_watches_count: int = Field(..., description="Number of active watches")
     error_rate: float = Field(default=0.0, description="Recent error rate percentage")
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
-    issues: List[str] = Field(
-        default_factory=list, description="List of current issues"
+    issues: list[str] = Field(
+        default_factory=list,
+        description="List of current issues",
     )
 
 
@@ -172,23 +199,29 @@ class ModelWatchFilter(BaseModel):
     Advanced filtering configuration for watch events.
     """
 
-    include_patterns: List[ModelWatchPattern] = Field(
-        default_factory=list, description="Inclusion patterns"
+    include_patterns: list[ModelWatchPattern] = Field(
+        default_factory=list,
+        description="Inclusion patterns",
     )
-    exclude_patterns: List[ModelWatchPattern] = Field(
-        default_factory=list, description="Exclusion patterns"
+    exclude_patterns: list[ModelWatchPattern] = Field(
+        default_factory=list,
+        description="Exclusion patterns",
     )
-    min_modify_index: Optional[int] = Field(
-        default=None, description="Minimum modify index to process"
+    min_modify_index: int | None = Field(
+        default=None,
+        description="Minimum modify index to process",
     )
-    event_types: List[EnumWatchEventType] = Field(
-        default_factory=list, description="Event types to include"
+    event_types: list[EnumWatchEventType] = Field(
+        default_factory=list,
+        description="Event types to include",
     )
-    value_filters: Dict[str, Any] = Field(
-        default_factory=dict, description="Value-based filters"
+    value_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Value-based filters",
     )
-    rate_limit_per_second: Optional[float] = Field(
-        default=None, description="Maximum events per second"
+    rate_limit_per_second: float | None = Field(
+        default=None,
+        description="Maximum events per second",
     )
 
 
@@ -198,26 +231,34 @@ class ModelWatchRecoveryConfig(BaseModel):
     """
 
     enable_auto_recovery: bool = Field(
-        default=True, description="Enable automatic recovery"
+        default=True,
+        description="Enable automatic recovery",
     )
     max_recovery_attempts: int = Field(
-        default=10, description="Maximum recovery attempts"
+        default=10,
+        description="Maximum recovery attempts",
     )
     recovery_backoff_multiplier: float = Field(
-        default=1.5, description="Backoff multiplier for recovery delays"
+        default=1.5,
+        description="Backoff multiplier for recovery delays",
     )
     initial_recovery_delay: int = Field(
-        default=1, description="Initial recovery delay in seconds"
+        default=1,
+        description="Initial recovery delay in seconds",
     )
     max_recovery_delay: int = Field(
-        default=300, description="Maximum recovery delay in seconds"
+        default=300,
+        description="Maximum recovery delay in seconds",
     )
     health_check_interval: int = Field(
-        default=30, description="Health check interval in seconds"
+        default=30,
+        description="Health check interval in seconds",
     )
     circuit_breaker_threshold: int = Field(
-        default=5, description="Consecutive failures to trigger circuit breaker"
+        default=5,
+        description="Consecutive failures to trigger circuit breaker",
     )
     circuit_breaker_timeout: int = Field(
-        default=60, description="Circuit breaker timeout in seconds"
+        default=60,
+        description="Circuit breaker timeout in seconds",
     )

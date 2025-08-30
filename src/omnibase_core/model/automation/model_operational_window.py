@@ -6,12 +6,10 @@ Defines an operational time window for automation scheduling.
 
 from datetime import time
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.automation.model_window_metadata import \
-    ModelWindowMetadata
+from omnibase_core.model.automation.model_window_metadata import ModelWindowMetadata
 
 
 class EnumWindowPriority(str, Enum):
@@ -42,23 +40,30 @@ class ModelOperationalWindow(BaseModel):
     start_time: time = Field(..., description="Window start time")
     end_time: time = Field(..., description="Window end time")
     quota_percentage: float = Field(
-        ..., ge=0, le=100, description="Percentage of daily quota"
+        ...,
+        ge=0,
+        le=100,
+        description="Percentage of daily quota",
     )
     max_agents: int = Field(..., ge=1, description="Maximum concurrent agents")
     min_agents: int = Field(1, ge=1, description="Minimum concurrent agents")
     priority: EnumWindowPriority = Field(..., description="Window priority level")
     risk_threshold: EnumWorkRiskLevel = Field(
-        ..., description="Maximum risk level allowed"
+        ...,
+        description="Maximum risk level allowed",
     )
     enabled: bool = Field(True, description="Whether window is currently active")
 
-    work_types: List[str] = Field(
-        default_factory=list, description="Types of work allowed in this window"
+    work_types: list[str] = Field(
+        default_factory=list,
+        description="Types of work allowed in this window",
     )
-    excluded_work_types: List[str] = Field(
-        default_factory=list, description="Types of work explicitly excluded"
+    excluded_work_types: list[str] = Field(
+        default_factory=list,
+        description="Types of work explicitly excluded",
     )
 
-    metadata: Optional[ModelWindowMetadata] = Field(
-        default=None, description="Additional window configuration"
+    metadata: ModelWindowMetadata | None = Field(
+        default=None,
+        description="Additional window configuration",
     )

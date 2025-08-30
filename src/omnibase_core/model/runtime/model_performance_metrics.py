@@ -9,7 +9,8 @@ class ModelPerformanceMetrics(BaseModel):
     """Model for performance metrics."""
 
     execution_time_ms: int = Field(
-        default=0, description="Execution time in milliseconds"
+        default=0,
+        description="Execution time in milliseconds",
     )
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in megabytes")
     cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")

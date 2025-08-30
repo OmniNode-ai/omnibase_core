@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     class HasModelDump(Protocol):
-        def model_dump(self, mode: str = "json") -> Dict[str, Any]: ...
+        def model_dump(self, mode: str = "json") -> dict[str, Any]: ...
 
 
 class YAMLSerializationMixin:

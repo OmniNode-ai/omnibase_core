@@ -16,11 +16,17 @@ class ModelEventBusConfig(BaseModel):
         description="Event bus service URL",
     )
     timeout_ms: int = Field(
-        30000, description="Event bus timeout in milliseconds", ge=1000, le=300000
+        30000,
+        description="Event bus timeout in milliseconds",
+        ge=1000,
+        le=300000,
     )
     retry_attempts: int = Field(3, description="Number of retry attempts", ge=1, le=10)
     connection_pool_size: int = Field(
-        10, description="Connection pool size", ge=1, le=100
+        10,
+        description="Connection pool size",
+        ge=1,
+        le=100,
     )
 
     @field_validator("url")
@@ -30,11 +36,13 @@ class ModelEventBusConfig(BaseModel):
         try:
             parsed = urlparse(v)
             if not parsed.scheme or not parsed.netloc:
+                msg = "Invalid event bus URL format - missing scheme or netloc"
                 raise ValueError(
-                    "Invalid event bus URL format - missing scheme or netloc"
+                    msg,
                 )
             return v
         except (ValueError, ValidationError) as e:
             if isinstance(e, ValidationError):
-                raise e
-            raise ValueError("Invalid event bus URL")
+                raise
+            msg = "Invalid event bus URL"
+            raise ValueError(msg)

@@ -37,7 +37,8 @@ class ModelDuration(BaseModel):
     def validate_positive(cls, v):
         """Ensure duration is non-negative."""
         if v < 0:
-            raise ValueError("Duration must be non-negative")
+            msg = "Duration must be non-negative"
+            raise ValueError(msg)
         return v
 
     def total_milliseconds(self) -> int:
@@ -120,52 +121,61 @@ class ModelDuration(BaseModel):
         """Check if this duration is less than another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds < other.milliseconds
-        raise TypeError(f"Cannot compare ModelDuration with {type(other)}")
+        msg = f"Cannot compare ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __le__(self, other) -> bool:
         """Check if this duration is less than or equal to another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds <= other.milliseconds
-        raise TypeError(f"Cannot compare ModelDuration with {type(other)}")
+        msg = f"Cannot compare ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __gt__(self, other) -> bool:
         """Check if this duration is greater than another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds > other.milliseconds
-        raise TypeError(f"Cannot compare ModelDuration with {type(other)}")
+        msg = f"Cannot compare ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __ge__(self, other) -> bool:
         """Check if this duration is greater than or equal to another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds >= other.milliseconds
-        raise TypeError(f"Cannot compare ModelDuration with {type(other)}")
+        msg = f"Cannot compare ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __add__(self, other) -> "ModelDuration":
         """Add two durations."""
         if isinstance(other, ModelDuration):
             return ModelDuration(milliseconds=self.milliseconds + other.milliseconds)
-        raise TypeError(f"Cannot add ModelDuration with {type(other)}")
+        msg = f"Cannot add ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __sub__(self, other) -> "ModelDuration":
         """Subtract two durations."""
         if isinstance(other, ModelDuration):
             result_ms = max(0, self.milliseconds - other.milliseconds)
             return ModelDuration(milliseconds=result_ms)
-        raise TypeError(f"Cannot subtract {type(other)} from ModelDuration")
+        msg = f"Cannot subtract {type(other)} from ModelDuration"
+        raise TypeError(msg)
 
     def __mul__(self, other) -> "ModelDuration":
         """Multiply duration by a number."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             return ModelDuration(milliseconds=int(self.milliseconds * other))
-        raise TypeError(f"Cannot multiply ModelDuration with {type(other)}")
+        msg = f"Cannot multiply ModelDuration with {type(other)}"
+        raise TypeError(msg)
 
     def __truediv__(self, other) -> "ModelDuration":
         """Divide duration by a number."""
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             if other == 0:
-                raise ZeroDivisionError("Cannot divide duration by zero")
+                msg = "Cannot divide duration by zero"
+                raise ZeroDivisionError(msg)
             return ModelDuration(milliseconds=int(self.milliseconds / other))
-        raise TypeError(f"Cannot divide ModelDuration by {type(other)}")
+        msg = f"Cannot divide ModelDuration by {type(other)}"
+        raise TypeError(msg)
 
     @classmethod
     def from_seconds(cls, seconds: float) -> "ModelDuration":
@@ -212,7 +222,8 @@ class ModelDuration(BaseModel):
         matches = re.findall(pattern, duration_str.lower())
 
         if not matches:
-            raise ValueError(f"Invalid duration format: {duration_str}")
+            msg = f"Invalid duration format: {duration_str}"
+            raise ValueError(msg)
 
         total_ms = 0
         for value_str, unit in matches:

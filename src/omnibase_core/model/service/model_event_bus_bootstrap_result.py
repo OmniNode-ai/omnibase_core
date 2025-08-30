@@ -8,6 +8,7 @@ class ModelEventBusBootstrapResult(BaseModel):
 
     status: str = Field(..., description="Bootstrap status, e.g. 'ok' or 'error'.")
     message: str = Field(
-        ..., description="Human-readable message about the bootstrap result."
+        ...,
+        description="Human-readable message about the bootstrap result.",
     )
     # Add more fields as needed (e.g., error_code, details)

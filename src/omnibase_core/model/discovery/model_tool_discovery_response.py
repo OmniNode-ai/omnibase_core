@@ -6,7 +6,7 @@ Contains discovered tools matching the request filters.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,18 +24,20 @@ class ModelDiscoveredTool(BaseModel):
     version: ModelSemVer = Field(..., description="Version of the node")
 
     # Tool capabilities
-    actions: List[str] = Field(
-        default_factory=list, description="Actions supported by this tool"
+    actions: list[str] = Field(
+        default_factory=list,
+        description="Actions supported by this tool",
     )
-    protocols: List[str] = Field(
+    protocols: list[str] = Field(
         default_factory=list,
         description="Protocols supported (mcp, graphql, event_bus)",
     )
 
     # Discovery metadata
-    tags: List[str] = Field(default_factory=list, description="Tags for categorization")
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional tool metadata"
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional tool metadata",
     )
 
     # Health and status
@@ -44,15 +46,18 @@ class ModelDiscoveredTool(BaseModel):
         description="Health status (healthy, warning, critical, unknown)",
     )
     last_seen: datetime = Field(
-        default_factory=datetime.now, description="When this tool was last seen"
+        default_factory=datetime.now,
+        description="When this tool was last seen",
     )
 
     # Service discovery
-    service_id: Optional[str] = Field(
-        None, description="Service ID for Consul compatibility"
+    service_id: str | None = Field(
+        None,
+        description="Service ID for Consul compatibility",
     )
-    health_endpoint: Optional[str] = Field(
-        None, description="Health check endpoint if available"
+    health_endpoint: str | None = Field(
+        None,
+        description="Health check endpoint if available",
     )
 
 
@@ -71,34 +76,39 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
     )
 
     # Response identification
-    request_correlation_id: Optional[str] = Field(
-        None, description="Correlation ID from the original request"
+    request_correlation_id: str | None = Field(
+        None,
+        description="Correlation ID from the original request",
     )
     requester_id: str = Field(
-        ..., description="ID of the service that made the request"
+        ...,
+        description="ID of the service that made the request",
     )
 
     # Discovery results
-    tools: List[ModelDiscoveredTool] = Field(
+    tools: list[ModelDiscoveredTool] = Field(
         default_factory=list,
         description="List of discovered tools matching the request",
     )
 
     # Response metadata
     total_count: int = Field(
-        0, description="Total number of tools found (may be > len(tools) if limited)"
+        0,
+        description="Total number of tools found (may be > len(tools) if limited)",
     )
     filtered_count: int = Field(0, description="Number of tools after applying filters")
-    response_time_ms: Optional[float] = Field(
-        None, description="Time taken to process the request in milliseconds"
+    response_time_ms: float | None = Field(
+        None,
+        description="Time taken to process the request in milliseconds",
     )
 
     # Status flags
     partial_response: bool = Field(
-        False, description="True if some registries didn't respond in time"
+        False,
+        description="True if some registries didn't respond in time",
     )
     timeout_occurred: bool = Field(False, description="True if the request timed out")
-    registry_errors: List[str] = Field(
+    registry_errors: list[str] = Field(
         default_factory=list,
         description="List of errors from registries during discovery",
     )
@@ -108,9 +118,9 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         cls,
         node_id: str,
         requester_id: str,
-        tools: List[ModelDiscoveredTool],
-        request_correlation_id: str = None,
-        response_time_ms: float = None,
+        tools: list[ModelDiscoveredTool],
+        request_correlation_id: str | None = None,
+        response_time_ms: float | None = None,
         **kwargs,
     ) -> "ModelToolDiscoveryResponse":
         """
@@ -155,9 +165,9 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         cls,
         node_id: str,
         requester_id: str,
-        partial_tools: List[ModelDiscoveredTool] = None,
-        request_correlation_id: str = None,
-        timeout_ms: int = None,
+        partial_tools: list[ModelDiscoveredTool] | None = None,
+        request_correlation_id: str | None = None,
+        timeout_ms: int | None = None,
         **kwargs,
     ) -> "ModelToolDiscoveryResponse":
         """
@@ -201,7 +211,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
             **kwargs,
         )
 
-    def get_tools_by_protocol(self, protocol: str) -> List[ModelDiscoveredTool]:
+    def get_tools_by_protocol(self, protocol: str) -> list[ModelDiscoveredTool]:
         """
         Filter tools by protocol.
 
@@ -213,7 +223,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         """
         return [tool for tool in self.tools if protocol in tool.protocols]
 
-    def get_tools_by_tag(self, tag: str) -> List[ModelDiscoveredTool]:
+    def get_tools_by_tag(self, tag: str) -> list[ModelDiscoveredTool]:
         """
         Filter tools by tag.
 

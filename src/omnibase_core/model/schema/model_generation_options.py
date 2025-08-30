@@ -5,7 +5,6 @@ Structured model for schema generation options that replaces Dict[str, Any] usag
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -39,60 +38,76 @@ class ModelGenerationOptions(BaseModel):
 
     # Core generation options
     mode: EnumGenerationMode = Field(
-        default=EnumGenerationMode.strict, description="Generation mode"
+        default=EnumGenerationMode.strict,
+        description="Generation mode",
     )
     output_format: EnumOutputFormat = Field(
-        default=EnumOutputFormat.pydantic, description="Output format"
+        default=EnumOutputFormat.pydantic,
+        description="Output format",
     )
     include_docs: bool = Field(
-        default=True, description="Include documentation in generated code"
+        default=True,
+        description="Include documentation in generated code",
     )
     include_examples: bool = Field(
-        default=False, description="Include examples in generated code"
+        default=False,
+        description="Include examples in generated code",
     )
 
     # Validation options
     strict_typing: bool = Field(
-        default=True, description="Use strict typing (no Any types)"
+        default=True,
+        description="Use strict typing (no Any types)",
     )
     validate_defaults: bool = Field(
-        default=True, description="Validate default values against schema"
+        default=True,
+        description="Validate default values against schema",
     )
     allow_extra_fields: bool = Field(
-        default=False, description="Allow extra fields not in schema"
+        default=False,
+        description="Allow extra fields not in schema",
     )
 
     # Code generation options
-    class_prefix: Optional[str] = Field(
-        default="Model", description="Prefix for generated class names"
+    class_prefix: str | None = Field(
+        default="Model",
+        description="Prefix for generated class names",
     )
-    module_name: Optional[str] = Field(
-        None, description="Module name for generated code"
+    module_name: str | None = Field(
+        None,
+        description="Module name for generated code",
     )
-    base_class: Optional[str] = Field(
-        default="BaseModel", description="Base class for generated models"
+    base_class: str | None = Field(
+        default="BaseModel",
+        description="Base class for generated models",
     )
 
     # File options
     one_file_per_model: bool = Field(
-        default=True, description="Generate one file per model"
+        default=True,
+        description="Generate one file per model",
     )
     preserve_field_order: bool = Field(
-        default=True, description="Preserve field order from schema"
+        default=True,
+        description="Preserve field order from schema",
     )
     generate_init_files: bool = Field(
-        default=True, description="Generate __init__.py files"
+        default=True,
+        description="Generate __init__.py files",
     )
 
     # Advanced options
-    custom_validators: List[str] = Field(
-        default_factory=list, description="Custom validator functions to include"
+    custom_validators: list[str] = Field(
+        default_factory=list,
+        description="Custom validator functions to include",
     )
-    excluded_fields: List[str] = Field(
-        default_factory=list, description="Fields to exclude from generation"
+    excluded_fields: list[str] = Field(
+        default_factory=list,
+        description="Fields to exclude from generation",
     )
-    field_mappings: Dict[str, str] = Field(
-        default_factory=dict, description="Custom field name mappings"
+    field_mappings: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom field name mappings",
     )
 
     @classmethod

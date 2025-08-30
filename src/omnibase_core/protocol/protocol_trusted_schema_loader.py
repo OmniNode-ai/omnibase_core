@@ -1,10 +1,7 @@
 from abc import abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Protocol
 
-from typing_extensions import Protocol
-
-from omnibase_core.model.validation.model_validation_result import \
-    ModelValidationResult
+from omnibase_core.model.validation.model_validation_result import ModelValidationResult
 
 
 class ProtocolTrustedSchemaLoader(Protocol):
@@ -26,7 +23,7 @@ class ProtocolTrustedSchemaLoader(Protocol):
         ...
 
     @abstractmethod
-    def get_security_audit(self) -> List[Dict[str, Any]]:
+    def get_security_audit(self) -> list[dict[str, Any]]:
         """Get security audit trail"""
         ...
 
@@ -36,6 +33,6 @@ class ProtocolTrustedSchemaLoader(Protocol):
         ...
 
     @abstractmethod
-    def get_approved_roots(self) -> List[str]:
+    def get_approved_roots(self) -> list[str]:
         """Get list of approved schema root paths"""
         ...

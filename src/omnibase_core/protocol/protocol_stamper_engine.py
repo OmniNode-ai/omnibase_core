@@ -23,7 +23,7 @@
 
 
 from pathlib import Path
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 from omnibase_core.enums.enum_template_type import TemplateTypeEnum
 from omnibase_core.model.core.model_onex_message_result import OnexResultModel
@@ -53,9 +53,9 @@ class ProtocolStamperEngine(Protocol):
         template: TemplateTypeEnum = TemplateTypeEnum.MINIMAL,
         recursive: bool = True,
         dry_run: bool = False,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
-        ignore_file: Optional[Path] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        ignore_file: Path | None = None,
         author: str = "OmniNode Team",
         overwrite: bool = False,
         repair: bool = False,

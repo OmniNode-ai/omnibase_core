@@ -5,8 +5,6 @@ This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
 """
 
-from typing import Dict, List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -19,15 +17,17 @@ class ModelSchemaValue(BaseModel):
     """
 
     # Value types (one of these will be set)
-    string_value: Optional[str] = Field(None, description="String value")
-    number_value: Optional[Union[int, float]] = Field(None, description="Numeric value")
-    boolean_value: Optional[bool] = Field(None, description="Boolean value")
-    null_value: Optional[bool] = Field(None, description="True if value is null")
-    array_value: Optional[List["ModelSchemaValue"]] = Field(
-        None, description="Array of values"
+    string_value: str | None = Field(None, description="String value")
+    number_value: int | float | None = Field(None, description="Numeric value")
+    boolean_value: bool | None = Field(None, description="Boolean value")
+    null_value: bool | None = Field(None, description="True if value is null")
+    array_value: list["ModelSchemaValue"] | None = Field(
+        None,
+        description="Array of values",
     )
-    object_value: Optional[Dict[str, "ModelSchemaValue"]] = Field(
-        None, description="Object with key-value pairs"
+    object_value: dict[str, "ModelSchemaValue"] | None = Field(
+        None,
+        description="Object with key-value pairs",
     )
 
     # Type indicator
@@ -49,24 +49,24 @@ class ModelSchemaValue(BaseModel):
         """
         if value is None:
             return cls(value_type="null", null_value=True)
-        elif isinstance(value, bool):
+        if isinstance(value, bool):
             return cls(value_type="boolean", boolean_value=value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return cls(value_type="string", string_value=value)
-        elif isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return cls(value_type="number", number_value=value)
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return cls(
-                value_type="array", array_value=[cls.from_value(item) for item in value]
+                value_type="array",
+                array_value=[cls.from_value(item) for item in value],
             )
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return cls(
                 value_type="object",
                 object_value={k: cls.from_value(v) for k, v in value.items()},
             )
-        else:
-            # Convert to string representation for unknown types
-            return cls(value_type="string", string_value=str(value))
+        # Convert to string representation for unknown types
+        return cls(value_type="string", string_value=str(value))
 
     def to_value(self):
         """
@@ -77,15 +77,14 @@ class ModelSchemaValue(BaseModel):
         """
         if self.value_type == "null":
             return None
-        elif self.value_type == "boolean":
+        if self.value_type == "boolean":
             return self.boolean_value
-        elif self.value_type == "string":
+        if self.value_type == "string":
             return self.string_value
-        elif self.value_type == "number":
+        if self.value_type == "number":
             return self.number_value
-        elif self.value_type == "array":
+        if self.value_type == "array":
             return [item.to_value() for item in (self.array_value or [])]
-        elif self.value_type == "object":
+        if self.value_type == "object":
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
-        else:
-            return None
+        return None

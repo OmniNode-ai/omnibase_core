@@ -12,9 +12,9 @@ from .utility_reference_resolver import UtilityReferenceResolver
 from .utility_type_mapper import UtilityTypeMapper
 
 __all__ = [
-    "UtilityTypeMapper",
-    "UtilityReferenceResolver",
     "UtilityASTBuilder",
-    "UtilityEnumGenerator",
     "UtilityContractAnalyzer",
+    "UtilityEnumGenerator",
+    "UtilityReferenceResolver",
+    "UtilityTypeMapper",
 ]

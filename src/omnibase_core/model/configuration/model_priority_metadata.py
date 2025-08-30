@@ -5,58 +5,73 @@ Additional metadata for execution priorities.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.configuration.model_monitoring_thresholds import \
-    ModelMonitoringThresholds
-from omnibase_core.model.configuration.model_notification_settings import \
-    ModelNotificationSettings
+from omnibase_core.model.configuration.model_monitoring_thresholds import (
+    ModelMonitoringThresholds,
+)
+from omnibase_core.model.configuration.model_notification_settings import (
+    ModelNotificationSettings,
+)
 
 
 class ModelPriorityMetadata(BaseModel):
     """Additional metadata for execution priorities."""
 
-    owner: Optional[str] = Field(
-        None, description="Owner or team responsible for this priority level"
+    owner: str | None = Field(
+        None,
+        description="Owner or team responsible for this priority level",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this priority was created"
+        default_factory=datetime.utcnow,
+        description="When this priority was created",
     )
-    last_modified: Optional[datetime] = Field(
-        None, description="When this priority was last modified"
+    last_modified: datetime | None = Field(
+        None,
+        description="When this priority was last modified",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Tags associated with this priority"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags associated with this priority",
     )
-    sla_requirements: Optional[str] = Field(
-        None, description="SLA requirements for this priority level"
+    sla_requirements: str | None = Field(
+        None,
+        description="SLA requirements for this priority level",
     )
-    business_justification: Optional[str] = Field(
-        None, description="Business justification for this priority level"
+    business_justification: str | None = Field(
+        None,
+        description="Business justification for this priority level",
     )
-    usage_guidelines: Optional[str] = Field(
-        None, description="Guidelines for when to use this priority"
+    usage_guidelines: str | None = Field(
+        None,
+        description="Guidelines for when to use this priority",
     )
-    cost_per_hour: Optional[float] = Field(
-        None, description="Cost per hour for this priority level", ge=0
+    cost_per_hour: float | None = Field(
+        None,
+        description="Cost per hour for this priority level",
+        ge=0,
     )
-    max_daily_usage: Optional[int] = Field(
-        None, description="Maximum daily usage allowed", ge=0
+    max_daily_usage: int | None = Field(
+        None,
+        description="Maximum daily usage allowed",
+        ge=0,
     )
     notification_settings: ModelNotificationSettings = Field(
         default_factory=lambda: ModelNotificationSettings(),
         description="Notification settings for this priority",
     )
     approval_required: bool = Field(
-        default=False, description="Whether approval is required to use this priority"
+        default=False,
+        description="Whether approval is required to use this priority",
     )
-    approved_users: List[str] = Field(
-        default_factory=list, description="Users approved to use this priority level"
+    approved_users: list[str] = Field(
+        default_factory=list,
+        description="Users approved to use this priority level",
     )
-    approved_groups: List[str] = Field(
-        default_factory=list, description="Groups approved to use this priority level"
+    approved_groups: list[str] = Field(
+        default_factory=list,
+        description="Groups approved to use this priority level",
     )
     monitoring_thresholds: ModelMonitoringThresholds = Field(
         default_factory=lambda: ModelMonitoringThresholds(),
@@ -94,10 +109,12 @@ class ModelPriorityMetadata(BaseModel):
         self.last_modified = datetime.utcnow()
 
     @classmethod
-    def create_default(cls, owner: Optional[str] = None) -> "ModelPriorityMetadata":
+    def create_default(cls, owner: str | None = None) -> "ModelPriorityMetadata":
         """Factory method for default metadata."""
         return cls(
-            owner=owner, tags=["default"], usage_guidelines="Standard priority metadata"
+            owner=owner,
+            tags=["default"],
+            usage_guidelines="Standard priority metadata",
         )
 
     @classmethod

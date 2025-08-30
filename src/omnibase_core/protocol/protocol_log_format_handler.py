@@ -32,7 +32,7 @@ Following the established ONEX architecture patterns for pluggable handlers.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 # Import LoggerInputState from the canonical location for type hinting.
 # Nodes should import their own input state model as needed.
@@ -78,7 +78,7 @@ class ProtocolLogFormatHandler(Protocol):
 
     @property
     @abstractmethod
-    def supported_formats(self) -> List[str]:
+    def supported_formats(self) -> list[str]:
         """List of output formats this handler supports (e.g., ['json'], ['yaml', 'yml'])."""
         ...
 
@@ -90,7 +90,7 @@ class ProtocolLogFormatHandler(Protocol):
 
     @property
     @abstractmethod
-    def requires_dependencies(self) -> List[str]:
+    def requires_dependencies(self) -> list[str]:
         """List of optional dependencies required by this handler (e.g., ['yaml', 'csv'])."""
         ...
 
@@ -101,7 +101,7 @@ class ProtocolLogFormatHandler(Protocol):
         ...
 
     @abstractmethod
-    def format_log_entry(self, input_state: Any, log_entry: Dict[str, Any]) -> str:
+    def format_log_entry(self, input_state: Any, log_entry: dict[str, Any]) -> str:
         """
         Format a log entry according to this handler's output format.
 
@@ -128,7 +128,7 @@ class ProtocolLogFormatHandler(Protocol):
         ...
 
     @abstractmethod
-    def get_format_metadata(self) -> Dict[str, Any]:
+    def get_format_metadata(self) -> dict[str, Any]:
         """
         Get metadata about this format handler.
 

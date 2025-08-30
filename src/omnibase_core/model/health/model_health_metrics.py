@@ -6,7 +6,6 @@ and error tracking.
 """
 
 from datetime import datetime
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,53 +19,79 @@ class ModelHealthMetrics(BaseModel):
     """
 
     cpu_usage_percent: float = Field(
-        default=0.0, description="CPU usage percentage", ge=0.0, le=100.0
+        default=0.0,
+        description="CPU usage percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     memory_usage_mb: int = Field(
-        default=0, description="Memory usage in megabytes", ge=0
+        default=0,
+        description="Memory usage in megabytes",
+        ge=0,
     )
 
     memory_usage_percent: float = Field(
-        default=0.0, description="Memory usage percentage", ge=0.0, le=100.0
+        default=0.0,
+        description="Memory usage percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     response_time_ms: float = Field(
-        default=0.0, description="Average response time in milliseconds", ge=0.0
+        default=0.0,
+        description="Average response time in milliseconds",
+        ge=0.0,
     )
 
     error_rate: float = Field(
-        default=0.0, description="Error rate as percentage", ge=0.0, le=100.0
+        default=0.0,
+        description="Error rate as percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     success_rate: float = Field(
-        default=100.0, description="Success rate as percentage", ge=0.0, le=100.0
+        default=100.0,
+        description="Success rate as percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     active_connections: int = Field(
-        default=0, description="Number of active connections", ge=0
+        default=0,
+        description="Number of active connections",
+        ge=0,
     )
 
     requests_per_second: float = Field(
-        default=0.0, description="Current requests per second", ge=0.0
+        default=0.0,
+        description="Current requests per second",
+        ge=0.0,
     )
 
     uptime_seconds: int = Field(default=0, description="Uptime in seconds", ge=0)
 
-    last_error_timestamp: Optional[datetime] = Field(
-        None, description="Timestamp of last error"
+    last_error_timestamp: datetime | None = Field(
+        None,
+        description="Timestamp of last error",
     )
 
     consecutive_errors: int = Field(
-        default=0, description="Number of consecutive errors", ge=0
+        default=0,
+        description="Number of consecutive errors",
+        ge=0,
     )
 
-    health_check_latency_ms: Optional[float] = Field(
-        None, description="Health check latency in milliseconds", ge=0.0
+    health_check_latency_ms: float | None = Field(
+        None,
+        description="Health check latency in milliseconds",
+        ge=0.0,
     )
 
-    custom_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="Custom health metrics"
+    custom_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="Custom health metrics",
     )
 
     def is_healthy(

@@ -1,7 +1,5 @@
 """Structure markers model with strong typing."""
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -10,7 +8,7 @@ class ModelCodeBlock(BaseModel):
 
     start_pos: int = Field(ge=0, description="Start position in text")
     end_pos: int = Field(ge=0, description="End position in text")
-    language: Optional[str] = Field(default=None, description="Programming language")
+    language: str | None = Field(default=None, description="Programming language")
     content: str = Field(description="Code block content")
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -29,11 +27,16 @@ class ModelStructureMarkers(BaseModel):
     code_block_count: int = Field(ge=0, description="Number of code blocks found")
     table_count: int = Field(ge=0, description="Number of tables found")
 
-    avg_paragraph_length: Optional[float] = Field(
-        default=None, ge=0.0, description="Average paragraph length"
+    avg_paragraph_length: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Average paragraph length",
     )
-    complexity_score: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Text complexity score"
+    complexity_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Text complexity score",
     )
 
     model_config = ConfigDict(frozen=True, extra="forbid")

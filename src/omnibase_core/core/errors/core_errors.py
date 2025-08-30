@@ -43,7 +43,6 @@ Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, Type, Union
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -65,7 +64,7 @@ class CLIExitCode(int, Enum):
 
 
 # Global mapping from EnumOnexStatus to CLI exit codes
-STATUS_TO_EXIT_CODE: Dict[EnumOnexStatus, CLIExitCode] = {
+STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, CLIExitCode] = {
     EnumOnexStatus.SUCCESS: CLIExitCode.SUCCESS,
     EnumOnexStatus.ERROR: CLIExitCode.ERROR,
     EnumOnexStatus.WARNING: CLIExitCode.WARNING,
@@ -114,15 +113,18 @@ class OnexErrorCode(str, Enum):
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
-        raise NotImplementedError("Subclasses must implement get_component()")
+        msg = "Subclasses must implement get_component()"
+        raise NotImplementedError(msg)
 
     def get_number(self) -> int:
         """Get the numeric identifier for this error code."""
-        raise NotImplementedError("Subclasses must implement get_number()")
+        msg = "Subclasses must implement get_number()"
+        raise NotImplementedError(msg)
 
     def get_description(self) -> str:
         """Get a human-readable description for this error code."""
-        raise NotImplementedError("Subclasses must implement get_description()")
+        msg = "Subclasses must implement get_description()"
+        raise NotImplementedError(msg)
 
     def get_exit_code(self) -> int:
         """
@@ -230,7 +232,7 @@ class CoreErrorCode(OnexErrorCode):
 
 
 # Mapping from core error codes to exit codes
-CORE_ERROR_CODE_TO_EXIT_CODE: Dict[CoreErrorCode, CLIExitCode] = {
+CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     # Validation errors -> ERROR
     CoreErrorCode.INVALID_PARAMETER: CLIExitCode.ERROR,
     CoreErrorCode.MISSING_REQUIRED_PARAMETER: CLIExitCode.ERROR,
@@ -360,8 +362,8 @@ class ModelOnexError(BaseModel):
                 "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
                 "timestamp": "2025-05-25T22:30:00Z",
                 "context": {"file_path": "/path/to/config.yaml"},
-            }
-        }
+            },
+        },
     )
 
     message: str = Field(
@@ -369,7 +371,7 @@ class ModelOnexError(BaseModel):
         description="Human-readable error message",
         json_schema_extra={"example": "File not found: config.yaml"},
     )
-    error_code: Optional[Union[str, OnexErrorCode]] = Field(
+    error_code: str | OnexErrorCode | None = Field(
         default=None,
         description="Canonical error code for this error",
         json_schema_extra={"example": "ONEX_CORE_021_FILE_NOT_FOUND"},
@@ -379,17 +381,17 @@ class ModelOnexError(BaseModel):
         description="EnumOnexStatus for this error",
         json_schema_extra={"example": "error"},
     )
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Optional correlation ID for request tracking",
         json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
     )
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the error occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: Dict[str, Union[str, int, bool, float]] = Field(
+    context: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
@@ -413,18 +415,18 @@ class ModelOnexWarning(BaseModel):
                 "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
                 "timestamp": "2025-05-25T22:30:00Z",
                 "context": {"file_path": "/path/to/config.yaml"},
-            }
-        }
+            },
+        },
     )
 
     message: str = Field(
         ...,
         description="Human-readable warning message",
         json_schema_extra={
-            "example": "File already exists and will be overwritten: config.yaml"
+            "example": "File already exists and will be overwritten: config.yaml",
         },
     )
-    warning_code: Optional[str] = Field(
+    warning_code: str | None = Field(
         default=None,
         description="Canonical warning code for this warning",
         json_schema_extra={"example": "ONEX_CORE_W001_FILE_OVERWRITE"},
@@ -434,17 +436,17 @@ class ModelOnexWarning(BaseModel):
         description="EnumOnexStatus for this warning",
         json_schema_extra={"example": "warning"},
     )
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default=None,
         description="Optional correlation ID for request tracking",
         json_schema_extra={"example": "req-123e4567-e89b-12d3-a456-426614174000"},
     )
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the warning occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: Dict[str, Union[str, int, bool, float]] = Field(
+    context: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Additional context information for the warning",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
@@ -466,11 +468,11 @@ class OnexError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Union[OnexErrorCode, str, None] = None,
+        error_code: OnexErrorCode | str | None = None,
         status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        correlation_id: Optional[Union[str, UUID]] = None,
-        timestamp: Optional[datetime] = None,
-        **context: Union[str, int, bool, float],
+        correlation_id: str | UUID | None = None,
+        timestamp: datetime | None = None,
+        **context: str | int | bool | float,
     ) -> None:
         """
         Initialize an ONEX error with error code and status.
@@ -512,8 +514,7 @@ class OnexError(Exception):
         # Check if ModelOnexError expects ModelErrorContext (newer version) or dict (older version)
         try:
             # Try to import ModelErrorContext to detect if we're using the newer ModelOnexError
-            from omnibase_core.model.core.model_error_context import \
-                ModelErrorContext
+            from omnibase_core.model.core.model_error_context import ModelErrorContext
 
             # Convert dictionary context to ModelErrorContext for new ModelOnexError
             if isinstance(context, dict):
@@ -522,8 +523,9 @@ class OnexError(Exception):
                 context_model = context or ModelErrorContext()
 
             # Use newer ModelOnexError from model package
-            from omnibase_core.model.core.model_onex_error import \
-                ModelOnexError as NewModelOnexError
+            from omnibase_core.model.core.model_onex_error import (
+                ModelOnexError as NewModelOnexError,
+            )
 
             self.model = NewModelOnexError(
                 message=message,
@@ -549,10 +551,10 @@ class OnexError(Exception):
         cls,
         message: str,
         correlation_id: UUID,
-        error_code: Union[OnexErrorCode, str, None] = None,
+        error_code: OnexErrorCode | str | None = None,
         status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        timestamp: Optional[datetime] = None,
-        **context: Union[str, int, bool, float],
+        timestamp: datetime | None = None,
+        **context: str | int | bool | float,
     ) -> "OnexError":
         """
         Create an OnexError with a guaranteed UUID correlation ID.
@@ -584,10 +586,10 @@ class OnexError(Exception):
     def with_new_correlation_id(
         cls,
         message: str,
-        error_code: Union[OnexErrorCode, str, None] = None,
+        error_code: OnexErrorCode | str | None = None,
         status: EnumOnexStatus = EnumOnexStatus.ERROR,
-        timestamp: Optional[datetime] = None,
-        **context: Union[str, int, bool, float],
+        timestamp: datetime | None = None,
+        **context: str | int | bool | float,
     ) -> tuple["OnexError", UUID]:
         """
         Create an OnexError with a new generated correlation ID.
@@ -622,7 +624,7 @@ class OnexError(Exception):
         return self.model.message
 
     @property
-    def error_code(self) -> Optional[Union[str, OnexErrorCode]]:
+    def error_code(self) -> str | OnexErrorCode | None:
         """Get the error code."""
         return self.model.error_code
 
@@ -632,25 +634,24 @@ class OnexError(Exception):
         return self.model.status
 
     @property
-    def correlation_id(self) -> Optional[str]:
+    def correlation_id(self) -> str | None:
         """Get the correlation ID."""
         return self.model.correlation_id
 
     @property
-    def timestamp(self) -> Optional[datetime]:
+    def timestamp(self) -> datetime | None:
         """Get the timestamp."""
         return self.model.timestamp
 
     @property
-    def context(self) -> Dict[str, Union[str, int, bool, float]]:
+    def context(self) -> dict[str, str | int | bool | float]:
         """Get the context information."""
         # Handle both old dict format and new ModelErrorContext format
         if hasattr(self.model.context, "to_dict"):
             # New ModelErrorContext format
             return self.model.context.to_dict()
-        else:
-            # Old dict format
-            return self.model.context
+        # Old dict format
+        return self.model.context
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""
@@ -670,7 +671,7 @@ class OnexError(Exception):
             return f"[{error_code_str}] {self.message}"
         return self.message
 
-    def model_dump(self) -> Dict[str, Union[str, int, bool, float]]:
+    def model_dump(self) -> dict[str, str | int | bool | float]:
         """Convert error to dictionary for serialization."""
         return self.model.model_dump()
 
@@ -678,7 +679,7 @@ class OnexError(Exception):
         """Convert error to JSON string for logging/telemetry."""
         return self.model.model_dump_json()
 
-    def to_dict(self) -> Dict[str, Union[str, int, bool, float]]:
+    def to_dict(self) -> dict[str, str | int | bool | float]:
         """Convert error to dictionary for serialization (alias for model_dump)."""
         return self.model_dump()
 
@@ -687,7 +688,7 @@ class OnexError(Exception):
         return self.model_dump_json()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Union[str, int, bool, float]]) -> "OnexError":
+    def from_dict(cls, data: dict[str, str | int | bool | float]) -> "OnexError":
         """Create OnexError from dictionary."""
         model = ModelOnexError.model_validate(data)
         return cls(
@@ -713,7 +714,7 @@ class OnexError(Exception):
         )
 
     @classmethod
-    def model_json_schema(cls) -> Dict[str, Union[str, int, bool, float]]:
+    def model_json_schema(cls) -> dict[str, str | int | bool | float]:
         """Get the JSON schema for OnexError."""
         return ModelOnexError.model_json_schema()
 
@@ -798,10 +799,10 @@ class CLIAdapter:
 
 
 # Registry for component-specific error code mappings
-_ERROR_CODE_REGISTRIES: Dict[str, Type[OnexErrorCode]] = {}
+_ERROR_CODE_REGISTRIES: dict[str, type[OnexErrorCode]] = {}
 
 
-def register_error_codes(component: str, error_code_enum: Type[OnexErrorCode]) -> None:
+def register_error_codes(component: str, error_code_enum: type[OnexErrorCode]) -> None:
     """
     Register error codes for a specific component.
 
@@ -812,7 +813,7 @@ def register_error_codes(component: str, error_code_enum: Type[OnexErrorCode]) -
     _ERROR_CODE_REGISTRIES[component] = error_code_enum
 
 
-def get_error_codes_for_component(component: str) -> Type[OnexErrorCode]:
+def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
     """
     Get the error code enum for a specific component.
 
@@ -826,8 +827,9 @@ def get_error_codes_for_component(component: str) -> Type[OnexErrorCode]:
         OnexError: If component is not registered
     """
     if component not in _ERROR_CODE_REGISTRIES:
+        msg = f"No error codes registered for component: {component}"
         raise OnexError(
-            f"No error codes registered for component: {component}",
+            msg,
             CoreErrorCode.ITEM_NOT_REGISTERED,
         )
     return _ERROR_CODE_REGISTRIES[component]
@@ -881,5 +883,6 @@ class RegistryErrorModel(ModelOnexError):
     """
 
     error_code: RegistryErrorCode = Field(
-        ..., description="Canonical registry error code."
+        ...,
+        description="Canonical registry error code.",
     )

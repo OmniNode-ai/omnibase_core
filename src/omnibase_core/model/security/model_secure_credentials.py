@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Type, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, SecretStr
 
@@ -35,7 +35,7 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     @classmethod
     @abstractmethod
-    def load_from_env(cls: Type[T], env_prefix: str = "ONEX_") -> T:
+    def load_from_env(cls: type[T], env_prefix: str = "ONEX_") -> T:
         """Load credentials from environment variables with prefix."""
         ...
 
@@ -61,14 +61,13 @@ class ModelSecureCredentials(BaseModel, ABC):
                 key: self._mask_secrets_recursive(value, mask_level)
                 for key, value in data.items()
             }
-        elif isinstance(data, list):
+        if isinstance(data, list):
             return [self._mask_secrets_recursive(item, mask_level) for item in data]
-        elif isinstance(data, SecretStr):
+        if isinstance(data, SecretStr):
             return self._mask_secret_value(data.get_secret_value(), mask_level)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             return self._mask_if_sensitive_string(data, mask_level)
-        else:
-            return data
+        return data
 
     def _mask_secret_value(self, value: str, mask_level: str) -> str:
         """Mask secret value based on masking level."""
@@ -81,14 +80,13 @@ class ModelSecureCredentials(BaseModel, ABC):
                 return "*" * len(value)
             return f"{value[:2]}{'*' * (len(value) - 4)}{value[-2:]}"
 
-        elif mask_level == "standard":
+        if mask_level == "standard":
             return "***MASKED***"
 
-        elif mask_level == "aggressive":
+        if mask_level == "aggressive":
             return "***REDACTED***"
 
-        else:
-            return "***MASKED***"
+        return "***MASKED***"
 
     def _mask_if_sensitive_string(self, value: str, mask_level: str) -> str:
         """Mask string if it appears to be sensitive based on patterns."""
@@ -121,7 +119,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             "recommendations": [],
         }
 
-        for field_name, field_info in self.model_fields.items():
+        for field_name, _field_info in self.model_fields.items():
             field_value = getattr(self, field_name)
 
             if isinstance(field_value, SecretStr):
@@ -134,12 +132,12 @@ class ModelSecureCredentials(BaseModel, ABC):
                 elif len(secret_value) < 8:
                     assessment["weak_secrets"] += 1
                     assessment["issues"].append(
-                        f"Weak secret (too short): {field_name}"
+                        f"Weak secret (too short): {field_name}",
                     )
                 elif len(secret_value) < 16:
                     assessment["weak_secrets"] += 1
                     assessment["issues"].append(
-                        f"Weak secret (consider longer): {field_name}"
+                        f"Weak secret (consider longer): {field_name}",
                     )
                 else:
                     assessment["strong_secrets"] += 1
@@ -153,16 +151,16 @@ class ModelSecureCredentials(BaseModel, ABC):
 
         if assessment["total_secrets"] == 0:
             assessment["recommendations"].append(
-                "Consider using SecretStr for sensitive fields"
+                "Consider using SecretStr for sensitive fields",
             )
 
         return assessment
 
-    def get_security_classification(self) -> Dict[str, str]:
+    def get_security_classification(self) -> dict[str, str]:
         """Get security classification for each field."""
         classification = {}
 
-        for field_name, field_info in self.model_fields.items():
+        for field_name, _field_info in self.model_fields.items():
             field_value = getattr(self, field_name)
 
             if isinstance(field_value, SecretStr):
@@ -184,7 +182,7 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     # === Environment Integration ===
 
-    def validate_environment_variables(self, env_prefix: str = "ONEX_") -> List[str]:
+    def validate_environment_variables(self, env_prefix: str = "ONEX_") -> list[str]:
         """Validate that required environment variables are available."""
         issues = []
 
@@ -193,24 +191,25 @@ class ModelSecureCredentials(BaseModel, ABC):
                 env_var_name = f"{env_prefix}{field_name.upper()}"
                 if not os.getenv(env_var_name):
                     issues.append(
-                        f"Missing required environment variable: {env_var_name}"
+                        f"Missing required environment variable: {env_var_name}",
                     )
 
         return issues
 
-    def get_environment_mapping(self, env_prefix: str = "ONEX_") -> Dict[str, str]:
+    def get_environment_mapping(self, env_prefix: str = "ONEX_") -> dict[str, str]:
         """Get mapping of model fields to environment variable names."""
         mapping = {}
 
-        for field_name in self.model_fields.keys():
+        for field_name in self.model_fields:
             env_var_name = f"{env_prefix}{field_name.upper()}"
             mapping[field_name] = env_var_name
 
         return mapping
 
     def load_from_environment_with_validation(
-        self, env_prefix: str = "ONEX_"
-    ) -> List[str]:
+        self,
+        env_prefix: str = "ONEX_",
+    ) -> list[str]:
         """Load values from environment with validation, return any issues."""
         issues = []
         env_mapping = self.get_environment_mapping(env_prefix)
@@ -221,7 +220,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                 try:
                     # Attempt to set the field value
                     if hasattr(self, field_name):
-                        field_info = self.model_fields[field_name]
+                        self.model_fields[field_name]
                         if isinstance(getattr(self, field_name), SecretStr):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
@@ -229,7 +228,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                 except Exception as e:
                     # Log the specific error for debugging while adding to issues
                     logger.warning(
-                        f"Failed to load environment variable {env_var} for field {field_name}: {str(e)}",
+                        f"Failed to load environment variable {env_var} for field {field_name}: {e!s}",
                         extra={
                             "env_var": env_var,
                             "field_name": field_name,
@@ -298,12 +297,12 @@ class ModelSecureCredentials(BaseModel, ABC):
                     and not field_value.get_secret_value()
                 ):
                     validation_result["issues"].append(
-                        f"Required secret is empty: {field_name}"
+                        f"Required secret is empty: {field_name}",
                     )
                     validation_result["is_valid"] = False
                 elif not field_value:
                     validation_result["issues"].append(
-                        f"Required field is empty: {field_name}"
+                        f"Required field is empty: {field_name}",
                     )
                     validation_result["is_valid"] = False
 
@@ -313,7 +312,7 @@ class ModelSecureCredentials(BaseModel, ABC):
 
         if strength["weak_secrets"] > 0:
             validation_result["warnings"].append(
-                f"{strength['weak_secrets']} weak secrets detected"
+                f"{strength['weak_secrets']} weak secrets detected",
             )
 
         return validation_result
@@ -327,9 +326,9 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     @classmethod
     def create_from_env_with_fallbacks(
-        cls: Type[T],
+        cls: type[T],
         env_prefix: str = "ONEX_",
-        fallback_prefixes: Optional[List[str]] = None,
+        fallback_prefixes: list[str] | None = None,
     ) -> T:
         """Create instance from environment with fallback prefixes."""
         fallback_prefixes = fallback_prefixes or []
@@ -339,7 +338,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             return cls.load_from_env(env_prefix)
         except Exception as e:
             logger.debug(
-                f"Failed to load credentials with primary prefix {env_prefix}: {str(e)}",
+                f"Failed to load credentials with primary prefix {env_prefix}: {e!s}",
                 extra={"env_prefix": env_prefix, "error": str(e)},
             )
 
@@ -351,7 +350,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             except Exception as e:
                 last_error = e
                 logger.debug(
-                    f"Failed to load credentials with fallback prefix {fallback_prefix}: {str(e)}",
+                    f"Failed to load credentials with fallback prefix {fallback_prefix}: {e!s}",
                     extra={"fallback_prefix": fallback_prefix, "error": str(e)},
                 )
                 continue
@@ -359,7 +358,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         # If all fail, log final attempt and create with defaults
         if last_error:
             logger.warning(
-                f"All credential loading attempts failed. Last error: {str(last_error)}. "
+                f"All credential loading attempts failed. Last error: {last_error!s}. "
                 f"Creating instance with defaults and loading from {env_prefix}",
                 extra={
                     "env_prefix": env_prefix,
@@ -379,7 +378,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         return instance
 
     @classmethod
-    def create_empty_template(cls: Type[T]) -> T:
+    def create_empty_template(cls: type[T]) -> T:
         """Create empty instance for template generation."""
         # Get default values for all fields
         field_defaults = {}

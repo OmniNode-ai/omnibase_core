@@ -5,11 +5,10 @@ Structured error classes for document freshness monitoring operations.
 Extends OmniBaseError with specific error codes and contexts.
 """
 
-from typing import Dict, Optional, Union
-
 from omnibase_core.core.errors.onex_error import CoreErrorCode, OnexError
-from omnibase_core.enums.enum_document_freshness_errors import \
-    EnumDocumentFreshnessErrorCodes
+from omnibase_core.enums.enum_document_freshness_errors import (
+    EnumDocumentFreshnessErrorCodes,
+)
 from omnibase_core.model.docs.model_error_details import ModelErrorDetails
 
 
@@ -25,9 +24,9 @@ class DocumentFreshnessError(OnexError):
         self,
         error_code: EnumDocumentFreshnessErrorCodes,
         message: str,
-        details: Optional[ModelErrorDetails] = None,
-        correlation_id: Optional[str] = None,
-        file_path: Optional[str] = None,
+        details: ModelErrorDetails | None = None,
+        correlation_id: str | None = None,
+        file_path: str | None = None,
     ):
         """
         Initialize a document freshness error.
@@ -58,7 +57,9 @@ class DocumentFreshnessError(OnexError):
 
         # Initialize the base OnexError with proper parameters
         super().__init__(
-            code=core_error_code, message=full_message, details=error_details
+            code=core_error_code,
+            message=full_message,
+            details=error_details,
         )
 
         # Store additional attributes specific to document freshness errors
@@ -193,7 +194,7 @@ class DocumentFreshnessError(OnexError):
         # Default fallback for any unmapped errors
         return CoreErrorCode.OPERATION_FAILED
 
-    def to_dict(self) -> Dict[str, Union[str, int, bool, None]]:
+    def to_dict(self) -> dict[str, str | int | bool | None]:
         """Convert error to dictionary for serialization."""
         return {
             "error_code": self.error_code.value,
@@ -207,46 +208,30 @@ class DocumentFreshnessError(OnexError):
 class DocumentFreshnessPathError(DocumentFreshnessError):
     """Error related to file path operations."""
 
-    pass
-
 
 class DocumentFreshnessDatabaseError(DocumentFreshnessError):
     """Error related to database operations."""
-
-    pass
 
 
 class DocumentFreshnessAnalysisError(DocumentFreshnessError):
     """Error related to document analysis operations."""
 
-    pass
-
 
 class DocumentFreshnessAIServiceError(DocumentFreshnessError):
     """Error related to AI service operations."""
-
-    pass
 
 
 class DocumentFreshnessDependencyError(DocumentFreshnessError):
     """Error related to dependency analysis."""
 
-    pass
-
 
 class DocumentFreshnessChangeDetectionError(DocumentFreshnessError):
     """Error related to change detection."""
-
-    pass
 
 
 class DocumentFreshnessValidationError(DocumentFreshnessError):
     """Error related to input/output validation."""
 
-    pass
-
 
 class DocumentFreshnessSystemError(DocumentFreshnessError):
     """Error related to system-level operations."""
-
-    pass

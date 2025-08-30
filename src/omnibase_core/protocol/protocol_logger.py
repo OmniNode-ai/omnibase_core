@@ -22,13 +22,12 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Optional, Protocol
+from typing import Protocol
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.model.core.model_log_entry import (LogModelContext,
-                                                      ModelLogEntry)
+from omnibase_core.model.core.model_log_entry import LogModelContext, ModelLogEntry
 
 
 class ProtocolLogger(Protocol):
@@ -52,7 +51,7 @@ class ProtocolLogger(Protocol):
         level: LogLevelEnum,
         message: str,
         correlation_id: UUID,
-        context: Optional[LogModelContext] = None,
+        context: LogModelContext | None = None,
     ) -> None:
         """
         Emit a log event with the specified level and message.

@@ -7,12 +7,13 @@ Provides consistent enum generation across all ONEX tools.
 
 import ast
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_schema import ModelSchema
 
 
@@ -21,9 +22,9 @@ class EnumInfo:
     """Information about a discovered enum."""
 
     name: str
-    values: List[str]
+    values: list[str]
     source_field: str
-    source_schema: Optional[str] = None
+    source_schema: str | None = None
 
 
 class UtilityEnumGenerator:
@@ -48,7 +49,7 @@ class UtilityEnumGenerator:
         self.ast_builder = ast_builder
         self.type_mapper = type_mapper
 
-    def discover_enums_from_contract(self, contract_data: Any) -> List[EnumInfo]:
+    def discover_enums_from_contract(self, contract_data: Any) -> list[EnumInfo]:
         """
         Discover all enum definitions from a contract document.
 
@@ -63,12 +64,16 @@ class UtilityEnumGenerator:
         # Handle ModelContractDocument
         if hasattr(contract_data, "input_state") and contract_data.input_state:
             self._collect_enum_schemas_from_model_schema(
-                contract_data.input_state, enum_schemas, source_schema="input_state"
+                contract_data.input_state,
+                enum_schemas,
+                source_schema="input_state",
             )
 
         if hasattr(contract_data, "output_state") and contract_data.output_state:
             self._collect_enum_schemas_from_model_schema(
-                contract_data.output_state, enum_schemas, source_schema="output_state"
+                contract_data.output_state,
+                enum_schemas,
+                source_schema="output_state",
             )
 
         if hasattr(contract_data, "definitions") and contract_data.definitions:
@@ -94,7 +99,9 @@ class UtilityEnumGenerator:
                     },
                 )
                 self._collect_enum_schemas_from_model_schema(
-                    def_schema, enum_schemas, source_schema=f"definitions.{def_name}"
+                    def_schema,
+                    enum_schemas,
+                    source_schema=f"definitions.{def_name}",
                 )
 
         # Handle dict-based contract data
@@ -134,7 +141,7 @@ class UtilityEnumGenerator:
 
         return enums
 
-    def generate_enum_classes(self, enum_infos: List[EnumInfo]) -> List[ast.ClassDef]:
+    def generate_enum_classes(self, enum_infos: list[EnumInfo]) -> list[ast.ClassDef]:
         """
         Generate AST class definitions for enum info objects.
 
@@ -149,12 +156,14 @@ class UtilityEnumGenerator:
         for enum_info in enum_infos:
             if self.ast_builder:
                 enum_class = self.ast_builder.generate_enum_class(
-                    enum_info.name, enum_info.values
+                    enum_info.name,
+                    enum_info.values,
                 )
             else:
                 # Fallback enum generation
                 enum_class = self._generate_enum_class_fallback(
-                    enum_info.name, enum_info.values
+                    enum_info.name,
+                    enum_info.values,
                 )
 
             enum_classes.append(enum_class)
@@ -171,7 +180,7 @@ class UtilityEnumGenerator:
 
         return enum_classes
 
-    def generate_enum_name_from_values(self, enum_values: List[str]) -> str:
+    def generate_enum_name_from_values(self, enum_values: list[str]) -> str:
         """
         Generate an enum class name from enum values.
 
@@ -197,13 +206,12 @@ class UtilityEnumGenerator:
                 # Handle snake_case values (including those that had hyphens)
                 parts = clean_value.split("_")
                 return "Enum" + "".join(word.capitalize() for word in parts)
-            else:
-                # Handle single word values
-                return f"Enum{clean_value.capitalize()}"
+            # Handle single word values
+            return f"Enum{clean_value.capitalize()}"
 
         return "EnumGeneric"
 
-    def generate_enum_name_from_schema(self, schema: Union[Dict, ModelSchema]) -> str:
+    def generate_enum_name_from_schema(self, schema: dict | ModelSchema) -> str:
         """
         Generate enum class name from schema context.
 
@@ -223,7 +231,7 @@ class UtilityEnumGenerator:
 
         return self.generate_enum_name_from_values(enum_values)
 
-    def deduplicate_enums(self, enum_infos: List[EnumInfo]) -> List[EnumInfo]:
+    def deduplicate_enums(self, enum_infos: list[EnumInfo]) -> list[EnumInfo]:
         """
         Remove duplicate enum definitions based on values.
 
@@ -263,7 +271,7 @@ class UtilityEnumGenerator:
     def _collect_enum_schemas_from_model_schema(
         self,
         schema: ModelSchema,
-        enum_schemas: Dict[str, Dict],
+        enum_schemas: dict[str, dict],
         source_schema: str = "unknown",
     ) -> None:
         """Collect enum schemas from a ModelSchema object."""
@@ -329,7 +337,7 @@ class UtilityEnumGenerator:
             for field_name, field_schema in schema.properties.items():
                 if field_schema.schema_type == "string" and field_schema.enum_values:
                     enum_name = self.generate_enum_name_from_values(
-                        field_schema.enum_values
+                        field_schema.enum_values,
                     )
                     enum_schemas[enum_name] = {
                         "values": field_schema.enum_values,
@@ -340,7 +348,9 @@ class UtilityEnumGenerator:
                 # Recursively check nested objects
                 if field_schema.schema_type == "object":
                     self._collect_enum_schemas_from_model_schema(
-                        field_schema, enum_schemas, f"{source_schema}.{field_name}"
+                        field_schema,
+                        enum_schemas,
+                        f"{source_schema}.{field_name}",
                     )
                 elif field_schema.schema_type == "array" and field_schema.items:
                     self._collect_enum_schemas_from_model_schema(
@@ -351,8 +361,8 @@ class UtilityEnumGenerator:
 
     def _collect_enum_schemas_from_dict(
         self,
-        schema: Dict,
-        enum_schemas: Dict[str, Dict],
+        schema: dict,
+        enum_schemas: dict[str, dict],
         source_schema: str = "unknown",
     ) -> None:
         """Collect enum schemas from a dict-based schema definition."""
@@ -382,7 +392,9 @@ class UtilityEnumGenerator:
                 # Recursively check nested objects
                 if field_schema.get("type") == "object":
                     self._collect_enum_schemas_from_dict(
-                        field_schema, enum_schemas, f"{source_schema}.{field_name}"
+                        field_schema,
+                        enum_schemas,
+                        f"{source_schema}.{field_name}",
                     )
                 elif field_schema.get("type") == "array" and "items" in field_schema:
                     self._collect_enum_schemas_from_dict(
@@ -392,7 +404,9 @@ class UtilityEnumGenerator:
                     )
 
     def _generate_enum_class_fallback(
-        self, class_name: str, enum_values: List[str]
+        self,
+        class_name: str,
+        enum_values: list[str],
     ) -> ast.ClassDef:
         """
         Fallback enum class generation when AST builder is not available.

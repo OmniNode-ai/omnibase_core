@@ -6,7 +6,6 @@ with location-aware routing, failover, and load balancing capabilities.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
 from omnibase_core.model.agent.model_agent_summary import ModelAgentSummary
@@ -19,8 +18,9 @@ class ProtocolDistributedAgentOrchestrator(ABC):
 
     @abstractmethod
     async def spawn_agents_for_device(
-        self, device_name: str
-    ) -> List[ModelAgentInstance]:
+        self,
+        device_name: str,
+    ) -> list[ModelAgentInstance]:
         """
         Spawn agents for a specific device based on configuration.
 
@@ -34,16 +34,15 @@ class ProtocolDistributedAgentOrchestrator(ABC):
             DeviceNotFoundError: If device configuration doesn't exist
             AgentSpawnError: If agent spawning fails
         """
-        pass
 
     @abstractmethod
     async def route_task(
         self,
         task_type: str,
         prompt: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         prefer_local: bool = True,
-        required_capabilities: Optional[List[EnumAgentCapability]] = None,
+        required_capabilities: list[EnumAgentCapability] | None = None,
     ) -> ModelLLMResponse:
         """
         Route a task to the most appropriate agent.
@@ -62,15 +61,14 @@ class ProtocolDistributedAgentOrchestrator(ABC):
             NoAgentsAvailableError: If no suitable agents are available
             TaskRoutingError: If task routing fails
         """
-        pass
 
     @abstractmethod
     async def find_best_agent(
         self,
         task_type: str,
-        required_capabilities: Optional[List[EnumAgentCapability]] = None,
+        required_capabilities: list[EnumAgentCapability] | None = None,
         prefer_local: bool = True,
-    ) -> Optional[ModelAgentInstance]:
+    ) -> ModelAgentInstance | None:
         """
         Find the best agent for a given task type.
 
@@ -82,7 +80,6 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Returns:
             Best agent instance or None if no suitable agent found
         """
-        pass
 
     @abstractmethod
     def get_agent_summary(self) -> ModelAgentSummary:
@@ -92,17 +89,15 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Returns:
             Comprehensive agent summary with health and status information
         """
-        pass
 
     @abstractmethod
-    async def health_check_agents(self) -> Dict[str, str]:
+    async def health_check_agents(self) -> dict[str, str]:
         """
         Perform health check on all active agents.
 
         Returns:
             Dictionary mapping agent IDs to health status
         """
-        pass
 
     @abstractmethod
     async def rebalance_agents(self) -> bool:
@@ -115,7 +110,6 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Raises:
             RebalancingError: If rebalancing fails
         """
-        pass
 
     @abstractmethod
     def set_location(self, location: str) -> None:
@@ -125,10 +119,9 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Args:
             location: Current location ('at_home', 'remote', 'unknown')
         """
-        pass
 
     @abstractmethod
-    async def get_device_agents(self, device_name: str) -> List[ModelAgentInstance]:
+    async def get_device_agents(self, device_name: str) -> list[ModelAgentInstance]:
         """
         Get all agents running on a specific device.
 
@@ -138,10 +131,9 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Returns:
             List of agent instances on the device
         """
-        pass
 
     @abstractmethod
-    async def get_agents_by_role(self, role: str) -> List[ModelAgentInstance]:
+    async def get_agents_by_role(self, role: str) -> list[ModelAgentInstance]:
         """
         Get all agents with a specific role.
 
@@ -151,7 +143,6 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Returns:
             List of agent instances with the specified role
         """
-        pass
 
     @abstractmethod
     async def terminate_agent(self, agent_id: str) -> bool:
@@ -167,7 +158,6 @@ class ProtocolDistributedAgentOrchestrator(ABC):
         Raises:
             AgentNotFoundError: If agent doesn't exist
         """
-        pass
 
     @abstractmethod
     async def restart_agent(self, agent_id: str) -> ModelAgentInstance:
@@ -184,4 +174,3 @@ class ProtocolDistributedAgentOrchestrator(ABC):
             AgentNotFoundError: If agent doesn't exist
             RestartError: If restart fails
         """
-        pass

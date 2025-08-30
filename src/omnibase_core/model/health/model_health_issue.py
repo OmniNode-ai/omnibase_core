@@ -6,7 +6,6 @@ category, occurrence patterns, and recovery recommendations.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +21,9 @@ class ModelHealthIssue(BaseModel):
     issue_id: str = Field(..., description="Unique issue identifier")
 
     severity: str = Field(
-        ..., description="Issue severity level", pattern="^(low|medium|high|critical)$"
+        ...,
+        description="Issue severity level",
+        pattern="^(low|medium|high|critical)$",
     )
 
     category: str = Field(
@@ -38,15 +39,19 @@ class ModelHealthIssue(BaseModel):
     last_seen: datetime = Field(..., description="When issue was last observed")
 
     count: int = Field(
-        default=1, description="Number of times this issue occurred", ge=1
+        default=1,
+        description="Number of times this issue occurred",
+        ge=1,
     )
 
     auto_recoverable: bool = Field(
-        default=False, description="Whether issue can be automatically recovered"
+        default=False,
+        description="Whether issue can be automatically recovered",
     )
 
-    recovery_action: Optional[str] = Field(
-        None, description="Recommended recovery action"
+    recovery_action: str | None = Field(
+        None,
+        description="Recommended recovery action",
     )
 
     def is_critical(self) -> bool:
@@ -63,7 +68,9 @@ class ModelHealthIssue(BaseModel):
 
     @classmethod
     def create_performance_issue(
-        cls, message: str, severity: str = "medium"
+        cls,
+        message: str,
+        severity: str = "medium",
     ) -> "ModelHealthIssue":
         """Create a performance-related health issue"""
         return cls(
@@ -77,7 +84,9 @@ class ModelHealthIssue(BaseModel):
 
     @classmethod
     def create_connectivity_issue(
-        cls, message: str, severity: str = "high"
+        cls,
+        message: str,
+        severity: str = "high",
     ) -> "ModelHealthIssue":
         """Create a connectivity-related health issue"""
         return cls(
@@ -91,7 +100,9 @@ class ModelHealthIssue(BaseModel):
 
     @classmethod
     def create_resource_issue(
-        cls, message: str, severity: str = "high"
+        cls,
+        message: str,
+        severity: str = "high",
     ) -> "ModelHealthIssue":
         """Create a resource-related health issue"""
         return cls(

@@ -5,8 +5,6 @@ Defines the capabilities and characteristics of different LLM models
 for intelligent routing and provider selection decisions.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.model.llm.model_model_requirements import ModelCapability
@@ -22,21 +20,25 @@ class ModelModelCapabilities(BaseModel):
     """
 
     model_name: str = Field(
-        description="Name of the model (e.g., 'mistral:latest', 'gpt-4')"
+        description="Name of the model (e.g., 'mistral:latest', 'gpt-4')",
     )
 
     provider: str = Field(description="Provider name (ollama, openai, anthropic)")
 
-    capabilities: List[ModelCapability] = Field(
-        description="List of capabilities this model supports"
+    capabilities: list[ModelCapability] = Field(
+        description="List of capabilities this model supports",
     )
 
     context_length: int = Field(
-        ge=1, le=1000000, description="Maximum context window size in tokens"
+        ge=1,
+        le=1000000,
+        description="Maximum context window size in tokens",
     )
 
     max_output_tokens: int = Field(
-        ge=1, le=100000, description="Maximum output tokens the model can generate"
+        ge=1,
+        le=100000,
+        description="Maximum output tokens the model can generate",
     )
 
     cost_per_input_token: float = Field(
@@ -51,51 +53,63 @@ class ModelModelCapabilities(BaseModel):
         description="Cost per output token in USD (0.0 for local models)",
     )
 
-    typical_latency_ms: Optional[int] = Field(
-        default=None, ge=1, description="Typical response latency in milliseconds"
+    typical_latency_ms: int | None = Field(
+        default=None,
+        ge=1,
+        description="Typical response latency in milliseconds",
     )
 
-    typical_throughput_tokens_per_second: Optional[float] = Field(
+    typical_throughput_tokens_per_second: float | None = Field(
         default=None,
         ge=0.1,
         description="Typical generation throughput in tokens per second",
     )
 
     supports_streaming: bool = Field(
-        default=True, description="Whether the model supports streaming responses"
+        default=True,
+        description="Whether the model supports streaming responses",
     )
 
     supports_function_calling: bool = Field(
-        default=False, description="Whether the model supports function/tool calling"
+        default=False,
+        description="Whether the model supports function/tool calling",
     )
 
     supports_json_mode: bool = Field(
-        default=False, description="Whether the model supports structured JSON output"
+        default=False,
+        description="Whether the model supports structured JSON output",
     )
 
-    quality_score: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Quality assessment score (0.0-1.0)"
+    quality_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Quality assessment score (0.0-1.0)",
     )
 
-    parameter_count: Optional[str] = Field(
-        default=None, description="Model parameter count (e.g., '7B', '13B', '70B')"
+    parameter_count: str | None = Field(
+        default=None,
+        description="Model parameter count (e.g., '7B', '13B', '70B')",
     )
 
-    model_version: Optional[str] = Field(
-        default=None, description="Model version or variant information"
+    model_version: str | None = Field(
+        default=None,
+        description="Model version or variant information",
     )
 
-    specializations: List[str] = Field(
+    specializations: list[str] = Field(
         default_factory=list,
         description="Areas of specialization (e.g., 'code', 'conversation', 'technical')",
     )
 
-    languages_supported: List[str] = Field(
-        default_factory=lambda: ["en"], description="Languages supported by the model"
+    languages_supported: list[str] = Field(
+        default_factory=lambda: ["en"],
+        description="Languages supported by the model",
     )
 
-    last_updated: Optional[str] = Field(
-        default=None, description="When capability information was last updated"
+    last_updated: str | None = Field(
+        default=None,
+        description="When capability information was last updated",
     )
 
     model_config = ConfigDict(
@@ -127,7 +141,7 @@ class ModelModelCapabilities(BaseModel):
                 "specializations": ["conversation", "technical_writing"],
                 "languages_supported": ["en", "fr", "de", "es"],
                 "last_updated": "2025-01-11T00:00:00Z",
-            }
+            },
         },
     )
 
@@ -135,7 +149,7 @@ class ModelModelCapabilities(BaseModel):
         """Check if this model meets the given requirements."""
         # Check required capabilities
         if not requirements.matches_capability(
-            [cap.value for cap in self.capabilities]
+            [cap.value for cap in self.capabilities],
         ):
             return False
 
@@ -161,18 +175,14 @@ class ModelModelCapabilities(BaseModel):
         if (
             requirements.min_throughput_tokens_per_second
             and self.typical_throughput_tokens_per_second
+        ) and (
+            self.typical_throughput_tokens_per_second
+            < requirements.min_throughput_tokens_per_second
         ):
-            if (
-                self.typical_throughput_tokens_per_second
-                < requirements.min_throughput_tokens_per_second
-            ):
-                return False
-
-        # Check streaming requirement
-        if requirements.require_streaming and not self.supports_streaming:
             return False
 
-        return True
+        # Check streaming requirement
+        return not (requirements.require_streaming and not self.supports_streaming)
 
     def calculate_score(self, requirements: "ModelModelRequirements") -> float:
         """Calculate a score for how well this model matches requirements."""
@@ -183,7 +193,7 @@ class ModelModelCapabilities(BaseModel):
 
         # Add preference bonus
         preference_score = requirements.calculate_preference_score(
-            [cap.value for cap in self.capabilities]
+            [cap.value for cap in self.capabilities],
         )
         score += preference_score * 0.2
 

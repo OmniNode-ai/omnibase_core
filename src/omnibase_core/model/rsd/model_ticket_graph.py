@@ -6,7 +6,6 @@ Model for the complete ticket dependency graph.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -22,35 +21,42 @@ class ModelTicketGraph(BaseModel):
     Represents all tickets and their relationships as a directed graph.
     """
 
-    nodes: Dict[str, ModelTicketNode] = Field(
-        default_factory=dict, description="Map of ticket ID to node"
+    nodes: dict[str, ModelTicketNode] = Field(
+        default_factory=dict,
+        description="Map of ticket ID to node",
     )
 
-    edges: List[ModelTicketEdge] = Field(
-        default_factory=list, description="All edges in the graph"
+    edges: list[ModelTicketEdge] = Field(
+        default_factory=list,
+        description="All edges in the graph",
     )
 
-    clusters: Dict[str, ModelTicketCluster] = Field(
-        default_factory=dict, description="Map of cluster ID to cluster"
+    clusters: dict[str, ModelTicketCluster] = Field(
+        default_factory=dict,
+        description="Map of cluster ID to cluster",
     )
 
-    critical_paths: List[List[str]] = Field(
-        default_factory=list, description="List of critical paths (ticket ID sequences)"
+    critical_paths: list[list[str]] = Field(
+        default_factory=list,
+        description="List of critical paths (ticket ID sequences)",
     )
 
-    bottleneck_nodes: List[str] = Field(
-        default_factory=list, description="Ticket IDs that are bottlenecks"
+    bottleneck_nodes: list[str] = Field(
+        default_factory=list,
+        description="Ticket IDs that are bottlenecks",
     )
 
-    cycle_nodes: Set[str] = Field(
-        default_factory=set, description="Ticket IDs involved in cycles"
+    cycle_nodes: set[str] = Field(
+        default_factory=set,
+        description="Ticket IDs involved in cycles",
     )
 
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="When graph was last updated"
+        default_factory=datetime.now,
+        description="When graph was last updated",
     )
 
-    graph_metrics: Dict[str, float] = Field(
+    graph_metrics: dict[str, float] = Field(
         default_factory=dict,
         description="Graph-level metrics (complexity, density, etc)",
     )
@@ -72,12 +78,12 @@ class ModelTicketGraph(BaseModel):
         # Update node relationships
         if edge.source_ticket_id in self.nodes:
             self.nodes[edge.source_ticket_id].outgoing_edges.append(
-                edge.target_ticket_id
+                edge.target_ticket_id,
             )
 
         if edge.target_ticket_id in self.nodes:
             self.nodes[edge.target_ticket_id].incoming_edges.append(
-                edge.source_ticket_id
+                edge.source_ticket_id,
             )
 
         self.last_updated = datetime.now()
@@ -94,7 +100,7 @@ class ModelTicketGraph(BaseModel):
         self.edges = [
             edge
             for edge in self.edges
-            if edge.source_ticket_id != ticket_id and edge.target_ticket_id != ticket_id
+            if ticket_id not in (edge.source_ticket_id, edge.target_ticket_id)
         ]
 
         # Update other nodes' edge lists
@@ -119,7 +125,7 @@ class ModelTicketGraph(BaseModel):
 
         self.last_updated = datetime.now()
 
-    def get_neighbors(self, ticket_id: str, direction: str = "both") -> List[str]:
+    def get_neighbors(self, ticket_id: str, direction: str = "both") -> list[str]:
         """
         Get neighboring nodes.
 
@@ -137,12 +143,11 @@ class ModelTicketGraph(BaseModel):
 
         if direction == "in":
             return node.incoming_edges
-        elif direction == "out":
+        if direction == "out":
             return node.outgoing_edges
-        else:
-            return list(set(node.incoming_edges + node.outgoing_edges))
+        return list(set(node.incoming_edges + node.outgoing_edges))
 
-    def get_subgraph(self, ticket_ids: List[str]) -> "ModelTicketGraph":
+    def get_subgraph(self, ticket_ids: list[str]) -> "ModelTicketGraph":
         """
         Extract a subgraph containing only specified tickets.
 
@@ -208,8 +213,11 @@ class ModelTicketGraph(BaseModel):
         self.last_updated = datetime.now()
 
     def find_path(
-        self, start_id: str, end_id: str, max_depth: int = 10
-    ) -> Optional[List[str]]:
+        self,
+        start_id: str,
+        end_id: str,
+        max_depth: int = 10,
+    ) -> list[str] | None:
         """
         Find a path between two tickets using BFS.
 
@@ -239,11 +247,11 @@ class ModelTicketGraph(BaseModel):
                 # Check outgoing edges
                 for neighbor_id in self.nodes[current_id].outgoing_edges:
                     if neighbor_id == end_id:
-                        return path + [end_id]
+                        return [*path, end_id]
 
                     if neighbor_id not in visited:
                         visited.add(neighbor_id)
-                        next_queue.append((neighbor_id, path + [neighbor_id]))
+                        next_queue.append((neighbor_id, [*path, neighbor_id]))
 
             queue = next_queue
             depth += 1

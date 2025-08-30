@@ -11,17 +11,29 @@ class ModelRiskFactors(BaseModel):
     """Risk factors for autonomous execution."""
 
     production_impact_risk: float = Field(
-        ..., ge=0, le=1, description="Risk to production"
+        ...,
+        ge=0,
+        le=1,
+        description="Risk to production",
     )
     data_loss_risk: float = Field(..., ge=0, le=1, description="Risk of data loss")
     security_risk: float = Field(
-        ..., ge=0, le=1, description="Security vulnerability risk"
+        ...,
+        ge=0,
+        le=1,
+        description="Security vulnerability risk",
     )
     rollback_difficulty: float = Field(
-        ..., ge=0, le=1, description="Difficulty to rollback"
+        ...,
+        ge=0,
+        le=1,
+        description="Difficulty to rollback",
     )
     cascade_failure_risk: float = Field(
-        ..., ge=0, le=1, description="Risk of cascade failures"
+        ...,
+        ge=0,
+        le=1,
+        description="Risk of cascade failures",
     )
     reputation_risk: float = Field(..., ge=0, le=1, description="Risk to reputation")
 

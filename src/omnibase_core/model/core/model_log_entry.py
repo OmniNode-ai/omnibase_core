@@ -45,11 +45,11 @@ LogMarkdownRowModel = ModelLogMarkdownRow
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelLogEntry",
+    "LogMarkdownRowModel",
+    "LogModelContext",
     "ModelLogContext",
-    "ModelLogMarkdownRow",
+    "ModelLogEntry",
     # Backward compatibility
     "ModelLogEntry",
-    "LogModelContext",
-    "LogMarkdownRowModel",
+    "ModelLogMarkdownRow",
 ]

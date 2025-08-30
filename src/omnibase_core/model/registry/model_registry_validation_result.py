@@ -5,20 +5,21 @@ This module provides comprehensive registry validation result tracking with busi
 performance analytics, and operational insights for ONEX registry validation systems.
 """
 
-import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
+    from omnibase_core.model.core.model_audit_entry import ModelAuditEntry
     from omnibase_core.model.core.model_generic_metadata import ModelGenericMetadata
     from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
-    from omnibase_core.model.core.model_audit_entry import ModelAuditEntry
 
-from omnibase_core.model.core.model_missing_tool import (ModelMissingTool,
-                                                         ToolCriticality)
+from omnibase_core.model.core.model_missing_tool import (
+    ModelMissingTool,
+    ToolCriticality,
+)
 
 from .model_registry_business_impact import ModelRegistryBusinessImpact
 from .model_registry_business_risk import ModelRegistryBusinessRisk
@@ -85,76 +86,99 @@ class ModelRegistryValidationResult(BaseModel):
     )
 
     required_tools_count: int = Field(
-        ..., description="Number of required tools for the node", ge=0
+        ...,
+        description="Number of required tools for the node",
+        ge=0,
     )
 
-    missing_tools: List[ModelMissingTool] = Field(
-        default_factory=list, description="List of missing or invalid tools"
+    missing_tools: list[ModelMissingTool] = Field(
+        default_factory=list,
+        description="List of missing or invalid tools",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Error message if validation failed", max_length=2000
+    error_message: str | None = Field(
+        None,
+        description="Error message if validation failed",
+        max_length=2000,
     )
 
-    validation_status: Optional[ValidationStatus] = Field(
-        default=None, description="Detailed validation status"
+    validation_status: ValidationStatus | None = Field(
+        default=None,
+        description="Detailed validation status",
     )
 
-    validation_types: Optional[List[ValidationType]] = Field(
-        default_factory=list, description="Types of validation performed"
+    validation_types: list[ValidationType] | None = Field(
+        default_factory=list,
+        description="Types of validation performed",
     )
 
-    validation_start_time: Optional[str] = Field(
-        default=None, description="ISO timestamp when validation started"
+    validation_start_time: str | None = Field(
+        default=None,
+        description="ISO timestamp when validation started",
     )
 
-    validation_end_time: Optional[str] = Field(
-        default=None, description="ISO timestamp when validation completed"
+    validation_end_time: str | None = Field(
+        default=None,
+        description="ISO timestamp when validation completed",
     )
 
-    validation_duration_ms: Optional[int] = Field(
-        default=None, description="Validation duration in milliseconds", ge=0
+    validation_duration_ms: int | None = Field(
+        default=None,
+        description="Validation duration in milliseconds",
+        ge=0,
     )
 
-    available_tools_count: Optional[int] = Field(
-        default=None, description="Number of tools that were available", ge=0
+    available_tools_count: int | None = Field(
+        default=None,
+        description="Number of tools that were available",
+        ge=0,
     )
 
-    warnings: Optional[List[str]] = Field(
-        default_factory=list, description="Non-fatal warnings during validation"
+    warnings: list[str] | None = Field(
+        default_factory=list,
+        description="Non-fatal warnings during validation",
     )
 
-    recommendations: Optional[List[str]] = Field(
-        default_factory=list, description="Recommendations for improving registry"
+    recommendations: list[str] | None = Field(
+        default_factory=list,
+        description="Recommendations for improving registry",
     )
 
     metadata: Optional["ModelGenericMetadata"] = Field(
-        None, description="Additional validation metadata"
+        None,
+        description="Additional validation metadata",
     )
 
-    severity_level: Optional[ValidationSeverity] = Field(
-        default=None, description="Overall severity level of validation issues"
+    severity_level: ValidationSeverity | None = Field(
+        default=None,
+        description="Overall severity level of validation issues",
     )
 
-    compliance_score: Optional[float] = Field(
-        default=None, description="Compliance score (0.0 to 1.0)", ge=0.0, le=1.0
+    compliance_score: float | None = Field(
+        default=None,
+        description="Compliance score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     performance_metrics: Optional["ModelMonitoringMetrics"] = Field(
-        None, description="Performance metrics from validation"
+        None,
+        description="Performance metrics from validation",
     )
 
-    security_assessment: Optional[ModelRegistrySecurityAssessment] = Field(
-        None, description="Security assessment results"
+    security_assessment: ModelRegistrySecurityAssessment | None = Field(
+        None,
+        description="Security assessment results",
     )
 
-    business_impact: Optional[ModelRegistryBusinessImpact] = Field(
-        None, description="Business impact assessment"
+    business_impact: ModelRegistryBusinessImpact | None = Field(
+        None,
+        description="Business impact assessment",
     )
 
     @field_validator("validation_start_time", "validation_end_time")
     @classmethod
-    def validate_timestamps(cls, v: Optional[str]) -> Optional[str]:
+    def validate_timestamps(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return v
@@ -163,7 +187,8 @@ class ModelRegistryValidationResult(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("Timestamp must be a valid ISO timestamp")
+            msg = "Timestamp must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -221,7 +246,7 @@ class ModelRegistryValidationResult(BaseModel):
 
     # === Performance Analysis ===
 
-    def get_validation_duration_seconds(self) -> Optional[float]:
+    def get_validation_duration_seconds(self) -> float | None:
         """Get validation duration in seconds."""
         if self.validation_duration_ms is None:
             return None
@@ -236,14 +261,13 @@ class ModelRegistryValidationResult(BaseModel):
 
         if seconds < 0.1:
             return "excellent"
-        elif seconds < 0.5:
+        if seconds < 0.5:
             return "good"
-        elif seconds < 2.0:
+        if seconds < 2.0:
             return "acceptable"
-        elif seconds < 5.0:
+        if seconds < 5.0:
             return "slow"
-        else:
-            return "very_slow"
+        return "very_slow"
 
     def is_performance_concerning(self) -> bool:
         """Check if performance indicates potential issues."""
@@ -252,7 +276,7 @@ class ModelRegistryValidationResult(BaseModel):
 
     # === Missing Tools Analysis ===
 
-    def get_missing_tools_by_criticality(self) -> Dict[str, List[ModelMissingTool]]:
+    def get_missing_tools_by_criticality(self) -> dict[str, list[ModelMissingTool]]:
         """Group missing tools by criticality level."""
         grouped = {}
         for criticality in ToolCriticality:
@@ -261,15 +285,15 @@ class ModelRegistryValidationResult(BaseModel):
             ]
         return grouped
 
-    def get_critical_missing_tools(self) -> List[ModelMissingTool]:
+    def get_critical_missing_tools(self) -> list[ModelMissingTool]:
         """Get list of critical missing tools."""
         return [tool for tool in self.missing_tools if tool.is_critical_tool()]
 
-    def get_high_priority_missing_tools(self) -> List[ModelMissingTool]:
+    def get_high_priority_missing_tools(self) -> list[ModelMissingTool]:
         """Get list of high priority missing tools."""
         return [tool for tool in self.missing_tools if tool.is_high_priority_tool()]
 
-    def get_missing_tools_by_category(self) -> Dict[str, List[ModelMissingTool]]:
+    def get_missing_tools_by_category(self) -> dict[str, list[ModelMissingTool]]:
         """Group missing tools by category."""
         from omnibase_core.model.core.model_missing_tool import ToolCategory
 
@@ -280,13 +304,14 @@ class ModelRegistryValidationResult(BaseModel):
             ]
         return grouped
 
-    def get_most_impactful_missing_tool(self) -> Optional[ModelMissingTool]:
+    def get_most_impactful_missing_tool(self) -> ModelMissingTool | None:
         """Get the missing tool with highest business impact."""
         if not self.missing_tools:
             return None
 
         return max(
-            self.missing_tools, key=lambda tool: tool.calculate_business_impact_score()
+            self.missing_tools,
+            key=lambda tool: tool.calculate_business_impact_score(),
         )
 
     # === Severity and Risk Assessment ===
@@ -309,10 +334,9 @@ class ModelRegistryValidationResult(BaseModel):
                 )
                 if missing_ratio > 0.5:
                     return ValidationSeverity.HIGH
-                elif missing_ratio > 0.2:
+                if missing_ratio > 0.2:
                     return ValidationSeverity.MEDIUM
-                else:
-                    return ValidationSeverity.LOW
+                return ValidationSeverity.LOW
 
         # Valid but with warnings
         if self.has_warnings():
@@ -335,12 +359,11 @@ class ModelRegistryValidationResult(BaseModel):
         """Calculate overall business risk level."""
         if self.has_critical_issues():
             return "HIGH"
-        elif self.severity_level == ValidationSeverity.HIGH:
+        if self.severity_level == ValidationSeverity.HIGH:
             return "MEDIUM"
-        elif self.severity_level == ValidationSeverity.MEDIUM:
+        if self.severity_level == ValidationSeverity.MEDIUM:
             return "LOW"
-        else:
-            return "MINIMAL"
+        return "MINIMAL"
 
     def _assess_operational_impact(self) -> str:
         """Assess operational impact."""
@@ -348,10 +371,9 @@ class ModelRegistryValidationResult(BaseModel):
             success_rate = self.get_success_rate()
             if success_rate < 0.5:
                 return "SEVERE"
-            elif success_rate < 0.8:
+            if success_rate < 0.8:
                 return "MODERATE"
-            else:
-                return "MINOR"
+            return "MINOR"
         return "NONE"
 
     def _assess_security_risk(self) -> str:
@@ -364,37 +386,33 @@ class ModelRegistryValidationResult(BaseModel):
 
         if security_tools_missing:
             return "HIGH"
-        elif not self.is_valid:
+        if not self.is_valid:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
     def _assess_compliance_risk(self) -> str:
         """Assess compliance risk."""
         if self.compliance_score is not None:
             if self.compliance_score < 0.7:
                 return "HIGH"
-            elif self.compliance_score < 0.9:
+            if self.compliance_score < 0.9:
                 return "MEDIUM"
-            else:
-                return "LOW"
+            return "LOW"
 
         # Fallback based on validation status
         if self.has_critical_issues():
             return "HIGH"
-        elif not self.is_valid:
+        if not self.is_valid:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
     def _assess_performance_risk(self) -> str:
         """Assess performance risk."""
         if self.is_performance_concerning():
             return "MEDIUM"
-        elif not self.is_valid:
+        if not self.is_valid:
             return "LOW"
-        else:
-            return "MINIMAL"
+        return "MINIMAL"
 
     def _assess_business_continuity_risk(self) -> str:
         """Assess business continuity risk."""
@@ -402,16 +420,15 @@ class ModelRegistryValidationResult(BaseModel):
 
         if critical_missing > 0:
             return "HIGH"
-        elif self.get_missing_tools_count() > self.required_tools_count * 0.3:
+        if self.get_missing_tools_count() > self.required_tools_count * 0.3:
             return "MEDIUM"
-        elif not self.is_valid:
+        if not self.is_valid:
             return "LOW"
-        else:
-            return "MINIMAL"
+        return "MINIMAL"
 
     # === Recovery and Recommendations ===
 
-    def get_recovery_action_plan(self) -> List[ModelRegistryRecoveryAction]:
+    def get_recovery_action_plan(self) -> list[ModelRegistryRecoveryAction]:
         """Get prioritized recovery action plan."""
         actions = []
 
@@ -426,7 +443,7 @@ class ModelRegistryValidationResult(BaseModel):
                     description=f"Fix critical missing tool: {tool.tool_name}",
                     estimated_time=tool.analyze_error_category()["estimated_fix_time"],
                     recommendations=tool.get_recovery_recommendations()[:2],
-                )
+                ),
             )
 
         # High priority tools
@@ -444,7 +461,7 @@ class ModelRegistryValidationResult(BaseModel):
                     description=f"Fix high priority missing tool: {tool.tool_name}",
                     estimated_time=tool.analyze_error_category()["estimated_fix_time"],
                     recommendations=tool.get_recovery_recommendations()[:1],
-                )
+                ),
             )
 
         # Address warnings if any
@@ -456,29 +473,30 @@ class ModelRegistryValidationResult(BaseModel):
                     description=f"Address {len(self.warnings)} validation warnings",
                     estimated_time="30-60 minutes",
                     warnings=self.warnings,
-                )
+                ),
             )
 
         return sorted(actions, key=lambda x: x.priority)
 
-    def get_comprehensive_recommendations(self) -> List[str]:
+    def get_comprehensive_recommendations(self) -> list[str]:
         """Get comprehensive recommendations for improving the registry."""
         recommendations = list(self.recommendations) if self.recommendations else []
 
         # Add automatic recommendations based on analysis
         if self.has_critical_issues():
             recommendations.insert(
-                0, "URGENT: Address critical missing tools immediately"
+                0,
+                "URGENT: Address critical missing tools immediately",
             )
 
         if self.get_success_rate() < 0.8:
             recommendations.append(
-                "Implement missing tools to improve registry completeness"
+                "Implement missing tools to improve registry completeness",
             )
 
         if self.is_performance_concerning():
             recommendations.append(
-                "Optimize validation performance - current duration is concerning"
+                "Optimize validation performance - current duration is concerning",
             )
 
         # Add tool-specific recommendations
@@ -584,45 +602,43 @@ class ModelRegistryValidationResult(BaseModel):
 
         if total_hours < 1:
             return "Less than 1 hour"
-        elif total_hours < 8:
+        if total_hours < 8:
             return f"Approximately {total_hours:.1f} hours"
-        elif total_hours < 40:
+        if total_hours < 40:
             return f"Approximately {total_hours/8:.1f} days"
-        else:
-            return f"Approximately {total_hours/40:.1f} weeks"
+        return f"Approximately {total_hours/40:.1f} weeks"
 
     def _assess_user_experience_impact(self) -> str:
         """Assess impact on user experience."""
         if self.has_critical_issues():
             return "Severe degradation expected"
-        elif not self.is_valid:
+        if not self.is_valid:
             success_rate = self.get_success_rate()
             if success_rate < 0.5:
                 return "Major functionality unavailable"
-            elif success_rate < 0.8:
+            if success_rate < 0.8:
                 return "Some features may not work"
-            else:
-                return "Minor impact on user experience"
-        else:
-            return "No impact on user experience"
+            return "Minor impact on user experience"
+        return "No impact on user experience"
 
     def _assess_reliability_impact(self) -> str:
         """Assess impact on system reliability."""
         if self.has_critical_issues():
             return "System stability at risk"
-        elif self.severity_level == ValidationSeverity.HIGH:
+        if self.severity_level == ValidationSeverity.HIGH:
             return "Reduced system reliability"
-        elif not self.is_valid:
+        if not self.is_valid:
             return "Some reliability concerns"
-        else:
-            return "No reliability impact"
+        return "No reliability impact"
 
     # === Monitoring Integration ===
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get comprehensive metrics for monitoring systems."""
         from omnibase_core.model.core.model_monitoring_metrics import (
-            MetricValue, ModelMonitoringMetrics)
+            MetricValue,
+            ModelMonitoringMetrics,
+        )
 
         custom_metrics = {
             "validation_id": MetricValue(
@@ -630,7 +646,7 @@ class ModelRegistryValidationResult(BaseModel):
                     self.metadata.get("validation_id", "unknown")
                     if self.metadata
                     else "unknown"
-                )
+                ),
             ),
             "node_class_name": MetricValue(value=self.node_class_name),
             "is_valid": MetricValue(value=self.is_valid),
@@ -639,29 +655,29 @@ class ModelRegistryValidationResult(BaseModel):
                     self.validation_status.value
                     if self.validation_status
                     else "unknown"
-                )
+                ),
             ),
             "severity_level": MetricValue(
-                value=self.severity_level.value if self.severity_level else "unknown"
+                value=self.severity_level.value if self.severity_level else "unknown",
             ),
             "success_rate": MetricValue(value=self.get_success_rate()),
             "completion_percentage": MetricValue(
-                value=self.get_completion_percentage()
+                value=self.get_completion_percentage(),
             ),
             "required_tools_count": MetricValue(value=self.required_tools_count),
             "missing_tools_count": MetricValue(value=self.get_missing_tools_count()),
             "critical_tools_missing": MetricValue(
-                value=len(self.get_critical_missing_tools())
+                value=len(self.get_critical_missing_tools()),
             ),
             "high_priority_tools_missing": MetricValue(
-                value=len(self.get_high_priority_missing_tools())
+                value=len(self.get_high_priority_missing_tools()),
             ),
             "warnings_count": MetricValue(
-                value=len(self.warnings) if self.warnings else 0
+                value=len(self.warnings) if self.warnings else 0,
             ),
             "has_critical_issues": MetricValue(value=self.has_critical_issues()),
             "performance_category": MetricValue(
-                value=self.get_validation_performance_category()
+                value=self.get_validation_performance_category(),
             ),
         }
 
@@ -677,7 +693,7 @@ class ModelRegistryValidationResult(BaseModel):
             custom_metrics=custom_metrics,
         )
 
-    def get_audit_trail(self) -> List["ModelAuditEntry"]:
+    def get_audit_trail(self) -> list["ModelAuditEntry"]:
         """Get comprehensive audit trail for compliance and debugging."""
         from omnibase_core.model.core.model_audit_entry import ModelAuditEntry
 
@@ -701,7 +717,7 @@ class ModelRegistryValidationResult(BaseModel):
                             else []
                         ),
                     },
-                )
+                ),
             )
 
         # Add missing tools discovery
@@ -720,7 +736,7 @@ class ModelRegistryValidationResult(BaseModel):
                             :2
                         ],
                     },
-                )
+                ),
             )
 
         # Add warnings as audit events
@@ -733,7 +749,7 @@ class ModelRegistryValidationResult(BaseModel):
                     resource=f"registry_validation_{self.node_class_name}",
                     result="warning",
                     details={"warning": warning},
-                )
+                ),
             )
 
         # Add validation completion event
@@ -763,7 +779,7 @@ class ModelRegistryValidationResult(BaseModel):
                         "compliance_score": self.calculate_compliance_score(),
                         "operational_health_score": self.get_operational_health_score(),
                     },
-                )
+                ),
             )
 
         return audit_entries
@@ -775,7 +791,7 @@ class ModelRegistryValidationResult(BaseModel):
         cls,
         node_class_name: str,
         required_tools_count: int,
-        duration_ms: Optional[int] = None,
+        duration_ms: int | None = None,
     ) -> "ModelRegistryValidationResult":
         """Create a successful validation result."""
         return cls(
@@ -795,9 +811,9 @@ class ModelRegistryValidationResult(BaseModel):
         cls,
         node_class_name: str,
         required_tools_count: int,
-        missing_tools: List[ModelMissingTool],
+        missing_tools: list[ModelMissingTool],
         error_message: str,
-        duration_ms: Optional[int] = None,
+        duration_ms: int | None = None,
     ) -> "ModelRegistryValidationResult":
         """Create a failed validation result."""
         return cls(
@@ -818,9 +834,9 @@ class ModelRegistryValidationResult(BaseModel):
         cls,
         node_class_name: str,
         required_tools_count: int,
-        missing_tools: List[ModelMissingTool],
-        warnings: List[str],
-        duration_ms: Optional[int] = None,
+        missing_tools: list[ModelMissingTool],
+        warnings: list[str],
+        duration_ms: int | None = None,
     ) -> "ModelRegistryValidationResult":
         """Create a partial validation result."""
         return cls(
@@ -838,7 +854,10 @@ class ModelRegistryValidationResult(BaseModel):
 
     @classmethod
     def create_error(
-        cls, node_class_name: str, error_message: str, duration_ms: Optional[int] = None
+        cls,
+        node_class_name: str,
+        error_message: str,
+        duration_ms: int | None = None,
     ) -> "ModelRegistryValidationResult":
         """Create an error validation result."""
         return cls(

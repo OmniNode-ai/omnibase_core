@@ -8,21 +8,18 @@ time calculations, risk assessments, scheduling helpers, and monitoring utilitie
 import hashlib
 import statistics
 from datetime import datetime, time, timedelta
-from typing import Dict, List, Optional, Tuple
 
-from omnibase_core.model.automation.model_operational_window import \
-    ModelOperationalWindow
-from omnibase_core.model.automation.model_work_item_validation import \
-    ModelWorkItemValidation
-from omnibase_core.model.classification.enum_work_complexity import \
-    EnumWorkComplexity
-from omnibase_core.model.classification.enum_work_priority import \
-    EnumWorkPriority
+from omnibase_core.model.automation.model_operational_window import (
+    ModelOperationalWindow,
+)
+from omnibase_core.model.automation.model_work_item_validation import (
+    ModelWorkItemValidation,
+)
+from omnibase_core.model.classification.enum_work_complexity import EnumWorkComplexity
+from omnibase_core.model.classification.enum_work_priority import EnumWorkPriority
 from omnibase_core.model.classification.enum_work_type import EnumWorkType
-from omnibase_core.model.monitoring.enum_alert_severity import \
-    EnumAlertSeverity
-from omnibase_core.model.monitoring.enum_incident_severity import \
-    EnumIncidentSeverity
+from omnibase_core.model.monitoring.enum_alert_severity import EnumAlertSeverity
+from omnibase_core.model.monitoring.enum_incident_severity import EnumIncidentSeverity
 
 
 class Phase4TimeUtilities:
@@ -30,8 +27,8 @@ class Phase4TimeUtilities:
 
     @staticmethod
     def get_current_window(
-        windows: List[ModelOperationalWindow],
-    ) -> Optional[ModelOperationalWindow]:
+        windows: list[ModelOperationalWindow],
+    ) -> ModelOperationalWindow | None:
         """
         Determine the currently active operational window.
 
@@ -51,9 +48,8 @@ class Phase4TimeUtilities:
             if window.start_time > window.end_time:
                 if current_time >= window.start_time or current_time < window.end_time:
                     return window
-            else:
-                if window.start_time <= current_time < window.end_time:
-                    return window
+            elif window.start_time <= current_time < window.end_time:
+                return window
 
         return None
 
@@ -238,14 +234,14 @@ class Phase4RiskUtilities:
         """
         if affects_production and affects_customers:
             return EnumIncidentSeverity.CRITICAL
-        elif affects_production or data_sensitive:
+        if affects_production or data_sensitive:
             return EnumIncidentSeverity.HIGH
-        elif affects_customers:
+        if affects_customers or work_type in [
+            EnumWorkType.DEPLOYMENT,
+            EnumWorkType.ARCHITECTURE,
+        ]:
             return EnumIncidentSeverity.MEDIUM
-        elif work_type in [EnumWorkType.DEPLOYMENT, EnumWorkType.ARCHITECTURE]:
-            return EnumIncidentSeverity.MEDIUM
-        else:
-            return EnumIncidentSeverity.LOW
+        return EnumIncidentSeverity.LOW
 
 
 class Phase4MetricsUtilities:
@@ -294,7 +290,7 @@ class Phase4MetricsUtilities:
         tokens_consumed: int,
         tasks_completed: int,
         cost_per_million_tokens: float = 15.0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate cost metrics.
 
@@ -320,9 +316,9 @@ class Phase4MetricsUtilities:
 
     @staticmethod
     def calculate_velocity_metrics(
-        tasks_history: List[int],
+        tasks_history: list[int],
         time_period_days: int = 7,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate velocity metrics.
 
@@ -404,19 +400,14 @@ class Phase4AlertUtilities:
         if metric_name in critical_metrics or is_critical_system:
             if deviation > 0.5:
                 return EnumAlertSeverity.EMERGENCY
-            elif deviation > 0.25:
+            if deviation > 0.25:
                 return EnumAlertSeverity.CRITICAL
-            else:
-                return EnumAlertSeverity.WARNING
-        else:
-            if deviation > 0.75:
-                return EnumAlertSeverity.CRITICAL
-            elif deviation > 0.5:
-                return EnumAlertSeverity.WARNING
-            elif deviation > 0.25:
-                return EnumAlertSeverity.WARNING
-            else:
-                return EnumAlertSeverity.INFO
+            return EnumAlertSeverity.WARNING
+        if deviation > 0.75:
+            return EnumAlertSeverity.CRITICAL
+        if deviation > 0.5 or deviation > 0.25:
+            return EnumAlertSeverity.WARNING
+        return EnumAlertSeverity.INFO
 
     @staticmethod
     def should_escalate(
@@ -512,8 +503,8 @@ class Phase4ValidationUtilities:
 
     @staticmethod
     def validate_schedule(
-        windows: List[ModelOperationalWindow],
-    ) -> Tuple[bool, List[str]]:
+        windows: list[ModelOperationalWindow],
+    ) -> tuple[bool, list[str]]:
         """
         Validate operational schedule for conflicts and gaps.
 
@@ -546,14 +537,15 @@ class Phase4ValidationUtilities:
         for window in windows:
             if window.min_agents > window.max_agents:
                 issues.append(
-                    f"Invalid agent range in {window.name}: min={window.min_agents}, max={window.max_agents}"
+                    f"Invalid agent range in {window.name}: min={window.min_agents}, max={window.max_agents}",
                 )
 
         return len(issues) == 0, issues
 
     @staticmethod
     def _windows_overlap(
-        window1: ModelOperationalWindow, window2: ModelOperationalWindow
+        window1: ModelOperationalWindow,
+        window2: ModelOperationalWindow,
     ) -> bool:
         """Check if two windows overlap."""
 
@@ -578,7 +570,7 @@ class Phase4ValidationUtilities:
     @staticmethod
     def validate_work_item(
         work_item: ModelWorkItemValidation,
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Validate work item for automation.
 
@@ -620,7 +612,7 @@ class Phase4HashingUtilities:
     def generate_work_hash(
         title: str,
         work_type: str,
-        file_paths: Optional[List[str]] = None,
+        file_paths: list[str] | None = None,
     ) -> str:
         """
         Generate unique hash for work item.

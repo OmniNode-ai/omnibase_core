@@ -28,7 +28,8 @@ Each case defines file content, type, expected status, and expected message.
 Sticky field rule: 'created_at' is always preserved from the previous metadata block if present. If no previous block exists, the file's creation date is used. It is never updated on restamp.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
@@ -82,7 +83,7 @@ class InvalidNodeYaml:
 
     def __init__(self) -> None:
         self.content: dict[str, Any] = {
-            "node_id": "test-node-id"
+            "node_id": "test-node-id",
         }  # Missing required fields
         self.expected_status: EnumOnexStatus = EnumOnexStatus.ERROR
         self.expected_message: str = "Semantic validation failed:"

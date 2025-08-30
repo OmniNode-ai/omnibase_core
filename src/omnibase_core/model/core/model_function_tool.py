@@ -1,5 +1,5 @@
+import builtins
 from enum import Enum
-from typing import List, Type
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,8 @@ class ModelFunctionTool(BaseModel):
     """
 
     type: ToolTypeEnum = Field(
-        default=ToolTypeEnum.FUNCTION, description="Tool type (always 'function')"
+        default=ToolTypeEnum.FUNCTION,
+        description="Tool type (always 'function')",
     )
     language: FunctionLanguageEnum = Field(
         ...,
@@ -33,17 +34,21 @@ class ModelFunctionTool(BaseModel):
     )
     line: int = Field(..., description="Line number where function is defined")
     description: str = Field(..., description="Function description")
-    inputs: List[str] = Field(
-        default_factory=list, description="Function input parameters with types"
+    inputs: list[str] = Field(
+        default_factory=list,
+        description="Function input parameters with types",
     )
-    outputs: List[str] = Field(
-        default_factory=list, description="Function output types"
+    outputs: list[str] = Field(
+        default_factory=list,
+        description="Function output types",
     )
-    error_codes: List[str] = Field(
-        default_factory=list, description="Error codes this function may raise"
+    error_codes: list[str] = Field(
+        default_factory=list,
+        description="Error codes this function may raise",
     )
-    side_effects: List[str] = Field(
-        default_factory=list, description="Side effects this function may have"
+    side_effects: list[str] = Field(
+        default_factory=list,
+        description="Side effects this function may have",
     )
 
     def to_serializable_dict(self) -> dict:
@@ -51,6 +56,7 @@ class ModelFunctionTool(BaseModel):
 
     @classmethod
     def from_serializable_dict(
-        cls: Type["ModelFunctionTool"], data: dict
+        cls: builtins.type["ModelFunctionTool"],
+        data: dict,
     ) -> "ModelFunctionTool":
         return cls(**data)

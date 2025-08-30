@@ -36,5 +36,3 @@ class ProtocolTestable(Protocol):
     Marker protocol for testable ONEX components.
     Extend for specific testable interfaces.
     """
-
-    pass

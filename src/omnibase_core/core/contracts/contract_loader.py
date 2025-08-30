@@ -10,24 +10,22 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Dict
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.models.model_contract_cache import ModelContractCache
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
-from omnibase_core.core.models.model_contract_definitions import \
-    ModelContractDefinitions
+from omnibase_core.core.models.model_contract_content import ModelContractContent
+from omnibase_core.core.models.model_contract_definitions import (
+    ModelContractDefinitions,
+)
 from omnibase_core.core.models.model_contract_loader import ModelContractLoader
-from omnibase_core.core.models.model_tool_specification import \
-    ModelToolSpecification
-from omnibase_core.core.models.model_yaml_schema_object import \
-    ModelYamlSchemaObject
+from omnibase_core.core.models.model_tool_specification import ModelToolSpecification
+from omnibase_core.core.models.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 
@@ -52,7 +50,8 @@ class ContractLoader:
             cache_enabled: Whether to enable contract caching for performance
         """
         self.state = ModelContractLoader(
-            cache_enabled=cache_enabled, base_path=base_path
+            cache_enabled=cache_enabled,
+            base_path=base_path,
         )
 
     def load_contract(self, contract_path: Path) -> ModelContractContent:
@@ -94,7 +93,8 @@ class ContractLoader:
 
             # Resolve all references
             resolved_contract = self._resolve_all_references(
-                contract_content, contract_path
+                contract_content,
+                contract_path,
             )
 
             # Cache the result
@@ -107,11 +107,11 @@ class ContractLoader:
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to load contract: {str(e)}",
+                message=f"Failed to load contract: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
 
-    def _load_contract_file(self, file_path: Path) -> Dict[str, object]:
+    def _load_contract_file(self, file_path: Path) -> dict[str, object]:
         """
         Load a single contract file with caching support.
 
@@ -133,7 +133,7 @@ class ContractLoader:
 
         # Load from file
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = yaml.safe_load(f)
 
             if content is None:
@@ -153,18 +153,20 @@ class ContractLoader:
         except yaml.YAMLError as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid YAML in contract file: {str(e)}",
+                message=f"Invalid YAML in contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to read contract file: {str(e)}",
+                message=f"Failed to read contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
 
     def _parse_contract_content(
-        self, raw_content: Dict[str, object], contract_path: Path
+        self,
+        raw_content: dict[str, object],
+        contract_path: Path,
     ) -> ModelContractContent:
         """
         Parse raw YAML content into strongly-typed contract content.
@@ -190,17 +192,19 @@ class ContractLoader:
             tool_specification = ModelToolSpecification(
                 main_tool_class=str(tool_spec_data.get("main_tool_class", "")),
                 business_logic_pattern=str(
-                    tool_spec_data.get("business_logic_pattern", "stateful")
+                    tool_spec_data.get("business_logic_pattern", "stateful"),
                 ),
             )
 
             # Parse input/output state (simplified for now)
             input_state = ModelYamlSchemaObject(
-                object_type="object", description="Input state schema"
+                object_type="object",
+                description="Input state schema",
             )
 
             output_state = ModelYamlSchemaObject(
-                object_type="object", description="Output state schema"
+                object_type="object",
+                description="Output state schema",
             )
 
             # Parse definitions section (optional)
@@ -209,8 +213,9 @@ class ContractLoader:
             # Parse dependencies section (optional, for Phase 0 pattern)
             dependencies = None
             if "dependencies" in raw_content:
-                from omnibase_core.core.models.model_contract_dependency import \
-                    ModelContractDependency
+                from omnibase_core.core.models.model_contract_dependency import (
+                    ModelContractDependency,
+                )
 
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):
@@ -233,13 +238,14 @@ class ContractLoader:
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Failed to parse contract content: {str(e)}",
+                message=f"Failed to parse contract content: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
 
     def _convert_contract_content_to_dict(
-        self, content: ModelContractContent
-    ) -> Dict[str, object]:
+        self,
+        content: ModelContractContent,
+    ) -> dict[str, object]:
         """Convert ModelContractContent back to dict for compatibility."""
         return {
             "contract_version": {
@@ -255,7 +261,9 @@ class ContractLoader:
         }
 
     def _validate_contract_structure(
-        self, contract: ModelContractContent, contract_path: Path
+        self,
+        contract: ModelContractContent,
+        contract_path: Path,
     ) -> None:
         """
         Validate basic contract structure for ModelNodeBase compatibility.
@@ -290,7 +298,9 @@ class ContractLoader:
         )
 
     def _resolve_all_references(
-        self, contract: ModelContractContent, base_path: Path
+        self,
+        contract: ModelContractContent,
+        base_path: Path,
     ) -> ModelContractContent:
         """
         Recursively resolve all $ref references in the contract.

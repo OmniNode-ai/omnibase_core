@@ -8,7 +8,6 @@ with comprehensive security policies and resource limitations.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
@@ -45,15 +44,24 @@ class ModelSandboxResourceLimits(BaseModel):
     """Resource limits for sandbox environments."""
 
     cpu_cores: float = Field(
-        default=0.5, ge=0.1, le=2.0, description="Maximum CPU cores (0.1-2.0)"
+        default=0.5,
+        ge=0.1,
+        le=2.0,
+        description="Maximum CPU cores (0.1-2.0)",
     )
 
     memory_mb: int = Field(
-        default=512, ge=128, le=2048, description="Maximum memory in MB (128-2048)"
+        default=512,
+        ge=128,
+        le=2048,
+        description="Maximum memory in MB (128-2048)",
     )
 
     disk_mb: int = Field(
-        default=1024, ge=256, le=5120, description="Maximum disk space in MB (256-5120)"
+        default=1024,
+        ge=256,
+        le=5120,
+        description="Maximum disk space in MB (256-5120)",
     )
 
     network_bandwidth_mbps: float = Field(
@@ -78,7 +86,10 @@ class ModelSandboxResourceLimits(BaseModel):
     )
 
     max_processes: int = Field(
-        default=32, ge=1, le=128, description="Maximum number of processes (1-128)"
+        default=32,
+        ge=1,
+        le=128,
+        description="Maximum number of processes (1-128)",
     )
 
 
@@ -91,34 +102,41 @@ class ModelSandboxSecurityPolicy(BaseModel):
     )
 
     network_policy: EnumSandboxNetworkPolicy = Field(
-        default=EnumSandboxNetworkPolicy.NONE, description="Network access policy"
+        default=EnumSandboxNetworkPolicy.NONE,
+        description="Network access policy",
     )
 
     readonly_filesystem: bool = Field(
-        default=True, description="Mount root filesystem as read-only"
+        default=True,
+        description="Mount root filesystem as read-only",
     )
 
     drop_all_capabilities: bool = Field(
-        default=True, description="Drop all Linux capabilities"
+        default=True,
+        description="Drop all Linux capabilities",
     )
 
     no_new_privileges: bool = Field(
-        default=True, description="Prevent privilege escalation"
+        default=True,
+        description="Prevent privilege escalation",
     )
 
     use_seccomp_profile: bool = Field(
-        default=True, description="Use seccomp security profile"
+        default=True,
+        description="Use seccomp security profile",
     )
 
     use_apparmor_profile: bool = Field(
-        default=False, description="Use AppArmor security profile"
+        default=False,
+        description="Use AppArmor security profile",
     )
 
-    allowed_syscalls: Optional[List[str]] = Field(
-        default=None, description="Whitelist of allowed system calls"
+    allowed_syscalls: list[str] | None = Field(
+        default=None,
+        description="Whitelist of allowed system calls",
     )
 
-    blocked_syscalls: Optional[List[str]] = Field(
+    blocked_syscalls: list[str] | None = Field(
         default_factory=lambda: [
             "mount",
             "umount",
@@ -134,7 +152,7 @@ class ModelSandboxSecurityPolicy(BaseModel):
         description="Blacklist of blocked system calls",
     )
 
-    environment_whitelist: Optional[List[str]] = Field(
+    environment_whitelist: list[str] | None = Field(
         default_factory=lambda: [
             "PATH",
             "HOME",
@@ -157,7 +175,7 @@ class ModelSandboxEnvironment(BaseModel):
     agent_id: UUID = Field(description="ID of the agent requesting the sandbox")
 
     language: EnumSandboxLanguage = Field(
-        description="Programming language runtime for the sandbox"
+        description="Programming language runtime for the sandbox",
     )
 
     base_image: str = Field(description="Docker base image for the sandbox environment")
@@ -172,66 +190,70 @@ class ModelSandboxEnvironment(BaseModel):
         description="Security policies and restrictions",
     )
 
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Environment variables for the sandbox"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Environment variables for the sandbox",
     )
 
-    package_requirements: List[str] = Field(
-        default_factory=list, description="Package dependencies to install"
+    package_requirements: list[str] = Field(
+        default_factory=list,
+        description="Package dependencies to install",
     )
 
     working_directory: str = Field(
-        default="/workspace", description="Working directory inside the sandbox"
+        default="/workspace",
+        description="Working directory inside the sandbox",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Sandbox creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Sandbox creation timestamp",
     )
 
-    expires_at: Optional[datetime] = Field(
-        default=None, description="Sandbox expiration timestamp"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Sandbox expiration timestamp",
     )
 
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata for the sandbox"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional metadata for the sandbox",
     )
 
     @validator("base_image")
-    def validate_base_image(cls, v):
+    def validate_base_image(self, v):
         """Validate that base image follows security standards."""
-        allowed_bases = {
-            EnumSandboxLanguage.PYTHON: ["python:3.11-slim", "python:3.12-slim"],
-            EnumSandboxLanguage.NODEJS: ["node:18-slim", "node:20-slim"],
-            EnumSandboxLanguage.SHELL: ["ubuntu:22.04", "alpine:3.18"],
-        }
 
         # For now, just validate format
         if not v or ":" not in v:
-            raise ValueError("Base image must include tag (e.g., 'python:3.11-slim')")
+            msg = "Base image must include tag (e.g., 'python:3.11-slim')"
+            raise ValueError(msg)
 
         return v
 
     @validator("environment_variables")
-    def validate_environment_variables(cls, v, values):
+    def validate_environment_variables(self, v, values):
         """Validate environment variables against security policy."""
         if "security_policy" in values:
             policy = values["security_policy"]
             if policy.environment_whitelist:
-                for key in v.keys():
+                for key in v:
                     if key not in policy.environment_whitelist:
+                        msg = f"Environment variable '{key}' not in whitelist"
                         raise ValueError(
-                            f"Environment variable '{key}' not in whitelist"
+                            msg,
                         )
 
         return v
 
     @validator("expires_at")
-    def validate_expiration(cls, v, values):
+    def validate_expiration(self, v, values):
         """Ensure expiration is in the future."""
         if v and "created_at" in values:
             created = values["created_at"]
             if v <= created:
-                raise ValueError("Expiration must be after creation time")
+                msg = "Expiration must be after creation time"
+                raise ValueError(msg)
 
         return v
 
@@ -241,7 +263,7 @@ class ModelSandboxEnvironment(BaseModel):
             return False
         return datetime.utcnow() > self.expires_at
 
-    def get_security_hardening_flags(self) -> List[str]:
+    def get_security_hardening_flags(self) -> list[str]:
         """Generate Docker security flags based on security policy."""
         flags = []
 
@@ -259,7 +281,7 @@ class ModelSandboxEnvironment(BaseModel):
                     "/tmp:rw,noexec,nosuid,size=100m",
                     "--tmpfs",
                     f"{self.working_directory}:rw,noexec,nosuid,size=512m",
-                ]
+                ],
             )
 
         if policy.drop_all_capabilities:
@@ -279,7 +301,12 @@ class ModelSandboxEnvironment(BaseModel):
             flags.extend(["--network", "none"])
         elif policy.network_policy == EnumSandboxNetworkPolicy.LOCALHOST:
             flags.extend(
-                ["--network", "host", "--add-host", "host.docker.internal:host-gateway"]
+                [
+                    "--network",
+                    "host",
+                    "--add-host",
+                    "host.docker.internal:host-gateway",
+                ],
             )
 
         # Resource limits
@@ -294,7 +321,7 @@ class ModelSandboxEnvironment(BaseModel):
                 f"nofile={limits.max_file_descriptors}:{limits.max_file_descriptors}",
                 "--ulimit",
                 f"nproc={limits.max_processes}:{limits.max_processes}",
-            ]
+            ],
         )
 
         return flags

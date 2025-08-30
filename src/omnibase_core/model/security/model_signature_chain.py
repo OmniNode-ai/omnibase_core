@@ -10,7 +10,6 @@ import json
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -18,9 +17,10 @@ from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.security.model_chain_metrics import ModelChainMetrics
 from omnibase_core.model.security.model_node_signature import (
-    ModelNodeSignature, NodeOperationEnum)
-from omnibase_core.model.security.model_signing_policy import \
-    ModelSigningPolicy
+    ModelNodeSignature,
+    NodeOperationEnum,
+)
+from omnibase_core.model.security.model_signing_policy import ModelSigningPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -70,20 +70,26 @@ class ModelSignatureChain(BaseModel):
 
     # Chain identification
     chain_id: str = Field(
-        ..., description="Unique identifier for this signature chain", min_length=1
+        ...,
+        description="Unique identifier for this signature chain",
+        min_length=1,
     )
     envelope_id: str = Field(
-        ..., description="ID of the envelope this chain belongs to", min_length=1
+        ...,
+        description="ID of the envelope this chain belongs to",
+        min_length=1,
     )
 
     # Signature collection
-    signatures: List[ModelNodeSignature] = Field(
-        default_factory=list, description="Ordered list of signatures in the chain"
+    signatures: list[ModelNodeSignature] = Field(
+        default_factory=list,
+        description="Ordered list of signatures in the chain",
     )
 
     # Chain metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the chain was created (UTC)"
+        default_factory=datetime.utcnow,
+        description="When the chain was created (UTC)",
     )
     last_modified: datetime = Field(
         default_factory=datetime.utcnow,
@@ -97,7 +103,9 @@ class ModelSignatureChain(BaseModel):
         min_length=0,
     )
     content_hash: str = Field(
-        ..., description="SHA-256 hash of the original envelope content", min_length=1
+        ...,
+        description="SHA-256 hash of the original envelope content",
+        min_length=1,
     )
 
     # Trust and validation
@@ -106,39 +114,45 @@ class ModelSignatureChain(BaseModel):
         description="Current validation status of the chain",
     )
     trust_level: TrustLevel = Field(
-        default=TrustLevel.UNTRUSTED, description="Overall trust level of the chain"
+        default=TrustLevel.UNTRUSTED,
+        description="Overall trust level of the chain",
     )
 
     # Policy compliance
-    signing_policy: Optional[ModelSigningPolicy] = Field(
-        None, description="Signing policy requirements for this chain"
+    signing_policy: ModelSigningPolicy | None = Field(
+        None,
+        description="Signing policy requirements for this chain",
     )
-    compliance_frameworks: List[ComplianceFramework] = Field(
+    compliance_frameworks: list[ComplianceFramework] = Field(
         default_factory=list,
         description="Compliance frameworks this chain must satisfy",
     )
 
     # Performance and debugging
-    chain_metrics: Optional[ModelChainMetrics] = Field(
-        None, description="Performance metrics for chain operations"
+    chain_metrics: ModelChainMetrics | None = Field(
+        None,
+        description="Performance metrics for chain operations",
     )
 
     @validator("signatures")
-    def validate_signature_order(cls, v):
+    def validate_signature_order(self, v):
         """Validate signatures are in correct hop order."""
         if not v:
             return v
 
         for i, signature in enumerate(v):
             if signature.hop_index != i:
+                msg = f"Signature at position {i} has hop_index {signature.hop_index}"
                 raise ValueError(
-                    f"Signature at position {i} has hop_index {signature.hop_index}"
+                    msg,
                 )
 
         return v
 
     def add_signature(
-        self, signature: ModelNodeSignature, validate_chain: bool = True
+        self,
+        signature: ModelNodeSignature,
+        validate_chain: bool = True,
     ) -> bool:
         """Add a new signature to the chain.
 
@@ -182,15 +196,16 @@ class ModelSignatureChain(BaseModel):
             raise
         except Exception as e:
             # Log the error and fail fast
-            logger.error(
-                f"Failed to add signature to chain {self.chain_id}: {str(e)}",
+            logger.exception(
+                f"Failed to add signature to chain {self.chain_id}: {e!s}",
                 extra={
                     "chain_id": self.chain_id,
                     "signature_node_id": signature.node_id,
                 },
             )
+            msg = f"Failed to add signature to chain: {e!s}"
             raise OnexError(
-                f"Failed to add signature to chain: {str(e)}",
+                msg,
                 error_code=CoreErrorCode.SECURITY_ERROR,
                 component="signature_chain",
                 operation="add_signature",
@@ -208,16 +223,12 @@ class ModelSignatureChain(BaseModel):
             last_operation = self.signatures[-1].operation
             if not signature.is_valid_operation_sequence(last_operation):
                 return False
-        else:
-            # First signature must be SOURCE
-            if signature.operation != NodeOperationEnum.SOURCE:
-                return False
-
-        # Check content hash matches
-        if signature.envelope_state_hash != self.content_hash:
+        # First signature must be SOURCE
+        elif signature.operation != NodeOperationEnum.SOURCE:
             return False
 
-        return True
+        # Check content hash matches
+        return signature.envelope_state_hash == self.content_hash
 
     def _update_chain_hash(self) -> None:
         """Update the chain hash based on current signatures."""
@@ -299,16 +310,17 @@ class ModelSignatureChain(BaseModel):
             raise
         except Exception as e:
             # Log the error and fail fast
-            logger.error(
-                f"Chain integrity validation failed for chain {self.chain_id}: {str(e)}",
+            logger.exception(
+                f"Chain integrity validation failed for chain {self.chain_id}: {e!s}",
                 extra={
                     "chain_id": self.chain_id,
                     "signatures_count": len(self.signatures),
                 },
             )
             self.validation_status = ChainValidationStatus.INVALID
+            msg = f"Chain integrity validation failed: {e!s}"
             raise OnexError(
-                f"Chain integrity validation failed: {str(e)}",
+                msg,
                 error_code=CoreErrorCode.SECURITY_ERROR,
                 component="signature_chain",
                 operation="validate_chain_integrity",
@@ -333,19 +345,16 @@ class ModelSignatureChain(BaseModel):
 
         # Check trusted node requirements
         trusted_count = len(
-            [sig for sig in self.signatures if sig.node_id in policy.trusted_nodes]
+            [sig for sig in self.signatures if sig.node_id in policy.trusted_nodes],
         )
 
-        if trusted_count < policy.minimum_trusted_signatures:
-            return False
+        return not trusted_count < policy.minimum_trusted_signatures
 
-        return True
-
-    def get_unique_signers(self) -> Set[str]:
+    def get_unique_signers(self) -> set[str]:
         """Get set of unique node IDs that signed this chain."""
         return {signature.node_id for signature in self.signatures}
 
-    def get_signature_by_node(self, node_id: str) -> Optional[ModelNodeSignature]:
+    def get_signature_by_node(self, node_id: str) -> ModelNodeSignature | None:
         """Get signature from specific node."""
         for signature in self.signatures:
             if signature.node_id == node_id:
@@ -353,8 +362,9 @@ class ModelSignatureChain(BaseModel):
         return None
 
     def get_signatures_by_operation(
-        self, operation: NodeOperationEnum
-    ) -> List[ModelNodeSignature]:
+        self,
+        operation: NodeOperationEnum,
+    ) -> list[ModelNodeSignature]:
         """Get all signatures for specific operation type."""
         return [sig for sig in self.signatures if sig.operation == operation]
 
@@ -366,7 +376,7 @@ class ModelSignatureChain(BaseModel):
             and NodeOperationEnum.DESTINATION in operations
         )
 
-    def calculate_trust_score(self, trusted_nodes: Set[str]) -> float:
+    def calculate_trust_score(self, trusted_nodes: set[str]) -> float:
         """Calculate trust score based on trusted node participation.
 
         Args:
@@ -385,11 +395,11 @@ class ModelSignatureChain(BaseModel):
 
         return trusted_signatures / len(self.signatures)
 
-    def get_routing_path(self) -> List[Tuple[str, NodeOperationEnum]]:
+    def get_routing_path(self) -> list[tuple[str, NodeOperationEnum]]:
         """Get the routing path as list of (node_id, operation) tuples."""
         return [(sig.node_id, sig.operation) for sig in self.signatures]
 
-    def get_chain_summary(self) -> Dict[str, Union[str, int, float, bool, List[str]]]:
+    def get_chain_summary(self) -> dict[str, str | int | float | bool | list[str]]:
         """Get summary information about the signature chain."""
         operations = [sig.operation for sig in self.signatures]
         algorithms = {sig.signature_algorithm for sig in self.signatures}
@@ -425,7 +435,7 @@ class ModelSignatureChain(BaseModel):
 
         return True
 
-    def get_signature_age_stats(self) -> Dict[str, Union[str, int, float]]:
+    def get_signature_age_stats(self) -> dict[str, str | int | float]:
         """Get statistics about signature ages."""
         if not self.signatures:
             return {}
@@ -440,7 +450,7 @@ class ModelSignatureChain(BaseModel):
             "total_routing_time_seconds": max(ages) - min(ages) if len(ages) > 1 else 0,
         }
 
-    def detect_anomalies(self) -> List[str]:
+    def detect_anomalies(self) -> list[str]:
         """Detect potential anomalies in the signature chain."""
         anomalies = []
 
@@ -456,7 +466,7 @@ class ModelSignatureChain(BaseModel):
         # Check for suspicious routing loops
         if len(self.signatures) > 20:  # Configurable threshold
             anomalies.append(
-                f"Unusually long routing chain: {len(self.signatures)} hops"
+                f"Unusually long routing chain: {len(self.signatures)} hops",
             )
 
         # Check for missing required operations
@@ -476,8 +486,8 @@ class ModelSignatureChain(BaseModel):
         cls,
         envelope_id: str,
         content_hash: str,
-        signing_policy: Optional[ModelSigningPolicy] = None,
-        compliance_frameworks: List[ComplianceFramework] = None,
+        signing_policy: ModelSigningPolicy | None = None,
+        compliance_frameworks: list[ComplianceFramework] | None = None,
     ) -> "ModelSignatureChain":
         """Create a new signature chain for an envelope."""
         import uuid

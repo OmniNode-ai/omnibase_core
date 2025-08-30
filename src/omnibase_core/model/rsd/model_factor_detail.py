@@ -19,17 +19,20 @@ class ModelFactorDetail(BaseModel):
     raw_value: float = Field(description="Raw calculated value before normalization")
 
     normalized_score: float = Field(
-        description="Normalized score (0.0-1.0)", ge=0.0, le=1.0
+        description="Normalized score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     weight: float = Field(description="Weight applied to this factor", ge=0.0, le=1.0)
 
     contribution: float = Field(
-        description="Final contribution to overall score", ge=0.0
+        description="Final contribution to overall score",
+        ge=0.0,
     )
 
     explanation: str = Field(
-        description="Human-readable explanation of the factor calculation"
+        description="Human-readable explanation of the factor calculation",
     )
 
     class Config:

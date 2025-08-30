@@ -13,7 +13,6 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field
@@ -27,28 +26,35 @@ class ModelPerformanceRequirements(BaseModel):
     for runtime validation and optimization.
     """
 
-    single_operation_max_ms: Optional[int] = Field(
+    single_operation_max_ms: int | None = Field(
         default=None,
         description="Maximum execution time for single operation in milliseconds",
         ge=1,
     )
 
-    batch_operation_max_s: Optional[int] = Field(
+    batch_operation_max_s: int | None = Field(
         default=None,
         description="Maximum execution time for batch operations in seconds",
         ge=1,
     )
 
-    memory_limit_mb: Optional[int] = Field(
-        default=None, description="Maximum memory usage in megabytes", ge=1
+    memory_limit_mb: int | None = Field(
+        default=None,
+        description="Maximum memory usage in megabytes",
+        ge=1,
     )
 
-    cpu_limit_percent: Optional[int] = Field(
-        default=None, description="Maximum CPU usage percentage", ge=1, le=100
+    cpu_limit_percent: int | None = Field(
+        default=None,
+        description="Maximum CPU usage percentage",
+        ge=1,
+        le=100,
     )
 
-    throughput_min_ops_per_second: Optional[float] = Field(
-        default=None, description="Minimum throughput in operations per second", ge=0.0
+    throughput_min_ops_per_second: float | None = Field(
+        default=None,
+        description="Minimum throughput in operations per second",
+        ge=0.0,
     )
 
 
@@ -61,23 +67,31 @@ class ModelLifecycleConfig(BaseModel):
     """
 
     initialization_timeout_s: int = Field(
-        default=30, description="Maximum time for node initialization in seconds", ge=1
+        default=30,
+        description="Maximum time for node initialization in seconds",
+        ge=1,
     )
 
     cleanup_timeout_s: int = Field(
-        default=30, description="Maximum time for node cleanup in seconds", ge=1
+        default=30,
+        description="Maximum time for node cleanup in seconds",
+        ge=1,
     )
 
     error_recovery_enabled: bool = Field(
-        default=True, description="Enable automatic error recovery mechanisms"
+        default=True,
+        description="Enable automatic error recovery mechanisms",
     )
 
     state_persistence_enabled: bool = Field(
-        default=False, description="Enable state persistence across restarts"
+        default=False,
+        description="Enable state persistence across restarts",
     )
 
     health_check_interval_s: int = Field(
-        default=60, description="Health check interval in seconds", ge=1
+        default=60,
+        description="Health check interval in seconds",
+        ge=1,
     )
 
 
@@ -90,23 +104,28 @@ class ModelValidationRules(BaseModel):
     """
 
     strict_typing_enabled: bool = Field(
-        default=True, description="Enforce strict type checking for all operations"
+        default=True,
+        description="Enforce strict type checking for all operations",
     )
 
     input_validation_enabled: bool = Field(
-        default=True, description="Enable input model validation"
+        default=True,
+        description="Enable input model validation",
     )
 
     output_validation_enabled: bool = Field(
-        default=True, description="Enable output model validation"
+        default=True,
+        description="Enable output model validation",
     )
 
     performance_validation_enabled: bool = Field(
-        default=True, description="Enable performance requirement validation"
+        default=True,
+        description="Enable performance requirement validation",
     )
 
-    constraint_definitions: Dict[str, str] = Field(
-        default_factory=dict, description="Custom constraint definitions for validation"
+    constraint_definitions: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom constraint definitions for validation",
     )
 
 
@@ -122,28 +141,39 @@ class ModelContractBase(BaseModel, ABC):
 
     # Core contract identification
     name: str = Field(
-        ..., description="Unique contract name for identification", min_length=1
+        ...,
+        description="Unique contract name for identification",
+        min_length=1,
     )
 
     version: str = Field(
-        ..., description="Semantic version (e.g., '1.0.0')", pattern=r"^\d+\.\d+\.\d+$"
+        ...,
+        description="Semantic version (e.g., '1.0.0')",
+        pattern=r"^\d+\.\d+\.\d+$",
     )
 
     description: str = Field(
-        ..., description="Human-readable contract description", min_length=1
+        ...,
+        description="Human-readable contract description",
+        min_length=1,
     )
 
     node_type: EnumNodeType = Field(
-        ..., description="Node type classification for 4-node architecture"
+        ...,
+        description="Node type classification for 4-node architecture",
     )
 
     # Model specifications with strong typing
     input_model: str = Field(
-        ..., description="Fully qualified input model class name", min_length=1
+        ...,
+        description="Fully qualified input model class name",
+        min_length=1,
     )
 
     output_model: str = Field(
-        ..., description="Fully qualified output model class name", min_length=1
+        ...,
+        description="Fully qualified output model class name",
+        min_length=1,
     )
 
     # Performance requirements
@@ -159,12 +189,12 @@ class ModelContractBase(BaseModel, ABC):
     )
 
     # Dependencies and protocols
-    dependencies: List[str] = Field(
+    dependencies: list[str] = Field(
         default_factory=list,
         description="Required protocol dependencies (fully qualified names)",
     )
 
-    protocol_interfaces: List[str] = Field(
+    protocol_interfaces: list[str] = Field(
         default_factory=list,
         description="Protocol interfaces implemented by this contract",
     )
@@ -176,16 +206,19 @@ class ModelContractBase(BaseModel, ABC):
     )
 
     # Metadata and documentation
-    author: Optional[str] = Field(
-        default=None, description="Contract author information"
+    author: str | None = Field(
+        default=None,
+        description="Contract author information",
     )
 
-    documentation_url: Optional[str] = Field(
-        default=None, description="URL to detailed contract documentation"
+    documentation_url: str | None = Field(
+        default=None,
+        description="URL to detailed contract documentation",
     )
 
-    tags: List[str] = Field(
-        default_factory=list, description="Contract classification tags"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Contract classification tags",
     )
 
     @abstractmethod
@@ -199,7 +232,6 @@ class ModelContractBase(BaseModel, ABC):
         Raises:
             ValidationError: If node-specific validation fails
         """
-        pass
 
     def model_post_init(self, __context) -> None:
         """
@@ -224,8 +256,9 @@ class ModelContractBase(BaseModel, ABC):
         """
         # Base validation - specialized contracts override with Literal types
         if not isinstance(self.node_type, EnumNodeType):
+            msg = f"node_type must be a valid EnumNodeType, got {type(self.node_type)}"
             raise ValueError(
-                f"node_type must be a valid EnumNodeType, got {type(self.node_type)}"
+                msg,
             )
 
     def _validate_protocol_dependencies(self) -> None:
@@ -236,14 +269,18 @@ class ModelContractBase(BaseModel, ABC):
         """
         for dependency in self.dependencies:
             if not dependency.startswith("Protocol"):
-                raise ValueError(
+                msg = (
                     f"Protocol dependency must start with 'Protocol', got: {dependency}"
+                )
+                raise ValueError(
+                    msg,
                 )
 
         for interface in self.protocol_interfaces:
             if not interface.startswith("Protocol"):
+                msg = f"Protocol interface must start with 'Protocol', got: {interface}"
                 raise ValueError(
-                    f"Protocol interface must start with 'Protocol', got: {interface}"
+                    msg,
                 )
 
     class Config:

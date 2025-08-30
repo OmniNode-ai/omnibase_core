@@ -43,7 +43,6 @@ Addressing Pattern (for future envelope routing):
 """
 
 import re
-from typing import Optional, Union
 
 # Event type validation pattern - namespace.category.action or namespace.action
 # Allow underscores in all parts (first part was incorrectly restrictive)
@@ -207,14 +206,15 @@ def validate_event_type(event_type: str) -> str:
         ValueError: If event type is invalid
     """
     if not is_valid_event_type(event_type):
+        msg = f"Invalid event type '{event_type}'. Must match pattern: {EVENT_TYPE_PATTERN.pattern}"
         raise ValueError(
-            f"Invalid event type '{event_type}'. Must match pattern: {EVENT_TYPE_PATTERN.pattern}"
+            msg,
         )
 
     return event_type
 
 
-def normalize_legacy_event_type(event_type: Union[str, object]) -> str:
+def normalize_legacy_event_type(event_type: str | object) -> str:
     """
     Normalize legacy enum values to new string format.
 
@@ -247,7 +247,8 @@ def normalize_legacy_event_type(event_type: Union[str, object]) -> str:
     if is_valid_event_type(legacy_value):
         return legacy_value
 
-    raise ValueError(f"Cannot normalize event type: {event_type}")
+    msg = f"Cannot normalize event type: {event_type}"
+    raise ValueError(msg)
 
 
 def create_user_event_type(namespace: str, action: str) -> str:
@@ -288,7 +289,7 @@ def create_plugin_event_type(plugin_name: str, action: str) -> str:
     return validate_event_type(event_type)
 
 
-def get_event_namespace(event_type: str) -> Optional[str]:
+def get_event_namespace(event_type: str) -> str | None:
     """
     Extract the namespace from an event type.
 

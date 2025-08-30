@@ -5,7 +5,7 @@ Load balancing algorithm model for defining how traffic should be distributed
 across multiple nodes with algorithm-specific parameters and behavior.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -33,23 +33,35 @@ class ModelLoadBalancingParameters(BaseModel):
         le=1.0,
     )
     disk_weight: float = Field(
-        0.1, description="Weight for disk I/O in resource-based routing", ge=0.0, le=1.0
+        0.1,
+        description="Weight for disk I/O in resource-based routing",
+        ge=0.0,
+        le=1.0,
     )
 
     # Connection limits
-    max_connections_per_node: Optional[int] = Field(
-        None, description="Maximum connections per node", ge=1
+    max_connections_per_node: int | None = Field(
+        None,
+        description="Maximum connections per node",
+        ge=1,
     )
-    connection_threshold: Optional[int] = Field(
-        None, description="Connection count threshold for overflow", ge=1
+    connection_threshold: int | None = Field(
+        None,
+        description="Connection count threshold for overflow",
+        ge=1,
     )
 
     # Response time parameters
     response_time_window_seconds: int = Field(
-        60, description="Window for calculating average response time", ge=1
+        60,
+        description="Window for calculating average response time",
+        ge=1,
     )
     response_time_percentile: int = Field(
-        95, description="Percentile to use for response time (e.g., p95)", ge=1, le=100
+        95,
+        description="Percentile to use for response time (e.g., p95)",
+        ge=1,
+        le=100,
     )
 
     # Hash parameters
@@ -59,34 +71,49 @@ class ModelLoadBalancingParameters(BaseModel):
         pattern="^(fnv1a|murmur3|xxhash|md5|sha1)$",
     )
     hash_virtual_nodes: int = Field(
-        150, description="Number of virtual nodes for consistent hashing", ge=1, le=1000
+        150,
+        description="Number of virtual nodes for consistent hashing",
+        ge=1,
+        le=1000,
     )
 
     # Failover parameters
     failover_threshold: int = Field(
-        3, description="Number of failures before marking node unhealthy", ge=1
+        3,
+        description="Number of failures before marking node unhealthy",
+        ge=1,
     )
     recovery_threshold: int = Field(
-        2, description="Number of successes before marking node healthy", ge=1
+        2,
+        description="Number of successes before marking node healthy",
+        ge=1,
     )
     health_check_interval_ms: int = Field(
-        5000, description="Health check interval in milliseconds", ge=100
+        5000,
+        description="Health check interval in milliseconds",
+        ge=100,
     )
 
     # Custom algorithm parameters
-    custom_algorithm_class: Optional[str] = Field(
-        None, description="Fully qualified class name for custom algorithm"
+    custom_algorithm_class: str | None = Field(
+        None,
+        description="Fully qualified class name for custom algorithm",
     )
-    custom_algorithm_config: Optional[Dict[str, str]] = Field(
-        None, description="Configuration for custom algorithm"
+    custom_algorithm_config: dict[str, str] | None = Field(
+        None,
+        description="Configuration for custom algorithm",
     )
 
     # Performance tuning
     cache_routing_decisions: bool = Field(
-        False, description="Cache routing decisions for performance"
+        False,
+        description="Cache routing decisions for performance",
     )
     cache_ttl_ms: int = Field(
-        1000, description="Cache TTL in milliseconds", ge=100, le=60000
+        1000,
+        description="Cache TTL in milliseconds",
+        ge=100,
+        le=60000,
     )
 
     def validate_weights(self) -> bool:
@@ -124,26 +151,31 @@ class ModelLoadBalancingAlgorithm(BaseModel):
     )
 
     supports_weights: bool = Field(
-        default=False, description="Whether algorithm supports node weights"
+        default=False,
+        description="Whether algorithm supports node weights",
     )
 
     supports_priorities: bool = Field(
-        default=False, description="Whether algorithm supports node priorities"
+        default=False,
+        description="Whether algorithm supports node priorities",
     )
 
     supports_health_checks: bool = Field(
-        default=True, description="Whether algorithm considers health status"
+        default=True,
+        description="Whether algorithm considers health status",
     )
 
     stateful: bool = Field(
-        default=False, description="Whether algorithm maintains state between requests"
+        default=False,
+        description="Whether algorithm maintains state between requests",
     )
 
     session_affinity_support: bool = Field(
-        default=False, description="Whether algorithm supports session affinity"
+        default=False,
+        description="Whether algorithm supports session affinity",
     )
 
-    performance_characteristics: Dict[str, str] = Field(
+    performance_characteristics: dict[str, str] = Field(
         default_factory=dict,
         description="Performance characteristics (latency, throughput, fairness)",
     )
@@ -290,7 +322,7 @@ class ModelLoadBalancingAlgorithm(BaseModel):
         name: str,
         display_name: str,
         description: str,
-        parameters: Optional[ModelLoadBalancingParameters] = None,
+        parameters: ModelLoadBalancingParameters | None = None,
     ) -> "ModelLoadBalancingAlgorithm":
         """Create custom load balancing algorithm"""
         return cls(

@@ -7,13 +7,15 @@ import asyncio
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, Optional
+from typing import TYPE_CHECKING
 
 import redis.asyncio as redis
 
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
 from omnibase_core.utils import metrics_registry as metrics
+
+if TYPE_CHECKING:
+    from omnibase_core.protocol.protocol_logger import ProtocolLogger
 
 
 class DistributedLockManager:
@@ -37,25 +39,27 @@ class DistributedLockManager:
     ):
         """Initialize the distributed lock manager."""
         self.container = container
-        self.logger: Optional[ProtocolLogger] = container.get_tool("LOGGER")
+        self.logger: ProtocolLogger | None = container.get_tool("LOGGER")
         self.redis_url = redis_url
         self.key_prefix = key_prefix
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: redis.Redis | None = None
         self.instance_id = str(uuid.uuid4())  # Unique ID for this instance
-        self.held_locks: Dict[str, str] = {}  # Track locks held by this instance
+        self.held_locks: dict[str, str] = {}  # Track locks held by this instance
 
     async def connect(self) -> None:
         """Connect to Redis."""
         try:
             self.redis_client = await redis.from_url(
-                self.redis_url, encoding="utf-8", decode_responses=True
+                self.redis_url,
+                encoding="utf-8",
+                decode_responses=True,
             )
             await self.redis_client.ping()
             if self.logger:
                 self.logger.info(f"Connected to Redis at {self.redis_url}")
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Failed to connect to Redis: {str(e)}")
+                self.logger.exception(f"Failed to connect to Redis: {e!s}")
             raise
 
     async def disconnect(self) -> None:
@@ -71,7 +75,7 @@ class DistributedLockManager:
         timeout: int = DEFAULT_LOCK_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_delay: float = DEFAULT_RETRY_DELAY,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Acquire a distributed lock.
 
@@ -90,7 +94,7 @@ class DistributedLockManager:
         lock_key = f"{self.key_prefix}{lock_name}"
         lock_token = f"{self.instance_id}:{uuid.uuid4()}"
 
-        for attempt in range(max_retries):
+        for _attempt in range(max_retries):
             try:
                 # Try to acquire lock with atomic SET NX EX
                 acquired = await self.redis_client.set(
@@ -105,16 +109,18 @@ class DistributedLockManager:
 
                     # Update Prometheus metrics
                     metrics.distributed_locks_acquired.labels(
-                        lock_name=lock_name, component="lock_manager"
+                        lock_name=lock_name,
+                        component="lock_manager",
                     ).inc()
 
                     metrics.distributed_locks_active.labels(
-                        lock_name=lock_name, holder=self.instance_id
+                        lock_name=lock_name,
+                        holder=self.instance_id,
                     ).set(1)
 
                     if self.logger:
                         self.logger.debug(
-                            f"Acquired lock '{lock_name}' with token {lock_token}"
+                            f"Acquired lock '{lock_name}' with token {lock_token}",
                         )
                     return lock_token
 
@@ -123,20 +129,24 @@ class DistributedLockManager:
 
             except Exception as e:
                 if self.logger:
-                    self.logger.error(f"Error acquiring lock '{lock_name}': {str(e)}")
+                    self.logger.exception(f"Error acquiring lock '{lock_name}': {e!s}")
 
                 metrics.distributed_locks_failed.labels(
-                    lock_name=lock_name, component="lock_manager", reason="exception"
+                    lock_name=lock_name,
+                    component="lock_manager",
+                    reason="exception",
                 ).inc()
 
         # Failed to acquire after all retries
         metrics.distributed_locks_failed.labels(
-            lock_name=lock_name, component="lock_manager", reason="timeout"
+            lock_name=lock_name,
+            component="lock_manager",
+            reason="timeout",
         ).inc()
 
         if self.logger:
             self.logger.warning(
-                f"Failed to acquire lock '{lock_name}' after {max_retries} attempts"
+                f"Failed to acquire lock '{lock_name}' after {max_retries} attempts",
             )
         return None
 
@@ -177,26 +187,29 @@ class DistributedLockManager:
 
                 # Update Prometheus metrics
                 metrics.distributed_locks_active.labels(
-                    lock_name=lock_name, holder=self.instance_id
+                    lock_name=lock_name,
+                    holder=self.instance_id,
                 ).set(0)
 
                 if self.logger:
                     self.logger.debug(f"Released lock '{lock_name}'")
                 return True
-            else:
-                if self.logger:
-                    self.logger.warning(
-                        f"Failed to release lock '{lock_name}' - token mismatch or lock expired"
-                    )
-                return False
+            if self.logger:
+                self.logger.warning(
+                    f"Failed to release lock '{lock_name}' - token mismatch or lock expired",
+                )
+            return False
 
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error releasing lock '{lock_name}': {str(e)}")
+                self.logger.exception(f"Error releasing lock '{lock_name}': {e!s}")
             return False
 
     async def extend_lock(
-        self, lock_name: str, lock_token: str, additional_time: int
+        self,
+        lock_name: str,
+        lock_token: str,
+        additional_time: int,
     ) -> bool:
         """
         Extend the expiration time of a held lock.
@@ -225,23 +238,26 @@ class DistributedLockManager:
 
         try:
             result = await self.redis_client.eval(
-                lua_script, 1, lock_key, lock_token, additional_time
+                lua_script,
+                1,
+                lock_key,
+                lock_token,
+                additional_time,
             )
 
             if result:
                 if self.logger:
                     self.logger.debug(
-                        f"Extended lock '{lock_name}' by {additional_time} seconds"
+                        f"Extended lock '{lock_name}' by {additional_time} seconds",
                     )
                 return True
-            else:
-                if self.logger:
-                    self.logger.warning(f"Failed to extend lock '{lock_name}'")
-                return False
+            if self.logger:
+                self.logger.warning(f"Failed to extend lock '{lock_name}'")
+            return False
 
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error extending lock '{lock_name}': {str(e)}")
+                self.logger.exception(f"Error extending lock '{lock_name}': {e!s}")
             return False
 
     @asynccontextmanager
@@ -266,11 +282,15 @@ class DistributedLockManager:
         try:
             # Acquire the lock
             lock_token = await self.acquire_lock(
-                lock_name, timeout, max_retries, retry_delay
+                lock_name,
+                timeout,
+                max_retries,
+                retry_delay,
             )
 
             if not lock_token:
-                raise RuntimeError(f"Failed to acquire lock '{lock_name}'")
+                msg = f"Failed to acquire lock '{lock_name}'"
+                raise RuntimeError(msg)
 
             yield lock_token
 
@@ -281,7 +301,7 @@ class DistributedLockManager:
 
                 # Record lock hold duration
                 metrics.distributed_lock_hold_duration.labels(
-                    lock_name=lock_name
+                    lock_name=lock_name,
                 ).observe(duration)
 
                 await self.release_lock(lock_name, lock_token)
@@ -303,10 +323,10 @@ class DistributedLockManager:
             return bool(result)
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error checking lock status: {str(e)}")
+                self.logger.exception(f"Error checking lock status: {e!s}")
             return False
 
-    async def get_lock_info(self, lock_name: str) -> Optional[Dict[str, str]]:
+    async def get_lock_info(self, lock_name: str) -> dict[str, str] | None:
         """Get information about a lock (holder and TTL)."""
         if not self.redis_client:
             await self.connect()
@@ -325,5 +345,5 @@ class DistributedLockManager:
             return None
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error getting lock info: {str(e)}")
+                self.logger.exception(f"Error getting lock info: {e!s}")
             return None

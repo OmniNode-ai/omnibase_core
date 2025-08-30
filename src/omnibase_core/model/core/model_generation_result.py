@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from omnibase.enums.enum_log_level import SeverityLevelEnum
 from pydantic import BaseModel
@@ -9,10 +8,10 @@ class ModelGenerationResult(BaseModel):
     """Result of code generation operations"""
 
     success: bool
-    files_generated: List[str]
-    files_modified: List[str]
-    errors: List[str]
-    warnings: List[str]
+    files_generated: list[str]
+    files_modified: list[str]
+    errors: list[str]
+    warnings: list[str]
     generation_time: datetime
     node_name: str
     operation_type: str  # "introspection", "error_codes", "template_validation", etc.
@@ -33,7 +32,6 @@ class ModelGenerationResult(BaseModel):
         """Get overall severity level"""
         if self.has_errors:
             return SeverityLevelEnum.ERROR
-        elif self.has_warnings:
+        if self.has_warnings:
             return SeverityLevelEnum.WARNING
-        else:
-            return SeverityLevelEnum.SUCCESS
+        return SeverityLevelEnum.SUCCESS

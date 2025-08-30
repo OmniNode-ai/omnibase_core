@@ -15,14 +15,14 @@ class MixinIntrospectFromContract:
         node_file = Path(module.__file__)
         return node_file.parent
 
-    def introspect(self, contract_path: Path = None) -> dict:
+    def introspect(self, contract_path: Path | None = None) -> dict:
         node_dir = self._get_node_dir()
         if contract_path is None:
             contract_path = node_dir / "node.onex.yaml"
             if not contract_path.exists():
                 contract_path = node_dir / "contract.yaml"
         if not contract_path.exists():
-            raise FileNotFoundError(f"No contract file found at {contract_path}")
-        with open(contract_path, "r") as f:
-            contract = yaml.safe_load(f)
-        return contract
+            msg = f"No contract file found at {contract_path}"
+            raise FileNotFoundError(msg)
+        with open(contract_path) as f:
+            return yaml.safe_load(f)

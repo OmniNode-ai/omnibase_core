@@ -23,7 +23,8 @@
 
 import hashlib
 import uuid
-from typing import Callable, Dict, List, Optional, Protocol, TypedDict, Union
+from collections.abc import Callable
+from typing import Protocol, TypedDict
 
 import yaml
 
@@ -36,7 +37,7 @@ class NodeMetadataDict(TypedDict, total=False):
     name: str
     author: str
     namespace: str
-    entrypoint: Union[Dict[str, str], str, ModelEntrypointBlock]
+    entrypoint: dict[str, str] | str | ModelEntrypointBlock
     metadata_version: str
     protocol_version: str
     owner: str
@@ -50,13 +51,14 @@ class NodeMetadataDict(TypedDict, total=False):
     state_contract: str
     lifecycle: str
     hash: str
-    runtime_language_hint: Optional[str]
+    runtime_language_hint: str | None
 
 
 class HasModelDump(Protocol):
     def model_dump(
-        self, mode: str = "json"
-    ) -> Dict[str, Union[str, int, float, bool, None]]: ...
+        self,
+        mode: str = "json",
+    ) -> dict[str, str | int | float | bool | None]: ...
 
 
 def generate_uuid() -> str:
@@ -70,9 +72,9 @@ def compute_canonical_hash(content: str) -> str:
 def canonicalize_for_hash(
     metadata: NodeMetadataDict,
     body: str,
-    volatile_fields: List[str] = ["hash", "last_modified_at"],
-    metadata_serializer: Optional[Callable[[HasModelDump], str]] = None,
-    body_canonicalizer: Optional[Callable[[str], str]] = None,
+    volatile_fields: list[str] | None = None,
+    metadata_serializer: Callable[[HasModelDump], str] | None = None,
+    body_canonicalizer: Callable[[str], str] | None = None,
 ) -> str:
     """
     Canonicalize metadata and body for hash computation.
@@ -85,6 +87,8 @@ def canonicalize_for_hash(
     from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
 
     # Extract key fields from metadata dict, use model defaults for missing fields
+    if volatile_fields is None:
+        volatile_fields = ["hash", "last_modified_at"]
     name = metadata.get("name", "unknown")
     author = metadata.get("author", "unknown")
     namespace = metadata.get("namespace", "onex.stamped.unknown")
@@ -181,7 +185,7 @@ def to_yaml_block(model: HasModelDump, comment_prefix: str = "") -> str:
 def compute_metadata_hash(
     model: HasModelDump,
     body: str,
-    volatile_fields: List[str] = ["hash", "last_modified_at"],
+    volatile_fields: list[str] | None = None,
     placeholder: str = "<PLACEHOLDER>",
     comment_prefix: str = "",
 ) -> str:
@@ -199,9 +203,12 @@ def compute_metadata_hash(
     Returns:
         SHA256 hash of the canonicalized content
     """
-    from omnibase_core.mixin.mixin_canonical_serialization import \
-        CanonicalYAMLSerializer
+    from omnibase_core.mixin.mixin_canonical_serialization import (
+        CanonicalYAMLSerializer,
+    )
 
+    if volatile_fields is None:
+        volatile_fields = ["hash", "last_modified_at"]
     canonical = CanonicalYAMLSerializer().canonicalize_for_hash(
         model,
         body,

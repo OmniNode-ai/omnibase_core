@@ -5,7 +5,6 @@ This eliminates the need for separate introspection.py files in each tool.
 """
 
 import sys
-from typing import Dict, List, Optional
 
 from omnibase_core.core.introspection import GenericIntrospection
 from omnibase_core.model.core.model_usage_example import ModelUsageExample
@@ -46,11 +45,11 @@ class MixinGenericIntrospection:
     INTROSPECTION_TOOL_NAME: str = ""
     INTROSPECTION_TOOL_DESCRIPTION: str = ""
     INTROSPECTION_TOOL_TYPE: str = ""
-    INTROSPECTION_INPUT_IMPORTS: List[str] = []
-    INTROSPECTION_OUTPUT_IMPORTS: List[str] = []
-    INTROSPECTION_USAGE_EXAMPLES: List[ModelUsageExample] = []
-    INTROSPECTION_EXTRA_CAPABILITIES: Optional[Dict[str, bool]] = None
-    INTROSPECTION_EXTRA_HEALTH_CHECKS: Optional[Dict[str, bool]] = None
+    INTROSPECTION_INPUT_IMPORTS: list[str] = []
+    INTROSPECTION_OUTPUT_IMPORTS: list[str] = []
+    INTROSPECTION_USAGE_EXAMPLES: list[ModelUsageExample] = []
+    INTROSPECTION_EXTRA_CAPABILITIES: dict[str, bool] | None = None
+    INTROSPECTION_EXTRA_HEALTH_CHECKS: dict[str, bool] | None = None
 
     @classmethod
     def handle_introspection(cls) -> None:
@@ -65,8 +64,9 @@ class MixinGenericIntrospection:
 
         # Validate that required attributes are set
         if not cls.INTROSPECTION_TOOL_NAME:
+            msg = "INTROSPECTION_TOOL_NAME must be set when using MixinGenericIntrospection"
             raise ValueError(
-                "INTROSPECTION_TOOL_NAME must be set when using MixinGenericIntrospection"
+                msg,
             )
 
         # Create a configured introspection class

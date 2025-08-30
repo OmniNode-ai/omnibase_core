@@ -2,8 +2,6 @@
 Orchestrator result model.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from .model_orchestrator_graph import ModelOrchestratorGraph
@@ -19,10 +17,11 @@ class ModelOrchestratorResult(BaseModel):
     status: str = Field(..., description="Orchestration status")
 
     # Execution details
-    graph: Optional[ModelOrchestratorGraph] = Field(None, description="Graph used")
-    plan: Optional[ModelOrchestratorPlan] = Field(None, description="Plan executed")
+    graph: ModelOrchestratorGraph | None = Field(None, description="Graph used")
+    plan: ModelOrchestratorPlan | None = Field(None, description="Plan executed")
 
     # Structured output
-    output: Optional[ModelOrchestratorOutput] = Field(
-        None, description="Orchestration output"
+    output: ModelOrchestratorOutput | None = Field(
+        None,
+        description="Orchestration output",
     )

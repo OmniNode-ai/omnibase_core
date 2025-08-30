@@ -1,28 +1,34 @@
 #!/usr/bin/env python3
 
 import asyncio
-import json
 import logging
 import os
-from pathlib import Path
-from typing import Callable, Dict, List, Optional
 
 from omnibase.enums.enum_health_status import EnumHealthStatus
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.node_effect import (EffectType, ModelEffectInput,
-                                            ModelEffectOutput)
+from omnibase_core.core.node_effect import (
+    EffectType,
+    ModelEffectInput,
+    ModelEffectOutput,
+)
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
-    ModelConsulAdapterHealth, ModelConsulAdapterInput,
-    ModelConsulHealthCheckNode, ModelConsulHealthResponse,
-    ModelConsulKVResponse, ModelConsulServiceInfo,
-    ModelConsulServiceListResponse, ModelConsulServiceRegistration,
-    ModelConsulServiceResponse)
+    ModelConsulAdapterInput,
+    ModelConsulHealthCheckNode,
+    ModelConsulHealthResponse,
+    ModelConsulKVResponse,
+    ModelConsulServiceInfo,
+    ModelConsulServiceListResponse,
+    ModelConsulServiceRegistration,
+    ModelConsulServiceResponse,
+)
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models.model_consul_adapter_response import (
-    ModelConsulHealthStatus, ModelConsulOperationResponse)
+    ModelConsulHealthStatus,
+    ModelConsulOperationResponse,
+)
 
 
 class MockConsulClient:
@@ -45,7 +51,7 @@ class MockConsulClient:
                     "Config": {
                         "NodeName": "mock-consul-node",
                         "Datacenter": self.client.config.get("datacenter", "dc1"),
-                    }
+                    },
                 }
 
             def services(self):
@@ -93,17 +99,16 @@ class MockConsulClient:
                 if recurse:
                     # Delete all keys with the prefix
                     keys_to_delete = [
-                        k for k in self.client.kv_store.keys() if k.startswith(key)
+                        k for k in self.client.kv_store if k.startswith(key)
                     ]
                     for k in keys_to_delete:
                         del self.client.kv_store[k]
                     return True
-                else:
-                    # Delete single key
-                    if key in self.client.kv_store:
-                        del self.client.kv_store[key]
-                        return True
-                    return False
+                # Delete single key
+                if key in self.client.kv_store:
+                    del self.client.kv_store[key]
+                    return True
+                return False
 
         class MockHealth:
             def __init__(self, client):
@@ -116,9 +121,9 @@ class MockConsulClient:
                         "Node": {"Node": "mock-node"},
                         "Service": {"ID": service_name, "Service": service_name},
                         "Checks": [
-                            {"Status": "passing", "CheckID": "service:" + service_name}
+                            {"Status": "passing", "CheckID": "service:" + service_name},
                         ],
-                    }
+                    },
                 ]
 
             def state(self, state):
@@ -128,7 +133,7 @@ class MockConsulClient:
                         "ServiceName": "consul",
                         "Status": "passing",
                         "CheckID": "serfHealth",
-                    }
+                    },
                 ]
 
         self.agent = MockAgent(self)
@@ -155,7 +160,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
         # ONEX logger initialization with fallback
         try:
             self.logger = getattr(container, "get_tool", lambda x: None)(
-                "LOGGER"
+                "LOGGER",
             ) or logging.getLogger(__name__)
         except (AttributeError, Exception):
             self.logger = logging.getLogger(__name__)
@@ -222,7 +227,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             except ImportError:
                 # For now, create a mock client for basic functionality
                 self.logger.warning(
-                    "Python consul library not available, using mock client"
+                    "Python consul library not available, using mock client",
                 )
                 self.consul_client = MockConsulClient(self.consul_config)
 
@@ -235,11 +240,11 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
 
             self._initialized = True
             self.logger.info(
-                "Consul client initialized successfully with event handlers"
+                "Consul client initialized successfully with event handlers",
             )
 
         except Exception as e:
-            self.logger.error(f"Failed to initialize Consul client: {e}")
+            self.logger.exception(f"Failed to initialize Consul client: {e}")
             raise OnexError(
                 message=f"Consul initialization failed: {e}",
                 error_code=CoreErrorCode.INITIALIZATION_FAILED,
@@ -291,7 +296,8 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             elif consul_input.action == "consul_kv_delete":
                 if consul_input.key_path:
                     result = await self.effect_kv_delete(
-                        consul_input.key_path, recurse=consul_input.recurse or False
+                        consul_input.key_path,
+                        recurse=consul_input.recurse or False,
                     )
                 else:
                     raise OnexError(
@@ -301,7 +307,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             elif consul_input.action == "consul_service_register":
                 if consul_input.service_config:
                     service_data = ModelConsulServiceRegistration(
-                        **consul_input.service_config
+                        **consul_input.service_config,
                     )
                     result = await self.effect_service_register(service_data)
                 else:
@@ -311,10 +317,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                     )
             elif consul_input.action == "consul_service_deregister":
                 if consul_input.service_config and consul_input.service_config.get(
-                    "service_id"
+                    "service_id",
                 ):
                     result = await self.effect_service_deregister(
-                        consul_input.service_config["service_id"]
+                        consul_input.service_config["service_id"],
                     )
                 else:
                     raise OnexError(
@@ -323,9 +329,11 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                     )
             elif consul_input.action == "health_check":
                 result = await self.effect_health_check(
-                    consul_input.service_config.get("service_name")
-                    if consul_input.service_config
-                    else None
+                    (
+                        consul_input.service_config.get("service_name")
+                        if consul_input.service_config
+                        else None
+                    ),
                 )
             else:
                 raise OnexError(
@@ -343,8 +351,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             }
 
             # Return the result directly since we override process completely
-            from omnibase_core.core.node_effect import (ModelEffectOutput,
-                                                        TransactionState)
+            from omnibase_core.core.node_effect import (
+                ModelEffectOutput,
+                TransactionState,
+            )
 
             return ModelEffectOutput(
                 result=result_data,
@@ -355,10 +365,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul operation failed: {e}")
+            self.logger.exception(f"Consul operation failed: {e}")
 
             # Log error for event-driven architecture
-            self.logger.error(f"Event-driven consul operation failed: {e}")
+            self.logger.exception(f"Event-driven consul operation failed: {e}")
 
             raise OnexError(
                 message=f"Consul adapter operation failed: {e}",
@@ -383,7 +393,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                 "endpoint_type": "monitoring_only",
             }
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
+            self.logger.exception(f"Health check failed: {e}")
             return {
                 "adapter": "consul",
                 "status": "error",
@@ -420,10 +430,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul health check failed: {e}")
+            self.logger.exception(f"Consul health check failed: {e}")
             return ModelHealthStatus(
                 status=EnumHealthStatus.UNREACHABLE,
-                message=f"Consul server unreachable: {str(e)}",
+                message=f"Consul server unreachable: {e!s}",
             )
 
     async def effect_kv_get(self, key: str) -> ModelConsulKVResponse:
@@ -454,7 +464,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul KV get failed for key {key}: {e}")
+            self.logger.exception(f"Consul KV get failed for key {key}: {e}")
             raise OnexError(
                 message=f"Consul KV get failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -475,14 +485,16 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul KV put failed for key {key}: {e}")
+            self.logger.exception(f"Consul KV put failed for key {key}: {e}")
             raise OnexError(
                 message=f"Consul KV put failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
             ) from e
 
     async def effect_kv_delete(
-        self, key: str, recurse: bool = False
+        self,
+        key: str,
+        recurse: bool = False,
     ) -> ModelConsulKVResponse:
         """Delete key(s) from Consul KV store"""
         try:
@@ -498,14 +510,15 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul KV delete failed for key {key}: {e}")
+            self.logger.exception(f"Consul KV delete failed for key {key}: {e}")
             raise OnexError(
                 message=f"Consul KV delete failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
             ) from e
 
     async def effect_service_register(
-        self, service_data: ModelConsulServiceRegistration
+        self,
+        service_data: ModelConsulServiceRegistration,
     ) -> ModelConsulServiceResponse:
         """Register service with Consul"""
         try:
@@ -545,14 +558,15 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul service registration failed: {e}")
+            self.logger.exception(f"Consul service registration failed: {e}")
             raise OnexError(
                 message=f"Service registration failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
             ) from e
 
     async def effect_service_deregister(
-        self, service_id: str
+        self,
+        service_id: str,
     ) -> ModelConsulServiceResponse:
         """Deregister service from Consul"""
         try:
@@ -582,8 +596,8 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(
-                f"Consul service deregistration failed for {service_id}: {e}"
+            self.logger.exception(
+                f"Consul service deregistration failed for {service_id}: {e}",
             )
             raise OnexError(
                 message=f"Service deregistration failed: {e}",
@@ -608,7 +622,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                         port=service_info.get("Port", 0),
                         address=service_info.get("Address", ""),
                         tags=service_info.get("Tags", []),
-                    )
+                    ),
                 )
 
             return ModelConsulServiceListResponse(
@@ -618,14 +632,15 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Consul service list failed: {e}")
+            self.logger.exception(f"Consul service list failed: {e}")
             raise OnexError(
                 message=f"Service list failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
             ) from e
 
     async def effect_health_check(
-        self, service_name: Optional[str] = None
+        self,
+        service_name: str | None = None,
     ) -> ModelConsulHealthResponse:
         """Get health check status from Consul"""
         try:
@@ -635,7 +650,8 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             if service_name:
                 # Get health for specific service
                 index, checks = self.consul_client.health.service(
-                    service_name, passing=None
+                    service_name,
+                    passing=None,
                 )
 
                 health_status = []
@@ -657,7 +673,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                             service_id=service.get("ID"),
                             service_name=service.get("Service"),
                             status=overall_status,
-                        )
+                        ),
                     )
 
                 return ModelConsulHealthResponse(
@@ -665,29 +681,28 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                     service_name=service_name,
                     health_checks=health_status,
                 )
-            else:
-                # Get all health checks
-                index, checks = self.consul_client.health.state("any")
+            # Get all health checks
+            index, checks = self.consul_client.health.state("any")
 
-                health_summary = {}
-                for check in checks:
-                    service_name_key = check.get("ServiceName", "consul")
-                    status = check.get("Status", "unknown")
+            health_summary = {}
+            for check in checks:
+                service_name_key = check.get("ServiceName", "consul")
+                status = check.get("Status", "unknown")
 
-                    if service_name_key not in health_summary:
-                        health_summary[service_name_key] = {}
+                if service_name_key not in health_summary:
+                    health_summary[service_name_key] = {}
 
-                    health_summary[service_name_key][
-                        check.get("CheckID", "unknown")
-                    ] = status
+                health_summary[service_name_key][
+                    check.get("CheckID", "unknown")
+                ] = status
 
-                return ModelConsulHealthResponse(
-                    status="success",
-                    health_summary=health_summary,
-                )
+            return ModelConsulHealthResponse(
+                status="success",
+                health_summary=health_summary,
+            )
 
         except Exception as e:
-            self.logger.error(f"Consul health check failed: {e}")
+            self.logger.exception(f"Consul health check failed: {e}")
             raise OnexError(
                 message=f"Health check failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -702,8 +717,8 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
         """
 
         async def consul_operation_handler(
-            operation_data: Dict[str, object],
-            transaction: Optional[object] = None,
+            operation_data: dict[str, object],
+            transaction: object | None = None,
         ) -> ModelConsulOperationResponse:
             """Handle consul operations through events."""
             try:
@@ -728,7 +743,8 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                 elif consul_input.action == "consul_kv_delete":
                     if consul_input.key_path:
                         result = await self.effect_kv_delete(
-                            consul_input.key_path, recurse=consul_input.recurse or False
+                            consul_input.key_path,
+                            recurse=consul_input.recurse or False,
                         )
                     else:
                         raise OnexError(
@@ -738,7 +754,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                 elif consul_input.action == "consul_service_register":
                     if consul_input.service_config:
                         service_data = ModelConsulServiceRegistration(
-                            **consul_input.service_config
+                            **consul_input.service_config,
                         )
                         result = await self.effect_service_register(service_data)
                     else:
@@ -748,10 +764,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                         )
                 elif consul_input.action == "consul_service_deregister":
                     if consul_input.service_config and consul_input.service_config.get(
-                        "service_id"
+                        "service_id",
                     ):
                         result = await self.effect_service_deregister(
-                            consul_input.service_config["service_id"]
+                            consul_input.service_config["service_id"],
                         )
                     else:
                         raise OnexError(
@@ -760,9 +776,11 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                         )
                 elif consul_input.action == "health_check":
                     result = await self.effect_health_check(
-                        consul_input.service_config.get("service_name")
-                        if consul_input.service_config
-                        else None
+                        (
+                            consul_input.service_config.get("service_name")
+                            if consul_input.service_config
+                            else None
+                        ),
                     )
                 else:
                     raise OnexError(
@@ -779,7 +797,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
                 }
 
             except Exception as e:
-                self.logger.error(f"Consul operation failed: {e}")
+                self.logger.exception(f"Consul operation failed: {e}")
                 raise OnexError(
                     message=f"Consul operation failed: {e}",
                     error_code=CoreErrorCode.OPERATION_FAILED,
@@ -792,14 +810,15 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
         self.effect_handlers[EffectType.DATABASE_OPERATION] = consul_operation_handler
 
         self.logger.info(
-            "Consul effect handlers registered for event-driven processing"
+            "Consul effect handlers registered for event-driven processing",
         )
 
 
 async def main():
     """Main entry point for Consul Adapter - runs in service mode with MixinNodeService"""
-    from omnibase_core.tools.infrastructure.container import \
-        create_infrastructure_container
+    from omnibase_core.tools.infrastructure.container import (
+        create_infrastructure_container,
+    )
 
     # Create infrastructure container with all shared dependencies
     container = create_infrastructure_container()

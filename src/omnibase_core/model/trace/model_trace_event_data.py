@@ -4,8 +4,6 @@ Model for trace event data in the traceability service.
 This model defines the structure for data contained within trace events.
 """
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel
 
 
@@ -13,21 +11,21 @@ class ModelTraceEventData(BaseModel):
     """Data structure for trace event data."""
 
     # Common fields
-    task_id: Optional[str] = None
-    task_description: Optional[str] = None
-    agent_id: Optional[str] = None
-    component: Optional[str] = None
-    success: Optional[bool] = None
-    error_message: Optional[str] = None
+    task_id: str | None = None
+    task_description: str | None = None
+    agent_id: str | None = None
+    component: str | None = None
+    success: bool | None = None
+    error_message: str | None = None
 
     # Performance metrics
-    duration_ms: Optional[float] = None
-    total_duration_ms: Optional[float] = None
-    event_count: Optional[int] = None
+    duration_ms: float | None = None
+    total_duration_ms: float | None = None
+    event_count: int | None = None
 
     # Additional context
-    debug_entry_id: Optional[str] = None
-    metadata: Optional[Dict[str, str]] = None
+    debug_entry_id: str | None = None
+    metadata: dict[str, str] | None = None
 
     # For flexibility with different event types
-    additional_data: Optional[Dict[str, str]] = None
+    additional_data: dict[str, str] | None = None

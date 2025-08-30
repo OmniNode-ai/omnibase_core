@@ -4,8 +4,6 @@ JSON Data Model for ONEX Configuration System.
 Strongly typed model for JSON request body data.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.configuration.model_dict_config import ModelDictConfig
@@ -14,22 +12,23 @@ from omnibase_core.model.configuration.model_dict_config import ModelDictConfig
 class ModelJsonField(BaseModel):
     """Strongly typed JSON field."""
 
-    string_value: Optional[str] = Field(default=None, description="String value")
-    number_value: Optional[float] = Field(default=None, description="Number value")
-    boolean_value: Optional[bool] = Field(default=None, description="Boolean value")
-    array_values: Optional[List[str]] = Field(
-        default=None, description="Array of string values"
+    string_value: str | None = Field(default=None, description="String value")
+    number_value: float | None = Field(default=None, description="Number value")
+    boolean_value: bool | None = Field(default=None, description="Boolean value")
+    array_values: list[str] | None = Field(
+        default=None,
+        description="Array of string values",
     )
 
     def get_value(self):
         """Get the actual value based on what's set."""
         if self.string_value is not None:
             return self.string_value
-        elif self.number_value is not None:
+        if self.number_value is not None:
             return self.number_value
-        elif self.boolean_value is not None:
+        if self.boolean_value is not None:
             return self.boolean_value
-        elif self.array_values is not None:
+        if self.array_values is not None:
             return self.array_values
         return None
 
@@ -42,8 +41,9 @@ class ModelJsonData(BaseModel):
     with proper type safety.
     """
 
-    fields: Dict[str, ModelJsonField] = Field(
-        default_factory=dict, description="JSON fields with strongly typed values"
+    fields: dict[str, ModelJsonField] = Field(
+        default_factory=dict,
+        description="JSON fields with strongly typed values",
     )
 
     def to_dict(self) -> ModelDictConfig:

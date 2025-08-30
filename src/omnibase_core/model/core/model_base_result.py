@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -33,12 +33,12 @@ from .model_generic_metadata import ModelGenericMetadata
 class ModelBaseResult(BaseModel):
     exit_code: int
     success: bool
-    errors: List[ModelBaseError] = Field(default_factory=list)
-    metadata: Optional[ModelGenericMetadata] = (
+    errors: list[ModelBaseError] = Field(default_factory=list)
+    metadata: ModelGenericMetadata | None = (
         None  # Typed metadata with backward compatibility
     )
 
-    def dict(self, **kwargs) -> Dict[str, Any]:
+    def dict(self, **kwargs) -> dict[str, Any]:
         """Override dict to maintain backward compatibility for metadata field."""
         result = super().dict(**kwargs)
         if self.metadata and isinstance(self.metadata, ModelGenericMetadata):

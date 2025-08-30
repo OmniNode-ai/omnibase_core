@@ -5,16 +5,12 @@ Complete quota usage tracking across operational windows.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.optimization.model_quota_allocation import \
-    ModelQuotaAllocation
-from omnibase_core.model.optimization.model_quota_metadata import \
-    ModelQuotaMetadata
-from omnibase_core.model.optimization.model_usage_snapshot import \
-    ModelUsageSnapshot
+from omnibase_core.model.optimization.model_quota_allocation import ModelQuotaAllocation
+from omnibase_core.model.optimization.model_quota_metadata import ModelQuotaMetadata
+from omnibase_core.model.optimization.model_usage_snapshot import ModelUsageSnapshot
 
 
 class ModelQuotaUsage(BaseModel):
@@ -29,32 +25,37 @@ class ModelQuotaUsage(BaseModel):
     total_consumed: int = Field(0, ge=0, description="Total tokens consumed today")
     total_cost: float = Field(0.0, ge=0, description="Total cost today")
 
-    window_allocations: List[ModelQuotaAllocation] = Field(
-        default_factory=list, description="Per-window allocations"
+    window_allocations: list[ModelQuotaAllocation] = Field(
+        default_factory=list,
+        description="Per-window allocations",
     )
 
     emergency_reserve: int = Field(..., gt=0, description="Emergency token reserve")
     emergency_reserve_used: int = Field(0, ge=0, description="Emergency tokens used")
 
     reset_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Daily reset time"
+        default_factory=datetime.utcnow,
+        description="Daily reset time",
     )
-    last_optimization: Optional[datetime] = Field(
-        None, description="Last optimization run"
+    last_optimization: datetime | None = Field(
+        None,
+        description="Last optimization run",
     )
 
-    snapshots: List[ModelUsageSnapshot] = Field(
+    snapshots: list[ModelUsageSnapshot] = Field(
         default_factory=list,
         max_length=1440,  # Keep last 24 hours of minute-level snapshots
         description="Recent usage snapshots",
     )
 
-    alerts_triggered: List[str] = Field(
-        default_factory=list, description="Alerts triggered today"
+    alerts_triggered: list[str] = Field(
+        default_factory=list,
+        description="Alerts triggered today",
     )
 
-    metadata: Optional[ModelQuotaMetadata] = Field(
-        default_factory=ModelQuotaMetadata, description="Additional usage data"
+    metadata: ModelQuotaMetadata | None = Field(
+        default_factory=ModelQuotaMetadata,
+        description="Additional usage data",
     )
 
     def get_utilization(self) -> float:
@@ -79,7 +80,7 @@ class ModelQuotaUsage(BaseModel):
         """Check if budget is exhausted."""
         return self.total_cost >= self.daily_budget
 
-    def get_window_allocation(self, window_id: str) -> Optional[ModelQuotaAllocation]:
+    def get_window_allocation(self, window_id: str) -> ModelQuotaAllocation | None:
         """Get allocation for specific window."""
         for allocation in self.window_allocations:
             if allocation.window_id == window_id:

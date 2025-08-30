@@ -54,12 +54,14 @@ class ModelRelationshipType(BaseModel):
     """Model for relationship type with additional metadata."""
 
     type_enum: EnumRelationshipType = Field(
-        ..., description="Primary relationship type"
+        ...,
+        description="Primary relationship type",
     )
     category: str = Field(..., description="High-level category grouping")
     is_directional: bool = Field(True, description="Whether relationship has direction")
     semantic_distance: float = Field(
-        1.0, description="Semantic distance (lower = closer)"
+        1.0,
+        description="Semantic distance (lower = closer)",
     )
     importance_weight: float = Field(1.0, description="Importance weighting factor")
 

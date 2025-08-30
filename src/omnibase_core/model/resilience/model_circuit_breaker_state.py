@@ -6,7 +6,6 @@ Circuit breaker pattern implementation for distributed system resilience.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -29,29 +28,36 @@ class ModelCircuitBreakerState(BaseModel):
 
     service_name: str = Field(..., description="Name of the protected service")
     current_state: EnumCircuitBreakerState = Field(
-        EnumCircuitBreakerState.CLOSED, description="Current circuit breaker state"
+        EnumCircuitBreakerState.CLOSED,
+        description="Current circuit breaker state",
     )
     failure_count: int = Field(0, description="Current consecutive failure count")
     failure_threshold: int = Field(5, description="Failures needed to open circuit")
     recovery_timeout: int = Field(
-        60, description="Seconds to wait before trying half-open"
+        60,
+        description="Seconds to wait before trying half-open",
     )
     success_threshold: int = Field(
-        3, description="Successes needed to close from half-open"
+        3,
+        description="Successes needed to close from half-open",
     )
 
-    last_failure_time: Optional[datetime] = Field(
-        None, description="Timestamp of last failure"
+    last_failure_time: datetime | None = Field(
+        None,
+        description="Timestamp of last failure",
     )
-    last_success_time: Optional[datetime] = Field(
-        None, description="Timestamp of last success"
+    last_success_time: datetime | None = Field(
+        None,
+        description="Timestamp of last success",
     )
     state_changed_at: datetime = Field(
-        default_factory=datetime.now, description="When state last changed"
+        default_factory=datetime.now,
+        description="When state last changed",
     )
 
     consecutive_successes: int = Field(
-        0, description="Consecutive successes in half-open state"
+        0,
+        description="Consecutive successes in half-open state",
     )
     total_requests: int = Field(0, description="Total requests processed")
     total_failures: int = Field(0, description="Total failures encountered")
@@ -73,5 +79,5 @@ class ModelCircuitBreakerState(BaseModel):
                 "consecutive_successes": 0,
                 "total_requests": 150,
                 "total_failures": 8,
-            }
+            },
         }

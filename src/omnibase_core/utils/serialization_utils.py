@@ -7,14 +7,14 @@ tasks, particularly for event bus JSON serialization.
 """
 
 import uuid
-from typing import Any, Dict, List, Set
+from typing import Any
 
 
 class SerializationUtils:
     """Utility class for common serialization tasks."""
 
     @staticmethod
-    def serialize_for_json(obj: Any, visited: Set[int] = None) -> Any:
+    def serialize_for_json(obj: Any, visited: set[int] | None = None) -> Any:
         """
         Recursively convert objects to JSON-serializable format.
 
@@ -54,7 +54,7 @@ class SerializationUtils:
                 return str(obj)
 
             # Basic JSON-serializable types
-            if obj is None or isinstance(obj, (str, int, float, bool)):
+            if obj is None or isinstance(obj, str | int | float | bool):
                 return obj
 
             # Track this object to prevent cycles
@@ -70,7 +70,7 @@ class SerializationUtils:
                     }
 
                 # Lists and tuples
-                if isinstance(obj, (list, tuple)):
+                if isinstance(obj, list | tuple):
                     return [
                         SerializationUtils.serialize_for_json(item, visited)
                         for item in obj
@@ -114,8 +114,9 @@ class SerializationUtils:
 
     @staticmethod
     def clean_event_data(
-        event_data: Dict[str, Any], exclude_fields: List[str] = None
-    ) -> Dict[str, Any]:
+        event_data: dict[str, Any],
+        exclude_fields: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Clean event data for JSON serialization, removing problematic fields.
 
@@ -130,13 +131,11 @@ class SerializationUtils:
             exclude_fields = ["event_type", "node_id", "correlation_id", "timestamp"]
 
         # Remove excluded fields and serialize remaining data
-        cleaned = {
+        return {
             k: SerializationUtils.serialize_for_json(v)
             for k, v in event_data.items()
             if k not in exclude_fields and not callable(v)
         }
-
-        return cleaned
 
     @staticmethod
     def prepare_correlation_id(correlation_id: Any) -> str:

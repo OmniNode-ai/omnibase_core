@@ -5,7 +5,7 @@ Execution environment context for CLI commands including environment,
 timeouts, retry configuration, and debug settings.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,48 +18,56 @@ class ModelContextMetadata(BaseModel):
     """Metadata for execution context."""
 
     # Request tracking
-    request_id: Optional[str] = Field(None, description="Unique request identifier")
-    request_source: Optional[str] = Field(None, description="Source of the request")
-    request_timestamp: Optional[str] = Field(None, description="Request timestamp")
+    request_id: str | None = Field(None, description="Unique request identifier")
+    request_source: str | None = Field(None, description="Source of the request")
+    request_timestamp: str | None = Field(None, description="Request timestamp")
 
     # Authentication context
-    auth_method: Optional[str] = Field(None, description="Authentication method used")
-    auth_provider: Optional[str] = Field(None, description="Authentication provider")
-    permissions: List[str] = Field(
-        default_factory=list, description="Granted permissions"
+    auth_method: str | None = Field(None, description="Authentication method used")
+    auth_provider: str | None = Field(None, description="Authentication provider")
+    permissions: list[str] = Field(
+        default_factory=list,
+        description="Granted permissions",
     )
 
     # Execution constraints
-    max_memory_mb: Optional[int] = Field(None, description="Maximum memory allowed")
-    max_cpu_percent: Optional[float] = Field(
-        None, description="Maximum CPU usage allowed"
+    max_memory_mb: int | None = Field(None, description="Maximum memory allowed")
+    max_cpu_percent: float | None = Field(
+        None,
+        description="Maximum CPU usage allowed",
     )
-    priority_level: Optional[str] = Field(None, description="Execution priority level")
+    priority_level: str | None = Field(None, description="Execution priority level")
 
     # Feature flags
-    enabled_features: List[str] = Field(
-        default_factory=list, description="Enabled features"
+    enabled_features: list[str] = Field(
+        default_factory=list,
+        description="Enabled features",
     )
-    disabled_features: List[str] = Field(
-        default_factory=list, description="Disabled features"
+    disabled_features: list[str] = Field(
+        default_factory=list,
+        description="Disabled features",
     )
-    experimental_features: List[str] = Field(
-        default_factory=list, description="Experimental features"
+    experimental_features: list[str] = Field(
+        default_factory=list,
+        description="Experimental features",
     )
 
     # Monitoring and telemetry
-    trace_flags: Optional[str] = Field(None, description="Distributed tracing flags")
-    baggage_items: Dict[str, str] = Field(
-        default_factory=dict, description="OpenTelemetry baggage"
+    trace_flags: str | None = Field(None, description="Distributed tracing flags")
+    baggage_items: dict[str, str] = Field(
+        default_factory=dict,
+        description="OpenTelemetry baggage",
     )
-    parent_span_id: Optional[str] = Field(
-        None, description="Parent span ID for tracing"
+    parent_span_id: str | None = Field(
+        None,
+        description="Parent span ID for tracing",
     )
 
     # Custom metadata for extensibility
-    custom_tags: Dict[str, str] = Field(default_factory=dict, description="Custom tags")
-    custom_metrics: Optional[Dict[str, float]] = Field(
-        None, description="Custom metrics"
+    custom_tags: dict[str, str] = Field(default_factory=dict, description="Custom tags")
+    custom_metrics: dict[str, float] | None = Field(
+        None,
+        description="Custom metrics",
     )
 
 
@@ -84,47 +92,60 @@ class ModelExecutionContext(BaseModel):
     )
 
     retry_attempts: int = Field(
-        default=3, description="Number of retry attempts on failure", ge=0, le=10
+        default=3,
+        description="Number of retry attempts on failure",
+        ge=0,
+        le=10,
     )
 
     debug_enabled: bool = Field(
-        default=False, description="Whether debug mode is enabled"
+        default=False,
+        description="Whether debug mode is enabled",
     )
 
     trace_enabled: bool = Field(
-        default=False, description="Whether execution tracing is enabled"
+        default=False,
+        description="Whether execution tracing is enabled",
     )
 
     dry_run: bool = Field(
-        default=False, description="Whether this is a dry run (no actual execution)"
+        default=False,
+        description="Whether this is a dry run (no actual execution)",
     )
 
     verbose: bool = Field(
-        default=False, description="Whether verbose output is enabled"
+        default=False,
+        description="Whether verbose output is enabled",
     )
 
-    working_directory: Optional[str] = Field(
-        None, description="Working directory for command execution"
+    working_directory: str | None = Field(
+        None,
+        description="Working directory for command execution",
     )
 
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Additional environment variables"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional environment variables",
     )
 
     execution_metadata: ModelContextMetadata = Field(
-        default_factory=ModelContextMetadata, description="Execution metadata"
+        default_factory=ModelContextMetadata,
+        description="Execution metadata",
     )
 
-    user_id: Optional[str] = Field(
-        None, description="User ID for audit and permissions"
+    user_id: str | None = Field(
+        None,
+        description="User ID for audit and permissions",
     )
 
-    session_id: Optional[str] = Field(
-        None, description="Session ID for tracking related commands"
+    session_id: str | None = Field(
+        None,
+        description="Session ID for tracking related commands",
     )
 
-    correlation_id: Optional[str] = Field(
-        None, description="Correlation ID for distributed tracing"
+    correlation_id: str | None = Field(
+        None,
+        description="Correlation ID for distributed tracing",
     )
 
     def is_async_mode(self) -> bool:
@@ -167,8 +188,10 @@ class ModelExecutionContext(BaseModel):
             self.execution_metadata.custom_tags[key] = str(value)
 
     def get_environment_variable(
-        self, key: str, default: Optional[str] = None
-    ) -> Optional[str]:
+        self,
+        key: str,
+        default: str | None = None,
+    ) -> str | None:
         """Get environment variable value."""
         return self.environment_variables.get(key, default)
 
@@ -186,7 +209,7 @@ class ModelExecutionContext(BaseModel):
         data.update(overrides)
         return ModelExecutionContext(**data)
 
-    def to_environment_dict(self) -> Dict[str, str]:
+    def to_environment_dict(self) -> dict[str, str]:
         """Convert to environment variables dictionary."""
         env_dict = self.environment_variables.copy()
 
@@ -223,7 +246,8 @@ class ModelExecutionContext(BaseModel):
 
     @classmethod
     def create_debug(
-        cls, environment_name: str = "development"
+        cls,
+        environment_name: str = "development",
     ) -> "ModelExecutionContext":
         """Create a debug execution context."""
         context = cls.create_default(environment_name)
@@ -234,7 +258,8 @@ class ModelExecutionContext(BaseModel):
 
     @classmethod
     def create_production(
-        cls, environment_name: str = "production"
+        cls,
+        environment_name: str = "production",
     ) -> "ModelExecutionContext":
         """Create a production execution context."""
         environment = ModelEnvironment.create_default(environment_name)

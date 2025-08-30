@@ -5,12 +5,10 @@ Automated recovery action taken.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.monitoring.enum_recovery_action import \
-    EnumRecoveryAction
+from omnibase_core.model.monitoring.enum_recovery_action import EnumRecoveryAction
 
 
 class ModelRecoveryAction(BaseModel):
@@ -21,35 +19,41 @@ class ModelRecoveryAction(BaseModel):
 
     triggered_by_alert: str = Field(..., description="Alert ID that triggered action")
     target_component: str = Field(..., description="Component being acted upon")
-    target_agent: Optional[str] = Field(
-        None, description="Specific agent if applicable"
+    target_agent: str | None = Field(
+        None,
+        description="Specific agent if applicable",
     )
 
     initiated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When action was initiated"
+        default_factory=datetime.utcnow,
+        description="When action was initiated",
     )
-    completed_at: Optional[datetime] = Field(None, description="When action completed")
+    completed_at: datetime | None = Field(None, description="When action completed")
 
-    success: Optional[bool] = Field(None, description="Whether action was successful")
-    error_message: Optional[str] = Field(
-        None, description="Error message if action failed"
+    success: bool | None = Field(None, description="Whether action was successful")
+    error_message: str | None = Field(
+        None,
+        description="Error message if action failed",
     )
 
-    parameters: Optional[str] = Field(
-        None, description="Action parameters as JSON string"
+    parameters: str | None = Field(
+        None,
+        description="Action parameters as JSON string",
     )
 
     impact_description: str = Field(..., description="Description of expected impact")
 
     def mark_completed(
-        self, success: bool, error_message: Optional[str] = None
+        self,
+        success: bool,
+        error_message: str | None = None,
     ) -> None:
         """Mark action as completed."""
         self.completed_at = datetime.utcnow()
         self.success = success
         self.error_message = error_message
 
-    def get_duration(self) -> Optional[float]:
+    def get_duration(self) -> float | None:
         """Get action duration in seconds."""
         if not self.completed_at:
             return None

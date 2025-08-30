@@ -5,12 +5,15 @@
 
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.model.core.model_onex_event import (
-    DiscoveryRequestModelMetadata, DiscoveryResponseModelMetadata, OnexEvent)
+    DiscoveryRequestModelMetadata,
+    DiscoveryResponseModelMetadata,
+    OnexEvent,
+)
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
 
@@ -53,7 +56,7 @@ class DiscoveryResponderMixin:
     def start_discovery_responder(
         self,
         event_bus: ProtocolEventBus,
-        logger: Optional[ProtocolLogger] = None,
+        logger: ProtocolLogger | None = None,
         response_throttle: float = 1.0,
     ):
         """
@@ -74,30 +77,32 @@ class DiscoveryResponderMixin:
         try:
             # Subscribe to discovery broadcast channel
             event_bus.subscribe(
-                "onex.discovery.broadcast", self._handle_discovery_request
+                "onex.discovery.broadcast",
+                self._handle_discovery_request,
             )
 
             self._discovery_active = True
 
             if logger:
                 logger.log(
-                    f"[DiscoveryResponder] Started discovery responder with {response_throttle}s throttle"
+                    f"[DiscoveryResponder] Started discovery responder with {response_throttle}s throttle",
                 )
                 logger.log(
-                    f"[DiscoveryResponder] Node ID: {getattr(self, 'node_id', 'unknown')}"
+                    f"[DiscoveryResponder] Node ID: {getattr(self, 'node_id', 'unknown')}",
                 )
 
         except Exception as e:
             if logger:
                 logger.log(
-                    f"[DiscoveryResponder] Failed to start discovery responder: {str(e)}"
+                    f"[DiscoveryResponder] Failed to start discovery responder: {e!s}",
                 )
+            msg = f"Failed to start discovery responder: {e!s}"
             raise OnexError(
-                f"Failed to start discovery responder: {str(e)}",
+                msg,
                 CoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
-    def stop_discovery_responder(self, logger: Optional[ProtocolLogger] = None):
+    def stop_discovery_responder(self, logger: ProtocolLogger | None = None):
         """
         Stop responding to discovery broadcasts.
 
@@ -114,9 +119,9 @@ class DiscoveryResponderMixin:
             logger.log(f"[DiscoveryResponder] Stats: {self._discovery_stats}")
 
     @allow_dict_str_any(
-        "Discovery request event data requires flexible dictionary structure"
+        "Discovery request event data requires flexible dictionary structure",
     )
-    def _handle_discovery_request(self, event_data: Dict[str, Any]):
+    def _handle_discovery_request(self, event_data: dict[str, Any]):
         """
         Handle incoming discovery requests.
 
@@ -159,7 +164,8 @@ class DiscoveryResponderMixin:
             pass
 
     def _matches_discovery_criteria(
-        self, request: DiscoveryRequestModelMetadata
+        self,
+        request: DiscoveryRequestModelMetadata,
     ) -> bool:
         """
         Check if this node matches the discovery criteria.
@@ -191,7 +197,7 @@ class DiscoveryResponderMixin:
         return True
 
     @allow_dict_str_any("Filter criteria requires flexible dictionary structure")
-    def _matches_custom_criteria(self, filter_criteria: Dict[str, Any]) -> bool:
+    def _matches_custom_criteria(self, filter_criteria: dict[str, Any]) -> bool:
         """
         Check custom filter criteria.
 
@@ -207,7 +213,9 @@ class DiscoveryResponderMixin:
         return True
 
     def _send_discovery_response(
-        self, original_event: OnexEvent, request: DiscoveryRequestModelMetadata
+        self,
+        original_event: OnexEvent,
+        request: DiscoveryRequestModelMetadata,
     ):
         """
         Send discovery response back to requester.
@@ -245,7 +253,8 @@ class DiscoveryResponderMixin:
             # Publish response (assuming we have access to event bus)
             if hasattr(self, "_event_bus") and self._event_bus:
                 self._event_bus.publish(
-                    "onex.discovery.response", response_event.model_dump()
+                    "onex.discovery.response",
+                    response_event.model_dump(),
                 )
 
         except Exception:
@@ -253,7 +262,7 @@ class DiscoveryResponderMixin:
             pass
 
     @allow_dict_str_any("Introspection data requires flexible dictionary structure")
-    def _get_discovery_introspection(self) -> Dict[str, Any]:
+    def _get_discovery_introspection(self) -> dict[str, Any]:
         """
         Get introspection data for discovery response.
 
@@ -276,7 +285,7 @@ class DiscoveryResponderMixin:
             "timestamp": datetime.utcnow().isoformat(),
         }
 
-    def get_discovery_capabilities(self) -> List[str]:
+    def get_discovery_capabilities(self) -> list[str]:
         """
         Get capabilities supported by this node for discovery.
 
@@ -312,7 +321,7 @@ class DiscoveryResponderMixin:
         # Subclasses should implement actual health checks
         return "healthy"
 
-    def _get_node_version(self) -> Optional[str]:
+    def _get_node_version(self) -> str | None:
         """
         Get version of the node.
 
@@ -325,7 +334,7 @@ class DiscoveryResponderMixin:
             return self.node_version
         return None
 
-    def _get_discovery_event_channels(self) -> Dict[str, List[str]]:
+    def _get_discovery_event_channels(self) -> dict[str, list[str]]:
         """
         Get event channels for discovery response.
 
@@ -346,7 +355,7 @@ class DiscoveryResponderMixin:
         }
 
     @allow_dict_str_any("Discovery stats require flexible dictionary structure")
-    def get_discovery_stats(self) -> Dict[str, Any]:
+    def get_discovery_stats(self) -> dict[str, Any]:
         """
         Get discovery responder statistics.
 

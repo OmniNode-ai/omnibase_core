@@ -8,12 +8,11 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.exceptions import OnexError
 from omnibase_core.utils.policy.utility_policy_loader import (
-    get_coding_standards_policy, get_logging_policy)
+    get_coding_standards_policy,
+    get_logging_policy,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class UtilityRuntimePolicyEnforcement:
 
     def __init__(self):
         """Initialize runtime policy enforcement."""
-        self._compiled_patterns: Optional[Dict[str, re.Pattern]] = None
+        self._compiled_patterns: dict[str, re.Pattern] | None = None
         self._policy_cache_valid = False
 
     def _ensure_patterns_compiled(self) -> None:
@@ -51,7 +50,8 @@ class UtilityRuntimePolicyEnforcement:
                 pattern_key = f"never_log_{pattern}"
                 # Create case-insensitive pattern for field names
                 self._compiled_patterns[pattern_key] = re.compile(
-                    rf"\b{re.escape(pattern)}\b", re.IGNORECASE
+                    rf"\b{re.escape(pattern)}\b",
+                    re.IGNORECASE,
                 )
 
             # Compile sanitize_patterns
@@ -59,7 +59,8 @@ class UtilityRuntimePolicyEnforcement:
                 pattern_key = f"sanitize_{pattern}"
                 # Match patterns like "password=", "token:", etc.
                 self._compiled_patterns[pattern_key] = re.compile(
-                    pattern.replace("=", r"\s*[=:]\s*[^\s,}]+"), re.IGNORECASE
+                    pattern.replace("=", r"\s*[=:]\s*[^\s,}]+"),
+                    re.IGNORECASE,
                 )
 
             # Compile PII patterns
@@ -69,7 +70,8 @@ class UtilityRuntimePolicyEnforcement:
             ) in policy.logging_policy.security.pii_detection.items():
                 pattern_key = f"pii_{pii_type}"
                 self._compiled_patterns[pattern_key] = re.compile(
-                    pattern, re.IGNORECASE
+                    pattern,
+                    re.IGNORECASE,
                 )
 
             self._policy_cache_valid = True
@@ -83,8 +85,10 @@ class UtilityRuntimePolicyEnforcement:
             self._compiled_patterns = {}
 
     def sanitize_log_data(
-        self, data: Union[str, Dict, List], context: str = "unknown"
-    ) -> Tuple[Union[str, Dict, List], List[SecurityViolation]]:
+        self,
+        data: str | dict | list,
+        context: str = "unknown",
+    ) -> tuple[str | dict | list, list[SecurityViolation]]:
         """Sanitize data before logging to remove sensitive information.
 
         Args:
@@ -95,46 +99,49 @@ class UtilityRuntimePolicyEnforcement:
             Tuple of (sanitized_data, violations_found)
         """
         self._ensure_patterns_compiled()
-        violations: List[SecurityViolation] = []
+        violations: list[SecurityViolation] = []
 
         if isinstance(data, str):
             sanitized, str_violations = self._sanitize_string(data, context)
             violations.extend(str_violations)
             return sanitized, violations
 
-        elif isinstance(data, dict):
+        if isinstance(data, dict):
             sanitized = {}
             for key, value in data.items():
                 sanitized_key, key_violations = self._sanitize_field_name(key, context)
                 violations.extend(key_violations)
 
                 sanitized_value, value_violations = self.sanitize_log_data(
-                    value, f"{context}.{key}"
+                    value,
+                    f"{context}.{key}",
                 )
                 violations.extend(value_violations)
 
                 sanitized[sanitized_key] = sanitized_value
             return sanitized, violations
 
-        elif isinstance(data, list):
+        if isinstance(data, list):
             sanitized = []
             for i, item in enumerate(data):
                 sanitized_item, item_violations = self.sanitize_log_data(
-                    item, f"{context}[{i}]"
+                    item,
+                    f"{context}[{i}]",
                 )
                 violations.extend(item_violations)
                 sanitized.append(sanitized_item)
             return sanitized, violations
 
-        else:
-            # For other types (int, float, bool, None), return as-is
-            return data, violations
+        # For other types (int, float, bool, None), return as-is
+        return data, violations
 
     def _sanitize_string(
-        self, text: str, context: str
-    ) -> Tuple[str, List[SecurityViolation]]:
+        self,
+        text: str,
+        context: str,
+    ) -> tuple[str, list[SecurityViolation]]:
         """Sanitize a string by removing sensitive patterns."""
-        violations: List[SecurityViolation] = []
+        violations: list[SecurityViolation] = []
         sanitized = text
 
         if not self._compiled_patterns:
@@ -173,16 +180,19 @@ class UtilityRuntimePolicyEnforcement:
 
                     # Replace PII with generic placeholder
                     sanitized = compiled_pattern.sub(
-                        f"[{pii_type.upper()}_REDACTED]", sanitized
+                        f"[{pii_type.upper()}_REDACTED]",
+                        sanitized,
                     )
 
         return sanitized, violations
 
     def _sanitize_field_name(
-        self, field_name: str, context: str
-    ) -> Tuple[str, List[SecurityViolation]]:
+        self,
+        field_name: str,
+        context: str,
+    ) -> tuple[str, list[SecurityViolation]]:
         """Check if a field name contains sensitive information."""
-        violations: List[SecurityViolation] = []
+        violations: list[SecurityViolation] = []
 
         if not self._compiled_patterns:
             return field_name, violations
@@ -206,9 +216,9 @@ class UtilityRuntimePolicyEnforcement:
 
     def validate_log_entry(
         self,
-        log_data: Dict[str, Union[str, int, float, bool, List, Dict]],
+        log_data: dict[str, str | int | float | bool | list | dict],
         subsystem: str = "default",
-    ) -> Tuple[bool, List[SecurityViolation]]:
+    ) -> tuple[bool, list[SecurityViolation]]:
         """Validate a log entry against security policies.
 
         Args:
@@ -218,11 +228,12 @@ class UtilityRuntimePolicyEnforcement:
         Returns:
             Tuple of (is_safe_to_log, violations_found)
         """
-        violations: List[SecurityViolation] = []
+        violations: list[SecurityViolation] = []
 
         # Sanitize the entire log entry
         sanitized_data, sanitize_violations = self.sanitize_log_data(
-            log_data, subsystem
+            log_data,
+            subsystem,
         )
         violations.extend(sanitize_violations)
 
@@ -244,9 +255,9 @@ class UtilityRuntimePolicyEnforcement:
 
     def get_safe_log_data(
         self,
-        log_data: Dict[str, Union[str, int, float, bool, List, Dict]],
+        log_data: dict[str, str | int | float | bool | list | dict],
         subsystem: str = "default",
-    ) -> Dict[str, Union[str, int, float, bool, List, Dict]]:
+    ) -> dict[str, str | int | float | bool | list | dict]:
         """Get sanitized version of log data that's safe to log.
 
         Args:
@@ -264,19 +275,20 @@ class UtilityRuntimePolicyEnforcement:
                 extra={
                     "subsystem": subsystem,
                     "violations_found": len(violations),
-                    "violation_types": list(set(v.violation_type for v in violations)),
+                    "violation_types": list({v.violation_type for v in violations}),
                 },
             )
 
         # Ensure sanitized_data is a dict
         if isinstance(sanitized_data, dict):
             return sanitized_data
-        else:
-            return {"sanitized_content": sanitized_data}
+        return {"sanitized_content": sanitized_data}
 
     def enforce_coding_standards(
-        self, code_content: str, file_path: Path
-    ) -> List[SecurityViolation]:
+        self,
+        code_content: str,
+        file_path: Path,
+    ) -> list[SecurityViolation]:
         """Enforce coding standards on code content.
 
         Args:
@@ -286,7 +298,7 @@ class UtilityRuntimePolicyEnforcement:
         Returns:
             List of coding standard violations
         """
-        violations: List[SecurityViolation] = []
+        violations: list[SecurityViolation] = []
 
         try:
             policy = get_coding_standards_policy()
@@ -337,7 +349,9 @@ class UtilityRuntimePolicyEnforcement:
             return violations
 
     def create_secure_logger(
-        self, name: str, subsystem: str = "default"
+        self,
+        name: str,
+        subsystem: str = "default",
     ) -> logging.Logger:
         """Create a logger with automatic security policy enforcement.
 
@@ -409,14 +423,15 @@ class SecurePolicyHandler(logging.Handler):
 
             # Validate log data
             is_safe, violations = self.enforcement.validate_log_entry(
-                extra_data, self.subsystem
+                extra_data,
+                self.subsystem,
             )
 
             if not is_safe:
                 # Block logging for critical security violations
                 blocked_logger = logging.getLogger(f"{record.name}.security_blocked")
                 blocked_logger.warning(
-                    f"Log entry blocked due to security violations",
+                    "Log entry blocked due to security violations",
                     extra={
                         "original_logger": record.name,
                         "violations_count": len(violations),
@@ -445,8 +460,9 @@ runtime_enforcer = UtilityRuntimePolicyEnforcement()
 
 
 def sanitize_for_logging(
-    data: Union[str, Dict, List], context: str = "log"
-) -> Union[str, Dict, List]:
+    data: str | dict | list,
+    context: str = "log",
+) -> str | dict | list:
     """Convenience function to sanitize data for logging.
 
     Args:
@@ -474,8 +490,9 @@ def create_secure_logger(name: str, subsystem: str = "default") -> logging.Logge
 
 
 def validate_code_security(
-    code_content: str, file_path: Path
-) -> List[SecurityViolation]:
+    code_content: str,
+    file_path: Path,
+) -> list[SecurityViolation]:
     """Convenience function to validate code against security standards.
 
     Args:

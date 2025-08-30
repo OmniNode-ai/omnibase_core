@@ -29,7 +29,6 @@ This module provides structured configuration for file type handlers,
 including processing categories, patterns, and priority settings.
 """
 
-from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -44,20 +43,23 @@ class ModelHandlerConfig(BaseModel):
 
     handler_name: str = Field(description="Unique name identifier for the handler")
     processing_category: str = Field(
-        description="Category of processing this handler performs"
+        description="Category of processing this handler performs",
     )
-    force_processing_patterns: List[str] = Field(
+    force_processing_patterns: list[str] = Field(
         default_factory=list,
         description="File patterns this handler should process despite ignore rules",
     )
-    supported_extensions: List[str] = Field(
-        default_factory=list, description="File extensions this handler can process"
+    supported_extensions: list[str] = Field(
+        default_factory=list,
+        description="File extensions this handler can process",
     )
-    supported_filenames: List[str] = Field(
-        default_factory=list, description="Specific filenames this handler can process"
+    supported_filenames: list[str] = Field(
+        default_factory=list,
+        description="Specific filenames this handler can process",
     )
     priority: int = Field(
-        default=50, description="Handler priority for conflict resolution (higher wins)"
+        default=50,
+        description="Handler priority for conflict resolution (higher wins)",
     )
 
     model_config = ConfigDict(
@@ -70,6 +72,6 @@ class ModelHandlerConfig(BaseModel):
                 "supported_extensions": [".yaml"],
                 "supported_filenames": ["node.onex.yaml"],
                 "priority": 75,
-            }
+            },
         },
     )

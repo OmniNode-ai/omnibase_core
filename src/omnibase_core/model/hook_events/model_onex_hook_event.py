@@ -61,7 +61,6 @@ See Also:
 """
 
 from datetime import datetime
-from typing import Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -99,36 +98,40 @@ class ModelOnexHookEvent(BaseModel):
     # Core event identification
     event_type: str = Field(..., description="Type of hook event")
     session_id: str = Field(..., description="Claude session identifier")
-    timestamp: Union[str, datetime] = Field(..., description="Event timestamp")
+    timestamp: str | datetime = Field(..., description="Event timestamp")
 
     # Tool information (optional for lifecycle hooks)
-    tool_name: Optional[str] = Field(
-        None, description="Name of the tool (if applicable)"
+    tool_name: str | None = Field(
+        None,
+        description="Name of the tool (if applicable)",
     )
 
     # Claude Code specific fields
-    claude_message: Optional[str] = Field(None, description="Claude message content")
-    message: Optional[str] = Field(None, description="Message content")
-    content: Optional[str] = Field(None, description="Content")
-    prompt: Optional[str] = Field(
-        None, description="User prompt (for user-prompt-submit)"
+    claude_message: str | None = Field(None, description="Claude message content")
+    message: str | None = Field(None, description="Message content")
+    content: str | None = Field(None, description="Content")
+    prompt: str | None = Field(
+        None,
+        description="User prompt (for user-prompt-submit)",
     )
 
     # Claude Code environment fields
-    transcript_path: Optional[str] = Field(
-        None, description="Path to Claude Code transcript"
+    transcript_path: str | None = Field(
+        None,
+        description="Path to Claude Code transcript",
     )
-    cwd: Optional[str] = Field(None, description="Current working directory")
-    working_directory: Optional[str] = Field(None, description="Working directory")
-    hook_event_name: Optional[str] = Field(
-        None, description="Claude Code hook event name"
+    cwd: str | None = Field(None, description="Current working directory")
+    working_directory: str | None = Field(None, description="Working directory")
+    hook_event_name: str | None = Field(
+        None,
+        description="Claude Code hook event name",
     )
-    hook_type: Optional[str] = Field(None, description="Hook type from Claude Code")
+    hook_type: str | None = Field(None, description="Hook type from Claude Code")
 
     # Additional context
-    error: Optional[str] = Field(None, description="Error details")
-    topic: Optional[str] = Field(None, description="Topic or routing info")
-    stop_hook_active: Optional[bool] = Field(None, description="Stop hook status")
+    error: str | None = Field(None, description="Error details")
+    topic: str | None = Field(None, description="Topic or routing info")
+    stop_hook_active: bool | None = Field(None, description="Stop hook status")
 
     @field_validator("timestamp")
     @classmethod

@@ -3,7 +3,7 @@ Node information model.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,15 +12,16 @@ class ModelNodeConfiguration(BaseModel):
     """Configuration for a node."""
 
     # Execution settings
-    max_retries: Optional[int] = Field(None, description="Maximum retry attempts")
-    timeout_seconds: Optional[int] = Field(None, description="Execution timeout")
-    batch_size: Optional[int] = Field(None, description="Batch processing size")
+    max_retries: int | None = Field(None, description="Maximum retry attempts")
+    timeout_seconds: int | None = Field(None, description="Execution timeout")
+    batch_size: int | None = Field(None, description="Batch processing size")
     parallel_execution: bool = Field(False, description="Enable parallel execution")
 
     # Resource limits
-    max_memory_mb: Optional[int] = Field(None, description="Maximum memory usage in MB")
-    max_cpu_percent: Optional[float] = Field(
-        None, description="Maximum CPU usage percentage"
+    max_memory_mb: int | None = Field(None, description="Maximum memory usage in MB")
+    max_cpu_percent: float | None = Field(
+        None,
+        description="Maximum CPU usage percentage",
     )
 
     # Feature flags
@@ -29,19 +30,22 @@ class ModelNodeConfiguration(BaseModel):
     enable_tracing: bool = Field(False, description="Enable detailed tracing")
 
     # Connection settings
-    endpoint: Optional[str] = Field(None, description="Service endpoint")
-    port: Optional[int] = Field(None, description="Service port")
-    protocol: Optional[str] = Field(None, description="Communication protocol")
+    endpoint: str | None = Field(None, description="Service endpoint")
+    port: int | None = Field(None, description="Service port")
+    protocol: str | None = Field(None, description="Communication protocol")
 
     # Custom configuration for extensibility
-    custom_settings: Optional[Dict[str, str]] = Field(
-        None, description="Custom string settings"
+    custom_settings: dict[str, str] | None = Field(
+        None,
+        description="Custom string settings",
     )
-    custom_flags: Optional[Dict[str, bool]] = Field(
-        None, description="Custom boolean flags"
+    custom_flags: dict[str, bool] | None = Field(
+        None,
+        description="Custom boolean flags",
     )
-    custom_limits: Optional[Dict[str, int]] = Field(
-        None, description="Custom numeric limits"
+    custom_limits: dict[str, int] | None = Field(
+        None,
+        description="Custom numeric limits",
     )
 
 
@@ -58,22 +62,25 @@ class ModelNodeInformation(BaseModel):
     node_version: str = Field(..., description="Node version")
 
     # Node metadata
-    description: Optional[str] = Field(None, description="Node description")
-    author: Optional[str] = Field(None, description="Node author")
-    created_at: Optional[datetime] = Field(None, description="Creation timestamp")
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    description: str | None = Field(None, description="Node description")
+    author: str | None = Field(None, description="Node author")
+    created_at: datetime | None = Field(None, description="Creation timestamp")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
 
     # Node capabilities
-    capabilities: List[str] = Field(
-        default_factory=list, description="Node capabilities"
+    capabilities: list[str] = Field(
+        default_factory=list,
+        description="Node capabilities",
     )
-    supported_operations: List[str] = Field(
-        default_factory=list, description="Supported operations"
+    supported_operations: list[str] = Field(
+        default_factory=list,
+        description="Supported operations",
     )
 
     # Node configuration
     configuration: ModelNodeConfiguration = Field(
-        default_factory=ModelNodeConfiguration, description="Node configuration"
+        default_factory=ModelNodeConfiguration,
+        description="Node configuration",
     )
 
     # Node status
@@ -81,22 +88,25 @@ class ModelNodeInformation(BaseModel):
     health: str = Field("healthy", description="Node health")
 
     # Performance metrics
-    performance_metrics: Optional[Dict[str, float]] = Field(
-        None, description="Performance metrics"
+    performance_metrics: dict[str, float] | None = Field(
+        None,
+        description="Performance metrics",
     )
 
     # Dependencies
-    dependencies: List[str] = Field(
-        default_factory=list, description="Node dependencies"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Node dependencies",
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelNodeInformation"]:
         """Create from dictionary for easy migration."""
         if data is None:

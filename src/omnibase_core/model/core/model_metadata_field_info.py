@@ -5,7 +5,7 @@ Replaces NodeMetadataField enum with a proper model that includes
 field properties and categorization.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -26,46 +26,56 @@ class ModelMetadataFieldInfo(BaseModel):
     )
 
     field_name: str = Field(
-        ..., description="Actual field name in models (e.g., metadata_version)"
+        ...,
+        description="Actual field name in models (e.g., metadata_version)",
     )
 
     # Properties
     is_required: bool = Field(
-        ..., description="Whether this field is required in metadata"
+        ...,
+        description="Whether this field is required in metadata",
     )
 
     is_optional: bool = Field(
-        ..., description="Whether this field is optional with defaults"
+        ...,
+        description="Whether this field is optional with defaults",
     )
 
     is_volatile: bool = Field(
-        ..., description="Whether this field may change on stamping"
+        ...,
+        description="Whether this field may change on stamping",
     )
 
     # Field metadata
     field_type: str = Field(
-        ..., description="Python type of the field (str, int, datetime, etc.)"
+        ...,
+        description="Python type of the field (str, int, datetime, etc.)",
     )
 
-    default_value: Optional[Any] = Field(
-        default=None, description="Default value for optional fields"
+    default_value: Any | None = Field(
+        default=None,
+        description="Default value for optional fields",
     )
 
     description: str = Field(
-        default="", description="Human-readable description of the field"
+        default="",
+        description="Human-readable description of the field",
     )
 
     # Validation metadata
-    validation_pattern: Optional[str] = Field(
-        default=None, description="Regex pattern for string validation"
+    validation_pattern: str | None = Field(
+        default=None,
+        description="Regex pattern for string validation",
     )
 
-    min_length: Optional[int] = Field(
-        default=None, description="Minimum length for string fields"
+    min_length: int | None = Field(
+        default=None,
+        description="Minimum length for string fields",
     )
 
-    max_length: Optional[int] = Field(
-        default=None, description="Maximum length for string fields"
+    max_length: int | None = Field(
+        default=None,
+        description="Maximum length for string fields",
     )
 
     # Factory methods for all metadata fields
@@ -272,17 +282,16 @@ class ModelMetadataFieldInfo(BaseModel):
         factory = field_map.get(field_name.upper())
         if factory:
             return factory()
-        else:
-            # Unknown field - create generic
-            return cls(
-                name=field_name.upper(),
-                field_name=field_name.lower(),
-                is_required=False,
-                is_optional=True,
-                is_volatile=False,
-                field_type="str",
-                description=f"Field: {field_name}",
-            )
+        # Unknown field - create generic
+        return cls(
+            name=field_name.upper(),
+            field_name=field_name.lower(),
+            is_required=False,
+            is_optional=True,
+            is_volatile=False,
+            field_type="str",
+            description=f"Field: {field_name}",
+        )
 
     def __str__(self) -> str:
         """String representation for backward compatibility."""
@@ -292,6 +301,6 @@ class ModelMetadataFieldInfo(BaseModel):
         """Equality comparison for backward compatibility."""
         if isinstance(other, str):
             return self.field_name == other or self.name == other.upper()
-        elif isinstance(other, ModelMetadataFieldInfo):
+        if isinstance(other, ModelMetadataFieldInfo):
             return self.name == other.name
         return False

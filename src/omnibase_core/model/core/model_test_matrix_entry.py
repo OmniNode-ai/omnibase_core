@@ -2,8 +2,6 @@
 Test matrix entry model.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -14,5 +12,5 @@ class ModelTestMatrixEntry(BaseModel):
     description: str
     context: str
     expected_result: str
-    tags: List[str] = Field(default_factory=list)
-    covers: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    covers: list[str] = Field(default_factory=list)

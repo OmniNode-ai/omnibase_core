@@ -17,14 +17,14 @@ Author: ONEX Framework Team
 
 import os
 import time
-from typing import List, Optional
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
@@ -44,7 +44,7 @@ class EventBusService(ProtocolEventBusService):
     rather than being scattered throughout ModelNodeBase and mixins.
     """
 
-    def __init__(self, config: Optional[ModelEventBusConfig] = None):
+    def __init__(self, config: ModelEventBusConfig | None = None):
         """
         Initialize EventBusService with configuration.
 
@@ -52,7 +52,7 @@ class EventBusService(ProtocolEventBusService):
             config: Optional configuration (uses defaults if not provided)
         """
         self.config = config or ModelEventBusConfig()
-        self._event_bus: Optional[ProtocolEventBus] = None
+        self._event_bus: ProtocolEventBus | None = None
         self._event_cache = {}
         self._pattern_cache = {}
 
@@ -68,7 +68,9 @@ class EventBusService(ProtocolEventBusService):
         )
 
     def initialize_event_bus(
-        self, event_bus: Optional[ProtocolEventBus] = None, auto_resolve: bool = True
+        self,
+        event_bus: ProtocolEventBus | None = None,
+        auto_resolve: bool = True,
     ) -> ProtocolEventBus:
         """
         Initialize or auto-resolve event bus connection.
@@ -121,23 +123,22 @@ class EventBusService(ProtocolEventBusService):
                         "suppress_errors": self.config.suppress_connection_errors,
                     },
                 )
-            else:
-                emit_log_event(
-                    LogLevelEnum.WARNING,
-                    "EventBusService: No event bus available, continuing in CLI-only mode",
-                    {
-                        "suppress_connection_errors": self.config.suppress_connection_errors,
-                    },
-                )
-                self._event_bus = None
-                return None
+            emit_log_event(
+                LogLevelEnum.WARNING,
+                "EventBusService: No event bus available, continuing in CLI-only mode",
+                {
+                    "suppress_connection_errors": self.config.suppress_connection_errors,
+                },
+            )
+            self._event_bus = None
+            return None
 
         except OnexError:
             raise
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to initialize event bus: {str(e)}",
+                message=f"Failed to initialize event bus: {e!s}",
                 context={
                     "event_bus_provided": event_bus is not None,
                     "auto_resolve": auto_resolve,
@@ -145,7 +146,11 @@ class EventBusService(ProtocolEventBusService):
             ) from e
 
     def emit_node_start(
-        self, node_id: str, node_name: str, correlation_id: UUID, metadata: dict
+        self,
+        node_id: str,
+        node_name: str,
+        correlation_id: UUID,
+        metadata: dict,
     ) -> bool:
         """
         Emit NODE_START event for operation lifecycle tracking.
@@ -211,24 +216,23 @@ class EventBusService(ProtocolEventBusService):
             if self.config.fail_fast_on_validation_errors:
                 raise OnexError(
                     error_code=CoreErrorCode.OPERATION_FAILED,
-                    message=f"Failed to emit NODE_START event: {str(e)}",
+                    message=f"Failed to emit NODE_START event: {e!s}",
                     context={
                         "node_id": node_id,
                         "node_name": node_name,
                         "correlation_id": str(correlation_id),
                     },
                 ) from e
-            else:
-                emit_log_event(
-                    LogLevelEnum.ERROR,
-                    f"EventBusService: Failed to emit NODE_START: {str(e)}",
-                    {
-                        "node_id": node_id,
-                        "node_name": node_name,
-                        "error_type": type(e).__name__,
-                    },
-                )
-                return False
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                f"EventBusService: Failed to emit NODE_START: {e!s}",
+                {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "error_type": type(e).__name__,
+                },
+            )
+            return False
 
     def emit_node_success(
         self,
@@ -276,7 +280,9 @@ class EventBusService(ProtocolEventBusService):
 
             # Create envelope and publish
             envelope = self.create_event_envelope(
-                success_event, node_id, correlation_id
+                success_event,
+                node_id,
+                correlation_id,
             )
             self._event_bus.publish(envelope)
 
@@ -297,24 +303,23 @@ class EventBusService(ProtocolEventBusService):
             if self.config.fail_fast_on_validation_errors:
                 raise OnexError(
                     error_code=CoreErrorCode.OPERATION_FAILED,
-                    message=f"Failed to emit NODE_SUCCESS event: {str(e)}",
+                    message=f"Failed to emit NODE_SUCCESS event: {e!s}",
                     context={
                         "node_id": node_id,
                         "node_name": node_name,
                         "correlation_id": str(correlation_id),
                     },
                 ) from e
-            else:
-                emit_log_event(
-                    LogLevelEnum.ERROR,
-                    f"EventBusService: Failed to emit NODE_SUCCESS: {str(e)}",
-                    {
-                        "node_id": node_id,
-                        "node_name": node_name,
-                        "error_type": type(e).__name__,
-                    },
-                )
-                return False
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                f"EventBusService: Failed to emit NODE_SUCCESS: {e!s}",
+                {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "error_type": type(e).__name__,
+                },
+            )
+            return False
 
     def emit_node_failure(
         self,
@@ -364,7 +369,9 @@ class EventBusService(ProtocolEventBusService):
 
             # Create envelope and publish
             envelope = self.create_event_envelope(
-                failure_event, node_id, correlation_id
+                failure_event,
+                node_id,
+                correlation_id,
             )
             self._event_bus.publish(envelope)
 
@@ -386,7 +393,7 @@ class EventBusService(ProtocolEventBusService):
             if self.config.fail_fast_on_validation_errors:
                 raise OnexError(
                     error_code=CoreErrorCode.OPERATION_FAILED,
-                    message=f"Failed to emit NODE_FAILURE event: {str(e)}",
+                    message=f"Failed to emit NODE_FAILURE event: {e!s}",
                     context={
                         "node_id": node_id,
                         "node_name": node_name,
@@ -394,26 +401,25 @@ class EventBusService(ProtocolEventBusService):
                         "original_error": str(error),
                     },
                 ) from e
-            else:
-                emit_log_event(
-                    LogLevelEnum.ERROR,
-                    f"EventBusService: Failed to emit NODE_FAILURE: {str(e)}",
-                    {
-                        "node_id": node_id,
-                        "node_name": node_name,
-                        "original_error": str(error),
-                        "emit_error_type": type(e).__name__,
-                    },
-                )
-                return False
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                f"EventBusService: Failed to emit NODE_FAILURE: {e!s}",
+                {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "original_error": str(error),
+                    "emit_error_type": type(e).__name__,
+                },
+            )
+            return False
 
     def publish_introspection_event(
         self,
         node_id: str,
         node_name: str,
         version: str,
-        actions: List[str],
-        protocols: List[str],
+        actions: list[str],
+        protocols: list[str],
         metadata: dict,
         correlation_id: UUID,
     ) -> bool:
@@ -441,8 +447,9 @@ class EventBusService(ProtocolEventBusService):
         try:
             # Create introspection event
             from omnibase_core.model.core.model_semver import ModelSemVer
-            from omnibase_core.model.discovery.model_node_introspection_event import \
-                ModelNodeIntrospectionEvent
+            from omnibase_core.model.discovery.model_node_introspection_event import (
+                ModelNodeIntrospectionEvent,
+            )
 
             # Parse version string to ModelSemVer
             try:
@@ -470,15 +477,17 @@ class EventBusService(ProtocolEventBusService):
 
             # Create envelope and publish with retry
             envelope = self.create_event_envelope(
-                introspection_event, node_id, correlation_id
+                introspection_event,
+                node_id,
+                correlation_id,
             )
 
             if self.config.enable_event_retry:
                 return self._publish_with_retry(
-                    envelope, self.config.max_retry_attempts
+                    envelope,
+                    self.config.max_retry_attempts,
                 )
-            else:
-                self._event_bus.publish(envelope)
+            self._event_bus.publish(envelope)
 
             emit_log_event(
                 LogLevelEnum.INFO,
@@ -498,28 +507,29 @@ class EventBusService(ProtocolEventBusService):
             if self.config.fail_fast_on_validation_errors:
                 raise OnexError(
                     error_code=CoreErrorCode.OPERATION_FAILED,
-                    message=f"Failed to publish introspection event: {str(e)}",
+                    message=f"Failed to publish introspection event: {e!s}",
                     context={
                         "node_id": node_id,
                         "node_name": node_name,
                         "version": version,
                     },
                 ) from e
-            else:
-                emit_log_event(
-                    LogLevelEnum.ERROR,
-                    f"EventBusService: Failed to publish introspection event: {str(e)}",
-                    {
-                        "node_id": node_id,
-                        "node_name": node_name,
-                        "error_type": type(e).__name__,
-                    },
-                )
-                return False
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                f"EventBusService: Failed to publish introspection event: {e!s}",
+                {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "error_type": type(e).__name__,
+                },
+            )
+            return False
 
     def get_event_patterns_from_contract(
-        self, contract_content: object, node_name: str
-    ) -> List[str]:
+        self,
+        contract_content: object,
+        node_name: str,
+    ) -> list[str]:
         """
         Extract event patterns from contract or derive from node name.
 
@@ -573,7 +583,7 @@ class EventBusService(ProtocolEventBusService):
                 except Exception as e:
                     emit_log_event(
                         LogLevelEnum.WARNING,
-                        f"EventBusService: Failed to parse contract event patterns: {str(e)}",
+                        f"EventBusService: Failed to parse contract event patterns: {e!s}",
                         {"node_name": node_name},
                     )
 
@@ -648,7 +658,7 @@ class EventBusService(ProtocolEventBusService):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"EventBusService: Failed to get event patterns for {node_name}: {str(e)}",
+                f"EventBusService: Failed to get event patterns for {node_name}: {e!s}",
                 {
                     "node_name": node_name,
                     "error_type": type(e).__name__,
@@ -658,7 +668,10 @@ class EventBusService(ProtocolEventBusService):
             return self.config.default_event_patterns.copy()
 
     def create_event_envelope(
-        self, event: ModelOnexEvent, source_node_id: str, correlation_id: UUID
+        self,
+        event: ModelOnexEvent,
+        source_node_id: str,
+        correlation_id: UUID,
     ) -> ModelEventEnvelope:
         """
         Create properly formatted event envelope for broadcasting.
@@ -691,43 +704,40 @@ class EventBusService(ProtocolEventBusService):
                     },
                 )
                 return envelope
-            else:
-                # Create a simple envelope without broadcast metadata
-                # Create proper route spec for direct routing
-                # Generate a UUID-compatible destination for node addressing
-                import hashlib
+            # Create a simple envelope without broadcast metadata
+            # Create proper route spec for direct routing
+            # Generate a UUID-compatible destination for node addressing
+            import hashlib
 
-                from omnibase_core.model.core.model_route_spec import \
-                    ModelRouteSpec
+            from omnibase_core.model.core.model_route_spec import ModelRouteSpec
 
-                if not source_node_id.startswith("node://"):
-                    # Generate a proper UUID from the source_node_id
-                    # Use a deterministic approach based on the node ID
-                    if len(source_node_id) >= 32 and "-" in source_node_id:
-                        # Already looks like a UUID, use it directly
-                        formatted_id = source_node_id
-                    else:
-                        # Create a deterministic UUID from the node ID using MD5 hash
-                        md5_hash = hashlib.md5(source_node_id.encode()).hexdigest()
-                        # Format as UUID: 8-4-4-4-12
-                        formatted_id = f"{md5_hash[:8]}-{md5_hash[8:12]}-{md5_hash[12:16]}-{md5_hash[16:20]}-{md5_hash[20:32]}"
-                    destination = f"node://{formatted_id}"
+            if not source_node_id.startswith("node://"):
+                # Generate a proper UUID from the source_node_id
+                # Use a deterministic approach based on the node ID
+                if len(source_node_id) >= 32 and "-" in source_node_id:
+                    # Already looks like a UUID, use it directly
+                    formatted_id = source_node_id
                 else:
-                    destination = source_node_id
-                route_spec = ModelRouteSpec.create_direct_route(destination)
+                    # Create a deterministic UUID from the node ID using MD5 hash
+                    md5_hash = hashlib.md5(source_node_id.encode()).hexdigest()
+                    # Format as UUID: 8-4-4-4-12
+                    formatted_id = f"{md5_hash[:8]}-{md5_hash[8:12]}-{md5_hash[12:16]}-{md5_hash[16:20]}-{md5_hash[20:32]}"
+                destination = f"node://{formatted_id}"
+            else:
+                destination = source_node_id
+            route_spec = ModelRouteSpec.create_direct_route(destination)
 
-                envelope = ModelEventEnvelope(
-                    payload=event,
-                    source_node_id=source_node_id,
-                    correlation_id=correlation_id,
-                    route_spec=route_spec,
-                )
-                return envelope
+            return ModelEventEnvelope(
+                payload=event,
+                source_node_id=source_node_id,
+                correlation_id=correlation_id,
+                route_spec=route_spec,
+            )
 
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to create event envelope: {str(e)}",
+                message=f"Failed to create event envelope: {e!s}",
                 context={
                     "event_type": event.event_type,
                     "source_node_id": source_node_id,
@@ -735,7 +745,7 @@ class EventBusService(ProtocolEventBusService):
                 },
             ) from e
 
-    def auto_resolve_event_bus_from_environment(self) -> Optional[ProtocolEventBus]:
+    def auto_resolve_event_bus_from_environment(self) -> ProtocolEventBus | None:
         """
         Auto-resolve event bus adapter from environment configuration.
 
@@ -745,7 +755,8 @@ class EventBusService(ProtocolEventBusService):
         try:
             # Get event bus URL from config or environment
             event_bus_url = self.config.event_bus_url or os.getenv(
-                "EVENT_BUS_URL", "http://localhost:8083"
+                "EVENT_BUS_URL",
+                "http://localhost:8083",
             )
 
             emit_log_event(
@@ -759,8 +770,7 @@ class EventBusService(ProtocolEventBusService):
 
             # Try to create event bus adapter
             try:
-                from omnibase_core.services.event_bus_adapter import \
-                    EventBusAdapter
+                from omnibase_core.services.event_bus_adapter import EventBusAdapter
 
                 adapter = EventBusAdapter(event_bus_url)
 
@@ -775,13 +785,12 @@ class EventBusService(ProtocolEventBusService):
                         },
                     )
                     return adapter
-                else:
-                    emit_log_event(
-                        LogLevelEnum.WARNING,
-                        "EventBusService: Event bus connection validation failed",
-                        {"event_bus_url": event_bus_url},
-                    )
-                    return None
+                emit_log_event(
+                    LogLevelEnum.WARNING,
+                    "EventBusService: Event bus connection validation failed",
+                    {"event_bus_url": event_bus_url},
+                )
+                return None
 
             except ImportError:
                 emit_log_event(
@@ -794,7 +803,7 @@ class EventBusService(ProtocolEventBusService):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"EventBusService: Failed to auto-resolve event bus: {str(e)}",
+                f"EventBusService: Failed to auto-resolve event bus: {e!s}",
                 {
                     "error_type": type(e).__name__,
                     "event_bus_url": self.config.event_bus_url,
@@ -803,7 +812,10 @@ class EventBusService(ProtocolEventBusService):
             return None
 
     def setup_event_subscriptions(
-        self, event_bus: ProtocolEventBus, patterns: List[str], event_handler: callable
+        self,
+        event_bus: ProtocolEventBus,
+        patterns: list[str],
+        event_handler: callable,
     ) -> bool:
         """
         Set up event subscriptions for specified patterns.
@@ -831,7 +843,7 @@ class EventBusService(ProtocolEventBusService):
                 except Exception as e:
                     emit_log_event(
                         LogLevelEnum.ERROR,
-                        f"EventBusService: Failed to subscribe to pattern {pattern}: {str(e)}",
+                        f"EventBusService: Failed to subscribe to pattern {pattern}: {e!s}",
                         {
                             "pattern": pattern,
                             "error_type": type(e).__name__,
@@ -853,7 +865,7 @@ class EventBusService(ProtocolEventBusService):
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to setup event subscriptions: {str(e)}",
+                message=f"Failed to setup event subscriptions: {e!s}",
                 context={
                     "patterns": patterns,
                     "event_bus_type": type(event_bus).__name__,
@@ -861,7 +873,9 @@ class EventBusService(ProtocolEventBusService):
             ) from e
 
     def cleanup_event_subscriptions(
-        self, event_bus: ProtocolEventBus, patterns: List[str]
+        self,
+        event_bus: ProtocolEventBus,
+        patterns: list[str],
     ) -> bool:
         """
         Clean up event subscriptions for specified patterns.
@@ -888,7 +902,7 @@ class EventBusService(ProtocolEventBusService):
                 except Exception as e:
                     emit_log_event(
                         LogLevelEnum.WARNING,
-                        f"EventBusService: Failed to unsubscribe from pattern {pattern}: {str(e)}",
+                        f"EventBusService: Failed to unsubscribe from pattern {pattern}: {e!s}",
                         {
                             "pattern": pattern,
                             "error_type": type(e).__name__,
@@ -910,7 +924,7 @@ class EventBusService(ProtocolEventBusService):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"EventBusService: Failed to cleanup event subscriptions: {str(e)}",
+                f"EventBusService: Failed to cleanup event subscriptions: {e!s}",
                 {
                     "patterns": patterns,
                     "error_type": type(e).__name__,
@@ -982,7 +996,7 @@ class EventBusService(ProtocolEventBusService):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"EventBusService: Event bus validation failed: {str(e)}",
+                f"EventBusService: Event bus validation failed: {e!s}",
                 {
                     "event_bus_type": type(event_bus).__name__ if event_bus else None,
                     "error_type": type(e).__name__,
@@ -991,7 +1005,9 @@ class EventBusService(ProtocolEventBusService):
             return False
 
     def _publish_with_retry(
-        self, envelope: ModelEventEnvelope, max_retries: int
+        self,
+        envelope: ModelEventEnvelope,
+        max_retries: int,
     ) -> bool:
         """
         Publish event envelope with retry logic.
@@ -1014,7 +1030,7 @@ class EventBusService(ProtocolEventBusService):
                 if attempt == max_retries - 1:
                     emit_log_event(
                         LogLevelEnum.ERROR,
-                        f"EventBusService: Failed to publish event after {max_retries} attempts: {str(e)}",
+                        f"EventBusService: Failed to publish event after {max_retries} attempts: {e!s}",
                         {
                             "envelope_id": str(envelope.envelope_id),
                             "max_retries": max_retries,
@@ -1022,8 +1038,7 @@ class EventBusService(ProtocolEventBusService):
                         },
                     )
                     return False
-                else:
-                    # Wait before retry
-                    time.sleep(self.config.retry_delay_seconds)
+                # Wait before retry
+                time.sleep(self.config.retry_delay_seconds)
 
         return False

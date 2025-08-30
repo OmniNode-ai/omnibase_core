@@ -5,14 +5,13 @@ Structured model for CLI command execution output data,
 replacing Dict[str, Any] with typed fields.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_custom_fields import ModelCustomFields
 from omnibase_core.model.core.model_node_info import ModelNodeInfo
-from omnibase_core.model.core.model_node_metadata_info import \
-    ModelNodeMetadataInfo
+from omnibase_core.model.core.model_node_metadata_info import ModelNodeMetadataInfo
 
 
 class ModelCliOutputData(BaseModel):
@@ -24,86 +23,100 @@ class ModelCliOutputData(BaseModel):
     """
 
     # Common output fields
-    message: Optional[str] = Field(None, description="Human-readable output message")
+    message: str | None = Field(None, description="Human-readable output message")
 
-    status: Optional[str] = Field(None, description="Status indicator")
+    status: str | None = Field(None, description="Status indicator")
 
     # Node-related output
-    nodes: Optional[List[ModelNodeInfo]] = Field(
-        None, description="List of nodes (for discovery/list commands)"
+    nodes: list[ModelNodeInfo] | None = Field(
+        None,
+        description="List of nodes (for discovery/list commands)",
     )
 
-    node_info: Optional[ModelNodeInfo] = Field(
-        None, description="Single node information"
+    node_info: ModelNodeInfo | None = Field(
+        None,
+        description="Single node information",
     )
 
-    node_metadata: Optional[ModelNodeMetadataInfo] = Field(
-        None, description="Node metadata information"
+    node_metadata: ModelNodeMetadataInfo | None = Field(
+        None,
+        description="Node metadata information",
     )
 
     # Registry-related output
-    registry_count: Optional[int] = Field(
-        None, description="Number of items in registry"
+    registry_count: int | None = Field(
+        None,
+        description="Number of items in registry",
     )
 
-    registry_status: Optional[str] = Field(
-        None, description="Registry status information"
+    registry_status: str | None = Field(
+        None,
+        description="Registry status information",
     )
 
     # Validation/test results
-    validation_passed: Optional[bool] = Field(
-        None, description="Whether validation passed"
+    validation_passed: bool | None = Field(
+        None,
+        description="Whether validation passed",
     )
 
-    test_results: Optional[Dict[str, bool]] = Field(
-        None, description="Test results by test name"
+    test_results: dict[str, bool] | None = Field(
+        None,
+        description="Test results by test name",
     )
 
     # Scenario results
-    scenario_name: Optional[str] = Field(None, description="Name of executed scenario")
+    scenario_name: str | None = Field(None, description="Name of executed scenario")
 
-    scenario_status: Optional[str] = Field(
-        None, description="Scenario execution status"
+    scenario_status: str | None = Field(
+        None,
+        description="Scenario execution status",
     )
 
     # Config/settings output
-    config_values: Optional[Dict[str, str]] = Field(
-        None, description="Configuration values"
+    config_values: dict[str, str] | None = Field(
+        None,
+        description="Configuration values",
     )
 
     # File operation results
-    files_processed: Optional[List[str]] = Field(
-        None, description="List of processed files"
+    files_processed: list[str] | None = Field(
+        None,
+        description="List of processed files",
     )
 
-    files_created: Optional[List[str]] = Field(
-        None, description="List of created files"
+    files_created: list[str] | None = Field(
+        None,
+        description="List of created files",
     )
 
-    files_modified: Optional[List[str]] = Field(
-        None, description="List of modified files"
+    files_modified: list[str] | None = Field(
+        None,
+        description="List of modified files",
     )
 
     # Numeric results
-    count: Optional[int] = Field(None, description="Generic count value")
+    count: int | None = Field(None, description="Generic count value")
 
-    total: Optional[int] = Field(None, description="Total items")
+    total: int | None = Field(None, description="Total items")
 
-    processed: Optional[int] = Field(None, description="Items processed")
+    processed: int | None = Field(None, description="Items processed")
 
-    failed: Optional[int] = Field(None, description="Items failed")
+    failed: int | None = Field(None, description="Items failed")
 
-    skipped: Optional[int] = Field(None, description="Items skipped")
+    skipped: int | None = Field(None, description="Items skipped")
 
     # Extended fields for complex outputs
-    custom_fields: Optional[ModelCustomFields] = Field(
-        None, description="Extensible custom fields for specific commands"
+    custom_fields: ModelCustomFields | None = Field(
+        None,
+        description="Extensible custom fields for specific commands",
     )
 
     # Backward compatibility field for truly dynamic data
     # This should only be used when the structure is genuinely unknown
-    raw_data: Optional[Dict[str, Any]] = Field(
-        None, description="Raw unstructured data (use sparingly)"
+    raw_data: dict[str, Any] | None = Field(
+        None,
+        description="Raw unstructured data (use sparingly)",
     )
 
     def get_field_value(self, field_name: str, default: Any = None) -> Any:
@@ -138,7 +151,7 @@ class ModelCliOutputData(BaseModel):
                 self.custom_fields = ModelCustomFields()
             self.custom_fields.set_field(field_name, value)
 
-    def to_dict(self, include_none: bool = False) -> Dict[str, Any]:
+    def to_dict(self, include_none: bool = False) -> dict[str, Any]:
         """Convert to dictionary, optionally including None values."""
         data = {}
 
@@ -157,7 +170,7 @@ class ModelCliOutputData(BaseModel):
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelCliOutputData":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCliOutputData":
         """Create from dictionary, handling unknown fields gracefully."""
         known_fields = set(cls.model_fields.keys())
         standard_data = {}
@@ -182,19 +195,24 @@ class ModelCliOutputData(BaseModel):
 
     @classmethod
     def create_simple(
-        cls, message: str, status: str = "success"
+        cls,
+        message: str,
+        status: str = "success",
     ) -> "ModelCliOutputData":
         """Create a simple output with just message and status."""
         return cls(message=message, status=status)
 
     @classmethod
-    def create_node_list(cls, nodes: List[ModelNodeInfo]) -> "ModelCliOutputData":
+    def create_node_list(cls, nodes: list[ModelNodeInfo]) -> "ModelCliOutputData":
         """Create output for node listing."""
         return cls(nodes=nodes, count=len(nodes), message=f"Found {len(nodes)} nodes")
 
     @classmethod
     def create_validation_result(
-        cls, passed: bool, message: str, test_results: Optional[Dict[str, bool]] = None
+        cls,
+        passed: bool,
+        message: str,
+        test_results: dict[str, bool] | None = None,
     ) -> "ModelCliOutputData":
         """Create output for validation results."""
         return cls(

@@ -9,18 +9,20 @@ state transition capability directly to nodes.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_state_transition import (
-    EnumTransitionType, ModelStateTransition)
+    EnumTransitionType,
+    ModelStateTransition,
+)
 
 
 class MixinContractStateReducer:
@@ -41,10 +43,10 @@ class MixinContractStateReducer:
         super().__init__(*args, **kwargs)
 
         # State transitions loaded from contract
-        self._state_transitions: Optional[List[ModelStateTransition]] = None
+        self._state_transitions: list[ModelStateTransition] | None = None
         self._transitions_loaded = False
 
-    def _load_state_transitions(self) -> List[ModelStateTransition]:
+    def _load_state_transitions(self) -> list[ModelStateTransition]:
         """
         Load state transitions from contracts/contract_state_transitions.yaml.
 
@@ -86,7 +88,7 @@ class MixinContractStateReducer:
                 return []
 
             # Load and parse YAML
-            with open(transitions_path, "r") as f:
+            with open(transitions_path) as f:
                 contract_data = yaml.safe_load(f)
 
             # Extract state_transitions section
@@ -103,7 +105,8 @@ class MixinContractStateReducer:
                         name=transition_data["name"],
                         triggers=transition_data.get("triggers", []),
                         updates=transition_data.get("simple_config", {}).get(
-                            "updates", {}
+                            "updates",
+                            {},
                         ),
                         description=transition_data.get("description"),
                     )
@@ -139,7 +142,7 @@ class MixinContractStateReducer:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Failed to load state transitions: {str(e)}",
+                f"Failed to load state transitions: {e!s}",
                 {"tool_name": tool_name, "error": str(e)},
             )
             self._transitions_loaded = True
@@ -195,11 +198,12 @@ class MixinContractStateReducer:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Error in contract state processing: {str(e)}",
+                f"Error in contract state processing: {e!s}",
                 {"tool_name": tool_name, "error": str(e)},
             )
+            msg = f"Contract state processing error: {e!s}"
             raise OnexError(
-                f"Contract state processing error: {str(e)}",
+                msg,
                 CoreErrorCode.OPERATION_FAILED,
             )
 
@@ -232,7 +236,7 @@ class MixinContractStateReducer:
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Failed to apply transition {transition.name}: {str(e)}",
+                f"Failed to apply transition {transition.name}: {e!s}",
                 {
                     "tool_name": tool_name,
                     "transition_name": transition.name,
@@ -241,7 +245,9 @@ class MixinContractStateReducer:
             )
 
     def _apply_simple_transition(
-        self, transition: ModelStateTransition, input_state
+        self,
+        transition: ModelStateTransition,
+        input_state,
     ) -> None:
         """Apply simple field update transition."""
         # Simple transitions update state fields using template expressions
@@ -259,7 +265,9 @@ class MixinContractStateReducer:
         )
 
     def _apply_tool_based_transition(
-        self, transition: ModelStateTransition, input_state
+        self,
+        transition: ModelStateTransition,
+        input_state,
     ) -> None:
         """Apply tool-based transition by delegating to specified tool."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -281,7 +289,9 @@ class MixinContractStateReducer:
         )
 
     def _apply_conditional_transition(
-        self, transition: ModelStateTransition, input_state
+        self,
+        transition: ModelStateTransition,
+        input_state,
     ) -> None:
         """Apply conditional transition based on state conditions."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -302,7 +312,7 @@ class MixinContractStateReducer:
         tool_name = getattr(self, "node_name", "unknown_tool")
 
         # Try to create output state using the tool's output state model
-        output_model_name = f"Model{tool_name.replace('_', '').title()}OutputState"
+        f"Model{tool_name.replace('_', '').title()}OutputState"
 
         # Basic response structure
         return {
@@ -311,7 +321,7 @@ class MixinContractStateReducer:
             "version": getattr(input_state, "version", "1.0.0"),
         }
 
-    def get_state_transitions(self) -> List[ModelStateTransition]:
+    def get_state_transitions(self) -> list[ModelStateTransition]:
         """Get loaded state transitions for introspection."""
         return self._load_state_transitions()
 

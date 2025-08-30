@@ -1,5 +1,3 @@
-from enum import Enum
-
 """
 Data classification enum for ONEX security policies.
 """

@@ -14,7 +14,6 @@ Key Performance Features:
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Set, Union
 
 import lz4.frame
 import orjson
@@ -50,20 +49,26 @@ class ModelSessionLearningData(BaseModel):
 
     patterns_learned: int = Field(default=0, description="Number of patterns learned")
     rules_validated: int = Field(default=0, description="Number of rules validated")
-    context_mappings: Dict[str, str] = Field(
-        default_factory=dict, description="Context to rule mappings"
+    context_mappings: dict[str, str] = Field(
+        default_factory=dict,
+        description="Context to rule mappings",
     )
     effectiveness_score: float = Field(
-        default=0.5, ge=0.0, le=1.0, description="Learning effectiveness"
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Learning effectiveness",
     )
     knowledge_base_size: int = Field(default=0, description="Size of knowledge base")
 
     # Performance optimization: Store frequently accessed patterns as sets
-    active_patterns: Set[str] = Field(
-        default_factory=set, description="Currently active patterns"
+    active_patterns: set[str] = Field(
+        default_factory=set,
+        description="Currently active patterns",
     )
-    validated_rules: Set[str] = Field(
-        default_factory=set, description="Validated rule IDs"
+    validated_rules: set[str] = Field(
+        default_factory=set,
+        description="Validated rule IDs",
     )
 
     def get_serialized_size(self) -> int:
@@ -85,30 +90,36 @@ class ModelSessionMetrics(BaseModel):
 
     # Access patterns
     last_access_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Last access timestamp"
+        default_factory=datetime.utcnow,
+        description="Last access timestamp",
     )
     access_count: int = Field(default=0, description="Total access count")
     access_frequency: float = Field(
-        default=0.0, description="Recent access frequency (accesses/hour)"
+        default=0.0,
+        description="Recent access frequency (accesses/hour)",
     )
 
     # Performance metrics
     last_retrieval_time_ms: float = Field(
-        default=0.0, description="Last retrieval time in ms"
+        default=0.0,
+        description="Last retrieval time in ms",
     )
     average_retrieval_time_ms: float = Field(
-        default=0.0, description="Average retrieval time in ms"
+        default=0.0,
+        description="Average retrieval time in ms",
     )
     cache_hit_count: int = Field(default=0, description="Cache hits")
     cache_miss_count: int = Field(default=0, description="Cache misses")
 
     # Size and compression
     uncompressed_size: int = Field(
-        default=0, description="Uncompressed data size in bytes"
+        default=0,
+        description="Uncompressed data size in bytes",
     )
     compressed_size: int = Field(default=0, description="Compressed data size in bytes")
     compression_ratio: float = Field(
-        default=1.0, description="Compression ratio achieved"
+        default=1.0,
+        description="Compression ratio achieved",
     )
 
     def update_access(self, retrieval_time_ms: float, was_cache_hit: bool) -> None:
@@ -158,42 +169,51 @@ class ModelOptimizedSessionState(BaseModel):
 
     # Session metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Session creation time"
+        default_factory=datetime.utcnow,
+        description="Session creation time",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update time"
+        default_factory=datetime.utcnow,
+        description="Last update time",
     )
     health_status: EnumSessionHealthStatus = Field(
-        default=EnumSessionHealthStatus.HEALTHY, description="Session health status"
+        default=EnumSessionHealthStatus.HEALTHY,
+        description="Session health status",
     )
     priority_level: EnumSessionPriority = Field(
-        default=EnumSessionPriority.MEDIUM, description="Session priority for caching"
+        default=EnumSessionPriority.MEDIUM,
+        description="Session priority for caching",
     )
 
     # Learning and intelligence data
     learning_data: ModelSessionLearningData = Field(
-        default_factory=ModelSessionLearningData, description="Session learning data"
+        default_factory=ModelSessionLearningData,
+        description="Session learning data",
     )
 
     # Context and state information
-    context_patterns: List[str] = Field(
-        default_factory=list, description="Identified context patterns"
+    context_patterns: list[str] = Field(
+        default_factory=list,
+        description="Identified context patterns",
     )
-    correlation_mappings: Dict[str, str] = Field(
-        default_factory=dict, description="Cross-session correlations"
+    correlation_mappings: dict[str, str] = Field(
+        default_factory=dict,
+        description="Cross-session correlations",
     )
-    user_preferences: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="User-specific preferences"
+    user_preferences: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="User-specific preferences",
     )
 
     # Performance and monitoring
     metrics: ModelSessionMetrics = Field(
-        default_factory=ModelSessionMetrics, description="Session performance metrics"
+        default_factory=ModelSessionMetrics,
+        description="Session performance metrics",
     )
 
     # Data integrity and versioning
     data_version: int = Field(default=1, description="Data structure version")
-    checksum: Optional[str] = Field(default=None, description="Data integrity checksum")
+    checksum: str | None = Field(default=None, description="Data integrity checksum")
 
     @model_validator(mode="after")
     def validate_session_state(self) -> "ModelOptimizedSessionState":
@@ -230,7 +250,8 @@ class ModelOptimizedSessionState(BaseModel):
         try:
             # Use orjson for fast serialization
             json_data = orjson.dumps(
-                self.model_dump(), option=orjson.OPT_UTC_Z | orjson.OPT_SERIALIZE_NUMPY
+                self.model_dump(),
+                option=orjson.OPT_UTC_Z | orjson.OPT_SERIALIZE_NUMPY,
             )
 
             # Compress with LZ4 for speed (2-3x faster than gzip)
@@ -251,7 +272,8 @@ class ModelOptimizedSessionState(BaseModel):
 
     @classmethod
     def from_compressed_bytes(
-        cls, compressed_data: bytes
+        cls,
+        compressed_data: bytes,
     ) -> "ModelOptimizedSessionState":
         """
         Deserialize from compressed bytes.
@@ -284,7 +306,7 @@ class ModelOptimizedSessionState(BaseModel):
         self,
         patterns_count: int = 0,
         rules_count: int = 0,
-        effectiveness: Optional[float] = None,
+        effectiveness: float | None = None,
     ) -> None:
         """
         Update learning progress efficiently.

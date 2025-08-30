@@ -4,8 +4,6 @@ ModelCredentialStrengthAssessment: Credential strength assessment result.
 This model represents the result of credential strength assessment.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
@@ -15,7 +13,8 @@ class ModelCredentialStrengthAssessment(BaseModel):
     """Result of credential strength assessment."""
 
     strength: EnumCredentialStrength = Field(
-        EnumCredentialStrength.VERY_WEAK, description="Overall strength level"
+        EnumCredentialStrength.VERY_WEAK,
+        description="Overall strength level",
     )
 
     score: int = Field(0, description="Numerical strength score", ge=0)
@@ -23,13 +22,18 @@ class ModelCredentialStrengthAssessment(BaseModel):
     length: int = Field(0, description="Character length of credential", ge=0)
 
     character_variety: int = Field(
-        0, description="Number of different character types", ge=0, le=4
+        0,
+        description="Number of different character types",
+        ge=0,
+        le=4,
     )
 
-    issues: List[str] = Field(
-        default_factory=list, description="List of identified issues"
+    issues: list[str] = Field(
+        default_factory=list,
+        description="List of identified issues",
     )
 
-    detected_patterns: List[str] = Field(
-        default_factory=list, description="List of detected credential patterns"
+    detected_patterns: list[str] = Field(
+        default_factory=list,
+        description="List of detected credential patterns",
     )

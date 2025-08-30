@@ -1,29 +1,33 @@
 """Pending request tracking model for event-driven discovery."""
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.discovery.model_introspection_filters import \
-    ModelIntrospectionFilters
+from omnibase_core.model.discovery.model_introspection_filters import (
+    ModelIntrospectionFilters,
+)
 
 
 class ModelPendingRequest(BaseModel):
     """Tracks pending introspection requests for correlation."""
 
     correlation_id: UUID = Field(
-        ..., description="Unique correlation ID for request-response matching"
+        ...,
+        description="Unique correlation ID for request-response matching",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="When request was initiated"
+        default_factory=datetime.now,
+        description="When request was initiated",
     )
     request_type: str = Field(
-        default="tool_discovery", description="Type of discovery request"
+        default="tool_discovery",
+        description="Type of discovery request",
     )
-    filters: Optional[ModelIntrospectionFilters] = Field(
-        None, description="Filters applied to the discovery request"
+    filters: ModelIntrospectionFilters | None = Field(
+        None,
+        description="Filters applied to the discovery request",
     )
     timeout_ms: int = Field(default=5000, description="Request timeout in milliseconds")
 

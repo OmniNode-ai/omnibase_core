@@ -39,8 +39,9 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.utils.utils_tests.utils_test_uri_parser_cases import \
-    URI_PARSER_TEST_CASES
+from omnibase_core.utils.utils_tests.utils_test_uri_parser_cases import (
+    URI_PARSER_TEST_CASES,
+)
 from omnibase_core.utils.utils_uri_parser import CanonicalUriParser
 
 
@@ -48,7 +49,7 @@ from omnibase_core.utils.utils_uri_parser import CanonicalUriParser
     params=[
         pytest.param("mock", id="mock", marks=pytest.mark.mock),
         pytest.param("integration", id="integration", marks=pytest.mark.integration),
-    ]
+    ],
 )
 def context(request: pytest.FixtureRequest) -> Any:  # type: ignore[no-any-return]
     # Return type is Any due to pytest param mechanics; see ONEX test standards
@@ -56,7 +57,9 @@ def context(request: pytest.FixtureRequest) -> Any:  # type: ignore[no-any-retur
 
 
 @pytest.mark.parametrize(
-    "context", ["mock", "integration"], ids=["mock", "integration"]
+    "context",
+    ["mock", "integration"],
+    ids=["mock", "integration"],
 )
 @pytest.mark.parametrize(
     "test_case",

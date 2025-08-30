@@ -4,8 +4,6 @@ Serializable Dictionary Model for ONEX Configuration System.
 Strongly typed model for serializable dictionary data.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -16,8 +14,9 @@ class ModelSerializableDict(BaseModel):
     Represents dictionary data that can be serialized with proper type safety.
     """
 
-    data: Dict[str, str] = Field(
-        default_factory=dict, description="Serializable data as string key-value pairs"
+    data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Serializable data as string key-value pairs",
     )
 
     def get_value(self, key: str) -> str:

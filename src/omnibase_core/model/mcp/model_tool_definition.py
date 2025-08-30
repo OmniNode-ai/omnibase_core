@@ -1,6 +1,6 @@
 """Strongly typed model for MCP tool definitions."""
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +10,7 @@ class ModelToolDefinition(BaseModel):
 
     name: str = Field(..., description="Tool name")
     description: str = Field(..., description="Tool description")
-    handler: Optional[Callable] = Field(None, description="Tool handler function")
+    handler: Callable | None = Field(None, description="Tool handler function")
     parameters: dict = Field(default_factory=dict, description="Tool parameters")
 
     class Config:

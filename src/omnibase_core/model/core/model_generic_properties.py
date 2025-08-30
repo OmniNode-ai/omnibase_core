@@ -2,7 +2,7 @@
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,33 +14,38 @@ class ModelGenericProperties(BaseModel):
     """
 
     # String properties (most common)
-    string_properties: Dict[str, str] = Field(
-        default_factory=dict, description="String key-value properties"
+    string_properties: dict[str, str] = Field(
+        default_factory=dict,
+        description="String key-value properties",
     )
 
     # Numeric properties
-    numeric_properties: Dict[str, Union[int, float]] = Field(
-        default_factory=dict, description="Numeric key-value properties"
+    numeric_properties: dict[str, int | float] = Field(
+        default_factory=dict,
+        description="Numeric key-value properties",
     )
 
     # Boolean flags
-    boolean_properties: Dict[str, bool] = Field(
-        default_factory=dict, description="Boolean key-value properties"
+    boolean_properties: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Boolean key-value properties",
     )
 
     # List properties
-    list_properties: Dict[str, List[str]] = Field(
-        default_factory=dict, description="List-valued properties"
+    list_properties: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="List-valued properties",
     )
 
     # Nested properties (for complex cases)
-    nested_properties: Dict[str, Dict[str, str]] = Field(
-        default_factory=dict, description="Nested key-value properties"
+    nested_properties: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description="Nested key-value properties",
     )
 
     model_config = ConfigDict(extra="forbid")  # Strict validation
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to flat dictionary for backward compatibility."""
         result = {}
         result.update(self.string_properties)
@@ -52,7 +57,8 @@ class ModelGenericProperties(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelGenericProperties"]:
         """Create from dictionary with type inference."""
         if data is None:
@@ -64,7 +70,7 @@ class ModelGenericProperties(BaseModel):
                 obj.string_properties[key] = value
             elif isinstance(value, bool):
                 obj.boolean_properties[key] = value
-            elif isinstance(value, (int, float)):
+            elif isinstance(value, int | float):
                 obj.numeric_properties[key] = value
             elif isinstance(value, list) and all(isinstance(v, str) for v in value):
                 obj.list_properties[key] = value

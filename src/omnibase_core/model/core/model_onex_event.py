@@ -29,7 +29,7 @@ OnexEventMetadataModel = ModelOnexEventMetadata
 
 
 from datetime import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -38,13 +38,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.constants.event_types import normalize_legacy_event_type
 
 from .model_event_type import ModelEventType
-from .model_telemetry_operation_error_metadata import \
-    ModelTelemetryOperationErrorMetadata
+from .model_telemetry_operation_error_metadata import (
+    ModelTelemetryOperationErrorMetadata,
+)
+
 # Import telemetry metadata classes from separate files
-from .model_telemetry_operation_start_metadata import \
-    ModelTelemetryOperationStartMetadata
-from .model_telemetry_operation_success_metadata import \
-    ModelTelemetryOperationSuccessMetadata
+from .model_telemetry_operation_start_metadata import (
+    ModelTelemetryOperationStartMetadata,
+)
+from .model_telemetry_operation_success_metadata import (
+    ModelTelemetryOperationSuccessMetadata,
+)
 
 
 class ModelOnexEvent(BaseModel):
@@ -66,27 +70,32 @@ class ModelOnexEvent(BaseModel):
         use_enum_values=False,
     )
 
-    event_type: Union[str, ModelEventType] = Field(
-        ..., description="Event type - can be string or ModelEventType object"
+    event_type: str | ModelEventType = Field(
+        ...,
+        description="Event type - can be string or ModelEventType object",
     )
     node_id: str = Field(
-        ..., description="Unique identifier of the node that generated this event"
+        ...,
+        description="Unique identifier of the node that generated this event",
     )
-    metadata: Optional[ModelOnexEventMetadata] = Field(
-        None, description="Optional event metadata"
+    metadata: ModelOnexEventMetadata | None = Field(
+        None,
+        description="Optional event metadata",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Event timestamp"
+        default_factory=datetime.now,
+        description="Event timestamp",
     )
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")
-    correlation_id: Optional[UUID] = Field(
-        None, description="Optional correlation ID for request/response patterns"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Optional correlation ID for request/response patterns",
     )
-    data: Optional[Dict[str, Any]] = Field(None, description="Event payload data")
+    data: dict[str, Any] | None = Field(None, description="Event payload data")
 
     @field_validator("event_type")
     @classmethod
-    def validate_event_type_format(cls, v: Any) -> Union[str, ModelEventType]:
+    def validate_event_type_format(cls, v: Any) -> str | ModelEventType:
         """
         Validate event type format and handle both string and ModelEventType inputs.
 
@@ -112,14 +121,15 @@ class ModelOnexEvent(BaseModel):
             # Normalize legacy enum values to new string format
             return normalize_legacy_event_type(v)
         except ValueError as e:
-            raise ValueError(f"Invalid event type: {e}")
+            msg = f"Invalid event type: {e}"
+            raise ValueError(msg)
 
     @classmethod
     def create_core_event(
         cls,
         event_type: str,
         node_id: str,
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":
         """
@@ -147,7 +157,7 @@ class ModelOnexEvent(BaseModel):
         namespace: str,
         action: str,
         node_id: str,
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":
         """
@@ -177,7 +187,7 @@ class ModelOnexEvent(BaseModel):
         plugin_name: str,
         action: str,
         node_id: str,
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
         **kwargs,
     ) -> "ModelOnexEvent":
         """
@@ -201,7 +211,7 @@ class ModelOnexEvent(BaseModel):
             **kwargs,
         )
 
-    def get_event_namespace(self) -> Optional[str]:
+    def get_event_namespace(self) -> str | None:
         """Get the namespace portion of the event type."""
         if isinstance(self.event_type, ModelEventType):
             return self.event_type.namespace
@@ -235,19 +245,19 @@ try:
 
     __all__ = [
         "ModelOnexEvent",
-        "OnexEvent",
-        "OnexEventTypeEnum",
-        "OnexEventMetadataModel",
+        "ModelTelemetryOperationErrorMetadata",
         "ModelTelemetryOperationStartMetadata",
         "ModelTelemetryOperationSuccessMetadata",
-        "ModelTelemetryOperationErrorMetadata",
+        "OnexEvent",
+        "OnexEventMetadataModel",
+        "OnexEventTypeEnum",
     ]
 except ImportError:
     __all__ = [
         "ModelOnexEvent",
-        "OnexEvent",
-        "OnexEventMetadataModel",
+        "ModelTelemetryOperationErrorMetadata",
         "ModelTelemetryOperationStartMetadata",
         "ModelTelemetryOperationSuccessMetadata",
-        "ModelTelemetryOperationErrorMetadata",
+        "OnexEvent",
+        "OnexEventMetadataModel",
     ]

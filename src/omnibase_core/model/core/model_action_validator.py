@@ -5,13 +5,13 @@ Provides validation logic for node actions with strong typing and security check
 Integrates with node execution pipelines for comprehensive action validation.
 """
 
-from typing import List
-
-from omnibase_core.model.core.model_action_validation_result import \
-    ModelActionValidationResult
+from omnibase_core.model.core.model_action_validation_result import (
+    ModelActionValidationResult,
+)
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.model.core.model_node_action_validator import \
-    ModelNodeActionValidator
+from omnibase_core.model.core.model_node_action_validator import (
+    ModelNodeActionValidator,
+)
 
 # Export the main classes for backward compatibility
 ActionValidationResult = ModelActionValidationResult
@@ -20,7 +20,7 @@ NodeActionValidator = ModelNodeActionValidator
 
 def create_node_validator(
     node_name: str,
-    supported_actions: List[ModelNodeActionType],
+    supported_actions: list[ModelNodeActionType],
     validation_cache_size: int = 100,
 ) -> ModelNodeActionValidator:
     """

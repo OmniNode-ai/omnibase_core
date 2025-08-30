@@ -7,7 +7,6 @@ with workflow coordination factors.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,11 +22,13 @@ class ModelWorkflowGraphNode(BaseModel):
     ticket_id: str = Field(description="Unique ticket identifier", min_length=1)
 
     estimated_effort_hours: float = Field(
-        description="Estimated effort hours for completion", ge=0.0
+        description="Estimated effort hours for completion",
+        ge=0.0,
     )
 
-    dependencies: List[str] = Field(
-        default_factory=list, description="List of dependent ticket IDs"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="List of dependent ticket IDs",
     )
 
     parallel_eligibility: bool = Field(
@@ -35,8 +36,9 @@ class ModelWorkflowGraphNode(BaseModel):
         description="Whether this node can execute in parallel with others",
     )
 
-    execution_lane: Optional[str] = Field(
-        default=None, description="Assigned execution lane (L1-L6)"
+    execution_lane: str | None = Field(
+        default=None,
+        description="Assigned execution lane (L1-L6)",
     )
 
 
@@ -49,11 +51,12 @@ class ModelCriticalPathAnalysis(BaseModel):
     """
 
     is_on_critical_path: bool = Field(
-        description="Whether ticket is on the critical path"
+        description="Whether ticket is on the critical path",
     )
 
     critical_path_position: int = Field(
-        description="Position in critical path (0-based)", ge=0
+        description="Position in critical path (0-based)",
+        ge=0,
     )
 
     critical_path_length: int = Field(description="Total length of critical path", ge=1)
@@ -61,11 +64,14 @@ class ModelCriticalPathAnalysis(BaseModel):
     slack_time_hours: float = Field(description="Available slack time in hours", ge=0.0)
 
     bottleneck_risk_score: float = Field(
-        description="Risk of becoming a bottleneck (0.0-1.0)", ge=0.0, le=1.0
+        description="Risk of becoming a bottleneck (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     parallel_opportunities: int = Field(
-        description="Number of parallel execution opportunities", ge=0
+        description="Number of parallel execution opportunities",
+        ge=0,
     )
 
 
@@ -78,25 +84,32 @@ class ModelLaneContention(BaseModel):
     """
 
     lane_id: str = Field(
-        description="Execution lane identifier (L1-L6)", pattern=r"^L[1-6]$"
+        description="Execution lane identifier (L1-L6)",
+        pattern=r"^L[1-6]$",
     )
 
     current_utilization: float = Field(
-        description="Current lane utilization percentage (0.0-100.0)", ge=0.0, le=100.0
+        description="Current lane utilization percentage (0.0-100.0)",
+        ge=0.0,
+        le=100.0,
     )
 
     queue_depth: int = Field(description="Number of tickets queued for this lane", ge=0)
 
     average_wait_time_minutes: float = Field(
-        description="Average wait time in minutes", ge=0.0
+        description="Average wait time in minutes",
+        ge=0.0,
     )
 
     congestion_level: float = Field(
-        description="Congestion severity (0.0-1.0, >0.8 is critical)", ge=0.0, le=1.0
+        description="Congestion severity (0.0-1.0, >0.8 is critical)",
+        ge=0.0,
+        le=1.0,
     )
 
     predicted_availability_hours: float = Field(
-        description="Predicted hours until lane becomes available", ge=0.0
+        description="Predicted hours until lane becomes available",
+        ge=0.0,
     )
 
 
@@ -115,17 +128,20 @@ class ModelWorkLease(BaseModel):
     expires_at: datetime = Field(description="When the lease expires")
 
     lease_duration_minutes: int = Field(
-        description="Original lease duration in minutes", ge=1
+        description="Original lease duration in minutes",
+        ge=1,
     )
 
     renewal_count: int = Field(
-        description="Number of times lease has been renewed", ge=0
+        description="Number of times lease has been renewed",
+        ge=0,
     )
 
     max_renewals: int = Field(description="Maximum allowed renewals", ge=0)
 
     auto_renewal_enabled: bool = Field(
-        default=True, description="Whether automatic renewal is enabled"
+        default=True,
+        description="Whether automatic renewal is enabled",
     )
 
     scope: str = Field(
@@ -143,27 +159,34 @@ class ModelCoordinationOverhead(BaseModel):
     """
 
     node_count: int = Field(
-        description="Number of nodes involved in coordination", ge=1
+        description="Number of nodes involved in coordination",
+        ge=1,
     )
 
     communication_overhead_factor: float = Field(
-        description="Communication overhead multiplier (1.0 = no overhead)", ge=1.0
+        description="Communication overhead multiplier (1.0 = no overhead)",
+        ge=1.0,
     )
 
     synchronization_points: int = Field(
-        description="Number of synchronization points required", ge=0
+        description="Number of synchronization points required",
+        ge=0,
     )
 
     consensus_required: bool = Field(
-        default=False, description="Whether consensus is required for coordination"
+        default=False,
+        description="Whether consensus is required for coordination",
     )
 
     coordination_complexity: float = Field(
-        description="Overall coordination complexity (0.0-1.0)", ge=0.0, le=1.0
+        description="Overall coordination complexity (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     estimated_overhead_minutes: float = Field(
-        description="Estimated coordination overhead in minutes", ge=0.0
+        description="Estimated coordination overhead in minutes",
+        ge=0.0,
     )
 
 
@@ -176,7 +199,8 @@ class ModelEventDependency(BaseModel):
     """
 
     event_name: str = Field(
-        description="Event name this ticket depends on", min_length=1
+        description="Event name this ticket depends on",
+        min_length=1,
     )
 
     event_type: str = Field(description="Type of event dependency", min_length=1)
@@ -185,16 +209,20 @@ class ModelEventDependency(BaseModel):
 
     is_blocking: bool = Field(description="Whether this event dependency is blocking")
 
-    timeout_minutes: Optional[int] = Field(
-        default=None, description="Timeout for event dependency in minutes", ge=1
+    timeout_minutes: int | None = Field(
+        default=None,
+        description="Timeout for event dependency in minutes",
+        ge=1,
     )
 
     retry_enabled: bool = Field(
-        default=True, description="Whether retry is enabled for this dependency"
+        default=True,
+        description="Whether retry is enabled for this dependency",
     )
 
     fallback_available: bool = Field(
-        default=False, description="Whether fallback execution path is available"
+        default=False,
+        description="Whether fallback execution path is available",
     )
 
 
@@ -210,48 +238,55 @@ class ModelOrchestratorContext(BaseModel):
     ticket_id: str = Field(description="Target ticket ID for context", min_length=1)
 
     # Critical path analysis
-    workflow_graph: List[ModelWorkflowGraphNode] = Field(
+    workflow_graph: list[ModelWorkflowGraphNode] = Field(
         default_factory=list,
         description="Complete workflow graph for critical path analysis",
     )
 
-    critical_path_analysis: Optional[ModelCriticalPathAnalysis] = Field(
-        default=None, description="Critical path analysis results"
+    critical_path_analysis: ModelCriticalPathAnalysis | None = Field(
+        default=None,
+        description="Critical path analysis results",
     )
 
     # Lane contention analysis
-    target_lane: Optional[str] = Field(
+    target_lane: str | None = Field(
         default=None,
         description="Target execution lane for this ticket",
         pattern=r"^L[1-6]$",
     )
 
-    lane_contention: Optional[ModelLaneContention] = Field(
-        default=None, description="Current lane contention analysis"
+    lane_contention: ModelLaneContention | None = Field(
+        default=None,
+        description="Current lane contention analysis",
     )
 
-    alternative_lanes: List[str] = Field(
-        default_factory=list, description="Alternative execution lanes available"
+    alternative_lanes: list[str] = Field(
+        default_factory=list,
+        description="Alternative execution lanes available",
     )
 
     # Lease TTL pressure
-    active_leases: List[ModelWorkLease] = Field(
-        default_factory=list, description="Active work leases for this ticket"
+    active_leases: list[ModelWorkLease] = Field(
+        default_factory=list,
+        description="Active work leases for this ticket",
     )
 
     # Coordination overhead
-    coordination_overhead: Optional[ModelCoordinationOverhead] = Field(
-        default=None, description="Multi-node coordination overhead analysis"
+    coordination_overhead: ModelCoordinationOverhead | None = Field(
+        default=None,
+        description="Multi-node coordination overhead analysis",
     )
 
     # Event dependencies
-    event_dependencies: List[ModelEventDependency] = Field(
-        default_factory=list, description="Event-driven workflow dependencies"
+    event_dependencies: list[ModelEventDependency] = Field(
+        default_factory=list,
+        description="Event-driven workflow dependencies",
     )
 
     # Orchestrator mode settings
     orchestrator_mode_enabled: bool = Field(
-        default=False, description="Whether orchestrator-specific factors are enabled"
+        default=False,
+        description="Whether orchestrator-specific factors are enabled",
     )
 
     algorithm_version: str = Field(
@@ -260,7 +295,8 @@ class ModelOrchestratorContext(BaseModel):
     )
 
     calculation_timestamp: datetime = Field(
-        default_factory=datetime.now, description="When context was captured"
+        default_factory=datetime.now,
+        description="When context was captured",
     )
 
     class Config:

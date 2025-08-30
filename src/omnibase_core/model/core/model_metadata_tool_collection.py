@@ -7,21 +7,25 @@ and compliance with one-model-per-file naming conventions.
 
 import hashlib
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 from pydantic import RootModel, computed_field, model_validator
 
 from omnibase_core.model.core.model_function_tool import ModelFunctionTool
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
-from .model_metadata_tool_info import (MetadataToolComplexity,
-                                       MetadataToolStatus, MetadataToolType,
-                                       ModelMetadataToolInfo)
+from .model_metadata_tool_info import (
+    MetadataToolComplexity,
+    MetadataToolStatus,
+    MetadataToolType,
+    ModelMetadataToolInfo,
+)
+
 # Import separated models
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
 
 
-class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
+class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     """
     Enterprise-grade collection of metadata/documentation tools for ONEX metadata blocks.
 
@@ -31,7 +35,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
     def __init__(
         self,
-        root: Union[Dict[str, Any], "ModelMetadataToolCollection", None] = None,
+        root: Union[dict[str, Any], "ModelMetadataToolCollection", None] = None,
         **kwargs,
     ):
         """Initialize with enhanced enterprise features."""
@@ -58,7 +62,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
             new_data = {}
             for k, v in data.items():
                 # Skip enterprise metadata fields
-                if k.startswith("_metadata_") or k.startswith("_tool_"):
+                if k.startswith(("_metadata_", "_tool_")):
                     new_data[k] = v
                     continue
 
@@ -87,14 +91,15 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         tools_by_status = {}
         tools_by_complexity = {}
 
-        for name, tool_data in self.root.items():
+        for name, _tool_data in self.root.items():
             # Skip enterprise metadata fields
-            if name.startswith("_metadata_") or name.startswith("_tool_"):
+            if name.startswith(("_metadata_", "_tool_")):
                 continue
 
             # Validate function name
             if not name.isidentifier():
-                raise ValueError(f"Invalid function name: {name}")
+                msg = f"Invalid function name: {name}"
+                raise ValueError(msg)
 
             tool_count += 1
 
@@ -123,7 +128,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
                 "tools_by_type": tools_by_type,
                 "tools_by_status": tools_by_status,
                 "tools_by_complexity": tools_by_complexity,
-            }
+            },
         )
         self.root["_metadata_analytics"] = analytics
 
@@ -133,7 +138,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
     @property
     def collection_id(self) -> str:
         """Generate unique identifier for this collection."""
-        tool_names = sorted([k for k in self.root.keys() if not k.startswith("_")])
+        tool_names = sorted([k for k in self.root if not k.startswith("_")])
         content = f"metadata_tools:{':'.join(tool_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
@@ -141,7 +146,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
     @property
     def tool_count(self) -> int:
         """Get total number of tools (excluding metadata)."""
-        return len([k for k in self.root.keys() if not k.startswith("_")])
+        return len([k for k in self.root if not k.startswith("_")])
 
     @computed_field
     @property
@@ -164,10 +169,12 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         # Penalty for deprecated/disabled tools
         deprecated_ratio = analytics.tools_by_status.get("deprecated", 0) / max(
-            analytics.total_tools, 1
+            analytics.total_tools,
+            1,
         )
         disabled_ratio = analytics.tools_by_status.get("disabled", 0) / max(
-            analytics.total_tools, 1
+            analytics.total_tools,
+            1,
         )
 
         penalty = (deprecated_ratio + disabled_ratio) * 20  # Up to 20 point penalty
@@ -181,7 +188,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         self,
         name: str,
         tool_data: Any,
-        tool_info: Optional[ModelMetadataToolInfo] = None,
+        tool_info: ModelMetadataToolInfo | None = None,
     ) -> bool:
         """
         Add a tool to the collection with enhanced metadata tracking.
@@ -203,7 +210,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
             if isinstance(tool_data, dict):
                 try:
                     self.root[name] = ModelFunctionTool.from_serializable_dict(
-                        tool_data
+                        tool_data,
                     )
                 except Exception:
                     self.root[name] = tool_data
@@ -249,7 +256,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         """Get a tool by name."""
         return self.root.get(name)
 
-    def get_tool_info(self, name: str) -> Optional[ModelMetadataToolInfo]:
+    def get_tool_info(self, name: str) -> ModelMetadataToolInfo | None:
         """Get enhanced tool information."""
         tool_info_data = self.root.get("_tool_info", {}).get(name)
         if tool_info_data:
@@ -273,7 +280,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         name: str,
         success: bool,
         processing_time_ms: float = 0.0,
-        error_msg: Optional[str] = None,
+        error_msg: str | None = None,
     ) -> None:
         """Record tool usage for analytics."""
         tool_info = self.get_tool_info(name)
@@ -314,13 +321,14 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         ) * 10
 
         metrics.popularity_score = min(
-            100.0, (usage_factor + recency_factor + success_factor) * 3.33
+            100.0,
+            (usage_factor + recency_factor + success_factor) * 3.33,
         )
 
         # Update tool info
         self.update_tool_info(name, tool_info)
 
-    def get_tools_by_type(self, tool_type: MetadataToolType) -> Dict[str, Any]:
+    def get_tools_by_type(self, tool_type: MetadataToolType) -> dict[str, Any]:
         """Get all tools of a specific type."""
         tools = {}
         for name, tool_data in self.root.items():
@@ -333,7 +341,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         return tools
 
-    def get_tools_by_status(self, status: MetadataToolStatus) -> Dict[str, Any]:
+    def get_tools_by_status(self, status: MetadataToolStatus) -> dict[str, Any]:
         """Get all tools with a specific status."""
         tools = {}
         for name, tool_data in self.root.items():
@@ -346,11 +354,11 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         return tools
 
-    def get_popular_tools(self, limit: int = 10) -> List[tuple[str, float]]:
+    def get_popular_tools(self, limit: int = 10) -> list[tuple[str, float]]:
         """Get most popular tools by usage score."""
         tool_scores = []
 
-        for name in self.root.keys():
+        for name in self.root:
             if name.startswith("_"):
                 continue
 
@@ -363,7 +371,10 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         return tool_scores[:limit]
 
     def deprecate_tool(
-        self, name: str, reason: str = "", replacement: Optional[str] = None
+        self,
+        name: str,
+        reason: str = "",
+        replacement: str | None = None,
     ) -> bool:
         """Mark a tool as deprecated."""
         tool_info = self.get_tool_info(name)
@@ -377,7 +388,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
                 "timestamp": datetime.now().isoformat(),
                 "reason": reason,
                 "replacement": replacement,
-            }
+            },
         )
 
         if replacement:
@@ -385,7 +396,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         return self.update_tool_info(name, tool_info)
 
-    def validate_collection(self) -> Dict[str, Any]:
+    def validate_collection(self) -> dict[str, Any]:
         """Perform comprehensive collection validation."""
         validation_results = {
             "valid": True,
@@ -419,7 +430,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
             if tool_info and tool_info.status == MetadataToolStatus.DEPRECATED:
                 if not tool_info.replaces:
                     tool_validation["warnings"].append(
-                        "Deprecated tool without replacement"
+                        "Deprecated tool without replacement",
                     )
 
             validation_results["tool_validations"][name] = tool_validation
@@ -432,13 +443,13 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         return validation_results
 
-    def export_analytics_report(self) -> Dict[str, Any]:
+    def export_analytics_report(self) -> dict[str, Any]:
         """Export comprehensive analytics report."""
         analytics = self.analytics
 
         # Calculate additional metrics
         tool_infos = []
-        for name in self.root.keys():
+        for name in self.root:
             if name.startswith("_"):
                 continue
 
@@ -454,7 +465,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
         # Documentation coverage
         documented_tools = len(
-            [t for t in tool_infos if t.description or t.documentation]
+            [t for t in tool_infos if t.description or t.documentation],
         )
         doc_coverage = (documented_tools / max(len(tool_infos), 1)) * 100
 
@@ -492,7 +503,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
         total_success = 0
 
         tool_count = 0
-        for name in self.root.keys():
+        for name in self.root:
             if name.startswith("_"):
                 continue
 
@@ -532,7 +543,7 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
                 "total_invocations": total_invocations,
                 "overall_success_rate": overall_success_rate,
                 "health_score": self.health_score,
-            }
+            },
         )
 
         self.root["_metadata_analytics"] = analytics_data
@@ -545,7 +556,8 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
     @classmethod
     def create_from_function_tools(
-        cls, tools_dict: Dict[str, ModelFunctionTool]
+        cls,
+        tools_dict: dict[str, ModelFunctionTool],
     ) -> "ModelMetadataToolCollection":
         """Create collection from existing ModelFunctionTool dictionary."""
         collection = cls(tools_dict)
@@ -564,7 +576,8 @@ class ModelMetadataToolCollection(RootModel[Dict[str, Any]]):
 
     @classmethod
     def create_documentation_collection(
-        cls, name: str = "documentation"
+        cls,
+        name: str = "documentation",
     ) -> "ModelMetadataToolCollection":
         """Create a collection optimized for documentation tools."""
         collection = cls({})
@@ -590,17 +603,17 @@ LegacyToolCollection = ModelMetadataToolCollection
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelMetadataToolUsageMetrics",
-    "ModelMetadataToolAnalytics",
-    "ModelMetadataToolInfo",
-    "ModelMetadataToolCollection",
-    "MetadataToolType",
-    "MetadataToolStatus",
+    "LegacyToolCollection",
+    "MetadataToolAnalytics",
+    "MetadataToolCollection",
     "MetadataToolComplexity",
+    "MetadataToolInfo",
+    "MetadataToolStatus",
+    "MetadataToolType",
     # Backward compatibility
     "MetadataToolUsageMetrics",
-    "MetadataToolAnalytics",
-    "MetadataToolInfo",
-    "MetadataToolCollection",
-    "LegacyToolCollection",
+    "ModelMetadataToolAnalytics",
+    "ModelMetadataToolCollection",
+    "ModelMetadataToolInfo",
+    "ModelMetadataToolUsageMetrics",
 ]

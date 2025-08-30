@@ -6,14 +6,12 @@ following ONEX canonical patterns.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.discovery.model_custom_metrics import \
-    ModelCustomMetrics
-from omnibase_core.model.discovery.model_tool_discovery_response import \
-    ModelDiscoveredTool
+from omnibase_core.model.discovery.model_tool_discovery_response import (
+    ModelDiscoveredTool,
+)
 
 
 class ModelDiscoveryResponse(BaseModel):
@@ -33,69 +31,80 @@ class ModelDiscoveryResponse(BaseModel):
         json_schema_extra={"enum": ["success", "error", "timeout", "partial"]},
     )
 
-    message: Optional[str] = Field(
-        None, description="Status message or error description"
+    message: str | None = Field(
+        None,
+        description="Status message or error description",
     )
 
     # Discovery results
-    tools: List[ModelDiscoveredTool] = Field(
-        default_factory=list, description="List of discovered tools"
+    tools: list[ModelDiscoveredTool] = Field(
+        default_factory=list,
+        description="List of discovered tools",
     )
 
     # Result metadata
     total_count: int = Field(
-        0, description="Total number of tools found before filtering"
+        0,
+        description="Total number of tools found before filtering",
     )
 
     filtered_count: int = Field(0, description="Number of tools after applying filters")
 
     # Performance metrics
-    response_time_ms: Optional[float] = Field(
-        None, description="Response time in milliseconds"
+    response_time_ms: float | None = Field(
+        None,
+        description="Response time in milliseconds",
     )
 
-    started_at: Optional[datetime] = Field(
-        None, description="When the operation started"
+    started_at: datetime | None = Field(
+        None,
+        description="When the operation started",
     )
 
-    completed_at: Optional[datetime] = Field(
-        None, description="When the operation completed"
+    completed_at: datetime | None = Field(
+        None,
+        description="When the operation completed",
     )
 
     # Error handling
     timeout_occurred: bool = Field(False, description="Whether the operation timed out")
 
     partial_response: bool = Field(
-        False, description="Whether this is a partial response"
+        False,
+        description="Whether this is a partial response",
     )
 
-    errors: List[str] = Field(
-        default_factory=list, description="List of errors encountered"
+    errors: list[str] = Field(
+        default_factory=list,
+        description="List of errors encountered",
     )
 
     # Client information
-    client_id: Optional[str] = Field(None, description="Client identifier")
+    client_id: str | None = Field(None, description="Client identifier")
 
-    client_stats: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Client statistics and status"
+    client_stats: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Client statistics and status",
     )
 
     # Request tracking
-    correlation_id: Optional[str] = Field(
-        None, description="Correlation ID from the request"
+    correlation_id: str | None = Field(
+        None,
+        description="Correlation ID from the request",
     )
 
     # Additional metadata
-    metadata: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Additional response metadata"
+    metadata: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Additional response metadata",
     )
 
     @classmethod
     def create_success_response(
         cls,
         operation: str,
-        tools: List[ModelDiscoveredTool],
-        response_time_ms: Optional[float] = None,
+        tools: list[ModelDiscoveredTool],
+        response_time_ms: float | None = None,
         **kwargs,
     ) -> "ModelDiscoveryResponse":
         """
@@ -123,7 +132,11 @@ class ModelDiscoveryResponse(BaseModel):
 
     @classmethod
     def create_error_response(
-        cls, operation: str, message: str, errors: Optional[List[str]] = None, **kwargs
+        cls,
+        operation: str,
+        message: str,
+        errors: list[str] | None = None,
+        **kwargs,
     ) -> "ModelDiscoveryResponse":
         """
         Factory method for error discovery responses.
@@ -151,7 +164,7 @@ class ModelDiscoveryResponse(BaseModel):
         cls,
         operation: str,
         timeout_seconds: float,
-        partial_tools: Optional[List[ModelDiscoveredTool]] = None,
+        partial_tools: list[ModelDiscoveredTool] | None = None,
         **kwargs,
     ) -> "ModelDiscoveryResponse":
         """
@@ -186,7 +199,7 @@ class ModelDiscoveryResponse(BaseModel):
     def create_status_response(
         cls,
         client_id: str,
-        client_stats: Dict[str, Union[str, int, float, bool]],
+        client_stats: dict[str, str | int | float | bool],
         **kwargs,
     ) -> "ModelDiscoveryResponse":
         """

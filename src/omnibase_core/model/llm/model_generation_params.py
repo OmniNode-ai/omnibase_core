@@ -5,8 +5,6 @@ Defines configurable parameters for text generation across
 all LLM providers with validation and sensible defaults.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -27,67 +25,72 @@ class ModelGenerationParams(BaseModel):
     )
 
     max_tokens: int = Field(
-        default=1000, ge=1, le=32000, description="Maximum number of tokens to generate"
+        default=1000,
+        ge=1,
+        le=32000,
+        description="Maximum number of tokens to generate",
     )
 
-    top_p: Optional[float] = Field(
+    top_p: float | None = Field(
         default=0.9,
         ge=0.0,
         le=1.0,
         description="Nucleus sampling parameter (cumulative probability)",
     )
 
-    top_k: Optional[int] = Field(
+    top_k: int | None = Field(
         default=None,
         ge=1,
         le=100,
         description="Top-k sampling parameter (number of tokens to consider)",
     )
 
-    frequency_penalty: Optional[float] = Field(
+    frequency_penalty: float | None = Field(
         default=0.0,
         ge=-2.0,
         le=2.0,
         description="Penalty for token frequency (reduce repetition)",
     )
 
-    presence_penalty: Optional[float] = Field(
+    presence_penalty: float | None = Field(
         default=0.0,
         ge=-2.0,
         le=2.0,
         description="Penalty for token presence (encourage new topics)",
     )
 
-    stop_sequences: Optional[List[str]] = Field(
-        default=None, description="Sequences that stop generation when encountered"
+    stop_sequences: list[str] | None = Field(
+        default=None,
+        description="Sequences that stop generation when encountered",
     )
 
-    seed: Optional[int] = Field(
-        default=None, description="Random seed for reproducible generation"
+    seed: int | None = Field(
+        default=None,
+        description="Random seed for reproducible generation",
     )
 
-    repeat_penalty: Optional[float] = Field(
+    repeat_penalty: float | None = Field(
         default=1.1,
         ge=0.1,
         le=2.0,
         description="Penalty for repeating tokens (Ollama-specific)",
     )
 
-    mirostat: Optional[int] = Field(
+    mirostat: int | None = Field(
         default=None,
         ge=0,
         le=2,
         description="Mirostat sampling algorithm version (Ollama-specific)",
     )
 
-    mirostat_eta: Optional[float] = Field(
+    mirostat_eta: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="Mirostat learning rate (Ollama-specific)",
     )
 
-    mirostat_tau: Optional[float] = Field(
+    mirostat_tau: float | None = Field(
         default=None,
         ge=0.0,
         le=10.0,
@@ -109,7 +112,7 @@ class ModelGenerationParams(BaseModel):
                 "stop_sequences": ["\n\n", "END"],
                 "seed": 42,
                 "repeat_penalty": 1.1,
-            }
+            },
         },
     )
 

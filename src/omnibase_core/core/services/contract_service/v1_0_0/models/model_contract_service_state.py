@@ -5,8 +5,6 @@ This model represents the internal state of the contract service
 including cache management and performance metrics.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from .model_contract_cache_entry import ModelContractCacheEntry
@@ -17,15 +15,17 @@ class ModelContractServiceState(BaseModel):
 
     cache_enabled: bool = Field(True, description="Whether caching is enabled")
     cache_max_size: int = Field(100, description="Maximum cache entries")
-    cache_entries: Dict[str, ModelContractCacheEntry] = Field(
-        default_factory=dict, description="Cached contract entries"
+    cache_entries: dict[str, ModelContractCacheEntry] = Field(
+        default_factory=dict,
+        description="Cached contract entries",
     )
     total_loads: int = Field(default=0, description="Total contracts loaded")
     cache_hits: int = Field(default=0, description="Number of cache hits")
     cache_misses: int = Field(default=0, description="Number of cache misses")
     total_validations: int = Field(default=0, description="Total validations performed")
     validation_failures: int = Field(
-        default=0, description="Number of validation failures"
+        default=0,
+        description="Number of validation failures",
     )
 
     @property

@@ -5,7 +5,6 @@ Represents statistics for event processing and storage.
 """
 
 from datetime import datetime
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,17 +14,22 @@ class ModelEventStatistics(BaseModel):
 
     total_events_sent: int = Field(..., description="Total events sent to Kafka")
     total_events_failed: int = Field(
-        ..., description="Total events that failed to send"
+        ...,
+        description="Total events that failed to send",
     )
-    events_by_type: Dict[str, int] = Field(
-        default_factory=dict, description="Count of events by type"
+    events_by_type: dict[str, int] = Field(
+        default_factory=dict,
+        description="Count of events by type",
     )
-    last_event_timestamp: Optional[datetime] = Field(
-        None, description="Timestamp of last event"
+    last_event_timestamp: datetime | None = Field(
+        None,
+        description="Timestamp of last event",
     )
     kafka_connection_active: bool = Field(
-        False, description="Whether Kafka connection is active"
+        False,
+        description="Whether Kafka connection is active",
     )
     average_send_time_ms: float = Field(
-        0.0, description="Average time to send events in milliseconds"
+        0.0,
+        description="Average time to send events in milliseconds",
     )

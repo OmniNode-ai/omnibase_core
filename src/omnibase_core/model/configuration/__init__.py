@@ -32,13 +32,10 @@ from .model_kafka_connection_config import *
 from .model_kafka_secure_config import *
 from .model_latency_profile import *
 from .model_load_balancing_algorithm import *
-from .model_load_balancing_algorithm import ModelLoadBalancingParameters
 from .model_load_balancing_policy import *
 from .model_load_metrics import *
 from .model_log_destination import *
-from .model_log_destination import ModelLogDestinationConfig
 from .model_log_filter import *
-from .model_log_filter import ModelLogFilterConfig
 from .model_log_formatting import *
 from .model_log_level import *
 from .model_matrix_strategy import *
@@ -51,8 +48,6 @@ from .model_performance_constraints import *
 from .model_performance_hints import *
 from .model_pool_recommendations import *
 from .model_priority_metadata import *
-from .model_priority_metadata import (ModelMonitoringThresholds,
-                                      ModelNotificationSettings)
 from .model_pull_request_trigger import *
 from .model_push_trigger import *
 from .model_rate_limit_policy import *
@@ -61,7 +56,6 @@ from .model_request_auth import *
 from .model_request_config import *
 from .model_request_retry_config import *
 from .model_resource_allocation import *
-from .model_resource_allocation import ModelCustomResourceLimits
 from .model_resource_limits import *
 from .model_rest_api_connection_config import *
 from .model_retry_policy import *
@@ -69,7 +63,6 @@ from .model_schedule_trigger import *
 from .model_serialized_block import *
 from .model_service_container import *
 from .model_session_affinity import *
-from .model_session_affinity import ModelSessionAffinityMetadata
 from .model_step import *
 from .model_step_with import *
 from .model_throttling_behavior import *

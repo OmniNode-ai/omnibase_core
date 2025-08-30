@@ -6,7 +6,6 @@ Replaces Dict[str, Any] returns with strongly typed models.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,12 +19,14 @@ class ModelTaskExecutionResult(OnexBaseModel):
     task_id: str = Field(..., description="ID of the executed task")
     status: str = Field(..., description="Execution status")
     execution_time: float = Field(..., description="Execution time in seconds")
-    result: Optional[Dict] = Field(
-        default=None, description="Task-specific result data"
+    result: dict | None = Field(
+        default=None,
+        description="Task-specific result data",
     )
-    error: Optional[str] = Field(default=None, description="Error message if failed")
-    traceback: Optional[str] = Field(
-        default=None, description="Error traceback if failed"
+    error: str | None = Field(default=None, description="Error message if failed")
+    traceback: str | None = Field(
+        default=None,
+        description="Error traceback if failed",
     )
 
 
@@ -35,11 +36,13 @@ class ModelDocumentAnalysisResult(OnexBaseModel):
     document: str = Field(..., description="Document path")
     freshness_score: float = Field(..., description="Document freshness score")
     issues_found: int = Field(default=0, description="Number of issues found")
-    recommendations: List[str] = Field(
-        default_factory=list, description="Improvement recommendations"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Improvement recommendations",
     )
     analyzed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Analysis timestamp"
+        default_factory=datetime.utcnow,
+        description="Analysis timestamp",
     )
 
 
@@ -50,8 +53,9 @@ class ModelBatchProcessingResult(OnexBaseModel):
     processed: int = Field(..., description="Number of items processed")
     batch_size: int = Field(..., description="Batch size used")
     status: str = Field(..., description="Processing status")
-    failed_items: List[str] = Field(
-        default_factory=list, description="IDs of failed items"
+    failed_items: list[str] = Field(
+        default_factory=list,
+        description="IDs of failed items",
     )
 
 
@@ -59,9 +63,9 @@ class ModelCustomFunctionResult(OnexBaseModel):
     """Result of custom function execution."""
 
     function: str = Field(..., description="Function name executed")
-    payload: Dict = Field(..., description="Input payload")
+    payload: dict = Field(..., description="Input payload")
     result: str = Field(..., description="Function result")
-    metadata: Optional[Dict] = Field(default=None, description="Additional metadata")
+    metadata: dict | None = Field(default=None, description="Additional metadata")
 
 
 class ModelMaintenanceResult(OnexBaseModel):
@@ -70,10 +74,12 @@ class ModelMaintenanceResult(OnexBaseModel):
     deleted_count: int = Field(..., description="Number of items deleted")
     older_than_days: int = Field(..., description="Age threshold in days")
     executed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Execution timestamp"
+        default_factory=datetime.utcnow,
+        description="Execution timestamp",
     )
-    additional_actions: Optional[List[str]] = Field(
-        default=None, description="Other actions performed"
+    additional_actions: list[str] | None = Field(
+        default=None,
+        description="Other actions performed",
     )
 
 
@@ -97,8 +103,8 @@ class ModelResourceAnalysisResult(OnexBaseModel):
     has_links: bool = Field(..., description="Whether document has links")
     reading_time_minutes: int = Field(..., description="Estimated reading time")
     analysis_timestamp: datetime = Field(default_factory=datetime.utcnow)
-    todos: List[str] = Field(default_factory=list, description="List of TODOs")
-    fixmes: List[str] = Field(default_factory=list, description="List of FIXMEs")
+    todos: list[str] = Field(default_factory=list, description="List of TODOs")
+    fixmes: list[str] = Field(default_factory=list, description="List of FIXMEs")
 
 
 class ModelTaskQueueStats(OnexBaseModel):
@@ -110,6 +116,7 @@ class ModelTaskQueueStats(OnexBaseModel):
     completed: int = Field(..., description="Completed tasks")
     failed: int = Field(..., description="Failed tasks")
     completed_today: int = Field(..., description="Tasks completed today")
-    recent_tasks: List[Dict] = Field(
-        default_factory=list, description="Recent task summaries"
+    recent_tasks: list[dict] = Field(
+        default_factory=list,
+        description="Recent task summaries",
     )

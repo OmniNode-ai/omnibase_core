@@ -13,7 +13,8 @@ class ModelEntrypointBlock(BaseModel):
         The target is always the filename stem (no extension).
         """
         if "://" not in uri:
-            raise ValueError(f"Invalid entrypoint URI: {uri}")
+            msg = f"Invalid entrypoint URI: {uri}"
+            raise ValueError(msg)
         type_, target = uri.split("://", 1)
         return cls(type=type_, target=target)
 

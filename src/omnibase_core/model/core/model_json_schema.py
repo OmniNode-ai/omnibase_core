@@ -5,7 +5,7 @@ This model replaces dictionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -20,64 +20,69 @@ class ModelJsonSchema(BaseModel):
     """
 
     # Core schema properties
-    type: Optional[str] = Field(None, description="JSON Schema type")
-    description: Optional[str] = Field(None, description="Schema description")
-    title: Optional[str] = Field(None, description="Schema title")
-    default: Optional[ModelSchemaValue] = Field(None, description="Default value")
+    type: str | None = Field(None, description="JSON Schema type")
+    description: str | None = Field(None, description="Schema description")
+    title: str | None = Field(None, description="Schema title")
+    default: ModelSchemaValue | None = Field(None, description="Default value")
 
     # String validation
-    min_length: Optional[int] = Field(None, alias="minLength")
-    max_length: Optional[int] = Field(None, alias="maxLength")
-    pattern: Optional[str] = Field(None, description="String pattern")
-    format: Optional[str] = Field(None, description="String format")
+    min_length: int | None = Field(None, alias="minLength")
+    max_length: int | None = Field(None, alias="maxLength")
+    pattern: str | None = Field(None, description="String pattern")
+    format: str | None = Field(None, description="String format")
 
     # Numeric validation
-    minimum: Optional[Union[int, float]] = Field(None, description="Minimum value")
-    maximum: Optional[Union[int, float]] = Field(None, description="Maximum value")
-    exclusive_minimum: Optional[bool] = Field(None, alias="exclusiveMinimum")
-    exclusive_maximum: Optional[bool] = Field(None, alias="exclusiveMaximum")
-    multiple_of: Optional[Union[int, float]] = Field(None, alias="multipleOf")
+    minimum: int | float | None = Field(None, description="Minimum value")
+    maximum: int | float | None = Field(None, description="Maximum value")
+    exclusive_minimum: bool | None = Field(None, alias="exclusiveMinimum")
+    exclusive_maximum: bool | None = Field(None, alias="exclusiveMaximum")
+    multiple_of: int | float | None = Field(None, alias="multipleOf")
 
     # Array validation
     items: Optional["ModelJsonSchema"] = Field(None, description="Array items schema")
-    min_items: Optional[int] = Field(None, alias="minItems")
-    max_items: Optional[int] = Field(None, alias="maxItems")
-    unique_items: Optional[bool] = Field(None, alias="uniqueItems")
+    min_items: int | None = Field(None, alias="minItems")
+    max_items: int | None = Field(None, alias="maxItems")
+    unique_items: bool | None = Field(None, alias="uniqueItems")
 
     # Object validation
-    properties: Optional[Dict[str, "ModelJsonSchema"]] = Field(
-        None, description="Object properties"
+    properties: dict[str, "ModelJsonSchema"] | None = Field(
+        None,
+        description="Object properties",
     )
-    required: Optional[List[str]] = Field(None, description="Required properties")
-    additional_properties: Optional[Union[bool, "ModelJsonSchema"]] = Field(
-        None, alias="additionalProperties"
+    required: list[str] | None = Field(None, description="Required properties")
+    additional_properties: Union[bool, "ModelJsonSchema"] | None = Field(
+        None,
+        alias="additionalProperties",
     )
 
     # Composition
-    all_of: Optional[List["ModelJsonSchema"]] = Field(None, alias="allOf")
-    any_of: Optional[List["ModelJsonSchema"]] = Field(None, alias="anyOf")
-    one_of: Optional[List["ModelJsonSchema"]] = Field(None, alias="oneOf")
+    all_of: list["ModelJsonSchema"] | None = Field(None, alias="allOf")
+    any_of: list["ModelJsonSchema"] | None = Field(None, alias="anyOf")
+    one_of: list["ModelJsonSchema"] | None = Field(None, alias="oneOf")
     not_schema: Optional["ModelJsonSchema"] = Field(None, alias="not")
 
     # References
-    ref: Optional[str] = Field(None, alias="$ref", description="Schema reference")
-    definitions: Optional[Dict[str, "ModelJsonSchema"]] = Field(
-        None, description="Schema definitions"
+    ref: str | None = Field(None, alias="$ref", description="Schema reference")
+    definitions: dict[str, "ModelJsonSchema"] | None = Field(
+        None,
+        description="Schema definitions",
     )
 
     # Enumeration
-    enum: Optional[List[ModelSchemaValue]] = Field(
-        None, description="Enumeration values"
+    enum: list[ModelSchemaValue] | None = Field(
+        None,
+        description="Enumeration values",
     )
-    const: Optional[ModelSchemaValue] = Field(None, description="Constant value")
+    const: ModelSchemaValue | None = Field(None, description="Constant value")
 
     # Additional metadata
-    examples: Optional[List[ModelSchemaValue]] = Field(
-        None, description="Example values"
+    examples: list[ModelSchemaValue] | None = Field(
+        None,
+        description="Example values",
     )
-    deprecated: Optional[bool] = Field(None, description="Whether schema is deprecated")
-    read_only: Optional[bool] = Field(None, alias="readOnly")
-    write_only: Optional[bool] = Field(None, alias="writeOnly")
+    deprecated: bool | None = Field(None, description="Whether schema is deprecated")
+    read_only: bool | None = Field(None, alias="readOnly")
+    write_only: bool | None = Field(None, alias="writeOnly")
 
     class Config:
         populate_by_name = True  # Allow both field names and aliases
@@ -124,10 +129,11 @@ class ModelJsonSchema(BaseModel):
             }
 
         if "additionalProperties" in schema_dict and isinstance(
-            schema_dict["additionalProperties"], dict
+            schema_dict["additionalProperties"],
+            dict,
         ):
             schema_dict["additionalProperties"] = cls.from_dict(
-                schema_dict["additionalProperties"]
+                schema_dict["additionalProperties"],
             )
 
         # Handle composition schemas
@@ -143,7 +149,8 @@ class ModelJsonSchema(BaseModel):
             del schema_dict["not"]
 
         if "definitions" in schema_dict and isinstance(
-            schema_dict["definitions"], dict
+            schema_dict["definitions"],
+            dict,
         ):
             schema_dict["definitions"] = {
                 k: cls.from_dict(v) if isinstance(v, dict) else v

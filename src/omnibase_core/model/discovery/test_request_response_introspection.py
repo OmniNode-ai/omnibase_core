@@ -10,25 +10,30 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.mixin.mixin_request_response_introspection import \
-    MixinRequestResponseIntrospection
+from omnibase_core.mixin.mixin_request_response_introspection import (
+    MixinRequestResponseIntrospection,
+)
 from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery.enum_node_current_status import \
-    NodeCurrentStatusEnum
-from omnibase_core.model.discovery.model_current_tool_availability import \
-    ModelCurrentToolAvailability
-from omnibase_core.model.discovery.model_introspection_filters import \
-    ModelIntrospectionFilters
-from omnibase_core.model.discovery.model_introspection_response_event import \
-    ModelIntrospectionResponseEvent
-from omnibase_core.model.discovery.model_node_introspection_event import \
-    ModelNodeCapabilities
-from omnibase_core.model.discovery.model_performance_metrics import \
-    ModelPerformanceMetrics
-from omnibase_core.model.discovery.model_request_introspection_event import \
-    ModelRequestIntrospectionEvent
-from omnibase_core.model.discovery.model_resource_usage import \
-    ModelResourceUsage
+from omnibase_core.model.discovery.enum_node_current_status import NodeCurrentStatusEnum
+from omnibase_core.model.discovery.model_current_tool_availability import (
+    ModelCurrentToolAvailability,
+)
+from omnibase_core.model.discovery.model_introspection_filters import (
+    ModelIntrospectionFilters,
+)
+from omnibase_core.model.discovery.model_introspection_response_event import (
+    ModelIntrospectionResponseEvent,
+)
+from omnibase_core.model.discovery.model_node_introspection_event import (
+    ModelNodeCapabilities,
+)
+from omnibase_core.model.discovery.model_performance_metrics import (
+    ModelPerformanceMetrics,
+)
+from omnibase_core.model.discovery.model_request_introspection_event import (
+    ModelRequestIntrospectionEvent,
+)
+from omnibase_core.model.discovery.model_resource_usage import ModelResourceUsage
 
 
 class TestRequestIntrospectionEvent:
@@ -37,7 +42,8 @@ class TestRequestIntrospectionEvent:
     def test_basic_request_creation(self):
         """Test creating a basic introspection request."""
         request = ModelRequestIntrospectionEvent(
-            node_id="test_requester", requester_id="test_service"
+            node_id="test_requester",
+            requester_id="test_service",
         )
 
         assert request.node_id == "test_requester"
@@ -92,7 +98,9 @@ class TestRequestIntrospectionEvent:
         )
 
         request = ModelRequestIntrospectionEvent(
-            node_id="test_requester", requester_id="test_service", filters=filters
+            node_id="test_requester",
+            requester_id="test_service",
+            filters=filters,
         )
 
         assert request.filters.node_type == ["service"]
@@ -137,7 +145,9 @@ class TestIntrospectionResponseEvent:
         """Test factory methods for creating responses."""
         correlation_id = uuid4()
         capabilities = ModelNodeCapabilities(
-            actions=["health_check"], protocols=["event_bus"], metadata={}
+            actions=["health_check"],
+            protocols=["event_bus"],
+            metadata={},
         )
 
         # Test basic response creation
@@ -260,7 +270,7 @@ class TestMixinRequestResponseIntrospection:
         node._teardown_request_response_introspection()
 
         node._event_bus.unsubscribe.assert_called_once_with(
-            node._handle_introspection_request
+            node._handle_introspection_request,
         )
 
     def test_filter_matching(self):
@@ -282,7 +292,7 @@ class TestMixinRequestResponseIntrospection:
 
         # Test non-matching capabilities filter
         capabilities_filter = ModelIntrospectionFilters(
-            capabilities=["nonexistent_capability"]
+            capabilities=["nonexistent_capability"],
         )
         assert node._matches_introspection_filters(capabilities_filter) is False
 
@@ -345,7 +355,7 @@ class TestMixinRequestResponseIntrospection:
         # Create request with non-matching filters
         correlation_id = uuid4()
         filters = ModelIntrospectionFilters(
-            node_names=["other_node"]  # Won't match our test_node
+            node_names=["other_node"],  # Won't match our test_node
         )
         request = ModelRequestIntrospectionEvent(
             node_id="requester",

@@ -8,7 +8,6 @@ Author: OmniNode Team
 """
 
 from enum import Enum
-from typing import Dict, Optional
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
@@ -30,77 +29,91 @@ class ModelHealthCheck(BaseModel):
     """Strongly typed health check configuration."""
 
     check_type: HealthCheckType = Field(
-        ..., description="Type of health check to perform"
+        ...,
+        description="Type of health check to perform",
     )
 
-    endpoint_path: Optional[str] = Field(
-        None, description="Health check endpoint path (for HTTP checks)"
+    endpoint_path: str | None = Field(
+        None,
+        description="Health check endpoint path (for HTTP checks)",
     )
 
-    full_url: Optional[HttpUrl] = Field(
-        None, description="Complete health check URL (alternative to endpoint_path)"
+    full_url: HttpUrl | None = Field(
+        None,
+        description="Complete health check URL (alternative to endpoint_path)",
     )
 
-    command: Optional[str] = Field(
-        None, description="Command to execute for health check (for command type)"
+    command: str | None = Field(
+        None,
+        description="Command to execute for health check (for command type)",
     )
 
-    expected_status_code: Optional[int] = Field(
-        200, description="Expected HTTP status code for success", ge=100, le=599
+    expected_status_code: int | None = Field(
+        200,
+        description="Expected HTTP status code for success",
+        ge=100,
+        le=599,
     )
 
-    expected_response_pattern: Optional[str] = Field(
-        None, description="Regex pattern that response must match"
+    expected_response_pattern: str | None = Field(
+        None,
+        description="Regex pattern that response must match",
     )
 
     timeout_seconds: int = Field(
-        5, description="Health check timeout in seconds", ge=1, le=300
+        5,
+        description="Health check timeout in seconds",
+        ge=1,
+        le=300,
     )
 
-    headers: Optional[Dict[str, str]] = Field(
+    headers: dict[str, str] | None = Field(
         default_factory=dict,
         description="HTTP headers to include in health check request",
     )
 
-    metadata: Optional[ModelGenericMetadata] = Field(
-        default_factory=dict, description="Additional health check configuration"
+    metadata: ModelGenericMetadata | None = Field(
+        default_factory=dict,
+        description="Additional health check configuration",
     )
 
     @field_validator("endpoint_path")
-    def validate_endpoint_path_format(cls, v, info):
+    def validate_endpoint_path_format(self, v, info):
         """Ensure endpoint path starts with /"""
         if v is not None and not v.startswith("/"):
             return f"/{v}"
         return v
 
     @field_validator("command", mode="before")
-    def validate_command_type_consistency(cls, v, info):
+    def validate_command_type_consistency(self, v, info):
         """Ensure command is provided when check_type is COMMAND"""
         if hasattr(info, "data") and info.data:
             check_type = info.data.get("check_type")
             if check_type == HealthCheckType.COMMAND and not v:
-                raise ValueError("command is required when check_type is COMMAND")
+                msg = "command is required when check_type is COMMAND"
+                raise ValueError(msg)
         return v
 
     @field_validator("full_url", mode="before")
-    def validate_url_type_consistency(cls, v, info):
+    def validate_url_type_consistency(self, v, info):
         """Ensure URL fields are consistent with check type"""
         if hasattr(info, "data") and info.data:
             check_type = info.data.get("check_type")
             if check_type in [HealthCheckType.HTTP_GET, HealthCheckType.HTTP_POST]:
                 if not v and not info.data.get("endpoint_path"):
+                    msg = "Either full_url or endpoint_path required for HTTP checks"
                     raise ValueError(
-                        "Either full_url or endpoint_path required for HTTP checks"
+                        msg,
                     )
         return v
 
-    def get_effective_url(self, base_url: str = None) -> str:
+    def get_effective_url(self, base_url: str | None = None) -> str:
         """Get the complete URL for the health check."""
         if self.full_url:
             return str(self.full_url)
-        elif self.endpoint_path and base_url:
+        if self.endpoint_path and base_url:
             return f"{base_url.rstrip('/')}{self.endpoint_path}"
-        elif self.endpoint_path:
+        if self.endpoint_path:
             return self.endpoint_path
         return ""
 

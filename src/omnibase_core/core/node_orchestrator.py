@@ -19,29 +19,26 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
-from datetime import datetime, timedelta
+from collections.abc import Callable
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import (Any, AsyncIterator, Callable, Dict, List, NamedTuple,
-                    Optional, Union)
-from uuid import UUID, uuid4
+from typing import Any, NamedTuple
+from uuid import uuid4
 
-import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+
 # Import contract model for orchestrator nodes
-from omnibase_core.core.model_contract_orchestrator import \
-    ModelContractOrchestrator
+from omnibase_core.core.model_contract_orchestrator import ModelContractOrchestrator
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.utils.generation.utility_reference_resolver import \
-    UtilityReferenceResolver
+
 # Import utilities for contract loading
-from omnibase_core.utils.io.utility_filesystem_reader import \
-    UtilityFileSystemReader
 
 
 class WorkflowState(Enum):
@@ -97,12 +94,12 @@ class Thunk(NamedTuple):
     thunk_id: str
     thunk_type: ThunkType
     target_node_type: str
-    operation_data: Dict[str, Any]
-    dependencies: List[str]
+    operation_data: dict[str, Any]
+    dependencies: list[str]
     priority: int
     timeout_ms: int
     retry_count: int
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     created_at: datetime
 
 
@@ -116,12 +113,12 @@ class WorkflowStep:
         step_id: str,
         step_name: str,
         execution_mode: ExecutionMode,
-        thunks: List[Thunk],
-        condition: Optional[BranchCondition] = None,
-        condition_function: Optional[Callable[..., Any]] = None,
+        thunks: list[Thunk],
+        condition: BranchCondition | None = None,
+        condition_function: Callable[..., Any] | None = None,
         timeout_ms: int = 30000,
         retry_count: int = 0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.step_id = step_id
         self.step_name = step_name
@@ -133,10 +130,10 @@ class WorkflowStep:
         self.retry_count = retry_count
         self.metadata = metadata or {}
         self.state = WorkflowState.PENDING
-        self.started_at: Optional[datetime] = None
-        self.completed_at: Optional[datetime] = None
-        self.error: Optional[Exception] = None
-        self.results: List[Any] = []
+        self.started_at: datetime | None = None
+        self.completed_at: datetime | None = None
+        self.error: Exception | None = None
+        self.results: list[Any] = []
 
 
 class ModelOrchestratorInput:
@@ -150,15 +147,15 @@ class ModelOrchestratorInput:
     def __init__(
         self,
         workflow_id: str,
-        steps: List[WorkflowStep],
-        operation_id: Optional[str] = None,
+        steps: list[WorkflowStep],
+        operation_id: str | None = None,
         execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL,
         max_parallel_steps: int = 5,
         global_timeout_ms: int = 300000,  # 5 minutes default
         failure_strategy: str = "fail_fast",
         load_balancing_enabled: bool = False,
         dependency_resolution_enabled: bool = True,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.workflow_id = workflow_id
         self.steps = steps
@@ -188,13 +185,13 @@ class ModelOrchestratorOutput:
         workflow_state: WorkflowState,
         steps_completed: int,
         steps_failed: int,
-        thunks_emitted: List[Thunk],
+        thunks_emitted: list[Thunk],
         processing_time_ms: float,
         parallel_executions: int = 0,
         load_balanced_operations: int = 0,
         dependency_violations: int = 0,
-        results: Optional[List[Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        results: list[Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.workflow_id = workflow_id
         self.operation_id = operation_id
@@ -217,9 +214,9 @@ class DependencyGraph:
     """
 
     def __init__(self) -> None:
-        self.nodes: Dict[str, WorkflowStep] = {}
-        self.edges: Dict[str, List[str]] = {}  # step_id -> [dependent_step_ids]
-        self.in_degree: Dict[str, int] = {}
+        self.nodes: dict[str, WorkflowStep] = {}
+        self.edges: dict[str, list[str]] = {}  # step_id -> [dependent_step_ids]
+        self.in_degree: dict[str, int] = {}
 
     def add_step(self, step: WorkflowStep) -> None:
         """Add step to dependency graph."""
@@ -236,7 +233,7 @@ class DependencyGraph:
         self.edges[from_step].append(to_step)
         self.in_degree[to_step] = self.in_degree.get(to_step, 0) + 1
 
-    def get_ready_steps(self) -> List[str]:
+    def get_ready_steps(self) -> list[str]:
         """Get steps that are ready to execute (no pending dependencies)."""
         return [
             step_id
@@ -275,12 +272,7 @@ class DependencyGraph:
             rec_stack.remove(node)
             return False
 
-        for node in self.nodes:
-            if node not in visited:
-                if dfs(node):
-                    return True
-
-        return False
+        return any(node not in visited and dfs(node) for node in self.nodes)
 
 
 class LoadBalancer:
@@ -290,8 +282,8 @@ class LoadBalancer:
 
     def __init__(self, max_concurrent_operations: int = 10):
         self.max_concurrent_operations = max_concurrent_operations
-        self.active_operations: Dict[str, datetime] = {}
-        self.operation_counts: Dict[str, int] = {}
+        self.active_operations: dict[str, datetime] = {}
+        self.operation_counts: dict[str, int] = {}
         self.semaphore = asyncio.Semaphore(max_concurrent_operations)
 
     async def acquire(self, operation_id: str) -> bool:
@@ -311,14 +303,14 @@ class LoadBalancer:
             del self.active_operations[operation_id]
         self.semaphore.release()
 
-    def get_least_loaded_target(self, targets: List[str]) -> str:
+    def get_least_loaded_target(self, targets: list[str]) -> str:
         """Get least loaded target for operation distribution."""
         if not targets:
             return ""
 
         return min(targets, key=lambda t: self.operation_counts.get(t, 0))
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get load balancer statistics."""
         return {
             "active_operations": len(self.active_operations),
@@ -372,23 +364,23 @@ class NodeOrchestrator(NodeCoreBase):
         self.thunk_emission_enabled = True
 
         # Active workflows tracking
-        self.active_workflows: Dict[str, ModelOrchestratorInput] = {}
-        self.workflow_states: Dict[str, WorkflowState] = {}
+        self.active_workflows: dict[str, ModelOrchestratorInput] = {}
+        self.workflow_states: dict[str, WorkflowState] = {}
 
         # Load balancer for operation distribution
         self.load_balancer = LoadBalancer(max_concurrent_operations=20)
 
         # Thunk emission registry
-        self.emitted_thunks: Dict[str, List[Thunk]] = {}
+        self.emitted_thunks: dict[str, list[Thunk]] = {}
 
         # Workflow execution semaphore
         self.workflow_semaphore = asyncio.Semaphore(self.max_concurrent_workflows)
 
         # Performance tracking
-        self.orchestration_metrics: Dict[str, Dict[str, float]] = {}
+        self.orchestration_metrics: dict[str, dict[str, float]] = {}
 
         # Conditional functions registry
-        self.condition_functions: Dict[str, Callable[..., Any]] = {}
+        self.condition_functions: dict[str, Callable[..., Any]] = {}
 
         # Register built-in condition functions
         self._register_builtin_conditions()
@@ -408,16 +400,15 @@ class NodeOrchestrator(NodeCoreBase):
         """
         try:
             # Load actual contract from file with subcontract resolution
-            from pathlib import Path
 
             import yaml
 
-            from omnibase_core.constants.contract_constants import \
-                CONTRACT_FILENAME
-            from omnibase_core.utils.generation.utility_reference_resolver import \
-                UtilityReferenceResolver
-            from omnibase_core.utils.io.utility_filesystem_reader import \
-                UtilityFileSystemReader
+            from omnibase_core.utils.generation.utility_reference_resolver import (
+                UtilityReferenceResolver,
+            )
+            from omnibase_core.utils.io.utility_filesystem_reader import (
+                UtilityFileSystemReader,
+            )
 
             # Get contract path - find the node.py file and look for contract.yaml
             contract_path = self._find_contract_path()
@@ -431,7 +422,9 @@ class NodeOrchestrator(NodeCoreBase):
 
             # Resolve any $ref references in the contract
             resolved_contract = self._resolve_contract_references(
-                contract_data, contract_path.parent, reference_resolver
+                contract_data,
+                contract_path.parent,
+                reference_resolver,
             )
 
             # Create ModelContractOrchestrator from resolved contract data
@@ -457,7 +450,7 @@ class NodeOrchestrator(NodeCoreBase):
             # CANONICAL PATTERN: Wrap contract loading errors
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract model loading failed for NodeOrchestrator: {str(e)}",
+                message=f"Contract model loading failed for NodeOrchestrator: {e!s}",
                 details={
                     "contract_model_type": "ModelContractOrchestrator",
                     "error_type": type(e).__name__,
@@ -480,8 +473,7 @@ class NodeOrchestrator(NodeCoreBase):
         import inspect
         from pathlib import Path
 
-        from omnibase_core.constants.contract_constants import \
-            CONTRACT_FILENAME
+        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 
         try:
             # Get the module file for the calling class
@@ -508,12 +500,15 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Error finding contract path: {str(e)}",
+                message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
 
     def _resolve_contract_references(
-        self, data: Any, base_path: Path, reference_resolver: Any
+        self,
+        data: Any,
+        base_path: Path,
+        reference_resolver: Any,
     ) -> Any:
         """
         Recursively resolve all $ref references in contract data.
@@ -536,7 +531,7 @@ class NodeOrchestrator(NodeCoreBase):
                 if "$ref" in data:
                     # Resolve reference to another file
                     ref_file = data["$ref"]
-                    if ref_file.startswith("./") or ref_file.startswith("../"):
+                    if ref_file.startswith(("./", "../")):
                         # Relative path reference
                         ref_path = (base_path / ref_file).resolve()
                     else:
@@ -544,27 +539,30 @@ class NodeOrchestrator(NodeCoreBase):
                         ref_path = Path(ref_file)
 
                     return reference_resolver.resolve_reference(
-                        str(ref_path), base_path
+                        str(ref_path),
+                        base_path,
                     )
-                else:
-                    # Recursively resolve nested dictionaries
-                    return {
-                        key: self._resolve_contract_references(
-                            value, base_path, reference_resolver
-                        )
-                        for key, value in data.items()
-                    }
-            elif isinstance(data, list):
+                # Recursively resolve nested dictionaries
+                return {
+                    key: self._resolve_contract_references(
+                        value,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for key, value in data.items()
+                }
+            if isinstance(data, list):
                 # Recursively resolve lists
                 return [
                     self._resolve_contract_references(
-                        item, base_path, reference_resolver
+                        item,
+                        base_path,
+                        reference_resolver,
                     )
                     for item in data
                 ]
-            else:
-                # Return primitives as-is
-                return data
+            # Return primitives as-is
+            return data
 
         except Exception as e:
             # Log error but don't stop processing
@@ -577,7 +575,8 @@ class NodeOrchestrator(NodeCoreBase):
         return None
 
     async def process(
-        self, input_data: ModelOrchestratorInput
+        self,
+        input_data: ModelOrchestratorInput,
     ) -> ModelOrchestratorOutput:
         """
         Workflow coordination with thunk emission.
@@ -623,19 +622,23 @@ class NodeOrchestrator(NodeCoreBase):
                 # Execute workflow based on mode
                 if input_data.execution_mode == ExecutionMode.SEQUENTIAL:
                     result = await self._execute_sequential_workflow(
-                        input_data, dependency_graph
+                        input_data,
+                        dependency_graph,
                     )
                 elif input_data.execution_mode == ExecutionMode.PARALLEL:
                     result = await self._execute_parallel_workflow(
-                        input_data, dependency_graph
+                        input_data,
+                        dependency_graph,
                     )
                 elif input_data.execution_mode == ExecutionMode.BATCH:
                     result = await self._execute_batch_workflow(
-                        input_data, dependency_graph
+                        input_data,
+                        dependency_graph,
                     )
                 else:
                     result = await self._execute_sequential_workflow(
-                        input_data, dependency_graph
+                        input_data,
+                        dependency_graph,
                     )
 
                 # Update workflow state
@@ -684,7 +687,7 @@ class NodeOrchestrator(NodeCoreBase):
 
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Workflow orchestration failed: {str(e)}",
+                message=f"Workflow orchestration failed: {e!s}",
                 context={
                     "node_id": self.node_id,
                     "workflow_id": input_data.workflow_id,
@@ -704,8 +707,8 @@ class NodeOrchestrator(NodeCoreBase):
         ticket_id: str,
         current_state: str,
         target_state: str,
-        dependency_tickets: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        dependency_tickets: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Orchestrate RSD ticket lifecycle state transitions.
 
@@ -726,7 +729,10 @@ class NodeOrchestrator(NodeCoreBase):
         """
         # Create workflow steps for state transition
         steps = self._create_ticket_lifecycle_steps(
-            ticket_id, current_state, target_state, dependency_tickets or []
+            ticket_id,
+            current_state,
+            target_state,
+            dependency_tickets or [],
         )
 
         workflow_input = ModelOrchestratorInput(
@@ -759,8 +765,8 @@ class NodeOrchestrator(NodeCoreBase):
         self,
         thunk_type: ThunkType,
         target_node_type: str,
-        operation_data: Dict[str, Any],
-        dependencies: Optional[List[str]] = None,
+        operation_data: dict[str, Any],
+        dependencies: list[str] | None = None,
         priority: int = 1,
         timeout_ms: int = 30000,
     ) -> Thunk:
@@ -816,7 +822,9 @@ class NodeOrchestrator(NodeCoreBase):
         return thunk
 
     def register_condition_function(
-        self, condition_name: str, function: Callable[..., Any]
+        self,
+        condition_name: str,
+        function: Callable[..., Any],
     ) -> None:
         """
         Register custom condition function for branching.
@@ -850,7 +858,7 @@ class NodeOrchestrator(NodeCoreBase):
             {"node_id": self.node_id, "condition_name": condition_name},
         )
 
-    async def get_orchestration_metrics(self) -> Dict[str, Dict[str, float]]:
+    async def get_orchestration_metrics(self) -> dict[str, dict[str, float]]:
         """
         Get detailed orchestration performance metrics.
 
@@ -871,7 +879,7 @@ class NodeOrchestrator(NodeCoreBase):
                 "active_workflows": float(len(self.active_workflows)),
                 "max_concurrent_workflows": float(self.max_concurrent_workflows),
                 "total_thunks_emitted": float(
-                    sum(len(thunks) for thunks in self.emitted_thunks.values())
+                    sum(len(thunks) for thunks in self.emitted_thunks.values()),
                 ),
                 "condition_functions_registered": float(len(self.condition_functions)),
             },
@@ -881,7 +889,7 @@ class NodeOrchestrator(NodeCoreBase):
         """Initialize orchestrator-specific resources."""
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeOrchestrator resources initialized",
+            "NodeOrchestrator resources initialized",
             {
                 "node_id": self.node_id,
                 "max_concurrent_workflows": self.max_concurrent_workflows,
@@ -905,7 +913,7 @@ class NodeOrchestrator(NodeCoreBase):
 
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeOrchestrator resources cleaned up",
+            "NodeOrchestrator resources cleaned up",
             {"node_id": self.node_id},
         )
 
@@ -951,7 +959,7 @@ class NodeOrchestrator(NodeCoreBase):
                 },
             )
 
-    def _build_dependency_graph(self, steps: List[WorkflowStep]) -> DependencyGraph:
+    def _build_dependency_graph(self, steps: list[WorkflowStep]) -> DependencyGraph:
         """Build dependency graph from workflow steps."""
         graph: DependencyGraph = DependencyGraph()
 
@@ -974,13 +982,13 @@ class NodeOrchestrator(NodeCoreBase):
     async def _execute_sequential_workflow(
         self,
         input_data: ModelOrchestratorInput,
-        dependency_graph: Optional[DependencyGraph],
+        dependency_graph: DependencyGraph | None,
     ) -> ModelOrchestratorOutput:
         """Execute workflow steps sequentially."""
         steps_completed = 0
         steps_failed = 0
         all_thunks = []
-        all_results: List[Any] = []
+        all_results: list[Any] = []
 
         # Determine execution order
         if dependency_graph:
@@ -996,7 +1004,8 @@ class NodeOrchestrator(NodeCoreBase):
             try:
                 # Check condition if specified
                 if step.condition and not await self._evaluate_condition(
-                    step, all_results
+                    step,
+                    all_results,
                 ):
                     emit_log_event(
                         LogLevelEnum.INFO,
@@ -1027,7 +1036,7 @@ class NodeOrchestrator(NodeCoreBase):
 
                     # Simulate thunk execution result
                     step_results.append(
-                        {"thunk_id": thunk.thunk_id, "status": "executed"}
+                        {"thunk_id": thunk.thunk_id, "status": "executed"},
                     )
 
                 step.results = step_results
@@ -1046,7 +1055,7 @@ class NodeOrchestrator(NodeCoreBase):
                 steps_failed += 1
 
                 if input_data.failure_strategy == "fail_fast":
-                    raise e
+                    raise
                 # Continue for other failure strategies
 
         return ModelOrchestratorOutput(
@@ -1067,7 +1076,7 @@ class NodeOrchestrator(NodeCoreBase):
     async def _execute_parallel_workflow(
         self,
         input_data: ModelOrchestratorInput,
-        dependency_graph: Optional[DependencyGraph],
+        dependency_graph: DependencyGraph | None,
     ) -> ModelOrchestratorOutput:
         """Execute workflow steps in parallel respecting dependencies."""
         steps_completed = 0
@@ -1093,7 +1102,7 @@ class NodeOrchestrator(NodeCoreBase):
                 tasks = []
                 for step in ready_steps[: input_data.max_parallel_steps]:
                     task = asyncio.create_task(
-                        self._execute_single_step(step, input_data.workflow_id)
+                        self._execute_single_step(step, input_data.workflow_id),
                     )
                     tasks.append((step, task))
 
@@ -1132,14 +1141,14 @@ class NodeOrchestrator(NodeCoreBase):
                             for _, remaining_task in tasks:
                                 if not remaining_task.done():
                                     remaining_task.cancel()
-                            raise e
+                            raise
         else:
             # Execute all steps in parallel
             parallel_executions = 1
             tasks = []
             for step in input_data.steps[: input_data.max_parallel_steps]:
                 task = asyncio.create_task(
-                    self._execute_single_step(step, input_data.workflow_id)
+                    self._execute_single_step(step, input_data.workflow_id),
                 )
                 tasks.append((step, task))
 
@@ -1173,7 +1182,7 @@ class NodeOrchestrator(NodeCoreBase):
     async def _execute_batch_workflow(
         self,
         input_data: ModelOrchestratorInput,
-        dependency_graph: Optional[DependencyGraph],
+        dependency_graph: DependencyGraph | None,
     ) -> ModelOrchestratorOutput:
         """Execute workflow with load balancing and batch processing."""
         load_balanced_operations = 0
@@ -1181,7 +1190,7 @@ class NodeOrchestrator(NodeCoreBase):
         # For batch processing, group similar operations
         step_groups = self._group_steps_by_type(input_data.steps)
 
-        for group_type, steps in step_groups.items():
+        for _group_type, steps in step_groups.items():
             for step in steps:
                 # Use load balancer for operation distribution
                 operation_acquired = await self.load_balancer.acquire(step.step_id)
@@ -1201,8 +1210,10 @@ class NodeOrchestrator(NodeCoreBase):
         return result
 
     async def _execute_single_step(
-        self, step: WorkflowStep, workflow_id: str
-    ) -> List[Any]:
+        self,
+        step: WorkflowStep,
+        workflow_id: str,
+    ) -> list[Any]:
         """Execute a single workflow step."""
         step.state = WorkflowState.RUNNING
         step.started_at = datetime.now()
@@ -1225,7 +1236,9 @@ class NodeOrchestrator(NodeCoreBase):
         return results
 
     async def _evaluate_condition(
-        self, step: WorkflowStep, previous_results: List[Any]
+        self,
+        step: WorkflowStep,
+        previous_results: list[Any],
     ) -> bool:
         """Evaluate step condition for branching."""
         if not step.condition:
@@ -1233,15 +1246,14 @@ class NodeOrchestrator(NodeCoreBase):
 
         if step.condition == BranchCondition.IF_TRUE:
             return True
-        elif step.condition == BranchCondition.IF_FALSE:
+        if step.condition == BranchCondition.IF_FALSE:
             return False
-        elif step.condition == BranchCondition.CUSTOM and step.condition_function:
+        if step.condition == BranchCondition.CUSTOM and step.condition_function:
             return bool(step.condition_function(step, previous_results))
-        else:
-            # Default to true for unhandled conditions
-            return True
+        # Default to true for unhandled conditions
+        return True
 
-    def _get_topological_order(self, dependency_graph: DependencyGraph) -> List[str]:
+    def _get_topological_order(self, dependency_graph: DependencyGraph) -> list[str]:
         """Get topological ordering of steps based on dependencies."""
         # Kahn's algorithm
         in_degree = dependency_graph.in_degree.copy()
@@ -1260,10 +1272,11 @@ class NodeOrchestrator(NodeCoreBase):
         return result
 
     def _group_steps_by_type(
-        self, steps: List[WorkflowStep]
-    ) -> Dict[str, List[WorkflowStep]]:
+        self,
+        steps: list[WorkflowStep],
+    ) -> dict[str, list[WorkflowStep]]:
         """Group steps by their thunk types for batch processing."""
-        groups: Dict[str, List[WorkflowStep]] = {}
+        groups: dict[str, list[WorkflowStep]] = {}
         for step in steps:
             # Group by first thunk type
             if step.thunks:
@@ -1279,8 +1292,8 @@ class NodeOrchestrator(NodeCoreBase):
         ticket_id: str,
         current_state: str,
         target_state: str,
-        dependencies: List[str],
-    ) -> List[WorkflowStep]:
+        dependencies: list[str],
+    ) -> list[WorkflowStep]:
         """Create workflow steps for RSD ticket lifecycle transition."""
         steps = []
 
@@ -1398,10 +1411,12 @@ class NodeOrchestrator(NodeCoreBase):
 
         # Update timing metrics
         metrics["min_processing_time_ms"] = min(
-            metrics["min_processing_time_ms"], processing_time_ms
+            metrics["min_processing_time_ms"],
+            processing_time_ms,
         )
         metrics["max_processing_time_ms"] = max(
-            metrics["max_processing_time_ms"], processing_time_ms
+            metrics["max_processing_time_ms"],
+            processing_time_ms,
         )
 
         # Update rolling averages
@@ -1418,19 +1433,21 @@ class NodeOrchestrator(NodeCoreBase):
     def _register_builtin_conditions(self) -> None:
         """Register built-in condition functions."""
 
-        def always_true(step: WorkflowStep, previous_results: List[Any]) -> bool:
+        def always_true(step: WorkflowStep, previous_results: list[Any]) -> bool:
             return True
 
-        def always_false(step: WorkflowStep, previous_results: List[Any]) -> bool:
+        def always_false(step: WorkflowStep, previous_results: list[Any]) -> bool:
             return False
 
         def has_previous_results(
-            step: WorkflowStep, previous_results: List[Any]
+            step: WorkflowStep,
+            previous_results: list[Any],
         ) -> bool:
             return len(previous_results) > 0
 
         def previous_step_success(
-            step: WorkflowStep, previous_results: List[Any]
+            step: WorkflowStep,
+            previous_results: list[Any],
         ) -> bool:
             if not previous_results:
                 return True
@@ -1583,7 +1600,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to generate full orchestrator introspection data: {str(e)}, using fallback",
+                f"Failed to generate full orchestrator introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
 
@@ -1626,7 +1643,7 @@ class NodeOrchestrator(NodeCoreBase):
                     "evaluate_condition",
                     "manage_dependencies",
                     "coordinate_parallel_execution",
-                ]
+                ],
             )
 
             # Add RSD operations
@@ -1635,13 +1652,13 @@ class NodeOrchestrator(NodeCoreBase):
                     "ticket_lifecycle_transition",
                     "dependency_aware_execution",
                     "batch_processing_coordination",
-                ]
+                ],
             )
 
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract all orchestrator operations: {str(e)}",
+                f"Failed to extract all orchestrator operations: {e!s}",
                 {"node_id": self.node_id},
             )
 
@@ -1670,7 +1687,7 @@ class NodeOrchestrator(NodeCoreBase):
     def _extract_orchestrator_performance_characteristics(self) -> dict:
         """Extract performance characteristics specific to orchestrator operations."""
         return {
-            "expected_response_time_ms": f"varies_by_workflow_complexity_and_step_count",
+            "expected_response_time_ms": "varies_by_workflow_complexity_and_step_count",
             "throughput_capacity": f"up_to_{self.max_parallel_workflows}_concurrent_workflows",
             "memory_usage_pattern": "workflow_state_tracking_with_thunk_queuing",
             "cpu_intensity": "low_to_medium_coordination_overhead",
@@ -1698,7 +1715,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract workflow configuration: {str(e)}",
+                f"Failed to extract workflow configuration: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"max_parallel_workflows": self.max_parallel_workflows}
@@ -1742,7 +1759,8 @@ class NodeOrchestrator(NodeCoreBase):
             )
 
             test_input = ModelOrchestratorInput(
-                workflow_id="health_check_workflow", steps=[test_step]
+                workflow_id="health_check_workflow",
+                steps=[test_step],
             )
 
             # For health check, we'll just validate the input without processing
@@ -1773,7 +1791,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get orchestration metrics: {str(e)}",
+                f"Failed to get orchestration metrics: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}
@@ -1792,7 +1810,7 @@ class NodeOrchestrator(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get orchestrator resource usage: {str(e)}",
+                f"Failed to get orchestrator resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown"}
@@ -1812,13 +1830,13 @@ class NodeOrchestrator(NodeCoreBase):
                     for metrics in self.orchestration_metrics.values()
                 ),
                 "workflow_execution_modes_used": list(
-                    self.orchestration_metrics.keys()
+                    self.orchestration_metrics.keys(),
                 ),
             }
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get workflow state: {str(e)}",
+                f"Failed to get workflow state: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}

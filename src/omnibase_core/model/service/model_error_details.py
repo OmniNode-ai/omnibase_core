@@ -3,7 +3,7 @@ Error details model to replace Dict[str, Any] usage.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -20,43 +20,47 @@ class ModelErrorDetails(BaseModel):
     error_message: str = Field(..., description="Error message")
 
     # Error context
-    component: Optional[str] = Field(None, description="Component where error occurred")
-    operation: Optional[str] = Field(None, description="Operation being performed")
+    component: str | None = Field(None, description="Component where error occurred")
+    operation: str | None = Field(None, description="Operation being performed")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Error timestamp"
+        default_factory=datetime.utcnow,
+        description="Error timestamp",
     )
 
     # Error details
-    stack_trace: Optional[List[str]] = Field(None, description="Stack trace lines")
-    inner_errors: Optional[List["ModelErrorDetails"]] = Field(
-        None, description="Nested errors"
+    stack_trace: list[str] | None = Field(None, description="Stack trace lines")
+    inner_errors: list["ModelErrorDetails"] | None = Field(
+        None,
+        description="Nested errors",
     )
 
     # Contextual data
-    request_id: Optional[str] = Field(None, description="Request ID")
-    user_id: Optional[str] = Field(None, description="User ID")
-    session_id: Optional[str] = Field(None, description="Session ID")
+    request_id: str | None = Field(None, description="Request ID")
+    user_id: str | None = Field(None, description="User ID")
+    session_id: str | None = Field(None, description="Session ID")
 
     # Additional context
-    context_data: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional error context"
+    context_data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional error context",
     )
 
     # Recovery information
-    retry_after_seconds: Optional[int] = Field(None, description="Retry after seconds")
-    recovery_suggestions: Optional[List[str]] = Field(
-        None, description="Recovery suggestions"
+    retry_after_seconds: int | None = Field(None, description="Retry after seconds")
+    recovery_suggestions: list[str] | None = Field(
+        None,
+        description="Recovery suggestions",
     )
-    documentation_url: Optional[str] = Field(None, description="Documentation URL")
+    documentation_url: str | None = Field(None, description="Documentation URL")
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["ModelErrorDetails"]:
+    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorDetails"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

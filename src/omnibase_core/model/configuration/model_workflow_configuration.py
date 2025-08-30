@@ -8,6 +8,7 @@ and compliance with one-model-per-file naming conventions.
 from .model_matrix_strategy import ModelMatrixStrategy
 from .model_service_container import ModelServiceContainer
 from .model_workflow_dispatch import ModelWorkflowDispatch
+
 # Import separated models
 from .model_workflow_input import ModelWorkflowInput
 from .model_workflow_permissions import ModelWorkflowPermissions
@@ -25,19 +26,19 @@ WorkflowPermissions = ModelWorkflowPermissions
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelWorkflowInput",
-    "ModelWorkflowDispatch",
-    "ModelServiceContainer",
-    "ModelWorkflowServices",
+    "MatrixStrategy",
     "ModelMatrixStrategy",
-    "ModelWorkflowStrategy",
+    "ModelServiceContainer",
+    "ModelWorkflowDispatch",
+    "ModelWorkflowInput",
     "ModelWorkflowPermissions",
+    "ModelWorkflowServices",
+    "ModelWorkflowStrategy",
+    "ServiceContainer",
+    "WorkflowDispatch",
     # Backward compatibility
     "WorkflowInput",
-    "WorkflowDispatch",
-    "ServiceContainer",
-    "WorkflowServices",
-    "MatrixStrategy",
-    "WorkflowStrategy",
     "WorkflowPermissions",
+    "WorkflowServices",
+    "WorkflowStrategy",
 ]

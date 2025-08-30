@@ -4,8 +4,6 @@ Retrieved document model for search results.
 Provides strongly-typed document structure to replace Dict[str, Any] usage.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,55 +18,68 @@ class ModelRetrievedDocument(BaseModel):
 
     content: str = Field(description="Document content or excerpt")
 
-    title: Optional[str] = Field(
-        default=None, description="Document title if available"
+    title: str | None = Field(
+        default=None,
+        description="Document title if available",
     )
 
-    source_path: Optional[str] = Field(
-        default=None, description="Original file path or URL"
+    source_path: str | None = Field(
+        default=None,
+        description="Original file path or URL",
     )
 
-    similarity_score: Optional[float] = Field(
-        default=None, description="Similarity score from vector search (0-1)"
+    similarity_score: float | None = Field(
+        default=None,
+        description="Similarity score from vector search (0-1)",
     )
 
-    bm25_score: Optional[float] = Field(
-        default=None, description="BM25 relevance score"
+    bm25_score: float | None = Field(
+        default=None,
+        description="BM25 relevance score",
     )
 
-    hybrid_score: Optional[float] = Field(
-        default=None, description="Combined hybrid search score"
+    hybrid_score: float | None = Field(
+        default=None,
+        description="Combined hybrid search score",
     )
 
-    rank: Optional[int] = Field(
-        default=None, description="Rank position in search results"
+    rank: int | None = Field(
+        default=None,
+        description="Rank position in search results",
     )
 
-    chunk_index: Optional[int] = Field(
-        default=None, description="Chunk index within original document"
+    chunk_index: int | None = Field(
+        default=None,
+        description="Chunk index within original document",
     )
 
-    metadata: Dict[str, str] = Field(
+    metadata: dict[str, str] = Field(
         default_factory=dict,
         description="Additional document metadata (string values only)",
     )
 
-    tags: List[str] = Field(
-        default_factory=list, description="Document tags or categories"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Document tags or categories",
     )
 
-    excerpt_start: Optional[int] = Field(
-        default=None, description="Start position of excerpt in original document"
+    excerpt_start: int | None = Field(
+        default=None,
+        description="Start position of excerpt in original document",
     )
 
-    excerpt_end: Optional[int] = Field(
-        default=None, description="End position of excerpt in original document"
+    excerpt_end: int | None = Field(
+        default=None,
+        description="End position of excerpt in original document",
     )
 
-    relevance_explanation: Optional[str] = Field(
-        default=None, description="Explanation of why this document was retrieved"
+    relevance_explanation: str | None = Field(
+        default=None,
+        description="Explanation of why this document was retrieved",
     )
 
     model_config = ConfigDict(
-        use_enum_values=True, validate_assignment=True, extra="forbid"
+        use_enum_values=True,
+        validate_assignment=True,
+        extra="forbid",
     )

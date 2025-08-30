@@ -5,15 +5,12 @@ Production monitoring alert.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.monitoring.enum_alert_type import EnumAlertType
-from omnibase_core.model.monitoring.enum_incident_severity import \
-    EnumIncidentSeverity
-from omnibase_core.model.monitoring.enum_recovery_action import \
-    EnumRecoveryAction
+from omnibase_core.model.monitoring.enum_incident_severity import EnumIncidentSeverity
+from omnibase_core.model.monitoring.enum_recovery_action import EnumRecoveryAction
 
 
 class ModelAlert(BaseModel):
@@ -27,12 +24,13 @@ class ModelAlert(BaseModel):
     message: str = Field(..., description="Alert message")
 
     triggered_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When alert was triggered"
+        default_factory=datetime.utcnow,
+        description="When alert was triggered",
     )
-    resolved_at: Optional[datetime] = Field(None, description="When alert was resolved")
+    resolved_at: datetime | None = Field(None, description="When alert was resolved")
 
     source_component: str = Field(..., description="Component that triggered alert")
-    source_agent: Optional[str] = Field(None, description="Agent that triggered alert")
+    source_agent: str | None = Field(None, description="Agent that triggered alert")
 
     metric_name: str = Field(..., description="Metric that triggered alert")
     metric_value: float = Field(..., description="Current metric value")
@@ -41,21 +39,25 @@ class ModelAlert(BaseModel):
     auto_resolve: bool = Field(False, description="Whether alert auto-resolves")
     is_active: bool = Field(True, description="Whether alert is currently active")
 
-    suggested_actions: List[str] = Field(
-        default_factory=list, description="Suggested remediation actions"
+    suggested_actions: list[str] = Field(
+        default_factory=list,
+        description="Suggested remediation actions",
     )
 
-    automated_actions_taken: List[EnumRecoveryAction] = Field(
-        default_factory=list, description="Automated actions already taken"
+    automated_actions_taken: list[EnumRecoveryAction] = Field(
+        default_factory=list,
+        description="Automated actions already taken",
     )
 
     escalation_level: int = Field(0, ge=0, description="Current escalation level")
-    escalated_at: Optional[datetime] = Field(
-        None, description="When alert was escalated"
+    escalated_at: datetime | None = Field(
+        None,
+        description="When alert was escalated",
     )
 
-    related_incidents: List[str] = Field(
-        default_factory=list, description="Related incident IDs"
+    related_incidents: list[str] = Field(
+        default_factory=list,
+        description="Related incident IDs",
     )
 
     def resolve(self) -> None:

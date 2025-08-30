@@ -27,8 +27,7 @@ from .protocol_cli_dir_fixture_case import ProtocolCLIDirFixtureCase
 
 # Conditionally import test fixture registry only when pytest is available
 try:
-    from .protocol_cli_dir_fixture_registry import \
-        ProtocolCLIDirFixtureRegistry
+    from .protocol_cli_dir_fixture_registry import ProtocolCLIDirFixtureRegistry
 except ImportError:
     # pytest not available - skip fixture registry import
     ProtocolCLIDirFixtureRegistry = None
@@ -55,6 +54,7 @@ __all__ = [
     "ProtocolFileDiscoverySource",
     "ProtocolFileTypeHandler",
     "ProtocolLogger",
+    "ProtocolModelRegistryValidator",
     "ProtocolNamingConvention",
     "ProtocolOrchestrator",
     "ProtocolOutputFormatter",
@@ -62,7 +62,6 @@ __all__ = [
     "ProtocolStamper",
     "ProtocolTestableCLI",
     "ProtocolTool",
-    "ProtocolValidate",
-    "ProtocolModelRegistryValidator",
     "ProtocolTrustedSchemaLoader",
+    "ProtocolValidate",
 ]

@@ -19,11 +19,14 @@ class ModelRegistryComponentPerformance(BaseModel):
     type: str = Field(..., description="Component type", pattern="^(tool|service)$")
 
     category: str = Field(
-        ..., description="Component category (tool type or service type)"
+        ...,
+        description="Component category (tool type or service type)",
     )
 
     response_time_ms: float = Field(
-        ..., description="Response time in milliseconds", ge=0
+        ...,
+        description="Response time in milliseconds",
+        ge=0,
     )
 
     status: str = Field(..., description="Current health status of component")

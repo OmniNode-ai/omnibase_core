@@ -6,13 +6,11 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 
 import json
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.model_websocket_config import ModelWebSocketConfig
-from omnibase_core.models.model_websocket_message_data import \
-    ModelWebSocketMessageData
+from omnibase_core.models.model_websocket_message_data import ModelWebSocketMessageData
 
 try:
     from fastapi import WebSocket, WebSocketDisconnect
@@ -28,11 +26,12 @@ class ModelWebSocketMessage(BaseModel):
     """Model for WebSocket messages."""
 
     message_type: str = Field(
-        description="Type of message (capture, hook_event, stats, etc.)"
+        description="Type of message (capture, hook_event, stats, etc.)",
     )
     data: ModelWebSocketMessageData = Field(description="Message payload data")
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Message creation timestamp"
+        default_factory=datetime.now,
+        description="Message creation timestamp",
     )
 
 
@@ -59,12 +58,11 @@ class UtilityWebSocketManager:
     def __init__(self):
         """Initialize WebSocket manager."""
         if not FASTAPI_AVAILABLE:
-            print("⚠️ FastAPI not available, WebSocket functionality disabled")
             self.enabled = False
             return
 
         # Connection management
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: list[WebSocket] = []
         self.enabled = True
 
         # Statistics tracking
@@ -72,8 +70,6 @@ class UtilityWebSocketManager:
         self._messages_sent = 0
         self._send_errors = 0
         self._disconnections = 0
-
-        print("✅ WebSocket manager initialized")
 
     async def add_connection(self, websocket: WebSocket) -> bool:
         """Add a new WebSocket connection.
@@ -92,13 +88,9 @@ class UtilityWebSocketManager:
             self.active_connections.append(websocket)
             self._total_connections += 1
 
-            print(
-                f"📱 WebSocket connection added (total: {len(self.active_connections)})"
-            )
             return True
 
-        except Exception as e:
-            print(f"❌ Failed to add WebSocket connection: {e}")
+        except Exception:
             return False
 
     def remove_connection(self, websocket: WebSocket) -> None:
@@ -113,15 +105,12 @@ class UtilityWebSocketManager:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
             self._disconnections += 1
-            print(
-                f"📱 WebSocket connection removed (remaining: {len(self.active_connections)})"
-            )
 
     async def broadcast_message(
         self,
         message_type: str,
         data,  # Accept either ModelWebSocketMessageData or dict
-        exclude_connection: Optional[WebSocket] = None,
+        exclude_connection: WebSocket | None = None,
     ) -> int:
         """Broadcast a message to all connected clients.
 
@@ -153,7 +142,7 @@ class UtilityWebSocketManager:
                 "type": message_type,
                 "data": payload_data,
                 "timestamp": datetime.now().isoformat(),
-            }
+            },
         )
 
         # Send to all connections
@@ -168,8 +157,7 @@ class UtilityWebSocketManager:
                 await connection.send_text(message_json)
                 successful_sends += 1
 
-            except Exception as e:
-                print(f"⚠️ WebSocket send failed: {e}")
+            except Exception:
                 disconnected_connections.append(connection)
                 self._send_errors += 1
 
@@ -180,12 +168,15 @@ class UtilityWebSocketManager:
         self._messages_sent += successful_sends
 
         if successful_sends > 0:
-            print(f"📡 Broadcast '{message_type}' to {successful_sends} clients")
+            pass
 
         return successful_sends
 
     async def send_to_connection(
-        self, websocket: WebSocket, message_type: str, data
+        self,
+        websocket: WebSocket,
+        message_type: str,
+        data,
     ) -> bool:
         """Send a message to a specific connection.
 
@@ -214,20 +205,20 @@ class UtilityWebSocketManager:
                     "type": message_type,
                     "data": payload_data,
                     "timestamp": datetime.now().isoformat(),
-                }
+                },
             )
 
             await websocket.send_text(message_json)
             self._messages_sent += 1
             return True
 
-        except Exception as e:
-            print(f"❌ Failed to send to WebSocket: {e}")
+        except Exception:
             self._send_errors += 1
             return False
 
     async def broadcast_capture_event(
-        self, capture_data: ModelWebSocketMessageData
+        self,
+        capture_data: ModelWebSocketMessageData,
     ) -> int:
         """Broadcast a tool capture event.
 
@@ -251,7 +242,8 @@ class UtilityWebSocketManager:
         return await self.broadcast_message("hook_event", hook_data)
 
     async def broadcast_stats_update(
-        self, stats_data: ModelWebSocketMessageData
+        self,
+        stats_data: ModelWebSocketMessageData,
     ) -> int:
         """Broadcast statistics update.
 
@@ -264,7 +256,9 @@ class UtilityWebSocketManager:
         return await self.broadcast_message("stats", stats_data)
 
     async def send_initial_state(
-        self, websocket: WebSocket, initial_data: ModelWebSocketMessageData
+        self,
+        websocket: WebSocket,
+        initial_data: ModelWebSocketMessageData,
     ) -> bool:
         """Send initial state to a newly connected client.
 
@@ -280,7 +274,7 @@ class UtilityWebSocketManager:
     async def handle_connection_lifecycle(
         self,
         websocket: WebSocket,
-        initial_data: Optional[ModelWebSocketMessageData] = None,
+        initial_data: ModelWebSocketMessageData | None = None,
     ) -> None:
         """Handle complete WebSocket connection lifecycle.
 
@@ -305,14 +299,13 @@ class UtilityWebSocketManager:
                 try:
                     # Wait for messages (ping/pong)
                     await websocket.receive_text()
-                except Exception as e:
-                    print(f"🔌 WebSocket receive error: {e}")
+                except Exception:
                     break
 
         except WebSocketDisconnect:
-            print("🔌 WebSocket disconnected normally")
-        except Exception as e:
-            print(f"❌ WebSocket error: {e}")
+            pass
+        except Exception:
+            pass
         finally:
             # Ensure connection is cleaned up
             self.remove_connection(websocket)
@@ -371,7 +364,7 @@ class UtilityWebSocketManager:
             self.remove_connection(conn)
 
         if stale_connections:
-            print(f"🧹 Cleaned up {len(stale_connections)} stale connections")
+            pass
 
         return len(stale_connections)
 

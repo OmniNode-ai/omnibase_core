@@ -4,16 +4,21 @@ Defines the interface for pluggable storage backends at the root level.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 # Import the new Pydantic models
-from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_checkpoint_data import \
-    ModelCheckpointData
-from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_storage_credentials import \
-    ModelStorageCredentials
+from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_checkpoint_data import (
+    ModelCheckpointData,
+)
+from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_storage_credentials import (
+    ModelStorageCredentials,
+)
 from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_storage_result import (
-    ModelStorageConfiguration, ModelStorageHealthStatus,
-    ModelStorageListResult, ModelStorageResult)
+    ModelStorageConfiguration,
+    ModelStorageHealthStatus,
+    ModelStorageListResult,
+    ModelStorageResult,
+)
 
 
 @runtime_checkable
@@ -26,14 +31,15 @@ class ProtocolStorageBackend(Protocol):
     def __init__(
         self,
         storage_config: ModelStorageConfiguration,
-        credentials: Optional[ModelStorageCredentials] = None,
+        credentials: ModelStorageCredentials | None = None,
         **kwargs: object,
     ) -> None:
         """Initialize storage backend with configuration."""
         ...
 
     def store_checkpoint(
-        self, checkpoint_data: ModelCheckpointData
+        self,
+        checkpoint_data: ModelCheckpointData,
     ) -> ModelStorageResult:
         """
         Store a checkpoint to the backend.
@@ -60,9 +66,9 @@ class ProtocolStorageBackend(Protocol):
 
     def list_checkpoints(
         self,
-        workflow_id: Optional[str] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        workflow_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> ModelStorageListResult:
         """
         List checkpoints, optionally filtered by workflow ID.
@@ -90,7 +96,8 @@ class ProtocolStorageBackend(Protocol):
         ...
 
     def cleanup_expired_checkpoints(
-        self, retention_hours: int = 72
+        self,
+        retention_hours: int = 72,
     ) -> ModelStorageResult:
         """
         Clean up expired checkpoints based on retention policies.
@@ -157,7 +164,7 @@ class ProtocolStorageBackendFactory(ABC):
         self,
         backend_type: str,
         storage_config: ModelStorageConfiguration,
-        credentials: Optional[ModelStorageCredentials] = None,
+        credentials: ModelStorageCredentials | None = None,
         **kwargs: object,
     ) -> ProtocolStorageBackend:
         """
@@ -175,7 +182,7 @@ class ProtocolStorageBackendFactory(ABC):
         ...
 
     @abstractmethod
-    def list_available_backends(self) -> List[str]:
+    def list_available_backends(self) -> list[str]:
         """
         List available storage backend types.
 
@@ -186,7 +193,9 @@ class ProtocolStorageBackendFactory(ABC):
 
     @abstractmethod
     def validate_backend_config(
-        self, backend_type: str, storage_config: ModelStorageConfiguration
+        self,
+        backend_type: str,
+        storage_config: ModelStorageConfiguration,
     ) -> ModelStorageResult:
         """
         Validate configuration for a specific backend type.

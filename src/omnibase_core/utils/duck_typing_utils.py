@@ -4,7 +4,7 @@ ONEX Utility: Duck Typing Helper
 Utilities to simplify verbose duck typing patterns and improve code readability.
 """
 
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from omnibase_core.decorators.decorator_allow_any_type import allow_any_type
 
@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_get(obj: Any, key: str, default: T = None) -> Union[T, Any]:
+def safe_get(obj: Any, key: str, default: T = None) -> T | Any:
     """Safely get a value from an object using duck typing.
 
     Tries multiple access patterns:
@@ -30,7 +30,7 @@ def safe_get(obj: Any, key: str, default: T = None) -> Union[T, Any]:
     """
     try:
         # Try dict-like access first
-        if hasattr(obj, "get") and callable(getattr(obj, "get")):
+        if hasattr(obj, "get") and callable(obj.get):
             return obj.get(key, default)
     except (AttributeError, TypeError):
         pass
@@ -46,7 +46,7 @@ def safe_get(obj: Any, key: str, default: T = None) -> Union[T, Any]:
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_get_nested(obj: Any, *keys: str, default: T = None) -> Union[T, Any]:
+def safe_get_nested(obj: Any, *keys: str, default: T = None) -> T | Any:
     """Safely get a nested value from an object using duck typing.
 
     Args:
@@ -95,7 +95,7 @@ def is_list_like(obj: Any) -> bool:
     try:
         return (
             hasattr(obj, "__iter__")
-            and not isinstance(obj, (str, bytes))
+            and not isinstance(obj, str | bytes)
             and not is_dict_like(obj)
         )
     except TypeError:
@@ -122,7 +122,7 @@ def safe_iterate(obj: Any, default_empty: bool = True) -> list:
         except (TypeError, ValueError) as e:
             # Re-raise validation errors for fail-fast behavior
             if "Validation" in type(e).__name__:
-                raise e
+                raise
 
     if is_dict_like(obj):
         try:
@@ -130,17 +130,16 @@ def safe_iterate(obj: Any, default_empty: bool = True) -> list:
         except (TypeError, ValueError) as e:
             # Re-raise validation errors for fail-fast behavior
             if "Validation" in type(e).__name__:
-                raise e
+                raise
 
     # Single item -> wrap in list
     if default_empty:
         return [obj] if obj is not None else []
-    else:
-        return []
+    return []
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_cast(obj: Any, target_type: type, default: T = None) -> Union[T, Any]:
+def safe_cast(obj: Any, target_type: type, default: T = None) -> T | Any:
     """Safely cast object to target type with fallback.
 
     Args:
@@ -159,7 +158,7 @@ def safe_cast(obj: Any, target_type: type, default: T = None) -> Union[T, Any]:
     except (TypeError, ValueError, AttributeError) as e:
         # Re-raise validation errors for fail-fast behavior
         if "Validation" in type(e).__name__:
-            raise e
+            raise
         return default
 
 
@@ -175,7 +174,7 @@ class DuckTypingHelper:
         """
         self.obj = obj
 
-    def get(self, key: str, default: T = None) -> Union[T, Any]:
+    def get(self, key: str, default: T = None) -> T | Any:
         """Get value using duck typing.
 
         Args:
@@ -187,7 +186,7 @@ class DuckTypingHelper:
         """
         return safe_get(self.obj, key, default)
 
-    def get_nested(self, *keys: str, default: T = None) -> Union[T, Any]:
+    def get_nested(self, *keys: str, default: T = None) -> T | Any:
         """Get nested value using duck typing.
 
         Args:
@@ -210,7 +209,7 @@ class DuckTypingHelper:
         """
         return safe_iterate(self.obj, default_empty)
 
-    def cast(self, target_type: type, default: T = None) -> Union[T, Any]:
+    def cast(self, target_type: type, default: T = None) -> T | Any:
         """Cast object to target type.
 
         Args:

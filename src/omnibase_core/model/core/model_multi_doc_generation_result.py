@@ -6,7 +6,6 @@ and its associated documents.
 """
 
 from pathlib import Path
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -19,20 +18,23 @@ class ModelMultiDocGenerationResult(BaseModel):
     """Result of multi-document model generation."""
 
     contract_path: Path = Field(
-        ..., description="Path to the source contract.yaml file"
+        ...,
+        description="Path to the source contract.yaml file",
     )
     output_dir: Path = Field(..., description="Directory where files were generated")
-    generated_files: List[ModelGeneratedFile] = Field(
-        default_factory=list, description="List of generated files"
+    generated_files: list[ModelGeneratedFile] = Field(
+        default_factory=list,
+        description="List of generated files",
     )
     contract_hash: str = Field(
-        default="", description="SHA256 hash of the contract content"
+        default="",
+        description="SHA256 hash of the contract content",
     )
-    errors: List[ModelOnexError] = Field(
+    errors: list[ModelOnexError] = Field(
         default_factory=list,
         description="List of structured error messages encountered",
     )
-    warnings: List[ModelOnexWarning] = Field(
+    warnings: list[ModelOnexWarning] = Field(
         default_factory=list,
         description="List of structured warning messages encountered",
     )

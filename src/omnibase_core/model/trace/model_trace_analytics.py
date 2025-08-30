@@ -4,8 +4,6 @@ Model for trace analytics in the traceability service.
 This model defines the structure for comprehensive trace analytics data.
 """
 
-from typing import Dict, List
-
 from pydantic import BaseModel
 
 
@@ -43,6 +41,6 @@ class ModelTraceAnalytics(BaseModel):
     total_events: int
     knowledge_contributions: int
     recent_activity_24h: int
-    agent_performance: Dict[str, ModelAgentTracePerformance]
-    top_components: List[ModelComponentMetrics]
-    common_errors: List[ModelErrorMetrics]
+    agent_performance: dict[str, ModelAgentTracePerformance]
+    top_components: list[ModelComponentMetrics]
+    common_errors: list[ModelErrorMetrics]

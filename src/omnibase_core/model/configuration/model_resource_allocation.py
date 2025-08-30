@@ -4,12 +4,11 @@ Resource Allocation Model.
 Resource allocation configuration for execution priorities.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.configuration.model_custom_resource_limits import \
-    ModelCustomResourceLimits
+from omnibase_core.model.configuration.model_custom_resource_limits import (
+    ModelCustomResourceLimits,
+)
 
 
 class ModelResourceAllocation(BaseModel):
@@ -21,27 +20,39 @@ class ModelResourceAllocation(BaseModel):
     """
 
     cpu_shares: int = Field(
-        ..., description="CPU shares allocated (relative weight)", ge=1, le=1000
+        ...,
+        description="CPU shares allocated (relative weight)",
+        ge=1,
+        le=1000,
     )
 
-    memory_limit_mb: Optional[int] = Field(
-        None, description="Memory limit in megabytes", ge=1
+    memory_limit_mb: int | None = Field(
+        None,
+        description="Memory limit in megabytes",
+        ge=1,
     )
 
     io_priority: int = Field(
-        default=4, description="I/O priority level (1=highest, 7=lowest)", ge=1, le=7
+        default=4,
+        description="I/O priority level (1=highest, 7=lowest)",
+        ge=1,
+        le=7,
     )
 
-    max_concurrent_tasks: Optional[int] = Field(
-        None, description="Maximum concurrent tasks for this priority", ge=1
+    max_concurrent_tasks: int | None = Field(
+        None,
+        description="Maximum concurrent tasks for this priority",
+        ge=1,
     )
 
     resource_guarantee: bool = Field(
-        default=False, description="Whether resources are guaranteed (reserved)"
+        default=False,
+        description="Whether resources are guaranteed (reserved)",
     )
 
     burst_allowance: bool = Field(
-        default=True, description="Allow bursting above allocated resources"
+        default=True,
+        description="Allow bursting above allocated resources",
     )
 
     custom_limits: ModelCustomResourceLimits = Field(
@@ -59,7 +70,9 @@ class ModelResourceAllocation(BaseModel):
         return base_weight
 
     def can_allocate_to(
-        self, requested_cpu: int, requested_memory_mb: Optional[int] = None
+        self,
+        requested_cpu: int,
+        requested_memory_mb: int | None = None,
     ) -> bool:
         """
         Check if this allocation can satisfy a resource request

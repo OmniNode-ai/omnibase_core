@@ -5,7 +5,6 @@ Health metrics for a single automation agent.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,32 +20,46 @@ class ModelAgentHealthMetrics(BaseModel):
     last_heartbeat: datetime = Field(..., description="Last heartbeat timestamp")
     error_count: int = Field(0, ge=0, description="Total error count")
     success_rate: float = Field(
-        ..., ge=0, le=100, description="Success rate percentage"
+        ...,
+        ge=0,
+        le=100,
+        description="Success rate percentage",
     )
     tasks_completed: int = Field(0, ge=0, description="Total tasks completed")
     avg_completion_time: float = Field(
-        0.0, ge=0, description="Average task completion time"
+        0.0,
+        ge=0,
+        description="Average task completion time",
     )
     tokens_consumed: int = Field(0, ge=0, description="Total tokens consumed")
     efficiency_score: float = Field(
-        0.0, ge=0, le=100, description="Agent efficiency score"
+        0.0,
+        ge=0,
+        le=100,
+        description="Agent efficiency score",
     )
 
     memory_usage_mb: float = Field(0.0, ge=0, description="Memory usage in megabytes")
     cpu_utilization: float = Field(
-        0.0, ge=0, le=100, description="CPU utilization percentage"
+        0.0,
+        ge=0,
+        le=100,
+        description="CPU utilization percentage",
     )
     network_io_bytes_sec: float = Field(
-        0.0, ge=0, description="Network I/O bytes per second"
+        0.0,
+        ge=0,
+        description="Network I/O bytes per second",
     )
     queue_depth: int = Field(0, ge=0, description="Current queue depth")
 
-    window_id: Optional[str] = Field(None, description="Current operational window")
-    current_task: Optional[str] = Field(None, description="Current task description")
+    window_id: str | None = Field(None, description="Current operational window")
+    current_task: str | None = Field(None, description="Current task description")
 
-    last_error: Optional[str] = Field(None, description="Last error message")
+    last_error: str | None = Field(None, description="Last error message")
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metrics update"
+        default_factory=datetime.utcnow,
+        description="Last metrics update",
     )
 
     def is_healthy(self) -> bool:

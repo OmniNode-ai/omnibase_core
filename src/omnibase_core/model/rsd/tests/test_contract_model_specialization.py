@@ -12,29 +12,46 @@ Comprehensive test suite for the 4-node architecture contract model hierarchy:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import ValidationError
 
 from omnibase_core.model.rsd.model_contract_base import (
-    ModelContractBase, ModelLifecycleConfig, ModelPerformanceRequirements,
-    ModelValidationRules)
+    ModelContractBase,
+    ModelLifecycleConfig,
+    ModelPerformanceRequirements,
+    ModelValidationRules,
+)
 from omnibase_core.model.rsd.model_contract_compute import (
-    ModelAlgorithmConfig, ModelAlgorithmFactorConfig, ModelCachingConfig,
-    ModelContractCompute, ModelParallelConfig)
+    ModelAlgorithmConfig,
+    ModelAlgorithmFactorConfig,
+    ModelCachingConfig,
+    ModelContractCompute,
+    ModelParallelConfig,
+)
 from omnibase_core.model.rsd.model_contract_effect import (
-    ModelContractEffect, ModelIOOperationConfig, ModelRetryConfig,
-    ModelTransactionConfig)
+    ModelContractEffect,
+    ModelIOOperationConfig,
+    ModelRetryConfig,
+    ModelTransactionConfig,
+)
 from omnibase_core.model.rsd.model_contract_orchestrator import (
-    ModelBranchingConfig, ModelContractOrchestrator,
-    ModelEventCoordinationConfig, ModelEventDescriptor,
-    ModelEventRegistryConfig, ModelEventSubscription, ModelThunkEmissionConfig,
-    ModelWorkflowConfig)
+    ModelBranchingConfig,
+    ModelContractOrchestrator,
+    ModelEventCoordinationConfig,
+    ModelEventDescriptor,
+    ModelEventSubscription,
+    ModelThunkEmissionConfig,
+    ModelWorkflowConfig,
+)
 from omnibase_core.model.rsd.model_contract_reducer import (
-    ModelAggregationConfig, ModelConflictResolutionConfig,
-    ModelContractReducer, ModelReductionConfig, ModelStreamingConfig)
+    ModelAggregationConfig,
+    ModelContractReducer,
+    ModelReductionConfig,
+    ModelStreamingConfig,
+)
 
 
 class TestContractModelBase:
@@ -105,19 +122,24 @@ class TestContractCompute:
             algorithm_type="weighted_factor_algorithm",
             factors={
                 "dependency_distance": ModelAlgorithmFactorConfig(
-                    weight=0.40, calculation_method="graph_traversal_depth"
+                    weight=0.40,
+                    calculation_method="graph_traversal_depth",
                 ),
                 "failure_surface": ModelAlgorithmFactorConfig(
-                    weight=0.25, calculation_method="compound_risk_analysis"
+                    weight=0.25,
+                    calculation_method="compound_risk_analysis",
                 ),
                 "time_decay": ModelAlgorithmFactorConfig(
-                    weight=0.15, calculation_method="exponential_decay"
+                    weight=0.15,
+                    calculation_method="exponential_decay",
                 ),
                 "agent_utility": ModelAlgorithmFactorConfig(
-                    weight=0.10, calculation_method="weighted_frequency"
+                    weight=0.10,
+                    calculation_method="weighted_frequency",
                 ),
                 "user_weighting": ModelAlgorithmFactorConfig(
-                    weight=0.10, calculation_method="manual_override"
+                    weight=0.10,
+                    calculation_method="manual_override",
                 ),
             },
         )
@@ -137,7 +159,8 @@ class TestContractCompute:
         # Invalid weight should raise ValidationError
         with pytest.raises(ValidationError):
             ModelAlgorithmFactorConfig(
-                weight=1.5, calculation_method="test"
+                weight=1.5,
+                calculation_method="test",
             )  # Weight > 1.0
 
     def test_algorithm_config_factor_weights_validation(self):
@@ -152,10 +175,12 @@ class TestContractCompute:
                 algorithm_type="weighted_factor_algorithm",
                 factors={
                     "factor1": ModelAlgorithmFactorConfig(
-                        weight=0.60, calculation_method="method1"
+                        weight=0.60,
+                        calculation_method="method1",
                     ),
                     "factor2": ModelAlgorithmFactorConfig(
-                        weight=0.20, calculation_method="method2"
+                        weight=0.20,
+                        calculation_method="method2",
                     ),
                     # Total: 0.80, should fail validation
                 },
@@ -257,7 +282,8 @@ class TestContractEffect:
         # Invalid buffer size should raise ValidationError
         with pytest.raises(ValidationError):
             ModelIOOperationConfig(
-                operation_type="test", buffer_size=512
+                operation_type="test",
+                buffer_size=512,
             )  # Must be >= 1024
 
     def test_transaction_config(self):
@@ -592,8 +618,9 @@ class TestContractValidationFramework:
                 algorithm_type="test",
                 factors={
                     "test": ModelAlgorithmFactorConfig(
-                        weight=1.0, calculation_method="test"
-                    )
+                        weight=1.0,
+                        calculation_method="test",
+                    ),
                 },
             ),
             dependencies=["ProtocolRSDPriorityCalculator"],
@@ -615,8 +642,9 @@ class TestContractValidationFramework:
                     algorithm_type="test",
                     factors={
                         "test": ModelAlgorithmFactorConfig(
-                            weight=1.0, calculation_method="test"
-                        )
+                            weight=1.0,
+                            calculation_method="test",
+                        ),
                     },
                 ),
                 dependencies=["InvalidDependency"],  # Must start with "Protocol"
@@ -638,8 +666,9 @@ class TestContractValidationFramework:
                     algorithm_type="test",
                     factors={
                         "test": ModelAlgorithmFactorConfig(
-                            weight=1.0, calculation_method="test"
-                        )
+                            weight=1.0,
+                            calculation_method="test",
+                        ),
                     },
                 ),
                 performance=ModelPerformanceRequirements(single_operation_max_ms=100),
@@ -660,12 +689,13 @@ class TestContractValidationFramework:
                         algorithm_type="test",
                         factors={
                             "test": ModelAlgorithmFactorConfig(
-                                weight=1.0, calculation_method="test"
-                            )
+                                weight=1.0,
+                                calculation_method="test",
+                            ),
                         },
                     ),
                     performance=ModelPerformanceRequirements(
-                        single_operation_max_ms=100
+                        single_operation_max_ms=100,
                     ),
                 )
 
@@ -674,7 +704,6 @@ class TestContractValidationFramework:
         # This test verifies that the contract models maintain strong typing
         # by checking that all fields have proper type annotations
 
-        import inspect
         from typing import get_type_hints
 
         # Check ModelContractBase
@@ -682,7 +711,7 @@ class TestContractValidationFramework:
         for field_name, field_type in base_hints.items():
             assert field_type != Any, f"Field {field_name} uses Any type"
             assert "Any" not in str(
-                field_type
+                field_type,
             ), f"Field {field_name} contains Any in type: {field_type}"
 
         # Check all specialized contract models
@@ -700,7 +729,7 @@ class TestContractValidationFramework:
                     field_type != Any
                 ), f"Field {field_name} in {model_class.__name__} uses Any type"
                 assert "Any" not in str(
-                    field_type
+                    field_type,
                 ), f"Field {field_name} in {model_class.__name__} contains Any: {field_type}"
 
     def test_extra_fields_forbidden(self):
@@ -717,8 +746,9 @@ class TestContractValidationFramework:
                     algorithm_type="test",
                     factors={
                         "test": ModelAlgorithmFactorConfig(
-                            weight=1.0, calculation_method="test"
-                        )
+                            weight=1.0,
+                            calculation_method="test",
+                        ),
                     },
                 ),
                 performance=ModelPerformanceRequirements(single_operation_max_ms=100),

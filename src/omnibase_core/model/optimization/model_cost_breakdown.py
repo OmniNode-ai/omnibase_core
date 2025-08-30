@@ -33,5 +33,5 @@ class ModelCostBreakdown(BaseModel):
                 self.refactoring,
                 self.review,
                 self.other,
-            ]
+            ],
         )

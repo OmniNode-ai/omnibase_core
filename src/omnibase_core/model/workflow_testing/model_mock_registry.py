@@ -7,7 +7,6 @@ to replace Any usage with proper type safety.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,10 +21,12 @@ class ModelMockRegistryConfig(BaseModel):
         description="Deterministic responses for different methods",
     )
     tool_registry: dict[str, dict] = Field(
-        default_factory=dict, description="Mock tool registry data"
+        default_factory=dict,
+        description="Mock tool registry data",
     )
     failure_injection: dict[str, bool] = Field(
-        default_factory=dict, description="Failure injection configuration"
+        default_factory=dict,
+        description="Failure injection configuration",
     )
 
 
@@ -51,15 +52,16 @@ class ModelRegistryResponse(BaseModel):
     operation: str = Field(description="Operation performed")
     timestamp: str = Field(description="Response timestamp")
     success: bool = Field(description="Whether operation succeeded")
-    message: Optional[str] = Field(default=None, description="Response message")
+    message: str | None = Field(default=None, description="Response message")
 
 
 class ModelPureToolResponse(BaseModel):
     """Model for pure tool retrieval response"""
 
     tool_identifier: str = Field(description="Tool identifier")
-    tool_instance: Optional[str] = Field(
-        default=None, description="Tool instance class name (mock)"
+    tool_instance: str | None = Field(
+        default=None,
+        description="Tool instance class name (mock)",
     )
     retrieval_successful: bool = Field(description="Whether retrieval succeeded")
     timestamp: str = Field(description="Response timestamp")
@@ -72,10 +74,11 @@ class ModelMockRegistryState(BaseModel):
     total_tools_registered: int = Field(description="Total tools in mock registry")
     total_retrievals: int = Field(description="Total tool retrievals performed")
     failure_injection_enabled: bool = Field(
-        description="Whether failure injection is enabled"
+        description="Whether failure injection is enabled",
     )
-    failure_injection_type: Optional[str] = Field(
-        default=None, description="Type of failure injection active"
+    failure_injection_type: str | None = Field(
+        default=None,
+        description="Type of failure injection active",
     )
     last_operation: str = Field(description="Last operation performed")
     last_operation_timestamp: str = Field(description="When last operation occurred")

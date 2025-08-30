@@ -7,7 +7,6 @@ Represents individual tools within a group with version management and capabilit
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -60,17 +59,20 @@ class ModelToolVersion(BaseModel):
     status: EnumVersionStatus = Field(description="Version lifecycle status")
     release_date: datetime = Field(description="Version release date")
     breaking_changes: bool = Field(
-        description="Whether version contains breaking changes"
+        description="Whether version contains breaking changes",
     )
     recommended: bool = Field(description="Whether version is recommended for use")
-    deprecation_date: Optional[datetime] = Field(
-        default=None, description="Date when version was deprecated"
+    deprecation_date: datetime | None = Field(
+        default=None,
+        description="Date when version was deprecated",
     )
-    end_of_life_date: Optional[datetime] = Field(
-        default=None, description="Date when version reaches end of life"
+    end_of_life_date: datetime | None = Field(
+        default=None,
+        description="Date when version reaches end of life",
     )
-    changelog: Optional[str] = Field(
-        default=None, description="Version changelog summary"
+    changelog: str | None = Field(
+        default=None,
+        description="Version changelog summary",
     )
 
 
@@ -81,12 +83,13 @@ class ModelToolDependency(BaseModel):
     type: str = Field(description="Dependency type (service, protocol, library)")
     target: str = Field(description="Dependency target (URL, protocol name, etc.)")
     binding: str = Field(
-        description="How dependency is bound (injection, lookup, etc.)"
+        description="How dependency is bound (injection, lookup, etc.)",
     )
     optional: bool = Field(default=False, description="Whether dependency is optional")
     description: str = Field(description="Dependency purpose and usage")
-    version_requirement: Optional[str] = Field(
-        default=None, description="Version requirement specification"
+    version_requirement: str | None = Field(
+        default=None,
+        description="Version requirement specification",
     )
 
 
@@ -95,14 +98,17 @@ class ModelToolCapability(BaseModel):
 
     name: str = Field(description="Capability name")
     description: str = Field(description="Capability description")
-    input_types: List[str] = Field(
-        default_factory=list, description="Input data types supported"
+    input_types: list[str] = Field(
+        default_factory=list,
+        description="Input data types supported",
     )
-    output_types: List[str] = Field(
-        default_factory=list, description="Output data types produced"
+    output_types: list[str] = Field(
+        default_factory=list,
+        description="Output data types produced",
     )
-    operations: List[str] = Field(
-        default_factory=list, description="Operations provided by capability"
+    operations: list[str] = Field(
+        default_factory=list,
+        description="Operations provided by capability",
     )
 
 
@@ -110,56 +116,70 @@ class ModelToolIntegration(BaseModel):
     """Service integration configuration for tool."""
 
     auto_load_strategy: str = Field(
-        default="current_stable", description="Strategy for loading tool versions"
+        default="current_stable",
+        description="Strategy for loading tool versions",
     )
-    fallback_versions: List[str] = Field(
-        default_factory=list, description="Fallback versions if preferred unavailable"
+    fallback_versions: list[str] = Field(
+        default_factory=list,
+        description="Fallback versions if preferred unavailable",
     )
     version_directory_pattern: str = Field(
-        default="v{major}_{minor}_{patch}", description="Directory pattern for versions"
+        default="v{major}_{minor}_{patch}",
+        description="Directory pattern for versions",
     )
     implementation_file: str = Field(
-        default="node.py", description="Main implementation file name"
+        default="node.py",
+        description="Main implementation file name",
     )
     contract_file: str = Field(
-        default="contract.yaml", description="Contract file name"
+        default="contract.yaml",
+        description="Contract file name",
     )
     main_class_name: str = Field(description="Main implementation class name")
     load_as_module: bool = Field(
-        default=True, description="Whether loaded as module by service"
+        default=True,
+        description="Whether loaded as module by service",
     )
     requires_separate_port: bool = Field(
-        default=False, description="Whether tool requires separate HTTP port"
+        default=False,
+        description="Whether tool requires separate HTTP port",
     )
     initialization_order: int = Field(
-        default=5, description="Initialization order relative to other tools"
+        default=5,
+        description="Initialization order relative to other tools",
     )
     shutdown_timeout: int = Field(
-        default=30, description="Graceful shutdown timeout in seconds"
+        default=30,
+        description="Graceful shutdown timeout in seconds",
     )
     health_check_via_service: bool = Field(
-        default=True, description="Whether health checked by parent service"
+        default=True,
+        description="Whether health checked by parent service",
     )
 
 
 class ModelToolTesting(BaseModel):
     """Testing requirements and configuration."""
 
-    required_ci_tiers: List[str] = Field(
+    required_ci_tiers: list[str] = Field(
         default_factory=lambda: ["unit", "integration"],
         description="Required CI testing tiers",
     )
     minimum_coverage_percentage: float = Field(
-        default=85.0, description="Minimum test coverage percentage required"
+        default=85.0,
+        description="Minimum test coverage percentage required",
     )
-    canonical_test_case_ids: List[str] = Field(
-        default_factory=list, description="Canonical test case identifiers"
+    canonical_test_case_ids: list[str] = Field(
+        default_factory=list,
+        description="Canonical test case identifiers",
     )
     performance_test_required: bool = Field(
-        default=False, description="Whether performance testing is required"
+        default=False,
+        description="Whether performance testing is required",
     )
     security_test_required: bool = Field(
-        default=True, description="Whether security testing is required"
+        default=True,
+        description="Whether security testing is required",
     )
 
 
@@ -167,19 +187,24 @@ class ModelToolSecurity(BaseModel):
     """Security configuration and requirements."""
 
     processes_sensitive_data: bool = Field(
-        default=False, description="Whether tool processes sensitive data"
+        default=False,
+        description="Whether tool processes sensitive data",
     )
     data_classification: str = Field(
-        default="internal", description="Data classification level"
+        default="internal",
+        description="Data classification level",
     )
     requires_network_access: bool = Field(
-        default=False, description="Whether tool requires network access"
+        default=False,
+        description="Whether tool requires network access",
     )
-    external_endpoints: List[str] = Field(
-        default_factory=list, description="External endpoints accessed"
+    external_endpoints: list[str] = Field(
+        default_factory=list,
+        description="External endpoints accessed",
     )
     security_profile_required: str = Field(
-        default="SP0_BOOTSTRAP", description="Required security profile level"
+        default="SP0_BOOTSTRAP",
+        description="Required security profile level",
     )
 
 
@@ -201,11 +226,12 @@ class ModelToolManifest(BaseModel):
     # === TOOL CLASSIFICATION ===
     node_type: EnumNodeType = Field(description="ONEX node type classification")
     business_logic_pattern: EnumBusinessLogicPattern = Field(
-        description="Business logic pattern classification"
+        description="Business logic pattern classification",
     )
     meta_type: str = Field(default="tool", description="Meta-type classification")
     runtime_language_hint: str = Field(
-        default="python>=3.11", description="Runtime language requirement"
+        default="python>=3.11",
+        description="Runtime language requirement",
     )
 
     # === TOOL STATUS ===
@@ -214,51 +240,56 @@ class ModelToolManifest(BaseModel):
 
     # === VERSION CATALOG ===
     current_stable_version: SemVerField = Field(
-        description="Current stable version identifier"
+        description="Current stable version identifier",
     )
-    current_development_version: Optional[SemVerField] = Field(
-        default=None, description="Current development version identifier"
+    current_development_version: SemVerField | None = Field(
+        default=None,
+        description="Current development version identifier",
     )
-    versions: List[ModelToolVersion] = Field(
-        description="Available versions with lifecycle information"
+    versions: list[ModelToolVersion] = Field(
+        description="Available versions with lifecycle information",
     )
 
     # === CAPABILITIES ===
-    capabilities: List[ModelToolCapability] = Field(
-        description="Tool capabilities and operations"
+    capabilities: list[ModelToolCapability] = Field(
+        description="Tool capabilities and operations",
     )
-    protocols_supported: List[str] = Field(
-        default_factory=list, description="Supported protocol interfaces"
+    protocols_supported: list[str] = Field(
+        default_factory=list,
+        description="Supported protocol interfaces",
     )
 
     # === DEPENDENCIES ===
-    dependencies: List[ModelToolDependency] = Field(
-        default_factory=list, description="Tool-specific dependencies"
+    dependencies: list[ModelToolDependency] = Field(
+        default_factory=list,
+        description="Tool-specific dependencies",
     )
 
     # === SERVICE INTEGRATION ===
     integration: ModelToolIntegration = Field(
-        description="Service integration configuration"
+        description="Service integration configuration",
     )
 
     # === EXECUTION METADATA ===
     execution_mode: str = Field(
-        default="async", description="Execution mode (sync/async)"
+        default="async",
+        description="Execution mode (sync/async)",
     )
     max_memory_mb: int = Field(default=256, description="Maximum memory usage in MB")
     max_cpu_percent: int = Field(default=50, description="Maximum CPU usage percentage")
     timeout_seconds: int = Field(
-        default=60, description="Default operation timeout in seconds"
+        default=60,
+        description="Default operation timeout in seconds",
     )
 
     # === TESTING CONFIGURATION ===
     testing: ModelToolTesting = Field(
-        description="Testing requirements and configuration"
+        description="Testing requirements and configuration",
     )
 
     # === SECURITY CONFIGURATION ===
     security: ModelToolSecurity = Field(
-        description="Security requirements and configuration"
+        description="Security requirements and configuration",
     )
 
     # === METADATA VALIDATION ===
@@ -266,11 +297,13 @@ class ModelToolManifest(BaseModel):
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Tool manifest schema version",
     )
-    uuid: Optional[str] = Field(
-        default=None, description="Unique identifier for tool instance"
+    uuid: str | None = Field(
+        default=None,
+        description="Unique identifier for tool instance",
     )
-    hash: Optional[str] = Field(
-        default=None, description="Content hash for integrity verification"
+    hash: str | None = Field(
+        default=None,
+        description="Content hash for integrity verification",
     )
 
     class Config:
@@ -281,34 +314,39 @@ class ModelToolManifest(BaseModel):
 
     @validator("versions")
     def validate_versions_list(
-        cls, v: List[ModelToolVersion]
-    ) -> List[ModelToolVersion]:
+        self,
+        v: list[ModelToolVersion],
+    ) -> list[ModelToolVersion]:
         """Validate versions list consistency."""
         if not v:
-            raise ValueError("versions list cannot be empty")
+            msg = "versions list cannot be empty"
+            raise ValueError(msg)
 
         # Check for duplicate versions
         version_strings = [str(version.version) for version in v]
         if len(version_strings) != len(set(version_strings)):
-            raise ValueError("Duplicate versions found in versions list")
+            msg = "Duplicate versions found in versions list"
+            raise ValueError(msg)
 
         return v
 
     @validator("max_memory_mb", "max_cpu_percent", "timeout_seconds")
-    def validate_positive_values(cls, v: int) -> int:
+    def validate_positive_values(self, v: int) -> int:
         """Validate positive integer values."""
         if v <= 0:
-            raise ValueError("Value must be positive")
+            msg = "Value must be positive"
+            raise ValueError(msg)
         return v
 
     @validator("testing")
-    def validate_testing_config(cls, v: ModelToolTesting) -> ModelToolTesting:
+    def validate_testing_config(self, v: ModelToolTesting) -> ModelToolTesting:
         """Validate testing configuration."""
         if v.minimum_coverage_percentage < 0 or v.minimum_coverage_percentage > 100:
-            raise ValueError("Coverage percentage must be between 0 and 100")
+            msg = "Coverage percentage must be between 0 and 100"
+            raise ValueError(msg)
         return v
 
-    def get_version_by_string(self, version_string: str) -> Optional[ModelToolVersion]:
+    def get_version_by_string(self, version_string: str) -> ModelToolVersion | None:
         """Get version by version string."""
         for version in self.versions:
             if str(version.version) == version_string:
@@ -316,18 +354,20 @@ class ModelToolManifest(BaseModel):
         return None
 
     def get_versions_by_status(
-        self, status: EnumVersionStatus
-    ) -> List[ModelToolVersion]:
+        self,
+        status: EnumVersionStatus,
+    ) -> list[ModelToolVersion]:
         """Get all versions with specified status."""
         return [version for version in self.versions if version.status == status]
 
-    def get_active_versions(self) -> List[ModelToolVersion]:
+    def get_active_versions(self) -> list[ModelToolVersion]:
         """Get all active versions."""
         return self.get_versions_by_status(EnumVersionStatus.ACTIVE)
 
     def get_capability_by_name(
-        self, capability_name: str
-    ) -> Optional[ModelToolCapability]:
+        self,
+        capability_name: str,
+    ) -> ModelToolCapability | None:
         """Get capability by name."""
         for capability in self.capabilities:
             if capability.name == capability_name:
@@ -340,10 +380,9 @@ class ModelToolManifest(BaseModel):
             self.security.security_profile_required
             in ["SP0_BOOTSTRAP", "SP1_BASELINE", "SP2_PRODUCTION", "SP3_HIGH_ASSURANCE"]
             and len(self.security.external_endpoints) == 0
-            or self.security.requires_network_access
-        )
+        ) or self.security.requires_network_access
 
-    def get_recommended_version(self) -> Optional[ModelToolVersion]:
+    def get_recommended_version(self) -> ModelToolVersion | None:
         """Get the recommended version."""
         for version in self.versions:
             if version.recommended and version.status == EnumVersionStatus.ACTIVE:

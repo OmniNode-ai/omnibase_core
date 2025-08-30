@@ -8,7 +8,7 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -25,25 +25,30 @@ class ModelToolDiscoveryResult(BaseModel):
     """
 
     tool_instance: Any = Field(
-        ..., description="Successfully instantiated tool instance"
+        ...,
+        description="Successfully instantiated tool instance",
     )
 
-    tool_class: Type = Field(..., description="Tool class type that was instantiated")
+    tool_class: type = Field(..., description="Tool class type that was instantiated")
 
     module_path: str = Field(
-        ..., description="Python module path used for tool discovery"
+        ...,
+        description="Python module path used for tool discovery",
     )
 
     tool_class_name: str = Field(
-        ..., description="Name of the tool class in the module"
+        ...,
+        description="Name of the tool class in the module",
     )
 
     contract_path: Path = Field(
-        ..., description="Path to contract file used for discovery"
+        ...,
+        description="Path to contract file used for discovery",
     )
 
     discovery_method: str = Field(
-        ..., description="Method used for tool discovery (module|registry|cached)"
+        ...,
+        description="Method used for tool discovery (module|registry|cached)",
     )
 
     instantiation_method: str = Field(
@@ -51,34 +56,34 @@ class ModelToolDiscoveryResult(BaseModel):
         description="Method used for tool instantiation (container|registry|direct)",
     )
 
-    registry_key: Optional[str] = Field(
+    registry_key: str | None = Field(
         default=None,
         description="Registry key used for legacy registry resolution",
     )
 
-    module_import_time_ms: Optional[float] = Field(
+    module_import_time_ms: float | None = Field(
         default=None,
         description="Time taken to import tool module in milliseconds",
         ge=0,
     )
 
-    tool_instantiation_time_ms: Optional[float] = Field(
+    tool_instantiation_time_ms: float | None = Field(
         default=None,
         description="Time taken to instantiate tool in milliseconds",
         ge=0,
     )
 
-    validation_results: Dict[str, bool] = Field(
+    validation_results: dict[str, bool] = Field(
         default_factory=dict,
         description="Results of various validation checks performed",
     )
 
-    tool_metadata: Dict[str, Any] = Field(
+    tool_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Metadata extracted from tool class and module",
     )
 
-    discovery_warnings: List[str] = Field(
+    discovery_warnings: list[str] = Field(
         default_factory=list,
         description="Non-critical warnings encountered during discovery",
     )
@@ -93,7 +98,7 @@ class ModelToolDiscoveryResult(BaseModel):
         description="Whether cached module or tool instance was used",
     )
 
-    total_time_ms: Optional[float] = Field(
+    total_time_ms: float | None = Field(
         default=None,
         description="Total time for complete tool resolution in milliseconds",
         ge=0,

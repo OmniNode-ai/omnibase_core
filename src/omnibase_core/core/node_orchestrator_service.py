@@ -8,13 +8,15 @@ Handles boilerplate initialization for NodeOrchestrator + MixinNodeService + Mix
 from omnibase_core.core.node_orchestrator import NodeOrchestrator
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
-from omnibase_core.mixin.mixin_node_id_from_contract import \
-    MixinNodeIdFromContract
+from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService
 
 
 class NodeOrchestratorService(
-    NodeOrchestrator, MixinNodeService, MixinNodeIdFromContract, MixinHealthCheck
+    NodeOrchestrator,
+    MixinNodeService,
+    MixinNodeIdFromContract,
+    MixinHealthCheck,
 ):
     """
     Base class for orchestrator nodes that need service capabilities.

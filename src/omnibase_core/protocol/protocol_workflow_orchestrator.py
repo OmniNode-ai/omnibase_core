@@ -5,21 +5,24 @@ This protocol defines the interface for tools that can orchestrate
 complex workflows with event-driven coordination.
 """
 
-from typing import TYPE_CHECKING, Optional, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from omnibase_core.model.core.model_onex_result import ModelOnexResult
-from omnibase_core.model.workflow.model_workflow_execution_state import \
-    ModelWorkflowExecutionState
-from omnibase_core.protocol.models.model_health_check_result import \
-    ModelHealthCheckResult
-from omnibase_core.protocol.models.model_workflow_input_state import \
-    ModelWorkflowInputState
-from omnibase_core.tools.workflow.models.model_workflow_parameters import \
-    ModelWorkflowParameters
+from omnibase_core.model.workflow.model_workflow_execution_state import (
+    ModelWorkflowExecutionState,
+)
+from omnibase_core.protocol.models.model_health_check_result import (
+    ModelHealthCheckResult,
+)
+from omnibase_core.protocol.models.model_workflow_input_state import (
+    ModelWorkflowInputState,
+)
+from omnibase_core.tools.workflow.models.model_workflow_parameters import (
+    ModelWorkflowParameters,
+)
 
 if TYPE_CHECKING:
-    from omnibase_core.protocol.protocol_node_registry import \
-        ProtocolNodeRegistry
+    from omnibase_core.protocol.protocol_node_registry import ProtocolNodeRegistry
 
 
 class ProtocolWorkflowOrchestrator(Protocol):
@@ -73,8 +76,9 @@ class ProtocolWorkflowOrchestrator(Protocol):
         ...
 
     def get_execution_state(
-        self, scenario_id: str
-    ) -> Optional[ModelWorkflowExecutionState]:
+        self,
+        scenario_id: str,
+    ) -> ModelWorkflowExecutionState | None:
         """
         Get the current execution state for a scenario.
 

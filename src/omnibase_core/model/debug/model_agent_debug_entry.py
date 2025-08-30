@@ -8,17 +8,15 @@ from every attempt and improve over time.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 # Import the strongly typed models
-from omnibase_core.model.debug.model_agent_attempt_details import \
-    ModelAgentAttemptDetails
-from omnibase_core.model.debug.model_extraction_metadata import \
-    ModelExtractionMetadata
-from omnibase_core.model.debug.model_similar_task_outcome import \
-    ModelSimilarTaskOutcome
+from omnibase_core.model.debug.model_agent_attempt_details import (
+    ModelAgentAttemptDetails,
+)
+from omnibase_core.model.debug.model_extraction_metadata import ModelExtractionMetadata
+from omnibase_core.model.debug.model_similar_task_outcome import ModelSimilarTaskOutcome
 
 
 class DebugSeverity(str, Enum):
@@ -50,41 +48,50 @@ class ModelAgentDebugEntry(BaseModel):
     agent_id: str = Field(description="ID of the agent that made this attempt")
     task_description: str = Field(description="Description of the task attempted")
     attempt_details: ModelAgentAttemptDetails = Field(
-        description="Detailed information about the attempt"
+        description="Detailed information about the attempt",
     )
     success: bool = Field(description="Whether the attempt was successful")
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if attempt failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if attempt failed",
     )
-    execution_trace: List[str] = Field(
-        default_factory=list, description="Step-by-step execution trace"
+    execution_trace: list[str] = Field(
+        default_factory=list,
+        description="Step-by-step execution trace",
     )
     category: DebugCategory = Field(description="Category of the debug entry")
     severity: DebugSeverity = Field(description="Severity level of the entry")
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for categorization and search"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorization and search",
     )
     resolution_status: str = Field(
-        default="open", description="Status of issue resolution"
+        default="open",
+        description="Status of issue resolution",
     )
-    learning_extraction: Dict[str, str] = Field(
-        default_factory=dict, description="Extracted learning points from this attempt"
+    learning_extraction: dict[str, str] = Field(
+        default_factory=dict,
+        description="Extracted learning points from this attempt",
     )
-    context_fingerprint: Optional[str] = Field(
-        default=None, description="Fingerprint of the context for similarity matching"
+    context_fingerprint: str | None = Field(
+        default=None,
+        description="Fingerprint of the context for similarity matching",
     )
-    related_entries: List[str] = Field(
-        default_factory=list, description="IDs of related debug entries"
+    related_entries: list[str] = Field(
+        default_factory=list,
+        description="IDs of related debug entries",
     )
     knowledge_contribution_score: float = Field(
         default=0.5,
         description="Score indicating value of this entry to knowledge base",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When this debug entry was created"
+        default_factory=datetime.now,
+        description="When this debug entry was created",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now, description="When this entry was last updated"
+        default_factory=datetime.now,
+        description="When this entry was last updated",
     )
 
     @property
@@ -98,13 +105,13 @@ class ModelAgentDebugEntry(BaseModel):
         return self.knowledge_contribution_score > 0.7
 
     @property
-    def execution_duration(self) -> Optional[float]:
+    def execution_duration(self) -> float | None:
         """Calculate execution duration if available in trace."""
         if len(self.execution_trace) >= 2:
             # Try to extract timing information from trace
             try:
-                first_step = self.execution_trace[0]
-                last_step = self.execution_trace[-1]
+                self.execution_trace[0]
+                self.execution_trace[-1]
                 # This would need parsing logic based on trace format
                 return None  # Placeholder
             except:
@@ -118,7 +125,9 @@ class ModelAgentDebugEntry(BaseModel):
             self.updated_at = datetime.now()
 
     def update_resolution_status(
-        self, status: str, resolution_notes: Optional[str] = None
+        self,
+        status: str,
+        resolution_notes: str | None = None,
     ) -> None:
         """Update the resolution status of this entry."""
         self.resolution_status = status
@@ -133,49 +142,56 @@ class ModelSuccessPattern(BaseModel):
     pattern_id: str = Field(description="Unique identifier for this success pattern")
     task_context: str = Field(description="Context where this pattern was successful")
     successful_approach: str = Field(
-        description="Description of the successful approach"
+        description="Description of the successful approach",
     )
-    key_techniques: List[str] = Field(
-        description="Key techniques that contributed to success"
+    key_techniques: list[str] = Field(
+        description="Key techniques that contributed to success",
     )
-    tools_used: List[str] = Field(
+    tools_used: list[str] = Field(
         default_factory=list,
         description="Tools that were used in the successful attempt",
     )
-    execution_steps: List[str] = Field(
-        default_factory=list, description="Step-by-step execution that led to success"
+    execution_steps: list[str] = Field(
+        default_factory=list,
+        description="Step-by-step execution that led to success",
     )
-    preconditions: List[str] = Field(
+    preconditions: list[str] = Field(
         default_factory=list,
         description="Conditions that need to be met for this pattern to work",
     )
-    success_indicators: List[str] = Field(
-        default_factory=list, description="Indicators that show the pattern is working"
+    success_indicators: list[str] = Field(
+        default_factory=list,
+        description="Indicators that show the pattern is working",
     )
     confidence_score: float = Field(
-        description="Confidence in this pattern's effectiveness (0.0-1.0)"
+        description="Confidence in this pattern's effectiveness (0.0-1.0)",
     )
     reusability_score: float = Field(
-        description="How reusable this pattern is in other contexts (0.0-1.0)"
+        description="How reusable this pattern is in other contexts (0.0-1.0)",
     )
-    validation_evidence: List[str] = Field(
+    validation_evidence: list[str] = Field(
         default_factory=list,
         description="Evidence that validates this pattern's success",
     )
-    applicable_contexts: List[str] = Field(
-        default_factory=list, description="Contexts where this pattern is applicable"
+    applicable_contexts: list[str] = Field(
+        default_factory=list,
+        description="Contexts where this pattern is applicable",
     )
-    performance_metrics: Optional[Dict[str, float]] = Field(
-        default=None, description="Performance metrics associated with this pattern"
+    performance_metrics: dict[str, float] | None = Field(
+        default=None,
+        description="Performance metrics associated with this pattern",
     )
     usage_count: int = Field(
-        default=1, description="Number of times this pattern has been successfully used"
+        default=1,
+        description="Number of times this pattern has been successfully used",
     )
-    last_used: Optional[datetime] = Field(
-        default=None, description="When this pattern was last successfully used"
+    last_used: datetime | None = Field(
+        default=None,
+        description="When this pattern was last successfully used",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When this pattern was identified"
+        default_factory=datetime.now,
+        description="When this pattern was identified",
     )
 
     @property
@@ -205,33 +221,39 @@ class ModelFailurePattern(BaseModel):
     pattern_id: str = Field(description="Unique identifier for this failure pattern")
     task_context: str = Field(description="Context where this failure pattern occurs")
     failed_approach: str = Field(description="Description of the approach that failed")
-    error_indicators: List[str] = Field(
-        description="Indicators that signal this type of failure"
+    error_indicators: list[str] = Field(
+        description="Indicators that signal this type of failure",
     )
     root_cause_analysis: str = Field(description="Root cause analysis of the failure")
-    prevention_strategies: List[str] = Field(
-        default_factory=list, description="Strategies to prevent this type of failure"
+    prevention_strategies: list[str] = Field(
+        default_factory=list,
+        description="Strategies to prevent this type of failure",
     )
-    detection_methods: List[str] = Field(
-        default_factory=list, description="Methods to detect this failure early"
+    detection_methods: list[str] = Field(
+        default_factory=list,
+        description="Methods to detect this failure early",
     )
-    recovery_procedures: List[str] = Field(
-        default_factory=list, description="Procedures to recover from this failure"
+    recovery_procedures: list[str] = Field(
+        default_factory=list,
+        description="Procedures to recover from this failure",
     )
     confidence_score: float = Field(
-        description="Confidence in this failure pattern identification (0.0-1.0)"
+        description="Confidence in this failure pattern identification (0.0-1.0)",
     )
     severity: DebugSeverity = Field(
-        description="Severity of failures following this pattern"
+        description="Severity of failures following this pattern",
     )
     frequency: int = Field(
-        default=1, description="Number of times this failure pattern has been observed"
+        default=1,
+        description="Number of times this failure pattern has been observed",
     )
-    last_occurrence: Optional[datetime] = Field(
-        default=None, description="When this failure pattern was last observed"
+    last_occurrence: datetime | None = Field(
+        default=None,
+        description="When this failure pattern was last observed",
     )
-    mitigation_effectiveness: Optional[float] = Field(
-        default=None, description="Effectiveness of mitigation strategies (0.0-1.0)"
+    mitigation_effectiveness: float | None = Field(
+        default=None,
+        description="Effectiveness of mitigation strategies (0.0-1.0)",
     )
     created_at: datetime = Field(
         default_factory=datetime.now,
@@ -259,39 +281,44 @@ class ModelDebugContext(BaseModel):
 
     context_id: str = Field(description="Unique identifier for this debug context")
     task_description: str = Field(
-        description="Description of the task for which context is provided"
+        description="Description of the task for which context is provided",
     )
-    agent_capabilities: List[str] = Field(
-        description="Capabilities of the agent requesting context"
+    agent_capabilities: list[str] = Field(
+        description="Capabilities of the agent requesting context",
     )
-    relevant_debug_entries: List[ModelAgentDebugEntry] = Field(
-        description="Debug entries relevant to the current task"
+    relevant_debug_entries: list[ModelAgentDebugEntry] = Field(
+        description="Debug entries relevant to the current task",
     )
-    success_patterns: List[ModelSuccessPattern] = Field(
-        default_factory=list, description="Success patterns applicable to this task"
+    success_patterns: list[ModelSuccessPattern] = Field(
+        default_factory=list,
+        description="Success patterns applicable to this task",
     )
-    failure_patterns: List[ModelFailurePattern] = Field(
-        default_factory=list, description="Failure patterns to avoid for this task"
+    failure_patterns: list[ModelFailurePattern] = Field(
+        default_factory=list,
+        description="Failure patterns to avoid for this task",
     )
-    contextual_recommendations: List[str] = Field(
-        default_factory=list, description="Recommendations based on historical context"
+    contextual_recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recommendations based on historical context",
     )
-    similar_task_outcomes: List[ModelSimilarTaskOutcome] = Field(
+    similar_task_outcomes: list[ModelSimilarTaskOutcome] = Field(
         default_factory=list,
         description="Outcomes of similar tasks performed previously",
     )
-    risk_assessment: Optional[Dict[str, float]] = Field(
-        default=None, description="Risk assessment based on historical data"
+    risk_assessment: dict[str, float] | None = Field(
+        default=None,
+        description="Risk assessment based on historical data",
     )
     confidence_score: float = Field(
-        description="Confidence in the quality of this context (0.0-1.0)"
+        description="Confidence in the quality of this context (0.0-1.0)",
     )
     extraction_metadata: ModelExtractionMetadata = Field(
         default_factory=ModelExtractionMetadata,
         description="Metadata about how this context was extracted",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When this context was created"
+        default_factory=datetime.now,
+        description="When this context was created",
     )
 
     @property
@@ -309,17 +336,17 @@ class ModelDebugContext(BaseModel):
         """Get total number of patterns in context."""
         return len(self.success_patterns) + len(self.failure_patterns)
 
-    def get_top_recommendations(self, limit: int = 5) -> List[str]:
+    def get_top_recommendations(self, limit: int = 5) -> list[str]:
         """Get top recommendations from context."""
         return self.contextual_recommendations[:limit]
 
-    def get_critical_warnings(self) -> List[str]:
+    def get_critical_warnings(self) -> list[str]:
         """Get critical warnings from failure patterns."""
         warnings = []
         for pattern in self.failure_patterns:
             if pattern.is_critical:
                 warnings.append(
-                    f"CRITICAL: Avoid {pattern.failed_approach} - {pattern.root_cause_analysis}"
+                    f"CRITICAL: Avoid {pattern.failed_approach} - {pattern.root_cause_analysis}",
                 )
         return warnings
 
@@ -329,27 +356,30 @@ class ModelLearningInsight(BaseModel):
 
     insight_id: str = Field(description="Unique identifier for this learning insight")
     insight_type: str = Field(
-        description="Type of insight (pattern, trend, anomaly, etc.)"
+        description="Type of insight (pattern, trend, anomaly, etc.)",
     )
     description: str = Field(description="Description of the learning insight")
-    evidence: List[str] = Field(description="Evidence supporting this insight")
+    evidence: list[str] = Field(description="Evidence supporting this insight")
     confidence: float = Field(description="Confidence in this insight (0.0-1.0)")
-    actionable_recommendations: List[str] = Field(
+    actionable_recommendations: list[str] = Field(
         default_factory=list,
         description="Actionable recommendations based on this insight",
     )
-    affected_agents: List[str] = Field(
-        default_factory=list, description="Agents that would benefit from this insight"
+    affected_agents: list[str] = Field(
+        default_factory=list,
+        description="Agents that would benefit from this insight",
     )
-    impact_assessment: Dict[str, str] = Field(
+    impact_assessment: dict[str, str] = Field(
         default_factory=dict,
         description="Assessment of potential impact of this insight",
     )
     validation_status: str = Field(
-        default="pending", description="Status of insight validation"
+        default="pending",
+        description="Status of insight validation",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When this insight was generated"
+        default_factory=datetime.now,
+        description="When this insight was generated",
     )
 
     @property

@@ -4,7 +4,7 @@ MCP Tool Input Schema Model.
 Model for MCP tool input schema.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,8 @@ class ModelMCPToolInputSchema(BaseModel):
     """
 
     type: str = Field(default="object", description="Schema type")
-    properties: Dict[str, Any] = Field(
-        default_factory=dict, description="Schema properties"
+    properties: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Schema properties",
     )
-    required: List[str] = Field(default_factory=list, description="Required properties")
+    required: list[str] = Field(default_factory=list, description="Required properties")

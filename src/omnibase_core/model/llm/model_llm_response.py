@@ -6,7 +6,6 @@ with usage metrics, metadata, and provider information.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,25 +25,26 @@ class ModelLLMResponse(BaseModel):
     response: str = Field(description="Generated text response from the LLM")
 
     provider_used: str = Field(
-        description="Which provider handled the request (ollama, openai, anthropic)"
+        description="Which provider handled the request (ollama, openai, anthropic)",
     )
 
     model_used: str = Field(description="Specific model that generated the response")
 
     usage_metrics: ModelUsageMetrics = Field(
-        description="Token usage, cost, and latency metrics"
+        description="Token usage, cost, and latency metrics",
     )
 
-    conversation_id: Optional[str] = Field(
-        default=None, description="Conversation identifier for multi-turn tracking"
+    conversation_id: str | None = Field(
+        default=None,
+        description="Conversation identifier for multi-turn tracking",
     )
 
-    finish_reason: Optional[str] = Field(
+    finish_reason: str | None = Field(
         default=None,
         description="Reason generation stopped (length, stop, error, etc.)",
     )
 
-    confidence_score: Optional[float] = Field(
+    confidence_score: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -85,6 +85,6 @@ class ModelLLMResponse(BaseModel):
                     "context_used": 1024,
                     "temperature_used": 0.7,
                 },
-            }
+            },
         },
     )

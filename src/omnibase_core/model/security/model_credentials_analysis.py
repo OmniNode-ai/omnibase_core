@@ -4,8 +4,6 @@ ModelCredentialsAnalysis: Credentials strength analysis results.
 This model provides structured credentials analysis without using Any types.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -21,25 +19,30 @@ class ModelCredentialsAnalysis(BaseModel):
     """Credentials strength analysis results."""
 
     strength_score: int = Field(..., description="Overall strength score (0-100)")
-    password_entropy: Optional[float] = Field(
-        None, description="Password entropy score"
+    password_entropy: float | None = Field(
+        None,
+        description="Password entropy score",
     )
-    common_patterns: List[str] = Field(
-        default_factory=list, description="Detected common patterns"
+    common_patterns: list[str] = Field(
+        default_factory=list,
+        description="Detected common patterns",
     )
-    security_issues: List[str] = Field(
-        default_factory=list, description="Identified security issues"
+    security_issues: list[str] = Field(
+        default_factory=list,
+        description="Identified security issues",
     )
-    recommendations: List[str] = Field(
-        default_factory=list, description="Improvement recommendations"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Improvement recommendations",
     )
     compliance_status: str = Field(..., description="Compliance status")
     risk_level: str = Field(..., description="Risk assessment level")
     manager_assessment: ModelManagerAssessment = Field(
-        ..., description="Manager-specific assessment"
+        ...,
+        description="Manager-specific assessment",
     )
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for backwards compatibility."""
         return {
             "strength_score": self.strength_score,

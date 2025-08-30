@@ -1,5 +1,4 @@
 import os
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -11,63 +10,70 @@ class ModelModelEventBusConfig(BaseModel):
     Sensitive fields (e.g., sasl_password, ssl_keyfile) should be injected via environment variables or a secrets manager, not hardcoded in config files or code.
     """
 
-    bootstrap_servers: List[str] = Field(
-        ..., description="List of event bus bootstrap servers (host:port)"
+    bootstrap_servers: list[str] = Field(
+        ...,
+        description="List of event bus bootstrap servers (host:port)",
     )
-    topics: List[str] = Field(
-        ..., description="List of topics to use for event bus communication"
+    topics: list[str] = Field(
+        ...,
+        description="List of topics to use for event bus communication",
     )
-    security_protocol: Optional[str] = Field(
+    security_protocol: str | None = Field(
         default=None,
         description="Security protocol (e.g., PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL)",
     )
-    sasl_mechanism: Optional[str] = Field(
+    sasl_mechanism: str | None = Field(
         default=None,
         description="SASL mechanism if using SASL authentication (e.g., PLAIN, SCRAM-SHA-256)",
     )
-    sasl_username: Optional[str] = Field(
-        default=None, description="SASL username for authentication"
+    sasl_username: str | None = Field(
+        default=None,
+        description="SASL username for authentication",
     )
-    sasl_password: Optional[SecretStr] = Field(
+    sasl_password: SecretStr | None = Field(
         default=None,
         description="SASL password for authentication (automatically masked for security)",
     )
-    client_id: Optional[str] = Field(
-        default=None, description="Client ID for diagnostics"
+    client_id: str | None = Field(
+        default=None,
+        description="Client ID for diagnostics",
     )
-    group_id: Optional[str] = Field(default=None, description="Consumer group ID")
-    partitions: Optional[int] = Field(
+    group_id: str | None = Field(default=None, description="Consumer group ID")
+    partitions: int | None = Field(
         default=None,
         description="Number of partitions for topic creation (if applicable)",
     )
-    replication_factor: Optional[int] = Field(
+    replication_factor: int | None = Field(
         default=None,
         description="Replication factor for topic creation (if applicable)",
     )
-    acks: Optional[str] = Field(
+    acks: str | None = Field(
         default="all",
         description="Producer acknowledgment policy (e.g., 'all', '1', '0')",
     )
-    enable_auto_commit: Optional[bool] = Field(
-        default=True, description="Enable auto-commit for consumer"
+    enable_auto_commit: bool | None = Field(
+        default=True,
+        description="Enable auto-commit for consumer",
     )
-    auto_offset_reset: Optional[str] = Field(
-        default="earliest", description="Offset reset policy (earliest/latest)"
+    auto_offset_reset: str | None = Field(
+        default="earliest",
+        description="Offset reset policy (earliest/latest)",
     )
-    ssl_cafile: Optional[str] = Field(
-        default=None, description="Path to CA file for TLS (if using SSL/SASL_SSL)"
+    ssl_cafile: str | None = Field(
+        default=None,
+        description="Path to CA file for TLS (if using SSL/SASL_SSL)",
     )
-    ssl_certfile: Optional[str] = Field(
+    ssl_certfile: str | None = Field(
         default=None,
         description="Path to client certificate file for TLS (if using SSL/SASL_SSL)",
     )
-    ssl_keyfile: Optional[str] = Field(
+    ssl_keyfile: str | None = Field(
         default=None,
         description="Path to client key file for TLS (if using SSL/SASL_SSL)",
     )
     # Add more fields as needed for advanced event bus features
 
-    def get_sasl_password_value(self) -> Optional[str]:
+    def get_sasl_password_value(self) -> str | None:
         """Safely get the SASL password value for use in authentication."""
         if self.sasl_password is None:
             return None

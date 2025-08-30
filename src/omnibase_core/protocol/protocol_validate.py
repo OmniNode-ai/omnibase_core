@@ -22,19 +22,21 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import TYPE_CHECKING, List, Optional, Protocol
+from typing import TYPE_CHECKING, Optional, Protocol
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
     from omnibase_core.core.core_structured_logging import ProtocolLogger
     from omnibase_core.model.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )
+    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
     from omnibase_core.model.core.model_result_cli import CLIArgsModel
 
 from omnibase_core.model.core.model_onex_message_result import OnexResultModel
 from omnibase_core.model.validation.model_validate_error import (
-    ValidateMessageModel, ValidateResultModel)
+    ValidateMessageModel,
+    ValidateResultModel,
+)
 from omnibase_core.protocol.protocol_cli import ProtocolCLI
 
 
@@ -55,16 +57,18 @@ class ProtocolValidate(ProtocolCLI, Protocol):
     def validate_main(self, args: "CLIArgsModel") -> OnexResultModel: ...
 
     def validate(
-        self, target: str, config: Optional["ModelMetadataConfig"] = None
+        self,
+        target: str,
+        config: Optional["ModelMetadataConfig"] = None,
     ) -> ValidateResultModel: ...
 
     def get_name(self) -> str: ...
 
-    def get_validation_errors(self) -> List[ValidateMessageModel]:
+    def get_validation_errors(self) -> list[ValidateMessageModel]:
         """Get detailed validation errors from the last validation."""
         ...
 
-    def discover_plugins(self) -> List["NodeMetadataBlock"]:
+    def discover_plugins(self) -> list["NodeMetadataBlock"]:
         """
         Returns a list of plugin metadata blocks supported by this validator.
         Enables dynamic test/validator scaffolding and runtime plugin contract enforcement.

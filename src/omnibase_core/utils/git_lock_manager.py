@@ -8,9 +8,8 @@ with stale lock detection and cleanup capabilities.
 
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
@@ -26,7 +25,7 @@ class ModelGitLockInfo:
         repository_path: Path,
         created_timestamp: float,
         lock_type: str,
-        process_id: Optional[int] = None,
+        process_id: int | None = None,
     ):
         self.lock_file_path = lock_file_path
         self.repository_path = repository_path
@@ -74,7 +73,7 @@ class GitLockManager:
         ".git/REVERT_HEAD.lock",
     ]
 
-    def __init__(self, base_workspace_path: Optional[Path] = None):
+    def __init__(self, base_workspace_path: Path | None = None):
         """
         Initialize the Git lock manager.
 
@@ -86,8 +85,9 @@ class GitLockManager:
         self.max_lock_age_seconds = 86400  # 24 hours absolute max
 
     def find_all_git_locks(
-        self, search_path: Optional[Path] = None
-    ) -> List[ModelGitLockInfo]:
+        self,
+        search_path: Path | None = None,
+    ) -> list[ModelGitLockInfo]:
         """
         Find all Git lock files in the specified path or base workspace path.
 
@@ -117,12 +117,12 @@ class GitLockManager:
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to find Git locks in {search_root}: {str(e)}",
+                message=f"Failed to find Git locks in {search_root}: {e!s}",
                 context={"search_path": str(search_root)},
                 cause=e,
             )
 
-    def _find_locks_in_repository(self, repo_path: Path) -> List[ModelGitLockInfo]:
+    def _find_locks_in_repository(self, repo_path: Path) -> list[ModelGitLockInfo]:
         """
         Find all lock files in a specific Git repository.
 
@@ -132,7 +132,7 @@ class GitLockManager:
         Returns:
             List of Git lock information objects
         """
-        lock_files: List[ModelGitLockInfo] = []
+        lock_files: list[ModelGitLockInfo] = []
         git_dir = repo_path / ".git"
 
         if not git_dir.exists():
@@ -153,7 +153,8 @@ class GitLockManager:
                             for file_path in current_path.iterdir():
                                 if file_path.name.endswith(pattern):
                                     lock_info = self._create_lock_info(
-                                        file_path, repo_path
+                                        file_path,
+                                        repo_path,
                                     )
                                     if lock_info:
                                         lock_files.append(lock_info)
@@ -170,8 +171,10 @@ class GitLockManager:
         return lock_files
 
     def _create_lock_info(
-        self, lock_file_path: Path, repo_path: Path
-    ) -> Optional[ModelGitLockInfo]:
+        self,
+        lock_file_path: Path,
+        repo_path: Path,
+    ) -> ModelGitLockInfo | None:
         """
         Create a lock info object from a lock file path.
 
@@ -222,29 +225,28 @@ class GitLockManager:
         # Check path-specific patterns first (more specific)
         if filename.endswith(".lock") and "logs/" in str(lock_file_path):
             return "log"
-        elif filename.endswith(".lock") and "refs/" in str(lock_file_path):
+        if filename.endswith(".lock") and "refs/" in str(lock_file_path):
             return "reference"
         # Then check filename patterns (less specific)
-        elif filename == "index.lock":
+        if filename == "index.lock":
             return "index"
-        elif filename == "HEAD.lock":
+        if filename == "HEAD.lock":
             return "head"
-        elif filename == "config.lock":
+        if filename == "config.lock":
             return "config"
-        elif "COMMIT_EDITMSG.lock" in filename:
+        if "COMMIT_EDITMSG.lock" in filename:
             return "commit"
-        elif "MERGE_HEAD.lock" in filename:
+        if "MERGE_HEAD.lock" in filename:
             return "merge"
-        elif "CHERRY_PICK_HEAD.lock" in filename:
+        if "CHERRY_PICK_HEAD.lock" in filename:
             return "cherry_pick"
-        elif "REVERT_HEAD.lock" in filename:
+        if "REVERT_HEAD.lock" in filename:
             return "revert"
-        elif "packed-refs.lock" in filename:
+        if "packed-refs.lock" in filename:
             return "packed_refs"
-        else:
-            return "unknown"
+        return "unknown"
 
-    def _extract_process_id(self, lock_file_path: Path) -> Optional[int]:
+    def _extract_process_id(self, lock_file_path: Path) -> int | None:
         """
         Try to extract process ID from lock file content.
 
@@ -270,9 +272,9 @@ class GitLockManager:
 
     def find_stale_locks(
         self,
-        search_path: Optional[Path] = None,
-        stale_threshold_seconds: Optional[int] = None,
-    ) -> List[ModelGitLockInfo]:
+        search_path: Path | None = None,
+        stale_threshold_seconds: int | None = None,
+    ) -> list[ModelGitLockInfo]:
         """
         Find all stale Git lock files.
 
@@ -319,10 +321,10 @@ class GitLockManager:
 
     def cleanup_stale_locks(
         self,
-        search_path: Optional[Path] = None,
-        stale_threshold_seconds: Optional[int] = None,
+        search_path: Path | None = None,
+        stale_threshold_seconds: int | None = None,
         dry_run: bool = False,
-    ) -> Tuple[int, List[str], List[str]]:
+    ) -> tuple[int, list[str], list[str]]:
         """
         Clean up stale Git lock files.
 
@@ -349,7 +351,7 @@ class GitLockManager:
                     if dry_run:
                         success_messages.append(
                             f"Would remove stale {lock.lock_type} lock: {lock.lock_file_path} "
-                            f"(age: {lock.age_seconds:.1f}s)"
+                            f"(age: {lock.age_seconds:.1f}s)",
                         )
                         cleaned_count += 1
                     else:
@@ -358,12 +360,12 @@ class GitLockManager:
                         cleaned_count += 1
                         success_messages.append(
                             f"Removed stale {lock.lock_type} lock: {lock.lock_file_path} "
-                            f"(age: {lock.age_seconds:.1f}s)"
+                            f"(age: {lock.age_seconds:.1f}s)",
                         )
 
                 except Exception as e:
                     error_messages.append(
-                        f"Failed to remove lock {lock.lock_file_path}: {str(e)}"
+                        f"Failed to remove lock {lock.lock_file_path}: {e!s}",
                     )
 
             return cleaned_count, success_messages, error_messages
@@ -371,7 +373,7 @@ class GitLockManager:
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to cleanup stale Git locks: {str(e)}",
+                message=f"Failed to cleanup stale Git locks: {e!s}",
                 context={
                     "search_path": str(search_path) if search_path else None,
                     "dry_run": dry_run,
@@ -393,7 +395,8 @@ class GitLockManager:
         return len(locks) > 0
 
     def get_lock_summary(
-        self, search_path: Optional[Path] = None
+        self,
+        search_path: Path | None = None,
     ) -> ModelGitLockSummary:
         """
         Get a summary of Git locks by type.
@@ -406,7 +409,7 @@ class GitLockManager:
         """
         all_locks = self.find_all_git_locks(search_path)
 
-        by_type_summary: Dict[str, int] = {}
+        by_type_summary: dict[str, int] = {}
         stale_count = 0
 
         for lock in all_locks:
@@ -420,7 +423,9 @@ class GitLockManager:
                 stale_count += 1
 
         return ModelGitLockSummary(
-            total_locks=len(all_locks), stale_locks=stale_count, by_type=by_type_summary
+            total_locks=len(all_locks),
+            stale_locks=stale_count,
+            by_type=by_type_summary,
         )
 
     def set_stale_threshold(self, threshold_seconds: int) -> None:

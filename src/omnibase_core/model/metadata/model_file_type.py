@@ -2,8 +2,6 @@
 Model for file type information used by metadata tools.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field, validator
 
 from .model_metadata_properties import ModelMetadataProperties
@@ -20,22 +18,27 @@ class ModelFileType(BaseModel):
 
     display_name: str = Field(..., description="Human-readable name for the file type")
 
-    extensions: List[str] = Field(
-        ..., description="File extensions associated with this type", min_items=1
+    extensions: list[str] = Field(
+        ...,
+        description="File extensions associated with this type",
+        min_items=1,
     )
 
-    mime_types: List[str] = Field(
-        default_factory=list, description="MIME types for this file type"
+    mime_types: list[str] = Field(
+        default_factory=list,
+        description="MIME types for this file type",
     )
 
     single_line_comment: str = Field(..., description="Single line comment delimiter")
 
-    multi_line_comment_start: Optional[str] = Field(
-        None, description="Multi-line comment start delimiter"
+    multi_line_comment_start: str | None = Field(
+        None,
+        description="Multi-line comment start delimiter",
     )
 
-    multi_line_comment_end: Optional[str] = Field(
-        None, description="Multi-line comment end delimiter"
+    multi_line_comment_end: str | None = Field(
+        None,
+        description="Multi-line comment end delimiter",
     )
 
     metadata_placement: str = Field(
@@ -45,35 +48,45 @@ class ModelFileType(BaseModel):
     )
 
     supports_function_discovery: bool = Field(
-        False, description="Whether this file type supports function/method discovery"
+        False,
+        description="Whether this file type supports function/method discovery",
     )
 
-    language_id: Optional[str] = Field(
-        None, description="Language identifier for syntax highlighting and parsing"
+    language_id: str | None = Field(
+        None,
+        description="Language identifier for syntax highlighting and parsing",
     )
 
-    metadata: Optional[ModelMetadataProperties] = Field(
-        None, description="Additional metadata and configuration"
+    metadata: ModelMetadataProperties | None = Field(
+        None,
+        description="Additional metadata and configuration",
     )
 
     @validator("extensions")
-    def validate_extensions(cls, v):
+    def validate_extensions(self, v):
         """Ensure all extensions start with a dot."""
         for ext in v:
             if not ext.startswith("."):
-                raise ValueError(f"Extension '{ext}' must start with a dot")
+                msg = f"Extension '{ext}' must start with a dot"
+                raise ValueError(msg)
         return v
 
     @validator("multi_line_comment_end")
-    def validate_multi_line_comments(cls, v, values):
+    def validate_multi_line_comments(self, v, values):
         """Ensure both multi-line delimiters are set if one is set."""
         if v and not values.get("multi_line_comment_start"):
-            raise ValueError(
+            msg = (
                 "multi_line_comment_start must be set if multi_line_comment_end is set"
             )
-        if not v and values.get("multi_line_comment_start"):
             raise ValueError(
+                msg,
+            )
+        if not v and values.get("multi_line_comment_start"):
+            msg = (
                 "multi_line_comment_end must be set if multi_line_comment_start is set"
+            )
+            raise ValueError(
+                msg,
             )
         return v
 
@@ -119,6 +132,6 @@ JSON_FILE_TYPE = ModelFileType(
     single_line_comment="//",  # Note: JSON technically doesn't support comments
     language_id="json",
     metadata=ModelMetadataProperties(
-        custom_string_1="JSON does not officially support comments"
+        custom_string_1="JSON does not officially support comments",
     ),
 )

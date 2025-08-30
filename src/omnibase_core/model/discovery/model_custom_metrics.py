@@ -5,8 +5,6 @@ Strongly typed model for custom metrics to replace Dict[str, Any] usage.
 Follows ONEX canonical patterns with zero tolerance for Any types.
 """
 
-from typing import Dict, List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +12,7 @@ class ModelMetricValue(BaseModel):
     """Single metric value with strong typing."""
 
     name: str = Field(..., description="Metric name")
-    value: Union[str, int, float, bool] = Field(..., description="Metric value")
+    value: str | int | float | bool = Field(..., description="Metric value")
     metric_type: str = Field(
         ...,
         description="Metric value type",
@@ -27,31 +25,35 @@ class ModelMetricValue(BaseModel):
                 "counter",
                 "gauge",
                 "histogram",
-            ]
+            ],
         },
     )
-    unit: Optional[str] = Field(
-        None, description="Metric unit (e.g., 'ms', 'bytes', 'percent')"
+    unit: str | None = Field(
+        None,
+        description="Metric unit (e.g., 'ms', 'bytes', 'percent')",
     )
-    tags: List[str] = Field(
-        default_factory=list, description="Metric tags for categorization"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Metric tags for categorization",
     )
 
 
 class ModelCustomMetrics(BaseModel):
     """Custom metrics container with strong typing."""
 
-    metrics: List[ModelMetricValue] = Field(
-        default_factory=list, description="List of typed custom metrics"
+    metrics: list[ModelMetricValue] = Field(
+        default_factory=list,
+        description="List of typed custom metrics",
     )
 
-    def get_metrics_dict(self) -> Dict[str, Union[str, int, float, bool]]:
+    def get_metrics_dict(self) -> dict[str, str | int | float | bool]:
         """Convert to dictionary format for backward compatibility."""
         return {metric.name: metric.value for metric in self.metrics}
 
     @classmethod
     def from_dict(
-        cls, metrics_dict: Dict[str, Union[str, int, float, bool]]
+        cls,
+        metrics_dict: dict[str, str | int | float | bool],
     ) -> "ModelCustomMetrics":
         """Create from dictionary with type inference."""
         metrics = []
@@ -70,7 +72,7 @@ class ModelCustomMetrics(BaseModel):
                 value = str(value)
 
             metrics.append(
-                ModelMetricValue(name=name, value=value, metric_type=metric_type)
+                ModelMetricValue(name=name, value=value, metric_type=metric_type),
             )
 
         return cls(metrics=metrics)

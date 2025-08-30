@@ -2,8 +2,6 @@
 Model for runtime information in introspection metadata.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,13 +12,16 @@ class ModelIntrospectionRuntimeInfo(BaseModel):
     module_path: str = Field(description="Module import path")
     command_pattern: str = Field(description="Command pattern for execution")
     supports_hub: bool = Field(
-        default=False, description="Whether supports hub execution"
+        default=False,
+        description="Whether supports hub execution",
     )
-    available_modes: List[str] = Field(
-        default_factory=list, description="Available execution modes"
+    available_modes: list[str] = Field(
+        default_factory=list,
+        description="Available execution modes",
     )
-    memory_usage_mb: Optional[float] = Field(
-        default=None, description="Memory usage in MB"
+    memory_usage_mb: float | None = Field(
+        default=None,
+        description="Memory usage in MB",
     )
 
     class Config:
@@ -32,5 +33,5 @@ class ModelIntrospectionRuntimeInfo(BaseModel):
                 "supports_hub": True,
                 "available_modes": ["direct", "workflow"],
                 "memory_usage_mb": 128.5,
-            }
+            },
         }

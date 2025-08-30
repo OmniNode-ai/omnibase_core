@@ -2,17 +2,15 @@
 Error utilities for consistent error handling in ONEX system.
 """
 
-from typing import Optional
-
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 
 
 def handle_exception(
     e: Exception,
     source: str,
-    message: Optional[str] = None,
+    message: str | None = None,
     error_code: CoreErrorCode = CoreErrorCode.EXECUTION_ERROR,
-    metadata: Optional[dict] = None,
+    metadata: dict | None = None,
 ) -> OnexError:
     """
     Convert any exception to OnexError for consistent handling.
@@ -32,7 +30,7 @@ def handle_exception(
         return e
 
     # Build error message
-    error_message = message or f"{type(e).__name__}: {str(e)}"
+    error_message = message or f"{type(e).__name__}: {e!s}"
 
     # Build metadata
     error_metadata = {"original_error": type(e).__name__, "original_message": str(e)}

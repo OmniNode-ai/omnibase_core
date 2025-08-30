@@ -61,10 +61,12 @@ class ModelEntityType(BaseModel):
     type_enum: EnumEntityType = Field(..., description="Primary entity type")
     category: str = Field(..., description="High-level category grouping")
     is_abstract: bool = Field(
-        False, description="Whether this is an abstract/conceptual entity"
+        False,
+        description="Whether this is an abstract/conceptual entity",
     )
     requires_implementation: bool = Field(
-        False, description="Whether this entity needs implementation"
+        False,
+        description="Whether this entity needs implementation",
     )
 
     model_config = ConfigDict(frozen=True, validate_assignment=True)

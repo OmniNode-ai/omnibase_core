@@ -5,8 +5,6 @@ This model represents a generated Pydantic model definition,
 including its code, imports, and dependencies.
 """
 
-from typing import Set
-
 from pydantic import BaseModel, Field
 
 
@@ -15,9 +13,11 @@ class ModelDefinition(BaseModel):
 
     name: str = Field(..., description="Name of the model class")
     code: str = Field(..., description="Generated Python code for the model")
-    imports: Set[str] = Field(
-        default_factory=set, description="Set of import statements needed"
+    imports: set[str] = Field(
+        default_factory=set,
+        description="Set of import statements needed",
     )
-    dependencies: Set[str] = Field(
-        default_factory=set, description="Names of other models this depends on"
+    dependencies: set[str] = Field(
+        default_factory=set,
+        description="Names of other models this depends on",
     )

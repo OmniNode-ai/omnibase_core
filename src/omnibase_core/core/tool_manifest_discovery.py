@@ -7,14 +7,14 @@ Discovers and manages tool manifests for automatic service startup and managemen
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.exceptions import OnexError
 
 
@@ -26,8 +26,8 @@ class ToolVersionInfo:
     node_module: str
     contract_path: str
     released: str
-    features: List[str] = None
-    deprecated_on: Optional[str] = None
+    features: list[str] = None
+    deprecated_on: str | None = None
 
 
 @dataclass
@@ -40,15 +40,15 @@ class ToolManifest:
     current_version: str
     tier: int
     classification: str
-    versions: Dict[str, ToolVersionInfo]
-    service_config: Dict
+    versions: dict[str, ToolVersionInfo]
+    service_config: dict
     manifest_path: Path
 
 
 class ToolManifestDiscovery:
     """Service for discovering and managing tool manifests."""
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         """
         Initialize tool manifest discovery.
 
@@ -85,7 +85,7 @@ class ToolManifestDiscovery:
             {"base_path": str(self.base_path)},
         )
 
-    def discover_all_manifests(self) -> List[ToolManifest]:
+    def discover_all_manifests(self) -> list[ToolManifest]:
         """
         Discover all tool manifests in the base path.
 
@@ -132,7 +132,7 @@ class ToolManifestDiscovery:
 
         return manifests
 
-    def discover_by_domain(self, domain: str) -> List[ToolManifest]:
+    def discover_by_domain(self, domain: str) -> list[ToolManifest]:
         """
         Discover tool manifests for a specific domain.
 
@@ -157,7 +157,7 @@ class ToolManifestDiscovery:
 
         return domain_manifests
 
-    def get_active_tools(self, domain: Optional[str] = None) -> List[ToolManifest]:
+    def get_active_tools(self, domain: str | None = None) -> list[ToolManifest]:
         """
         Get all tools with auto_start enabled.
 
@@ -205,7 +205,7 @@ class ToolManifestDiscovery:
             Parsed ToolManifest object
         """
         try:
-            with open(manifest_path, "r") as f:
+            with open(manifest_path) as f:
                 data = yaml.safe_load(f)
 
             # Parse tool metadata
@@ -224,7 +224,7 @@ class ToolManifestDiscovery:
                 )
 
             # Create manifest object
-            manifest = ToolManifest(
+            return ToolManifest(
                 name=tool_meta["name"],
                 domain=tool_meta["domain"],
                 description=tool_meta["description"],
@@ -236,12 +236,10 @@ class ToolManifestDiscovery:
                 manifest_path=manifest_path,
             )
 
-            return manifest
-
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to parse tool manifest: {str(e)}",
+                message=f"Failed to parse tool manifest: {e!s}",
                 details={
                     "manifest_path": str(manifest_path),
                     "error_type": type(e).__name__,
@@ -256,7 +254,9 @@ def main():
     parser = argparse.ArgumentParser(description="Discover ONEX tool manifests")
     parser.add_argument("--domain", help="Filter by domain")
     parser.add_argument(
-        "--active-only", action="store_true", help="Show only auto-start tools"
+        "--active-only",
+        action="store_true",
+        help="Show only auto-start tools",
     )
     parser.add_argument("--base-path", help="Base path to search for tools")
 
@@ -275,16 +275,9 @@ def main():
         manifests = discovery.discover_all_manifests()
 
     # Display results
-    print(f"\n📋 Found {len(manifests)} tool manifests:")
     for manifest in manifests:
-        current_version_info = manifest.versions[manifest.current_version]
-        auto_start = "🚀" if manifest.service_config.get("auto_start") else "⏹️"
-        print(
-            f"  {auto_start} {manifest.name} ({manifest.domain}) - {manifest.current_version} [{current_version_info.status}]"
-        )
-        print(f"     {manifest.description}")
-        print(f"     Module: {current_version_info.node_module}")
-        print()
+        manifest.versions[manifest.current_version]
+        "🚀" if manifest.service_config.get("auto_start") else "⏹️"
 
 
 if __name__ == "__main__":

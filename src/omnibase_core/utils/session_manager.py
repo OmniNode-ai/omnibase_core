@@ -6,9 +6,8 @@ Provides thread-safe session management with proper isolation.
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -37,12 +36,12 @@ class ModelSessionConfig(BaseModel):
 class ThreadSafeSessionManager:
     """Thread-safe session manager with proper isolation."""
 
-    def __init__(self, config: Optional[ModelSessionConfig] = None):
+    def __init__(self, config: ModelSessionConfig | None = None):
         """Initialize the session manager."""
         self.config = config or ModelSessionConfig()
         self._sessions: dict[str, ModelMCPSession] = {}
         self._lock = asyncio.Lock()
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task: asyncio.Task | None = None
         self.logger = logger
 
     async def start(self) -> None:
@@ -55,14 +54,12 @@ class ThreadSafeSessionManager:
         """Stop the session manager and cleanup task."""
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
             self._cleanup_task = None
             self.logger.info("Session manager stopped")
 
-    async def create_session(self, session_id: Optional[str] = None) -> ModelMCPSession:
+    async def create_session(self, session_id: str | None = None) -> ModelMCPSession:
         """
         Create a new session with proper isolation.
 
@@ -104,7 +101,7 @@ class ThreadSafeSessionManager:
             self.logger.info(f"Created session: {session_id}")
             return session
 
-    async def get_session(self, session_id: str) -> Optional[ModelMCPSession]:
+    async def get_session(self, session_id: str) -> ModelMCPSession | None:
         """
         Get a session by ID with thread safety.
 
@@ -183,7 +180,7 @@ class ThreadSafeSessionManager:
             return len(self._sessions)
 
     @asynccontextmanager
-    async def session_context(self, session_id: Optional[str] = None):
+    async def session_context(self, session_id: str | None = None):
         """
         Context manager for session operations.
 
@@ -246,11 +243,11 @@ class ThreadSafeSessionManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in cleanup loop: {e}")
+                self.logger.exception(f"Error in cleanup loop: {e}")
 
 
 # Global instance
-_session_manager: Optional[ThreadSafeSessionManager] = None
+_session_manager: ThreadSafeSessionManager | None = None
 
 
 def get_session_manager() -> ThreadSafeSessionManager:

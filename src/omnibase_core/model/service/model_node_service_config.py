@@ -9,24 +9,17 @@ Author: OmniNode Team
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.model.service.model_event_bus_config import \
-    ModelEventBusConfig
-from omnibase_core.model.service.model_health_check_config import \
-    ModelHealthCheckConfig
+from omnibase_core.model.service.model_event_bus_config import ModelEventBusConfig
+from omnibase_core.model.service.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.model.service.model_log_level_enum import ModelLogLevelEnum
-from omnibase_core.model.service.model_monitoring_config import \
-    ModelMonitoringConfig
+from omnibase_core.model.service.model_monitoring_config import ModelMonitoringConfig
 from omnibase_core.model.service.model_network_config import ModelNetworkConfig
-from omnibase_core.model.service.model_resource_limits import \
-    ModelResourceLimits
-from omnibase_core.model.service.model_security_config import \
-    ModelSecurityConfig
-from omnibase_core.model.service.model_service_mode_enum import \
-    ModelServiceModeEnum
+from omnibase_core.model.service.model_resource_limits import ModelResourceLimits
+from omnibase_core.model.service.model_security_config import ModelSecurityConfig
+from omnibase_core.model.service.model_service_mode_enum import ModelServiceModeEnum
 
 # Note: All sub-models have been moved to separate files following ONEX standards
 
@@ -43,72 +36,86 @@ class ModelNodeServiceConfig(BaseModel):
     node_name: str = Field(..., description="Name of the ONEX node", min_length=1)
     node_version: str = Field("1.0.0", description="Version of the node")
     service_mode: ModelServiceModeEnum = Field(
-        ModelServiceModeEnum.STANDALONE, description="Service deployment mode"
+        ModelServiceModeEnum.STANDALONE,
+        description="Service deployment mode",
     )
 
     # Environment and runtime
-    node_id: Optional[str] = Field(
-        None, description="Override node ID for service instance"
+    node_id: str | None = Field(
+        None,
+        description="Override node ID for service instance",
     )
     log_level: ModelLogLevelEnum = Field(
-        ModelLogLevelEnum.INFO, description="Logging level"
+        ModelLogLevelEnum.INFO,
+        description="Logging level",
     )
     debug_mode: bool = Field(False, description="Enable debug mode")
 
     # Event bus configuration
     event_bus: ModelEventBusConfig = Field(
-        default_factory=ModelEventBusConfig, description="Event bus configuration"
+        default_factory=ModelEventBusConfig,
+        description="Event bus configuration",
     )
 
     # Network and deployment
     network: ModelNetworkConfig = Field(
-        default_factory=ModelNetworkConfig, description="Network configuration"
+        default_factory=ModelNetworkConfig,
+        description="Network configuration",
     )
 
     # Health monitoring
     health_check: ModelHealthCheckConfig = Field(
-        default_factory=ModelHealthCheckConfig, description="Health check configuration"
+        default_factory=ModelHealthCheckConfig,
+        description="Health check configuration",
     )
 
     # Security
     security: ModelSecurityConfig = Field(
-        default_factory=ModelSecurityConfig, description="Security configuration"
+        default_factory=ModelSecurityConfig,
+        description="Security configuration",
     )
 
     # Monitoring and observability
     monitoring: ModelMonitoringConfig = Field(
-        default_factory=ModelMonitoringConfig, description="Monitoring configuration"
+        default_factory=ModelMonitoringConfig,
+        description="Monitoring configuration",
     )
 
     # Resource management
-    resources: Optional[ModelResourceLimits] = Field(
-        None, description="Resource limits for deployment"
+    resources: ModelResourceLimits | None = Field(
+        None,
+        description="Resource limits for deployment",
     )
 
     # Environment variables for container deployment
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Additional environment variables"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional environment variables",
     )
 
     # Docker-specific configuration
-    docker_image: Optional[str] = Field(
-        None, description="Docker image name for containerized deployment"
+    docker_image: str | None = Field(
+        None,
+        description="Docker image name for containerized deployment",
     )
-    docker_tag: Optional[str] = Field("latest", description="Docker image tag")
-    docker_registry: Optional[str] = Field(None, description="Docker registry URL")
+    docker_tag: str | None = Field("latest", description="Docker image tag")
+    docker_registry: str | None = Field(None, description="Docker registry URL")
 
     # Kubernetes-specific configuration
     kubernetes_namespace: str = Field("default", description="Kubernetes namespace")
-    kubernetes_service_account: Optional[str] = Field(
-        None, description="Kubernetes service account"
+    kubernetes_service_account: str | None = Field(
+        None,
+        description="Kubernetes service account",
     )
 
     # Compose-specific configuration
-    compose_project_name: Optional[str] = Field(
-        None, description="Docker Compose project name"
+    compose_project_name: str | None = Field(
+        None,
+        description="Docker Compose project name",
     )
-    depends_on: List[str] = Field(
-        default_factory=list, description="Service dependencies"
+    depends_on: list[str] = Field(
+        default_factory=list,
+        description="Service dependencies",
     )
 
     @field_validator("node_name")
@@ -116,8 +123,9 @@ class ModelNodeServiceConfig(BaseModel):
     def validate_node_name(cls, v: str) -> str:
         """Validate node name format."""
         if not v.replace("_", "").replace("-", "").isalnum():
+            msg = "Node name must contain only alphanumeric characters, hyphens, and underscores"
             raise ValueError(
-                "Node name must contain only alphanumeric characters, hyphens, and underscores"
+                msg,
             )
         return v
 
@@ -128,7 +136,8 @@ class ModelNodeServiceConfig(BaseModel):
         metrics_port = self.monitoring.metrics_port if self.monitoring else None
 
         if network_port and metrics_port and network_port == metrics_port:
-            raise ValueError("Network port and metrics port cannot be the same")
+            msg = "Network port and metrics port cannot be the same"
+            raise ValueError(msg)
 
         return self
 
@@ -145,7 +154,7 @@ class ModelNodeServiceConfig(BaseModel):
         )
         return f"{self.node_name}_service{mode_suffix}"
 
-    def get_environment_dict(self) -> Dict[str, str]:
+    def get_environment_dict(self) -> dict[str, str]:
         """Get complete environment variables for deployment."""
         env = {
             "NODE_NAME": self.node_name,
@@ -178,7 +187,7 @@ class ModelNodeServiceConfig(BaseModel):
 
         return env
 
-    def get_docker_labels(self) -> Dict[str, str]:
+    def get_docker_labels(self) -> dict[str, str]:
         """Get Docker labels for the service."""
         return {
             "onex.node.name": self.node_name,
@@ -187,7 +196,7 @@ class ModelNodeServiceConfig(BaseModel):
             "onex.service.type": "node_service",
         }
 
-    def get_kubernetes_labels(self) -> Dict[str, str]:
+    def get_kubernetes_labels(self) -> dict[str, str]:
         """Get Kubernetes labels for the service."""
         return {
             "app": self.node_name,
@@ -196,7 +205,7 @@ class ModelNodeServiceConfig(BaseModel):
             "service-mode": self.service_mode.value,
         }
 
-    def get_health_check_command(self) -> List[str]:
+    def get_health_check_command(self) -> list[str]:
         """Get health check command for container deployment."""
         url = f"http://localhost:{self.network.port}{self.health_check.endpoint}"
         return ["curl", "-f", url]
@@ -277,7 +286,7 @@ class ModelNodeServiceConfig(BaseModel):
                     "ca_file": (
                         Path(ca_file) if (ca_file := os.getenv("TLS_CA_FILE")) else None
                     ),
-                }
+                },
             )
 
         # Build complete configuration
@@ -309,7 +318,7 @@ class ModelNodeServiceConfig(BaseModel):
             "docker_image": "onex/node-registry",
             "network": ModelNetworkConfig(port=8081),  # Registry-specific port
             "monitoring": ModelMonitoringConfig(
-                metrics_port=9091
+                metrics_port=9091,
             ),  # Registry-specific metrics port
             "depends_on": ["event-bus"],  # Registry depends on event bus
         }

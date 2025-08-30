@@ -20,15 +20,15 @@ import importlib
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.decorators import allow_any_type
 
 from .models.model_tool_discovery_config import ModelToolDiscoveryConfig
@@ -36,7 +36,7 @@ from .models.model_tool_discovery_result import ModelToolDiscoveryResult
 
 
 @allow_any_type(
-    "Service interfaces require Any types for generic tool and registry handling"
+    "Service interfaces require Any types for generic tool and registry handling",
 )
 class ToolDiscoveryService:
     """
@@ -53,7 +53,7 @@ class ToolDiscoveryService:
     This service implements the ProtocolToolDiscoveryService interface for duck typing.
     """
 
-    def __init__(self, config: Optional[ModelToolDiscoveryConfig] = None):
+    def __init__(self, config: ModelToolDiscoveryConfig | None = None):
         """
         Initialize tool discovery service with configuration.
 
@@ -61,9 +61,9 @@ class ToolDiscoveryService:
             config: Optional configuration for tool discovery operations
         """
         self._config = config or ModelToolDiscoveryConfig()
-        self._module_cache: Dict[str, Any] = {}
-        self._tool_cache: Dict[str, Any] = {}
-        self._validation_cache: Dict[str, bool] = {}
+        self._module_cache: dict[str, Any] = {}
+        self._tool_cache: dict[str, Any] = {}
+        self._validation_cache: dict[str, bool] = {}
 
     @allow_any_type("Registry parameter must accept any registry type for duck typing")
     def resolve_tool_from_contract(
@@ -110,47 +110,46 @@ class ToolDiscoveryService:
                 and registry._is_phase_0_container
             ):
                 result = self._resolve_tool_from_module(
-                    main_tool_class_name, registry, contract_path
+                    main_tool_class_name,
+                    registry,
+                    contract_path,
                 )
                 result.total_time_ms = (time.time() - start_time) * 1000
                 return result
 
             # Try legacy registry pattern
-            elif hasattr(registry, "get_tool"):
+            if hasattr(registry, "get_tool"):
                 result = self._resolve_tool_from_registry(
-                    main_tool_class_name, registry, contract_path
+                    main_tool_class_name,
+                    registry,
+                    contract_path,
                 )
                 result.total_time_ms = (time.time() - start_time) * 1000
                 return result
 
-            else:
-                raise OnexError(
-                    code=CoreErrorCode.TOOL_NOT_FOUND,
-                    message=f"No resolution method available for tool '{main_tool_class_name}'",
-                    details={
-                        "tool_class": main_tool_class_name,
-                        "registry_type": type(registry).__name__,
-                        "available_methods": [
-                            (
-                                "phase_0_container"
-                                if hasattr(registry, "_is_phase_0_container")
-                                else None
-                            ),
-                            (
-                                "legacy_registry"
-                                if hasattr(registry, "get_tool")
-                                else None
-                            ),
-                        ],
-                    },
-                )
+            raise OnexError(
+                code=CoreErrorCode.TOOL_NOT_FOUND,
+                message=f"No resolution method available for tool '{main_tool_class_name}'",
+                details={
+                    "tool_class": main_tool_class_name,
+                    "registry_type": type(registry).__name__,
+                    "available_methods": [
+                        (
+                            "phase_0_container"
+                            if hasattr(registry, "_is_phase_0_container")
+                            else None
+                        ),
+                        ("legacy_registry" if hasattr(registry, "get_tool") else None),
+                    ],
+                },
+            )
 
         except Exception as e:
             if isinstance(e, OnexError):
                 raise
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to resolve tool from contract: {str(e)}",
+                message=f"Failed to resolve tool from contract: {e!s}",
                 context={
                     "tool_class": getattr(
                         contract_content.tool_specification,
@@ -189,7 +188,8 @@ class ToolDiscoveryService:
 
         # Import module and get tool class
         tool_class = self.discover_tool_class_from_module(
-            module_path, main_tool_class_name
+            module_path,
+            main_tool_class_name,
         )
 
         module_import_time = (time.time() - module_import_start) * 1000
@@ -197,7 +197,8 @@ class ToolDiscoveryService:
         # Instantiate tool with container
         instantiation_start = time.time()
         tool_instance = self.instantiate_tool_with_container(
-            tool_class, registry._container
+            tool_class,
+            registry._container,
         )
         instantiation_time = (time.time() - instantiation_start) * 1000
 
@@ -271,7 +272,7 @@ class ToolDiscoveryService:
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.WARNING,
-                    f"Failed to list available tools: {str(e)}",
+                    f"Failed to list available tools: {e!s}",
                     {"error": str(e)},
                 )
 
@@ -316,7 +317,7 @@ class ToolDiscoveryService:
         self,
         module_path: str,
         tool_class_name: str,
-    ) -> Type:
+    ) -> type:
         """
         Discover tool class from module path.
 
@@ -417,7 +418,7 @@ class ToolDiscoveryService:
 
     def instantiate_tool_with_container(
         self,
-        tool_class: Type,
+        tool_class: type,
         container: Any,
     ) -> Any:
         """
@@ -512,7 +513,7 @@ class ToolDiscoveryService:
 
             if src_index > 0:
                 # Build module path from parts after 'src/'
-                module_parts = list(node_dir.parts[src_index:]) + ["node"]
+                module_parts = [*list(node_dir.parts[src_index:]), "node"]
                 module_path = ".".join(module_parts)
             else:
                 # Fallback to trying to construct from full path
@@ -533,7 +534,7 @@ class ToolDiscoveryService:
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Failed to build module path from contract: {str(e)}",
+                message=f"Failed to build module path from contract: {e!s}",
                 details={
                     "contract_path": str(contract_path),
                     "error": str(e),

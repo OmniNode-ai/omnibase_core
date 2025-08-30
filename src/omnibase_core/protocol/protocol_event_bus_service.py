@@ -6,7 +6,7 @@ Defines the required interface that all event bus service implementations must f
 This ensures consistency and prevents runtime errors from missing methods.
 """
 
-from typing import Any, List, Protocol
+from typing import Any, Protocol
 
 
 class ProtocolEventBusService(Protocol):
@@ -62,7 +62,7 @@ class ProtocolEventBusService(Protocol):
         """
         ...
 
-    def list_nodes(self) -> List[str]:
+    def list_nodes(self) -> list[str]:
         """
         List the names of all nodes connected to this event bus service.
 

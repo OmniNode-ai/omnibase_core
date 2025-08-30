@@ -4,8 +4,6 @@ Resource Limits Model
 Type-safe resource limits configuration for environments and execution contexts.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,57 +15,84 @@ class ModelResourceLimits(BaseModel):
     and other system resources.
     """
 
-    cpu_cores: Optional[float] = Field(
-        None, description="CPU core limit (e.g., 2.5 cores)", ge=0.1, le=1000.0
+    cpu_cores: float | None = Field(
+        None,
+        description="CPU core limit (e.g., 2.5 cores)",
+        ge=0.1,
+        le=1000.0,
     )
 
-    memory_mb: Optional[int] = Field(
-        None, description="Memory limit in megabytes", ge=1, le=1048576  # 1TB max
+    memory_mb: int | None = Field(
+        None,
+        description="Memory limit in megabytes",
+        ge=1,
+        le=1048576,  # 1TB max
     )
 
-    storage_gb: Optional[float] = Field(
-        None, description="Storage limit in gigabytes", ge=0.1, le=100000.0  # 100TB max
+    storage_gb: float | None = Field(
+        None,
+        description="Storage limit in gigabytes",
+        ge=0.1,
+        le=100000.0,  # 100TB max
     )
 
-    max_file_descriptors: Optional[int] = Field(
-        None, description="Maximum number of open file descriptors", ge=10, le=1000000
+    max_file_descriptors: int | None = Field(
+        None,
+        description="Maximum number of open file descriptors",
+        ge=10,
+        le=1000000,
     )
 
-    max_processes: Optional[int] = Field(
-        None, description="Maximum number of processes", ge=1, le=100000
+    max_processes: int | None = Field(
+        None,
+        description="Maximum number of processes",
+        ge=1,
+        le=100000,
     )
 
-    max_threads: Optional[int] = Field(
-        None, description="Maximum number of threads", ge=1, le=100000
+    max_threads: int | None = Field(
+        None,
+        description="Maximum number of threads",
+        ge=1,
+        le=100000,
     )
 
-    network_bandwidth_mbps: Optional[float] = Field(
+    network_bandwidth_mbps: float | None = Field(
         None,
         description="Network bandwidth limit in megabits per second",
         ge=0.1,
         le=100000.0,  # 100Gbps max
     )
 
-    max_connections: Optional[int] = Field(
-        None, description="Maximum number of network connections", ge=1, le=1000000
+    max_connections: int | None = Field(
+        None,
+        description="Maximum number of network connections",
+        ge=1,
+        le=1000000,
     )
 
-    max_requests_per_second: Optional[float] = Field(
-        None, description="Maximum requests per second", ge=0.1, le=1000000.0
+    max_requests_per_second: float | None = Field(
+        None,
+        description="Maximum requests per second",
+        ge=0.1,
+        le=1000000.0,
     )
 
-    execution_time_seconds: Optional[int] = Field(
+    execution_time_seconds: int | None = Field(
         None,
         description="Maximum execution time in seconds",
         ge=1,
         le=86400,  # 24 hours max
     )
 
-    queue_size: Optional[int] = Field(
-        None, description="Maximum queue size for pending operations", ge=1, le=1000000
+    queue_size: int | None = Field(
+        None,
+        description="Maximum queue size for pending operations",
+        ge=1,
+        le=1000000,
     )
 
-    max_retries: Optional[int] = Field(
+    max_retries: int | None = Field(
         None,
         description="Maximum number of retries for failed operations",
         ge=0,
@@ -90,13 +115,13 @@ class ModelResourceLimits(BaseModel):
         """Check if network bandwidth limit is set."""
         return self.network_bandwidth_mbps is not None
 
-    def get_memory_gb(self) -> Optional[float]:
+    def get_memory_gb(self) -> float | None:
         """Get memory limit in gigabytes."""
         if self.memory_mb is None:
             return None
         return self.memory_mb / 1024.0
 
-    def get_storage_mb(self) -> Optional[float]:
+    def get_storage_mb(self) -> float | None:
         """Get storage limit in megabytes."""
         if self.storage_gb is None:
             return None
@@ -118,7 +143,7 @@ class ModelResourceLimits(BaseModel):
                 self.execution_time_seconds is not None,
                 self.queue_size is not None,
                 self.max_retries is not None,
-            ]
+            ],
         )
 
     @classmethod

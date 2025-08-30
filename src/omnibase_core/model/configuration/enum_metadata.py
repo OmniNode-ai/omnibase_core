@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List
 
 
 class NodeMetadataField(str, Enum):
@@ -45,7 +44,7 @@ class NodeMetadataField(str, Enum):
     TOOLS = "tools"
 
     @classmethod
-    def required(cls) -> List["NodeMetadataField"]:
+    def required(cls) -> list["NodeMetadataField"]:
         return [
             cls.METADATA_VERSION,
             cls.PROTOCOL_VERSION,
@@ -65,7 +64,7 @@ class NodeMetadataField(str, Enum):
         ]
 
     @classmethod
-    def optional(cls) -> List["NodeMetadataField"]:
+    def optional(cls) -> list["NodeMetadataField"]:
         return [
             cls.DESCRIPTION,
             cls.STATE_CONTRACT,

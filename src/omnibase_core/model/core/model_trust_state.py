@@ -6,7 +6,6 @@ rich metadata for trust verification and management.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,17 +21,21 @@ class ModelTrustState(BaseModel):
     """
 
     trust_level: str = Field(
-        ..., description="Trust level identifier", pattern="^[a-z][a-z0-9_]*$"
+        ...,
+        description="Trust level identifier",
+        pattern="^[a-z][a-z0-9_]*$",
     )
     trust_score: float = Field(..., description="Numeric trust score", ge=0.0, le=1.0)
-    verification_methods: List[ModelVerificationMethod] = Field(
-        default_factory=list, description="Methods used to verify trust"
+    verification_methods: list[ModelVerificationMethod] = Field(
+        default_factory=list,
+        description="Methods used to verify trust",
     )
-    last_verified: Optional[datetime] = Field(
-        None, description="Last verification timestamp"
+    last_verified: datetime | None = Field(
+        None,
+        description="Last verification timestamp",
     )
-    expires_at: Optional[datetime] = Field(None, description="When trust expires")
-    issuer: Optional[str] = Field(None, description="Trust issuer identifier")
+    expires_at: datetime | None = Field(None, description="When trust expires")
+    issuer: str | None = Field(None, description="Trust issuer identifier")
     revocable: bool = Field(default=True, description="Whether trust can be revoked")
 
     def is_trusted(self, threshold: float = 0.5) -> bool:

@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import TYPE_CHECKING, Any, Protocol, Tuple, Union
+from typing import TYPE_CHECKING, Any, Protocol, Union
 
 from omnibase_core.enums import NodeMetadataField
 
@@ -44,7 +44,7 @@ class ProtocolCanonicalSerializer(Protocol):
     def canonicalize_metadata_block(
         self,
         block: Union[dict[str, Any], "NodeMetadataBlock"],
-        volatile_fields: Tuple[NodeMetadataField, ...] = (
+        volatile_fields: tuple[NodeMetadataField, ...] = (
             NodeMetadataField.HASH,
             NodeMetadataField.LAST_MODIFIED_AT,
         ),
@@ -73,7 +73,7 @@ class ProtocolCanonicalSerializer(Protocol):
         self,
         block: Union[dict[str, Any], "NodeMetadataBlock"],
         body: str,
-        volatile_fields: Tuple[NodeMetadataField, ...] = (
+        volatile_fields: tuple[NodeMetadataField, ...] = (
             NodeMetadataField.HASH,
             NodeMetadataField.LAST_MODIFIED_AT,
         ),

@@ -2,8 +2,6 @@
 Input state model for naming convention conversion operations.
 """
 
-from typing import Optional
-
 from pydantic import Field
 
 from omnibase_core.model.core.model_onex_base_state import ModelOnexInputState
@@ -14,6 +12,7 @@ class ModelNamingConventionInputState(ModelOnexInputState):
 
     input_string: str = Field(..., description="String to convert")
     target_convention: str = Field(
-        ..., description="Target convention (pascal_case, snake_case, etc.)"
+        ...,
+        description="Target convention (pascal_case, snake_case, etc.)",
     )
-    source_convention: Optional[str] = Field(None, description="Source convention hint")
+    source_convention: str | None = Field(None, description="Source convention hint")

@@ -5,7 +5,7 @@ Health metadata model for storing additional health system configuration,
 environment context, and custom attributes.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -28,27 +28,37 @@ class ModelHealthMetadata(BaseModel):
     version: str = Field(default="1.0.0", description="Health system version")
 
     check_interval_seconds: int = Field(
-        default=30, description="Health check interval in seconds", ge=1, le=3600
+        default=30,
+        description="Health check interval in seconds",
+        ge=1,
+        le=3600,
     )
 
     auto_healing_enabled: bool = Field(
-        default=True, description="Whether auto-healing mechanisms are enabled"
+        default=True,
+        description="Whether auto-healing mechanisms are enabled",
     )
 
     maintenance_mode: bool = Field(
-        default=False, description="Whether system is in maintenance mode"
+        default=False,
+        description="Whether system is in maintenance mode",
     )
 
     notification_enabled: bool = Field(
-        default=True, description="Whether health notifications are enabled"
+        default=True,
+        description="Whether health notifications are enabled",
     )
 
     escalation_enabled: bool = Field(
-        default=True, description="Whether issue escalation is enabled"
+        default=True,
+        description="Whether issue escalation is enabled",
     )
 
     max_issue_retention_days: int = Field(
-        default=30, description="Maximum days to retain resolved issues", ge=1, le=365
+        default=30,
+        description="Maximum days to retain resolved issues",
+        ge=1,
+        le=365,
     )
 
     health_score_algorithm: str = Field(
@@ -57,8 +67,9 @@ class ModelHealthMetadata(BaseModel):
         pattern="^(simple|weighted|custom)$",
     )
 
-    custom_attributes: Optional[ModelHealthAttributes] = Field(
-        None, description="Custom health attributes for extensibility"
+    custom_attributes: ModelHealthAttributes | None = Field(
+        None,
+        description="Custom health attributes for extensibility",
     )
 
     def is_production_environment(self) -> bool:

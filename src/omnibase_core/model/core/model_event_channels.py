@@ -2,20 +2,19 @@
 Event channels model for node introspection.
 """
 
-from typing import List
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelEventChannels(BaseModel):
     """Model for event channel specification in introspection."""
 
-    subscribes_to: List[str] = Field(
+    subscribes_to: list[str] = Field(
         default_factory=list,
         description="Event channels this node subscribes to for receiving events",
     )
-    publishes_to: List[str] = Field(
-        default_factory=list, description="Event channels this node publishes events to"
+    publishes_to: list[str] = Field(
+        default_factory=list,
+        description="Event channels this node publishes events to",
     )
 
     model_config = ConfigDict(
@@ -33,7 +32,7 @@ class ModelEventChannels(BaseModel):
                         "onex.registry.update",
                         "onex.node.status",
                     ],
-                }
-            ]
+                },
+            ],
         },
     )

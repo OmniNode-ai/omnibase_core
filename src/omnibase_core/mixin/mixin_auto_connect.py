@@ -5,17 +5,20 @@
 
 import json
 import time
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from omnibase_core.model.configuration.model_event_bus_config import \
-    ModelModelEventBusConfig
-from omnibase_core.model.core.model_event_type import \
-    create_event_type_from_string
+from omnibase_core.model.configuration.model_event_bus_config import (
+    ModelModelEventBusConfig,
+)
+from omnibase_core.model.core.model_event_type import create_event_type_from_string
 from omnibase_core.model.core.model_onex_event import OnexEvent
-from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.registry.registry_bootstrap import \
-    BootstrapRegistry
-from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
+from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.registry.registry_bootstrap import (
+    BootstrapRegistry,
+)
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
+
+if TYPE_CHECKING:
+    from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 
 class AutoConnectMixin:
@@ -42,8 +45,8 @@ class AutoConnectMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._event_bus: Optional[ProtocolEventBus] = None
-        self._auto_connect_config: Optional[Dict[str, Any]] = None
+        self._event_bus: ProtocolEventBus | None = None
+        self._auto_connect_config: dict[str, Any] | None = None
         self._connection_retries = 0
         self._max_retries = 3
         self._retry_delay = 5.0  # seconds
@@ -51,7 +54,7 @@ class AutoConnectMixin:
     def auto_connect_to_kafka(
         self,
         kafka_bootstrap_servers: str = "localhost:9092",
-        logger: Optional[ProtocolLogger] = None,
+        logger: ProtocolLogger | None = None,
         max_retries: int = 3,
         retry_delay: float = 5.0,
     ) -> bool:
@@ -72,20 +75,21 @@ class AutoConnectMixin:
 
         if logger:
             logger.log(
-                f"[AutoConnect] Attempting Kafka connection to {kafka_bootstrap_servers}"
+                f"[AutoConnect] Attempting Kafka connection to {kafka_bootstrap_servers}",
             )
 
         for attempt in range(max_retries + 1):
             try:
                 # Create bootstrap registry for minimal connection
                 bootstrap_registry = BootstrapRegistry(
-                    kafka_bootstrap_servers=kafka_bootstrap_servers, logger=logger
+                    kafka_bootstrap_servers=kafka_bootstrap_servers,
+                    logger=logger,
                 )
 
                 if not bootstrap_registry.validate_bootstrap_readiness():
                     if logger:
                         logger.log(
-                            f"[AutoConnect] Bootstrap registry not ready, attempt {attempt + 1}/{max_retries + 1}"
+                            f"[AutoConnect] Bootstrap registry not ready, attempt {attempt + 1}/{max_retries + 1}",
                         )
                     if attempt < max_retries:
                         time.sleep(retry_delay)
@@ -97,7 +101,7 @@ class AutoConnectMixin:
                 if not kafka_tool:
                     if logger:
                         logger.log(
-                            "[AutoConnect] Kafka tool not available in bootstrap registry"
+                            "[AutoConnect] Kafka tool not available in bootstrap registry",
                         )
                     return False
 
@@ -117,7 +121,7 @@ class AutoConnectMixin:
 
                 if logger:
                     logger.log(
-                        f"[AutoConnect] Successfully connected to Kafka on attempt {attempt + 1}"
+                        f"[AutoConnect] Successfully connected to Kafka on attempt {attempt + 1}",
                     )
 
                 # Publish node announcement to discovery channel
@@ -129,25 +133,25 @@ class AutoConnectMixin:
                 self._connection_retries = attempt + 1
                 if logger:
                     logger.log(
-                        f"[AutoConnect] Connection attempt {attempt + 1} failed: {str(e)}"
+                        f"[AutoConnect] Connection attempt {attempt + 1} failed: {e!s}",
                     )
 
                 if attempt < max_retries:
                     if logger:
                         logger.log(
-                            f"[AutoConnect] Retrying in {retry_delay} seconds..."
+                            f"[AutoConnect] Retrying in {retry_delay} seconds...",
                         )
                     time.sleep(retry_delay)
                 else:
                     if logger:
                         logger.log(
-                            f"[AutoConnect] All {max_retries + 1} connection attempts failed"
+                            f"[AutoConnect] All {max_retries + 1} connection attempts failed",
                         )
                     return False
 
         return False
 
-    def _publish_node_announcement(self, logger: Optional[ProtocolLogger] = None):
+    def _publish_node_announcement(self, logger: ProtocolLogger | None = None):
         """
         Publish node announcement to universal discovery channel.
 
@@ -157,7 +161,7 @@ class AutoConnectMixin:
         if not self._event_bus:
             if logger:
                 logger.log(
-                    "[AutoConnect] Cannot publish announcement - no event bus connection"
+                    "[AutoConnect] Cannot publish announcement - no event bus connection",
                 )
             return
 
@@ -176,24 +180,25 @@ class AutoConnectMixin:
 
             # Publish to universal discovery channel
             self._event_bus.publish(
-                "onex.discovery.broadcast", discovery_event.model_dump()
+                "onex.discovery.broadcast",
+                discovery_event.model_dump(),
             )
 
             if logger:
                 logger.log(
-                    "[AutoConnect] Published node announcement to discovery channel"
+                    "[AutoConnect] Published node announcement to discovery channel",
                 )
                 logger.log(
-                    f"[AutoConnect] Announcement data: {json.dumps(announcement_data, indent=2)}"
+                    f"[AutoConnect] Announcement data: {json.dumps(announcement_data, indent=2)}",
                 )
 
         except Exception as e:
             if logger:
                 logger.log(
-                    f"[AutoConnect] Failed to publish node announcement: {str(e)}"
+                    f"[AutoConnect] Failed to publish node announcement: {e!s}",
                 )
 
-    def get_node_announcement(self) -> Dict[str, Any]:
+    def get_node_announcement(self) -> dict[str, Any]:
         """
         Get node announcement data for discovery.
 
@@ -220,7 +225,7 @@ class AutoConnectMixin:
             "event_channels": self._get_node_event_channels(),
         }
 
-    def _get_node_event_channels(self) -> Dict[str, List[str]]:
+    def _get_node_event_channels(self) -> dict[str, list[str]]:
         """
         Get event channels for this node.
 
@@ -240,7 +245,7 @@ class AutoConnectMixin:
             "publishes_to": ["onex.discovery.response"],
         }
 
-    def get_auto_connect_status(self) -> Dict[str, Any]:
+    def get_auto_connect_status(self) -> dict[str, Any]:
         """
         Get auto-connect status information.
 
@@ -257,7 +262,7 @@ class AutoConnectMixin:
             ),
         }
 
-    def disconnect_from_kafka(self, logger: Optional[ProtocolLogger] = None):
+    def disconnect_from_kafka(self, logger: ProtocolLogger | None = None):
         """
         Disconnect from Kafka event bus.
 
@@ -276,7 +281,8 @@ class AutoConnectMixin:
                 )
 
                 self._event_bus.publish(
-                    "onex.discovery.broadcast", disconnect_event.model_dump()
+                    "onex.discovery.broadcast",
+                    disconnect_event.model_dump(),
                 )
 
                 if logger:
@@ -285,7 +291,7 @@ class AutoConnectMixin:
             except Exception as e:
                 if logger:
                     logger.log(
-                        f"[AutoConnect] Failed to publish disconnect announcement: {str(e)}"
+                        f"[AutoConnect] Failed to publish disconnect announcement: {e!s}",
                     )
 
             finally:

@@ -6,12 +6,12 @@ Provides consistent AST generation across all ONEX tools.
 """
 
 import ast
-from typing import Dict, List, Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.model.core.model_schema import ModelSchema
 
 
@@ -39,7 +39,10 @@ class UtilityASTBuilder:
         self.reference_resolver = reference_resolver
 
     def generate_model_class(
-        self, class_name: str, schema: ModelSchema, base_class: str = "BaseModel"
+        self,
+        class_name: str,
+        schema: ModelSchema,
+        base_class: str = "BaseModel",
     ) -> ast.ClassDef:
         """
         Generate a Pydantic model class from a schema definition.
@@ -57,8 +60,9 @@ class UtilityASTBuilder:
 
         from omnibase.enums.enum_log_level import LogLevelEnum
 
-        from omnibase_core.core.core_structured_logging import \
-            emit_log_event_sync as emit_log_event
+        from omnibase_core.core.core_structured_logging import (
+            emit_log_event_sync as emit_log_event,
+        )
 
         emit_log_event(
             LogLevelEnum.DEBUG,
@@ -88,7 +92,9 @@ class UtilityASTBuilder:
             for field_name, field_schema in schema.properties.items():
                 is_required = field_name in required_fields
                 field_def = self.create_field_definition(
-                    field_name, field_schema, is_required
+                    field_name,
+                    field_schema,
+                    is_required,
                 )
                 if field_def:
                     body.append(field_def)
@@ -115,8 +121,11 @@ class UtilityASTBuilder:
         )
 
     def create_field_definition(
-        self, field_name: str, field_schema: ModelSchema, is_required: bool = True
-    ) -> Optional[ast.AnnAssign]:
+        self,
+        field_name: str,
+        field_schema: ModelSchema,
+        is_required: bool = True,
+    ) -> ast.AnnAssign | None:
         """
         Create a field definition from schema.
 
@@ -161,7 +170,10 @@ class UtilityASTBuilder:
         target = ast.Name(id=field_name, ctx=ast.Store())
 
         return ast.AnnAssign(
-            target=target, annotation=type_annotation, value=field_call, simple=1
+            target=target,
+            annotation=type_annotation,
+            value=field_call,
+            simple=1,
         )
 
     def get_type_annotation(self, schema: ModelSchema) -> ast.expr:
@@ -192,7 +204,7 @@ class UtilityASTBuilder:
         if schema_type == "string" and schema.enum_values:
             if self.type_mapper:
                 enum_name = self.type_mapper.generate_enum_name_from_values(
-                    schema.enum_values
+                    schema.enum_values,
                 )
             else:
                 # Fallback enum name generation
@@ -326,46 +338,53 @@ class UtilityASTBuilder:
         if schema.description:
             keywords.append(
                 ast.keyword(
-                    arg="description", value=ast.Constant(value=schema.description)
-                )
+                    arg="description",
+                    value=ast.Constant(value=schema.description),
+                ),
             )
 
         # Add other constraints
         if schema.minimum is not None:
             keywords.append(
-                ast.keyword(arg="ge", value=ast.Constant(value=schema.minimum))
+                ast.keyword(arg="ge", value=ast.Constant(value=schema.minimum)),
             )
         if schema.maximum is not None:
             keywords.append(
-                ast.keyword(arg="le", value=ast.Constant(value=schema.maximum))
+                ast.keyword(arg="le", value=ast.Constant(value=schema.maximum)),
             )
 
         # Add string constraints
         if schema.min_length is not None:
             keywords.append(
                 ast.keyword(
-                    arg="min_length", value=ast.Constant(value=schema.min_length)
-                )
+                    arg="min_length",
+                    value=ast.Constant(value=schema.min_length),
+                ),
             )
         if schema.max_length is not None:
             keywords.append(
                 ast.keyword(
-                    arg="max_length", value=ast.Constant(value=schema.max_length)
-                )
+                    arg="max_length",
+                    value=ast.Constant(value=schema.max_length),
+                ),
             )
 
         # Add pattern constraint
         if schema.pattern:
             keywords.append(
-                ast.keyword(arg="pattern", value=ast.Constant(value=schema.pattern))
+                ast.keyword(arg="pattern", value=ast.Constant(value=schema.pattern)),
             )
 
         return ast.Call(
-            func=ast.Name(id="Field", ctx=ast.Load()), args=args, keywords=keywords
+            func=ast.Name(id="Field", ctx=ast.Load()),
+            args=args,
+            keywords=keywords,
         )
 
     def generate_enum_class(
-        self, class_name: str, enum_values: List[str]
+        self,
+        class_name: str,
+        enum_values: list[str],
     ) -> ast.ClassDef:
         """
         Create an enum class from enum values.
@@ -415,7 +434,9 @@ class UtilityASTBuilder:
         return class_def
 
     def generate_import_statement(
-        self, module: str, names: List[str]
+        self,
+        module: str,
+        names: list[str],
     ) -> ast.ImportFrom:
         """
         Generate an import statement.
@@ -431,7 +452,9 @@ class UtilityASTBuilder:
         return ast.ImportFrom(module=module, names=aliases, level=0)
 
     def generate_module_with_imports(
-        self, classes: List[ast.ClassDef], imports: Dict[str, List[str]]
+        self,
+        classes: list[ast.ClassDef],
+        imports: dict[str, list[str]],
     ) -> ast.Module:
         """
         Generate a complete module with imports and classes.

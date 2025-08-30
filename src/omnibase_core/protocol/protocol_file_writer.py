@@ -6,7 +6,7 @@ Implementations can write to filesystem, S3, memory, etc.
 """
 
 from pathlib import Path
-from typing import List, Protocol, Union
+from typing import Protocol
 
 
 class ProtocolFileWriter(Protocol):
@@ -19,7 +19,7 @@ class ProtocolFileWriter(Protocol):
     - Type-safe interfaces
     """
 
-    def write_file(self, path: Union[str, Path], content: str) -> Path:
+    def write_file(self, path: str | Path, content: str) -> Path:
         """
         Write content to a file.
 
@@ -35,7 +35,7 @@ class ProtocolFileWriter(Protocol):
         """
         ...
 
-    def write_files(self, files: List[tuple[Union[str, Path], str]]) -> List[Path]:
+    def write_files(self, files: list[tuple[str | Path, str]]) -> list[Path]:
         """
         Write multiple files atomically.
 
@@ -50,7 +50,7 @@ class ProtocolFileWriter(Protocol):
         """
         ...
 
-    def ensure_directory(self, path: Union[str, Path]) -> Path:
+    def ensure_directory(self, path: str | Path) -> Path:
         """
         Ensure a directory exists, creating it if necessary.
 
@@ -65,7 +65,7 @@ class ProtocolFileWriter(Protocol):
         """
         ...
 
-    def delete_file(self, path: Union[str, Path]) -> bool:
+    def delete_file(self, path: str | Path) -> bool:
         """
         Delete a file if it exists.
 

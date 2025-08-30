@@ -8,7 +8,6 @@ on parallel tickets.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -64,21 +63,26 @@ class ModelProgressMetric(BaseModel):
     metric_name: str = Field(description="Human-readable name of the metric")
     metric_type: MetricType = Field(description="Type of metric")
     value: float = Field(description="Current value of the metric")
-    unit: Optional[str] = Field(default=None, description="Unit of measurement")
-    target_value: Optional[float] = Field(
-        default=None, description="Target value for this metric"
+    unit: str | None = Field(default=None, description="Unit of measurement")
+    target_value: float | None = Field(
+        default=None,
+        description="Target value for this metric",
     )
-    min_value: Optional[float] = Field(
-        default=None, description="Minimum acceptable value"
+    min_value: float | None = Field(
+        default=None,
+        description="Minimum acceptable value",
     )
-    max_value: Optional[float] = Field(
-        default=None, description="Maximum acceptable value"
+    max_value: float | None = Field(
+        default=None,
+        description="Maximum acceptable value",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="When the metric was recorded"
+        default_factory=datetime.now,
+        description="When the metric was recorded",
     )
-    tags: Dict[str, str] = Field(
-        default_factory=dict, description="Additional tags for the metric"
+    tags: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional tags for the metric",
     )
 
     @property
@@ -86,19 +90,17 @@ class ModelProgressMetric(BaseModel):
         """Check if metric value is within acceptable bounds."""
         if self.min_value is not None and self.value < self.min_value:
             return False
-        if self.max_value is not None and self.value > self.max_value:
-            return False
-        return True
+        return not (self.max_value is not None and self.value > self.max_value)
 
     @property
-    def progress_percentage(self) -> Optional[float]:
+    def progress_percentage(self) -> float | None:
         """Calculate progress percentage if target is set."""
         if self.target_value is None or self.target_value == 0:
             return None
         return min(100.0, (self.value / self.target_value) * 100.0)
 
     @property
-    def variance_from_target(self) -> Optional[float]:
+    def variance_from_target(self) -> float | None:
         """Calculate variance from target value."""
         if self.target_value is None:
             return None
@@ -112,33 +114,39 @@ class ModelProgressCheckpoint(BaseModel):
     checkpoint_name: str = Field(description="Human-readable name of the checkpoint")
     phase: ProgressPhase = Field(description="Phase this checkpoint belongs to")
     progress_percentage: float = Field(
-        description="Progress percentage at this checkpoint (0-100)"
+        description="Progress percentage at this checkpoint (0-100)",
     )
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time for this checkpoint"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time for this checkpoint",
     )
-    actual_completion: Optional[datetime] = Field(
-        default=None, description="Actual completion time"
+    actual_completion: datetime | None = Field(
+        default=None,
+        description="Actual completion time",
     )
-    dependencies: List[str] = Field(
-        default_factory=list, description="List of checkpoint IDs this depends on"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="List of checkpoint IDs this depends on",
     )
-    blocking: List[str] = Field(
-        default_factory=list, description="List of checkpoint IDs this blocks"
+    blocking: list[str] = Field(
+        default_factory=list,
+        description="List of checkpoint IDs this blocks",
     )
-    success_criteria: List[str] = Field(
+    success_criteria: list[str] = Field(
         default_factory=list,
         description="Criteria that must be met to complete this checkpoint",
     )
-    artifacts: List[str] = Field(
+    artifacts: list[str] = Field(
         default_factory=list,
         description="List of artifacts produced at this checkpoint",
     )
-    notes: List[str] = Field(
-        default_factory=list, description="Notes about this checkpoint"
+    notes: list[str] = Field(
+        default_factory=list,
+        description="Notes about this checkpoint",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the checkpoint was created"
+        default_factory=datetime.now,
+        description="When the checkpoint was created",
     )
 
     @property
@@ -154,7 +162,7 @@ class ModelProgressCheckpoint(BaseModel):
         return datetime.now() > self.estimated_completion and not self.is_completed
 
     @property
-    def duration(self) -> Optional[timedelta]:
+    def duration(self) -> timedelta | None:
         """Get duration of checkpoint completion."""
         if self.actual_completion and self.created_at:
             return self.actual_completion - self.created_at
@@ -169,38 +177,48 @@ class ModelProgressAlert(BaseModel):
     title: str = Field(description="Brief title of the alert")
     message: str = Field(description="Detailed alert message")
     source_entity: str = Field(
-        description="Entity that triggered the alert (agent_id, ticket_id, etc.)"
+        description="Entity that triggered the alert (agent_id, ticket_id, etc.)",
     )
     source_type: str = Field(description="Type of source entity")
-    metric_name: Optional[str] = Field(
-        default=None, description="Name of metric that triggered alert"
+    metric_name: str | None = Field(
+        default=None,
+        description="Name of metric that triggered alert",
     )
-    threshold_value: Optional[float] = Field(
-        default=None, description="Threshold value that was crossed"
+    threshold_value: float | None = Field(
+        default=None,
+        description="Threshold value that was crossed",
     )
-    actual_value: Optional[float] = Field(
-        default=None, description="Actual value that triggered the alert"
+    actual_value: float | None = Field(
+        default=None,
+        description="Actual value that triggered the alert",
     )
-    suggested_actions: List[str] = Field(
-        default_factory=list, description="Suggested actions to resolve the alert"
+    suggested_actions: list[str] = Field(
+        default_factory=list,
+        description="Suggested actions to resolve the alert",
     )
     auto_resolve: bool = Field(
-        default=False, description="Whether this alert can be auto-resolved"
+        default=False,
+        description="Whether this alert can be auto-resolved",
     )
     acknowledged: bool = Field(
-        default=False, description="Whether the alert has been acknowledged"
+        default=False,
+        description="Whether the alert has been acknowledged",
     )
     resolved: bool = Field(
-        default=False, description="Whether the alert has been resolved"
+        default=False,
+        description="Whether the alert has been resolved",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the alert was created"
+        default_factory=datetime.now,
+        description="When the alert was created",
     )
-    acknowledged_at: Optional[datetime] = Field(
-        default=None, description="When the alert was acknowledged"
+    acknowledged_at: datetime | None = Field(
+        default=None,
+        description="When the alert was acknowledged",
     )
-    resolved_at: Optional[datetime] = Field(
-        default=None, description="When the alert was resolved"
+    resolved_at: datetime | None = Field(
+        default=None,
+        description="When the alert was resolved",
     )
 
     def acknowledge(self) -> None:
@@ -221,57 +239,74 @@ class ModelAgentProgress(BaseModel):
 
     agent_id: str = Field(description="Unique identifier for the agent")
     current_status: ProgressStatus = Field(description="Current progress status")
-    current_phase: Optional[ProgressPhase] = Field(
-        default=None, description="Current phase of work"
+    current_phase: ProgressPhase | None = Field(
+        default=None,
+        description="Current phase of work",
     )
-    assigned_tickets: List[str] = Field(
-        default_factory=list, description="List of assigned ticket IDs"
+    assigned_tickets: list[str] = Field(
+        default_factory=list,
+        description="List of assigned ticket IDs",
     )
-    active_ticket: Optional[str] = Field(
-        default=None, description="Currently active ticket ID"
+    active_ticket: str | None = Field(
+        default=None,
+        description="Currently active ticket ID",
     )
     overall_progress: float = Field(
-        default=0.0, description="Overall progress percentage (0-100)"
+        default=0.0,
+        description="Overall progress percentage (0-100)",
     )
-    ticket_progress: Dict[str, float] = Field(
-        default_factory=dict, description="Progress percentage per ticket"
+    ticket_progress: dict[str, float] = Field(
+        default_factory=dict,
+        description="Progress percentage per ticket",
     )
-    completed_tickets: List[str] = Field(
-        default_factory=list, description="List of completed ticket IDs"
+    completed_tickets: list[str] = Field(
+        default_factory=list,
+        description="List of completed ticket IDs",
     )
-    failed_tickets: List[str] = Field(
-        default_factory=list, description="List of failed ticket IDs"
+    failed_tickets: list[str] = Field(
+        default_factory=list,
+        description="List of failed ticket IDs",
     )
-    start_time: Optional[datetime] = Field(
-        default=None, description="When the agent started working"
+    start_time: datetime | None = Field(
+        default=None,
+        description="When the agent started working",
     )
     last_activity: datetime = Field(
-        default_factory=datetime.now, description="Last activity timestamp"
+        default_factory=datetime.now,
+        description="Last activity timestamp",
     )
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time",
     )
     productivity_score: float = Field(
-        default=1.0, description="Productivity score (0.0 to 2.0)"
+        default=1.0,
+        description="Productivity score (0.0 to 2.0)",
     )
     efficiency_score: float = Field(
-        default=1.0, description="Efficiency score (0.0 to 2.0)"
+        default=1.0,
+        description="Efficiency score (0.0 to 2.0)",
     )
     quality_score: float = Field(default=1.0, description="Quality score (0.0 to 2.0)")
-    bottlenecks: List[str] = Field(
-        default_factory=list, description="List of identified bottlenecks"
+    bottlenecks: list[str] = Field(
+        default_factory=list,
+        description="List of identified bottlenecks",
     )
-    achievements: List[str] = Field(
-        default_factory=list, description="List of achievements or milestones"
+    achievements: list[str] = Field(
+        default_factory=list,
+        description="List of achievements or milestones",
     )
-    metrics: List[ModelProgressMetric] = Field(
-        default_factory=list, description="Agent-specific metrics"
+    metrics: list[ModelProgressMetric] = Field(
+        default_factory=list,
+        description="Agent-specific metrics",
     )
-    checkpoints: List[ModelProgressCheckpoint] = Field(
-        default_factory=list, description="Progress checkpoints"
+    checkpoints: list[ModelProgressCheckpoint] = Field(
+        default_factory=list,
+        description="Progress checkpoints",
     )
-    alerts: List[ModelProgressAlert] = Field(
-        default_factory=list, description="Active alerts for this agent"
+    alerts: list[ModelProgressAlert] = Field(
+        default_factory=list,
+        description="Active alerts for this agent",
     )
 
     @property
@@ -293,7 +328,7 @@ class ModelAgentProgress(BaseModel):
         return self.current_status == ProgressStatus.BLOCKED
 
     @property
-    def work_duration(self) -> Optional[timedelta]:
+    def work_duration(self) -> timedelta | None:
         """Get total work duration."""
         if self.start_time:
             return datetime.now() - self.start_time
@@ -385,36 +420,43 @@ class ModelSystemProgress(BaseModel):
     completed_tickets: int = Field(description="Number of completed tickets")
     failed_tickets: int = Field(description="Number of failed tickets")
     in_progress_tickets: int = Field(
-        description="Number of tickets currently in progress"
+        description="Number of tickets currently in progress",
     )
     blocked_tickets: int = Field(description="Number of blocked tickets")
     overall_progress: float = Field(
-        description="Overall system progress percentage (0-100)"
+        description="Overall system progress percentage (0-100)",
     )
     average_agent_efficiency: float = Field(
-        description="Average efficiency across all agents"
+        description="Average efficiency across all agents",
     )
     system_throughput: float = Field(description="System throughput (tickets per hour)")
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time for all work"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time for all work",
     )
-    bottleneck_analysis: Dict[str, int] = Field(
-        default_factory=dict, description="Analysis of system bottlenecks"
+    bottleneck_analysis: dict[str, int] = Field(
+        default_factory=dict,
+        description="Analysis of system bottlenecks",
     )
-    performance_trends: Dict[str, List[float]] = Field(
-        default_factory=dict, description="Performance trends over time"
+    performance_trends: dict[str, list[float]] = Field(
+        default_factory=dict,
+        description="Performance trends over time",
     )
-    resource_utilization: Dict[str, float] = Field(
-        default_factory=dict, description="Resource utilization metrics"
+    resource_utilization: dict[str, float] = Field(
+        default_factory=dict,
+        description="Resource utilization metrics",
     )
-    quality_metrics: Dict[str, float] = Field(
-        default_factory=dict, description="System-wide quality metrics"
+    quality_metrics: dict[str, float] = Field(
+        default_factory=dict,
+        description="System-wide quality metrics",
     )
-    alerts_summary: Dict[str, int] = Field(
-        default_factory=dict, description="Summary of alerts by level"
+    alerts_summary: dict[str, int] = Field(
+        default_factory=dict,
+        description="Summary of alerts by level",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="When the progress was last updated"
+        default_factory=datetime.now,
+        description="When the progress was last updated",
     )
 
     @property
@@ -457,7 +499,8 @@ class ModelSystemProgress(BaseModel):
         success_score = self.success_rate
         utilization_score = min(100.0, self.agent_utilization)
         efficiency_score = min(
-            100.0, self.average_agent_efficiency * 50.0
+            100.0,
+            self.average_agent_efficiency * 50.0,
         )  # Assuming 2.0 max efficiency
 
         # Deduct points for critical issues
@@ -467,9 +510,7 @@ class ModelSystemProgress(BaseModel):
         base_score = (
             completion_score + success_score + utilization_score + efficiency_score
         ) / 4.0
-        final_score = max(0.0, base_score - critical_penalty - error_penalty)
-
-        return final_score
+        return max(0.0, base_score - critical_penalty - error_penalty)
 
 
 class ModelProgressReport(BaseModel):
@@ -480,26 +521,33 @@ class ModelProgressReport(BaseModel):
     period_start: datetime = Field(description="Start of the reporting period")
     period_end: datetime = Field(description="End of the reporting period")
     system_progress: ModelSystemProgress = Field(description="Overall system progress")
-    agent_progress: List[ModelAgentProgress] = Field(
-        default_factory=list, description="Progress for individual agents"
+    agent_progress: list[ModelAgentProgress] = Field(
+        default_factory=list,
+        description="Progress for individual agents",
     )
-    key_metrics: List[ModelProgressMetric] = Field(
-        default_factory=list, description="Key system metrics"
+    key_metrics: list[ModelProgressMetric] = Field(
+        default_factory=list,
+        description="Key system metrics",
     )
-    achievements: List[str] = Field(
-        default_factory=list, description="Key achievements during the period"
+    achievements: list[str] = Field(
+        default_factory=list,
+        description="Key achievements during the period",
     )
-    issues: List[str] = Field(
-        default_factory=list, description="Issues encountered during the period"
+    issues: list[str] = Field(
+        default_factory=list,
+        description="Issues encountered during the period",
     )
-    recommendations: List[str] = Field(
-        default_factory=list, description="Recommendations for improvement"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recommendations for improvement",
     )
-    next_period_goals: List[str] = Field(
-        default_factory=list, description="Goals for the next period"
+    next_period_goals: list[str] = Field(
+        default_factory=list,
+        description="Goals for the next period",
     )
     generated_at: datetime = Field(
-        default_factory=datetime.now, description="When the report was generated"
+        default_factory=datetime.now,
+        description="When the report was generated",
     )
     generated_by: str = Field(description="Who or what generated the report")
 
@@ -509,18 +557,21 @@ class ModelProgressReport(BaseModel):
         return self.period_end - self.period_start
 
     @property
-    def top_performing_agents(self) -> List[str]:
+    def top_performing_agents(self) -> list[str]:
         """Get list of top performing agent IDs."""
         sorted_agents = sorted(
-            self.agent_progress, key=lambda a: a.overall_score, reverse=True
+            self.agent_progress,
+            key=lambda a: a.overall_score,
+            reverse=True,
         )
         return [agent.agent_id for agent in sorted_agents[:5]]
 
     @property
-    def underperforming_agents(self) -> List[str]:
+    def underperforming_agents(self) -> list[str]:
         """Get list of underperforming agent IDs."""
         avg_score = sum(a.overall_score for a in self.agent_progress) / max(
-            len(self.agent_progress), 1
+            len(self.agent_progress),
+            1,
         )
         return [
             agent.agent_id
@@ -529,14 +580,14 @@ class ModelProgressReport(BaseModel):
         ]
 
     @property
-    def critical_issues(self) -> List[str]:
+    def critical_issues(self) -> list[str]:
         """Get list of critical issues."""
         critical_issues = []
 
         # Add system-level critical alerts
         if self.system_progress.has_critical_alerts:
             critical_issues.append(
-                "System has critical alerts requiring immediate attention"
+                "System has critical alerts requiring immediate attention",
             )
 
         # Add agent-level critical issues
@@ -548,14 +599,14 @@ class ModelProgressReport(BaseModel):
 
         return critical_issues
 
-    def get_metric_by_name(self, metric_name: str) -> Optional[ModelProgressMetric]:
+    def get_metric_by_name(self, metric_name: str) -> ModelProgressMetric | None:
         """Get a specific metric by name."""
         for metric in self.key_metrics:
             if metric.metric_name == metric_name:
                 return metric
         return None
 
-    def get_agent_progress(self, agent_id: str) -> Optional[ModelAgentProgress]:
+    def get_agent_progress(self, agent_id: str) -> ModelAgentProgress | None:
         """Get progress for a specific agent."""
         for agent in self.agent_progress:
             if agent.agent_id == agent_id:

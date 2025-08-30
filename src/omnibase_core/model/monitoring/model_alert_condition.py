@@ -15,12 +15,16 @@ class ModelAlertCondition(BaseModel):
     operator: str = Field(..., description="Comparison operator (>, <, ==, etc.)")
     threshold_value: float = Field(..., description="Threshold value")
     duration_seconds: int = Field(
-        0, ge=0, description="Duration condition must persist"
+        0,
+        ge=0,
+        description="Duration condition must persist",
     )
 
     evaluation_window: int = Field(60, gt=0, description="Evaluation window in seconds")
     hysteresis_percent: float = Field(
-        5.0, ge=0, description="Hysteresis percentage to prevent flapping"
+        5.0,
+        ge=0,
+        description="Hysteresis percentage to prevent flapping",
     )
 
     enabled: bool = Field(True, description="Whether condition is active")

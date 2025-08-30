@@ -7,11 +7,10 @@ contract documents for code generation.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Protocol, Set
+from typing import Protocol
 
 from omnibase_core.model.core.model_schema import ModelSchema
-from omnibase_core.model.generation.model_contract_document import \
-    ModelContractDocument
+from omnibase_core.model.generation.model_contract_document import ModelContractDocument
 
 
 @dataclass
@@ -37,7 +36,7 @@ class ReferenceInfo:
     ref_type: str  # "internal", "external", "subcontract"
     resolved_type: str
     source_location: str
-    target_file: Optional[str] = None
+    target_file: str | None = None
 
 
 @dataclass
@@ -45,9 +44,9 @@ class ContractValidationResult:
     """Result of contract validation."""
 
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
-    info: List[str]
+    errors: list[str]
+    warnings: list[str]
+    info: list[str]
 
 
 class ProtocolContractAnalyzer(Protocol):
@@ -94,8 +93,9 @@ class ProtocolContractAnalyzer(Protocol):
         ...
 
     def discover_all_references(
-        self, contract: ModelContractDocument
-    ) -> List[ReferenceInfo]:
+        self,
+        contract: ModelContractDocument,
+    ) -> list[ReferenceInfo]:
         """Discover all $ref references in a contract.
 
         Args:
@@ -106,7 +106,7 @@ class ProtocolContractAnalyzer(Protocol):
         """
         ...
 
-    def get_external_dependencies(self, contract: ModelContractDocument) -> Set[str]:
+    def get_external_dependencies(self, contract: ModelContractDocument) -> set[str]:
         """Get all external file dependencies of a contract.
 
         Args:
@@ -117,7 +117,7 @@ class ProtocolContractAnalyzer(Protocol):
         """
         ...
 
-    def get_dependency_graph(self, contract_path: Path) -> Dict[str, Set[str]]:
+    def get_dependency_graph(self, contract_path: Path) -> dict[str, set[str]]:
         """Build a dependency graph starting from a contract.
 
         Args:
@@ -129,8 +129,9 @@ class ProtocolContractAnalyzer(Protocol):
         ...
 
     def check_circular_references(
-        self, contract: ModelContractDocument
-    ) -> List[List[str]]:
+        self,
+        contract: ModelContractDocument,
+    ) -> list[list[str]]:
         """Check for circular references in the contract.
 
         Args:
@@ -153,8 +154,10 @@ class ProtocolContractAnalyzer(Protocol):
         ...
 
     def validate_schema(
-        self, schema: ModelSchema, location: str
-    ) -> Dict[str, List[str]]:
+        self,
+        schema: ModelSchema,
+        location: str,
+    ) -> dict[str, list[str]]:
         """Validate a schema object and return issues.
 
         Args:

@@ -6,7 +6,7 @@ Follows AMQP envelope pattern for distributed event routing.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,44 +22,54 @@ class ModelRouteHop(BaseModel):
     # Hop identification
     hop_id: str = Field(..., description="Unique identifier for this hop")
     node_id: str = Field(..., description="ID of the node that processed this hop")
-    service_name: Optional[str] = Field(None, description="Service name if applicable")
+    service_name: str | None = Field(None, description="Service name if applicable")
 
     # Timing information
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When this hop was processed"
+        default_factory=datetime.utcnow,
+        description="When this hop was processed",
     )
-    processing_duration_ms: Optional[int] = Field(
-        None, description="Time spent processing at this hop in milliseconds"
+    processing_duration_ms: int | None = Field(
+        None,
+        description="Time spent processing at this hop in milliseconds",
     )
 
     # Routing information
     hop_type: str = Field(
-        ..., description="Type of hop: 'source', 'router', 'destination'"
+        ...,
+        description="Type of hop: 'source', 'router', 'destination'",
     )
-    routing_decision: Optional[str] = Field(
-        None, description="Routing decision made at this hop"
+    routing_decision: str | None = Field(
+        None,
+        description="Routing decision made at this hop",
     )
-    next_hop: Optional[str] = Field(None, description="Address of next hop chosen")
+    next_hop: str | None = Field(None, description="Address of next hop chosen")
 
     # Metadata and debugging
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional hop-specific metadata"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional hop-specific metadata",
     )
-    error_info: Optional[str] = Field(
-        None, description="Error information if hop failed"
+    error_info: str | None = Field(
+        None,
+        description="Error information if hop failed",
     )
 
     # Performance metrics
-    queue_depth: Optional[int] = Field(None, description="Queue depth at this hop")
-    load_factor: Optional[float] = Field(
-        None, description="Load factor (0.0-1.0) at this hop"
+    queue_depth: int | None = Field(None, description="Queue depth at this hop")
+    load_factor: float | None = Field(
+        None,
+        description="Load factor (0.0-1.0) at this hop",
     )
 
     model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
 
     @classmethod
     def create_source_hop(
-        cls, node_id: str, service_name: Optional[str] = None, **kwargs
+        cls,
+        node_id: str,
+        service_name: str | None = None,
+        **kwargs,
     ) -> "ModelRouteHop":
         """Create a source hop (where the event originated)."""
         return cls(
@@ -72,7 +82,11 @@ class ModelRouteHop(BaseModel):
 
     @classmethod
     def create_router_hop(
-        cls, node_id: str, routing_decision: str, next_hop: str, **kwargs
+        cls,
+        node_id: str,
+        routing_decision: str,
+        next_hop: str,
+        **kwargs,
     ) -> "ModelRouteHop":
         """Create a router hop (intermediate routing node)."""
         return cls(
@@ -86,7 +100,10 @@ class ModelRouteHop(BaseModel):
 
     @classmethod
     def create_destination_hop(
-        cls, node_id: str, service_name: Optional[str] = None, **kwargs
+        cls,
+        node_id: str,
+        service_name: str | None = None,
+        **kwargs,
     ) -> "ModelRouteHop":
         """Create a destination hop (final recipient)."""
         return cls(
@@ -104,8 +121,8 @@ class ModelRouteHop(BaseModel):
     def set_performance_metrics(
         self,
         processing_duration_ms: int,
-        queue_depth: Optional[int] = None,
-        load_factor: Optional[float] = None,
+        queue_depth: int | None = None,
+        load_factor: float | None = None,
     ) -> None:
         """Set performance metrics for this hop."""
         self.processing_duration_ms = processing_duration_ms

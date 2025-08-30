@@ -5,7 +5,6 @@ Defines status updates from an agent in the distributed system.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +22,9 @@ class ModelAgentStatusUpdate(BaseModel):
 
     @classmethod
     def create_event(
-        cls, node_id: str, status: "ModelAgentStatusUpdate"
+        cls,
+        node_id: str,
+        status: "ModelAgentStatusUpdate",
     ) -> ModelOnexEvent:
         """Create ONEX event for agent status update."""
         return ModelOnexEvent.create_plugin_event(
@@ -39,12 +40,13 @@ class ModelAgentStatusUpdate(BaseModel):
 
         # Broadcast status to all interested parties
         return ModelEventEnvelope.create_broadcast(
-            payload=event, source_node_id=source_node_id
+            payload=event,
+            source_node_id=source_node_id,
         )
 
     # Current status
     status: str = Field(..., description="idle, busy, error, offline")
-    current_task_id: Optional[str] = Field(None)
+    current_task_id: str | None = Field(None)
     queue_depth: int = Field(0, ge=0, description="Number of queued tasks")
 
     # Health metrics
@@ -53,9 +55,10 @@ class ModelAgentStatusUpdate(BaseModel):
     memory_usage_mb: float = Field(0.0, ge=0.0)
 
     # Capabilities
-    available_capabilities: List[EnumAgentCapability] = Field(default_factory=list)
-    model_info: Dict[str, str] = Field(
-        default_factory=dict, description="Model information as string key-value pairs"
+    available_capabilities: list[EnumAgentCapability] = Field(default_factory=list)
+    model_info: dict[str, str] = Field(
+        default_factory=dict,
+        description="Model information as string key-value pairs",
     )
 
     # Timestamps

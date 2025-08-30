@@ -4,8 +4,6 @@ Model for dashboard metrics data in the metrics collector service.
 This model defines the structure for comprehensive metrics dashboard data.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel
 
 
@@ -35,10 +33,10 @@ class ModelKPI(BaseModel):
 class ModelDashboardMetrics(BaseModel):
     """Comprehensive dashboard metrics data."""
 
-    system_metrics: Dict[str, float]
+    system_metrics: dict[str, float]
     agent_count: int
     health_score: float
     timestamp: str
-    agent_summaries: Dict[str, Dict[str, float]]
-    recent_events: Dict[str, ModelEventMetrics]
+    agent_summaries: dict[str, dict[str, float]]
+    recent_events: dict[str, ModelEventMetrics]
     kpis: ModelKPI

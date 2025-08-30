@@ -6,10 +6,9 @@ and caching operations following ONEX duck typing standards.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-from omnibase_core.core.models.model_contract_content import \
-    ModelContractContent
+from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 
@@ -59,8 +58,9 @@ class ProtocolContractService(Protocol):
         ...
 
     def get_cached_contract(
-        self, contract_path: Path
-    ) -> Optional[ModelContractContent]:
+        self,
+        contract_path: Path,
+    ) -> ModelContractContent | None:
         """
         Retrieve contract from cache if available.
 
@@ -73,7 +73,9 @@ class ProtocolContractService(Protocol):
         ...
 
     def cache_contract(
-        self, contract_path: Path, contract: ModelContractContent
+        self,
+        contract_path: Path,
+        contract: ModelContractContent,
     ) -> bool:
         """
         Cache a contract for future retrieval.
@@ -87,7 +89,7 @@ class ProtocolContractService(Protocol):
         """
         ...
 
-    def clear_cache(self, contract_path: Optional[Path] = None) -> int:
+    def clear_cache(self, contract_path: Path | None = None) -> int:
         """
         Clear contract cache.
 
@@ -124,8 +126,9 @@ class ProtocolContractService(Protocol):
         ...
 
     def extract_dependencies(
-        self, contract: ModelContractContent
-    ) -> List[Dict[str, str]]:
+        self,
+        contract: ModelContractContent,
+    ) -> list[dict[str, str]]:
         """
         Extract dependency list from contract.
 
@@ -149,7 +152,7 @@ class ProtocolContractService(Protocol):
         """
         ...
 
-    def extract_event_patterns(self, contract: ModelContractContent) -> List[str]:
+    def extract_event_patterns(self, contract: ModelContractContent) -> list[str]:
         """
         Extract event subscription patterns from contract.
 
@@ -161,7 +164,7 @@ class ProtocolContractService(Protocol):
         """
         ...
 
-    def health_check(self) -> Dict[str, object]:
+    def health_check(self) -> dict[str, object]:
         """
         Perform health check on contract service.
 

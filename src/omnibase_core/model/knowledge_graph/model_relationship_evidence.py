@@ -40,11 +40,13 @@ class ModelRelationshipEvidence(BaseModel):
     source_location: str = Field(..., description="Where evidence was found")
     evidence_text: str = Field(..., description="Actual evidence content")
     confidence_contribution: float = Field(
-        ..., description="How much this evidence contributes to confidence (0.0-1.0)"
+        ...,
+        description="How much this evidence contributes to confidence (0.0-1.0)",
     )
     line_number: int = Field(0, description="Line number where evidence was found")
     extraction_method: str = Field(
-        ..., description="Method used to extract this evidence"
+        ...,
+        description="Method used to extract this evidence",
     )
 
     model_config = ConfigDict(frozen=True, validate_assignment=True)

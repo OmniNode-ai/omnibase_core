@@ -1,7 +1,5 @@
 """Model for task routing tuple data."""
 
-from typing import Union
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_optional_string import ModelOptionalString
@@ -37,12 +35,14 @@ class ModelTaskTuple(BaseModel):
                 prompt=data[1],
                 system_prompt=ModelOptionalString(value=data[2]),
             )
-        elif len(data) == 2:
+        if len(data) == 2:
             return cls(
-                task_role=data[0], prompt=data[1], system_prompt=ModelOptionalString()
+                task_role=data[0],
+                prompt=data[1],
+                system_prompt=ModelOptionalString(),
             )
-        else:
-            raise ValueError("Tuple must have at least 2 elements")
+        msg = "Tuple must have at least 2 elements"
+        raise ValueError(msg)
 
     def get_task_role(self) -> str:
         """Get the task role."""
@@ -52,7 +52,7 @@ class ModelTaskTuple(BaseModel):
         """Get the task prompt."""
         return self.prompt
 
-    def get_system_prompt(self) -> Union[str, None]:
+    def get_system_prompt(self) -> str | None:
         """Get the optional system prompt."""
         return self.system_prompt.get()
 

@@ -25,10 +25,8 @@
 from typing import Protocol
 
 from omnibase_core.model.core.model_result_cli import ModelResultCLI
-from omnibase_core.protocol.models.model_tool_arguments import \
-    ModelToolArguments
-from omnibase_core.protocol.models.model_tool_input_data import \
-    ModelToolInputData
+from omnibase_core.protocol.models.model_tool_arguments import ModelToolArguments
+from omnibase_core.protocol.models.model_tool_input_data import ModelToolInputData
 
 
 class ProtocolTool(Protocol):

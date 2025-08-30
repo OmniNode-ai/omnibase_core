@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.model.core.model_generic_metadata import \
-    ModelGenericMetadata
-from omnibase_core.model.core.model_orchestrator_info import \
-    ModelOrchestratorInfo
+if TYPE_CHECKING:
+    from datetime import datetime
 
-from .model_onex_message import ModelOnexMessage
-from .model_unified_summary import ModelUnifiedSummary
-from .model_unified_version import ModelUnifiedVersion
+    from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+    from omnibase_core.model.core.model_generic_metadata import ModelGenericMetadata
+    from omnibase_core.model.core.model_orchestrator_info import ModelOrchestratorInfo
+
+    from .model_onex_message import ModelOnexMessage
+    from .model_unified_summary import ModelUnifiedSummary
+    from .model_unified_version import ModelUnifiedVersion
 
 
 class ModelOnexResult(BaseModel):
@@ -23,32 +23,33 @@ class ModelOnexResult(BaseModel):
     """
 
     status: EnumOnexStatus
-    target: Optional[str] = Field(
-        None, description="Target file or resource validated."
+    target: str | None = Field(
+        None,
+        description="Target file or resource validated.",
     )
-    messages: List[ModelOnexMessage] = Field(default_factory=list)
-    summary: Optional[ModelUnifiedSummary] = None
-    metadata: Optional[ModelGenericMetadata] = None
-    suggestions: Optional[List[str]] = None
-    diff: Optional[str] = None
-    auto_fix_applied: Optional[bool] = None
-    fixed_files: Optional[List[str]] = None
-    failed_files: Optional[List[str]] = None
-    version: Optional[ModelUnifiedVersion] = None
-    duration: Optional[float] = None
-    exit_code: Optional[int] = None
-    run_id: Optional[str] = None
-    child_results: Optional[List["ModelOnexResult"]] = None
-    output_format: Optional[str] = None
-    cli_args: Optional[List[str]] = None
-    orchestrator_info: Optional[ModelOrchestratorInfo] = None
-    tool_name: Optional[str] = None
-    skipped_reason: Optional[str] = None
-    coverage: Optional[float] = None
-    test_type: Optional[str] = None
-    batch_id: Optional[str] = None
-    parent_id: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    messages: list[ModelOnexMessage] = Field(default_factory=list)
+    summary: ModelUnifiedSummary | None = None
+    metadata: ModelGenericMetadata | None = None
+    suggestions: list[str] | None = None
+    diff: str | None = None
+    auto_fix_applied: bool | None = None
+    fixed_files: list[str] | None = None
+    failed_files: list[str] | None = None
+    version: ModelUnifiedVersion | None = None
+    duration: float | None = None
+    exit_code: int | None = None
+    run_id: str | None = None
+    child_results: list[ModelOnexResult] | None = None
+    output_format: str | None = None
+    cli_args: list[str] | None = None
+    orchestrator_info: ModelOrchestratorInfo | None = None
+    tool_name: str | None = None
+    skipped_reason: str | None = None
+    coverage: float | None = None
+    test_type: str | None = None
+    batch_id: str | None = None
+    parent_id: str | None = None
+    timestamp: datetime | None = None
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         json_schema_extra={
@@ -61,10 +62,10 @@ class ModelOnexResult(BaseModel):
                     {
                         "summary": "All required metadata fields present.",
                         "level": "info",
-                    }
+                    },
                 ],
                 "version": "v1",
-            }
+            },
         },
     )
 

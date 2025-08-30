@@ -7,12 +7,9 @@ strongly typed YAML schema object definitions.
 Author: ONEX Framework Team
 """
 
-from typing import Dict, List
-
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.models.model_yaml_schema_property import \
-    ModelYamlSchemaProperty
+from omnibase_core.core.models.model_yaml_schema_property import ModelYamlSchemaProperty
 
 
 class ModelYamlSchemaObject(BaseModel):
@@ -21,12 +18,15 @@ class ModelYamlSchemaObject(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     object_type: str = Field(
-        ..., description="Object type (always 'object' for schema objects)"
+        ...,
+        description="Object type (always 'object' for schema objects)",
     )
-    properties: Dict[str, ModelYamlSchemaProperty] = Field(
-        default_factory=dict, description="Object properties"
+    properties: dict[str, ModelYamlSchemaProperty] = Field(
+        default_factory=dict,
+        description="Object properties",
     )
-    required_properties: List[str] = Field(
-        default_factory=list, description="Required property names"
+    required_properties: list[str] = Field(
+        default_factory=list,
+        description="Required property names",
     )
     description: str = Field(default="", description="Object description")

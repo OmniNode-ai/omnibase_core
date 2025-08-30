@@ -5,21 +5,24 @@ Configuration for PostgreSQL database connections with production-ready settings
 """
 
 import os
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.core.errors.document_freshness_errors import \
-    DocumentFreshnessValidationError
-from omnibase_core.enums.enum_document_freshness_errors import \
-    EnumDocumentFreshnessErrorCodes
+from omnibase_core.core.errors.document_freshness_errors import (
+    DocumentFreshnessValidationError,
+)
+from omnibase_core.enums.enum_document_freshness_errors import (
+    EnumDocumentFreshnessErrorCodes,
+)
 
 
 class ModelDatabaseConnectionConfig(BaseModel):
     """Configuration for PostgreSQL database connections."""
 
     model_config = ConfigDict(
-        str_strip_whitespace=True, validate_assignment=True, extra="forbid"
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra="forbid",
     )
 
     # Connection settings
@@ -31,30 +34,42 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     # Connection pool settings
     min_connections: int = Field(
-        default=1, ge=1, description="Minimum pool connections"
+        default=1,
+        ge=1,
+        description="Minimum pool connections",
     )
     max_connections: int = Field(
-        default=10, ge=1, description="Maximum pool connections"
+        default=10,
+        ge=1,
+        description="Maximum pool connections",
     )
     connection_timeout: int = Field(
-        default=10, ge=1, description="Connection timeout in seconds"
+        default=10,
+        ge=1,
+        description="Connection timeout in seconds",
     )
     idle_timeout: int = Field(
-        default=300, ge=1, description="Idle connection timeout in seconds"
+        default=300,
+        ge=1,
+        description="Idle connection timeout in seconds",
     )
 
     # SSL/TLS settings
-    ssl_mode: Optional[str] = Field(
-        default=None, description="SSL mode (disable, require, prefer)"
+    ssl_mode: str | None = Field(
+        default=None,
+        description="SSL mode (disable, require, prefer)",
     )
-    ssl_cert_path: Optional[str] = Field(
-        default=None, description="Path to SSL certificate"
+    ssl_cert_path: str | None = Field(
+        default=None,
+        description="Path to SSL certificate",
     )
-    ssl_key_path: Optional[str] = Field(
-        default=None, description="Path to SSL private key"
+    ssl_key_path: str | None = Field(
+        default=None,
+        description="Path to SSL private key",
     )
-    ssl_ca_path: Optional[str] = Field(
-        default=None, description="Path to SSL CA certificate"
+    ssl_ca_path: str | None = Field(
+        default=None,
+        description="Path to SSL CA certificate",
     )
 
     # Environment-specific settings
@@ -88,7 +103,8 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     @classmethod
     def from_environment(
-        cls, environment: Optional[str] = None
+        cls,
+        environment: str | None = None,
     ) -> "ModelDatabaseConnectionConfig":
         """Create configuration from environment variables with environment-specific defaults."""
         env = environment or os.getenv("ENVIRONMENT", "development")
@@ -138,16 +154,18 @@ class ModelDatabaseConnectionConfig(BaseModel):
             password=os.getenv("POSTGRES_PASSWORD", ""),
             min_connections=int(
                 os.getenv(
-                    "DB_POOL_MIN_CONNECTIONS", str(pool_config["min_connections"])
-                )
+                    "DB_POOL_MIN_CONNECTIONS",
+                    str(pool_config["min_connections"]),
+                ),
             ),
             max_connections=int(
                 os.getenv(
-                    "DB_POOL_MAX_CONNECTIONS", str(pool_config["max_connections"])
-                )
+                    "DB_POOL_MAX_CONNECTIONS",
+                    str(pool_config["max_connections"]),
+                ),
             ),
             connection_timeout=int(
-                os.getenv("DB_POOL_TIMEOUT", str(pool_config["connection_timeout"]))
+                os.getenv("DB_POOL_TIMEOUT", str(pool_config["connection_timeout"])),
             ),
             idle_timeout=int(os.getenv("DB_POOL_IDLE_TIMEOUT", "300")),
             ssl_mode=os.getenv("POSTGRES_SSL_MODE"),

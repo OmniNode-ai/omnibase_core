@@ -16,28 +16,28 @@ Event Types:
 - agent.discovery.response: Response with discovered agents
 """
 
-from omnibase_core.model.events.model_agent_discovery_request import \
-    ModelAgentDiscoveryRequest
-from omnibase_core.model.events.model_agent_discovery_response import \
-    ModelAgentDiscoveryResponse
-from omnibase_core.model.events.model_agent_status_update import \
-    ModelAgentStatusUpdate
-from omnibase_core.model.events.model_agent_task_assignment import \
-    ModelAgentTaskAssignment
-from omnibase_core.model.events.model_agent_task_progress import \
-    ModelAgentTaskProgress
+from omnibase_core.model.events.model_agent_discovery_request import (
+    ModelAgentDiscoveryRequest,
+)
+from omnibase_core.model.events.model_agent_discovery_response import (
+    ModelAgentDiscoveryResponse,
+)
+from omnibase_core.model.events.model_agent_status_update import ModelAgentStatusUpdate
+from omnibase_core.model.events.model_agent_task_assignment import (
+    ModelAgentTaskAssignment,
+)
+from omnibase_core.model.events.model_agent_task_progress import ModelAgentTaskProgress
+
 # Re-export all event models for backward compatibility
-from omnibase_core.model.events.model_agent_task_request import \
-    ModelAgentTaskRequest
-from omnibase_core.model.events.model_agent_task_result import \
-    ModelAgentTaskResult
+from omnibase_core.model.events.model_agent_task_request import ModelAgentTaskRequest
+from omnibase_core.model.events.model_agent_task_result import ModelAgentTaskResult
 
 __all__ = [
-    "ModelAgentTaskRequest",
-    "ModelAgentTaskAssignment",
-    "ModelAgentTaskProgress",
-    "ModelAgentTaskResult",
-    "ModelAgentStatusUpdate",
     "ModelAgentDiscoveryRequest",
     "ModelAgentDiscoveryResponse",
+    "ModelAgentStatusUpdate",
+    "ModelAgentTaskAssignment",
+    "ModelAgentTaskProgress",
+    "ModelAgentTaskRequest",
+    "ModelAgentTaskResult",
 ]

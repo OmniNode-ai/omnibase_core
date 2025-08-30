@@ -22,11 +22,11 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Callable, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Protocol, runtime_checkable
 
 from omnibase_core.model.core.model_onex_event import OnexEvent
-from omnibase_core.protocol.protocol_event_bus_types import \
-    EventBusCredentialsModel
+from omnibase_core.protocol.protocol_event_bus_types import EventBusCredentialsModel
 
 
 @runtime_checkable
@@ -43,7 +43,9 @@ class ProtocolEventBus(Protocol):
     """
 
     def __init__(
-        self, credentials: Optional[EventBusCredentialsModel] = None, **kwargs
+        self,
+        credentials: EventBusCredentialsModel | None = None,
+        **kwargs,
     ): ...
 
     def publish(self, event: OnexEvent) -> None:

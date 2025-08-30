@@ -7,7 +7,8 @@ for agent-generated tools.
 """
 
 import functools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
@@ -55,8 +56,10 @@ def standard_error_handling(operation_name: str = "operation"):
                 raise
             except Exception as e:
                 # Convert generic exceptions to OnexError with proper chaining
+                msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    f"{operation_name} failed: {str(e)}", CoreErrorCode.OPERATION_FAILED
+                    msg,
+                    CoreErrorCode.OPERATION_FAILED,
                 ) from e
 
         return wrapper
@@ -95,16 +98,17 @@ def validation_error_handling(operation_name: str = "validation"):
             except Exception as e:
                 # Check if this is a validation error (duck typing)
                 if hasattr(e, "errors") or "validation" in str(e).lower():
+                    msg = f"{operation_name} failed: {e!s}"
                     raise OnexError(
-                        f"{operation_name} failed: {str(e)}",
+                        msg,
                         CoreErrorCode.VALIDATION_ERROR,
                     ) from e
-                else:
-                    # Generic operation failure
-                    raise OnexError(
-                        f"{operation_name} failed: {str(e)}",
-                        CoreErrorCode.OPERATION_FAILED,
-                    ) from e
+                # Generic operation failure
+                msg = f"{operation_name} failed: {e!s}"
+                raise OnexError(
+                    msg,
+                    CoreErrorCode.OPERATION_FAILED,
+                ) from e
 
         return wrapper
 
@@ -138,8 +142,9 @@ def io_error_handling(operation_name: str = "I/O operation"):
                 raise
             except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
                 # File system errors
+                msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    f"{operation_name} failed: {str(e)}",
+                    msg,
                     (
                         CoreErrorCode.FILE_NOT_FOUND
                         if isinstance(e, FileNotFoundError)
@@ -148,8 +153,10 @@ def io_error_handling(operation_name: str = "I/O operation"):
                 ) from e
             except Exception as e:
                 # Generic I/O failure
+                msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    f"{operation_name} failed: {str(e)}", CoreErrorCode.OPERATION_FAILED
+                    msg,
+                    CoreErrorCode.OPERATION_FAILED,
                 ) from e
 
         return wrapper

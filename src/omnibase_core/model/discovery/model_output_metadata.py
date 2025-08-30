@@ -6,7 +6,6 @@ Follows ONEX canonical patterns with zero tolerance for Any types.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +14,7 @@ class ModelOutputMetadataItem(BaseModel):
     """Single output metadata item with strong typing."""
 
     key: str = Field(..., description="Metadata key")
-    value: Union[str, int, float, bool] = Field(..., description="Metadata value")
+    value: str | int | float | bool = Field(..., description="Metadata value")
     value_type: str = Field(
         ...,
         description="Value type",
@@ -28,31 +27,35 @@ class ModelOutputMetadataItem(BaseModel):
                 "timestamp",
                 "url",
                 "path",
-            ]
+            ],
         },
     )
-    category: Optional[str] = Field(
-        None, description="Metadata category for organization"
+    category: str | None = Field(
+        None,
+        description="Metadata category for organization",
     )
 
 
 class ModelOutputMetadata(BaseModel):
     """Output metadata container with strong typing."""
 
-    items: List[ModelOutputMetadataItem] = Field(
-        default_factory=list, description="List of typed output metadata items"
+    items: list[ModelOutputMetadataItem] = Field(
+        default_factory=list,
+        description="List of typed output metadata items",
     )
     execution_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When metadata was created"
+        default_factory=datetime.utcnow,
+        description="When metadata was created",
     )
 
-    def get_metadata_dict(self) -> Dict[str, Union[str, int, float, bool]]:
+    def get_metadata_dict(self) -> dict[str, str | int | float | bool]:
         """Convert to dictionary format for backward compatibility."""
         return {item.key: item.value for item in self.items}
 
     @classmethod
     def from_dict(
-        cls, metadata_dict: Dict[str, Union[str, int, float, bool]]
+        cls,
+        metadata_dict: dict[str, str | int | float | bool],
     ) -> "ModelOutputMetadata":
         """Create from dictionary with type inference."""
         items = []
@@ -71,7 +74,7 @@ class ModelOutputMetadata(BaseModel):
                 value = str(value)
 
             items.append(
-                ModelOutputMetadataItem(key=key, value=value, value_type=value_type)
+                ModelOutputMetadataItem(key=key, value=value, value_type=value_type),
             )
 
         return cls(items=items)

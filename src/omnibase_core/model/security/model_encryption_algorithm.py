@@ -4,8 +4,6 @@ ModelEncryptionAlgorithm: Encryption algorithm configuration.
 This model represents encryption algorithm specifications and parameters.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -20,19 +18,25 @@ class ModelEncryptionAlgorithm(BaseModel):
 
     key_size_bits: int = Field(256, description="Key size in bits", ge=128, le=512)
 
-    block_size_bits: Optional[int] = Field(
-        128, description="Block size in bits for block ciphers", ge=64, le=256
+    block_size_bits: int | None = Field(
+        128,
+        description="Block size in bits for block ciphers",
+        ge=64,
+        le=256,
     )
 
-    mode: Optional[str] = Field(
-        None, description="Cipher mode: GCM, CBC, CTR, etc.", pattern=r"^[A-Z]+$"
+    mode: str | None = Field(
+        None,
+        description="Cipher mode: GCM, CBC, CTR, etc.",
+        pattern=r"^[A-Z]+$",
     )
 
     is_authenticated: bool = Field(
-        True, description="Whether this is an authenticated encryption algorithm (AEAD)"
+        True,
+        description="Whether this is an authenticated encryption algorithm (AEAD)",
     )
 
-    tag_size_bits: Optional[int] = Field(
+    tag_size_bits: int | None = Field(
         128,
         description="Authentication tag size in bits for AEAD algorithms",
         ge=64,
@@ -40,7 +44,10 @@ class ModelEncryptionAlgorithm(BaseModel):
     )
 
     iv_size_bits: int = Field(
-        96, description="Initialization vector size in bits", ge=64, le=256
+        96,
+        description="Initialization vector size in bits",
+        ge=64,
+        le=256,
     )
 
     is_stream_cipher: bool = Field(False, description="Whether this is a stream cipher")
@@ -76,8 +83,9 @@ class ModelEncryptionAlgorithm(BaseModel):
             from omnibase_core.core.core_error_codes import CoreErrorCode
             from omnibase_core.exceptions import OnexError
 
+            msg = f"Unsupported encryption algorithm: {v}"
             raise OnexError(
-                f"Unsupported encryption algorithm: {v}",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 component="encryption_algorithm",
                 operation="validate_algorithm_name",
@@ -91,9 +99,7 @@ class ModelEncryptionAlgorithm(BaseModel):
         if self.name.split("-")[0] == other.name.split("-")[0]:
             return True
         # Both are AEAD
-        if self.is_authenticated and other.is_authenticated:
-            return True
-        return False
+        return bool(self.is_authenticated and other.is_authenticated)
 
     @classmethod
     def create_aes_256_gcm(cls) -> "ModelEncryptionAlgorithm":

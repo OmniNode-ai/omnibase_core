@@ -4,7 +4,7 @@ ONEX Model: MCP Tool Registry Model
 Strongly typed model for MCP tool registry.
 """
 
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,7 @@ class ModelMCPToolDefinition(BaseModel):
     """Model for a single MCP tool definition."""
 
     name: str = Field(..., description="Tool name")
-    handler: Optional[Callable] = Field(None, description="Tool handler function")
+    handler: Callable | None = Field(None, description="Tool handler function")
     description: str = Field("", description="Tool description")
 
     class Config:
@@ -25,12 +25,16 @@ class ModelMCPToolDefinition(BaseModel):
 class ModelMCPToolRegistry(BaseModel):
     """Strongly typed model for MCP tool registry."""
 
-    tools: List[ModelMCPToolDefinition] = Field(
-        default_factory=list, description="Registry of available tools"
+    tools: list[ModelMCPToolDefinition] = Field(
+        default_factory=list,
+        description="Registry of available tools",
     )
 
     def register_tool(
-        self, name: str, handler: Callable, description: str = ""
+        self,
+        name: str,
+        handler: Callable,
+        description: str = "",
     ) -> None:
         """Register a new tool."""
         # Remove existing tool with same name if it exists
@@ -38,16 +42,16 @@ class ModelMCPToolRegistry(BaseModel):
 
         # Add new tool
         self.tools.append(
-            ModelMCPToolDefinition(name=name, handler=handler, description=description)
+            ModelMCPToolDefinition(name=name, handler=handler, description=description),
         )
 
-    def get_tool(self, name: str) -> Optional[ModelMCPToolDefinition]:
+    def get_tool(self, name: str) -> ModelMCPToolDefinition | None:
         """Get a tool by name."""
         for tool in self.tools:
             if tool.name == name:
                 return tool
         return None
 
-    def list_tools(self) -> List[str]:
+    def list_tools(self) -> list[str]:
         """List all registered tool names."""
         return [tool.name for tool in self.tools]

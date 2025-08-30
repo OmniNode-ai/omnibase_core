@@ -1,7 +1,5 @@
 """Email notification configuration model."""
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
@@ -13,5 +11,5 @@ class ModelEmailConfig(BaseModel):
     username: str = Field(..., description="SMTP username")
     password: str = Field(..., description="SMTP password")
     from_email: str = Field(..., description="From email address")
-    to_emails: List[str] = Field(..., description="Recipient email addresses")
+    to_emails: list[str] = Field(..., description="Recipient email addresses")
     use_tls: bool = Field(default=True, description="Use TLS encryption")

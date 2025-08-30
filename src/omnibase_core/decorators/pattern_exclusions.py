@@ -3,7 +3,8 @@ ONEX Pattern Exclusion Decorators.
 Provides fine-grained control over ONEX zero tolerance standards enforcement.
 """
 
-from typing import Any, Callable, Optional, Set, Union
+from collections.abc import Callable
+from typing import Any
 
 # Self-exclusion: This module contains example code and infrastructure
 # ONEX_EXCLUDE: dict_str_any - Example code in docstrings and function signatures
@@ -15,10 +16,10 @@ class ONEXPatternExclusion:
 
     def __init__(
         self,
-        excluded_patterns: Set[str],
+        excluded_patterns: set[str],
         reason: str,
         scope: str = "function",
-        reviewer: Optional[str] = None,
+        reviewer: str | None = None,
     ):
         """
         Initialize pattern exclusion decorator.
@@ -34,7 +35,7 @@ class ONEXPatternExclusion:
         self.scope = scope
         self.reviewer = reviewer
 
-    def __call__(self, target: Union[Callable, type]) -> Union[Callable, type]:
+    def __call__(self, target: Callable | type) -> Callable | type:
         """Apply the exclusion to the target function or class."""
         # Mark the target with exclusion metadata
         if not hasattr(target, "_onex_pattern_exclusions"):
@@ -48,7 +49,7 @@ class ONEXPatternExclusion:
         return target
 
 
-def allow_any_type(reason: str, reviewer: Optional[str] = None):
+def allow_any_type(reason: str, reviewer: str | None = None):
     """
     Allow usage of Any type annotation.
 
@@ -62,11 +63,13 @@ def allow_any_type(reason: str, reviewer: Optional[str] = None):
             ...
     """
     return ONEXPatternExclusion(
-        excluded_patterns={"any_type"}, reason=reason, reviewer=reviewer
+        excluded_patterns={"any_type"},
+        reason=reason,
+        reviewer=reviewer,
     )
 
 
-def allow_dict_str_any(reason: str, reviewer: Optional[str] = None):
+def allow_dict_str_any(reason: str, reviewer: str | None = None):
     """
     Allow usage of Dict[str, Any] type annotation.
 
@@ -80,11 +83,13 @@ def allow_dict_str_any(reason: str, reviewer: Optional[str] = None):
             ...
     """
     return ONEXPatternExclusion(
-        excluded_patterns={"dict_str_any"}, reason=reason, reviewer=reviewer
+        excluded_patterns={"dict_str_any"},
+        reason=reason,
+        reviewer=reviewer,
     )
 
 
-def allow_mixed_types(reason: str, reviewer: Optional[str] = None):
+def allow_mixed_types(reason: str, reviewer: str | None = None):
     """
     Allow usage of both Any and Dict[str, Any] patterns.
 
@@ -98,11 +103,13 @@ def allow_mixed_types(reason: str, reviewer: Optional[str] = None):
             ...
     """
     return ONEXPatternExclusion(
-        excluded_patterns={"any_type", "dict_str_any"}, reason=reason, reviewer=reviewer
+        excluded_patterns={"any_type", "dict_str_any"},
+        reason=reason,
+        reviewer=reviewer,
     )
 
 
-def allow_legacy_pattern(pattern: str, reason: str, reviewer: Optional[str] = None):
+def allow_legacy_pattern(pattern: str, reason: str, reviewer: str | None = None):
     """
     Allow specific legacy pattern that doesn't conform to ONEX standards.
 
@@ -117,12 +124,16 @@ def allow_legacy_pattern(pattern: str, reason: str, reviewer: Optional[str] = No
             print(f"DEBUG: {message}")  # Normally forbidden
     """
     return ONEXPatternExclusion(
-        excluded_patterns={pattern}, reason=reason, reviewer=reviewer
+        excluded_patterns={pattern},
+        reason=reason,
+        reviewer=reviewer,
     )
 
 
 def exclude_from_onex_standards(
-    *patterns: str, reason: str, reviewer: Optional[str] = None
+    *patterns: str,
+    reason: str,
+    reviewer: str | None = None,
 ):
     """
     Generic exclusion decorator for multiple ONEX standard patterns.
@@ -142,7 +153,9 @@ def exclude_from_onex_standards(
             ...
     """
     return ONEXPatternExclusion(
-        excluded_patterns=set(patterns), reason=reason, reviewer=reviewer
+        excluded_patterns=set(patterns),
+        reason=reason,
+        reviewer=reviewer,
     )
 
 
@@ -165,7 +178,7 @@ def has_pattern_exclusion(obj: Any, pattern: str) -> bool:
     return pattern in obj._onex_pattern_exclusions
 
 
-def get_exclusion_info(obj: Any) -> Optional[dict]:
+def get_exclusion_info(obj: Any) -> dict | None:
     """
     Get exclusion information for an object.
 
@@ -187,7 +200,9 @@ def get_exclusion_info(obj: Any) -> Optional[dict]:
 
 
 def is_excluded_from_pattern_check(
-    file_path: str, line_number: int, pattern: str
+    file_path: str,
+    line_number: int,
+    pattern: str,
 ) -> bool:
     """
     Check if a specific line in a file is excluded from pattern checking.
@@ -205,7 +220,7 @@ def is_excluded_from_pattern_check(
     # to check if the line is within a function/class that has exclusion decorators
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
 
         # Look backwards from the current line to find decorator exclusions

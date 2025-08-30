@@ -5,7 +5,6 @@ Strongly typed model for MCP session management.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,13 +14,16 @@ class ModelMCPSession(BaseModel):
 
     session_id: str = Field(..., description="Unique session identifier")
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Session creation timestamp"
+        default_factory=datetime.now,
+        description="Session creation timestamp",
     )
     last_accessed: datetime = Field(
-        default_factory=datetime.now, description="Last access timestamp"
+        default_factory=datetime.now,
+        description="Last access timestamp",
     )
-    metadata: Optional[dict] = Field(
-        default_factory=dict, description="Session metadata"
+    metadata: dict | None = Field(
+        default_factory=dict,
+        description="Session metadata",
     )
     is_active: bool = Field(default=True, description="Whether session is active")
 

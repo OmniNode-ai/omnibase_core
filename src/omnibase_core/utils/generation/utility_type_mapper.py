@@ -6,13 +6,13 @@ Provides consistent type string generation across all ONEX tools.
 """
 
 import re
-from typing import List, Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_schema import ModelSchema
 
@@ -96,8 +96,9 @@ class UtilityTypeMapper:
         if schema.schema_type == "string" and schema.format:
             from omnibase.enums.enum_log_level import LogLevelEnum
 
-            from omnibase_core.core.core_structured_logging import \
-                emit_log_event_sync as emit_log_event
+            from omnibase_core.core.core_structured_logging import (
+                emit_log_event_sync as emit_log_event,
+            )
 
             emit_log_event(
                 LogLevelEnum.INFO,
@@ -106,11 +107,11 @@ class UtilityTypeMapper:
             )
             if schema.format in ["date-time", "datetime"]:
                 return "datetime"
-            elif schema.format == "date":
+            if schema.format == "date":
                 return "date"
-            elif schema.format == "time":
+            if schema.format == "time":
                 return "time"
-            elif schema.format == "uuid":
+            if schema.format == "uuid":
                 return "UUID"
 
         # Handle basic types
@@ -130,7 +131,7 @@ class UtilityTypeMapper:
             if hasattr(schema.items, "ref") and schema.items.ref:
                 ref_name = self._resolve_ref_name(schema.items.ref)
                 return f"List[{ref_name}]"
-            elif hasattr(schema.items, "schema_type"):
+            if hasattr(schema.items, "schema_type"):
                 item_type = self.get_type_string_from_schema(schema.items)
                 return f"List[{item_type}]"
 
@@ -154,16 +155,15 @@ class UtilityTypeMapper:
             ):
                 value_type = schema.additional_properties_type
                 return f"Dict[str, {value_type}]"
-            else:
-                # ONEX COMPLIANCE: Never use Dict[str, Any]
-                return "ModelObjectData"
-        elif schema.properties:
+            # ONEX COMPLIANCE: Never use Dict[str, Any]
+            return "ModelObjectData"
+        if schema.properties:
             # Has defined properties, use ModelObjectData for structured objects
             return "ModelObjectData"
         # Generic object - use structured type per ONEX standards
         return "ModelObjectData"
 
-    def generate_enum_name_from_values(self, enum_values: List[str]) -> str:
+    def generate_enum_name_from_values(self, enum_values: list[str]) -> str:
         """
         Generate enum class name from enum values.
 
@@ -182,8 +182,9 @@ class UtilityTypeMapper:
         # TRACE: Enum name generation
         from omnibase.enums.enum_log_level import LogLevelEnum
 
-        from omnibase_core.core.core_structured_logging import \
-            emit_log_event_sync as emit_log_event
+        from omnibase_core.core.core_structured_logging import (
+            emit_log_event_sync as emit_log_event,
+        )
 
         emit_log_event(
             LogLevelEnum.DEBUG,
@@ -211,15 +212,14 @@ class UtilityTypeMapper:
                     {"snake_case_parts": parts, "generated_name": generated_name},
                 )
                 return generated_name
-            else:
-                # Handle single word values
-                generated_name = f"Enum{clean_value.capitalize()}"
-                emit_log_event(
-                    LogLevelEnum.DEBUG,
-                    "🔍 TRACE: Single word enum name generated",
-                    {"generated_name": generated_name},
-                )
-                return generated_name
+            # Handle single word values
+            generated_name = f"Enum{clean_value.capitalize()}"
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                "🔍 TRACE: Single word enum name generated",
+                {"generated_name": generated_name},
+            )
+            return generated_name
 
         return "EnumGeneric"
 
@@ -270,7 +270,7 @@ class UtilityTypeMapper:
         """
         return self._resolve_ref_name(ref)
 
-    def get_import_for_type(self, type_string: str) -> Optional[str]:
+    def get_import_for_type(self, type_string: str) -> str | None:
         """
         Get the import statement needed for a type string.
 
@@ -282,25 +282,25 @@ class UtilityTypeMapper:
         """
         if type_string.startswith("List["):
             return "from typing import List"
-        elif type_string.startswith("Dict["):
+        if type_string.startswith("Dict["):
             return "from typing import Dict"
-        elif type_string == "Any":
+        if type_string == "Any":
             return "from typing import Any"
-        elif type_string.startswith("Optional["):
+        if type_string.startswith("Optional["):
             return "from typing import Optional"
-        elif type_string.startswith("Union["):
+        if type_string.startswith("Union["):
             return "from typing import Union"
-        elif type_string == "ModelObjectData":
+        if type_string == "ModelObjectData":
             return (
                 "from omnibase_core.model.core.model_object_data import ModelObjectData"
             )
-        elif type_string == "datetime":
+        if type_string == "datetime":
             return "from datetime import datetime"
-        elif type_string == "date":
+        if type_string == "date":
             return "from datetime import date"
-        elif type_string == "time":
+        if type_string == "time":
             return "from datetime import time"
-        elif type_string == "UUID":
+        if type_string == "UUID":
             return "from uuid import UUID"
 
         return None

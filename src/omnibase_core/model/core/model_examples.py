@@ -7,6 +7,7 @@ and compliance with one-model-per-file naming conventions.
 
 from .model_custom_settings import ModelCustomSettings
 from .model_example import ModelExample
+
 # Import separated models
 from .model_example_metadata import ModelExampleMetadata
 from .model_examples_collection import ModelExamples
@@ -17,11 +18,11 @@ ExampleMetadata = ModelExampleMetadata
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelExampleMetadata",
-    "ModelExample",
-    "ModelExamples",
-    "ModelCustomSettings",
-    "ModelNodeInformation",
     # Backward compatibility
     "ExampleMetadata",
+    "ModelCustomSettings",
+    "ModelExample",
+    "ModelExampleMetadata",
+    "ModelExamples",
+    "ModelNodeInformation",
 ]

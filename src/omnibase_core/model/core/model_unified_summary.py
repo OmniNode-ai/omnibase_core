@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from .model_unified_summary_details import ModelUnifiedSummaryDetails
+if TYPE_CHECKING:
+    from .model_unified_summary_details import ModelUnifiedSummaryDetails
 
 
 class ModelUnifiedSummary(BaseModel):
@@ -18,5 +19,5 @@ class ModelUnifiedSummary(BaseModel):
     skipped: int
     fixed: int
     warnings: int
-    notes: Optional[List[str]] = None
-    details: Optional[ModelUnifiedSummaryDetails] = None
+    notes: list[str] | None = None
+    details: ModelUnifiedSummaryDetails | None = None

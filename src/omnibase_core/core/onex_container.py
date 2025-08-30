@@ -6,7 +6,7 @@ without legacy registry dependencies.
 """
 
 import os
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, TypeVar
 
 from omnibase_core.exceptions.base_onex_error import OnexError
 
@@ -23,10 +23,10 @@ class ONEXContainer:
 
     def __init__(self) -> None:
         """Initialize the container."""
-        self._services: Dict[str, Any] = {}
-        self._config: Dict[str, Any] = {}
+        self._services: dict[str, Any] = {}
+        self._config: dict[str, Any] = {}
 
-    def configure(self, config: Dict[str, Any]) -> None:
+    def configure(self, config: dict[str, Any]) -> None:
         """Configure the container with settings."""
         self._config.update(config)
 
@@ -100,7 +100,7 @@ def create_onex_container() -> ONEXContainer:
 
 
 # === GLOBAL CONTAINER INSTANCE ===
-_container: Optional[ONEXContainer] = None
+_container: ONEXContainer | None = None
 
 
 def get_container() -> ONEXContainer:

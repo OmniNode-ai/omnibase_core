@@ -9,10 +9,11 @@ Author: ONEX Framework Team
 """
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from omnibase_core.core.common_types import ModelStateValue
 from omnibase_core.core.core_errors import OnexError
@@ -40,7 +41,7 @@ class LogEntry:
     level: str
     message: str
     timestamp: datetime
-    metadata: Optional[Dict[str, ModelStateValue]] = None
+    metadata: dict[str, ModelStateValue] | None = None
 
 
 @dataclass
@@ -52,15 +53,15 @@ class ExecutionContext:
     for full workflow traceability and debugging support.
     """
 
-    provenance: List[str]  # trace of node invocations
-    logs: List[LogEntry]  # structured logs per step
+    provenance: list[str]  # trace of node invocations
+    logs: list[LogEntry]  # structured logs per step
     trust_score: float  # numeric trust level (0.0-1.0)
     timestamp: datetime  # execution timestamp
-    metadata: Dict[str, ModelStateValue]  # additional ad hoc data
-    session_id: Optional[str] = None  # session identifier
-    correlation_id: Optional[str] = None  # correlation identifier
-    node_id: Optional[str] = None  # executing node identifier
-    workflow_id: Optional[str] = None  # workflow identifier
+    metadata: dict[str, ModelStateValue]  # additional ad hoc data
+    session_id: str | None = None  # session identifier
+    correlation_id: str | None = None  # correlation identifier
+    node_id: str | None = None  # executing node identifier
+    workflow_id: str | None = None  # workflow identifier
     parent_context: Optional["ExecutionContext"] = None  # parent execution context
 
 
@@ -74,13 +75,13 @@ class Event:
     """
 
     type: str  # e.g., "workflow.step.completed"
-    payload: Dict[str, ModelStateValue]  # structured content
+    payload: dict[str, ModelStateValue]  # structured content
     timestamp: datetime
-    source: Optional[str] = None  # source node identifier
-    correlation_id: Optional[str] = None
-    workflow_id: Optional[str] = None
-    session_id: Optional[str] = None
-    trust_score: Optional[float] = None
+    source: str | None = None  # source node identifier
+    correlation_id: str | None = None
+    workflow_id: str | None = None
+    session_id: str | None = None
+    trust_score: float | None = None
 
 
 @dataclass
@@ -89,13 +90,13 @@ class ErrorInfo:
 
     error_type: ErrorType
     message: str
-    code: Optional[str] = None
-    trace: Optional[str] = None
-    context: Optional[Dict] = None
+    code: str | None = None
+    trace: str | None = None
+    context: dict | None = None
     retryable: bool = False
-    backoff_strategy: Optional[str] = None
-    max_attempts: Optional[int] = None
-    correlation_id: Optional[str] = None
+    backoff_strategy: str | None = None
+    max_attempts: int | None = None
+    correlation_id: str | None = None
 
 
 class NodeResult(Generic[T]):
@@ -114,9 +115,9 @@ class NodeResult(Generic[T]):
         self,
         value: T,
         context: ExecutionContext,
-        state_delta: Optional[Dict] = None,
-        events: Optional[List[Event]] = None,
-        error: Optional[ErrorInfo] = None,
+        state_delta: dict | None = None,
+        events: list[Event] | None = None,
+        error: ErrorInfo | None = None,
     ):
         self.value = value
         self.context = context
@@ -136,7 +137,8 @@ class NodeResult(Generic[T]):
         return not self._is_success
 
     async def bind(
-        self, f: Callable[[T], Awaitable["NodeResult[U]"]]
+        self,
+        f: Callable[[T], Awaitable["NodeResult[U]"]],
     ) -> "NodeResult[U]":
         """
         Monadic bind operation for composing nodes with context propagation.
@@ -163,7 +165,8 @@ class NodeResult(Generic[T]):
                 provenance=self.context.provenance + next_result.context.provenance,
                 logs=self.context.logs + next_result.context.logs,
                 trust_score=min(
-                    self.context.trust_score, next_result.context.trust_score
+                    self.context.trust_score,
+                    next_result.context.trust_score,
                 ),
                 timestamp=next_result.context.timestamp,
                 metadata={**self.context.metadata, **next_result.context.metadata},
@@ -204,14 +207,14 @@ class NodeResult(Generic[T]):
                 value=None,
                 context=self.context,
                 state_delta=self.state_delta,
-                events=self.events
-                + [
+                events=[
+                    *self.events,
                     Event(
                         type="node.operation.failed",
                         payload={"error": error_info.__dict__},
                         timestamp=datetime.now(),
                         correlation_id=self.context.correlation_id,
-                    )
+                    ),
                 ],
                 error=error_info,
             )
@@ -230,14 +233,14 @@ class NodeResult(Generic[T]):
                 value=None,
                 context=self.context,
                 state_delta=self.state_delta,
-                events=self.events
-                + [
+                events=[
+                    *self.events,
                     Event(
                         type="node.operation.exception",
                         payload={"error": str(e), "type": type(e).__name__},
                         timestamp=datetime.now(),
                         correlation_id=self.context.correlation_id,
-                    )
+                    ),
                 ],
                 error=error_info,
             )
@@ -269,7 +272,7 @@ class NodeResult(Generic[T]):
         except Exception as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Map operation failed: {str(e)}",
+                message=f"Map operation failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 correlation_id=self.context.correlation_id,
             )
@@ -278,22 +281,22 @@ class NodeResult(Generic[T]):
                 value=None,
                 context=self.context,
                 state_delta=self.state_delta,
-                events=self.events
-                + [
+                events=[
+                    *self.events,
                     Event(
                         type="node.map.failed",
                         payload={"error": str(e)},
                         timestamp=datetime.now(),
                         correlation_id=self.context.correlation_id,
-                    )
+                    ),
                 ],
                 error=error_info,
             )
 
     @staticmethod
     async def gather(
-        results: List[Awaitable["NodeResult[T]"]],
-    ) -> "NodeResult[List[T]]":
+        results: list[Awaitable["NodeResult[T]"]],
+    ) -> "NodeResult[list[T]]":
         """
         Gather multiple NodeResult operations, combining their contexts.
 
@@ -312,7 +315,7 @@ class NodeResult(Generic[T]):
                 # Handle exception in gather
                 error_info = ErrorInfo(
                     error_type=ErrorType.PERMANENT,
-                    message=f"Gather operation failed: {str(result)}",
+                    message=f"Gather operation failed: {result!s}",
                     trace=str(result.__traceback__) if result.__traceback__ else None,
                 )
 
@@ -322,8 +325,10 @@ class NodeResult(Generic[T]):
                         provenance=["gather.failed"],
                         logs=[
                             LogEntry(
-                                "ERROR", f"Gather failed: {str(result)}", datetime.now()
-                            )
+                                "ERROR",
+                                f"Gather failed: {result!s}",
+                                datetime.now(),
+                            ),
                         ],
                         trust_score=0.0,
                         timestamp=datetime.now(),
@@ -334,7 +339,7 @@ class NodeResult(Generic[T]):
                             type="node.gather.failed",
                             payload={"error": str(result)},
                             timestamp=datetime.now(),
-                        )
+                        ),
                     ],
                     error=error_info,
                 )
@@ -353,7 +358,8 @@ class NodeResult(Generic[T]):
                     provenance=combined_context.provenance + result.context.provenance,
                     logs=combined_context.logs + result.context.logs,
                     trust_score=min(
-                        combined_context.trust_score, result.context.trust_score
+                        combined_context.trust_score,
+                        result.context.trust_score,
                     ),
                     timestamp=result.context.timestamp,
                     metadata={**combined_context.metadata, **result.context.metadata},
@@ -376,15 +382,15 @@ class NodeResult(Generic[T]):
     @staticmethod
     def success(
         value: T,
-        provenance: List[str],
+        provenance: list[str],
         trust_score: float = 1.0,
-        metadata: Optional[Dict[str, ModelStateValue]] = None,
-        state_delta: Optional[Dict] = None,
-        events: Optional[List[Event]] = None,
-        session_id: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        node_id: Optional[str] = None,
-        workflow_id: Optional[str] = None,
+        metadata: dict[str, ModelStateValue] | None = None,
+        state_delta: dict | None = None,
+        events: list[Event] | None = None,
+        session_id: str | None = None,
+        correlation_id: str | None = None,
+        node_id: str | None = None,
+        workflow_id: str | None = None,
     ) -> "NodeResult[T]":
         """Create a successful NodeResult with the given parameters."""
         context = ExecutionContext(
@@ -400,19 +406,22 @@ class NodeResult(Generic[T]):
         )
 
         return NodeResult(
-            value=value, context=context, state_delta=state_delta, events=events
+            value=value,
+            context=context,
+            state_delta=state_delta,
+            events=events,
         )
 
     @staticmethod
     def failure(
         error: ErrorInfo,
-        provenance: List[str],
+        provenance: list[str],
         trust_score: float = 0.0,
-        metadata: Optional[Dict[str, ModelStateValue]] = None,
-        session_id: Optional[str] = None,
-        correlation_id: Optional[str] = None,
-        node_id: Optional[str] = None,
-        workflow_id: Optional[str] = None,
+        metadata: dict[str, ModelStateValue] | None = None,
+        session_id: str | None = None,
+        correlation_id: str | None = None,
+        node_id: str | None = None,
+        workflow_id: str | None = None,
     ) -> "NodeResult[None]":
         """Create a failed NodeResult with the given error information."""
         context = ExecutionContext(
@@ -439,7 +448,7 @@ class NodeResult(Generic[T]):
                     correlation_id=correlation_id,
                     workflow_id=workflow_id,
                     session_id=session_id,
-                )
+                ),
             ],
             error=error,
         )

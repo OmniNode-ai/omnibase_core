@@ -5,12 +5,9 @@ Defines the structure for CLI commands discovered dynamically from node contract
 This replaces hardcoded command enums with flexible, contract-driven command definitions.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.core.model_argument_description import \
-    ModelArgumentDescription
+from omnibase_core.model.core.model_argument_description import ModelArgumentDescription
 from omnibase_core.model.core.model_event_type import ModelEventType
 from omnibase_core.model.core.model_node_reference import ModelNodeReference
 
@@ -31,25 +28,29 @@ class ModelCliCommandDefinition(BaseModel):
     )
 
     target_node: ModelNodeReference = Field(
-        ..., description="Target node for execution"
+        ...,
+        description="Target node for execution",
     )
 
     action: str = Field(..., description="Action to execute on the target node")
 
     description: str = Field(..., description="Human-readable command description")
 
-    required_args: List[ModelArgumentDescription] = Field(
-        default_factory=list, description="Required command arguments"
+    required_args: list[ModelArgumentDescription] = Field(
+        default_factory=list,
+        description="Required command arguments",
     )
 
-    optional_args: List[ModelArgumentDescription] = Field(
-        default_factory=list, description="Optional command arguments"
+    optional_args: list[ModelArgumentDescription] = Field(
+        default_factory=list,
+        description="Optional command arguments",
     )
 
     event_type: ModelEventType = Field(..., description="Event type for execution")
 
-    examples: List[str] = Field(
-        default_factory=list, description="Usage examples for help display"
+    examples: list[str] = Field(
+        default_factory=list,
+        description="Usage examples for help display",
     )
 
     category: str = Field(
@@ -59,11 +60,13 @@ class ModelCliCommandDefinition(BaseModel):
     )
 
     deprecated: bool = Field(
-        default=False, description="Whether this command is deprecated"
+        default=False,
+        description="Whether this command is deprecated",
     )
 
-    deprecation_message: Optional[str] = Field(
-        None, description="Deprecation warning message"
+    deprecation_message: str | None = Field(
+        None,
+        description="Deprecation warning message",
     )
 
     def get_qualified_name(self) -> str:

@@ -26,12 +26,13 @@ tool-as-a-service functionality for MCP, GraphQL, and other integrations.
 """
 
 import asyncio
+import contextlib
 import signal
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Set
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
@@ -39,12 +40,18 @@ from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.mixin.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.model.core.model_log_context import ModelLogContext
-from omnibase_core.model.discovery.model_node_shutdown_event import \
-    ModelNodeShutdownEvent
-from omnibase_core.model.discovery.model_tool_invocation_event import \
-    ModelToolInvocationEvent
-from omnibase_core.model.discovery.model_tool_response_event import \
-    ModelToolResponseEvent
+from omnibase_core.model.discovery.model_node_shutdown_event import (
+    ModelNodeShutdownEvent,
+)
+from omnibase_core.model.discovery.model_tool_invocation_event import (
+    ModelToolInvocationEvent,
+)
+from omnibase_core.model.discovery.model_tool_response_event import (
+    ModelToolResponseEvent,
+)
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -68,15 +75,15 @@ class MixinNodeService(MixinEventDrivenNode):
 
         # Service state
         self._service_running = False
-        self._service_task: Optional[asyncio.Task] = None
-        self._health_task: Optional[asyncio.Task] = None
-        self._active_invocations: Set[UUID] = set()
+        self._service_task: asyncio.Task | None = None
+        self._health_task: asyncio.Task | None = None
+        self._active_invocations: set[UUID] = set()
 
         # Performance tracking
         self._total_invocations = 0
         self._successful_invocations = 0
         self._failed_invocations = 0
-        self._start_time: Optional[float] = None
+        self._start_time: float | None = None
 
         # Shutdown handling
         self._shutdown_requested = False
@@ -145,10 +152,8 @@ class MixinNodeService(MixinEventDrivenNode):
             # Cancel health monitoring
             if self._health_task and not self._health_task.done():
                 self._health_task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await self._health_task
-                except asyncio.CancelledError:
-                    pass
 
             # Wait for active invocations to complete (with timeout)
             await self._wait_for_active_invocations(timeout_ms=30000)
@@ -194,12 +199,12 @@ class MixinNodeService(MixinEventDrivenNode):
             # Validate target
             if not self._is_target_node(event):
                 self._log_warning(
-                    f"Ignoring invocation for different target: {event.target_node_id}"
+                    f"Ignoring invocation for different target: {event.target_node_id}",
                 )
                 return
 
             self._log_info(
-                f"Handling tool invocation: {event.tool_name}.{event.action} (correlation: {correlation_id})"
+                f"Handling tool invocation: {event.tool_name}.{event.action} (correlation: {correlation_id})",
             )
 
             # Convert event to input state
@@ -228,7 +233,7 @@ class MixinNodeService(MixinEventDrivenNode):
 
             self._successful_invocations += 1
             self._log_info(
-                f"Tool invocation completed successfully in {execution_time_ms}ms"
+                f"Tool invocation completed successfully in {execution_time_ms}ms",
             )
 
         except Exception as e:
@@ -257,7 +262,7 @@ class MixinNodeService(MixinEventDrivenNode):
             # Remove from active invocations
             self._active_invocations.discard(correlation_id)
 
-    def get_service_health(self) -> Dict[str, Any]:
+    def get_service_health(self) -> dict[str, Any]:
         """
         Get current service health status.
 
@@ -304,7 +309,8 @@ class MixinNodeService(MixinEventDrivenNode):
         """Subscribe to TOOL_INVOCATION events."""
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
-            raise RuntimeError("Event bus not available for subscription")
+            msg = "Event bus not available for subscription"
+            raise RuntimeError(msg)
 
         # Subscribe to tool invocation events
         event_bus.subscribe(self.handle_tool_invocation, CoreEventTypes.TOOL_INVOCATION)
@@ -334,7 +340,7 @@ class MixinNodeService(MixinEventDrivenNode):
                 # Log health status periodically
                 if self._total_invocations % 100 == 0 and self._total_invocations > 0:
                     self._log_info(
-                        f"Health: {health['active_invocations']} active, {health['success_rate']:.2%} success rate"
+                        f"Health: {health['active_invocations']} active, {health['success_rate']:.2%} success rate",
                     )
 
                 # Wait before next health check
@@ -354,7 +360,8 @@ class MixinNodeService(MixinEventDrivenNode):
         )
 
     async def _convert_event_to_input_state(
-        self, event: ModelToolInvocationEvent
+        self,
+        event: ModelToolInvocationEvent,
     ) -> Any:
         """
         Convert tool invocation event to node input state.
@@ -375,13 +382,12 @@ class MixinNodeService(MixinEventDrivenNode):
             # Create input state with action and parameters
             state_data = {"action": event.action, **event.parameters}
             return input_state_class(**state_data)
-        else:
-            # Fallback to generic state object
-            from types import SimpleNamespace
+        # Fallback to generic state object
+        from types import SimpleNamespace
 
-            return SimpleNamespace(action=event.action, **event.parameters)
+        return SimpleNamespace(action=event.action, **event.parameters)
 
-    def _infer_input_state_class(self) -> Optional[type]:
+    def _infer_input_state_class(self) -> type | None:
         """Attempt to infer the input state class for this node."""
         # Look for common patterns in the node class
         for attr_name in dir(self):
@@ -392,35 +398,37 @@ class MixinNodeService(MixinEventDrivenNode):
         return None
 
     async def _execute_tool(
-        self, input_state: Any, event: ModelToolInvocationEvent
+        self,
+        input_state: Any,
+        event: ModelToolInvocationEvent,
     ) -> Any:
         """Execute the tool via the node's run method."""
         # Check if the node has a run method
         if hasattr(self, "run"):
-            run_method = getattr(self, "run")
+            run_method = self.run
             if asyncio.iscoroutinefunction(run_method):
                 return await run_method(input_state)
-            else:
-                # Run synchronous method in executor to avoid blocking
-                return await asyncio.get_event_loop().run_in_executor(
-                    None, run_method, input_state
-                )
-        else:
-            raise RuntimeError("Node does not have a 'run' method for tool execution")
+            # Run synchronous method in executor to avoid blocking
+            return await asyncio.get_event_loop().run_in_executor(
+                None,
+                run_method,
+                input_state,
+            )
+        msg = "Node does not have a 'run' method for tool execution"
+        raise RuntimeError(msg)
 
-    def _serialize_result(self, result: Any) -> Dict[str, Any]:
+    def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize the execution result to a dictionary."""
         if hasattr(result, "dict"):
             # Pydantic model
             return result.model_dump()
-        elif hasattr(result, "__dict__"):
+        if hasattr(result, "__dict__"):
             # Regular object
             return result.__dict__
-        elif isinstance(result, dict):
+        if isinstance(result, dict):
             return result
-        else:
-            # Primitive or other types
-            return {"result": result}
+        # Primitive or other types
+        return {"result": result}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
@@ -451,7 +459,7 @@ class MixinNodeService(MixinEventDrivenNode):
             return
 
         self._log_info(
-            f"Waiting for {len(self._active_invocations)} active invocations to complete..."
+            f"Waiting for {len(self._active_invocations)} active invocations to complete...",
         )
 
         timeout_seconds = timeout_ms / 1000
@@ -462,7 +470,7 @@ class MixinNodeService(MixinEventDrivenNode):
 
         if self._active_invocations:
             self._log_warning(
-                f"Timeout waiting for invocations, {len(self._active_invocations)} still active"
+                f"Timeout waiting for invocations, {len(self._active_invocations)} still active",
             )
 
     def _register_signal_handlers(self) -> None:
@@ -471,7 +479,7 @@ class MixinNodeService(MixinEventDrivenNode):
 
             def signal_handler(signum, frame):
                 self._log_info(
-                    f"Received signal {signum}, initiating graceful shutdown"
+                    f"Received signal {signum}, initiating graceful shutdown",
                 )
                 self._shutdown_requested = True
 

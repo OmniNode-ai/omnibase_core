@@ -1,9 +1,11 @@
 from typing import Protocol
 
-from omnibase_core.model.service.model_event_bus_bootstrap_result import \
-    ModelEventBusBootstrapResult
-from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.tools.tool_kafka_event_bus import \
-    ModelModelEventBusConfig
+from omnibase_core.model.service.model_event_bus_bootstrap_result import (
+    ModelEventBusBootstrapResult,
+)
+from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.tools.tool_kafka_event_bus import (
+    ModelModelEventBusConfig,
+)
 
 
 class ProtocolToolBootstrap(Protocol):
@@ -13,7 +15,8 @@ class ProtocolToolBootstrap(Protocol):
     """
 
     def bootstrap_kafka_cluster(
-        self, config: ModelModelEventBusConfig
+        self,
+        config: ModelModelEventBusConfig,
     ) -> ModelEventBusBootstrapResult:
         """
         Perform bootstrap initialization for the Kafka cluster.

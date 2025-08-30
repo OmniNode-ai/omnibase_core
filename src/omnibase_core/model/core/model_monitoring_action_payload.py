@@ -4,26 +4,25 @@ Monitoring Action Payload Model.
 Payload for monitoring actions (monitor, collect, report, alert).
 """
 
-from typing import List, Optional
-
 from pydantic import Field, field_validator
 
-from omnibase_core.model.core.model_action_payload_base import \
-    ModelActionPayloadBase
+from omnibase_core.model.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
 
 
 class ModelMonitoringActionPayload(ModelActionPayloadBase):
     """Payload for monitoring actions (monitor, collect, report, alert)."""
 
-    metrics: List[str] = Field(
-        default_factory=list, description="Metrics to monitor/collect"
+    metrics: list[str] = Field(
+        default_factory=list,
+        description="Metrics to monitor/collect",
     )
-    interval_seconds: Optional[int] = Field(
-        None, description="Monitoring interval in seconds"
+    interval_seconds: int | None = Field(
+        None,
+        description="Monitoring interval in seconds",
     )
-    threshold: Optional[float] = Field(None, description="Threshold for alerts")
-    output_format: Optional[str] = Field(None, description="Output format for reports")
+    threshold: float | None = Field(None, description="Threshold for alerts")
+    output_format: str | None = Field(None, description="Output format for reports")
 
     @field_validator("action_type")
     @classmethod
@@ -32,5 +31,6 @@ class ModelMonitoringActionPayload(ModelActionPayloadBase):
         from omnibase_core.model.core.predefined_categories import QUERY
 
         if v.category != QUERY:
-            raise ValueError(f"Invalid monitoring action: {v.name}")
+            msg = f"Invalid monitoring action: {v.name}"
+            raise ValueError(msg)
         return v

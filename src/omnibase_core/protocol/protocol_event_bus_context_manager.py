@@ -1,7 +1,8 @@
 from typing import Protocol, TypeVar, runtime_checkable
 
-from omnibase_core.model.configuration.model_event_bus_config import \
-    ModelModelEventBusConfig
+from omnibase_core.model.configuration.model_event_bus_config import (
+    ModelModelEventBusConfig,
+)
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 TEventBus = TypeVar("TEventBus", bound=ProtocolEventBus)

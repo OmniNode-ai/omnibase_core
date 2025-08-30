@@ -6,7 +6,6 @@ with thresholds, trends, and temporal tracking.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -28,12 +27,14 @@ class ModelHealthMetric(BaseModel):
 
     unit: str = Field(..., description="Metric unit (e.g., '%', 'ms', 'MB', 'req/s')")
 
-    threshold_warning: Optional[float] = Field(
-        None, description="Warning threshold value"
+    threshold_warning: float | None = Field(
+        None,
+        description="Warning threshold value",
     )
 
-    threshold_critical: Optional[float] = Field(
-        None, description="Critical threshold value"
+    threshold_critical: float | None = Field(
+        None,
+        description="Critical threshold value",
     )
 
     trend: str = Field(
@@ -43,15 +44,17 @@ class ModelHealthMetric(BaseModel):
     )
 
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metric update timestamp"
+        default_factory=datetime.utcnow,
+        description="Last metric update timestamp",
     )
 
-    min_value: Optional[float] = Field(None, description="Minimum recorded value")
+    min_value: float | None = Field(None, description="Minimum recorded value")
 
-    max_value: Optional[float] = Field(None, description="Maximum recorded value")
+    max_value: float | None = Field(None, description="Maximum recorded value")
 
-    average_value: Optional[float] = Field(
-        None, description="Average value over time period"
+    average_value: float | None = Field(
+        None,
+        description="Average value over time period",
     )
 
     def is_warning(self) -> bool:
@@ -78,12 +81,11 @@ class ModelHealthMetric(BaseModel):
         """Get overall metric status"""
         if self.is_critical():
             return "critical"
-        elif self.is_warning():
+        if self.is_warning():
             return "warning"
-        elif self.is_degrading():
+        if self.is_degrading():
             return "degrading"
-        else:
-            return "normal"
+        return "normal"
 
     def update_value(self, new_value: float) -> None:
         """Update metric with new value and recalculate stats"""

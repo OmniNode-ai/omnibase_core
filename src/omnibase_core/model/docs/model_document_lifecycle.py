@@ -7,7 +7,6 @@ and automated categorization within the ONEX document management system.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import Field, validator
 
@@ -64,51 +63,62 @@ class ModelLifecycleTransition(ModelOnexInputState):
 
     transition_id: str = Field(..., description="Unique identifier for this transition")
     document_path: str = Field(
-        ..., description="Path to the document that transitioned"
+        ...,
+        description="Path to the document that transitioned",
     )
 
     # Transition details
     from_state: str = Field(..., description="Previous lifecycle state")
     to_state: str = Field(..., description="New lifecycle state")
     transition_reason: EnumLifecycleTransitionReason = Field(
-        ..., description="Reason for the transition"
+        ...,
+        description="Reason for the transition",
     )
 
     # Metadata
     triggered_by: str = Field(
-        ..., description="What triggered this transition (system, user, ai)"
+        ...,
+        description="What triggered this transition (system, user, ai)",
     )
     triggered_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When transition occurred"
+        default_factory=datetime.utcnow,
+        description="When transition occurred",
     )
     confidence_score: float = Field(
-        default=1.0, description="Confidence in this transition decision"
+        default=1.0,
+        description="Confidence in this transition decision",
     )
 
     # Context
-    context_data: Dict = Field(
-        default_factory=dict, description="Additional context for the transition"
+    context_data: dict = Field(
+        default_factory=dict,
+        description="Additional context for the transition",
     )
-    notes: Optional[str] = Field(
-        None, description="Human-readable notes about the transition"
+    notes: str | None = Field(
+        None,
+        description="Human-readable notes about the transition",
     )
 
     # Approval workflow
     requires_approval: bool = Field(
-        default=False, description="Whether this transition requires human approval"
+        default=False,
+        description="Whether this transition requires human approval",
     )
-    approved: Optional[bool] = Field(
-        None, description="Whether transition was approved"
+    approved: bool | None = Field(
+        None,
+        description="Whether transition was approved",
     )
-    approved_by: Optional[str] = Field(None, description="Who approved the transition")
-    approved_at: Optional[datetime] = Field(
-        None, description="When transition was approved"
+    approved_by: str | None = Field(None, description="Who approved the transition")
+    approved_at: datetime | None = Field(
+        None,
+        description="When transition was approved",
     )
 
     @validator("confidence_score")
-    def validate_confidence_score(cls, v):
+    def validate_confidence_score(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Confidence score must be between 0.0 and 1.0")
+            msg = "Confidence score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -117,17 +127,20 @@ class ModelDocumentLifecycleConfig(ModelOnexInputState):
 
     # Automatic transition thresholds
     auto_stale_threshold_days: int = Field(
-        default=90, description="Days after which docs auto-transition to stale"
+        default=90,
+        description="Days after which docs auto-transition to stale",
     )
     auto_deprecated_threshold_days: int = Field(
-        default=365, description="Days after which docs auto-transition to deprecated"
+        default=365,
+        description="Days after which docs auto-transition to deprecated",
     )
     auto_archive_threshold_days: int = Field(
-        default=730, description="Days after which docs can be auto-archived"
+        default=730,
+        description="Days after which docs can be auto-archived",
     )
 
     # Directory-based classification rules
-    directory_mappings: Dict[str, EnumDocumentCategory] = Field(
+    directory_mappings: dict[str, EnumDocumentCategory] = Field(
         default_factory=lambda: {
             "docs/": EnumDocumentCategory.CORE_DOCUMENTATION,
             "legacy/": EnumDocumentCategory.LEGACY_CONTENT,
@@ -141,42 +154,50 @@ class ModelDocumentLifecycleConfig(ModelOnexInputState):
     )
 
     # Lifecycle rules by category
-    category_rules: Dict[EnumDocumentCategory, Dict] = Field(
+    category_rules: dict[EnumDocumentCategory, dict] = Field(
         default_factory=dict,
         description="Lifecycle rules specific to each document category",
     )
 
     # AI analysis settings
     enable_ai_lifecycle_analysis: bool = Field(
-        default=True, description="Enable AI-powered lifecycle analysis"
+        default=True,
+        description="Enable AI-powered lifecycle analysis",
     )
     ai_analysis_frequency_days: int = Field(
-        default=7, description="How often to run AI lifecycle analysis"
+        default=7,
+        description="How often to run AI lifecycle analysis",
     )
     ai_confidence_threshold: float = Field(
-        default=0.8, description="Minimum confidence for AI lifecycle decisions"
+        default=0.8,
+        description="Minimum confidence for AI lifecycle decisions",
     )
 
     # Notification settings
     notify_on_transitions: bool = Field(
-        default=True, description="Send notifications on lifecycle transitions"
+        default=True,
+        description="Send notifications on lifecycle transitions",
     )
-    notification_recipients: List[str] = Field(
-        default_factory=list, description="Email/user IDs to notify"
+    notification_recipients: list[str] = Field(
+        default_factory=list,
+        description="Email/user IDs to notify",
     )
 
     # Approval requirements
     require_approval_for_deletion: bool = Field(
-        default=True, description="Require human approval before deletion"
+        default=True,
+        description="Require human approval before deletion",
     )
     require_approval_for_deprecation: bool = Field(
-        default=False, description="Require approval for deprecation"
+        default=False,
+        description="Require approval for deprecation",
     )
 
     @validator("ai_confidence_threshold")
-    def validate_ai_confidence_threshold(cls, v):
+    def validate_ai_confidence_threshold(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("AI confidence threshold must be between 0.0 and 1.0")
+            msg = "AI confidence threshold must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -186,7 +207,8 @@ class ModelDocumentLifecycleState(ModelOnexInputState):
     document_path: str = Field(..., description="Path to the document")
     current_state: str = Field(..., description="Current lifecycle state")
     category: EnumDocumentCategory = Field(
-        ..., description="Document category classification"
+        ...,
+        description="Document category classification",
     )
 
     # State tracking
@@ -194,55 +216,67 @@ class ModelDocumentLifecycleState(ModelOnexInputState):
         default_factory=datetime.utcnow,
         description="When document entered current state",
     )
-    previous_state: Optional[str] = Field(None, description="Previous lifecycle state")
+    previous_state: str | None = Field(None, description="Previous lifecycle state")
     state_change_count: int = Field(default=0, description="Number of state changes")
 
     # Scheduled actions
-    next_review_date: Optional[datetime] = Field(
-        None, description="When document is scheduled for next review"
+    next_review_date: datetime | None = Field(
+        None,
+        description="When document is scheduled for next review",
     )
-    pending_actions: List[EnumLifecycleAction] = Field(
-        default_factory=list, description="Actions pending for this document"
+    pending_actions: list[EnumLifecycleAction] = Field(
+        default_factory=list,
+        description="Actions pending for this document",
     )
 
     # Analysis results
-    last_ai_analysis: Optional[datetime] = Field(
-        None, description="When AI last analyzed this document"
+    last_ai_analysis: datetime | None = Field(
+        None,
+        description="When AI last analyzed this document",
     )
-    ai_recommended_state: Optional[str] = Field(
-        None, description="AI-recommended lifecycle state"
+    ai_recommended_state: str | None = Field(
+        None,
+        description="AI-recommended lifecycle state",
     )
-    ai_confidence: Optional[float] = Field(
-        None, description="AI confidence in recommendation"
+    ai_confidence: float | None = Field(
+        None,
+        description="AI confidence in recommendation",
     )
 
     # Manual overrides
     manual_override: bool = Field(
-        default=False, description="Whether lifecycle is manually overridden"
+        default=False,
+        description="Whether lifecycle is manually overridden",
     )
-    override_reason: Optional[str] = Field(
-        None, description="Reason for manual override"
+    override_reason: str | None = Field(
+        None,
+        description="Reason for manual override",
     )
-    override_by: Optional[str] = Field(None, description="Who applied the override")
-    override_until: Optional[datetime] = Field(
-        None, description="Until when the override is valid"
+    override_by: str | None = Field(None, description="Who applied the override")
+    override_until: datetime | None = Field(
+        None,
+        description="Until when the override is valid",
     )
 
     # Metrics
     access_frequency: float = Field(
-        default=0.0, description="How frequently this document is accessed"
+        default=0.0,
+        description="How frequently this document is accessed",
     )
     reference_count: int = Field(
-        default=0, description="Number of other documents referencing this one"
+        default=0,
+        description="Number of other documents referencing this one",
     )
     importance_score: float = Field(
-        default=0.5, description="Calculated importance score (0.0-1.0)"
+        default=0.5,
+        description="Calculated importance score (0.0-1.0)",
     )
 
     @validator("ai_confidence", "importance_score")
-    def validate_scores(cls, v):
+    def validate_scores(self, v):
         if v is not None and not 0.0 <= v <= 1.0:
-            raise ValueError("Score must be between 0.0 and 1.0")
+            msg = "Score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -252,54 +286,66 @@ class ModelLifecycleAnalysisResult(ModelOnexInputState):
     analysis_id: str = Field(..., description="Unique identifier for this analysis")
     document_path: str = Field(..., description="Document that was analyzed")
     analysis_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When analysis was performed"
+        default_factory=datetime.utcnow,
+        description="When analysis was performed",
     )
 
     # Analysis inputs
     document_age_days: int = Field(..., description="Age of document in days")
     last_modified_days_ago: int = Field(..., description="Days since last modification")
     dependency_staleness_score: float = Field(
-        ..., description="Score indicating dependency staleness"
+        ...,
+        description="Score indicating dependency staleness",
     )
     access_pattern_score: float = Field(
-        ..., description="Score based on access patterns"
+        ...,
+        description="Score based on access patterns",
     )
 
     # AI analysis (if enabled)
-    ai_content_analysis: Optional[Dict] = Field(
-        None, description="AI analysis of document content"
+    ai_content_analysis: dict | None = Field(
+        None,
+        description="AI analysis of document content",
     )
-    ai_relevance_score: Optional[float] = Field(
-        None, description="AI-assessed relevance score"
+    ai_relevance_score: float | None = Field(
+        None,
+        description="AI-assessed relevance score",
     )
-    ai_quality_score: Optional[float] = Field(
-        None, description="AI-assessed quality score"
+    ai_quality_score: float | None = Field(
+        None,
+        description="AI-assessed quality score",
     )
 
     # Recommendations
     recommended_state: str = Field(..., description="Recommended lifecycle state")
-    recommended_actions: List[EnumLifecycleAction] = Field(
-        default_factory=list, description="Recommended actions to take"
+    recommended_actions: list[EnumLifecycleAction] = Field(
+        default_factory=list,
+        description="Recommended actions to take",
     )
     confidence_score: float = Field(..., description="Confidence in recommendations")
 
     # Reasoning
-    reasoning: List[str] = Field(
-        default_factory=list, description="Human-readable reasoning for recommendations"
+    reasoning: list[str] = Field(
+        default_factory=list,
+        description="Human-readable reasoning for recommendations",
     )
-    factors_considered: List[str] = Field(
-        default_factory=list, description="Factors that influenced the analysis"
+    factors_considered: list[str] = Field(
+        default_factory=list,
+        description="Factors that influenced the analysis",
     )
 
     # Next steps
     requires_human_review: bool = Field(
-        default=False, description="Whether human review is recommended"
+        default=False,
+        description="Whether human review is recommended",
     )
     urgency_level: str = Field(
-        default="low", description="Urgency level (low, medium, high, critical)"
+        default="low",
+        description="Urgency level (low, medium, high, critical)",
     )
-    estimated_effort_hours: Optional[float] = Field(
-        None, description="Estimated effort to address recommendations"
+    estimated_effort_hours: float | None = Field(
+        None,
+        description="Estimated effort to address recommendations",
     )
 
     @validator(
@@ -309,9 +355,10 @@ class ModelLifecycleAnalysisResult(ModelOnexInputState):
         "ai_quality_score",
         "confidence_score",
     )
-    def validate_scores(cls, v):
+    def validate_scores(self, v):
         if v is not None and not 0.0 <= v <= 1.0:
-            raise ValueError("Score must be between 0.0 and 1.0")
+            msg = "Score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -319,66 +366,82 @@ class ModelLifecycleBatchOperation(ModelOnexInputState):
     """Batch operation for processing multiple documents through lifecycle management."""
 
     operation_id: str = Field(
-        ..., description="Unique identifier for this batch operation"
+        ...,
+        description="Unique identifier for this batch operation",
     )
     operation_type: str = Field(
-        ..., description="Type of operation (analysis, transition, cleanup)"
+        ...,
+        description="Type of operation (analysis, transition, cleanup)",
     )
 
     # Scope
-    document_paths: List[str] = Field(
-        ..., description="Documents to process in this batch"
+    document_paths: list[str] = Field(
+        ...,
+        description="Documents to process in this batch",
     )
-    directory_patterns: List[str] = Field(
-        default_factory=list, description="Directory patterns to process"
+    directory_patterns: list[str] = Field(
+        default_factory=list,
+        description="Directory patterns to process",
     )
 
     # Configuration
     config: ModelDocumentLifecycleConfig = Field(
-        ..., description="Configuration for this batch operation"
+        ...,
+        description="Configuration for this batch operation",
     )
     dry_run: bool = Field(
-        default=True, description="Whether to perform a dry run without making changes"
+        default=True,
+        description="Whether to perform a dry run without making changes",
     )
 
     # Progress tracking
     started_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When operation started"
+        default_factory=datetime.utcnow,
+        description="When operation started",
     )
-    completed_at: Optional[datetime] = Field(
-        None, description="When operation completed"
+    completed_at: datetime | None = Field(
+        None,
+        description="When operation completed",
     )
     progress_percentage: float = Field(default=0.0, description="Completion percentage")
 
     # Results
     documents_processed: int = Field(
-        default=0, description="Number of documents processed"
+        default=0,
+        description="Number of documents processed",
     )
     documents_modified: int = Field(
-        default=0, description="Number of documents modified"
+        default=0,
+        description="Number of documents modified",
     )
     errors_encountered: int = Field(
-        default=0, description="Number of errors encountered"
+        default=0,
+        description="Number of errors encountered",
     )
 
     # Detailed results
-    processing_results: List[ModelLifecycleAnalysisResult] = Field(
-        default_factory=list, description="Detailed results for each document"
+    processing_results: list[ModelLifecycleAnalysisResult] = Field(
+        default_factory=list,
+        description="Detailed results for each document",
     )
-    error_details: List[Dict] = Field(
-        default_factory=list, description="Details of any errors encountered"
+    error_details: list[dict] = Field(
+        default_factory=list,
+        description="Details of any errors encountered",
     )
 
     # Summary
-    summary_statistics: Dict = Field(
-        default_factory=dict, description="Summary statistics for the operation"
+    summary_statistics: dict = Field(
+        default_factory=dict,
+        description="Summary statistics for the operation",
     )
-    recommendations_summary: Dict = Field(
-        default_factory=dict, description="Summary of all recommendations"
+    recommendations_summary: dict = Field(
+        default_factory=dict,
+        description="Summary of all recommendations",
     )
 
     @validator("progress_percentage")
-    def validate_progress_percentage(cls, v):
+    def validate_progress_percentage(self, v):
         if not 0.0 <= v <= 100.0:
-            raise ValueError("Progress percentage must be between 0.0 and 100.0")
+            msg = "Progress percentage must be between 0.0 and 100.0"
+            raise ValueError(msg)
         return v

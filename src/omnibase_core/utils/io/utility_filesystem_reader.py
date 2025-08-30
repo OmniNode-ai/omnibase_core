@@ -5,7 +5,7 @@ This is the production implementation that reads from the actual filesystem.
 """
 
 from pathlib import Path
-from typing import Type, TypeVar, Union
+from typing import TypeVar
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -23,7 +23,7 @@ class UtilityFileSystemReader:
     This implementation reads files from the actual filesystem.
     """
 
-    def read_text(self, path: Union[str, Path]) -> str:
+    def read_text(self, path: str | Path) -> str:
         """
         Read text content from a file on the filesystem.
 
@@ -44,10 +44,11 @@ class UtilityFileSystemReader:
             return path.read_text()
         except Exception as e:
             raise OnexError(
-                CoreErrorCode.FILE_READ_ERROR, f"Failed to read file {path}: {e}"
+                CoreErrorCode.FILE_READ_ERROR,
+                f"Failed to read file {path}: {e}",
             )
 
-    def read_yaml(self, path: Union[str, Path], model_class: Type[T]) -> T:
+    def read_yaml(self, path: str | Path, model_class: type[T]) -> T:
         """
         Read and parse YAML content from a file into a Pydantic model.
 
@@ -65,11 +66,13 @@ class UtilityFileSystemReader:
             content = self.read_text(path)
         except FileNotFoundError:
             raise OnexError(
-                CoreErrorCode.FILE_NOT_FOUND, f"Contract file not found: {path}"
+                CoreErrorCode.FILE_NOT_FOUND,
+                f"Contract file not found: {path}",
             )
         except Exception as e:
             raise OnexError(
-                CoreErrorCode.FILE_READ_ERROR, f"Failed to read file {path}: {e}"
+                CoreErrorCode.FILE_READ_ERROR,
+                f"Failed to read file {path}: {e}",
             )
 
         try:
@@ -88,7 +91,7 @@ class UtilityFileSystemReader:
                 f"Failed to validate {model_class.__name__} from {path}: {e}",
             )
 
-    def exists(self, path: Union[str, Path]) -> bool:
+    def exists(self, path: str | Path) -> bool:
         """
         Check if a file exists on the filesystem.
 

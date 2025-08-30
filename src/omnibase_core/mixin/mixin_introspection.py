@@ -32,19 +32,30 @@ this mixin to provide consistent --introspect functionality.
 
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 from pydantic import BaseModel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.model.core.model_node_introspection import (
-    CLIArgumentModel, CLIInterfaceModel, ContractModel, DependenciesModel,
-    ErrorCodeModel, ErrorCodesModel, EventChannelsModel, ModelStateModel,
-    ModelStatesModel, NodeCapabilityEnum, NodeModelMetadata, StateFieldModel,
-    create_node_introspection_response)
-from omnibase_core.model.core.model_node_introspection_response import \
-    ModelNodeIntrospectionResponse
+    CLIArgumentModel,
+    CLIInterfaceModel,
+    ContractModel,
+    DependenciesModel,
+    ErrorCodeModel,
+    ErrorCodesModel,
+    EventChannelsModel,
+    ModelStateModel,
+    ModelStatesModel,
+    NodeCapabilityEnum,
+    NodeModelMetadata,
+    StateFieldModel,
+    create_node_introspection_response,
+)
+from omnibase_core.model.core.model_node_introspection_response import (
+    ModelNodeIntrospectionResponse,
+)
 
 
 class NodeIntrospectionMixin(ABC):
@@ -70,7 +81,6 @@ class NodeIntrospectionMixin(ABC):
         Subclasses must implement this to provide a metadata loader instance.
         This enables dependency injection and avoids hardcoding.
         """
-        pass
 
     @classmethod
     def get_node_name(cls) -> str:
@@ -85,19 +95,16 @@ class NodeIntrospectionMixin(ABC):
         return cls.get_metadata_loader().node_description
 
     @classmethod
-    def get_input_state_class(cls) -> Type[BaseModel]:
+    def get_input_state_class(cls) -> type[BaseModel]:
         """Return the input state model class."""
-        pass
 
     @classmethod
-    def get_output_state_class(cls) -> Type[BaseModel]:
+    def get_output_state_class(cls) -> type[BaseModel]:
         """Return the output state model class."""
-        pass
 
     @classmethod
-    def get_error_codes_class(cls) -> Type:
+    def get_error_codes_class(cls) -> type:
         """Return the error codes enum class."""
-        pass
 
     @classmethod
     def get_node_author(cls) -> str:
@@ -120,22 +127,22 @@ class NodeIntrospectionMixin(ABC):
         return ">=3.11"
 
     @classmethod
-    def get_runtime_dependencies(cls) -> List[str]:
+    def get_runtime_dependencies(cls) -> list[str]:
         """Return runtime dependencies. Override to specify dependencies."""
         return ["omnibase.core", "omnibase.model"]
 
     @classmethod
-    def get_optional_dependencies(cls) -> List[str]:
+    def get_optional_dependencies(cls) -> list[str]:
         """Return optional dependencies. Override to specify optional deps."""
         return []
 
     @classmethod
-    def get_external_tools(cls) -> List[str]:
+    def get_external_tools(cls) -> list[str]:
         """Return external tool dependencies. Override to specify tools."""
         return []
 
     @classmethod
-    def get_node_capabilities(cls) -> List[NodeCapabilityEnum]:
+    def get_node_capabilities(cls) -> list[NodeCapabilityEnum]:
         """Return node capabilities. Override to specify capabilities."""
         return []
 
@@ -154,12 +161,12 @@ class NodeIntrospectionMixin(ABC):
         return f"python -m omnibase.nodes.{node_name}.v1_0_0.node"
 
     @classmethod
-    def get_cli_required_args(cls) -> List[CLIArgumentModel]:
+    def get_cli_required_args(cls) -> list[CLIArgumentModel]:
         """Return required CLI arguments. Override to specify required args."""
         return []
 
     @classmethod
-    def get_cli_optional_args(cls) -> List[CLIArgumentModel]:
+    def get_cli_optional_args(cls) -> list[CLIArgumentModel]:
         """Return optional CLI arguments. Override to specify optional args."""
         return [
             CLIArgumentModel(
@@ -169,18 +176,19 @@ class NodeIntrospectionMixin(ABC):
                 description="Display node contract and capabilities",
                 default=None,
                 choices=None,
-            )
+            ),
         ]
 
     @classmethod
-    def get_cli_exit_codes(cls) -> List[int]:
+    def get_cli_exit_codes(cls) -> list[int]:
         """Return possible CLI exit codes. Override if different from default."""
         return [0, 1, 2]
 
     @classmethod
     def _extract_state_model_fields(
-        cls, model_class: Type[BaseModel]
-    ) -> List[StateFieldModel]:
+        cls,
+        model_class: type[BaseModel],
+    ) -> list[StateFieldModel]:
         """Extract field information from a Pydantic model."""
         fields = []
 
@@ -206,7 +214,7 @@ class NodeIntrospectionMixin(ABC):
                     required=is_required,
                     description=description,
                     default=default_value,
-                )
+                ),
             )
 
         return fields
@@ -264,7 +272,7 @@ class NodeIntrospectionMixin(ABC):
                         description=description,
                         exit_code=exit_code,
                         category=category,
-                    )
+                    ),
                 )
 
         return ErrorCodesModel(component=component, codes=codes, total_codes=len(codes))
@@ -277,8 +285,9 @@ class NodeIntrospectionMixin(ABC):
         Returns:
             ModelNodeIntrospectionResponse with all node metadata and capabilities
         """
-        from omnibase_core.cli_tools.onex.v1_0_0.cli_version_resolver import \
-            global_resolver
+        from omnibase_core.cli_tools.onex.v1_0_0.cli_version_resolver import (
+            global_resolver,
+        )
 
         node_name = cls.get_node_name()
 
@@ -375,7 +384,7 @@ class NodeIntrospectionMixin(ABC):
         return "utility"
 
     @classmethod
-    def _get_node_tags(cls) -> List[str]:
+    def _get_node_tags(cls) -> list[str]:
         """Return node tags. Override to specify tags."""
         return []
 
@@ -385,12 +394,12 @@ class NodeIntrospectionMixin(ABC):
         return "stable"
 
     @classmethod
-    def _get_node_use_cases(cls) -> List[str]:
+    def _get_node_use_cases(cls) -> list[str]:
         """Return node use cases. Override to specify use cases."""
         return []
 
     @classmethod
-    def _get_performance_profile(cls) -> Dict[str, Any]:
+    def _get_performance_profile(cls) -> dict[str, Any]:
         """Return performance profile. Override to specify performance characteristics."""
         return {
             "typical_execution_time": "unknown",
@@ -407,13 +416,14 @@ class NodeIntrospectionMixin(ABC):
         """
         import os
 
-        from omnibase_core.model.core.model_event_type import \
-            create_event_type_from_string
+        from omnibase_core.model.core.model_event_type import (
+            create_event_type_from_string,
+        )
 
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
-            correlation_id = getattr(event_bus, "correlation_id")
+            correlation_id = event_bus.correlation_id
         # 2. Fallback to ONEX_CORRELATION_ID env var
         if not correlation_id:
             correlation_id = os.environ.get("ONEX_CORRELATION_ID")

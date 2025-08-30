@@ -7,7 +7,6 @@ communication with the ONEX system through the communication bridge.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -44,35 +43,44 @@ class ModelAgentEvent(BaseModel):
     event_type: AgentEventType = Field(description="Type of agent event")
     agent_id: str = Field(description="ID of the agent that generated this event")
     severity: AgentEventSeverity = Field(
-        default=AgentEventSeverity.INFO, description="Severity level of the event"
+        default=AgentEventSeverity.INFO,
+        description="Severity level of the event",
     )
     message: str = Field(description="Human-readable event message")
-    data: Optional[Dict[str, Union[str, int, float, bool, Dict[str, str], list]]] = (
-        Field(default=None, description="Additional event data")
+    data: dict[str, str | int | float | bool | dict[str, str] | list] | None = Field(
+        default=None, description="Additional event data"
     )
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation ID for tracking related events"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Correlation ID for tracking related events",
     )
-    task_id: Optional[str] = Field(
-        default=None, description="ID of the task this event relates to"
+    task_id: str | None = Field(
+        default=None,
+        description="ID of the task this event relates to",
     )
-    session_id: Optional[str] = Field(
-        default=None, description="Agent session identifier"
+    session_id: str | None = Field(
+        default=None,
+        description="Agent session identifier",
     )
-    source_file: Optional[str] = Field(
-        default=None, description="Source file related to this event"
+    source_file: str | None = Field(
+        default=None,
+        description="Source file related to this event",
     )
-    source_line: Optional[int] = Field(
-        default=None, description="Source line number related to this event"
+    source_line: int | None = Field(
+        default=None,
+        description="Source line number related to this event",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Event generation timestamp"
+        default_factory=datetime.now,
+        description="Event generation timestamp",
     )
-    expires_at: Optional[datetime] = Field(
-        default=None, description="Event expiration timestamp"
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Event expiration timestamp",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata for the event"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata for the event",
     )
 
     @property

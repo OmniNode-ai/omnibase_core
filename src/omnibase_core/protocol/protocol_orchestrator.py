@@ -22,10 +22,13 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import List, Protocol
+from typing import Protocol
 
 from omnibase_core.model.service.model_orchestrator import (
-    GraphModel, OrchestratorResultModel, PlanModel)
+    GraphModel,
+    OrchestratorResultModel,
+    PlanModel,
+)
 
 
 class ProtocolOrchestrator(Protocol):
@@ -40,6 +43,6 @@ class ProtocolOrchestrator(Protocol):
                 ...
     """
 
-    def plan(self, graph: GraphModel) -> List[PlanModel]: ...
+    def plan(self, graph: GraphModel) -> list[PlanModel]: ...
 
-    def execute(self, plan: List[PlanModel]) -> OrchestratorResultModel: ...
+    def execute(self, plan: list[PlanModel]) -> OrchestratorResultModel: ...

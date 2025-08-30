@@ -10,7 +10,7 @@ Author: ONEX Framework Team
 
 import asyncio
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Protocol
 
 from llama_index.core.workflow import Workflow
 
@@ -56,7 +56,9 @@ class ProtocolWorkflowReducer(Protocol):
 
     @abstractmethod
     async def dispatch_async(
-        self, state: ModelState, action: ActionModel
+        self,
+        state: ModelState,
+        action: ActionModel,
     ) -> NodeResult[ModelState]:
         """
         Asynchronous workflow-based state transition.
@@ -79,7 +81,7 @@ class ProtocolWorkflowReducer(Protocol):
         ...
 
     @abstractmethod
-    def create_workflow(self) -> Optional[Workflow]:
+    def create_workflow(self) -> Workflow | None:
         """
         Factory method for creating LlamaIndex workflow instances.
 
@@ -90,7 +92,10 @@ class ProtocolWorkflowReducer(Protocol):
         ...
 
     def validate_state_transition(
-        self, from_state: ModelState, action: ActionModel, to_state: ModelState
+        self,
+        from_state: ModelState,
+        action: ActionModel,
+        to_state: ModelState,
     ) -> bool:
         """
         Validate that a state transition is legal.
@@ -106,7 +111,7 @@ class ProtocolWorkflowReducer(Protocol):
         # Default implementation allows all transitions
         return True
 
-    def get_state_schema(self) -> Optional[Dict[str, Any]]:
+    def get_state_schema(self) -> dict[str, Any] | None:
         """
         Get the schema definition for this reducer's state.
 
@@ -116,7 +121,7 @@ class ProtocolWorkflowReducer(Protocol):
         """
         return None
 
-    def get_action_schema(self) -> Optional[Dict[str, Any]]:
+    def get_action_schema(self) -> dict[str, Any] | None:
         """
         Get the schema definition for actions this reducer handles.
 
@@ -137,7 +142,9 @@ class SimpleWorkflowReducer(ProtocolWorkflowReducer):
     """
 
     async def dispatch_async(
-        self, state: ModelState, action: ActionModel
+        self,
+        state: ModelState,
+        action: ActionModel,
     ) -> NodeResult[ModelState]:
         """
         Default async implementation that wraps synchronous dispatch.
@@ -170,11 +177,13 @@ class SimpleWorkflowReducer(ProtocolWorkflowReducer):
 
         except Exception as e:
             from omnibase_core.core.monadic.model_node_result import (
-                ErrorInfo, ErrorType)
+                ErrorInfo,
+                ErrorType,
+            )
 
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Synchronous dispatch failed: {str(e)}",
+                message=f"Synchronous dispatch failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 retryable=False,
             )
@@ -184,7 +193,7 @@ class SimpleWorkflowReducer(ProtocolWorkflowReducer):
                 provenance=[f"{self.__class__.__name__}.dispatch.failed"],
             )
 
-    def create_workflow(self) -> Optional[Workflow]:
+    def create_workflow(self) -> Workflow | None:
         """
         Default implementation returns None (no workflow needed).
 
@@ -206,7 +215,7 @@ class WorkflowOrchestrationMixin:
         workflow: Workflow,
         step_name: str,
         input_data: Any,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> NodeResult[Any]:
         """
         Run a single workflow step with error handling and observability.
@@ -222,9 +231,11 @@ class WorkflowOrchestrationMixin:
         """
         from datetime import datetime
 
-        from omnibase_core.core.monadic.model_node_result import (ErrorInfo,
-                                                                  ErrorType,
-                                                                  Event)
+        from omnibase_core.core.monadic.model_node_result import (
+            ErrorInfo,
+            ErrorType,
+            Event,
+        )
 
         start_time = datetime.now()
 
@@ -232,7 +243,8 @@ class WorkflowOrchestrationMixin:
             # Run workflow step with optional timeout
             if timeout:
                 result = await asyncio.wait_for(
-                    workflow.run(**input_data), timeout=timeout
+                    workflow.run(**input_data),
+                    timeout=timeout,
                 )
             else:
                 result = await workflow.run(**input_data)
@@ -260,11 +272,11 @@ class WorkflowOrchestrationMixin:
                         },
                         timestamp=end_time,
                         source=f"workflow.{step_name}",
-                    )
+                    ),
                 ],
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_info = ErrorInfo(
                 error_type=ErrorType.TIMEOUT,
                 message=f"Workflow step '{step_name}' timed out after {timeout}s",
@@ -274,23 +286,27 @@ class WorkflowOrchestrationMixin:
             )
 
             return NodeResult.failure(
-                error=error_info, provenance=[f"workflow.{step_name}.timeout"]
+                error=error_info,
+                provenance=[f"workflow.{step_name}.timeout"],
             )
 
         except Exception as e:
             error_info = ErrorInfo(
                 error_type=ErrorType.PERMANENT,
-                message=f"Workflow step '{step_name}' failed: {str(e)}",
+                message=f"Workflow step '{step_name}' failed: {e!s}",
                 trace=str(e.__traceback__) if e.__traceback__ else None,
                 retryable=False,
             )
 
             return NodeResult.failure(
-                error=error_info, provenance=[f"workflow.{step_name}.failed"]
+                error=error_info,
+                provenance=[f"workflow.{step_name}.failed"],
             )
 
     async def coordinate_workflow_sequence(
-        self, workflow_steps: list, initial_data: Any
+        self,
+        workflow_steps: list,
+        initial_data: Any,
     ) -> NodeResult[Any]:
         """
         Coordinate a sequence of workflow steps with data flow.
@@ -310,7 +326,9 @@ class WorkflowOrchestrationMixin:
         for workflow, step_name, transform_fn in workflow_steps:
             # Run workflow step
             step_result = await self.run_workflow_step(
-                workflow, step_name, current_data
+                workflow,
+                step_name,
+                current_data,
             )
 
             if step_result.is_failure:

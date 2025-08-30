@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -20,13 +20,20 @@ class ModelRetryConfig(BaseModel):
     """
 
     max_attempts: int = Field(
-        3, description="Maximum number of retry attempts", ge=1, le=10
+        3,
+        description="Maximum number of retry attempts",
+        ge=1,
+        le=10,
     )
     backoff_seconds: float = Field(
-        1.0, description="Base backoff time between retries", ge=0.1, le=60.0
+        1.0,
+        description="Base backoff time between retries",
+        ge=0.1,
+        le=60.0,
     )
     exponential_backoff: bool = Field(
-        True, description="Whether to use exponential backoff"
+        True,
+        description="Whether to use exponential backoff",
     )
 
     @field_validator("max_attempts", mode="before")
@@ -34,11 +41,13 @@ class ModelRetryConfig(BaseModel):
     def validate_max_attempts(cls, v: int) -> int:
         """Validate retry attempts with reasonable limits."""
         if v < 1:
-            raise ValueError("Must have at least 1 attempt")
+            msg = "Must have at least 1 attempt"
+            raise ValueError(msg)
 
         if v > 10:
+            msg = "Too many retry attempts (max 10) - consider circuit breaker instead"
             raise ValueError(
-                "Too many retry attempts (max 10) - consider circuit breaker instead"
+                msg,
             )
 
         return v
@@ -48,11 +57,13 @@ class ModelRetryConfig(BaseModel):
     def validate_backoff_seconds(cls, v: float) -> float:
         """Validate backoff timing for practical use."""
         if v < 0.1:
-            raise ValueError("Backoff too short (min 0.1 seconds)")
+            msg = "Backoff too short (min 0.1 seconds)"
+            raise ValueError(msg)
 
         if v > 60.0:
+            msg = "Backoff too long (max 60 seconds) - consider reducing retry attempts"
             raise ValueError(
-                "Backoff too long (max 60 seconds) - consider reducing retry attempts"
+                msg,
             )
 
         return v
@@ -60,15 +71,18 @@ class ModelRetryConfig(BaseModel):
     # === Retry Strategy Calculations ===
 
     def calculate_delay(
-        self, attempt_number: int, include_jitter: bool = True
+        self,
+        attempt_number: int,
+        include_jitter: bool = True,
     ) -> float:
         """Calculate delay for a specific retry attempt."""
         if attempt_number < 1:
             return 0.0
 
         if attempt_number > self.max_attempts:
+            msg = f"Attempt {attempt_number} exceeds max attempts {self.max_attempts}"
             raise ValueError(
-                f"Attempt {attempt_number} exceeds max attempts {self.max_attempts}"
+                msg,
             )
 
         if self.exponential_backoff:
@@ -85,7 +99,7 @@ class ModelRetryConfig(BaseModel):
 
         return max(0.1, delay)  # Minimum 0.1 second delay
 
-    def get_all_delays(self, include_jitter: bool = True) -> List[float]:
+    def get_all_delays(self, include_jitter: bool = True) -> list[float]:
         """Get all delay times for the retry sequence."""
         return [
             self.calculate_delay(i, include_jitter)
@@ -108,17 +122,14 @@ class ModelRetryConfig(BaseModel):
         if self.exponential_backoff:
             if self.max_attempts <= 3:
                 return "conservative_exponential"
-            elif self.max_attempts <= 5:
+            if self.max_attempts <= 5:
                 return "moderate_exponential"
-            else:
-                return "aggressive_exponential"
-        else:
-            if self.max_attempts <= 3:
-                return "conservative_linear"
-            elif self.max_attempts <= 5:
-                return "moderate_linear"
-            else:
-                return "aggressive_linear"
+            return "aggressive_exponential"
+        if self.max_attempts <= 3:
+            return "conservative_linear"
+        if self.max_attempts <= 5:
+            return "moderate_linear"
+        return "aggressive_linear"
 
     def is_aggressive_strategy(self) -> bool:
         """Check if this is an aggressive retry strategy."""
@@ -132,7 +143,7 @@ class ModelRetryConfig(BaseModel):
 
     # === Performance Assessment ===
 
-    def get_performance_impact(self) -> Dict[str, str]:
+    def get_performance_impact(self) -> dict[str, str]:
         """Assess the performance impact of this retry configuration."""
         total_time = self.get_total_retry_time()
 
@@ -160,19 +171,19 @@ class ModelRetryConfig(BaseModel):
             "strategy_type": self.get_retry_strategy_type(),
         }
 
-    def get_performance_recommendations(self) -> List[str]:
+    def get_performance_recommendations(self) -> list[str]:
         """Get performance tuning recommendations."""
         recommendations = []
 
         total_time = self.get_total_retry_time()
         if total_time > 30.0:
             recommendations.append(
-                "Total retry time is very high - consider reducing attempts or backoff"
+                "Total retry time is very high - consider reducing attempts or backoff",
             )
 
         if not self.exponential_backoff and self.max_attempts > 3:
             recommendations.append(
-                "Consider exponential backoff for better resource utilization"
+                "Consider exponential backoff for better resource utilization",
             )
 
         if self.backoff_seconds > 10.0:
@@ -180,12 +191,12 @@ class ModelRetryConfig(BaseModel):
 
         if self.max_attempts > 5:
             recommendations.append(
-                "High retry count may indicate need for circuit breaker pattern"
+                "High retry count may indicate need for circuit breaker pattern",
             )
 
         if self.exponential_backoff and self.backoff_seconds > 2.0:
             recommendations.append(
-                "High base backoff with exponential growth may cause very long delays"
+                "High base backoff with exponential growth may cause very long delays",
             )
 
         return recommendations
@@ -196,7 +207,7 @@ class ModelRetryConfig(BaseModel):
         """Determine if a circuit breaker should be used with this configuration."""
         return self.max_attempts > 3 or self.get_total_retry_time() > 15.0
 
-    def get_circuit_breaker_recommendations(self) -> Dict[str, Any]:
+    def get_circuit_breaker_recommendations(self) -> dict[str, Any]:
         """Get circuit breaker configuration recommendations."""
         if not self.should_use_circuit_breaker():
             return {
@@ -230,7 +241,7 @@ class ModelRetryConfig(BaseModel):
         # Add 20% buffer for network variability
         return total_timeout * 1.2
 
-    def validate_timeout_compatibility(self, total_timeout: float) -> Tuple[bool, str]:
+    def validate_timeout_compatibility(self, total_timeout: float) -> tuple[bool, str]:
         """Validate if the retry config is compatible with a given timeout."""
         min_required = self.get_recommended_timeout(1.0)  # Assume 1s base operation
 
@@ -251,7 +262,9 @@ class ModelRetryConfig(BaseModel):
     # === Error Classification Support ===
 
     def should_retry_error(
-        self, error_code: Optional[int] = None, error_type: Optional[str] = None
+        self,
+        error_code: int | None = None,
+        error_type: str | None = None,
     ) -> bool:
         """Determine if an error should be retried based on classification."""
         # Non-retryable HTTP status codes
@@ -290,7 +303,7 @@ class ModelRetryConfig(BaseModel):
         # Default: retry if we have attempts left
         return True
 
-    def get_retry_error_categories(self) -> Dict[str, List[str]]:
+    def get_retry_error_categories(self) -> dict[str, list[str]]:
         """Get categorized list of retryable and non-retryable errors."""
         return {
             "always_retry": [
@@ -340,7 +353,9 @@ class ModelRetryConfig(BaseModel):
 
     @classmethod
     def create_linear(
-        cls, max_attempts: int = 3, backoff_seconds: float = 2.0
+        cls,
+        max_attempts: int = 3,
+        backoff_seconds: float = 2.0,
     ) -> "ModelRetryConfig":
         """Create linear backoff retry configuration."""
         return cls(
@@ -356,7 +371,9 @@ class ModelRetryConfig(BaseModel):
 
     @classmethod
     def create_for_timeout(
-        cls, total_timeout: float, base_operation_time: float = 1.0
+        cls,
+        total_timeout: float,
+        base_operation_time: float = 1.0,
     ) -> "ModelRetryConfig":
         """Create retry configuration that fits within a total timeout."""
         # Calculate how many attempts we can fit

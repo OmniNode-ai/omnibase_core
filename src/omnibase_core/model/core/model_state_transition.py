@@ -6,7 +6,7 @@ to specify how state should change in response to actions.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -24,26 +24,30 @@ class ModelStateTransitionCondition(BaseModel):
     """Condition that must be met for a transition to apply."""
 
     expression: str = Field(
-        ..., description="Expression to evaluate (e.g., 'state.count > 10')"
+        ...,
+        description="Expression to evaluate (e.g., 'state.count > 10')",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Error message if condition fails"
+    error_message: str | None = Field(
+        None,
+        description="Error message if condition fails",
     )
 
-    required_fields: Optional[List[str]] = Field(
-        None, description="Fields that must exist in state for condition"
+    required_fields: list[str] | None = Field(
+        None,
+        description="Fields that must exist in state for condition",
     )
 
 
 class ModelSimpleTransition(BaseModel):
     """Simple direct state field updates."""
 
-    updates: Dict[str, Any] = Field(
-        ..., description="Field path to value mappings (e.g., {'user.name': 'John'})"
+    updates: dict[str, Any] = Field(
+        ...,
+        description="Field path to value mappings (e.g., {'user.name': 'John'})",
     )
 
-    merge_strategy: Optional[str] = Field(
+    merge_strategy: str | None = Field(
         "replace",
         description="How to handle existing values: 'replace', 'merge', 'append'",
     )
@@ -53,31 +57,37 @@ class ModelToolBasedTransition(BaseModel):
     """Transition that delegates to a tool for state computation."""
 
     tool_name: str = Field(
-        ..., description="Name of the tool to invoke (e.g., 'tool_state_calculator')"
+        ...,
+        description="Name of the tool to invoke (e.g., 'tool_state_calculator')",
     )
 
-    tool_params: Optional[Dict[str, Any]] = Field(
-        None, description="Additional parameters to pass to the tool"
+    tool_params: dict[str, Any] | None = Field(
+        None,
+        description="Additional parameters to pass to the tool",
     )
 
-    fallback_updates: Optional[Dict[str, Any]] = Field(
-        None, description="Updates to apply if tool invocation fails"
+    fallback_updates: dict[str, Any] | None = Field(
+        None,
+        description="Updates to apply if tool invocation fails",
     )
 
-    timeout_ms: Optional[int] = Field(
-        5000, description="Tool invocation timeout in milliseconds"
+    timeout_ms: int | None = Field(
+        5000,
+        description="Tool invocation timeout in milliseconds",
     )
 
 
 class ModelConditionalTransition(BaseModel):
     """Transition that applies different updates based on conditions."""
 
-    branches: List[Dict[str, Any]] = Field(
-        ..., description="List of condition/transition pairs"
+    branches: list[dict[str, Any]] = Field(
+        ...,
+        description="List of condition/transition pairs",
     )
 
-    default_transition: Optional[Dict[str, Any]] = Field(
-        None, description="Transition to apply if no conditions match"
+    default_transition: dict[str, Any] | None = Field(
+        None,
+        description="Transition to apply if no conditions match",
     )
 
 
@@ -92,13 +102,15 @@ class ModelStateTransition(BaseModel):
     # Transition identification
     name: str = Field(..., description="Unique name for this transition")
 
-    description: Optional[str] = Field(
-        None, description="Human-readable description of what this transition does"
+    description: str | None = Field(
+        None,
+        description="Human-readable description of what this transition does",
     )
 
     # Trigger configuration
-    triggers: List[str] = Field(
-        ..., description="Action types or events that trigger this transition"
+    triggers: list[str] = Field(
+        ...,
+        description="Action types or events that trigger this transition",
     )
 
     priority: int = Field(
@@ -110,52 +122,62 @@ class ModelStateTransition(BaseModel):
     transition_type: EnumTransitionType = Field(..., description="Type of transition")
 
     # Type-specific configuration (only one should be set)
-    simple_config: Optional[ModelSimpleTransition] = Field(
-        None, description="Configuration for simple transitions"
+    simple_config: ModelSimpleTransition | None = Field(
+        None,
+        description="Configuration for simple transitions",
     )
 
-    tool_config: Optional[ModelToolBasedTransition] = Field(
-        None, description="Configuration for tool-based transitions"
+    tool_config: ModelToolBasedTransition | None = Field(
+        None,
+        description="Configuration for tool-based transitions",
     )
 
-    conditional_config: Optional[ModelConditionalTransition] = Field(
-        None, description="Configuration for conditional transitions"
+    conditional_config: ModelConditionalTransition | None = Field(
+        None,
+        description="Configuration for conditional transitions",
     )
 
-    composite_config: Optional[List["ModelStateTransition"]] = Field(
-        None, description="Sub-transitions for composite transitions"
+    composite_config: list["ModelStateTransition"] | None = Field(
+        None,
+        description="Sub-transitions for composite transitions",
     )
 
     # Pre/post conditions
-    preconditions: Optional[List[ModelStateTransitionCondition]] = Field(
-        None, description="Conditions that must be met before transition"
+    preconditions: list[ModelStateTransitionCondition] | None = Field(
+        None,
+        description="Conditions that must be met before transition",
     )
 
-    postconditions: Optional[List[ModelStateTransitionCondition]] = Field(
-        None, description="Conditions that must be met after transition"
+    postconditions: list[ModelStateTransitionCondition] | None = Field(
+        None,
+        description="Conditions that must be met after transition",
     )
 
     # Validation and side effects
     validate_before: bool = Field(
-        default=True, description="Whether to validate state before transition"
+        default=True,
+        description="Whether to validate state before transition",
     )
 
     validate_after: bool = Field(
-        default=True, description="Whether to validate state after transition"
+        default=True,
+        description="Whether to validate state after transition",
     )
 
-    emit_events: Optional[List[str]] = Field(
-        None, description="Event types to emit after successful transition"
+    emit_events: list[str] | None = Field(
+        None,
+        description="Event types to emit after successful transition",
     )
 
     # Error handling
-    on_error: Optional[str] = Field(
+    on_error: str | None = Field(
         "fail",
         description="Error handling strategy: 'fail', 'skip', 'rollback', 'retry'",
     )
 
-    max_retries: Optional[int] = Field(
-        0, description="Maximum retry attempts for failed transitions"
+    max_retries: int | None = Field(
+        0,
+        description="Maximum retry attempts for failed transitions",
     )
 
     @model_validator(mode="after")
@@ -175,8 +197,9 @@ class ModelStateTransition(BaseModel):
         if expected_field:
             expected_value = getattr(self, expected_field)
             if expected_value is None:
+                msg = f"{expected_field} is required for {self.transition_type} transitions"
                 raise ValueError(
-                    f"{expected_field} is required for {self.transition_type} transitions"
+                    msg,
                 )
 
         # Check that other configs are not set
@@ -187,8 +210,9 @@ class ModelStateTransition(BaseModel):
             ("composite_config", self.composite_config),
         ]:
             if field_name != expected_field and config_value is not None:
+                msg = f"{field_name} should not be set for {self.transition_type} transitions"
                 raise ValueError(
-                    f"{field_name} should not be set for {self.transition_type} transitions"
+                    msg,
                 )
 
         return self
@@ -197,9 +221,9 @@ class ModelStateTransition(BaseModel):
     def create_simple(
         cls,
         name: str,
-        triggers: List[str],
-        updates: Dict[str, Any],
-        description: Optional[str] = None,
+        triggers: list[str],
+        updates: dict[str, Any],
+        description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for simple transitions."""
         return cls(
@@ -214,10 +238,10 @@ class ModelStateTransition(BaseModel):
     def create_tool_based(
         cls,
         name: str,
-        triggers: List[str],
+        triggers: list[str],
         tool_name: str,
-        tool_params: Optional[Dict[str, Any]] = None,
-        description: Optional[str] = None,
+        tool_params: dict[str, Any] | None = None,
+        description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for tool-based transitions."""
         return cls(
@@ -226,7 +250,8 @@ class ModelStateTransition(BaseModel):
             triggers=triggers,
             transition_type=EnumTransitionType.TOOL_BASED,
             tool_config=ModelToolBasedTransition(
-                tool_name=tool_name, tool_params=tool_params
+                tool_name=tool_name,
+                tool_params=tool_params,
             ),
         )
 

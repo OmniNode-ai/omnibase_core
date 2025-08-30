@@ -5,13 +5,10 @@ Metadata for execution contexts including timeouts,
 retry policies, and debugging configuration.
 """
 
-from typing import Optional
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
-from omnibase_core.model.configuration.model_retry_policy import \
-    ModelRetryPolicy
+from omnibase_core.model.configuration.model_retry_policy import ModelRetryPolicy
 from omnibase_core.model.core.model_duration import ModelDuration
 
 from .model_metadata_base import ModelMetadataBase
@@ -29,18 +26,22 @@ class ModelExecutionMetadata(ModelMetadataBase):
         default_factory=lambda: ModelDuration(milliseconds=30000),
         description="Execution timeout",
     )
-    retry_policy: Optional[ModelRetryPolicy] = Field(
-        None, description="Retry policy for failures"
+    retry_policy: ModelRetryPolicy | None = Field(
+        None,
+        description="Retry policy for failures",
     )
     trace_enabled: bool = Field(default=False, description="Enable execution tracing")
-    debug_level: Optional[EnumDebugLevel] = Field(
-        None, description="Debug verbosity level"
+    debug_level: EnumDebugLevel | None = Field(
+        None,
+        description="Debug verbosity level",
     )
     profiling_enabled: bool = Field(
-        default=False, description="Enable performance profiling"
+        default=False,
+        description="Enable performance profiling",
     )
     metrics_collection: bool = Field(
-        default=True, description="Enable metrics collection"
+        default=True,
+        description="Enable metrics collection",
     )
 
     def is_debug_enabled(self) -> bool:

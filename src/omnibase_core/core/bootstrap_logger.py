@@ -26,7 +26,7 @@ def create_basic_logger(level: LogLevelEnum = LogLevelEnum.INFO) -> ProtocolLogg
         ) -> None:
             """Emit log event synchronously."""
             if level.value >= self.level.value:
-                print(f"[{level.name}] {message}")
+                pass
 
         async def emit_log_event_async(
             self,

@@ -3,12 +3,13 @@
 This module defines the request model for event discovery queries.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.model.discovery.model_event_descriptor import (
-    DiscoveryPhaseEnum, EventTypeEnum, ServiceStatusEnum)
+    DiscoveryPhaseEnum,
+    EventTypeEnum,
+    ServiceStatusEnum,
+)
 
 
 class ModelEventDiscoveryRequest(BaseModel):
@@ -18,32 +19,39 @@ class ModelEventDiscoveryRequest(BaseModel):
     correlation_id: str = Field(..., description="Correlation ID for response matching")
 
     # Discovery Filters
-    service_name_pattern: Optional[str] = Field(
-        None, description="Service name pattern to match"
+    service_name_pattern: str | None = Field(
+        None,
+        description="Service name pattern to match",
     )
-    event_types: List[EventTypeEnum] = Field(
-        default_factory=list, description="Event types to include"
+    event_types: list[EventTypeEnum] = Field(
+        default_factory=list,
+        description="Event types to include",
     )
-    discovery_phases: List[DiscoveryPhaseEnum] = Field(
-        default_factory=list, description="Discovery phases to include"
+    discovery_phases: list[DiscoveryPhaseEnum] = Field(
+        default_factory=list,
+        description="Discovery phases to include",
     )
-    consul_tags: List[str] = Field(
-        default_factory=list, description="Required Consul tags"
+    consul_tags: list[str] = Field(
+        default_factory=list,
+        description="Required Consul tags",
     )
 
     # Container Adapter Filters
-    container_status_filter: List[ServiceStatusEnum] = Field(
-        default_factory=list, description="Container status filter"
+    container_status_filter: list[ServiceStatusEnum] = Field(
+        default_factory=list,
+        description="Container status filter",
     )
-    hub_domain_filter: Optional[str] = Field(None, description="Hub domain filter")
-    trust_level_filter: List[str] = Field(
-        default_factory=list, description="Trust level filter"
+    hub_domain_filter: str | None = Field(None, description="Hub domain filter")
+    trust_level_filter: list[str] = Field(
+        default_factory=list,
+        description="Trust level filter",
     )
 
     # Query Configuration
     max_results: int = Field(100, description="Maximum number of results to return")
     include_inactive: bool = Field(
-        False, description="Whether to include inactive services"
+        False,
+        description="Whether to include inactive services",
     )
     timeout_seconds: int = Field(30, description="Query timeout in seconds")
 

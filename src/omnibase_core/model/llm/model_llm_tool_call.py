@@ -29,7 +29,8 @@ class ModelLLMToolCall(BaseModel):
     id: str = Field(min_length=1, description="Unique identifier for this tool call")
 
     type: str = Field(
-        default="function", description="Type of tool call (typically 'function')"
+        default="function",
+        description="Type of tool call (typically 'function')",
     )
 
     function: ModelLLMToolCallFunction = Field(description="Function call details")

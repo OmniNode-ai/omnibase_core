@@ -8,23 +8,25 @@ and compliance with one-model-per-file naming conventions.
 import hashlib
 import inspect
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field, computed_field, field_validator
 
-from omnibase_core.model.core.model_performance_summary import \
-    ModelPerformanceSummary
+from omnibase_core.model.core.model_performance_summary import ModelPerformanceSummary
 
-from .model_tool_metadata import (ModelToolMetadata, ToolCapabilityLevel,
-                                  ToolCategory, ToolCompatibilityMode,
-                                  ToolRegistrationStatus)
+from .model_tool_metadata import (
+    ModelToolMetadata,
+    ToolCapabilityLevel,
+    ToolCategory,
+    ToolCompatibilityMode,
+    ToolRegistrationStatus,
+)
+
 # Import separated models
 from .model_tool_performance_metrics import ModelToolPerformanceMetrics
 from .model_tool_validation_result import ModelToolValidationResult
 
 # Removed circular import to avoid issues
-if TYPE_CHECKING:
-    pass
 
 
 class ModelToolCollection(BaseModel):
@@ -36,13 +38,13 @@ class ModelToolCollection(BaseModel):
     """
 
     # Core tool storage (enhanced)
-    tools: Dict[str, Any] = Field(
+    tools: dict[str, Any] = Field(
         default_factory=dict,
         description="Mapping of tool names to ProtocolTool implementations",
     )
 
     # Enterprise enhancements
-    tool_metadata: Dict[str, ModelToolMetadata] = Field(
+    tool_metadata: dict[str, ModelToolMetadata] = Field(
         default_factory=dict,
         description="Comprehensive metadata for each registered tool",
     )
@@ -50,45 +52,55 @@ class ModelToolCollection(BaseModel):
     # Collection management
     collection_id: str = Field(..., description="Unique collection identifier")
     collection_name: str = Field(
-        "default", description="Human-readable collection name"
+        "default",
+        description="Human-readable collection name",
     )
     collection_version: str = Field("1.0.0", description="Collection version")
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Collection creation time"
+        default_factory=datetime.now,
+        description="Collection creation time",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.now, description="Last modification time"
+        default_factory=datetime.now,
+        description="Last modification time",
     )
 
     # Operational configuration
     max_tools: int = Field(100, description="Maximum number of tools allowed")
     auto_validation: bool = Field(
-        True, description="Whether to automatically validate tools"
+        True,
+        description="Whether to automatically validate tools",
     )
     performance_monitoring: bool = Field(
-        True, description="Whether to track performance metrics"
+        True,
+        description="Whether to track performance metrics",
     )
     strict_mode: bool = Field(False, description="Whether to enforce strict validation")
 
     # Analytics and insights
     total_registrations: int = Field(
-        0, description="Total number of tool registrations"
+        0,
+        description="Total number of tool registrations",
     )
     active_tool_count: int = Field(0, description="Number of active tools")
     deprecated_tool_count: int = Field(0, description="Number of deprecated tools")
     failed_registration_count: int = Field(
-        0, description="Number of failed registrations"
+        0,
+        description="Number of failed registrations",
     )
 
     # Security and compliance
-    security_policy: Dict[str, Any] = Field(
-        default_factory=dict, description="Security policy configuration"
+    security_policy: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Security policy configuration",
     )
-    compliance_requirements: List[str] = Field(
-        default_factory=list, description="Compliance requirements"
+    compliance_requirements: list[str] = Field(
+        default_factory=list,
+        description="Compliance requirements",
     )
-    access_control: Dict[str, Any] = Field(
-        default_factory=dict, description="Access control settings"
+    access_control: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Access control settings",
     )
 
     def __init__(self, **data):
@@ -109,7 +121,7 @@ class ModelToolCollection(BaseModel):
 
     @computed_field
     @property
-    def tool_count_by_category(self) -> Dict[str, int]:
+    def tool_count_by_category(self) -> dict[str, int]:
         """Count tools by category."""
         counts = {}
         for metadata in self.tool_metadata.values():
@@ -119,7 +131,7 @@ class ModelToolCollection(BaseModel):
 
     @computed_field
     @property
-    def tool_count_by_status(self) -> Dict[str, int]:
+    def tool_count_by_status(self) -> dict[str, int]:
         """Count tools by registration status."""
         counts = {}
         for metadata in self.tool_metadata.values():
@@ -165,10 +177,11 @@ class ModelToolCollection(BaseModel):
         return total_score / len(self.tool_metadata)
 
     @field_validator("max_tools")
-    def validate_max_tools(cls, v, info):
+    def validate_max_tools(self, v, info):
         """Validate maximum tools limit."""
         if v < 1 or v > 1000:
-            raise ValueError("max_tools must be between 1 and 1000")
+            msg = "max_tools must be between 1 and 1000"
+            raise ValueError(msg)
         return v
 
     def register_tool(self, name: str, tool_class: Any, **metadata_kwargs) -> bool:
@@ -209,7 +222,7 @@ class ModelToolCollection(BaseModel):
                     m
                     for m in self.tool_metadata.values()
                     if m.status == ToolRegistrationStatus.REGISTERED
-                ]
+                ],
             )
             self.last_modified = datetime.now()
 
@@ -241,7 +254,7 @@ class ModelToolCollection(BaseModel):
                 if not hasattr(tool_class, method_name):
                     result.is_valid = False
                     result.validation_errors.append(
-                        f"Missing required method: {method_name}"
+                        f"Missing required method: {method_name}",
                     )
 
             # Validate method signatures
@@ -250,18 +263,18 @@ class ModelToolCollection(BaseModel):
                 if len(sig.parameters) < 1:  # Should have self at minimum
                     result.signature_valid = False
                     result.validation_warnings.append(
-                        "execute method signature may be invalid"
+                        "execute method signature may be invalid",
                     )
 
             # Check for common issues
             if tool_class.__name__.startswith("_"):
                 result.validation_warnings.append(
-                    "Tool class name starts with underscore (private)"
+                    "Tool class name starts with underscore (private)",
                 )
 
         except Exception as e:
             result.is_valid = False
-            result.validation_errors.append(f"Validation failed: {str(e)}")
+            result.validation_errors.append(f"Validation failed: {e!s}")
 
         return result
 
@@ -273,18 +286,17 @@ class ModelToolCollection(BaseModel):
         # Category detection based on naming patterns
         if "registry" in class_name or "registry" in module_name:
             return ToolCategory.REGISTRY
-        elif "validate" in class_name or "validator" in class_name:
+        if "validate" in class_name or "validator" in class_name:
             return ToolCategory.VALIDATION
-        elif "transform" in class_name or "convert" in class_name:
+        if "transform" in class_name or "convert" in class_name:
             return ToolCategory.TRANSFORMATION
-        elif "output" in class_name or "format" in class_name:
+        if "output" in class_name or "format" in class_name:
             return ToolCategory.OUTPUT
-        elif "core" in module_name or "essential" in class_name:
+        if "core" in module_name or "essential" in class_name:
             return ToolCategory.CORE
-        elif "util" in class_name or "helper" in class_name:
+        if "util" in class_name or "helper" in class_name:
             return ToolCategory.UTILITY
-        else:
-            return ToolCategory.CUSTOM
+        return ToolCategory.CUSTOM
 
     def get_tool(self, name: str) -> Any | None:
         """Get a tool implementation by name."""
@@ -331,7 +343,8 @@ class ModelToolCollection(BaseModel):
         """Support dict-like access."""
         tool = self.get_tool(name)
         if tool is None:
-            raise KeyError(f"Tool '{name}' not found in collection")
+            msg = f"Tool '{name}' not found in collection"
+            raise KeyError(msg)
         return tool
 
     def __setitem__(self, name: str, tool_class: Any) -> None:
@@ -353,7 +366,10 @@ class ModelToolCollection(BaseModel):
     # Factory methods for common scenarios
     @classmethod
     def create_empty_collection(
-        cls, name: str = "default", strict_mode: bool = False, max_tools: int = 100
+        cls,
+        name: str = "default",
+        strict_mode: bool = False,
+        max_tools: int = 100,
     ) -> "ModelToolCollection":
         """Create an empty tool collection with specified configuration."""
         return cls(collection_name=name, strict_mode=strict_mode, max_tools=max_tools)
@@ -361,7 +377,7 @@ class ModelToolCollection(BaseModel):
     @classmethod
     def create_from_tools_dict(
         cls,
-        tools_dict: Dict[str, Any],
+        tools_dict: dict[str, Any],
         collection_name: str = "imported",
         auto_validate: bool = True,
     ) -> "ModelToolCollection":
@@ -375,7 +391,9 @@ class ModelToolCollection(BaseModel):
 
     @classmethod
     def create_production_collection(
-        cls, name: str, max_tools: int = 50
+        cls,
+        name: str,
+        max_tools: int = 50,
     ) -> "ModelToolCollection":
         """Create a production-ready collection with strict validation."""
         return cls(
@@ -395,17 +413,17 @@ ToolCollection = ModelToolCollection
 
 # Re-export for backward compatibility
 __all__ = [
+    "ModelToolCollection",
+    "ModelToolMetadata",
     "ModelToolPerformanceMetrics",
     "ModelToolValidationResult",
-    "ModelToolMetadata",
-    "ModelToolCollection",
-    "ToolRegistrationStatus",
     "ToolCapabilityLevel",
     "ToolCategory",
+    "ToolCollection",
     "ToolCompatibilityMode",
+    "ToolMetadata",
     # Backward compatibility
     "ToolPerformanceMetrics",
+    "ToolRegistrationStatus",
     "ToolValidationResult",
-    "ToolMetadata",
-    "ToolCollection",
 ]

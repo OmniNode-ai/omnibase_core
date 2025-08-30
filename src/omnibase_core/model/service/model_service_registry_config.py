@@ -9,61 +9,70 @@ Author: OmniNode Team
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.model.registry.model_registry_mode_config import \
-    ModelRegistryModeConfig
-from omnibase_core.model.service.model_service_configuration_single import \
-    ModelServiceConfiguration
+if TYPE_CHECKING:
+    from omnibase_core.model.registry.model_registry_mode_config import (
+        ModelRegistryModeConfig,
+    )
+    from omnibase_core.model.service.model_service_configuration_single import (
+        ModelServiceConfiguration,
+    )
 
 
 class ModelServiceRegistryConfig(BaseModel):
     """Complete service registry configuration."""
 
-    services: Dict[str, ModelServiceConfiguration] = Field(
-        default_factory=dict, description="Service configurations keyed by service name"
+    services: dict[str, ModelServiceConfiguration] = Field(
+        default_factory=dict,
+        description="Service configurations keyed by service name",
     )
-    registry_modes: Dict[str, ModelRegistryModeConfig] = Field(
-        default_factory=dict, description="Registry mode configurations"
+    registry_modes: dict[str, ModelRegistryModeConfig] = Field(
+        default_factory=dict,
+        description="Registry mode configurations",
     )
     default_mode: str = Field(
-        "development", description="Default registry mode if not specified"
+        "development",
+        description="Default registry mode if not specified",
     )
     configuration_version: str = Field(
-        "1.0", description="Configuration schema version"
+        "1.0",
+        description="Configuration schema version",
     )
 
     @field_validator("services")
-    def validate_services_not_empty(cls, v, info):
+    def validate_services_not_empty(self, v, info):
         if not v:
-            raise ValueError("At least one service must be configured")
+            msg = "At least one service must be configured"
+            raise ValueError(msg)
         return v
 
     @field_validator("registry_modes")
-    def validate_default_mode_exists(cls, v, info):
+    def validate_default_mode_exists(self, v, info):
         if hasattr(info, "data") and info.data:
             default_mode = info.data.get("default_mode")
             if default_mode and default_mode not in v:
+                msg = f"Default mode '{default_mode}' not found in registry_modes"
                 raise ValueError(
-                    f"Default mode '{default_mode}' not found in registry_modes"
+                    msg,
                 )
         return v
 
-    def get_service_names(self) -> List[str]:
+    def get_service_names(self) -> list[str]:
         """Get list of all configured service names."""
         return list(self.services.keys())
 
-    def get_mode_names(self) -> List[str]:
+    def get_mode_names(self) -> list[str]:
         """Get list of all configured registry mode names."""
         return list(self.registry_modes.keys())
 
-    def get_service(self, service_name: str) -> Optional[ModelServiceConfiguration]:
+    def get_service(self, service_name: str) -> ModelServiceConfiguration | None:
         """Get a specific service configuration."""
         return self.services.get(service_name)
 
-    def get_mode(self, mode_name: str) -> Optional[ModelRegistryModeConfig]:
+    def get_mode(self, mode_name: str) -> ModelRegistryModeConfig | None:
         """Get a specific registry mode configuration."""
         return self.registry_modes.get(mode_name)
 
@@ -75,7 +84,7 @@ class ModelServiceRegistryConfig(BaseModel):
         """Check if a registry mode is configured."""
         return mode_name in self.registry_modes
 
-    def get_critical_services(self) -> List[str]:
+    def get_critical_services(self) -> list[str]:
         """Get list of critical service names."""
         return [
             name
@@ -83,13 +92,13 @@ class ModelServiceRegistryConfig(BaseModel):
             if config.is_critical_service()
         ]
 
-    def get_high_priority_services(self) -> List[str]:
+    def get_high_priority_services(self) -> list[str]:
         """Get list of high priority service names."""
         return [
             name for name, config in self.services.items() if config.is_high_priority()
         ]
 
-    def get_services_by_type(self, service_type: str) -> List[str]:
+    def get_services_by_type(self, service_type: str) -> list[str]:
         """Get service names filtered by service type."""
         return [
             name
@@ -97,7 +106,7 @@ class ModelServiceRegistryConfig(BaseModel):
             if config.get_service_type_name() == service_type
         ]
 
-    def get_required_services_for_mode(self, mode_name: str) -> List[str]:
+    def get_required_services_for_mode(self, mode_name: str) -> list[str]:
         """Get required services for a specific mode."""
         mode_config = self.get_mode(mode_name)
         if not mode_config:

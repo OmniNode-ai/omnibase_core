@@ -6,17 +6,19 @@ resource hierarchies, actions, effects, scopes, and comprehensive constraints.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.security.model_permission_custom_fields import \
-    ModelPermissionCustomFields
-from omnibase_core.model.security.model_permission_evaluation_context import \
-    ModelPermissionEvaluationContext
-from omnibase_core.model.security.model_permission_metadata import \
-    ModelPermissionMetadata
+from omnibase_core.model.security.model_permission_custom_fields import (
+    ModelPermissionCustomFields,
+)
+from omnibase_core.model.security.model_permission_evaluation_context import (
+    ModelPermissionEvaluationContext,
+)
+from omnibase_core.model.security.model_permission_metadata import (
+    ModelPermissionMetadata,
+)
 
 
 class ModelPermission(BaseModel):
@@ -29,7 +31,8 @@ class ModelPermission(BaseModel):
     """
 
     permission_id: UUID = Field(
-        default_factory=uuid4, description="Unique permission identifier"
+        default_factory=uuid4,
+        description="Unique permission identifier",
     )
 
     name: str = Field(
@@ -45,11 +48,15 @@ class ModelPermission(BaseModel):
     )
 
     action: str = Field(
-        ..., description="Action on resource", pattern="^[a-z][a-z0-9_]*$"
+        ...,
+        description="Action on resource",
+        pattern="^[a-z][a-z0-9_]*$",
     )
 
     effect: str = Field(
-        default="allow", description="Permission effect", pattern="^(allow|deny)$"
+        default="allow",
+        description="Permission effect",
+        pattern="^(allow|deny)$",
     )
 
     scope_type: str = Field(
@@ -58,21 +65,24 @@ class ModelPermission(BaseModel):
         pattern="^(global|organizational|resource|temporal|conditional)$",
     )
 
-    resource_hierarchy: List[str] = Field(
+    resource_hierarchy: list[str] = Field(
         default_factory=list,
         description="Resource hierarchy path (e.g., ['org', 'project', 'resource'])",
     )
 
-    resource_patterns: List[str] = Field(
-        default_factory=list, description="Resource patterns (glob or regex)"
+    resource_patterns: list[str] = Field(
+        default_factory=list,
+        description="Resource patterns (glob or regex)",
     )
 
     include_subresources: bool = Field(
-        default=True, description="Whether permission applies to subresources"
+        default=True,
+        description="Whether permission applies to subresources",
     )
 
-    conditions: List[str] = Field(
-        default_factory=list, description="Conditional expressions that must be true"
+    conditions: list[str] = Field(
+        default_factory=list,
+        description="Conditional expressions that must be true",
     )
 
     priority: int = Field(
@@ -82,7 +92,7 @@ class ModelPermission(BaseModel):
         le=100,
     )
 
-    namespace: Optional[str] = Field(
+    namespace: str | None = Field(
         None,
         description="Permission namespace for third-party isolation",
         pattern="^[a-z][a-z0-9_-]*$",
@@ -96,81 +106,100 @@ class ModelPermission(BaseModel):
 
     # Usage and constraints
     usage_limits_enabled: bool = Field(
-        default=False, description="Whether usage limits are enforced"
+        default=False,
+        description="Whether usage limits are enforced",
     )
 
-    max_uses_total: Optional[int] = Field(None, description="Maximum total uses", ge=0)
+    max_uses_total: int | None = Field(None, description="Maximum total uses", ge=0)
 
-    max_uses_per_day: Optional[int] = Field(
-        None, description="Maximum uses per day", ge=0
+    max_uses_per_day: int | None = Field(
+        None,
+        description="Maximum uses per day",
+        ge=0,
     )
 
-    max_uses_per_hour: Optional[int] = Field(
-        None, description="Maximum uses per hour", ge=0
+    max_uses_per_hour: int | None = Field(
+        None,
+        description="Maximum uses per hour",
+        ge=0,
     )
 
     # Approval and delegation
     approval_required: bool = Field(
-        default=False, description="Whether approval is required"
+        default=False,
+        description="Whether approval is required",
     )
 
-    approval_types: List[str] = Field(
-        default_factory=list, description="Types of approval required"
+    approval_types: list[str] = Field(
+        default_factory=list,
+        description="Types of approval required",
     )
 
     min_approvals_required: int = Field(
-        default=1, description="Minimum approvals needed", ge=0
+        default=1,
+        description="Minimum approvals needed",
+        ge=0,
     )
 
     delegation_allowed: bool = Field(
-        default=False, description="Whether permission can be delegated"
+        default=False,
+        description="Whether permission can be delegated",
     )
 
     max_delegation_depth: int = Field(
-        default=1, description="Maximum delegation depth", ge=0, le=10
+        default=1,
+        description="Maximum delegation depth",
+        ge=0,
+        le=10,
     )
 
     # Temporal constraints
     temporal_constraints_enabled: bool = Field(
-        default=False, description="Whether temporal constraints are active"
+        default=False,
+        description="Whether temporal constraints are active",
     )
 
-    valid_from: Optional[datetime] = Field(
-        None, description="Permission valid from timestamp"
+    valid_from: datetime | None = Field(
+        None,
+        description="Permission valid from timestamp",
     )
 
-    valid_until: Optional[datetime] = Field(
-        None, description="Permission valid until timestamp"
+    valid_until: datetime | None = Field(
+        None,
+        description="Permission valid until timestamp",
     )
 
-    time_of_day_start: Optional[str] = Field(
+    time_of_day_start: str | None = Field(
         None,
         description="Daily start time (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
-    time_of_day_end: Optional[str] = Field(
+    time_of_day_end: str | None = Field(
         None,
         description="Daily end time (HH:MM)",
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
     )
 
-    days_of_week: List[int] = Field(
+    days_of_week: list[int] = Field(
         default_factory=lambda: list(range(7)),
         description="Valid days of week (0=Monday)",
     )
 
     # Geographic constraints
     geographic_constraints_enabled: bool = Field(
-        default=False, description="Whether geographic constraints are active"
+        default=False,
+        description="Whether geographic constraints are active",
     )
 
-    allowed_countries: List[str] = Field(
-        default_factory=list, description="Allowed ISO country codes"
+    allowed_countries: list[str] = Field(
+        default_factory=list,
+        description="Allowed ISO country codes",
     )
 
-    allowed_ip_ranges: List[str] = Field(
-        default_factory=list, description="Allowed IP ranges (CIDR notation)"
+    allowed_ip_ranges: list[str] = Field(
+        default_factory=list,
+        description="Allowed IP ranges (CIDR notation)",
     )
 
     # Security and audit
@@ -181,7 +210,8 @@ class ModelPermission(BaseModel):
     )
 
     audit_logging_enabled: bool = Field(
-        default=True, description="Whether audit logging is enabled"
+        default=True,
+        description="Whether audit logging is enabled",
     )
 
     audit_detail_level: str = Field(
@@ -193,18 +223,21 @@ class ModelPermission(BaseModel):
     require_mfa: bool = Field(default=False, description="Whether MFA is required")
 
     require_secure_connection: bool = Field(
-        default=False, description="Whether secure connection is required"
+        default=False,
+        description="Whether secure connection is required",
     )
 
     # Metadata and extensions
-    description: Optional[str] = Field(None, description="Human-readable description")
+    description: str | None = Field(None, description="Human-readable description")
 
-    tags: List[str] = Field(
-        default_factory=list, description="Permission tags for organization"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Permission tags for organization",
     )
 
-    compliance_tags: List[str] = Field(
-        default_factory=list, description="Compliance framework tags"
+    compliance_tags: list[str] = Field(
+        default_factory=list,
+        description="Compliance framework tags",
     )
 
     custom_fields: ModelPermissionCustomFields = Field(
@@ -213,17 +246,19 @@ class ModelPermission(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Creation timestamp",
     )
 
-    created_by: Optional[str] = Field(None, description="Creator identifier")
+    created_by: str | None = Field(None, description="Creator identifier")
 
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
 
-    updated_by: Optional[str] = Field(None, description="Last updater identifier")
+    updated_by: str | None = Field(None, description="Last updater identifier")
 
     metadata: ModelPermissionMetadata = Field(
-        default_factory=ModelPermissionMetadata, description="Additional metadata"
+        default_factory=ModelPermissionMetadata,
+        description="Additional metadata",
     )
 
     def matches_resource(self, resource_path: str) -> bool:
@@ -247,14 +282,15 @@ class ModelPermission(BaseModel):
 
             for i, hierarchy_part in enumerate(self.resource_hierarchy):
                 if i >= len(resource_parts) or not self._matches_pattern(
-                    resource_parts[i], hierarchy_part
+                    resource_parts[i],
+                    hierarchy_part,
                 ):
                     hierarchy_matches = False
                     break
 
             if hierarchy_matches:
                 if self.include_subresources or len(resource_parts) == len(
-                    self.resource_hierarchy
+                    self.resource_hierarchy,
                 ):
                     return True
 
@@ -266,7 +302,7 @@ class ModelPermission(BaseModel):
 
         return False
 
-    def is_temporally_valid(self, current_time: Optional[datetime] = None) -> bool:
+    def is_temporally_valid(self, current_time: datetime | None = None) -> bool:
         """Check if permission is temporally valid"""
         if not self.temporal_constraints_enabled:
             return True
@@ -288,13 +324,12 @@ class ModelPermission(BaseModel):
 
         # Check day of week
         current_day = current_time.weekday()
-        if current_day not in self.days_of_week:
-            return False
-
-        return True
+        return current_day in self.days_of_week
 
     def is_geographically_valid(
-        self, country_code: Optional[str] = None, ip_address: Optional[str] = None
+        self,
+        country_code: str | None = None,
+        ip_address: str | None = None,
     ) -> bool:
         """Check if permission is geographically valid"""
         if not self.geographic_constraints_enabled:
@@ -330,7 +365,7 @@ class ModelPermission(BaseModel):
 
         return True
 
-    def is_usage_allowed(self, current_usage: Dict[str, int]) -> bool:
+    def is_usage_allowed(self, current_usage: dict[str, int]) -> bool:
         """Check if usage limits allow access"""
         if not self.usage_limits_enabled:
             return True
@@ -344,13 +379,10 @@ class ModelPermission(BaseModel):
         ):
             return False
 
-        if (
+        return not (
             self.max_uses_per_hour
             and current_usage.get("this_hour", 0) >= self.max_uses_per_hour
-        ):
-            return False
-
-        return True
+        )
 
     def get_qualified_name(self) -> str:
         """Get qualified permission name with namespace"""
@@ -377,13 +409,10 @@ class ModelPermission(BaseModel):
             return True
 
         # Geographic constraints = more specific
-        if (
+        return bool(
             self.geographic_constraints_enabled
             and not other.geographic_constraints_enabled
-        ):
-            return True
-
-        return False
+        )
 
     def _matches_pattern(self, value: str, pattern: str) -> bool:
         """Check if value matches pattern"""
@@ -400,7 +429,9 @@ class ModelPermission(BaseModel):
         return ip_address.startswith(network.rsplit(".", 1)[0])
 
     def _evaluate_simple_condition(
-        self, condition: str, context: ModelPermissionEvaluationContext
+        self,
+        condition: str,
+        context: ModelPermissionEvaluationContext,
     ) -> bool:
         """Simple condition evaluation (placeholder)"""
         # Handle equality checks
@@ -418,7 +449,9 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_read_permission(
-        cls, resource: str, namespace: Optional[str] = None
+        cls,
+        resource: str,
+        namespace: str | None = None,
     ) -> "ModelPermission":
         """Create read permission for resource"""
         return cls(
@@ -432,7 +465,9 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_write_permission(
-        cls, resource: str, namespace: Optional[str] = None
+        cls,
+        resource: str,
+        namespace: str | None = None,
     ) -> "ModelPermission":
         """Create write permission for resource"""
         return cls(
@@ -448,7 +483,9 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_admin_permission(
-        cls, resource: str, namespace: Optional[str] = None
+        cls,
+        resource: str,
+        namespace: str | None = None,
     ) -> "ModelPermission":
         """Create admin permission for resource"""
         return cls(
@@ -466,7 +503,10 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_deny_permission(
-        cls, resource: str, action: str, namespace: Optional[str] = None
+        cls,
+        resource: str,
+        action: str,
+        namespace: str | None = None,
     ) -> "ModelPermission":
         """Create deny permission"""
         return cls(
@@ -482,7 +522,9 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_emergency_permission(
-        cls, resource: str, action: str
+        cls,
+        resource: str,
+        action: str,
     ) -> "ModelPermission":
         """Create emergency break-glass permission"""
         return cls(
@@ -501,7 +543,10 @@ class ModelPermission(BaseModel):
 
     @classmethod
     def create_time_limited_permission(
-        cls, resource: str, action: str, valid_hours: int = 24
+        cls,
+        resource: str,
+        action: str,
+        valid_hours: int = 24,
     ) -> "ModelPermission":
         """Create time-limited permission"""
         valid_until = datetime.utcnow().replace(microsecond=0)

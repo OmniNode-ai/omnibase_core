@@ -1,7 +1,6 @@
 """Agent action entry model for direct-to-database knowledge pipeline."""
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -16,87 +15,108 @@ class ModelAgentActionEntry(BaseModel):
     """
 
     # Core identification
-    action_id: Optional[UUID] = Field(
-        None, description="Auto-generated UUID for the agent action entry"
+    action_id: UUID | None = Field(
+        None,
+        description="Auto-generated UUID for the agent action entry",
     )
     session_id: str = Field(..., description="Claude Code session identifier")
-    conversation_id: Optional[str] = Field(
-        None, description="Conversation context identifier"
+    conversation_id: str | None = Field(
+        None,
+        description="Conversation context identifier",
     )
 
     # Agent identification
     agent_name: str = Field(..., description="Name of the agent performing the action")
-    agent_version: Optional[str] = Field(None, description="Version of the agent")
+    agent_version: str | None = Field(None, description="Version of the agent")
     action_type: str = Field(..., description="Type of action being performed")
 
     # Action details
     action_description: str = Field(
-        ..., description="Detailed description of the action"
+        ...,
+        description="Detailed description of the action",
     )
-    input_parameters: Optional[
-        Dict[str, Union[str, int, float, bool, List[str], Dict[str, str]]]
-    ] = Field(None, description="Input parameters for the action")
-    output_result: Optional[
-        Dict[str, Union[str, int, float, bool, List[str], Dict[str, str]]]
-    ] = Field(None, description="Output result of the action")
+    input_parameters: (
+        dict[str, str | int | float | bool | list[str] | dict[str, str]] | None
+    ) = Field(None, description="Input parameters for the action")
+    output_result: (
+        dict[str, str | int | float | bool | list[str] | dict[str, str]] | None
+    ) = Field(None, description="Output result of the action")
 
     # Execution context
-    tool_name: Optional[str] = Field(
-        None, description="Name of the tool used in the action"
+    tool_name: str | None = Field(
+        None,
+        description="Name of the tool used in the action",
     )
-    file_path: Optional[str] = Field(
-        None, description="File path affected by the action"
+    file_path: str | None = Field(
+        None,
+        description="File path affected by the action",
     )
-    working_directory: Optional[str] = Field(
-        None, description="Working directory when action was performed"
+    working_directory: str | None = Field(
+        None,
+        description="Working directory when action was performed",
     )
-    git_context: Optional[Dict[str, Union[str, bool, List[str]]]] = Field(
-        None, description="Git context information"
+    git_context: dict[str, str | bool | list[str]] | None = Field(
+        None,
+        description="Git context information",
     )
 
     # Performance metrics
-    execution_time_ms: Optional[int] = Field(
-        None, ge=0, description="Execution time in milliseconds"
+    execution_time_ms: int | None = Field(
+        None,
+        ge=0,
+        description="Execution time in milliseconds",
     )
-    memory_usage_mb: Optional[float] = Field(
-        None, ge=0.0, description="Memory usage in megabytes"
+    memory_usage_mb: float | None = Field(
+        None,
+        ge=0.0,
+        description="Memory usage in megabytes",
     )
     success_status: bool = Field(
-        ..., description="Whether the action completed successfully"
+        ...,
+        description="Whether the action completed successfully",
     )
-    error_details: Optional[str] = Field(
-        None, description="Error details if action failed"
+    error_details: str | None = Field(
+        None,
+        description="Error details if action failed",
     )
 
     # Causality and relationships
-    parent_action_id: Optional[UUID] = Field(
-        None, description="UUID of parent action if this is a sub-action"
+    parent_action_id: UUID | None = Field(
+        None,
+        description="UUID of parent action if this is a sub-action",
     )
-    related_actions: List[UUID] = Field(
-        default_factory=list, description="UUIDs of related actions"
+    related_actions: list[UUID] = Field(
+        default_factory=list,
+        description="UUIDs of related actions",
     )
-    causality_chain: List[str] = Field(
-        default_factory=list, description="Chain of events leading to this action"
+    causality_chain: list[str] = Field(
+        default_factory=list,
+        description="Chain of events leading to this action",
     )
 
     # Learning integration
-    learning_value: Optional[str] = Field(
+    learning_value: str | None = Field(
         None,
         description="Learning value of this action",
         regex="^(none|low|medium|high|critical)$",
     )
-    pattern_significance: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Significance for pattern recognition"
+    pattern_significance: float | None = Field(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Significance for pattern recognition",
     )
 
     # Metadata
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the action was recorded"
+        default_factory=datetime.now,
+        description="When the action was recorded",
     )
     user_interaction: bool = Field(
-        default=False, description="Whether this action involved user interaction"
+        default=False,
+        description="Whether this action involved user interaction",
     )
-    automation_level: Optional[str] = Field(
+    automation_level: str | None = Field(
         None,
         description="Level of automation",
         regex="^(manual|assisted|automated|autonomous)$",
@@ -162,5 +182,5 @@ class ModelAgentActionEntry(BaseModel):
                 "automation_level": "assisted",
                 "intelligence_processed": False,
                 "quality_score": 0.8,
-            }
+            },
         }

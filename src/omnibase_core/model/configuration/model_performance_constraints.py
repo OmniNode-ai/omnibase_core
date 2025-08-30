@@ -5,8 +5,6 @@ Type-safe performance constraints for execution capabilities
 and resource management.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -18,29 +16,41 @@ class ModelPerformanceConstraints(BaseModel):
     capabilities and resource management decisions.
     """
 
-    max_memory_mb: Optional[int] = Field(
-        None, description="Maximum memory usage in MB", ge=1
+    max_memory_mb: int | None = Field(
+        None,
+        description="Maximum memory usage in MB",
+        ge=1,
     )
-    max_cpu_cores: Optional[float] = Field(
-        None, description="Maximum CPU cores", ge=0.1, le=64.0
+    max_cpu_cores: float | None = Field(
+        None,
+        description="Maximum CPU cores",
+        ge=0.1,
+        le=64.0,
     )
-    max_disk_io_mb_per_sec: Optional[int] = Field(
-        None, description="Maximum disk I/O in MB/sec", ge=1
+    max_disk_io_mb_per_sec: int | None = Field(
+        None,
+        description="Maximum disk I/O in MB/sec",
+        ge=1,
     )
-    max_network_mb_per_sec: Optional[int] = Field(
-        None, description="Maximum network bandwidth in MB/sec", ge=1
+    max_network_mb_per_sec: int | None = Field(
+        None,
+        description="Maximum network bandwidth in MB/sec",
+        ge=1,
     )
-    max_execution_time_ms: Optional[int] = Field(
-        None, description="Maximum execution time in milliseconds", ge=1
+    max_execution_time_ms: int | None = Field(
+        None,
+        description="Maximum execution time in milliseconds",
+        ge=1,
     )
-    max_queue_size: Optional[int] = Field(None, description="Maximum queue size", ge=1)
+    max_queue_size: int | None = Field(None, description="Maximum queue size", ge=1)
     priority_class: str = Field(
         default="normal",
         description="Priority class for resource allocation",
         pattern="^(low|normal|high|critical)$",
     )
     preemptible: bool = Field(
-        default=True, description="Whether execution can be preempted"
+        default=True,
+        description="Whether execution can be preempted",
     )
 
     def is_within_limits(self, memory_mb: int, cpu_cores: float) -> bool:
@@ -48,10 +58,7 @@ class ModelPerformanceConstraints(BaseModel):
         if self.max_memory_mb and memory_mb > self.max_memory_mb:
             return False
 
-        if self.max_cpu_cores and cpu_cores > self.max_cpu_cores:
-            return False
-
-        return True
+        return not (self.max_cpu_cores and cpu_cores > self.max_cpu_cores)
 
     def get_priority_weight(self) -> float:
         """Get numeric priority weight for scheduling."""

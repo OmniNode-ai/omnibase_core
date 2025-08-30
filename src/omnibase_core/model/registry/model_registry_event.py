@@ -13,7 +13,6 @@ ONEX Compliance:
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -28,18 +27,22 @@ class ModelRegistryRequestEvent(BaseModel):
     )
     operation: str = Field(..., description="Registry operation to perform")
     endpoint_path: str = Field(
-        ..., description="HTTP endpoint path for the registry request"
+        ...,
+        description="HTTP endpoint path for the registry request",
     )
     http_method: str = Field(..., description="HTTP method (GET, POST, etc.)")
-    params: Optional[Dict[str, Union[str, int, bool, float, List[str]]]] = Field(
-        None, description="Optional parameters for the registry operation"
+    params: dict[str, str | int | bool | float | list[str]] | None = Field(
+        None,
+        description="Optional parameters for the registry operation",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Event timestamp"
+        default_factory=datetime.utcnow,
+        description="Event timestamp",
     )
     source_node_id: str = Field(..., description="Node ID of the requesting service")
     timeout_ms: int = Field(
-        default=30000, description="Request timeout in milliseconds"
+        default=30000,
+        description="Request timeout in milliseconds",
     )
 
 
@@ -47,24 +50,29 @@ class ModelRegistryResponseEvent(BaseModel):
     """Registry response event for event-driven communication."""
 
     correlation_id: UUID = Field(
-        ..., description="Correlation ID matching the original request"
+        ...,
+        description="Correlation ID matching the original request",
     )
     status: str = Field(..., description="Response status (success, error, timeout)")
-    result: Optional[
-        Dict[str, Union[str, int, bool, float, List[str], Dict[str, object]]]
-    ] = Field(None, description="Registry operation result data")
-    error_message: Optional[str] = Field(
-        None, description="Error message if status is error"
+    result: (
+        dict[str, str | int | bool | float | list[str] | dict[str, object]] | None
+    ) = Field(None, description="Registry operation result data")
+    error_message: str | None = Field(
+        None,
+        description="Error message if status is error",
     )
-    error_code: Optional[str] = Field(
-        None, description="Error code for programmatic handling"
+    error_code: str | None = Field(
+        None,
+        description="Error code for programmatic handling",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Response timestamp"
+        default_factory=datetime.utcnow,
+        description="Response timestamp",
     )
     source_node_id: str = Field(..., description="Node ID of the responding service")
-    processing_time_ms: Optional[int] = Field(
-        None, description="Processing time in milliseconds"
+    processing_time_ms: int | None = Field(
+        None,
+        description="Processing time in milliseconds",
     )
 
 
@@ -77,10 +85,12 @@ class ModelRegistryOperationMetrics(BaseModel):
     error_count: int = Field(default=0, description="Number of failed operations")
     timeout_count: int = Field(default=0, description="Number of timed out operations")
     average_processing_time_ms: float = Field(
-        default=0.0, description="Average processing time"
+        default=0.0,
+        description="Average processing time",
     )
-    last_operation_timestamp: Optional[datetime] = Field(
-        None, description="Last operation timestamp"
+    last_operation_timestamp: datetime | None = Field(
+        None,
+        description="Last operation timestamp",
     )
 
 
@@ -101,7 +111,7 @@ class RegistryOperations:
     REGISTRY_ERROR_EVENT = "registry.error"
 
     @classmethod
-    def get_all_operations(cls) -> List[str]:
+    def get_all_operations(cls) -> list[str]:
         """Get all supported registry operations."""
         return [
             cls.LIST_REGISTRY_TOOLS,
@@ -125,13 +135,13 @@ ENDPOINT_OPERATION_MAPPING = {
     "/registry/metrics": {"GET": RegistryOperations.GET_AGGREGATION_METRICS},
     "/registry/bootstrap": {"POST": RegistryOperations.TRIGGER_BOOTSTRAP_WORKFLOW},
     "/registry/hello-coordinate": {
-        "POST": RegistryOperations.TRIGGER_HELLO_COORDINATION
+        "POST": RegistryOperations.TRIGGER_HELLO_COORDINATION,
     },
     "/registry/consul-sync": {"POST": RegistryOperations.TRIGGER_CONSUL_SYNC},
 }
 
 
-def get_operation_for_endpoint(endpoint_path: str, http_method: str) -> Optional[str]:
+def get_operation_for_endpoint(endpoint_path: str, http_method: str) -> str | None:
     """
     Get the registry operation for a given endpoint and HTTP method.
 
@@ -148,10 +158,10 @@ def get_operation_for_endpoint(endpoint_path: str, http_method: str) -> Optional
     return None
 
 
-def get_supported_endpoints() -> List[str]:
+def get_supported_endpoints() -> list[str]:
     """Get all supported registry endpoints."""
     return [
         f"{method} {endpoint}"
         for endpoint, methods in ENDPOINT_OPERATION_MAPPING.items()
-        for method in methods.keys()
+        for method in methods
     ]

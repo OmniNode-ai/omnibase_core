@@ -7,12 +7,9 @@ strongly typed contract definitions section.
 Author: ONEX Framework Team
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.models.model_yaml_schema_object import \
-    ModelYamlSchemaObject
+from omnibase_core.core.models.model_yaml_schema_object import ModelYamlSchemaObject
 
 
 class ModelContractDefinitions(BaseModel):
@@ -20,6 +17,7 @@ class ModelContractDefinitions(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    definitions: Dict[str, ModelYamlSchemaObject] = Field(
-        default_factory=dict, description="Contract definitions mapping"
+    definitions: dict[str, ModelYamlSchemaObject] = Field(
+        default_factory=dict,
+        description="Contract definitions mapping",
     )

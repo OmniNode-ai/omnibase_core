@@ -7,7 +7,7 @@ type-safe ONEX-compliant model architecture.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -28,20 +28,24 @@ class ModelSessionData(BaseModel):
     created_at: str = Field(..., description="ISO timestamp when session was created")
     last_used: str = Field(..., description="ISO timestamp when session was last used")
     conversation_count: int = Field(
-        default=0, description="Number of conversations in this session"
+        default=0,
+        description="Number of conversations in this session",
     )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional session metadata"
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional session metadata",
     )
 
     # Optional fields for enhanced session management
-    tags: Optional[List[str]] = Field(
-        default=None, description="Tags for categorizing the session"
+    tags: list[str] | None = Field(
+        default=None,
+        description="Tags for categorizing the session",
     )
-    project_name: Optional[str] = Field(
-        default=None, description="Associated project name"
+    project_name: str | None = Field(
+        default=None,
+        description="Associated project name",
     )
-    priority: Optional[int] = Field(default=None, description="Session priority level")
+    priority: int | None = Field(default=None, description="Session priority level")
     archived: bool = Field(default=False, description="Whether session is archived")
 
     class Config:

@@ -4,8 +4,6 @@ AST analysis models for OmniMemory system.
 Represents AST analysis results and code patterns.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,13 +12,15 @@ class ModelFunctionSignature(BaseModel):
 
     name: str = Field(..., description="Function name")
     line_number: int = Field(..., description="Line number where function is defined")
-    parameters: List[str] = Field(default_factory=list, description="Parameter names")
-    return_type: Optional[str] = Field(
-        None, description="Return type annotation if present"
+    parameters: list[str] = Field(default_factory=list, description="Parameter names")
+    return_type: str | None = Field(
+        None,
+        description="Return type annotation if present",
     )
     is_async: bool = Field(default=False, description="Whether function is async")
-    decorators: List[str] = Field(
-        default_factory=list, description="Applied decorators"
+    decorators: list[str] = Field(
+        default_factory=list,
+        description="Applied decorators",
     )
 
 
@@ -29,15 +29,18 @@ class ModelClassDefinition(BaseModel):
 
     name: str = Field(..., description="Class name")
     line_number: int = Field(..., description="Line number where class is defined")
-    base_classes: List[str] = Field(
-        default_factory=list, description="Base class names"
+    base_classes: list[str] = Field(
+        default_factory=list,
+        description="Base class names",
     )
-    methods: List[str] = Field(
-        default_factory=list, description="Method names in class"
+    methods: list[str] = Field(
+        default_factory=list,
+        description="Method names in class",
     )
-    attributes: List[str] = Field(default_factory=list, description="Class attributes")
-    decorators: List[str] = Field(
-        default_factory=list, description="Applied decorators"
+    attributes: list[str] = Field(default_factory=list, description="Class attributes")
+    decorators: list[str] = Field(
+        default_factory=list,
+        description="Applied decorators",
     )
 
 
@@ -45,13 +48,15 @@ class ModelImportStatement(BaseModel):
     """Represents an import statement extracted from AST."""
 
     module: str = Field(..., description="Module being imported")
-    names: List[str] = Field(
-        default_factory=list, description="Names imported from module"
+    names: list[str] = Field(
+        default_factory=list,
+        description="Names imported from module",
     )
-    alias: Optional[str] = Field(None, description="Import alias if present")
+    alias: str | None = Field(None, description="Import alias if present")
     line_number: int = Field(..., description="Line number of import")
     is_from_import: bool = Field(
-        default=False, description="Whether it's a 'from X import Y' statement"
+        default=False,
+        description="Whether it's a 'from X import Y' statement",
     )
 
 
@@ -63,10 +68,12 @@ class ModelTypingViolation(BaseModel):
     column: int = Field(..., description="Column offset of violation")
     message: str = Field(..., description="Violation description")
     severity: str = Field(
-        ..., description="Severity level (critical, high, medium, low)"
+        ...,
+        description="Severity level (critical, high, medium, low)",
     )
-    suggested_fix: Optional[str] = Field(
-        None, description="Suggested fix for the violation"
+    suggested_fix: str | None = Field(
+        None,
+        description="Suggested fix for the violation",
     )
 
 

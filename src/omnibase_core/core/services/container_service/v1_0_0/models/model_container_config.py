@@ -7,8 +7,6 @@ as part of NODEBASE-001 Phase 2 deconstruction.
 Author: ONEX Framework Team
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +19,8 @@ class ModelContainerConfig(BaseModel):
     """
 
     node_id: str = Field(
-        ..., description="Node identifier for container and service registration"
+        ...,
+        description="Node identifier for container and service registration",
     )
 
     enable_service_validation: bool = Field(
@@ -39,7 +38,7 @@ class ModelContainerConfig(BaseModel):
         description="Enable registry wrapper for backward compatibility with Phase 0 pattern",
     )
 
-    container_metadata: Optional[dict] = Field(
+    container_metadata: dict | None = Field(
         default=None,
         description="Additional metadata to attach to container instance",
     )

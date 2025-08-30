@@ -7,7 +7,6 @@ and monitoring within the ONEX document management system.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -58,13 +57,16 @@ class ModelDocumentDependency(ModelOnexInputState):
     """Represents a dependency relationship for document freshness tracking."""
 
     dependency_path: str = Field(
-        ..., description="Path to the dependent file or resource"
+        ...,
+        description="Path to the dependent file or resource",
     )
     dependency_type: str = Field(
-        ..., description="Type of dependency (code, config, doc, external)"
+        ...,
+        description="Type of dependency (code, config, doc, external)",
     )
     last_modified: datetime = Field(
-        ..., description="Last modification time of the dependency"
+        ...,
+        description="Last modification time of the dependency",
     )
     impact_weight: float = Field(
         default=1.0,
@@ -76,9 +78,10 @@ class ModelDocumentDependency(ModelOnexInputState):
     )
 
     @validator("impact_weight")
-    def validate_impact_weight(cls, v):
+    def validate_impact_weight(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("impact_weight must be between 0.0 and 1.0")
+            msg = "impact_weight must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -86,46 +89,59 @@ class ModelFreshnessScore(ModelOnexInputState):
     """Document freshness scoring result with detailed breakdown."""
 
     overall_score: float = Field(
-        ..., description="Overall freshness score (0.0-1.0, higher is fresher)"
+        ...,
+        description="Overall freshness score (0.0-1.0, higher is fresher)",
     )
     time_decay_score: float = Field(..., description="Score based on document age")
     dependency_score: float = Field(
-        ..., description="Score based on dependency staleness"
+        ...,
+        description="Score based on dependency staleness",
     )
     semantic_drift_score: float = Field(
-        default=1.0, description="Score based on semantic drift from code"
+        default=1.0,
+        description="Score based on semantic drift from code",
     )
-    manual_override_score: Optional[float] = Field(
-        None, description="Manual override score if applicable"
+    manual_override_score: float | None = Field(
+        None,
+        description="Manual override score if applicable",
     )
 
     # Score component weights
     time_weight: float = Field(
-        default=0.4, description="Weight for time decay component"
+        default=0.4,
+        description="Weight for time decay component",
     )
     dependency_weight: float = Field(
-        default=0.4, description="Weight for dependency component"
+        default=0.4,
+        description="Weight for dependency component",
     )
     semantic_weight: float = Field(
-        default=0.2, description="Weight for semantic drift component"
+        default=0.2,
+        description="Weight for semantic drift component",
     )
 
     calculated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this score was calculated"
+        default_factory=datetime.utcnow,
+        description="When this score was calculated",
     )
 
     @validator(
-        "overall_score", "time_decay_score", "dependency_score", "semantic_drift_score"
+        "overall_score",
+        "time_decay_score",
+        "dependency_score",
+        "semantic_drift_score",
     )
-    def validate_scores(cls, v):
+    def validate_scores(self, v):
         if v is not None and not 0.0 <= v <= 1.0:
-            raise ValueError("Score must be between 0.0 and 1.0")
+            msg = "Score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
     @validator("time_weight", "dependency_weight", "semantic_weight")
-    def validate_weights(cls, v):
+    def validate_weights(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Weight must be between 0.0 and 1.0")
+            msg = "Weight must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -134,28 +150,34 @@ class ModelDocumentFreshness(ModelOnexInputState):
 
     document_path: str = Field(..., description="Path to the document being tracked")
     document_type: EnumDocumentType = Field(
-        ..., description="Classification of document type"
+        ...,
+        description="Classification of document type",
     )
 
     # Timestamps
     document_last_modified: datetime = Field(
-        ..., description="Last modification time of the document"
+        ...,
+        description="Last modification time of the document",
     )
     last_freshness_check: datetime = Field(
-        default_factory=datetime.utcnow, description="Last time freshness was checked"
+        default_factory=datetime.utcnow,
+        description="Last time freshness was checked",
     )
 
     # Dependencies
-    dependencies: List[ModelDocumentDependency] = Field(
-        default_factory=list, description="List of tracked dependencies"
+    dependencies: list[ModelDocumentDependency] = Field(
+        default_factory=list,
+        description="List of tracked dependencies",
     )
 
     # Freshness assessment
     freshness_score: ModelFreshnessScore = Field(
-        ..., description="Current freshness scoring breakdown"
+        ...,
+        description="Current freshness scoring breakdown",
     )
     freshness_status: EnumFreshnessStatus = Field(
-        ..., description="Current freshness status level"
+        ...,
+        description="Current freshness status level",
     )
     lifecycle_state: EnumDocumentLifecycleState = Field(
         default=EnumDocumentLifecycleState.UP_TO_DATE,
@@ -164,40 +186,48 @@ class ModelDocumentFreshness(ModelOnexInputState):
 
     # Metadata
     file_size_bytes: int = Field(default=0, description="Document file size in bytes")
-    line_count: Optional[int] = Field(None, description="Number of lines in document")
-    word_count: Optional[int] = Field(None, description="Estimated word count")
+    line_count: int | None = Field(None, description="Number of lines in document")
+    word_count: int | None = Field(None, description="Estimated word count")
 
     # Tracking
     stale_dependency_count: int = Field(
-        default=0, description="Number of stale dependencies detected"
+        default=0,
+        description="Number of stale dependencies detected",
     )
     critical_dependency_count: int = Field(
-        default=0, description="Number of critical dependencies that are stale"
+        default=0,
+        description="Number of critical dependencies that are stale",
     )
 
     # Notifications
     notification_sent: bool = Field(
-        default=False, description="Whether staleness notification has been sent"
+        default=False,
+        description="Whether staleness notification has been sent",
     )
-    notification_sent_at: Optional[datetime] = Field(
-        None, description="When notification was last sent"
+    notification_sent_at: datetime | None = Field(
+        None,
+        description="When notification was last sent",
     )
 
     # AI Analysis
     ai_analysis_enabled: bool = Field(
-        default=False, description="Whether AI analysis is enabled for this document"
+        default=False,
+        description="Whether AI analysis is enabled for this document",
     )
-    last_ai_analysis: Optional[datetime] = Field(
-        None, description="Last AI analysis timestamp"
+    last_ai_analysis: datetime | None = Field(
+        None,
+        description="Last AI analysis timestamp",
     )
-    ai_quality_score: Optional[float] = Field(
-        None, description="AI-assessed quality score (0.0-1.0)"
+    ai_quality_score: float | None = Field(
+        None,
+        description="AI-assessed quality score (0.0-1.0)",
     )
 
     @validator("ai_quality_score")
-    def validate_ai_quality_score(cls, v):
+    def validate_ai_quality_score(self, v):
         if v is not None and not 0.0 <= v <= 1.0:
-            raise ValueError("AI quality score must be between 0.0 and 1.0")
+            msg = "AI quality score must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -213,61 +243,75 @@ class ModelFreshnessThresholds(ModelOnexInputState):
     """Configurable thresholds for document freshness assessment."""
 
     document_type: EnumDocumentType = Field(
-        ..., description="Document type these thresholds apply to"
+        ...,
+        description="Document type these thresholds apply to",
     )
 
     # Freshness score thresholds
     fresh_threshold: float = Field(
-        default=0.8, description="Minimum score for FRESH status"
+        default=0.8,
+        description="Minimum score for FRESH status",
     )
     moderate_threshold: float = Field(
-        default=0.6, description="Minimum score for MODERATE status"
+        default=0.6,
+        description="Minimum score for MODERATE status",
     )
     stale_threshold: float = Field(
-        default=0.4, description="Minimum score for STALE status"
+        default=0.4,
+        description="Minimum score for STALE status",
     )
     # Below stale_threshold = CRITICAL
 
     # Time-based thresholds (in days)
     max_age_fresh: int = Field(
-        default=30, description="Maximum age in days for FRESH status"
+        default=30,
+        description="Maximum age in days for FRESH status",
     )
     max_age_moderate: int = Field(
-        default=90, description="Maximum age in days for MODERATE status"
+        default=90,
+        description="Maximum age in days for MODERATE status",
     )
     max_age_stale: int = Field(
-        default=180, description="Maximum age in days for STALE status"
+        default=180,
+        description="Maximum age in days for STALE status",
     )
 
     # Dependency staleness tolerance
     max_stale_dependencies: int = Field(
-        default=2, description="Maximum stale dependencies before status degradation"
+        default=2,
+        description="Maximum stale dependencies before status degradation",
     )
     max_critical_stale_dependencies: int = Field(
-        default=0, description="Maximum critical stale dependencies allowed"
+        default=0,
+        description="Maximum critical stale dependencies allowed",
     )
 
     # Scoring weights for this document type
     time_decay_weight: float = Field(
-        default=0.4, description="Weight for time decay in scoring"
+        default=0.4,
+        description="Weight for time decay in scoring",
     )
     dependency_weight: float = Field(
-        default=0.4, description="Weight for dependency staleness in scoring"
+        default=0.4,
+        description="Weight for dependency staleness in scoring",
     )
     semantic_drift_weight: float = Field(
-        default=0.2, description="Weight for semantic drift in scoring"
+        default=0.2,
+        description="Weight for semantic drift in scoring",
     )
 
     @validator("fresh_threshold", "moderate_threshold", "stale_threshold")
-    def validate_score_thresholds(cls, v):
+    def validate_score_thresholds(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Score threshold must be between 0.0 and 1.0")
+            msg = "Score threshold must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
     @validator("time_decay_weight", "dependency_weight", "semantic_drift_weight")
-    def validate_scoring_weights(cls, v):
+    def validate_scoring_weights(self, v):
         if not 0.0 <= v <= 1.0:
-            raise ValueError("Scoring weight must be between 0.0 and 1.0")
+            msg = "Scoring weight must be between 0.0 and 1.0"
+            raise ValueError(msg)
         return v
 
 
@@ -277,19 +321,21 @@ class ModelDocumentChange(ModelOnexInputState):
     change_id: str = Field(..., description="Unique identifier for this change event")
     changed_file_path: str = Field(..., description="Path to the file that changed")
     change_type: str = Field(
-        ..., description="Type of change (modified, added, deleted, renamed)"
+        ...,
+        description="Type of change (modified, added, deleted, renamed)",
     )
     change_timestamp: datetime = Field(..., description="When the change occurred")
 
     # Git information if available
-    git_commit_hash: Optional[str] = Field(
-        None, description="Git commit hash if change is from git"
+    git_commit_hash: str | None = Field(
+        None,
+        description="Git commit hash if change is from git",
     )
-    git_author: Optional[str] = Field(None, description="Git commit author")
-    git_message: Optional[str] = Field(None, description="Git commit message")
+    git_author: str | None = Field(None, description="Git commit author")
+    git_message: str | None = Field(None, description="Git commit message")
 
     # Impact assessment
-    affected_documents: List[str] = Field(
+    affected_documents: list[str] = Field(
         default_factory=list,
         description="Documents potentially affected by this change",
     )
@@ -307,6 +353,7 @@ class ModelDocumentChange(ModelOnexInputState):
         default=False,
         description="Whether this change has been processed for freshness updates",
     )
-    processed_at: Optional[datetime] = Field(
-        None, description="When this change was processed"
+    processed_at: datetime | None = Field(
+        None,
+        description="When this change was processed",
     )

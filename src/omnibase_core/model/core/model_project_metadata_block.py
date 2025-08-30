@@ -2,15 +2,18 @@
 Project metadata block model.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
 from omnibase_core.metadata.metadata_constants import (
-    COPYRIGHT_KEY, ENTRYPOINT_KEY, METADATA_VERSION_KEY,
-    PROJECT_ONEX_YAML_FILENAME, PROTOCOL_VERSION_KEY, SCHEMA_VERSION_KEY,
-    TOOLS_KEY)
+    COPYRIGHT_KEY,
+    ENTRYPOINT_KEY,
+    METADATA_VERSION_KEY,
+    PROJECT_ONEX_YAML_FILENAME,
+    PROTOCOL_VERSION_KEY,
+    SCHEMA_VERSION_KEY,
+    TOOLS_KEY,
+)
 from omnibase_core.model.core.model_entrypoint import EntrypointBlock
 from omnibase_core.model.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.model.core.model_tool_collection import ModelToolCollection
@@ -31,22 +34,23 @@ class ModelProjectMetadataBlock(BaseModel):
     author: str
     name: str
     namespace: str
-    description: Optional[str] = None
+    description: str | None = None
     versions: ModelOnexVersionInfo
     lifecycle: Lifecycle = Field(default=Lifecycle.ACTIVE)
-    created_at: Optional[str] = None
-    last_modified_at: Optional[str] = None
-    license: Optional[str] = None
+    created_at: str | None = None
+    last_modified_at: str | None = None
+    license: str | None = None
     # Entrypoint must be a URI: <type>://<target>
     entrypoint: EntrypointBlock = Field(
         default_factory=lambda: EntrypointBlock(
-            type="yaml", target=PROJECT_ONEX_YAML_FILENAME
-        )
+            type="yaml",
+            target=PROJECT_ONEX_YAML_FILENAME,
+        ),
     )
     meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.PROJECT)
-    tools: Optional[ModelToolCollection] = None
+    tools: ModelToolCollection | None = None
     copyright: str
-    tree_generator: Optional[ModelTreeGeneratorConfig] = None
+    tree_generator: ModelTreeGeneratorConfig | None = None
     # Add project-specific fields as needed
 
     model_config = {"extra": "allow"}
@@ -58,8 +62,9 @@ class ModelProjectMetadataBlock(BaseModel):
             return value
         if hasattr(value, "type") and hasattr(value, "target"):
             return f"{value.type}://{value.target}"
+        msg = f"Entrypoint must be a URI string or EntrypointBlock, got: {value}"
         raise ValueError(
-            f"Entrypoint must be a URI string or EntrypointBlock, got: {value}"
+            msg,
         )
 
     @classmethod
@@ -70,8 +75,9 @@ class ModelProjectMetadataBlock(BaseModel):
             if isinstance(entrypoint_val, str):
                 data[ENTRYPOINT_KEY] = EntrypointBlock.from_uri(entrypoint_val)
             elif not isinstance(entrypoint_val, EntrypointBlock):
+                msg = f"entrypoint must be a URI string or EntrypointBlock, got: {entrypoint_val}"
                 raise ValueError(
-                    f"entrypoint must be a URI string or EntrypointBlock, got: {entrypoint_val}"
+                    msg,
                 )
         # Convert tools to ModelToolCollection if needed
         if TOOLS_KEY in data and isinstance(data[TOOLS_KEY], dict):
@@ -89,7 +95,8 @@ class ModelProjectMetadataBlock(BaseModel):
                 schema_version=data.pop(SCHEMA_VERSION_KEY),
             )
         if COPYRIGHT_KEY not in data:
-            raise ValueError(f"Missing required field: {COPYRIGHT_KEY}")
+            msg = f"Missing required field: {COPYRIGHT_KEY}"
+            raise ValueError(msg)
         return cls(**data)
 
     def to_serializable_dict(self) -> dict:
@@ -98,7 +105,6 @@ class ModelProjectMetadataBlock(BaseModel):
         d[ENTRYPOINT_KEY] = self._parse_entrypoint(self.entrypoint)
         # Omit empty/null/empty-string fields except protocol-required
         for k in list(d.keys()):
-            if d[k] in (None, "", [], {}):
-                if k not in {TOOLS_KEY}:
-                    d.pop(k)
+            if d[k] in (None, "", [], {}) and k not in {TOOLS_KEY}:
+                d.pop(k)
         return d

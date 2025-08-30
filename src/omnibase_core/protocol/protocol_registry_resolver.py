@@ -1,4 +1,4 @@
-from typing import Optional, Protocol
+from typing import Protocol
 
 from omnibase_core.protocol.protocol_registry import ProtocolRegistry
 
@@ -7,9 +7,9 @@ class ProtocolRegistryResolver(Protocol):
     def resolve_registry(
         self,
         registry_class: type,
-        scenario_path: Optional[str] = None,
-        logger: Optional[object] = None,
-        fallback_tools: Optional[dict] = None,
+        scenario_path: str | None = None,
+        logger: object | None = None,
+        fallback_tools: dict | None = None,
     ) -> ProtocolRegistry:
         """
         Canonical protocol for registry resolution.

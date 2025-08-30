@@ -1,12 +1,15 @@
 import os
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator
 
 from omnibase_core.model.configuration.model_connection_parse_result import (
-    LatencyProfile, ParsedConnectionInfo, PoolRecommendations)
+    LatencyProfile,
+    ParsedConnectionInfo,
+    PoolRecommendations,
+)
 
 # Moved to TYPE_CHECKING import
 
@@ -16,8 +19,7 @@ if TYPE_CHECKING:
         ModelSecurityAssessment,
     )
 
-from omnibase_core.model.security.model_secure_credentials import \
-    ModelSecureCredentials
+from omnibase_core.model.security.model_secure_credentials import ModelSecureCredentials
 
 
 class ModelDatabaseSecureConfig(ModelSecureCredentials):
@@ -35,13 +37,19 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     """
 
     host: str = Field(
-        ..., description="Database host", pattern=r"^[a-zA-Z0-9\-\.]+$", max_length=255
+        ...,
+        description="Database host",
+        pattern=r"^[a-zA-Z0-9\-\.]+$",
+        max_length=255,
     )
 
     port: int = Field(..., description="Database port", ge=1, le=65535)
 
     database: str = Field(
-        ..., description="Database name", pattern=r"^[a-zA-Z0-9_\-]+$", max_length=100
+        ...,
+        description="Database name",
+        pattern=r"^[a-zA-Z0-9_\-]+$",
+        max_length=100,
     )
 
     username: str = Field(..., description="Database username", max_length=100)
@@ -54,12 +62,15 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         pattern=r"^(postgresql|mysql|sqlite|oracle|mssql|mongodb)$",
     )
 
-    db_schema: Optional[str] = Field(
-        default=None, description="Default database schema", max_length=100
+    db_schema: str | None = Field(
+        default=None,
+        description="Default database schema",
+        max_length=100,
     )
 
     ssl_enabled: bool = Field(
-        default=False, description="Whether to use SSL connection"
+        default=False,
+        description="Whether to use SSL connection",
     )
 
     ssl_mode: str = Field(
@@ -68,41 +79,60 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         pattern=r"^(disable|allow|prefer|require|verify-ca|verify-full)$",
     )
 
-    ssl_cert_path: Optional[str] = Field(
-        default=None, description="Path to SSL certificate", max_length=500
+    ssl_cert_path: str | None = Field(
+        default=None,
+        description="Path to SSL certificate",
+        max_length=500,
     )
 
-    ssl_key_path: Optional[str] = Field(
-        default=None, description="Path to SSL key file", max_length=500
+    ssl_key_path: str | None = Field(
+        default=None,
+        description="Path to SSL key file",
+        max_length=500,
     )
 
-    ssl_key_password: Optional[SecretStr] = Field(
-        default=None, description="SSL key password (secured)"
+    ssl_key_password: SecretStr | None = Field(
+        default=None,
+        description="SSL key password (secured)",
     )
 
-    ssl_ca_path: Optional[str] = Field(
-        default=None, description="Path to SSL CA certificate", max_length=500
+    ssl_ca_path: str | None = Field(
+        default=None,
+        description="Path to SSL CA certificate",
+        max_length=500,
     )
 
     connection_timeout: int = Field(
-        default=30, description="Connection timeout in seconds", ge=1, le=300
+        default=30,
+        description="Connection timeout in seconds",
+        ge=1,
+        le=300,
     )
 
     query_timeout: int = Field(
-        default=60, description="Query timeout in seconds", ge=1, le=3600
+        default=60,
+        description="Query timeout in seconds",
+        ge=1,
+        le=3600,
     )
 
     pool_size: int = Field(default=10, description="Connection pool size", ge=1, le=100)
 
     max_overflow: int = Field(
-        default=20, description="Maximum connection pool overflow", ge=0, le=100
+        default=20,
+        description="Maximum connection pool overflow",
+        ge=0,
+        le=100,
     )
 
     pool_timeout: int = Field(
-        default=30, description="Pool checkout timeout in seconds", ge=1, le=300
+        default=30,
+        description="Pool checkout timeout in seconds",
+        ge=1,
+        le=300,
     )
 
-    application_name: Optional[str] = Field(
+    application_name: str | None = Field(
         default="ONEX",
         description="Application name for connection identification",
         max_length=100,
@@ -113,7 +143,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def validate_host(cls, v: str) -> str:
         """Validate database host format."""
         if not v or not v.strip():
-            raise ValueError("Database host cannot be empty")
+            msg = "Database host cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip().lower()
 
@@ -123,15 +154,18 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Validate hostname format
         if not re.match(r"^[a-zA-Z0-9\-\.]+$", v):
-            raise ValueError(f"Invalid hostname format: {v}")
+            msg = f"Invalid hostname format: {v}"
+            raise ValueError(msg)
 
         # Check for valid domain format
         parts = v.split(".")
         for part in parts:
             if not part or len(part) > 63:
-                raise ValueError(f"Invalid hostname part: {part}")
+                msg = f"Invalid hostname part: {part}"
+                raise ValueError(msg)
             if part.startswith("-") or part.endswith("-"):
-                raise ValueError(f"Hostname part cannot start or end with dash: {part}")
+                msg = f"Hostname part cannot start or end with dash: {part}"
+                raise ValueError(msg)
 
         return v
 
@@ -140,10 +174,12 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def validate_port(cls, v: int) -> int:
         """Validate database port number."""
         if not isinstance(v, int):
-            raise ValueError("Port must be an integer")
+            msg = "Port must be an integer"
+            raise ValueError(msg)
 
         if not (1 <= v <= 65535):
-            raise ValueError(f"Port must be between 1 and 65535, got: {v}")
+            msg = f"Port must be between 1 and 65535, got: {v}"
+            raise ValueError(msg)
 
         return v
 
@@ -152,7 +188,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def validate_database(cls, v: str) -> str:
         """Validate database name."""
         if not v or not v.strip():
-            raise ValueError("Database name cannot be empty")
+            msg = "Database name cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip()
 
@@ -160,8 +197,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         dangerous_patterns = [";", "--", "/*", "*/", "xp_", "sp_"]
         for pattern in dangerous_patterns:
             if pattern in v.lower():
+                msg = f"Database name contains potentially dangerous pattern: {pattern}"
                 raise ValueError(
-                    f"Database name contains potentially dangerous pattern: {pattern}"
+                    msg,
                 )
 
         return v
@@ -196,8 +234,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         valid_drivers = {"postgresql", "mysql", "sqlite", "oracle", "mssql", "mongodb"}
         if normalized not in valid_drivers:
+            msg = f"Unsupported driver: {v}. Must be one of: {valid_drivers}"
             raise ValueError(
-                f"Unsupported driver: {v}. Must be one of: {valid_drivers}"
+                msg,
             )
 
         return normalized
@@ -212,20 +251,20 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         if self.driver == "postgresql":
             return self._get_postgresql_connection_string(password_value)
-        elif self.driver == "mysql":
+        if self.driver == "mysql":
             return self._get_mysql_connection_string(password_value)
-        elif self.driver == "sqlite":
+        if self.driver == "sqlite":
             return self._get_sqlite_connection_string()
-        elif self.driver == "oracle":
+        if self.driver == "oracle":
             return self._get_oracle_connection_string(password_value)
-        elif self.driver == "mssql":
+        if self.driver == "mssql":
             return self._get_mssql_connection_string(password_value)
-        elif self.driver == "mongodb":
+        if self.driver == "mongodb":
             return self._get_mongodb_connection_string(password_value)
-        else:
-            raise ValueError(
-                f"Connection string generation not implemented for driver: {self.driver}"
-            )
+        msg = f"Connection string generation not implemented for driver: {self.driver}"
+        raise ValueError(
+            msg,
+        )
 
     def _get_postgresql_connection_string(self, password: str) -> str:
         """Generate PostgreSQL connection string."""
@@ -378,13 +417,13 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 [
                     "No encryption - database traffic sent in plaintext",
                     "Connection vulnerable to man-in-the-middle attacks",
-                ]
+                ],
             )
             assessment["recommendations"].extend(
                 [
                     "Enable SSL/TLS encryption (ssl_enabled: true)",
                     "Use 'require' or 'verify-full' SSL mode for production",
-                ]
+                ],
             )
         else:
             assessment["security_level"] = "medium"
@@ -392,7 +431,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if self.ssl_mode in ["disable", "allow"]:
                 assessment["vulnerabilities"].append(f"Weak SSL mode: {self.ssl_mode}")
                 assessment["recommendations"].append(
-                    "Use 'require' or 'verify-full' SSL mode"
+                    "Use 'require' or 'verify-full' SSL mode",
                 )
             elif self.ssl_mode == "verify-full":
                 assessment["security_level"] = "high"
@@ -401,14 +440,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         password_value = self.password.get_secret_value()
         if len(password_value) < 8:
             assessment["vulnerabilities"].append(
-                "Weak password (less than 8 characters)"
+                "Weak password (less than 8 characters)",
             )
             assessment["recommendations"].append(
-                "Use password with at least 12 characters"
+                "Use password with at least 12 characters",
             )
         elif len(password_value) < 12:
             assessment["recommendations"].append(
-                "Consider using longer password (12+ characters)"
+                "Consider using longer password (12+ characters)",
             )
         else:
             assessment["authentication_strength"] = "strong"
@@ -423,13 +462,12 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if self.driver == "postgresql":
             if self.username == "postgres":
                 assessment["recommendations"].append(
-                    "Avoid using 'postgres' superuser for applications"
+                    "Avoid using 'postgres' superuser for applications",
                 )
-        elif self.driver == "mysql":
-            if self.username == "root":
-                assessment["recommendations"].append(
-                    "Avoid using 'root' user for applications"
-                )
+        elif self.driver == "mysql" and self.username == "root":
+            assessment["recommendations"].append(
+                "Avoid using 'root' user for applications",
+            )
 
         # Compliance assessment
         assessment["compliance_status"] = {
@@ -478,21 +516,21 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         # Assess current pool configuration
         if self.pool_size < 5:
             recommendations["recommendations"].append(
-                "Consider increasing pool_size for better concurrency"
+                "Consider increasing pool_size for better concurrency",
             )
         elif self.pool_size > 50:
             recommendations["recommendations"].append(
-                "Large pool_size may cause resource contention"
+                "Large pool_size may cause resource contention",
             )
 
         if self.max_overflow == 0:
             recommendations["recommendations"].append(
-                "Enable max_overflow for burst handling"
+                "Enable max_overflow for burst handling",
             )
 
         if self.pool_timeout < 10:
             recommendations["recommendations"].append(
-                "Low pool_timeout may cause frequent timeouts"
+                "Low pool_timeout may cause frequent timeouts",
             )
 
         # Performance profile based on driver
@@ -517,14 +555,12 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     def get_performance_profile(self) -> "ModelPerformanceProfile":
         """Get performance characteristics and optimization recommendations."""
-        profile = {
+        return {
             "latency_characteristics": self._get_latency_profile(),
             "throughput_optimization": self._get_throughput_recommendations(),
             "resource_usage": self._get_resource_usage_profile(),
             "monitoring_recommendations": self._get_monitoring_recommendations(),
         }
-
-        return profile
 
     def _get_latency_profile(self) -> LatencyProfile:
         """Assess configuration impact on latency."""
@@ -543,7 +579,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         # Timeout impact
         if self.connection_timeout > 60:
             profile["factors"].append(
-                "High connection timeout may delay error detection"
+                "High connection timeout may delay error detection",
             )
 
         if self.query_timeout > 300:
@@ -563,7 +599,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         return profile
 
-    def _get_throughput_recommendations(self) -> List[str]:
+    def _get_throughput_recommendations(self) -> list[str]:
         """Get throughput optimization recommendations."""
         recommendations = []
 
@@ -577,25 +613,25 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 [
                     "Consider using connection pooler like PgBouncer for high concurrency",
                     "Enable prepared statements for repeated queries",
-                ]
+                ],
             )
         elif self.driver == "mysql":
             recommendations.extend(
                 [
                     "Consider using MySQL connection pooling",
                     "Optimize query cache settings",
-                ]
+                ],
             )
 
         # SSL recommendations for performance
         if self.ssl_enabled and self.ssl_mode == "verify-full":
             recommendations.append(
-                "Consider 'require' SSL mode if certificate validation overhead is high"
+                "Consider 'require' SSL mode if certificate validation overhead is high",
             )
 
         return recommendations
 
-    def _get_resource_usage_profile(self) -> Dict[str, str]:
+    def _get_resource_usage_profile(self) -> dict[str, str]:
         """Get resource usage characteristics."""
         profile = {
             "memory_usage": "medium",
@@ -620,7 +656,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         return profile
 
-    def _get_monitoring_recommendations(self) -> List[str]:
+    def _get_monitoring_recommendations(self) -> list[str]:
         """Get monitoring and observability recommendations."""
         recommendations = [
             "Monitor connection pool utilization",
@@ -631,7 +667,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         if self.ssl_enabled:
             recommendations.extend(
-                ["Monitor SSL certificate expiration", "Track SSL handshake latency"]
+                ["Monitor SSL certificate expiration", "Track SSL handshake latency"],
             )
 
         # Driver-specific monitoring
@@ -640,14 +676,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 [
                     "Monitor PostgreSQL connection state",
                     "Track pg_stat_activity for active connections",
-                ]
+                ],
             )
         elif self.driver == "mysql":
             recommendations.extend(
                 [
                     "Monitor MySQL processlist",
                     "Track connection thread cache efficiency",
-                ]
+                ],
             )
 
         return recommendations
@@ -678,9 +714,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         return True
 
-    def get_troubleshooting_guide(self) -> Dict[str, List[str]]:
+    def get_troubleshooting_guide(self) -> dict[str, list[str]]:
         """Get troubleshooting guide for common database connection issues."""
-        guide = {
+        return {
             "connection_failures": [
                 "Verify host and port are correct and reachable",
                 "Check database name exists",
@@ -712,9 +748,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "driver_specific": self._get_driver_specific_troubleshooting(),
         }
 
-        return guide
-
-    def _get_driver_specific_troubleshooting(self) -> List[str]:
+    def _get_driver_specific_troubleshooting(self) -> list[str]:
         """Get driver-specific troubleshooting tips."""
         guides = {
             "postgresql": [
@@ -757,7 +791,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Load database configuration from environment variables."""
         password = os.getenv(f"{env_prefix}PASSWORD")
         if not password:
-            raise ValueError(f"Database password required: {env_prefix}PASSWORD")
+            msg = f"Database password required: {env_prefix}PASSWORD"
+            raise ValueError(msg)
 
         config_data = {
             "host": os.getenv(f"{env_prefix}HOST", "localhost"),
@@ -807,7 +842,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if pool_timeout := os.getenv(f"{env_prefix}POOL_TIMEOUT"):
                 config_data["pool_timeout"] = int(pool_timeout)
         except ValueError as e:
-            raise ValueError(f"Invalid integer value in environment variables: {e}")
+            msg = f"Invalid integer value in environment variables: {e}"
+            raise ValueError(msg)
 
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
@@ -856,7 +892,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     @classmethod
     def create_sqlite(
-        cls, database_path: str = "onex_dev.db"
+        cls,
+        database_path: str = "onex_dev.db",
     ) -> "ModelDatabaseSecureConfig":
         """Create SQLite configuration."""
         return cls(

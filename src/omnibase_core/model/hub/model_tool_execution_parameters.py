@@ -4,8 +4,6 @@ ONEX-compliant model for tool execution parameters.
 Replaces Dict[str, Any] with strongly typed Pydantic model following ONEX standards.
 """
 
-from typing import Dict, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -18,20 +16,23 @@ class ModelToolExecutionParameters(BaseModel):
     """
 
     tool_name: str = Field(..., description="Name of tool to execute")
-    input_parameters: Dict[str, Union[str, int, float, bool, list, dict]] = Field(
+    input_parameters: dict[str, str | int | float | bool | list | dict] = Field(
         default_factory=dict,
         description="Tool input parameters with strongly typed values",
     )
-    execution_timeout: Optional[int] = Field(
-        60, description="Execution timeout in seconds"
+    execution_timeout: int | None = Field(
+        60,
+        description="Execution timeout in seconds",
     )
     priority: int = Field(1, description="Execution priority (1=highest, 10=lowest)")
-    correlation_id: Optional[str] = Field(
-        None, description="Request correlation identifier"
+    correlation_id: str | None = Field(
+        None,
+        description="Request correlation identifier",
     )
-    session_id: Optional[str] = Field(None, description="Session identifier")
-    callback_url: Optional[str] = Field(
-        None, description="Callback URL for async results"
+    session_id: str | None = Field(None, description="Session identifier")
+    callback_url: str | None = Field(
+        None,
+        description="Callback URL for async results",
     )
 
     class Config:
@@ -52,5 +53,5 @@ class ModelToolExecutionParameters(BaseModel):
                 "correlation_id": "req_123456",
                 "session_id": "session_abc",
                 "callback_url": "https://api.example.com/callbacks/results",
-            }
+            },
         }

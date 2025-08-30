@@ -7,29 +7,23 @@ Service hosting is handled by the infrastructure reducer.
 """
 
 import asyncio
-from pathlib import Path
-from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
 from omnibase.enums.enum_health_status import EnumHealthStatus
 
-from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.infrastructure_service_bases import \
-    NodeOrchestratorService
+from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.discovery.model_tool_invocation_event import \
-    ModelToolInvocationEvent
-from omnibase_core.model.discovery.model_tool_parameters import \
-    ModelToolParameters
-from omnibase_core.model.discovery.model_tool_response_event import \
-    ModelToolResponseEvent
-
-from .protocols.protocol_infrastructure_orchestrator import \
-    ProtocolInfrastructureOrchestrator
+from omnibase_core.model.discovery.model_tool_invocation_event import (
+    ModelToolInvocationEvent,
+)
+from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.model.discovery.model_tool_response_event import (
+    ModelToolResponseEvent,
+)
 
 
 class ToolInfrastructureOrchestrator(NodeOrchestratorService):
@@ -47,7 +41,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
         # Get event bus from container for publishing tool invocations
         self.event_bus = container.get_service("ProtocolEventBus")
         # Track pending invocations for response correlation
-        self._pending_invocations: Dict[str, asyncio.Future] = {}
+        self._pending_invocations: dict[str, asyncio.Future] = {}
         # Subscribe to tool response events
         self._setup_response_handler()
 
@@ -56,7 +50,8 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
         # Subscribe to TOOL_RESPONSE events
         if hasattr(self.event_bus, "subscribe"):
             self.event_bus.subscribe(
-                CoreEventTypes.TOOL_RESPONSE, self._handle_tool_response
+                CoreEventTypes.TOOL_RESPONSE,
+                self._handle_tool_response,
             )
 
     def health_check(self) -> ModelHealthStatus:
@@ -106,32 +101,31 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
                     status=EnumHealthStatus.CRITICAL,
                     message=f"Critical failure - {event_bus_message}",
                 )
-            elif not adapter_healthy:
+            if not adapter_healthy:
                 return ModelHealthStatus(
                     status=EnumHealthStatus.UNHEALTHY,
                     message=f"Orchestrator not ready - {adapter_message}",
                 )
-            elif pending_count > 50:
+            if pending_count > 50:
                 return ModelHealthStatus(
                     status=EnumHealthStatus.DEGRADED,
                     message=f"High pending invocations: {pending_count} (possible coordination delays)",
                 )
-            elif pending_count > 20:
+            if pending_count > 20:
                 return ModelHealthStatus(
                     status=EnumHealthStatus.WARNING,
                     message=f"Moderate pending invocations: {pending_count} (monitor coordination performance)",
                 )
-            else:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.HEALTHY,
-                    message=f"Orchestrator healthy - {pending_count} pending invocations, event bus and adapters ready",
-                )
+            return ModelHealthStatus(
+                status=EnumHealthStatus.HEALTHY,
+                message=f"Orchestrator healthy - {pending_count} pending invocations, event bus and adapters ready",
+            )
 
         except Exception as e:
-            self.logger.error(f"Orchestrator health check failed: {e}")
+            self.logger.exception(f"Orchestrator health check failed: {e}")
             return ModelHealthStatus(
                 status=EnumHealthStatus.ERROR,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
             )
 
     async def _handle_tool_response(self, envelope: ModelEventEnvelope):
@@ -154,10 +148,10 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
                             "result": response.result,
                             "error": response.error,
                             "metadata": response.metadata,
-                        }
+                        },
                     )
         except Exception as e:
-            self.logger.error(f"Failed to handle tool response: {e}")
+            self.logger.exception(f"Failed to handle tool response: {e}")
             raise OnexError(
                 message=f"Tool response handling failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -202,7 +196,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
 
             # Publish invocation event
             self.logger.info(
-                f"Coordinating with {adapter_name} via event bus: {request}"
+                f"Coordinating with {adapter_name} via event bus: {request}",
             )
             if hasattr(self.event_bus, "publish"):
                 self.event_bus.publish(envelope)
@@ -212,9 +206,8 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
 
             # Wait for response with timeout
             try:
-                response = await asyncio.wait_for(response_future, timeout=30.0)
-                return response
-            except asyncio.TimeoutError:
+                return await asyncio.wait_for(response_future, timeout=30.0)
+            except TimeoutError:
                 self._pending_invocations.pop(str(correlation_id), None)
                 self.logger.warning(f"Timeout waiting for response from {adapter_name}")
                 return {
@@ -225,7 +218,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
                 }
 
         except Exception as e:
-            self.logger.error(f"Failed to coordinate with {adapter_name}: {e}")
+            self.logger.exception(f"Failed to coordinate with {adapter_name}: {e}")
             raise OnexError(
                 message=f"Adapter coordination failed for {adapter_name}: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -236,17 +229,20 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
         try:
             # Coordinate Consul adapter startup
             consul_result = await self._coordinate_adapter(
-                "tool_consul_adapter", {"operation": "bootstrap", "priority": "high"}
+                "tool_consul_adapter",
+                {"operation": "bootstrap", "priority": "high"},
             )
 
             # Coordinate Vault adapter startup
             vault_result = await self._coordinate_adapter(
-                "tool_vault_adapter", {"operation": "bootstrap", "priority": "high"}
+                "tool_vault_adapter",
+                {"operation": "bootstrap", "priority": "high"},
             )
 
             # Coordinate Kafka wrapper startup
             kafka_result = await self._coordinate_adapter(
-                "tool_kafka_wrapper", {"operation": "bootstrap", "priority": "medium"}
+                "tool_kafka_wrapper",
+                {"operation": "bootstrap", "priority": "medium"},
             )
 
             return {
@@ -259,7 +255,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
             }
 
         except Exception as e:
-            self.logger.error(f"Infrastructure bootstrap failed: {e}")
+            self.logger.exception(f"Infrastructure bootstrap failed: {e}")
             raise OnexError(
                 message=f"Infrastructure bootstrap failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -274,14 +270,15 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
         health monitoring of orchestrator components.
         """
         self.logger.warning(
-            "coordinate_infrastructure_health_check() is deprecated, use standardized health_check() from MixinHealthCheck"
+            "coordinate_infrastructure_health_check() is deprecated, use standardized health_check() from MixinHealthCheck",
         )
         try:
             health_checks = {}
 
             for adapter in ["consul_adapter", "vault_adapter", "kafka_wrapper"]:
                 health_result = await self._coordinate_adapter(
-                    f"tool_{adapter}", {"operation": "health_check"}
+                    f"tool_{adapter}",
+                    {"operation": "health_check"},
                 )
                 health_checks[adapter] = health_result
 
@@ -297,7 +294,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
             }
 
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
+            self.logger.exception(f"Health check failed: {e}")
             raise OnexError(
                 message=f"Infrastructure health check failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -312,7 +309,8 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
             if failed_adapter == "kafka_wrapper":
                 # Activate in-memory fallback mode
                 failover_result = await self._coordinate_adapter(
-                    "tool_kafka_wrapper", {"operation": "enable_fallback_mode"}
+                    "tool_kafka_wrapper",
+                    {"operation": "enable_fallback_mode"},
                 )
             elif failed_adapter in ["consul_adapter", "vault_adapter"]:
                 # Log critical infrastructure failure
@@ -330,7 +328,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
             }
 
         except Exception as e:
-            self.logger.error(f"Failover coordination failed: {e}")
+            self.logger.exception(f"Failover coordination failed: {e}")
             raise OnexError(
                 message=f"Failover coordination failed: {e}",
                 error_code=CoreErrorCode.OPERATION_FAILED,
@@ -339,8 +337,9 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
 
 def main():
     """Main entry point for Infrastructure Orchestrator - returns node instance with infrastructure container"""
-    from omnibase_core.tools.infrastructure.container import \
-        create_infrastructure_container
+    from omnibase_core.tools.infrastructure.container import (
+        create_infrastructure_container,
+    )
 
     container = create_infrastructure_container()
     return ToolInfrastructureOrchestrator(container)

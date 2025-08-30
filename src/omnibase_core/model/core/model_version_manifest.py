@@ -7,7 +7,6 @@ Represents specific version implementations with contract compliance and validat
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -38,12 +37,13 @@ class ModelVersionFile(BaseModel):
 
     file_path: str = Field(description="Relative path to file within version directory")
     file_type: str = Field(
-        description="File type (contract, model, protocol, test, etc.)"
+        description="File type (contract, model, protocol, test, etc.)",
     )
     required: bool = Field(default=True, description="Whether file is required")
     description: str = Field(description="File purpose and contents")
-    checksum: Optional[str] = Field(
-        default=None, description="File checksum for integrity verification"
+    checksum: str | None = Field(
+        default=None,
+        description="File checksum for integrity verification",
     )
 
 
@@ -51,21 +51,25 @@ class ModelVersionContract(BaseModel):
     """Contract file information and validation status."""
 
     contract_file: str = Field(
-        default="contract.yaml", description="Contract file name"
+        default="contract.yaml",
+        description="Contract file name",
     )
     contract_version: SemVerField = Field(description="Contract version")
     contract_name: str = Field(description="Contract identifier")
     m1_compliant: bool = Field(
-        default=True, description="Whether contract follows M1 standards"
+        default=True,
+        description="Whether contract follows M1 standards",
     )
     validation_status: EnumContractCompliance = Field(
-        description="Contract validation status"
+        description="Contract validation status",
     )
-    validation_date: Optional[datetime] = Field(
-        default=None, description="Date when contract was validated"
+    validation_date: datetime | None = Field(
+        default=None,
+        description="Date when contract was validated",
     )
-    validation_errors: List[str] = Field(
-        default_factory=list, description="Contract validation errors"
+    validation_errors: list[str] = Field(
+        default_factory=list,
+        description="Contract validation errors",
     )
 
 
@@ -73,66 +77,82 @@ class ModelVersionImplementation(BaseModel):
     """Implementation file information."""
 
     implementation_file: str = Field(
-        default="node.py", description="Main implementation file name"
+        default="node.py",
+        description="Main implementation file name",
     )
     main_class_name: str = Field(description="Main implementation class name")
-    entry_point: Optional[str] = Field(
-        default=None, description="Entry point for standalone execution"
+    entry_point: str | None = Field(
+        default=None,
+        description="Entry point for standalone execution",
     )
     namespace: str = Field(description="Python namespace for the implementation")
 
     # File references
-    model_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Pydantic model files"
+    model_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Pydantic model files",
     )
-    protocol_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Protocol interface files"
+    protocol_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Protocol interface files",
     )
-    enum_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Enumeration definition files"
+    enum_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Enumeration definition files",
     )
-    contract_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Subcontract files"
+    contract_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Subcontract files",
     )
 
 
 class ModelVersionTesting(BaseModel):
     """Version-specific testing information."""
 
-    test_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Test implementation files"
+    test_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Test implementation files",
     )
-    test_coverage_percentage: Optional[float] = Field(
-        default=None, description="Actual test coverage percentage"
+    test_coverage_percentage: float | None = Field(
+        default=None,
+        description="Actual test coverage percentage",
     )
-    test_results: Dict[str, str] = Field(
-        default_factory=dict, description="Test execution results by test type"
+    test_results: dict[str, str] = Field(
+        default_factory=dict,
+        description="Test execution results by test type",
     )
-    performance_benchmarks: Dict[str, float] = Field(
-        default_factory=dict, description="Performance benchmark results"
+    performance_benchmarks: dict[str, float] = Field(
+        default_factory=dict,
+        description="Performance benchmark results",
     )
-    last_test_date: Optional[datetime] = Field(
-        default=None, description="Date when tests were last executed"
+    last_test_date: datetime | None = Field(
+        default=None,
+        description="Date when tests were last executed",
     )
 
 
 class ModelVersionDeployment(BaseModel):
     """Deployment-specific configuration."""
 
-    docker_image: Optional[str] = Field(
-        default=None, description="Docker image reference if containerized"
+    docker_image: str | None = Field(
+        default=None,
+        description="Docker image reference if containerized",
     )
-    resource_requirements: Dict[str, str] = Field(
-        default_factory=dict, description="Resource requirements for deployment"
+    resource_requirements: dict[str, str] = Field(
+        default_factory=dict,
+        description="Resource requirements for deployment",
     )
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Required environment variables"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Required environment variables",
     )
-    port_mappings: Dict[str, int] = Field(
-        default_factory=dict, description="Port mapping requirements"
+    port_mappings: dict[str, int] = Field(
+        default_factory=dict,
+        description="Port mapping requirements",
     )
     health_check_endpoint: str = Field(
-        default="/health", description="Health check endpoint path"
+        default="/health",
+        description="Health check endpoint path",
     )
     startup_timeout: int = Field(default=30, description="Startup timeout in seconds")
 
@@ -140,40 +160,50 @@ class ModelVersionDeployment(BaseModel):
 class ModelVersionSecurity(BaseModel):
     """Version-specific security configuration."""
 
-    security_context: Dict[str, str] = Field(
-        default_factory=dict, description="Security context requirements"
+    security_context: dict[str, str] = Field(
+        default_factory=dict,
+        description="Security context requirements",
     )
-    data_handling_declaration: Dict[str, str] = Field(
-        default_factory=dict, description="Data handling and classification"
+    data_handling_declaration: dict[str, str] = Field(
+        default_factory=dict,
+        description="Data handling and classification",
     )
-    audit_events: List[str] = Field(
-        default_factory=list, description="Security audit events generated"
+    audit_events: list[str] = Field(
+        default_factory=list,
+        description="Security audit events generated",
     )
-    encryption_requirements: Dict[str, str] = Field(
-        default_factory=dict, description="Encryption requirements"
+    encryption_requirements: dict[str, str] = Field(
+        default_factory=dict,
+        description="Encryption requirements",
     )
-    authentication_methods: List[str] = Field(
-        default_factory=list, description="Supported authentication methods"
+    authentication_methods: list[str] = Field(
+        default_factory=list,
+        description="Supported authentication methods",
     )
 
 
 class ModelVersionDocumentation(BaseModel):
     """Version documentation information."""
 
-    documentation_files: List[ModelVersionFile] = Field(
-        default_factory=list, description="Documentation files"
+    documentation_files: list[ModelVersionFile] = Field(
+        default_factory=list,
+        description="Documentation files",
     )
-    readme_file: Optional[str] = Field(
-        default="README.md", description="README file name"
+    readme_file: str | None = Field(
+        default="README.md",
+        description="README file name",
     )
-    api_documentation: Optional[str] = Field(
-        default=None, description="API documentation file or URL"
+    api_documentation: str | None = Field(
+        default=None,
+        description="API documentation file or URL",
     )
-    changelog_entry: Optional[str] = Field(
-        default=None, description="Changelog entry for this version"
+    changelog_entry: str | None = Field(
+        default=None,
+        description="Changelog entry for this version",
     )
-    migration_guide: Optional[str] = Field(
-        default=None, description="Migration guide from previous versions"
+    migration_guide: str | None = Field(
+        default=None,
+        description="Migration guide from previous versions",
     )
 
 
@@ -190,31 +220,36 @@ class ModelVersionManifest(BaseModel):
     status: EnumVersionStatus = Field(description="Version lifecycle status")
     release_date: datetime = Field(description="Version release date")
     created_by: str = Field(
-        default="ONEX Framework Team", description="Version creator"
+        default="ONEX Framework Team",
+        description="Version creator",
     )
 
     # === VERSION METADATA ===
     breaking_changes: bool = Field(
-        default=False, description="Whether version contains breaking changes"
+        default=False,
+        description="Whether version contains breaking changes",
     )
     recommended: bool = Field(
-        default=True, description="Whether version is recommended for use"
+        default=True,
+        description="Whether version is recommended for use",
     )
-    deprecation_date: Optional[datetime] = Field(
-        default=None, description="Date when version was deprecated"
+    deprecation_date: datetime | None = Field(
+        default=None,
+        description="Date when version was deprecated",
     )
-    end_of_life_date: Optional[datetime] = Field(
-        default=None, description="Date when version reaches end of life"
+    end_of_life_date: datetime | None = Field(
+        default=None,
+        description="Date when version reaches end of life",
     )
 
     # === CONTRACT COMPLIANCE ===
     contract: ModelVersionContract = Field(
-        description="Contract file information and validation status"
+        description="Contract file information and validation status",
     )
 
     # === IMPLEMENTATION DETAILS ===
     implementation: ModelVersionImplementation = Field(
-        description="Implementation files and entry points"
+        description="Implementation files and entry points",
     )
 
     # === TESTING INFORMATION ===
@@ -222,17 +257,17 @@ class ModelVersionManifest(BaseModel):
 
     # === DEPLOYMENT CONFIGURATION ===
     deployment: ModelVersionDeployment = Field(
-        description="Deployment requirements and configuration"
+        description="Deployment requirements and configuration",
     )
 
     # === SECURITY CONFIGURATION ===
     security: ModelVersionSecurity = Field(
-        description="Security requirements and configuration"
+        description="Security requirements and configuration",
     )
 
     # === DOCUMENTATION ===
     documentation: ModelVersionDocumentation = Field(
-        description="Documentation files and references"
+        description="Documentation files and references",
     )
 
     # === VALIDATION METADATA ===
@@ -240,11 +275,13 @@ class ModelVersionManifest(BaseModel):
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version manifest schema version",
     )
-    checksum: Optional[str] = Field(
-        default=None, description="Version content checksum"
+    checksum: str | None = Field(
+        default=None,
+        description="Version content checksum",
     )
-    validation_date: Optional[datetime] = Field(
-        default=None, description="Date when version was validated"
+    validation_date: datetime | None = Field(
+        default=None,
+        description="Date when version was validated",
     )
 
     # === BLUEPRINT COMPLIANCE ===
@@ -253,7 +290,8 @@ class ModelVersionManifest(BaseModel):
         description="Tool group blueprint version followed",
     )
     blueprint_compliant: bool = Field(
-        default=True, description="Whether version follows blueprint standards"
+        default=True,
+        description="Whether version follows blueprint standards",
     )
 
     class Config:
@@ -264,19 +302,22 @@ class ModelVersionManifest(BaseModel):
 
     @validator("deployment")
     def validate_deployment_config(
-        cls, v: ModelVersionDeployment
+        self,
+        v: ModelVersionDeployment,
     ) -> ModelVersionDeployment:
         """Validate deployment configuration."""
         if v.startup_timeout <= 0:
-            raise ValueError("startup_timeout must be positive")
+            msg = "startup_timeout must be positive"
+            raise ValueError(msg)
         return v
 
     @validator("testing")
-    def validate_testing_config(cls, v: ModelVersionTesting) -> ModelVersionTesting:
+    def validate_testing_config(self, v: ModelVersionTesting) -> ModelVersionTesting:
         """Validate testing configuration."""
         if v.test_coverage_percentage is not None:
             if v.test_coverage_percentage < 0 or v.test_coverage_percentage > 100:
-                raise ValueError("test_coverage_percentage must be between 0 and 100")
+                msg = "test_coverage_percentage must be between 0 and 100"
+                raise ValueError(msg)
         return v
 
     def is_current_stable(self) -> bool:
@@ -319,7 +360,7 @@ class ModelVersionManifest(BaseModel):
             and self.testing.test_coverage_percentage >= 85.0
         )
 
-    def get_file_by_type(self, file_type: str) -> List[ModelVersionFile]:
+    def get_file_by_type(self, file_type: str) -> list[ModelVersionFile]:
         """Get all files of specified type."""
         all_files = (
             self.implementation.model_files
@@ -331,7 +372,7 @@ class ModelVersionManifest(BaseModel):
         )
         return [f for f in all_files if f.file_type == file_type]
 
-    def get_required_files(self) -> List[ModelVersionFile]:
+    def get_required_files(self) -> list[ModelVersionFile]:
         """Get all required files."""
         all_files = (
             self.implementation.model_files
@@ -343,7 +384,7 @@ class ModelVersionManifest(BaseModel):
         )
         return [f for f in all_files if f.required]
 
-    def validate_file_integrity(self) -> Dict[str, bool]:
+    def validate_file_integrity(self) -> dict[str, bool]:
         """Validate file integrity using checksums."""
         results = {}
         for file_group in [

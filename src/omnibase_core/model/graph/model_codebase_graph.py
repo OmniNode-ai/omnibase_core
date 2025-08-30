@@ -7,40 +7,49 @@ and provides methods for graph operations and queries.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from .model_graph_edge import GraphEdge, ModelGraphEdge
-from .model_graph_node import (GraphNode, ModelDocumentationNode,
-                               ModelFileNode, ModelSymbolNode)
+from .model_graph_edge import GraphEdge
+from .model_graph_node import (
+    GraphNode,
+    ModelFileNode,
+    ModelSymbolNode,
+)
 
 
 class ModelChangeMetadata(BaseModel):
     """Metadata for graph change events."""
 
-    file_size_bytes: Optional[int] = Field(
-        None, description="Size of the changed file in bytes"
+    file_size_bytes: int | None = Field(
+        None,
+        description="Size of the changed file in bytes",
     )
-    modification_type: Optional[str] = Field(
-        None, description="Type of modification: content/permissions/metadata"
+    modification_type: str | None = Field(
+        None,
+        description="Type of modification: content/permissions/metadata",
     )
-    line_count_delta: Optional[int] = Field(None, description="Change in line count")
-    symbol_count_delta: Optional[int] = Field(
-        None, description="Change in symbol count"
+    line_count_delta: int | None = Field(None, description="Change in line count")
+    symbol_count_delta: int | None = Field(
+        None,
+        description="Change in symbol count",
     )
-    checksum_before: Optional[str] = Field(
-        None, description="File checksum before change"
+    checksum_before: str | None = Field(
+        None,
+        description="File checksum before change",
     )
-    checksum_after: Optional[str] = Field(
-        None, description="File checksum after change"
+    checksum_after: str | None = Field(
+        None,
+        description="File checksum after change",
     )
-    user_agent: Optional[str] = Field(
-        None, description="User agent that triggered the change"
+    user_agent: str | None = Field(
+        None,
+        description="User agent that triggered the change",
     )
-    commit_hash: Optional[str] = Field(
-        None, description="Git commit hash if applicable"
+    commit_hash: str | None = Field(
+        None,
+        description="Git commit hash if applicable",
     )
 
 
@@ -73,11 +82,11 @@ class ModelCodebaseGraphConfig(BaseModel):
     """Configuration for codebase graph building and maintenance."""
 
     # File discovery settings
-    include_patterns: List[str] = Field(
+    include_patterns: list[str] = Field(
         default=["**/*.py", "**/*.yaml", "**/*.yml", "**/*.md", "**/*.json"],
         description="File patterns to include in graph",
     )
-    exclude_patterns: List[str] = Field(
+    exclude_patterns: list[str] = Field(
         default=["**/__pycache__/**", "**/.git/**", "**/node_modules/**"],
         description="File patterns to exclude from graph",
     )
@@ -86,25 +95,29 @@ class ModelCodebaseGraphConfig(BaseModel):
     max_file_size_mb: int = Field(10, description="Maximum file size to process (MB)")
     enable_embeddings: bool = Field(True, description="Whether to generate embeddings")
     embedding_model: str = Field(
-        "all-MiniLM-L6-v2", description="Model for generating embeddings"
+        "all-MiniLM-L6-v2",
+        description="Model for generating embeddings",
     )
 
     # OnexTree integration
     use_onextree_validation: bool = Field(
-        True, description="Use OnexTree for file structure validation"
+        True,
+        description="Use OnexTree for file structure validation",
     )
     enable_metadata_stamping: bool = Field(True, description="Enable metadata stamping")
 
     # Real-time update settings
     enable_real_time_updates: bool = Field(
-        True, description="Enable real-time graph updates"
+        True,
+        description="Enable real-time graph updates",
     )
     batch_update_interval_seconds: int = Field(30, description="Batch update interval")
 
     # Vector search settings
     vector_dimension: int = Field(384, description="Dimension of embedding vectors")
     similarity_threshold: float = Field(
-        0.7, description="Similarity threshold for related nodes"
+        0.7,
+        description="Similarity threshold for related nodes",
     )
 
 
@@ -112,47 +125,56 @@ class ModelCodebaseGraph(BaseModel):
     """Main codebase graph model containing all nodes and edges."""
 
     graph_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique graph identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique graph identifier",
     )
     version: str = Field("1.0.0", description="Graph schema version")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Graph content
-    nodes: Dict[str, GraphNode] = Field(
-        default_factory=dict, description="All nodes in the graph"
+    nodes: dict[str, GraphNode] = Field(
+        default_factory=dict,
+        description="All nodes in the graph",
     )
-    edges: Dict[str, GraphEdge] = Field(
-        default_factory=dict, description="All edges in the graph"
+    edges: dict[str, GraphEdge] = Field(
+        default_factory=dict,
+        description="All edges in the graph",
     )
 
     # Index structures for efficient queries
-    node_type_index: Dict[str, Set[str]] = Field(
-        default_factory=dict, description="Index of node IDs by type"
+    node_type_index: dict[str, set[str]] = Field(
+        default_factory=dict,
+        description="Index of node IDs by type",
     )
-    edge_type_index: Dict[str, Set[str]] = Field(
-        default_factory=dict, description="Index of edge IDs by type"
+    edge_type_index: dict[str, set[str]] = Field(
+        default_factory=dict,
+        description="Index of edge IDs by type",
     )
-    file_path_index: Dict[str, str] = Field(
-        default_factory=dict, description="Index from file path to node ID"
+    file_path_index: dict[str, str] = Field(
+        default_factory=dict,
+        description="Index from file path to node ID",
     )
-    symbol_name_index: Dict[str, Set[str]] = Field(
-        default_factory=dict, description="Index from symbol name to node IDs"
+    symbol_name_index: dict[str, set[str]] = Field(
+        default_factory=dict,
+        description="Index from symbol name to node IDs",
     )
 
     # Graph metadata
-    root_path: Optional[Path] = Field(None, description="Root path of the codebase")
+    root_path: Path | None = Field(None, description="Root path of the codebase")
     config: ModelCodebaseGraphConfig = Field(default_factory=ModelCodebaseGraphConfig)
     metrics: ModelCodebaseGraphMetrics = Field(
-        default_factory=ModelCodebaseGraphMetrics
+        default_factory=ModelCodebaseGraphMetrics,
     )
 
     # OnexTree integration metadata
-    onextree_last_sync: Optional[datetime] = Field(
-        None, description="Last sync with OnexTree"
+    onextree_last_sync: datetime | None = Field(
+        None,
+        description="Last sync with OnexTree",
     )
-    stamper_last_sync: Optional[datetime] = Field(
-        None, description="Last sync with metadata stamper"
+    stamper_last_sync: datetime | None = Field(
+        None,
+        description="Last sync with metadata stamper",
     )
 
     def add_node(self, node: GraphNode) -> None:
@@ -190,17 +212,17 @@ class ModelCodebaseGraph(BaseModel):
 
         self.updated_at = datetime.utcnow()
 
-    def get_nodes_by_type(self, node_type: str) -> List[GraphNode]:
+    def get_nodes_by_type(self, node_type: str) -> list[GraphNode]:
         """Get all nodes of a specific type."""
         node_ids = self.node_type_index.get(node_type, set())
         return [self.nodes[node_id] for node_id in node_ids if node_id in self.nodes]
 
-    def get_edges_by_type(self, edge_type: str) -> List[GraphEdge]:
+    def get_edges_by_type(self, edge_type: str) -> list[GraphEdge]:
         """Get all edges of a specific type."""
         edge_ids = self.edge_type_index.get(edge_type, set())
         return [self.edges[edge_id] for edge_id in edge_ids if edge_id in self.edges]
 
-    def get_file_node(self, file_path: Union[str, Path]) -> Optional[ModelFileNode]:
+    def get_file_node(self, file_path: str | Path) -> ModelFileNode | None:
         """Get file node by path."""
         node_id = self.file_path_index.get(str(file_path))
         if node_id and node_id in self.nodes:
@@ -209,7 +231,7 @@ class ModelCodebaseGraph(BaseModel):
                 return node
         return None
 
-    def get_symbol_nodes(self, symbol_name: str) -> List[ModelSymbolNode]:
+    def get_symbol_nodes(self, symbol_name: str) -> list[ModelSymbolNode]:
         """Get all symbol nodes with the given name."""
         node_ids = self.symbol_name_index.get(symbol_name, set())
         result = []
@@ -221,8 +243,10 @@ class ModelCodebaseGraph(BaseModel):
         return result
 
     def get_connected_nodes(
-        self, node_id: str, edge_types: Optional[List[str]] = None
-    ) -> List[GraphNode]:
+        self,
+        node_id: str,
+        edge_types: list[str] | None = None,
+    ) -> list[GraphNode]:
         """Get nodes connected to the given node, optionally filtered by edge types."""
         connected_node_ids = set()
 
@@ -246,7 +270,7 @@ class ModelCodebaseGraph(BaseModel):
         self.metrics.file_nodes = len(self.node_type_index.get("file", set()))
         self.metrics.symbol_nodes = len(self.node_type_index.get("symbol", set()))
         self.metrics.documentation_nodes = len(
-            self.node_type_index.get("documentation", set())
+            self.node_type_index.get("documentation", set()),
         )
 
         # Count edges by type
@@ -254,11 +278,11 @@ class ModelCodebaseGraph(BaseModel):
         self.metrics.definition_edges = len(self.edge_type_index.get("defines", set()))
         self.metrics.usage_edges = len(self.edge_type_index.get("uses", set()))
         self.metrics.inheritance_edges = len(
-            self.edge_type_index.get("inherits", set())
+            self.edge_type_index.get("inherits", set()),
         )
         self.metrics.call_edges = len(self.edge_type_index.get("calls", set()))
         self.metrics.documentation_edges = len(
-            self.edge_type_index.get("documents", set())
+            self.edge_type_index.get("documents", set()),
         )
 
         # Calculate average degree
@@ -274,7 +298,8 @@ class ModelCodebaseGraph(BaseModel):
         try:
             import networkx as nx
         except ImportError:
-            raise ImportError("NetworkX is required for graph analysis")
+            msg = "NetworkX is required for graph analysis"
+            raise ImportError(msg)
 
         G = nx.DiGraph()
 
@@ -293,7 +318,7 @@ class ModelGraphBuildResult(BaseModel):
     """Result of building the codebase graph."""
 
     success: bool = Field(..., description="Whether graph building succeeded")
-    graph: Optional[ModelCodebaseGraph] = Field(None, description="The built graph")
+    graph: ModelCodebaseGraph | None = Field(None, description="The built graph")
 
     # Build statistics
     files_processed: int = Field(0, description="Number of files processed")
@@ -304,18 +329,22 @@ class ModelGraphBuildResult(BaseModel):
     # Build metadata
     build_duration_seconds: float = Field(0.0, description="Time taken to build graph")
     onextree_integration_success: bool = Field(
-        False, description="Whether OnexTree integration succeeded"
+        False,
+        description="Whether OnexTree integration succeeded",
     )
     stamper_integration_success: bool = Field(
-        False, description="Whether stamper integration succeeded"
+        False,
+        description="Whether stamper integration succeeded",
     )
 
     # Error information
-    errors: List[str] = Field(
-        default_factory=list, description="Errors encountered during build"
+    errors: list[str] = Field(
+        default_factory=list,
+        description="Errors encountered during build",
     )
-    warnings: List[str] = Field(
-        default_factory=list, description="Warnings generated during build"
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="Warnings generated during build",
     )
 
     build_timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -325,21 +354,25 @@ class ModelGraphUpdateEvent(BaseModel):
     """Event representing an update to the codebase graph."""
 
     event_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique event identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique event identifier",
     )
     event_type: str = Field(..., description="Type of update: add/update/delete")
-    node_id: Optional[str] = Field(None, description="ID of affected node")
-    edge_id: Optional[str] = Field(None, description="ID of affected edge")
+    node_id: str | None = Field(None, description="ID of affected node")
+    edge_id: str | None = Field(None, description="ID of affected edge")
 
     # Change details
-    file_path: Optional[Path] = Field(
-        None, description="File path that triggered the update"
+    file_path: Path | None = Field(
+        None,
+        description="File path that triggered the update",
     )
     change_type: str = Field(
-        ..., description="Type of change: file_created/file_modified/file_deleted"
+        ...,
+        description="Type of change: file_created/file_modified/file_deleted",
     )
     change_metadata: ModelChangeMetadata = Field(
-        default_factory=ModelChangeMetadata, description="Additional change metadata"
+        default_factory=ModelChangeMetadata,
+        description="Additional change metadata",
     )
 
     timestamp: datetime = Field(default_factory=datetime.utcnow)

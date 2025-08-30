@@ -1,13 +1,12 @@
 import os
-from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
-from omnibase_core.model.configuration.model_health_check_config import \
-    ModelHealthCheckConfig
-from omnibase_core.model.configuration.model_request_config import \
-    ModelRequestConfig
+from omnibase_core.model.configuration.model_health_check_config import (
+    ModelHealthCheckConfig,
+)
+from omnibase_core.model.configuration.model_request_config import ModelRequestConfig
 
 
 class ModelRestApiConnectionConfig(BaseModel):
@@ -32,18 +31,24 @@ class ModelRestApiConnectionConfig(BaseModel):
         pattern=r"^https?://[a-zA-Z0-9\-\.:]+(/.*)?$",
         max_length=500,
     )
-    api_key: Optional[SecretStr] = Field(
-        None, description="API key for authentication (secured)"
+    api_key: SecretStr | None = Field(
+        None,
+        description="API key for authentication (secured)",
     )
-    bearer_token: Optional[SecretStr] = Field(
-        None, description="Bearer token for authentication (secured)"
+    bearer_token: SecretStr | None = Field(
+        None,
+        description="Bearer token for authentication (secured)",
     )
     timeout_seconds: int = Field(
-        30, description="Request timeout in seconds", ge=1, le=300
+        30,
+        description="Request timeout in seconds",
+        ge=1,
+        le=300,
     )
     max_retries: int = Field(3, description="Maximum number of retries", ge=0, le=10)
-    headers: Optional[Dict[str, str]] = Field(
-        None, description="Additional HTTP headers"
+    headers: dict[str, str] | None = Field(
+        None,
+        description="Additional HTTP headers",
     )
 
     @field_validator("base_url", mode="before")
@@ -51,7 +56,8 @@ class ModelRestApiConnectionConfig(BaseModel):
     def validate_base_url(cls, v: str) -> str:
         """Validate and normalize base URL."""
         if not v or not v.strip():
-            raise ValueError("Base URL cannot be empty")
+            msg = "Base URL cannot be empty"
+            raise ValueError(msg)
 
         v = v.strip()
 
@@ -59,15 +65,18 @@ class ModelRestApiConnectionConfig(BaseModel):
         try:
             parsed = urlparse(v)
         except Exception as e:
-            raise ValueError(f"Invalid URL format: {e}")
+            msg = f"Invalid URL format: {e}"
+            raise ValueError(msg)
 
         # Validate scheme
         if parsed.scheme not in ("http", "https"):
-            raise ValueError(f"URL must use http or https scheme, got: {parsed.scheme}")
+            msg = f"URL must use http or https scheme, got: {parsed.scheme}"
+            raise ValueError(msg)
 
         # Validate host
         if not parsed.netloc:
-            raise ValueError("URL must include a host")
+            msg = "URL must include a host"
+            raise ValueError(msg)
 
         # Recommend HTTPS for production
         if parsed.scheme == "http" and not any(
@@ -85,20 +94,23 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     @field_validator("headers")
     @classmethod
-    def validate_headers(cls, v: Optional[Dict[str, str]]) -> Optional[Dict[str, str]]:
+    def validate_headers(cls, v: dict[str, str] | None) -> dict[str, str] | None:
         """Validate HTTP headers."""
         if v is not None:
             # Limit number of headers and their sizes
             if len(v) > 20:
-                raise ValueError("Too many headers (max 20)")
+                msg = "Too many headers (max 20)"
+                raise ValueError(msg)
 
             validated_headers = {}
             for key, value in v.items():
                 if not isinstance(key, str) or not isinstance(value, str):
-                    raise ValueError("Header keys and values must be strings")
+                    msg = "Header keys and values must be strings"
+                    raise ValueError(msg)
 
                 if len(key) > 100 or len(value) > 500:
-                    raise ValueError("Header key or value too long")
+                    msg = "Header key or value too long"
+                    raise ValueError(msg)
 
                 # Sanitize header names (convert to proper case)
                 normalized_key = "-".join(
@@ -111,7 +123,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     # === URL Management ===
 
-    def get_parsed_url(self) -> Tuple[str, str, int, str]:
+    def get_parsed_url(self) -> tuple[str, str, int, str]:
         """Parse base URL into components (scheme, host, port, path)."""
         parsed = urlparse(self.base_url)
 
@@ -156,16 +168,15 @@ class ModelRestApiConnectionConfig(BaseModel):
         """Determine the authentication type being used."""
         if self.bearer_token:
             return "bearer_token"
-        elif self.api_key:
+        if self.api_key:
             return "api_key"
-        else:
-            return "none"
+        return "none"
 
     def has_authentication(self) -> bool:
         """Check if any authentication is configured."""
         return bool(self.api_key or self.bearer_token)
 
-    def get_auth_headers(self) -> Dict[str, str]:
+    def get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers."""
         auth_headers = {}
 
@@ -179,7 +190,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
         return auth_headers
 
-    def get_masked_auth_headers(self) -> Dict[str, str]:
+    def get_masked_auth_headers(self) -> dict[str, str]:
         """Get authentication headers with values masked."""
         auth_headers = {}
 
@@ -192,7 +203,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     # === Request Configuration ===
 
-    def get_request_headers(self, include_auth: bool = True) -> Dict[str, str]:
+    def get_request_headers(self, include_auth: bool = True) -> dict[str, str]:
         """Get complete request headers including authentication."""
         all_headers = {}
 
@@ -214,7 +225,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
         return all_headers
 
-    def get_masked_request_headers(self) -> Dict[str, str]:
+    def get_masked_request_headers(self) -> dict[str, str]:
         """Get request headers with sensitive values masked."""
         headers = self.get_request_headers(include_auth=False)
         headers.update(self.get_masked_auth_headers())
@@ -242,12 +253,9 @@ class ModelRestApiConnectionConfig(BaseModel):
             return False
 
         # Check for reasonable timeout (not too high or too low)
-        if self.timeout_seconds < 5 or self.timeout_seconds > 120:
-            return False
+        return not (self.timeout_seconds < 5 or self.timeout_seconds > 120)
 
-        return True
-
-    def get_security_recommendations(self) -> List[str]:
+    def get_security_recommendations(self) -> list[str]:
         """Get security recommendations for this configuration."""
         recommendations = []
 
@@ -256,12 +264,12 @@ class ModelRestApiConnectionConfig(BaseModel):
 
         if not self.has_authentication():
             recommendations.append(
-                "Configure API authentication (API key or bearer token)"
+                "Configure API authentication (API key or bearer token)",
             )
 
         if self.api_key and self.bearer_token:
             recommendations.append(
-                "Configure only one authentication method (API key OR bearer token)"
+                "Configure only one authentication method (API key OR bearer token)",
             )
 
         if self.timeout_seconds > 60:
@@ -275,7 +283,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
         return recommendations
 
-    def get_security_profile(self) -> Dict[str, str]:
+    def get_security_profile(self) -> dict[str, str]:
         """Get security profile assessment."""
         return {
             "protocol": "https" if self.uses_https() else "http",
@@ -288,7 +296,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     # === Performance Assessment ===
 
-    def get_performance_profile(self) -> Dict[str, str]:
+    def get_performance_profile(self) -> dict[str, str]:
         """Get performance characteristics of this configuration."""
         profile = {
             "timeout_category": "fast" if self.timeout_seconds <= 10 else "slow",
@@ -304,28 +312,28 @@ class ModelRestApiConnectionConfig(BaseModel):
 
         return profile
 
-    def get_performance_recommendations(self) -> List[str]:
+    def get_performance_recommendations(self) -> list[str]:
         """Get performance tuning recommendations."""
         recommendations = []
 
         if self.timeout_seconds > 60:
             recommendations.append(
-                "Consider reducing timeout for better responsiveness"
+                "Consider reducing timeout for better responsiveness",
             )
 
         if self.max_retries > 3 and self.timeout_seconds > 30:
             recommendations.append(
-                "High retry count with long timeout may cause delays"
+                "High retry count with long timeout may cause delays",
             )
 
         if self.uses_https():
             recommendations.append(
-                "HTTPS adds latency - ensure adequate timeout values"
+                "HTTPS adds latency - ensure adequate timeout values",
             )
 
         if not self.is_localhost() and self.timeout_seconds < 15:
             recommendations.append(
-                "Remote APIs may need longer timeouts for reliability"
+                "Remote APIs may need longer timeouts for reliability",
             )
 
         return recommendations
@@ -393,7 +401,9 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     @classmethod
     def create_local_development(
-        cls, port: int = 8000, path: str = "/api"
+        cls,
+        port: int = 8000,
+        path: str = "/api",
     ) -> "ModelRestApiConnectionConfig":
         """Create configuration for local development."""
         return cls(
@@ -405,7 +415,10 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     @classmethod
     def create_production_api(
-        cls, base_url: str, api_key: str, timeout_seconds: int = 30
+        cls,
+        base_url: str,
+        api_key: str,
+        timeout_seconds: int = 30,
     ) -> "ModelRestApiConnectionConfig":
         """Create secure production API configuration with API key."""
         return cls(
@@ -418,7 +431,10 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     @classmethod
     def create_bearer_token_api(
-        cls, base_url: str, bearer_token: str, timeout_seconds: int = 25
+        cls,
+        base_url: str,
+        bearer_token: str,
+        timeout_seconds: int = 25,
     ) -> "ModelRestApiConnectionConfig":
         """Create secure API configuration with bearer token."""
         return cls(
@@ -431,7 +447,8 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     @classmethod
     def create_testing(
-        cls, base_url: str = "http://localhost:8888/api"
+        cls,
+        base_url: str = "http://localhost:8888/api",
     ) -> "ModelRestApiConnectionConfig":
         """Create configuration for automated testing."""
         return cls(

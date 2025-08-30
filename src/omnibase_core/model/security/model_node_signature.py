@@ -13,10 +13,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.model.security.model_operation_details import \
-    ModelOperationDetails
-from omnibase_core.model.security.model_signature_metadata import \
-    ModelSignatureMetadata
+from omnibase_core.model.security.model_operation_details import ModelOperationDetails
+from omnibase_core.model.security.model_signature_metadata import ModelSignatureMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +70,13 @@ class ModelNodeSignature(BaseModel):
 
     # Node identification
     node_id: str = Field(
-        ..., description="Unique identifier of the signing node", min_length=1
+        ...,
+        description="Unique identifier of the signing node",
+        min_length=1,
     )
-    node_name: Optional[str] = Field(
-        None, description="Human-readable name of the signing node"
+    node_name: str | None = Field(
+        None,
+        description="Human-readable name of the signing node",
     )
 
     # Signature metadata
@@ -84,7 +85,9 @@ class ModelNodeSignature(BaseModel):
         description="When the signature was created (UTC)",
     )
     signature: str = Field(
-        ..., description="Base64-encoded digital signature", min_length=1
+        ...,
+        description="Base64-encoded digital signature",
+        min_length=1,
     )
 
     # Cryptographic details
@@ -93,27 +96,34 @@ class ModelNodeSignature(BaseModel):
         description="Cryptographic algorithm used for signing",
     )
     key_id: str = Field(
-        ..., description="Certificate fingerprint or key identifier", min_length=1
+        ...,
+        description="Certificate fingerprint or key identifier",
+        min_length=1,
     )
-    certificate_thumbprint: Optional[str] = Field(
-        None, description="SHA-256 thumbprint of the signing certificate"
+    certificate_thumbprint: str | None = Field(
+        None,
+        description="SHA-256 thumbprint of the signing certificate",
     )
 
     # Operation context
     operation: NodeOperationEnum = Field(
-        ..., description="Type of operation performed by this node"
+        ...,
+        description="Type of operation performed by this node",
     )
-    operation_details: Optional[ModelOperationDetails] = Field(
+    operation_details: ModelOperationDetails | None = Field(
         None,
         description="Additional details about the operation performed",
     )
 
     # Audit and compliance
     hop_index: int = Field(
-        ..., description="Position in the routing chain (0-based)", ge=0
+        ...,
+        description="Position in the routing chain (0-based)",
+        ge=0,
     )
-    previous_signature_hash: Optional[str] = Field(
-        None, description="Hash of the previous signature in the chain"
+    previous_signature_hash: str | None = Field(
+        None,
+        description="Hash of the previous signature in the chain",
     )
     envelope_state_hash: str = Field(
         ...,
@@ -122,43 +132,53 @@ class ModelNodeSignature(BaseModel):
     )
 
     # Security context
-    user_context: Optional[str] = Field(
-        None, description="User ID or service account that initiated the operation"
+    user_context: str | None = Field(
+        None,
+        description="User ID or service account that initiated the operation",
     )
-    security_clearance: Optional[str] = Field(
-        None, description="Security clearance level required for this operation"
+    security_clearance: str | None = Field(
+        None,
+        description="Security clearance level required for this operation",
     )
 
     # Performance and debugging
-    processing_time_ms: Optional[int] = Field(
-        None, description="Time spent processing the envelope (milliseconds)", ge=0
+    processing_time_ms: int | None = Field(
+        None,
+        description="Time spent processing the envelope (milliseconds)",
+        ge=0,
     )
-    signature_time_ms: Optional[int] = Field(
-        None, description="Time spent creating the signature (milliseconds)", ge=0
+    signature_time_ms: int | None = Field(
+        None,
+        description="Time spent creating the signature (milliseconds)",
+        ge=0,
     )
 
     # Error handling
-    error_message: Optional[str] = Field(
-        None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        None,
+        description="Error message if operation failed",
     )
     warning_messages: list[str] = Field(
-        default_factory=list, description="Non-fatal warnings during processing"
+        default_factory=list,
+        description="Non-fatal warnings during processing",
     )
 
     # Additional metadata
-    signature_metadata: Optional[ModelSignatureMetadata] = Field(
-        None, description="Additional signature metadata"
+    signature_metadata: ModelSignatureMetadata | None = Field(
+        None,
+        description="Additional signature metadata",
     )
 
     @validator("hop_index")
-    def validate_hop_index(cls, v):
+    def validate_hop_index(self, v):
         """Validate hop index is reasonable."""
         if v > 1000:  # Sanity check for routing loops
-            raise ValueError("Hop index too large - possible routing loop")
+            msg = "Hop index too large - possible routing loop"
+            raise ValueError(msg)
         return v
 
     @validator("signature")
-    def validate_signature_format(cls, v):
+    def validate_signature_format(self, v):
         """Validate signature is properly base64 encoded."""
         import base64
 
@@ -166,11 +186,12 @@ class ModelNodeSignature(BaseModel):
             base64.b64decode(v, validate=True)
         except Exception as e:
             # Log the specific base64 decoding error
-            logger.error(
-                f"Invalid base64 signature format: {str(e)}",
+            logger.exception(
+                f"Invalid base64 signature format: {e!s}",
                 extra={"signature_preview": v[:20] + "..." if len(v) > 20 else v},
             )
-            raise ValueError(f"Signature must be valid base64 encoding: {str(e)}")
+            msg = f"Signature must be valid base64 encoding: {e!s}"
+            raise ValueError(msg)
         return v
 
     @classmethod
@@ -180,7 +201,7 @@ class ModelNodeSignature(BaseModel):
         signature: str,
         key_id: str,
         envelope_state_hash: str,
-        user_context: Optional[str] = None,
+        user_context: str | None = None,
         **kwargs,
     ) -> "ModelNodeSignature":
         """Create a source signature for envelope origination."""
@@ -246,7 +267,8 @@ class ModelNodeSignature(BaseModel):
         )
 
     def verify_signature_chain_continuity(
-        self, previous_signature: Optional["ModelNodeSignature"]
+        self,
+        previous_signature: Optional["ModelNodeSignature"],
     ) -> bool:
         """Verify this signature properly continues the chain."""
         if self.hop_index == 0:
@@ -264,7 +286,7 @@ class ModelNodeSignature(BaseModel):
         import hashlib
 
         previous_hash = hashlib.sha256(
-            previous_signature.signature.encode()
+            previous_signature.signature.encode(),
         ).hexdigest()
         return self.previous_signature_hash == previous_hash
 
@@ -289,7 +311,8 @@ class ModelNodeSignature(BaseModel):
         return hashlib.sha256(self.signature.encode()).hexdigest()
 
     def is_valid_operation_sequence(
-        self, previous_operation: Optional[NodeOperationEnum]
+        self,
+        previous_operation: NodeOperationEnum | None,
     ) -> bool:
         """Verify this operation is valid given the previous operation."""
         if previous_operation is None:

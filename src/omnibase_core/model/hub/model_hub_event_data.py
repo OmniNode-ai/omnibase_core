@@ -4,13 +4,10 @@ ONEX-compliant model for hub event data.
 Replaces Dict[str, Any] with strongly typed Pydantic model following ONEX standards.
 """
 
-from typing import Optional, Union
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.hub.model_hub_status import ModelHubStatus
-from omnibase_core.model.hub.model_tool_specification import \
-    ModelToolSpecification
+from omnibase_core.model.hub.model_tool_specification import ModelToolSpecification
 
 
 class ModelHubEventData(BaseModel):
@@ -26,25 +23,31 @@ class ModelHubEventData(BaseModel):
     timestamp: float = Field(..., description="Event timestamp")
 
     # Event-specific payload using Union types instead of Any
-    tool_spec: Optional[ModelToolSpecification] = Field(
-        None, description="Tool specification for tool-related events"
+    tool_spec: ModelToolSpecification | None = Field(
+        None,
+        description="Tool specification for tool-related events",
     )
-    hub_status: Optional[ModelHubStatus] = Field(
-        None, description="Hub status for status events"
+    hub_status: ModelHubStatus | None = Field(
+        None,
+        description="Hub status for status events",
     )
-    tool_name: Optional[str] = Field(
-        None, description="Tool name for tool-specific events"
+    tool_name: str | None = Field(
+        None,
+        description="Tool name for tool-specific events",
     )
-    error_message: Optional[str] = Field(
-        None, description="Error message for error events"
+    error_message: str | None = Field(
+        None,
+        description="Error message for error events",
     )
-    success: Optional[bool] = Field(
-        None, description="Success indicator for operation events"
+    success: bool | None = Field(
+        None,
+        description="Success indicator for operation events",
     )
 
     # Generic data for custom events (using Union instead of Any)
-    custom_data: Optional[Union[str, int, float, bool, dict, list]] = Field(
-        None, description="Custom event data with strongly typed values"
+    custom_data: str | int | float | bool | dict | list | None = Field(
+        None,
+        description="Custom event data with strongly typed values",
     )
 
     class Config:
@@ -62,5 +65,5 @@ class ModelHubEventData(BaseModel):
                     "capabilities": ["processing"],
                 },
                 "success": True,
-            }
+            },
         }

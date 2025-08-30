@@ -6,7 +6,6 @@ with flexible, extensible tagging system.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -28,24 +27,28 @@ class ModelTag(BaseModel):
 
     display_name: str = Field(..., description="Display name")
 
-    description: Optional[str] = Field(None, description="Tag description")
+    description: str | None = Field(None, description="Tag description")
 
-    color: Optional[str] = Field(
-        None, description="Hex color code", pattern="^#[0-9A-Fa-f]{6}$"
+    color: str | None = Field(
+        None,
+        description="Hex color code",
+        pattern="^#[0-9A-Fa-f]{6}$",
     )
 
-    icon: Optional[str] = Field(None, description="Icon identifier")
+    icon: str | None = Field(None, description="Icon identifier")
 
     created_by: str = Field(..., description="Creator identifier")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Creation timestamp",
     )
 
     is_system: bool = Field(default=False, description="System-defined tag")
 
-    parent_tag: Optional[str] = Field(
-        None, description="Parent tag for hierarchical organization"
+    parent_tag: str | None = Field(
+        None,
+        description="Parent tag for hierarchical organization",
     )
 
     def get_qualified_name(self) -> str:
@@ -58,7 +61,10 @@ class ModelTag(BaseModel):
 
     @classmethod
     def create_system_tag(
-        cls, name: str, display_name: str, color: Optional[str] = None
+        cls,
+        name: str,
+        display_name: str,
+        color: str | None = None,
     ) -> "ModelTag":
         """Create a system-defined tag."""
         return cls(

@@ -4,7 +4,7 @@ Canonicalization Policy Model for ONEX Configuration System.
 Strongly typed model for canonicalization policies.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 
@@ -17,7 +17,8 @@ class ModelCanonicalizationPolicy(BaseModel):
     """
 
     canonicalize_body: Callable = Field(
-        ..., description="Function to canonicalize body content"
+        ...,
+        description="Function to canonicalize body content",
     )
 
     class Config:

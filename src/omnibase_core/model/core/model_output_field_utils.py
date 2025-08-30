@@ -1,24 +1,26 @@
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
-from omnibase_core.constants import (BACKEND_KEY, CUSTOM_KEY,
-                                     DEFAULT_PROCESSED_VALUE, INTEGRATION_KEY,
-                                     PROCESSED_KEY)
+from omnibase_core.constants import (
+    BACKEND_KEY,
+    CUSTOM_KEY,
+    DEFAULT_PROCESSED_VALUE,
+    INTEGRATION_KEY,
+    PROCESSED_KEY,
+)
 from omnibase_core.model.core.model_output_field import ModelOnexField
 
 # Import the protocol from either node (assume canonical location for now)
 try:
-    from omnibase_core.protocol.protocol_output_field_tool import \
-        OutputFieldTool
+    from omnibase_core.protocol.protocol_output_field_tool import OutputFieldTool
 except ImportError:
-    from omnibase_core.protocol.protocol_output_field_tool import \
-        OutputFieldTool
+    from omnibase_core.protocol.protocol_output_field_tool import OutputFieldTool
 
 T = TypeVar("T", bound=BaseModel)
 
 
-def make_output_field(field_value: Any, output_field_model_cls: Type[T]) -> T:
+def make_output_field(field_value: Any, output_field_model_cls: type[T]) -> T:
     """
     Converts/wraps any field_value (dict, Pydantic model, etc.) into the canonical output field model.
     Args:
@@ -40,8 +42,11 @@ def make_output_field(field_value: Any, output_field_model_cls: Type[T]) -> T:
     try:
         return output_field_model_cls(data=field_value)
     except Exception as e:
-        raise ValueError(
+        msg = (
             f"Cannot convert {field_value!r} to {output_field_model_cls.__name__}: {e}"
+        )
+        raise ValueError(
+            msg,
         )
 
 
@@ -56,32 +61,28 @@ def build_output_field_kwargs(input_state: dict, event_bus: any) -> dict:
     """
     kwargs = {BACKEND_KEY: event_bus.__class__.__name__ if event_bus else "unknown"}
     if CUSTOM_KEY in input_state:
-        kwargs = {BACKEND_KEY: kwargs[BACKEND_KEY], CUSTOM_KEY: input_state[CUSTOM_KEY]}
-        return kwargs
+        return {BACKEND_KEY: kwargs[BACKEND_KEY], CUSTOM_KEY: input_state[CUSTOM_KEY]}
     if INTEGRATION_KEY in input_state:
-        kwargs = {
+        return {
             BACKEND_KEY: kwargs[BACKEND_KEY],
             INTEGRATION_KEY: input_state[INTEGRATION_KEY],
         }
-        return kwargs
     kwargs[PROCESSED_KEY] = DEFAULT_PROCESSED_VALUE
     return kwargs
 
 
 class ModelComputeOutputFieldTool(OutputFieldTool):
-    def __call__(self, state, input_state_dict: Dict[str, Any]) -> ModelOnexField:
+    def __call__(self, state, input_state_dict: dict[str, Any]) -> ModelOnexField:
         # If 'output_field' is present in the input dict, always use it
-        val = input_state_dict.get("output_field", None)
+        val = input_state_dict.get("output_field")
         if val is not None:
             if isinstance(val, ModelOnexField):
                 return val
-            elif isinstance(val, dict):
+            if isinstance(val, dict):
                 if "data" in val:
                     return ModelOnexField(**val)
-                else:
-                    return ModelOnexField(data=val)
-            else:
                 return ModelOnexField(data=val)
+            return ModelOnexField(data=val)
         # If 'external_dependency' is present and True in either model or dict, return integration
         if (
             getattr(state, "external_dependency", None) is True

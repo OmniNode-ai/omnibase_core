@@ -6,7 +6,7 @@ Replaces raw dict usage throughout the contract-to-model pipeline.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -32,34 +32,41 @@ class ModelContractDocument(BaseModel):
     node_version: ModelSemVer = Field(..., description="Node implementation version")
 
     # State schemas
-    input_state: Optional[ModelSchema] = Field(
-        None, description="Input state schema definition"
+    input_state: ModelSchema | None = Field(
+        None,
+        description="Input state schema definition",
     )
-    output_state: Optional[ModelSchema] = Field(
-        None, description="Output state schema definition"
+    output_state: ModelSchema | None = Field(
+        None,
+        description="Output state schema definition",
     )
 
     # Schema definitions for $ref resolution
-    definitions: Optional[Dict[str, ModelSchema]] = Field(
-        None, description="Reusable schema definitions"
+    definitions: dict[str, ModelSchema] | None = Field(
+        None,
+        description="Reusable schema definitions",
     )
 
     # Optional components
-    associated_documents: Optional[Dict[str, Any]] = Field(
-        None, description="Associated configuration documents"
+    associated_documents: dict[str, Any] | None = Field(
+        None,
+        description="Associated configuration documents",
     )
-    cli_interface: Optional[ModelCliInterface] = Field(
-        None, description="CLI interface definition"
+    cli_interface: ModelCliInterface | None = Field(
+        None,
+        description="CLI interface definition",
     )
 
     # NEW: Dependency injection specification
-    dependencies: Optional[ModelContractDependencies] = Field(
-        None, description="Dependency injection specification"
+    dependencies: ModelContractDependencies | None = Field(
+        None,
+        description="Dependency injection specification",
     )
 
     # Additional contract properties
-    execution_capabilities: Optional[Dict[str, Any]] = Field(
-        None, description="Node execution capabilities"
+    execution_capabilities: dict[str, Any] | None = Field(
+        None,
+        description="Node execution capabilities",
     )
 
     @field_validator("node_name")
@@ -67,10 +74,12 @@ class ModelContractDocument(BaseModel):
     def validate_node_name(cls, v):
         """Validate node name format."""
         if not v or not isinstance(v, str):
-            raise ValueError("node_name must be a non-empty string")
+            msg = "node_name must be a non-empty string"
+            raise ValueError(msg)
         if not v.replace("_", "").replace("-", "").isalnum():
+            msg = "node_name must contain only alphanumeric characters, hyphens, and underscores"
             raise ValueError(
-                "node_name must contain only alphanumeric characters, hyphens, and underscores"
+                msg,
             )
         return v
 
@@ -79,7 +88,8 @@ class ModelContractDocument(BaseModel):
     def validate_version_fields(cls, v):
         """Validate and convert version fields to ModelSemVer."""
         if v is None:
-            raise ValueError("Version field cannot be None")
+            msg = "Version field cannot be None"
+            raise ValueError(msg)
 
         # If it's already a ModelSemVer, return as-is
         if isinstance(v, ModelSemVer):
@@ -93,8 +103,9 @@ class ModelContractDocument(BaseModel):
         if isinstance(v, dict) and all(key in v for key in ["major", "minor", "patch"]):
             return ModelSemVer(major=v["major"], minor=v["minor"], patch=v["patch"])
 
+        msg = f"Invalid version format: {v}. Expected string, dict with major/minor/patch, or ModelSemVer"
         raise ValueError(
-            f"Invalid version format: {v}. Expected string, dict with major/minor/patch, or ModelSemVer"
+            msg,
         )
 
     def to_yaml(self) -> str:
@@ -102,7 +113,7 @@ class ModelContractDocument(BaseModel):
         data = self.model_dump(exclude_none=True)
         return yaml.dump(data, default_flow_style=False, sort_keys=False)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         return self.model_dump(exclude_none=True)
 
@@ -116,15 +127,16 @@ class ModelContractDocument(BaseModel):
     def from_file(cls, file_path: Path) -> "ModelContractDocument":
         """Load from contract.yaml file."""
         if not file_path.exists():
-            raise FileNotFoundError(f"Contract file not found: {file_path}")
+            msg = f"Contract file not found: {file_path}"
+            raise FileNotFoundError(msg)
 
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         return cls.from_yaml(content)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelContractDocument":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelContractDocument":
         """Create from dictionary data."""
         # Convert nested dictionaries to models
         input_state = ModelSchema.from_dict(data.get("input_state"))
@@ -134,7 +146,7 @@ class ModelContractDocument(BaseModel):
 
         # Convert definitions to ModelSchema objects
         definitions = None
-        if "definitions" in data and data["definitions"]:
+        if data.get("definitions"):
             definitions = {}
             for name, def_data in data["definitions"].items():
                 schema_def = ModelSchema.from_dict(def_data)

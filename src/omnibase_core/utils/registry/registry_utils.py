@@ -5,7 +5,6 @@ Provides common helper functions to eliminate repetitive registry patterns.
 """
 
 from pathlib import Path
-from typing import Optional
 
 
 def get_default_node_dir(calling_file: str) -> Path:
@@ -30,7 +29,8 @@ def get_default_node_dir(calling_file: str) -> Path:
 
 
 def validate_registry_config_type(
-    config: Optional[object], expected_type: type
+    config: object | None,
+    expected_type: type,
 ) -> object:
     """
     Validate registry config is proper Pydantic model, not Dict[str, Any].
@@ -51,25 +51,31 @@ def validate_registry_config_type(
         # Handle complex models that require sub-models
         if expected_type.__name__ == "ModelRegistryConfig":
             # Create default ModelRegistryConfig with required service_config
-            from omnibase_core.model.service.model_service_registry_config import \
-                ModelServiceRegistryConfig
+            from omnibase_core.model.service.model_service_registry_config import (
+                ModelServiceRegistryConfig,
+            )
 
             default_service_config = ModelServiceRegistryConfig()
             return expected_type(service_config=default_service_config)
-        else:
-            return expected_type()
+        return expected_type()
 
     if isinstance(config, dict):
-        raise TypeError(
+        msg = (
             f"Registry config must be {expected_type.__name__} Pydantic model, "
             f"not Dict[str, Any]. This violates ONEX core principle: "
             f"'All data structures must be proper Pydantic models'"
         )
+        raise TypeError(
+            msg,
+        )
 
     if not isinstance(config, expected_type):
-        raise TypeError(
+        msg = (
             f"Registry config must be {expected_type.__name__}, "
             f"got {type(config).__name__}"
+        )
+        raise TypeError(
+            msg,
         )
 
     return config

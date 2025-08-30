@@ -8,21 +8,23 @@ Tool-specific models following canonical ONEX pattern.
 
 from .model_consul_adapter_input import ModelConsulAdapterInput
 from .model_consul_adapter_output import ModelConsulAdapterOutput
-from .model_consul_response import (ModelConsulAdapterHealth,
-                                    ModelConsulHealthCheck,
-                                    ModelConsulHealthCheckNode,
-                                    ModelConsulHealthResponse,
-                                    ModelConsulHealthStatus,
-                                    ModelConsulKVResponse,
-                                    ModelConsulServiceInfo,
-                                    ModelConsulServiceListResponse,
-                                    ModelConsulServiceRegistration,
-                                    ModelConsulServiceResponse)
+from .model_consul_response import (
+    ModelConsulAdapterHealth,
+    ModelConsulHealthCheck,
+    ModelConsulHealthCheckNode,
+    ModelConsulHealthResponse,
+    ModelConsulHealthStatus,
+    ModelConsulKVResponse,
+    ModelConsulServiceInfo,
+    ModelConsulServiceListResponse,
+    ModelConsulServiceRegistration,
+    ModelConsulServiceResponse,
+)
 
 __all__ = [
+    "ModelConsulAdapterHealth",
     "ModelConsulAdapterInput",
     "ModelConsulAdapterOutput",
-    "ModelConsulAdapterHealth",
     "ModelConsulHealthCheck",
     "ModelConsulHealthCheckNode",
     "ModelConsulHealthResponse",

@@ -2,12 +2,10 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.ai_workflows.model_task_metadata import \
-    ModelTaskMetadata
+from omnibase_core.model.ai_workflows.model_task_metadata import ModelTaskMetadata
 
 
 class EnumTaskPriority(str, Enum):
@@ -59,34 +57,41 @@ class ModelAgentTask(BaseModel):
 
     description: str = Field(description="Detailed task description with requirements")
 
-    work_ticket_id: Optional[str] = Field(
-        default=None, description="Associated work ticket ID if applicable"
+    work_ticket_id: str | None = Field(
+        default=None,
+        description="Associated work ticket ID if applicable",
     )
 
     branch_name: str = Field(description="Git branch name for isolated work")
 
     priority: EnumTaskPriority = Field(
-        default=EnumTaskPriority.MEDIUM, description="Task priority for scheduling"
+        default=EnumTaskPriority.MEDIUM,
+        description="Task priority for scheduling",
     )
 
     status: EnumTaskStatus = Field(
-        default=EnumTaskStatus.PENDING, description="Current task status"
+        default=EnumTaskStatus.PENDING,
+        description="Current task status",
     )
 
-    assigned_agent_id: Optional[str] = Field(
-        default=None, description="ID of agent assigned to this task"
+    assigned_agent_id: str | None = Field(
+        default=None,
+        description="ID of agent assigned to this task",
     )
 
-    context_files: List[str] = Field(
-        default_factory=list, description="Files to include in agent context"
+    context_files: list[str] = Field(
+        default_factory=list,
+        description="Files to include in agent context",
     )
 
-    target_files: List[str] = Field(
-        default_factory=list, description="Specific files to be modified"
+    target_files: list[str] = Field(
+        default_factory=list,
+        description="Specific files to be modified",
     )
 
-    dependencies: List[str] = Field(
-        default_factory=list, description="Task IDs that must complete before this task"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Task IDs that must complete before this task",
     )
 
     estimated_duration_minutes: int = Field(
@@ -98,16 +103,18 @@ class ModelAgentTask(BaseModel):
 
     # Container isolation settings
     isolation_level: str = Field(
-        default="thread", description="Isolation level (thread, process, container)"
+        default="thread",
+        description="Isolation level (thread, process, container)",
     )
 
-    docker_image: Optional[str] = Field(
+    docker_image: str | None = Field(
         default=None,
         description="Docker image for container isolation (if isolation_level=container)",
     )
 
-    environment_variables: Dict[str, str] = Field(
-        default_factory=dict, description="Environment variables for task execution"
+    environment_variables: dict[str, str] = Field(
+        default_factory=dict,
+        description="Environment variables for task execution",
     )
 
     metadata: ModelTaskMetadata = Field(
@@ -116,19 +123,23 @@ class ModelAgentTask(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Task creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Task creation timestamp",
     )
 
-    assigned_at: Optional[datetime] = Field(
-        default=None, description="When task was assigned to agent"
+    assigned_at: datetime | None = Field(
+        default=None,
+        description="When task was assigned to agent",
     )
 
-    started_at: Optional[datetime] = Field(
-        default=None, description="When agent started working on task"
+    started_at: datetime | None = Field(
+        default=None,
+        description="When agent started working on task",
     )
 
-    completed_at: Optional[datetime] = Field(
-        default=None, description="When task was completed"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="When task was completed",
     )
 
     def to_agent_prompt(self) -> str:
@@ -155,7 +166,7 @@ class ModelAgentTask(BaseModel):
                 [
                     "",
                     f"## Work Ticket: {self.work_ticket_id}",
-                ]
+                ],
             )
 
         if self.target_files:
@@ -164,7 +175,7 @@ class ModelAgentTask(BaseModel):
                     "",
                     "## Target Files",
                     *[f"- {file}" for file in self.target_files],
-                ]
+                ],
             )
 
         if self.context_files:
@@ -173,7 +184,7 @@ class ModelAgentTask(BaseModel):
                     "",
                     "## Context Files",
                     *[f"- {file}" for file in self.context_files],
-                ]
+                ],
             )
 
         prompt_parts.extend(
@@ -182,7 +193,7 @@ class ModelAgentTask(BaseModel):
                 f"## Working Branch: {self.branch_name}",
                 "",
                 "Begin implementation following ONEX standards.",
-            ]
+            ],
         )
 
         return "\n".join(prompt_parts)

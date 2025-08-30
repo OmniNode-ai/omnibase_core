@@ -4,7 +4,7 @@ Core ONEX Subcontract Models.
 
 Provides dedicated Pydantic models for all ONEX subcontract patterns:
 - FSM (Finite State Machine) subcontracts
-- Event Type subcontracts  
+- Event Type subcontracts
 - Caching subcontracts
 - Routing subcontracts
 - State Management subcontracts
@@ -24,10 +24,10 @@ from .model_routing_subcontract import ModelRoutingSubcontract
 from .model_state_management_subcontract import ModelStateManagementSubcontract
 
 __all__ = [
-    "ModelFSMSubcontract",
-    "ModelEventTypeSubcontract",
+    "ModelAggregationSubcontract",
     "ModelCachingSubcontract",
+    "ModelEventTypeSubcontract",
+    "ModelFSMSubcontract",
     "ModelRoutingSubcontract",
     "ModelStateManagementSubcontract",
-    "ModelAggregationSubcontract",
 ]

@@ -4,12 +4,11 @@ Configuration Merge Result Model for ONEX Configuration System.
 Strongly typed model to replace dictionary usage in configuration merging.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.service.model_service_registry_config import \
-    ModelServiceRegistryConfig
+from omnibase_core.model.service.model_service_registry_config import (
+    ModelServiceRegistryConfig,
+)
 
 
 class ModelConfigurationMergeResult(BaseModel):
@@ -21,23 +20,25 @@ class ModelConfigurationMergeResult(BaseModel):
     """
 
     merged_data: ModelServiceRegistryConfig = Field(
-        description="The merged and validated service configuration"
+        description="The merged and validated service configuration",
     )
 
-    source_files: List[str] = Field(
+    source_files: list[str] = Field(
         default_factory=list,
         description="List of configuration file paths that were merged",
     )
 
     environment_overrides_applied: int = Field(
-        default=0, description="Number of environment variable overrides applied"
+        default=0,
+        description="Number of environment variable overrides applied",
     )
 
-    validation_errors: List[str] = Field(
+    validation_errors: list[str] = Field(
         default_factory=list,
         description="Any validation errors encountered during merge",
     )
 
     merge_strategy_used: str = Field(
-        default="deep_merge", description="The merge strategy that was applied"
+        default="deep_merge",
+        description="The merge strategy that was applied",
     )

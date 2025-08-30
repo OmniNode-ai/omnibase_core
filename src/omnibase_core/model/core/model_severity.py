@@ -36,20 +36,24 @@ class ModelSeverity(BaseModel):
 
     # Properties as fields
     is_blocking: bool = Field(
-        ..., description="Whether this severity level should block execution"
+        ...,
+        description="Whether this severity level should block execution",
     )
 
     is_critical: bool = Field(
-        default=False, description="Whether this is critical or fatal severity"
+        default=False,
+        description="Whether this is critical or fatal severity",
     )
 
     # Optional metadata
     description: str = Field(
-        default="", description="Human-readable description of the severity level"
+        default="",
+        description="Human-readable description of the severity level",
     )
 
     color_code: str = Field(
-        default="", description="Terminal color code for this severity"
+        default="",
+        description="Terminal color code for this severity",
     )
 
     emoji: str = Field(default="", description="Emoji representation for this severity")
@@ -165,16 +169,15 @@ class ModelSeverity(BaseModel):
         factory = factory_map.get(severity_upper)
         if factory:
             return factory()
-        else:
-            # Unknown severity - default to INFO
-            return cls(
-                name=severity_upper,
-                value=severity.lower(),
-                numeric_value=20,
-                is_blocking=False,
-                is_critical=False,
-                description=f"Custom severity: {severity}",
-            )
+        # Unknown severity - default to INFO
+        return cls(
+            name=severity_upper,
+            value=severity.lower(),
+            numeric_value=20,
+            is_blocking=False,
+            is_critical=False,
+            description=f"Custom severity: {severity}",
+        )
 
     def __str__(self) -> str:
         """String representation for backward compatibility."""
@@ -184,7 +187,7 @@ class ModelSeverity(BaseModel):
         """Equality comparison for backward compatibility."""
         if isinstance(other, str):
             return self.value == other or self.name == other.upper()
-        elif isinstance(other, ModelSeverity):
+        if isinstance(other, ModelSeverity):
             return self.name == other.name
         return False
 

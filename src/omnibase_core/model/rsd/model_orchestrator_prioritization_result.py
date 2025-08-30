@@ -10,8 +10,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.rsd.model_rsd_prioritization_result import \
-    ModelRSDPrioritizationResult
+from omnibase_core.model.rsd.model_rsd_prioritization_result import (
+    ModelRSDPrioritizationResult,
+)
 
 
 class ModelOrchestratorPrioritizationResult(BaseModel):
@@ -25,7 +26,7 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
 
     # Base RSD calculation (maintains backward compatibility)
     base_result: ModelRSDPrioritizationResult = Field(
-        description="Original 5-factor RSD prioritization result"
+        description="Original 5-factor RSD prioritization result",
     )
 
     # Orchestrator-enhanced scoring
@@ -37,7 +38,9 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
 
     # Individual orchestrator factor contributions
     critical_path_boost_applied: float = Field(
-        description="Critical path boost multiplier applied (1.0-1.5)", ge=1.0, le=1.5
+        description="Critical path boost multiplier applied (1.0-1.5)",
+        ge=1.0,
+        le=1.5,
     )
 
     lane_contention_penalty_applied: float = Field(
@@ -47,7 +50,9 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
     )
 
     lease_ttl_pressure_applied: float = Field(
-        description="Lease TTL pressure multiplier applied (1.0-2.0)", ge=1.0, le=2.0
+        description="Lease TTL pressure multiplier applied (1.0-2.0)",
+        ge=1.0,
+        le=2.0,
     )
 
     coordination_overhead_penalty_applied: float = Field(
@@ -64,29 +69,32 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
 
     # Orchestrator mode metadata
     orchestrator_mode_enabled: bool = Field(
-        description="Whether orchestrator mode was enabled for this calculation"
+        description="Whether orchestrator mode was enabled for this calculation",
     )
 
     orchestrator_factors_detected: int = Field(
-        description="Number of orchestrator factors that applied to this ticket", ge=0
+        description="Number of orchestrator factors that applied to this ticket",
+        ge=0,
     )
 
     workflow_graph_size: int = Field(
-        description="Size of workflow graph analyzed", ge=0
+        description="Size of workflow graph analyzed",
+        ge=0,
     )
 
     target_execution_lane: str = Field(
-        default="unassigned", description="Target execution lane (L1-L6 or unassigned)"
+        default="unassigned",
+        description="Target execution lane (L1-L6 or unassigned)",
     )
 
     is_on_critical_path: bool = Field(
-        description="Whether ticket was identified on critical path"
+        description="Whether ticket was identified on critical path",
     )
 
     has_active_leases: bool = Field(description="Whether ticket has active work leases")
 
     requires_coordination: bool = Field(
-        description="Whether ticket requires multi-node coordination"
+        description="Whether ticket requires multi-node coordination",
     )
 
     # Impact analysis
@@ -102,7 +110,8 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
     )
 
     orchestrator_recommendation: str = Field(
-        description="Orchestrator-specific execution recommendation", min_length=1
+        description="Orchestrator-specific execution recommendation",
+        min_length=1,
     )
 
     # Extended metadata
@@ -117,7 +126,8 @@ class ModelOrchestratorPrioritizationResult(BaseModel):
     )
 
     total_processing_time_ms: float = Field(
-        description="Total processing time including orchestrator extensions", gt=0.0
+        description="Total processing time including orchestrator extensions",
+        gt=0.0,
     )
 
     calculated_at: datetime = Field(

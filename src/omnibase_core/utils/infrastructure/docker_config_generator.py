@@ -5,15 +5,24 @@ Generates type-safe, validated Docker configurations from Pydantic models.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from omnibase_core.models.infrastructure.model_docker_config import (
-    DockerLogDriver, DockerNetworkDriver, DockerRestartPolicy,
-    DockerVolumeDriver, ModelDockerBuildArg, ModelDockerBuildStage,
-    ModelDockerCompose, ModelDockerEnvironment, ModelDockerfile,
-    ModelDockerHealthCheck, ModelDockerLogging, ModelDockerNetwork,
-    ModelDockerPort, ModelDockerResources, ModelDockerService,
-    ModelDockerVolume, ModelDockerVolumeMount)
+    DockerLogDriver,
+    DockerNetworkDriver,
+    DockerRestartPolicy,
+    ModelDockerBuildArg,
+    ModelDockerBuildStage,
+    ModelDockerCompose,
+    ModelDockerEnvironment,
+    ModelDockerfile,
+    ModelDockerHealthCheck,
+    ModelDockerLogging,
+    ModelDockerNetwork,
+    ModelDockerPort,
+    ModelDockerService,
+    ModelDockerVolume,
+    ModelDockerVolumeMount,
+)
 
 
 class DockerConfigGenerator:
@@ -25,9 +34,9 @@ class DockerConfigGenerator:
         service_group: str,
         python_version: str = "3.12",
         poetry_version: str = "1.8.5",
-        dependency_group: Optional[str] = None,
-        expose_ports: Optional[List[int]] = None,
-        additional_env: Optional[Dict[str, str]] = None,
+        dependency_group: str | None = None,
+        expose_ports: list[int] | None = None,
+        additional_env: dict[str, str] | None = None,
     ) -> ModelDockerfile:
         """
         Create a standardized ONEX service Dockerfile.
@@ -60,10 +69,14 @@ class DockerConfigGenerator:
                 description="Poetry version",
             ),
             ModelDockerBuildArg(
-                name="SERVICE_NAME", default=service_name, description="Service name"
+                name="SERVICE_NAME",
+                default=service_name,
+                description="Service name",
             ),
             ModelDockerBuildArg(
-                name="SERVICE_GROUP", default=service_group, description="Service group"
+                name="SERVICE_GROUP",
+                default=service_group,
+                description="Service group",
             ),
         ]
 
@@ -73,7 +86,7 @@ class DockerConfigGenerator:
                     name="DEPENDENCY_GROUP",
                     default=dependency_group,
                     description="Poetry dependency group",
-                )
+                ),
             )
 
         # Stage 1: Dependencies
@@ -82,18 +95,18 @@ class DockerConfigGenerator:
             from_image="python:${PYTHON_VERSION}-slim",
             workdir="/app",
             copy_commands=[
-                {"source": "pyproject.toml poetry.lock", "destination": "./"}
+                {"source": "pyproject.toml poetry.lock", "destination": "./"},
             ],
             run_commands=["pip install --no-cache-dir poetry==${POETRY_VERSION}"],
         )
 
         if dependency_group:
             dependencies_stage.run_commands.append(
-                f"poetry export -f requirements.txt --output requirements.txt --without-hashes --with {dependency_group}"
+                f"poetry export -f requirements.txt --output requirements.txt --without-hashes --with {dependency_group}",
             )
         else:
             dependencies_stage.run_commands.append(
-                "poetry export -f requirements.txt --output requirements.txt --without-hashes"
+                "poetry export -f requirements.txt --output requirements.txt --without-hashes",
             )
 
         # Stage 2: Builder
@@ -111,12 +124,12 @@ class DockerConfigGenerator:
                     "source": "/app/requirements.txt",
                     "destination": ".",
                     "from": "dependencies",
-                }
+                },
             ],
         )
         builder_stage.run_commands.append(
             "pip install --no-cache-dir --upgrade pip setuptools wheel && "
-            "pip install --no-cache-dir -r requirements.txt"
+            "pip install --no-cache-dir -r requirements.txt",
         )
 
         # Stage 3: Test (optional but included)
@@ -131,7 +144,7 @@ class DockerConfigGenerator:
             env=[ModelDockerEnvironment(name="PYTHONPATH", value="/app/src")],
             run_commands=[
                 f"if [ -d 'tests/unit/{service_group}/{service_name}' ]; then "
-                f"python -m pytest tests/unit/{service_group}/{service_name} -v; fi"
+                f"python -m pytest tests/unit/{service_group}/{service_name} -v; fi",
             ],
         )
 
@@ -149,7 +162,8 @@ class DockerConfigGenerator:
             ModelDockerEnvironment(name="SERVICE_HOST", value="0.0.0.0"),
             ModelDockerEnvironment(name="SERVICE_PORT", value="8080"),
             ModelDockerEnvironment(
-                name="EVENT_BUS_URL", value="http://onex-event-bus:8080"
+                name="EVENT_BUS_URL",
+                value="http://onex-event-bus:8080",
             ),
             ModelDockerEnvironment(name="CONSUL_HOST", value="consul"),
             ModelDockerEnvironment(name="CONSUL_PORT", value="8500"),
@@ -245,7 +259,7 @@ class DockerConfigGenerator:
 
     @staticmethod
     def create_tool_group_service(
-        tools: List[str],
+        tools: list[str],
         kafka_enabled: bool = True,
         consul_enabled: bool = True,
     ) -> ModelDockerService:
@@ -264,7 +278,9 @@ class DockerConfigGenerator:
             ModelDockerEnvironment(name="PYTHONPATH", value="/app/src"),
             ModelDockerEnvironment(name="PYTHONUNBUFFERED", value="1"),
             ModelDockerEnvironment(
-                name="ONEX_LOG_LEVEL", from_env="ONEX_LOG_LEVEL", default="INFO"
+                name="ONEX_LOG_LEVEL",
+                from_env="ONEX_LOG_LEVEL",
+                default="INFO",
             ),
             ModelDockerEnvironment(
                 name="EVENT_BUS_URL",
@@ -284,7 +300,7 @@ class DockerConfigGenerator:
                     name="KAFKA_BOOTSTRAP_SERVERS",
                     from_env="KAFKA_BOOTSTRAP_SERVERS",
                     default="kafka:29092",
-                )
+                ),
             )
             depends_on.append("kafka")
 
@@ -292,15 +308,20 @@ class DockerConfigGenerator:
             environment.extend(
                 [
                     ModelDockerEnvironment(
-                        name="CONSUL_HOST", from_env="CONSUL_HOST", default="consul"
+                        name="CONSUL_HOST",
+                        from_env="CONSUL_HOST",
+                        default="consul",
                     ),
                     ModelDockerEnvironment(
-                        name="CONSUL_PORT", from_env="CONSUL_PORT", default="8500"
+                        name="CONSUL_PORT",
+                        from_env="CONSUL_PORT",
+                        default="8500",
                     ),
                     ModelDockerEnvironment(
-                        name="SERVICE_DISCOVERY_ENABLED", value="true"
+                        name="SERVICE_DISCOVERY_ENABLED",
+                        value="true",
                     ),
-                ]
+                ],
             )
             depends_on.append("consul")
 
@@ -320,7 +341,9 @@ class DockerConfigGenerator:
             environment=environment,
             volumes=[
                 ModelDockerVolumeMount(
-                    source="./src", target="/app/src", read_only=True
+                    source="./src",
+                    target="/app/src",
+                    read_only=True,
                 ),
                 ModelDockerVolumeMount(source="./logs", target="/app/logs"),
                 ModelDockerVolumeMount(source="./generated", target="/app/generated"),
@@ -352,7 +375,7 @@ class DockerConfigGenerator:
 
     @staticmethod
     def create_production_compose(
-        services: List[ModelDockerService],
+        services: list[ModelDockerService],
         include_monitoring: bool = True,
     ) -> ModelDockerCompose:
         """
@@ -370,7 +393,7 @@ class DockerConfigGenerator:
                 name="onex-network",
                 driver=DockerNetworkDriver.BRIDGE,
                 ipam={"config": [{"subnet": "172.28.0.0/16"}]},
-            )
+            ),
         ]
 
         volumes = [
@@ -396,7 +419,9 @@ class DockerConfigGenerator:
                         read_only=True,
                     ),
                     ModelDockerVolumeMount(
-                        source="prometheus_data", target="/prometheus", type="volume"
+                        source="prometheus_data",
+                        target="/prometheus",
+                        type="volume",
                     ),
                 ],
                 command=[
@@ -424,7 +449,9 @@ class DockerConfigGenerator:
                 ],
                 volumes=[
                     ModelDockerVolumeMount(
-                        source="grafana_data", target="/var/lib/grafana", type="volume"
+                        source="grafana_data",
+                        target="/var/lib/grafana",
+                        type="volume",
                     ),
                     ModelDockerVolumeMount(
                         source="./config/grafana/provisioning",
@@ -450,7 +477,7 @@ class DockerConfigGenerator:
                     "PYTHONPATH": "/app/src",
                     "PYTHONUNBUFFERED": "1",
                     "ONEX_LOG_LEVEL": "${ONEX_LOG_LEVEL:-INFO}",
-                }
+                },
             },
         )
 

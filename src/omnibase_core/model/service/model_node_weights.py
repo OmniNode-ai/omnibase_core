@@ -5,8 +5,6 @@ Node weights model for configuring relative traffic distribution weights
 across multiple nodes in a load balancing system.
 """
 
-from typing import Dict, List
-
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -18,8 +16,9 @@ class ModelNodeWeights(BaseModel):
     multiple nodes, with normalization and validation capabilities.
     """
 
-    weights: Dict[str, float] = Field(
-        default_factory=dict, description="Node identifier to weight mapping"
+    weights: dict[str, float] = Field(
+        default_factory=dict,
+        description="Node identifier to weight mapping",
     )
 
     default_weight: float = Field(
@@ -35,11 +34,15 @@ class ModelNodeWeights(BaseModel):
     )
 
     min_weight: float = Field(
-        default=0.0, description="Minimum allowed weight value", ge=0.0
+        default=0.0,
+        description="Minimum allowed weight value",
+        ge=0.0,
     )
 
     max_weight: float = Field(
-        default=100.0, description="Maximum allowed weight value", ge=0.0
+        default=100.0,
+        description="Maximum allowed weight value",
+        ge=0.0,
     )
 
     @model_validator(mode="after")
@@ -47,12 +50,14 @@ class ModelNodeWeights(BaseModel):
         """Ensure all weights are within valid range"""
         for node_id, weight in self.weights.items():
             if weight < self.min_weight:
+                msg = f"Weight for {node_id} ({weight}) is below minimum ({self.min_weight})"
                 raise ValueError(
-                    f"Weight for {node_id} ({weight}) is below minimum ({self.min_weight})"
+                    msg,
                 )
             if weight > self.max_weight:
+                msg = f"Weight for {node_id} ({weight}) exceeds maximum ({self.max_weight})"
                 raise ValueError(
-                    f"Weight for {node_id} ({weight}) exceeds maximum ({self.max_weight})"
+                    msg,
                 )
         return self
 
@@ -63,9 +68,11 @@ class ModelNodeWeights(BaseModel):
     def set_weight(self, node_id: str, weight: float) -> None:
         """Set weight for a specific node with validation"""
         if weight < self.min_weight:
-            raise ValueError(f"Weight ({weight}) is below minimum ({self.min_weight})")
+            msg = f"Weight ({weight}) is below minimum ({self.min_weight})"
+            raise ValueError(msg)
         if weight > self.max_weight:
-            raise ValueError(f"Weight ({weight}) exceeds maximum ({self.max_weight})")
+            msg = f"Weight ({weight}) exceeds maximum ({self.max_weight})"
+            raise ValueError(msg)
 
         self.weights[node_id] = weight
 
@@ -73,7 +80,7 @@ class ModelNodeWeights(BaseModel):
         """Remove weight configuration for a node (will use default)"""
         self.weights.pop(node_id, None)
 
-    def get_all_nodes(self) -> List[str]:
+    def get_all_nodes(self) -> list[str]:
         """Get list of all configured node IDs"""
         return list(self.weights.keys())
 
@@ -105,7 +112,7 @@ class ModelNodeWeights(BaseModel):
             return normalized.get_weight(node_id)
         return self.get_weight(node_id)
 
-    def get_weight_distribution(self) -> Dict[str, float]:
+    def get_weight_distribution(self) -> dict[str, float]:
         """Get weight distribution for all configured nodes"""
         if self.auto_normalize:
             normalized = self.normalize()
@@ -125,7 +132,7 @@ class ModelNodeWeights(BaseModel):
                 return False
         return True
 
-    def get_effective_weights(self, active_nodes: List[str]) -> Dict[str, float]:
+    def get_effective_weights(self, active_nodes: list[str]) -> dict[str, float]:
         """Get effective weights for a subset of active nodes"""
         effective = {}
         for node_id in active_nodes:
@@ -141,15 +148,18 @@ class ModelNodeWeights(BaseModel):
 
     @classmethod
     def create_equal_weights(
-        cls, node_ids: List[str], weight: float = 1.0
+        cls,
+        node_ids: list[str],
+        weight: float = 1.0,
     ) -> "ModelNodeWeights":
         """Create equal weights for all specified nodes"""
-        weights = {node_id: weight for node_id in node_ids}
+        weights = dict.fromkeys(node_ids, weight)
         return cls(weights=weights, auto_normalize=True)
 
     @classmethod
     def create_priority_weights(
-        cls, node_priorities: Dict[str, int]
+        cls,
+        node_priorities: dict[str, int],
     ) -> "ModelNodeWeights":
         """Create weights based on node priorities (higher priority = higher weight)"""
         max_priority = max(node_priorities.values()) if node_priorities else 1
@@ -164,14 +174,17 @@ class ModelNodeWeights(BaseModel):
 
     @classmethod
     def create_capacity_weights(
-        cls, node_capacities: Dict[str, float]
+        cls,
+        node_capacities: dict[str, float],
     ) -> "ModelNodeWeights":
         """Create weights based on node capacities"""
         return cls(weights=node_capacities.copy(), auto_normalize=True)
 
     @classmethod
     def create_custom_weights(
-        cls, node_weights: Dict[str, float], normalize: bool = True
+        cls,
+        node_weights: dict[str, float],
+        normalize: bool = True,
     ) -> "ModelNodeWeights":
         """Create custom weight configuration"""
         return cls(weights=node_weights.copy(), auto_normalize=normalize)

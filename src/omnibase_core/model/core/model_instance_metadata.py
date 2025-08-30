@@ -6,7 +6,6 @@ version details, and custom attributes.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,8 +20,10 @@ class ModelInstanceMetadata(BaseModel):
     and custom attributes for node instances.
     """
 
-    deployment_id: Optional[str] = Field(
-        None, description="Deployment identifier", pattern="^[a-z][a-z0-9-]*$"
+    deployment_id: str | None = Field(
+        None,
+        description="Deployment identifier",
+        pattern="^[a-z][a-z0-9-]*$",
     )
 
     deployment_environment: str = Field(
@@ -31,8 +32,10 @@ class ModelInstanceMetadata(BaseModel):
         pattern="^[a-z][a-z0-9-]*$",
     )
 
-    deployment_region: Optional[str] = Field(
-        None, description="Deployment region or zone", pattern="^[a-z][a-z0-9-]*$"
+    deployment_region: str | None = Field(
+        None,
+        description="Deployment region or zone",
+        pattern="^[a-z][a-z0-9-]*$",
     )
 
     node_version: ModelSemVer = Field(
@@ -40,48 +43,58 @@ class ModelInstanceMetadata(BaseModel):
         description="Node software version",
     )
 
-    runtime_version: Optional[str] = Field(
-        None, description="Runtime version (e.g., Python 3.9.0)"
+    runtime_version: str | None = Field(
+        None,
+        description="Runtime version (e.g., Python 3.9.0)",
     )
 
-    host_info: Dict[str, str] = Field(
-        default_factory=dict, description="Host information (OS, kernel, etc.)"
+    host_info: dict[str, str] = Field(
+        default_factory=dict,
+        description="Host information (OS, kernel, etc.)",
     )
 
-    labels: Dict[str, str] = Field(
-        default_factory=dict, description="Custom labels for categorization"
+    labels: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom labels for categorization",
     )
 
-    annotations: Dict[str, str] = Field(
-        default_factory=dict, description="Custom annotations"
+    annotations: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom annotations",
     )
 
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for filtering and grouping"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for filtering and grouping",
     )
 
-    owner: Optional[str] = Field(None, description="Owner or team responsible")
+    owner: str | None = Field(None, description="Owner or team responsible")
 
-    cost_center: Optional[str] = Field(None, description="Cost center for billing")
+    cost_center: str | None = Field(None, description="Cost center for billing")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Instance creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Instance creation timestamp",
     )
 
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metadata update timestamp"
+        default_factory=datetime.utcnow,
+        description="Last metadata update timestamp",
     )
 
-    maintenance_window: Optional[str] = Field(
-        None, description="Maintenance window specification"
+    maintenance_window: str | None = Field(
+        None,
+        description="Maintenance window specification",
     )
 
-    sla_tier: Optional[str] = Field(
-        None, description="SLA tier (e.g., gold, silver, bronze)"
+    sla_tier: str | None = Field(
+        None,
+        description="SLA tier (e.g., gold, silver, bronze)",
     )
 
-    custom_attributes: Dict[str, str] = Field(
-        default_factory=dict, description="Additional custom attributes"
+    custom_attributes: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional custom attributes",
     )
 
     def add_label(self, key: str, value: str) -> None:
@@ -97,7 +110,7 @@ class ModelInstanceMetadata(BaseModel):
         if tag not in self.tags:
             self.tags.append(tag)
 
-    def has_label(self, key: str, value: Optional[str] = None) -> bool:
+    def has_label(self, key: str, value: str | None = None) -> bool:
         """
         Check if instance has a label.
 
@@ -118,7 +131,7 @@ class ModelInstanceMetadata(BaseModel):
         """Check if instance has a tag."""
         return tag in self.tags
 
-    def matches_selector(self, selector: Dict[str, str]) -> bool:
+    def matches_selector(self, selector: dict[str, str]) -> bool:
         """
         Check if instance matches label selector.
 
@@ -128,7 +141,4 @@ class ModelInstanceMetadata(BaseModel):
         Returns:
             True if all selector labels match
         """
-        for key, value in selector.items():
-            if not self.has_label(key, value):
-                return False
-        return True
+        return all(self.has_label(key, value) for key, value in selector.items())

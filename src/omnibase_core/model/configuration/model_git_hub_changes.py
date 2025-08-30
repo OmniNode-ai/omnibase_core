@@ -4,8 +4,6 @@ GitHub Changes Model for ONEX Configuration System.
 Strongly typed model for GitHub webhook change data.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,14 +15,17 @@ class ModelGitHubChanges(BaseModel):
     for edited actions with proper type safety.
     """
 
-    body: Optional[str] = Field(
-        default=None, description="Previous body content for edited comments/issues"
+    body: str | None = Field(
+        default=None,
+        description="Previous body content for edited comments/issues",
     )
 
-    title: Optional[str] = Field(
-        default=None, description="Previous title for edited issues"
+    title: str | None = Field(
+        default=None,
+        description="Previous title for edited issues",
     )
 
-    updated_at: Optional[str] = Field(
-        default=None, description="Previous updated timestamp"
+    updated_at: str | None = Field(
+        default=None,
+        description="Previous updated timestamp",
     )

@@ -39,5 +39,7 @@ class ProtocolOutputFormatter(Protocol):
     """
 
     def format(
-        self, data: ModelOutputData, style: EnumOutputFormat = EnumOutputFormat.JSON
+        self,
+        data: ModelOutputData,
+        style: EnumOutputFormat = EnumOutputFormat.JSON,
     ) -> str: ...

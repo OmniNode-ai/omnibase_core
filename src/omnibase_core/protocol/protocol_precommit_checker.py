@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Protocol
+from typing import Protocol
 
 from omnibase_core.model.precommit.model_check_result import ModelCheckResult
 
@@ -15,7 +15,7 @@ class ProtocolPrecommitChecker(Protocol):
     """
 
     @abstractmethod
-    def check_files(self, file_paths: List[Path]) -> ModelCheckResult:
+    def check_files(self, file_paths: list[Path]) -> ModelCheckResult:
         """Check files for violations.
 
         Args:

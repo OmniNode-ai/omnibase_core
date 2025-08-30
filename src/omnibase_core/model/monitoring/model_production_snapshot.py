@@ -5,19 +5,20 @@ Complete production monitoring snapshot.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.model.monitoring.enum_agent_state import EnumAgentState
-from omnibase_core.model.monitoring.model_agent_health_metrics import \
-    ModelAgentHealthMetrics
-from omnibase_core.model.monitoring.model_business_metrics import \
-    ModelBusinessMetrics
-from omnibase_core.model.monitoring.model_service_dependency import \
-    ModelServiceDependency
-from omnibase_core.model.monitoring.model_system_health_metrics import \
-    ModelSystemHealthMetrics
+from omnibase_core.model.monitoring.model_agent_health_metrics import (
+    ModelAgentHealthMetrics,
+)
+from omnibase_core.model.monitoring.model_business_metrics import ModelBusinessMetrics
+from omnibase_core.model.monitoring.model_service_dependency import (
+    ModelServiceDependency,
+)
+from omnibase_core.model.monitoring.model_system_health_metrics import (
+    ModelSystemHealthMetrics,
+)
 
 
 class ModelProductionSnapshot(BaseModel):
@@ -27,27 +28,33 @@ class ModelProductionSnapshot(BaseModel):
 
     snapshot_id: str = Field(..., description="Unique snapshot identifier")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Snapshot timestamp"
+        default_factory=datetime.utcnow,
+        description="Snapshot timestamp",
     )
 
     system_health: ModelSystemHealthMetrics = Field(
-        ..., description="System health metrics"
+        ...,
+        description="System health metrics",
     )
     business_metrics: ModelBusinessMetrics = Field(..., description="Business KPIs")
 
-    agent_metrics: List[ModelAgentHealthMetrics] = Field(
-        default_factory=list, description="Individual agent metrics"
+    agent_metrics: list[ModelAgentHealthMetrics] = Field(
+        default_factory=list,
+        description="Individual agent metrics",
     )
 
-    service_dependencies: List[ModelServiceDependency] = Field(
-        default_factory=list, description="Service dependency statuses"
+    service_dependencies: list[ModelServiceDependency] = Field(
+        default_factory=list,
+        description="Service dependency statuses",
     )
 
-    current_window: Optional[str] = Field(
-        None, description="Current operational window"
+    current_window: str | None = Field(
+        None,
+        description="Current operational window",
     )
-    next_transition: Optional[datetime] = Field(
-        None, description="Next window transition"
+    next_transition: datetime | None = Field(
+        None,
+        description="Next window transition",
     )
 
     alerts_active: int = Field(0, ge=0, description="Number of active alerts")
@@ -60,7 +67,7 @@ class ModelProductionSnapshot(BaseModel):
                 agent
                 for agent in self.agent_metrics
                 if agent.status in [EnumAgentState.RUNNING, EnumAgentState.IDLE]
-            ]
+            ],
         )
 
     def get_failed_agents(self) -> int:
@@ -70,7 +77,7 @@ class ModelProductionSnapshot(BaseModel):
                 agent
                 for agent in self.agent_metrics
                 if agent.status == EnumAgentState.FAILED
-            ]
+            ],
         )
 
     def get_total_queue_depth(self) -> int:

@@ -11,7 +11,7 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Dict, List, Literal, Optional
+from typing import Literal
 
 from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, validator
@@ -34,31 +34,40 @@ class ModelReductionConfig(BaseModel):
     )
 
     reduction_function: str = Field(
-        ..., description="Reduction function identifier", min_length=1
+        ...,
+        description="Reduction function identifier",
+        min_length=1,
     )
 
     associative: bool = Field(
-        default=True, description="Whether the reduction operation is associative"
+        default=True,
+        description="Whether the reduction operation is associative",
     )
 
     commutative: bool = Field(
-        default=False, description="Whether the reduction operation is commutative"
+        default=False,
+        description="Whether the reduction operation is commutative",
     )
 
-    identity_element: Optional[str] = Field(
-        default=None, description="Identity element for the reduction operation"
+    identity_element: str | None = Field(
+        default=None,
+        description="Identity element for the reduction operation",
     )
 
     chunk_size: int = Field(
-        default=1000, description="Chunk size for batch reduction operations", ge=1
+        default=1000,
+        description="Chunk size for batch reduction operations",
+        ge=1,
     )
 
     parallel_enabled: bool = Field(
-        default=True, description="Enable parallel reduction processing"
+        default=True,
+        description="Enable parallel reduction processing",
     )
 
     intermediate_results_caching: bool = Field(
-        default=True, description="Cache intermediate reduction results"
+        default=True,
+        description="Cache intermediate reduction results",
     )
 
 
@@ -73,7 +82,9 @@ class ModelStreamingConfig(BaseModel):
     enabled: bool = Field(default=True, description="Enable streaming processing")
 
     buffer_size: int = Field(
-        default=8192, description="Stream buffer size in bytes", ge=1024
+        default=8192,
+        description="Stream buffer size in bytes",
+        ge=1024,
     )
 
     window_size: int = Field(
@@ -83,30 +94,39 @@ class ModelStreamingConfig(BaseModel):
     )
 
     window_overlap: int = Field(
-        default=0, description="Overlap between processing windows", ge=0
+        default=0,
+        description="Overlap between processing windows",
+        ge=0,
     )
 
     memory_threshold_mb: int = Field(
-        default=512, description="Memory threshold for streaming activation in MB", ge=1
+        default=512,
+        description="Memory threshold for streaming activation in MB",
+        ge=1,
     )
 
     backpressure_enabled: bool = Field(
-        default=True, description="Enable backpressure handling for streaming"
+        default=True,
+        description="Enable backpressure handling for streaming",
     )
 
     checkpoint_interval: int = Field(
-        default=10000, description="Checkpoint interval for streaming operations", ge=1
+        default=10000,
+        description="Checkpoint interval for streaming operations",
+        ge=1,
     )
 
     flow_control_enabled: bool = Field(
-        default=True, description="Enable flow control for streaming"
+        default=True,
+        description="Enable flow control for streaming",
     )
 
     @validator("window_overlap")
-    def validate_window_overlap(cls, v, values):
+    def validate_window_overlap(self, v, values):
         """Validate window overlap is less than window size."""
         if "window_size" in values and v >= values["window_size"]:
-            raise ValueError("window_overlap must be less than window_size")
+            msg = "window_overlap must be less than window_size"
+            raise ValueError(msg)
         return v
 
 
@@ -124,28 +144,33 @@ class ModelConflictResolutionConfig(BaseModel):
     )
 
     detection_enabled: bool = Field(
-        default=True, description="Enable automatic conflict detection"
+        default=True,
+        description="Enable automatic conflict detection",
     )
 
-    detection_fields: List[str] = Field(
-        default_factory=list, description="Fields to monitor for conflict detection"
+    detection_fields: list[str] = Field(
+        default_factory=list,
+        description="Fields to monitor for conflict detection",
     )
 
-    merge_function: Optional[str] = Field(
-        default=None, description="Custom merge function for conflict resolution"
+    merge_function: str | None = Field(
+        default=None,
+        description="Custom merge function for conflict resolution",
     )
 
-    priority_weights: Dict[str, float] = Field(
+    priority_weights: dict[str, float] = Field(
         default_factory=dict,
         description="Priority weights for weighted conflict resolution",
     )
 
     timestamp_based_resolution: bool = Field(
-        default=True, description="Use timestamps for conflict resolution"
+        default=True,
+        description="Use timestamps for conflict resolution",
     )
 
     conflict_logging_enabled: bool = Field(
-        default=True, description="Enable detailed conflict logging"
+        default=True,
+        description="Enable detailed conflict logging",
     )
 
     manual_review_threshold: float = Field(
@@ -165,7 +190,9 @@ class ModelMemoryManagementConfig(BaseModel):
     """
 
     max_memory_mb: int = Field(
-        default=1024, description="Maximum memory allocation in MB", ge=1
+        default=1024,
+        description="Maximum memory allocation in MB",
+        ge=1,
     )
 
     gc_threshold: float = Field(
@@ -176,23 +203,30 @@ class ModelMemoryManagementConfig(BaseModel):
     )
 
     memory_pool_enabled: bool = Field(
-        default=True, description="Enable memory pooling for reusable objects"
+        default=True,
+        description="Enable memory pooling for reusable objects",
     )
 
     lazy_loading_enabled: bool = Field(
-        default=True, description="Enable lazy loading for large datasets"
+        default=True,
+        description="Enable lazy loading for large datasets",
     )
 
     spill_to_disk_enabled: bool = Field(
-        default=True, description="Enable spilling to disk when memory is full"
+        default=True,
+        description="Enable spilling to disk when memory is full",
     )
 
     spill_threshold: float = Field(
-        default=0.9, description="Memory threshold for spilling to disk", ge=0.0, le=1.0
+        default=0.9,
+        description="Memory threshold for spilling to disk",
+        ge=0.0,
+        le=1.0,
     )
 
     compression_enabled: bool = Field(
-        default=True, description="Enable compression for spilled data"
+        default=True,
+        description="Enable compression for spilled data",
     )
 
 
@@ -204,23 +238,27 @@ class ModelAggregationConfig(BaseModel):
     and statistical computations for data consolidation.
     """
 
-    aggregation_functions: List[str] = Field(
+    aggregation_functions: list[str] = Field(
         ...,
         description="List of aggregation functions (sum, count, avg, min, max, etc.)",
         min_items=1,
     )
 
-    grouping_fields: List[str] = Field(
-        default_factory=list, description="Fields to group by for aggregation"
+    grouping_fields: list[str] = Field(
+        default_factory=list,
+        description="Fields to group by for aggregation",
     )
 
-    statistical_functions: List[str] = Field(
+    statistical_functions: list[str] = Field(
         default_factory=list,
         description="Statistical functions to compute (median, std, percentiles, etc.)",
     )
 
     precision_digits: int = Field(
-        default=6, description="Precision for aggregated numeric values", ge=1, le=15
+        default=6,
+        description="Precision for aggregated numeric values",
+        ge=1,
+        le=15,
     )
 
     null_handling_strategy: str = Field(
@@ -247,8 +285,10 @@ class ModelContractReducer(ModelContractBase):
     node_type: Literal[EnumNodeType.REDUCER] = EnumNodeType.REDUCER
 
     # Reduction configuration
-    reduction_operations: List[ModelReductionConfig] = Field(
-        ..., description="Data reduction operation specifications", min_items=1
+    reduction_operations: list[ModelReductionConfig] = Field(
+        ...,
+        description="Data reduction operation specifications",
+        min_items=1,
     )
 
     streaming: ModelStreamingConfig = Field(
@@ -268,24 +308,29 @@ class ModelContractReducer(ModelContractBase):
     )
 
     aggregation: ModelAggregationConfig = Field(
-        ..., description="Data aggregation specifications"
+        ...,
+        description="Data aggregation specifications",
     )
 
     # Reducer-specific settings
     order_preserving: bool = Field(
-        default=False, description="Whether to preserve input order in reduction"
+        default=False,
+        description="Whether to preserve input order in reduction",
     )
 
     incremental_processing: bool = Field(
-        default=True, description="Enable incremental processing for efficiency"
+        default=True,
+        description="Enable incremental processing for efficiency",
     )
 
     result_caching_enabled: bool = Field(
-        default=True, description="Enable caching of reduction results"
+        default=True,
+        description="Enable caching of reduction results",
     )
 
     partial_results_enabled: bool = Field(
-        default=True, description="Enable returning partial results for long operations"
+        default=True,
+        description="Enable returning partial results for long operations",
     )
 
     def validate_node_specific_config(self) -> None:
@@ -300,14 +345,16 @@ class ModelContractReducer(ModelContractBase):
         """
         # Validate at least one reduction operation is defined
         if not self.reduction_operations:
+            msg = "Reducer node must define at least one reduction operation"
             raise ValueError(
-                "Reducer node must define at least one reduction operation"
+                msg,
             )
 
         # Validate aggregation functions are defined
         if not self.aggregation.aggregation_functions:
+            msg = "Reducer node must define at least one aggregation function"
             raise ValueError(
-                "Reducer node must define at least one aggregation function"
+                msg,
             )
 
         # Validate memory management consistency
@@ -316,29 +363,33 @@ class ModelContractReducer(ModelContractBase):
             and self.memory_management.spill_threshold
             <= self.memory_management.gc_threshold
         ):
-            raise ValueError("Spill threshold must be greater than GC threshold")
+            msg = "Spill threshold must be greater than GC threshold"
+            raise ValueError(msg)
 
         # Validate streaming configuration
         if self.streaming.enabled and self.streaming.window_size < 1:
-            raise ValueError("Streaming requires positive window_size")
+            msg = "Streaming requires positive window_size"
+            raise ValueError(msg)
 
         # Validate conflict resolution strategy
         if (
             self.conflict_resolution.strategy == "merge"
             and not self.conflict_resolution.merge_function
         ):
+            msg = "Merge conflict resolution strategy requires merge_function"
             raise ValueError(
-                "Merge conflict resolution strategy requires merge_function"
+                msg,
             )
 
         # Validate performance requirements for reducer nodes
         if not self.performance.batch_operation_max_s:
+            msg = "Reducer nodes must specify batch_operation_max_s performance requirement"
             raise ValueError(
-                "Reducer nodes must specify batch_operation_max_s performance requirement"
+                msg,
             )
 
     @validator("reduction_operations")
-    def validate_reduction_operations_consistency(cls, v):
+    def validate_reduction_operations_consistency(self, v):
         """Validate reduction operations configuration consistency."""
         # Check for conflicting associativity requirements
         associative_ops = [op for op in v if op.associative]
@@ -351,7 +402,7 @@ class ModelContractReducer(ModelContractBase):
         return v
 
     @validator("aggregation")
-    def validate_aggregation_functions(cls, v):
+    def validate_aggregation_functions(self, v):
         """Validate aggregation functions are supported."""
         supported_functions = {
             "sum",
@@ -371,7 +422,8 @@ class ModelContractReducer(ModelContractBase):
 
         for func in v.aggregation_functions:
             if func not in supported_functions:
-                raise ValueError(f"Unsupported aggregation function: {func}")
+                msg = f"Unsupported aggregation function: {func}"
+                raise ValueError(msg)
 
         return v
 

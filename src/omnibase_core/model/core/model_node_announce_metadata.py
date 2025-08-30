@@ -7,15 +7,14 @@ from uuid import UUID
 from omnibase.enums.enum_node_status import EnumNodeStatus
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_registry_execution_mode import \
-    RegistryExecutionModeEnum
+from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
 
 if TYPE_CHECKING:
     from omnibase_core.model.core.model_io_block import ModelIOBlock
-    from omnibase_core.model.core.model_node_metadata_block import \
-        ModelNodeMetadataBlock
-    from omnibase_core.model.core.model_signature_block import \
-        ModelSignatureBlock
+    from omnibase_core.model.core.model_node_metadata_block import (
+        ModelNodeMetadataBlock,
+    )
+    from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
 
 
 class ModelNodeAnnounceMetadata(BaseModel):
@@ -28,51 +27,59 @@ class ModelNodeAnnounceMetadata(BaseModel):
 
     # Core identification
     node_id: str = Field(..., description="Unique identifier for the node")
-    node_version: Optional[str] = Field(None, description="Version of the node")
+    node_version: str | None = Field(None, description="Version of the node")
 
     # Node metadata and configuration
     metadata_block: "ModelNodeMetadataBlock" = Field(
-        ..., description="Complete node metadata block from node.onex.yaml"
+        ...,
+        description="Complete node metadata block from node.onex.yaml",
     )
 
     # Node status and operational state
-    status: Optional[EnumNodeStatus] = Field(
-        default=EnumNodeStatus.ACTIVE, description="Current status of the node"
+    status: EnumNodeStatus | None = Field(
+        default=EnumNodeStatus.ACTIVE,
+        description="Current status of the node",
     )
-    execution_mode: Optional[RegistryExecutionModeEnum] = Field(
+    execution_mode: RegistryExecutionModeEnum | None = Field(
         default=RegistryExecutionModeEnum.MEMORY,
         description="Execution mode for the node",
     )
 
     # Input/Output configuration
     inputs: Optional["ModelIOBlock"] = Field(
-        None, description="Node input configuration"
+        None,
+        description="Node input configuration",
     )
     outputs: Optional["ModelIOBlock"] = Field(
-        None, description="Node output configuration"
+        None,
+        description="Node output configuration",
     )
 
     # Graph and trust configuration
-    graph_binding: Optional[str] = Field(
-        None, description="Graph binding configuration"
+    graph_binding: str | None = Field(
+        None,
+        description="Graph binding configuration",
     )
-    trust_state: Optional[str] = Field(None, description="Trust state of the node")
+    trust_state: str | None = Field(None, description="Trust state of the node")
 
     # TTL and timing
-    ttl: Optional[int] = Field(None, description="Time to live in seconds")
+    ttl: int | None = Field(None, description="Time to live in seconds")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Timestamp of the announcement"
+        default_factory=datetime.utcnow,
+        description="Timestamp of the announcement",
     )
 
     # Schema and signature
-    schema_version: Optional[str] = Field(None, description="Schema version")
+    schema_version: str | None = Field(None, description="Schema version")
     signature_block: Optional["ModelSignatureBlock"] = Field(
-        None, description="Signature block for verification"
+        None,
+        description="Signature block for verification",
     )
 
     # Correlation
-    correlation_id: Optional[UUID] = Field(
-        None, description="Correlation ID for tracking"
+    correlation_id: UUID | None = Field(
+        None,
+        description="Correlation ID for tracking",
     )
 
 

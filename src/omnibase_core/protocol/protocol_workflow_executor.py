@@ -5,13 +5,12 @@ This protocol defines the interface for tools that execute specific
 operations within workflows, such as model generation and bootstrap validation.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from omnibase_core.model.core.model_onex_result import ModelOnexResult
 
 if TYPE_CHECKING:
-    from omnibase_core.protocol.protocol_node_registry import \
-        ProtocolNodeRegistry
+    from omnibase_core.protocol.protocol_node_registry import ProtocolNodeRegistry
 
 
 class ProtocolWorkflowExecutor(Protocol):
@@ -32,7 +31,7 @@ class ProtocolWorkflowExecutor(Protocol):
         """
         ...
 
-    def run(self, input_state: Dict[str, Any]) -> ModelOnexResult:
+    def run(self, input_state: dict[str, Any]) -> ModelOnexResult:
         """
         Run the Workflow executor with the provided input state.
 
@@ -49,7 +48,7 @@ class ProtocolWorkflowExecutor(Protocol):
         operation_type: str,
         scenario_id: str,
         correlation_id: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
     ) -> ModelOnexResult:
         """
         Execute a specific operation.
@@ -77,7 +76,7 @@ class ProtocolWorkflowExecutor(Protocol):
         """
         ...
 
-    def get_supported_operations(self) -> List[str]:
+    def get_supported_operations(self) -> list[str]:
         """
         Get list of supported operation types.
 
@@ -87,8 +86,10 @@ class ProtocolWorkflowExecutor(Protocol):
         ...
 
     def validate_parameters(
-        self, operation_type: str, parameters: Dict[str, Any]
-    ) -> List[str]:
+        self,
+        operation_type: str,
+        parameters: dict[str, Any],
+    ) -> list[str]:
         """
         Validate parameters for a specific operation.
 
@@ -101,7 +102,7 @@ class ProtocolWorkflowExecutor(Protocol):
         """
         ...
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """
         Perform health check for the Workflow executor.
 

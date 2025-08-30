@@ -6,12 +6,19 @@ for various property types and metadata.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from pydantic import BaseModel, Field
 
 PropertyValue = Union[
-    str, int, bool, float, List[str], List[int], List[float], datetime
+    str,
+    int,
+    bool,
+    float,
+    list[str],
+    list[int],
+    list[float],
+    datetime,
 ]
 
 
@@ -23,11 +30,12 @@ class ModelEnvironmentProperties(BaseModel):
     with type safety and helper methods for property access.
     """
 
-    properties: Dict[str, PropertyValue] = Field(
-        default_factory=dict, description="Custom property values"
+    properties: dict[str, PropertyValue] = Field(
+        default_factory=dict,
+        description="Custom property values",
     )
 
-    property_metadata: Dict[str, Dict[str, str]] = Field(
+    property_metadata: dict[str, dict[str, str]] = Field(
         default_factory=dict,
         description="Metadata about each property (description, source, etc.)",
     )
@@ -40,18 +48,18 @@ class ModelEnvironmentProperties(BaseModel):
     def get_int(self, key: str, default: int = 0) -> int:
         """Get integer property value."""
         value = self.properties.get(key, default)
-        if isinstance(value, (int, float)):
-            return int(value)
-        elif isinstance(value, str) and value.isdigit():
+        if isinstance(value, int | float) or (
+            isinstance(value, str) and value.isdigit()
+        ):
             return int(value)
         return default
 
     def get_float(self, key: str, default: float = 0.0) -> float:
         """Get float property value."""
         value = self.properties.get(key, default)
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return float(value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             try:
                 return float(value)
             except ValueError:
@@ -63,32 +71,34 @@ class ModelEnvironmentProperties(BaseModel):
         value = self.properties.get(key, default)
         if isinstance(value, bool):
             return value
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return value.lower() in ["true", "yes", "1", "on", "enabled"]
-        elif isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return bool(value)
         return default
 
-    def get_list(self, key: str, default: Optional[List[str]] = None) -> List[str]:
+    def get_list(self, key: str, default: list[str] | None = None) -> list[str]:
         """Get list property value."""
         if default is None:
             default = []
         value = self.properties.get(key, default)
         if isinstance(value, list):
             return [str(item) for item in value]
-        elif isinstance(value, str):
+        if isinstance(value, str):
             # Support comma-separated values
             return [item.strip() for item in value.split(",") if item.strip()]
         return default
 
     def get_datetime(
-        self, key: str, default: Optional[datetime] = None
-    ) -> Optional[datetime]:
+        self,
+        key: str,
+        default: datetime | None = None,
+    ) -> datetime | None:
         """Get datetime property value."""
         value = self.properties.get(key, default)
         if isinstance(value, datetime):
             return value
-        elif isinstance(value, str):
+        if isinstance(value, str):
             try:
                 return datetime.fromisoformat(value)
             except ValueError:
@@ -99,8 +109,8 @@ class ModelEnvironmentProperties(BaseModel):
         self,
         key: str,
         value: PropertyValue,
-        description: Optional[str] = None,
-        source: Optional[str] = None,
+        description: str | None = None,
+        source: str | None = None,
     ) -> None:
         """Set a property with optional metadata."""
         self.properties[key] = value
@@ -122,21 +132,21 @@ class ModelEnvironmentProperties(BaseModel):
         """Check if a property exists."""
         return key in self.properties
 
-    def get_property_description(self, key: str) -> Optional[str]:
+    def get_property_description(self, key: str) -> str | None:
         """Get property description from metadata."""
         metadata = self.property_metadata.get(key, {})
         return metadata.get("description")
 
-    def get_property_source(self, key: str) -> Optional[str]:
+    def get_property_source(self, key: str) -> str | None:
         """Get property source from metadata."""
         metadata = self.property_metadata.get(key, {})
         return metadata.get("source")
 
-    def get_all_properties(self) -> Dict[str, PropertyValue]:
+    def get_all_properties(self) -> dict[str, PropertyValue]:
         """Get all properties."""
         return self.properties.copy()
 
-    def get_properties_by_prefix(self, prefix: str) -> Dict[str, PropertyValue]:
+    def get_properties_by_prefix(self, prefix: str) -> dict[str, PropertyValue]:
         """Get all properties with keys starting with a prefix."""
         return {
             key: value
@@ -149,7 +159,7 @@ class ModelEnvironmentProperties(BaseModel):
         self.properties.update(other.properties)
         self.property_metadata.update(other.property_metadata)
 
-    def to_environment_variables(self, prefix: str = "ONEX_CUSTOM_") -> Dict[str, str]:
+    def to_environment_variables(self, prefix: str = "ONEX_CUSTOM_") -> dict[str, str]:
         """Convert properties to environment variables with prefix."""
         env_vars = {}
         for key, value in self.properties.items():
@@ -164,7 +174,8 @@ class ModelEnvironmentProperties(BaseModel):
 
     @classmethod
     def create_from_dict(
-        cls, properties: Dict[str, PropertyValue]
+        cls,
+        properties: dict[str, PropertyValue],
     ) -> "ModelEnvironmentProperties":
         """Create from a dictionary of properties."""
         return cls(properties=properties)

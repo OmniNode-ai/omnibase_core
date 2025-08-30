@@ -28,17 +28,14 @@ Event sent in response to a TOOL_INVOCATION event after tool execution completes
 Contains the result of the tool execution or error information if execution failed.
 """
 
-from typing import Dict, Optional, Union
 from uuid import UUID
 
 from pydantic import Field
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.discovery.model_output_metadata import \
-    ModelOutputMetadata
-from omnibase_core.model.discovery.model_resource_usage import \
-    ModelResourceUsage
+from omnibase_core.model.discovery.model_output_metadata import ModelOutputMetadata
+from omnibase_core.model.discovery.model_resource_usage import ModelResourceUsage
 
 
 class ModelToolResponseEvent(ModelOnexEvent):
@@ -58,13 +55,15 @@ class ModelToolResponseEvent(ModelOnexEvent):
 
     # Response correlation
     correlation_id: UUID = Field(
-        ..., description="Correlation ID matching the original TOOL_INVOCATION request"
+        ...,
+        description="Correlation ID matching the original TOOL_INVOCATION request",
     )
 
     # Source node identification
     source_node_id: str = Field(..., description="Node ID that executed the tool")
     source_node_name: str = Field(
-        ..., description="Name of the node that executed the tool"
+        ...,
+        description="Name of the node that executed the tool",
     )
 
     # Tool execution details
@@ -73,38 +72,49 @@ class ModelToolResponseEvent(ModelOnexEvent):
 
     # Execution result
     success: bool = Field(..., description="Whether the tool execution was successful")
-    result: Optional[Dict[str, Union[str, int, float, bool, list]]] = Field(
-        None, description="Tool execution result data (if successful)"
+    result: dict[str, str | int | float | bool | list] | None = Field(
+        None,
+        description="Tool execution result data (if successful)",
     )
-    error: Optional[str] = Field(
-        None, description="Error message (if execution failed)"
+    error: str | None = Field(
+        None,
+        description="Error message (if execution failed)",
     )
-    error_code: Optional[str] = Field(
-        None, description="Specific error code for programmatic handling"
+    error_code: str | None = Field(
+        None,
+        description="Specific error code for programmatic handling",
     )
 
     # Performance metrics
     execution_time_ms: int = Field(
-        ..., description="Total execution time in milliseconds", ge=0
+        ...,
+        description="Total execution time in milliseconds",
+        ge=0,
     )
-    queue_time_ms: Optional[int] = Field(
-        None, description="Time spent in queue before execution (if applicable)", ge=0
+    queue_time_ms: int | None = Field(
+        None,
+        description="Time spent in queue before execution (if applicable)",
+        ge=0,
     )
 
     # Execution metadata
     execution_priority: str = Field(
-        default="normal", description="Priority level at which the tool was executed"
+        default="normal",
+        description="Priority level at which the tool was executed",
     )
     execution_mode: str = Field(
-        default="synchronous", description="Execution mode (synchronous, asynchronous)"
+        default="synchronous",
+        description="Execution mode (synchronous, asynchronous)",
     )
 
     # Response routing
     target_node_id: str = Field(
-        ..., description="Node ID where response should be delivered"
+        ...,
+        description="Node ID where response should be delivered",
     )
     requester_id: str = Field(
-        ..., description="Original requester identifier for response handling"
+        ...,
+        description="Original requester identifier for response handling",
     )
 
     # Optional detailed information
@@ -112,8 +122,9 @@ class ModelToolResponseEvent(ModelOnexEvent):
         default_factory=ModelOutputMetadata,
         description="Additional metadata about the execution",
     )
-    resource_usage: Optional[ModelResourceUsage] = Field(
-        None, description="Resource usage during execution (CPU, memory, etc.)"
+    resource_usage: ModelResourceUsage | None = Field(
+        None,
+        description="Resource usage during execution (CPU, memory, etc.)",
     )
 
     @classmethod
@@ -124,7 +135,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         source_node_name: str,
         tool_name: str,
         action: str,
-        result: Dict[str, Union[str, int, float, bool, list]],
+        result: dict[str, str | int | float | bool | list],
         execution_time_ms: int,
         target_node_id: str,
         requester_id: str,
@@ -281,7 +292,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         """Get the routing key for response delivery."""
         return f"response.{self.requester_id}.{self.correlation_id}"
 
-    def get_performance_summary(self) -> Dict[str, Union[str, int, float, bool]]:
+    def get_performance_summary(self) -> dict[str, str | int | float | bool]:
         """Get a summary of performance metrics."""
         summary = {
             "execution_time_ms": self.execution_time_ms,

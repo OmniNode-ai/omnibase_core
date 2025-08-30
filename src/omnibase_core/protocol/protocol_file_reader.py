@@ -6,7 +6,7 @@ allowing for easy mocking in tests and alternative implementations.
 """
 
 from pathlib import Path
-from typing import Protocol, Type, TypeVar, Union
+from typing import Protocol, TypeVar
 
 from pydantic import BaseModel
 
@@ -23,7 +23,7 @@ class ProtocolFileReader(Protocol):
     - RemoteFileReader: Could read from S3, HTTP, etc.
     """
 
-    def read_text(self, path: Union[str, Path]) -> str:
+    def read_text(self, path: str | Path) -> str:
         """
         Read text content from a file.
 
@@ -39,7 +39,7 @@ class ProtocolFileReader(Protocol):
         """
         ...
 
-    def read_yaml(self, path: Union[str, Path], model_class: Type[T]) -> T:
+    def read_yaml(self, path: str | Path, model_class: type[T]) -> T:
         """
         Read and parse YAML content from a file into a Pydantic model.
 
@@ -58,7 +58,7 @@ class ProtocolFileReader(Protocol):
         """
         ...
 
-    def exists(self, path: Union[str, Path]) -> bool:
+    def exists(self, path: str | Path) -> bool:
         """
         Check if a file exists.
 

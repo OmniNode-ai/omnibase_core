@@ -5,8 +5,6 @@ This model replaces dictionary usage in CLI tool execution by providing
 a structured representation of advanced parameters.
 """
 
-from typing import Dict, List, Optional, Union
-
 from pydantic import BaseModel, Field
 
 
@@ -19,65 +17,77 @@ class ModelAdvancedParams(BaseModel):
     """
 
     # Common advanced parameters
-    parallel_execution: Optional[bool] = Field(
-        None, description="Enable parallel execution"
+    parallel_execution: bool | None = Field(
+        None,
+        description="Enable parallel execution",
     )
-    max_workers: Optional[int] = Field(
-        None, description="Maximum number of parallel workers"
+    max_workers: int | None = Field(
+        None,
+        description="Maximum number of parallel workers",
     )
-    retry_count: Optional[int] = Field(None, description="Number of retry attempts")
-    retry_delay: Optional[float] = Field(
-        None, description="Delay between retries in seconds"
+    retry_count: int | None = Field(None, description="Number of retry attempts")
+    retry_delay: float | None = Field(
+        None,
+        description="Delay between retries in seconds",
     )
 
     # Resource limits
-    memory_limit_mb: Optional[int] = Field(
-        None, description="Memory limit in megabytes"
+    memory_limit_mb: int | None = Field(
+        None,
+        description="Memory limit in megabytes",
     )
-    cpu_limit: Optional[float] = Field(
-        None, description="CPU limit as fraction (0.5 = 50%)"
+    cpu_limit: float | None = Field(
+        None,
+        description="CPU limit as fraction (0.5 = 50%)",
     )
-    time_limit_seconds: Optional[float] = Field(
-        None, description="Time limit for execution in seconds"
+    time_limit_seconds: float | None = Field(
+        None,
+        description="Time limit for execution in seconds",
     )
 
     # Debugging and logging
-    debug_mode: Optional[bool] = Field(None, description="Enable debug mode")
-    log_level: Optional[str] = Field(
-        None, description="Log level (DEBUG, INFO, WARNING, ERROR)"
+    debug_mode: bool | None = Field(None, description="Enable debug mode")
+    log_level: str | None = Field(
+        None,
+        description="Log level (DEBUG, INFO, WARNING, ERROR)",
     )
-    trace_enabled: Optional[bool] = Field(None, description="Enable execution tracing")
+    trace_enabled: bool | None = Field(None, description="Enable execution tracing")
 
     # Environment and context
-    environment_vars: Dict[str, str] = Field(
-        default_factory=dict, description="Environment variables to set"
+    environment_vars: dict[str, str] = Field(
+        default_factory=dict,
+        description="Environment variables to set",
     )
-    working_directory: Optional[str] = Field(None, description="Working directory path")
+    working_directory: str | None = Field(None, description="Working directory path")
 
     # Feature flags
-    feature_flags: Dict[str, bool] = Field(
+    feature_flags: dict[str, bool] = Field(
         default_factory=dict,
         description="Feature flags for enabling/disabling features",
     )
 
     # Configuration overrides
-    config_overrides: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Configuration value overrides"
+    config_overrides: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Configuration value overrides",
     )
 
     # Tool-specific string parameters
-    string_params: Dict[str, str] = Field(
-        default_factory=dict, description="Tool-specific string parameters"
+    string_params: dict[str, str] = Field(
+        default_factory=dict,
+        description="Tool-specific string parameters",
     )
 
     # Tool-specific numeric parameters
-    numeric_params: Dict[str, Union[int, float]] = Field(
-        default_factory=dict, description="Tool-specific numeric parameters"
+    numeric_params: dict[str, int | float] = Field(
+        default_factory=dict,
+        description="Tool-specific numeric parameters",
     )
 
     # Tool-specific list parameters
-    list_params: Dict[str, List[str]] = Field(
-        default_factory=dict, description="Tool-specific list parameters"
+    list_params: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="Tool-specific list parameters",
     )
 
     def to_dict(self) -> dict:
@@ -170,7 +180,7 @@ class ModelAdvancedParams(BaseModel):
         for key, value in remaining.items():
             if isinstance(value, str):
                 string_params[key] = value
-            elif isinstance(value, (int, float)):
+            elif isinstance(value, int | float):
                 numeric_params[key] = value
             elif isinstance(value, list) and all(
                 isinstance(item, str) for item in value

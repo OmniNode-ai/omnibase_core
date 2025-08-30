@@ -4,8 +4,6 @@ Registry Business Impact Model
 Type-safe business impact assessment for registry validation.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -17,33 +15,48 @@ class ModelRegistryBusinessImpact(BaseModel):
     """
 
     operational_health_score: float = Field(
-        ..., description="Overall operational health score (0.0 to 1.0)", ge=0.0, le=1.0
+        ...,
+        description="Overall operational health score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     compliance_score: float = Field(
-        ..., description="Compliance score (0.0 to 1.0)", ge=0.0, le=1.0
+        ...,
+        description="Compliance score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     success_rate_percentage: float = Field(
-        ..., description="Success rate as percentage", ge=0.0, le=100.0
+        ...,
+        description="Success rate as percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     critical_tools_missing: int = Field(
-        0, description="Number of critical tools missing", ge=0
+        0,
+        description="Number of critical tools missing",
+        ge=0,
     )
 
     high_priority_tools_missing: int = Field(
-        0, description="Number of high priority tools missing", ge=0
+        0,
+        description="Number of high priority tools missing",
+        ge=0,
     )
 
     estimated_fix_effort: str = Field(
-        ..., description="Estimated effort to fix all issues"
+        ...,
+        description="Estimated effort to fix all issues",
     )
 
     user_experience_impact: str = Field(..., description="Impact on user experience")
 
     system_reliability_impact: str = Field(
-        ..., description="Impact on system reliability"
+        ...,
+        description="Impact on system reliability",
     )
 
     # Business risk components
@@ -84,17 +97,21 @@ class ModelRegistryBusinessImpact(BaseModel):
     )
 
     # Financial impact
-    potential_revenue_impact: Optional[str] = Field(
-        None, description="Potential revenue impact assessment"
+    potential_revenue_impact: str | None = Field(
+        None,
+        description="Potential revenue impact assessment",
     )
 
-    estimated_cost_to_fix: Optional[str] = Field(
-        None, description="Estimated cost to fix issues"
+    estimated_cost_to_fix: str | None = Field(
+        None,
+        description="Estimated cost to fix issues",
     )
 
     # Recommendations
     immediate_actions_required: int = Field(
-        0, description="Number of immediate actions required", ge=0
+        0,
+        description="Number of immediate actions required",
+        ge=0,
     )
 
     recommended_priority: str = Field(

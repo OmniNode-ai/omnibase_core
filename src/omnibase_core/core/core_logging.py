@@ -10,7 +10,6 @@ This module provides the simplest possible logging interface:
 
 import asyncio
 import threading
-from typing import Optional
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
@@ -54,7 +53,7 @@ def set_correlation_id(correlation_id: UUID) -> None:
     _context.correlation_id = correlation_id
 
 
-def get_correlation_id() -> Optional[UUID]:
+def get_correlation_id() -> UUID | None:
     """Get current correlation ID."""
     return getattr(_context, "correlation_id", None)
 
@@ -79,23 +78,24 @@ def _get_registry_logger():
             if _cached_logger is None:
                 try:
                     # Try to resolve from registry with better error handling
-                    from omnibase_core.core.registry_bootstrap import \
-                        get_logger_protocol
+                    from omnibase_core.core.registry_bootstrap import (
+                        get_logger_protocol,
+                    )
 
                     # Use the dedicated logger protocol function for better performance
                     _cached_logger = get_logger_protocol()
 
                     if _cached_logger is None:
                         # Fallback to direct implementation
-                        from omnibase_core.core.core_registry_logger import \
-                            RegistryLogger
+                        from omnibase_core.core.core_registry_logger import (
+                            RegistryLogger,
+                        )
 
                         _cached_logger = RegistryLogger()
 
                 except Exception:
                     # Final fallback to direct implementation with logging
-                    from omnibase_core.core.core_registry_logger import \
-                        RegistryLogger
+                    from omnibase_core.core.core_registry_logger import RegistryLogger
 
                     _cached_logger = RegistryLogger()
 
@@ -103,7 +103,10 @@ def _get_registry_logger():
 
 
 async def _async_emit_via_logger(
-    logger, level: LogLevelEnum, message: str, correlation_id: UUID
+    logger,
+    level: LogLevelEnum,
+    message: str,
+    correlation_id: UUID,
 ) -> None:
     """Async fire-and-forget logging via registry-resolved logger."""
     try:
@@ -111,4 +114,4 @@ async def _async_emit_via_logger(
         logger.emit(level, message, correlation_id)
     except Exception:
         # Fallback to simple print if logger fails
-        print(f"[{level.name}] {message} ({correlation_id})")
+        pass

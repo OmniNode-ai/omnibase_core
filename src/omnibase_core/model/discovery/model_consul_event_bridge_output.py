@@ -3,12 +3,9 @@
 This module defines the output model for Consul Event Bridge operations.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.discovery.model_event_descriptor import \
-    ModelEventDescriptor
+from omnibase_core.model.discovery.model_event_descriptor import ModelEventDescriptor
 
 
 class ModelConsulEventBridgeOutput(BaseModel):
@@ -16,28 +13,33 @@ class ModelConsulEventBridgeOutput(BaseModel):
 
     bridge_result: str = Field(..., description="Bridge operation result")
 
-    bridging_success: Optional[bool] = Field(None, description="Event bridging success")
+    bridging_success: bool | None = Field(None, description="Event bridging success")
 
-    bridged_event_descriptor: Optional[ModelEventDescriptor] = Field(
-        None, description="Event descriptor created from Consul data"
+    bridged_event_descriptor: ModelEventDescriptor | None = Field(
+        None,
+        description="Event descriptor created from Consul data",
     )
 
-    sync_success: Optional[bool] = Field(
-        None, description="State synchronization success"
+    sync_success: bool | None = Field(
+        None,
+        description="State synchronization success",
     )
 
-    monitoring_started: Optional[bool] = Field(
-        None, description="Event monitoring started successfully"
+    monitoring_started: bool | None = Field(
+        None,
+        description="Event monitoring started successfully",
     )
 
     operation_timestamp: str = Field(..., description="Operation timestamp")
 
-    error_details: Optional[str] = Field(
-        None, description="Error details if operation failed"
+    error_details: str | None = Field(
+        None,
+        description="Error details if operation failed",
     )
 
     operation_successful: bool = Field(
-        True, description="Whether operation was successful"
+        True,
+        description="Whether operation was successful",
     )
 
     model_config = ConfigDict(extra="forbid")

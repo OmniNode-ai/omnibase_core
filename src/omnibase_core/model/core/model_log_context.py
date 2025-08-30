@@ -21,7 +21,6 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -35,5 +34,5 @@ class ModelLogContext(BaseModel):
     calling_function: str
     calling_line: int
     timestamp: str
-    node_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    node_id: str | None = None
+    correlation_id: str | None = None

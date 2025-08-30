@@ -19,5 +19,6 @@ class ModelRegistryReference(BaseModel):
     registry_class_name: str = Field(..., description="Registry class name")
     registry_type: str = Field(..., description="Registry type classification")
     is_initialized: bool = Field(
-        default=True, description="Whether registry is initialized"
+        default=True,
+        description="Whether registry is initialized",
     )

@@ -6,16 +6,21 @@ and query historical solutions from other agents.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.intelligence.model_agent_debug_intelligence import (
-    EnumAgentType, EnumProblemType, EnumSolutionEffectiveness,
-    ModelAgentDebugIntelligence, ModelDebugIntelligenceQuery,
-    ModelDebugIntelligenceResult, ModelProblemContext, ModelSolutionApproach,
-    ModelSolutionOutcome)
+    EnumAgentType,
+    EnumProblemType,
+    EnumSolutionEffectiveness,
+    ModelAgentDebugIntelligence,
+    ModelDebugIntelligenceQuery,
+    ModelDebugIntelligenceResult,
+    ModelProblemContext,
+    ModelSolutionApproach,
+    ModelSolutionOutcome,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +29,10 @@ class UtilityDebugIntelligenceCapture:
     """Utility for capturing and querying agent debug intelligence."""
 
     def __init__(
-        self, agent_name: str, agent_type: EnumAgentType, agent_version: str = "1.0.0"
+        self,
+        agent_name: str,
+        agent_type: EnumAgentType,
+        agent_version: str = "1.0.0",
     ):
         """Initialize debug intelligence capture for an agent.
 
@@ -40,7 +48,7 @@ class UtilityDebugIntelligenceCapture:
 
         # In future, this will connect to actual database/RAG service
         # For now, we'll use in-memory storage as foundation
-        self._debug_entries: List[ModelAgentDebugIntelligence] = []
+        self._debug_entries: list[ModelAgentDebugIntelligence] = []
 
         logger.info(
             "Debug intelligence capture initialized",
@@ -55,7 +63,7 @@ class UtilityDebugIntelligenceCapture:
         self,
         problem_description: str,
         problem_type: EnumProblemType,
-        context: Optional[Dict[str, Union[str, int, float, bool, List[str]]]] = None,
+        context: dict[str, str | int | float | bool | list[str]] | None = None,
     ) -> UUID:
         """Start tracking a problem-solving session.
 
@@ -88,12 +96,12 @@ class UtilityDebugIntelligenceCapture:
     def query_similar_problems(
         self,
         problem_description: str,
-        problem_type: Optional[EnumProblemType] = None,
-        subsystem: Optional[str] = None,
+        problem_type: EnumProblemType | None = None,
+        subsystem: str | None = None,
         limit: int = 5,
         offset: int = 0,
         min_similarity_score: float = 0.5,
-    ) -> List[ModelDebugIntelligenceResult]:
+    ) -> list[ModelDebugIntelligenceResult]:
         """Query for similar problems solved by other agents.
 
         Args:
@@ -120,7 +128,9 @@ class UtilityDebugIntelligenceCapture:
         # TODO: Replace with actual RAG/database query
         # For now, return empty results as foundation
         similar_solutions = self._simulate_similarity_search(
-            query, offset, min_similarity_score
+            query,
+            offset,
+            min_similarity_score,
         )
 
         logger.debug(
@@ -145,13 +155,13 @@ class UtilityDebugIntelligenceCapture:
         problem_description: str,
         problem_type: EnumProblemType,
         solution_strategy: str,
-        solution_steps: List[str],
+        solution_steps: list[str],
         effectiveness: EnumSolutionEffectiveness,
-        success_indicators: List[str],
-        context: Optional[Dict[str, Union[str, int, float, bool, List[str]]]] = None,
-        tools_used: Optional[List[str]] = None,
-        time_to_solution_minutes: Optional[int] = None,
-        lessons_learned: Optional[List[str]] = None,
+        success_indicators: list[str],
+        context: dict[str, str | int | float | bool | list[str]] | None = None,
+        tools_used: list[str] | None = None,
+        time_to_solution_minutes: int | None = None,
+        lessons_learned: list[str] | None = None,
         confidence_level: float = 0.8,
         reusability_score: float = 0.7,
     ) -> ModelAgentDebugIntelligence:
@@ -261,13 +271,13 @@ class UtilityDebugIntelligenceCapture:
 
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to capture debug intelligence: {str(e)}",
+                message=f"Failed to capture debug intelligence: {e!s}",
                 context={"agent_name": self.agent_name, "problem_id": str(problem_id)},
             ) from e
 
     def get_agent_statistics(
         self,
-    ) -> Dict[str, Union[int, float, str, List[str], Dict[str, int]]]:
+    ) -> dict[str, int | float | str | list[str] | dict[str, int]]:
         """Get statistics about this agent's debug intelligence contributions.
 
         Returns:
@@ -311,7 +321,7 @@ class UtilityDebugIntelligenceCapture:
                 for entry in agent_entries
                 if entry.solution_outcome.effectiveness
                 == EnumSolutionEffectiveness.HIGHLY_EFFECTIVE
-            ]
+            ],
         )
 
         return {
@@ -319,36 +329,36 @@ class UtilityDebugIntelligenceCapture:
             "average_solution_time_minutes": round(avg_solution_time, 1),
             "effectiveness_distribution": effectiveness_dist,
             "most_common_problem_types": sorted(
-                problem_type_dist.items(), key=lambda x: x[1], reverse=True
+                problem_type_dist.items(),
+                key=lambda x: x[1],
+                reverse=True,
             )[:5],
             "highly_effective_solutions": highly_effective,
             "reusable_solutions": len(
-                [entry for entry in agent_entries if entry.is_highly_reusable()]
+                [entry for entry in agent_entries if entry.is_highly_reusable()],
             ),
         }
 
     def _sanitize_data(
         self,
-        data: Optional[
-            Union[
-                Dict[str, Union[str, int, float, bool, List[str]]],
-                List[Union[str, int, float, bool]],
-                str,
-                int,
-                float,
-                bool,
-            ]
-        ],
-    ) -> Optional[
-        Union[
-            Dict[str, Union[str, int, float, bool, List[str]]],
-            List[Union[str, int, float, bool]],
-            str,
-            int,
-            float,
-            bool,
-        ]
-    ]:
+        data: (
+            dict[str, str | int | float | bool | list[str]]
+            | list[str | int | float | bool]
+            | str
+            | int
+            | float
+            | bool
+            | None
+        ),
+    ) -> (
+        dict[str, str | int | float | bool | list[str]]
+        | list[str | int | float | bool]
+        | str
+        | int
+        | float
+        | bool
+        | None
+    ):
         """Sanitize data before storing to remove sensitive information."""
         if data is None:
             return None
@@ -366,17 +376,16 @@ class UtilityDebugIntelligenceCapture:
                 else:
                     sanitized[key] = self._sanitize_data(value)
             return sanitized
-        elif isinstance(data, list):
+        if isinstance(data, list):
             return [self._sanitize_data(item) for item in data]
-        else:
-            return data
+        return data
 
     def _generate_tags(
         self,
         problem_description: str,
         problem_type: EnumProblemType,
-        context: Optional[Dict[str, Union[str, int, float, bool, List[str]]]],
-    ) -> List[str]:
+        context: dict[str, str | int | float | bool | list[str]] | None,
+    ) -> list[str]:
         """Generate searchable tags for the debug entry."""
         tags = [problem_type.value]
 
@@ -396,7 +405,7 @@ class UtilityDebugIntelligenceCapture:
 
         return list(set(tags))  # Remove duplicates
 
-    def _extract_key_terms(self, text: str) -> List[str]:
+    def _extract_key_terms(self, text: str) -> list[str]:
         """Extract key searchable terms from text."""
         # Simple keyword extraction - could be enhanced with NLP
         common_tech_terms = [
@@ -433,7 +442,7 @@ class UtilityDebugIntelligenceCapture:
         query: ModelDebugIntelligenceQuery,
         offset: int = 0,
         min_similarity_score: float = 0.5,
-    ) -> List[ModelDebugIntelligenceResult]:
+    ) -> list[ModelDebugIntelligenceResult]:
         """Simulate similarity search - to be replaced with actual RAG query.
 
         Args:
@@ -494,7 +503,8 @@ def capture_problem_solving(
 
             problem_description = f"Executing {func.__name__} with {len(args)} args"
             problem_id = self.debug_capture.start_problem_solving(
-                problem_description, problem_type
+                problem_description,
+                problem_type,
             )
 
             start_time = datetime.utcnow()
@@ -513,7 +523,7 @@ def capture_problem_solving(
                     problem_type=problem_type,
                     solution_strategy=f"Successfully executed {func.__name__}",
                     solution_steps=[
-                        f"Executed function {func.__name__} with provided parameters"
+                        f"Executed function {func.__name__} with provided parameters",
                     ],
                     effectiveness=EnumSolutionEffectiveness.EFFECTIVE,
                     success_indicators=[
@@ -534,19 +544,19 @@ def capture_problem_solving(
 
                 self.debug_capture.capture_solution(
                     problem_id=problem_id,
-                    problem_description=f"Failed execution of {func.__name__}: {str(e)}",
+                    problem_description=f"Failed execution of {func.__name__}: {e!s}",
                     problem_type=problem_type,
                     solution_strategy="Function execution failed",
                     solution_steps=[
                         f"Attempted to execute {func.__name__}",
-                        f"Encountered error: {str(e)}",
+                        f"Encountered error: {e!s}",
                     ],
                     effectiveness=EnumSolutionEffectiveness.INEFFECTIVE,
                     success_indicators=[],
                     context={"error_message": str(e), "function": func.__name__},
                     time_to_solution_minutes=solution_time,
                     lessons_learned=[
-                        f"Execution of {func.__name__} failed with: {str(e)}"
+                        f"Execution of {func.__name__} failed with: {e!s}",
                     ],
                     confidence_level=0.1,
                     reusability_score=0.1,

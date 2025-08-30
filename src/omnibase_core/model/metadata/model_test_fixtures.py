@@ -2,8 +2,6 @@
 Pydantic models for test fixtures and test data structures.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from .model_file_type import ModelFileType
@@ -28,7 +26,8 @@ class ModelFileTypeTestCase(BaseModel):
     content: str = Field(..., description="File content for testing")
     expected_type: str = Field(..., description="Expected file type name")
     detection_method: str = Field(
-        ..., description="Detection method (extension, content, heuristic)"
+        ...,
+        description="Detection method (extension, content, heuristic)",
     )
 
 
@@ -37,16 +36,19 @@ class ModelStampingTestScenario(BaseModel):
 
     name: str = Field(..., description="Scenario name")
     operation: EnumStampingOperation = Field(
-        ..., description="Stamping operation to perform"
+        ...,
+        description="Stamping operation to perform",
     )
     file_content: str = Field(..., description="Initial file content")
     file_type: ModelFileType = Field(..., description="File type information")
     metadata: ModelMetadataBlock = Field(..., description="Metadata to stamp")
     expected_status: EnumStampingStatus = Field(
-        ..., description="Expected operation status"
+        ...,
+        description="Expected operation status",
     )
     should_create_backup: bool = Field(
-        False, description="Whether backup should be created"
+        False,
+        description="Whether backup should be created",
     )
 
 
@@ -62,29 +64,35 @@ class ModelDirectoryStructure(BaseModel):
     """Model for representing directory structures in tests."""
 
     name: str = Field(..., description="Directory name")
-    files: List[ModelDirectoryFile] = Field(
-        default_factory=list, description="Files in directory"
+    files: list[ModelDirectoryFile] = Field(
+        default_factory=list,
+        description="Files in directory",
     )
-    subdirectories: List["ModelDirectoryStructure"] = Field(
-        default_factory=list, description="Subdirectories"
+    subdirectories: list["ModelDirectoryStructure"] = Field(
+        default_factory=list,
+        description="Subdirectories",
     )
 
 
 class ModelTestFilePatterns(BaseModel):
     """Model for test file patterns."""
 
-    python_files: List[str] = Field(
-        default_factory=list, description="Python file patterns"
+    python_files: list[str] = Field(
+        default_factory=list,
+        description="Python file patterns",
     )
-    config_files: List[str] = Field(
-        default_factory=list, description="Configuration file patterns"
+    config_files: list[str] = Field(
+        default_factory=list,
+        description="Configuration file patterns",
     )
-    doc_files: List[str] = Field(
-        default_factory=list, description="Documentation file patterns"
+    doc_files: list[str] = Field(
+        default_factory=list,
+        description="Documentation file patterns",
     )
-    all_files: List[str] = Field(default_factory=list, description="All file patterns")
-    source_files: List[str] = Field(
-        default_factory=list, description="Source code file patterns"
+    all_files: list[str] = Field(default_factory=list, description="All file patterns")
+    source_files: list[str] = Field(
+        default_factory=list,
+        description="Source code file patterns",
     )
 
 

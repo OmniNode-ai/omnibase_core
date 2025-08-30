@@ -4,7 +4,6 @@ Business impact model to replace dictionary usage for business metrics.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -27,82 +26,102 @@ class ModelBusinessImpact(BaseModel):
 
     # Impact assessment
     severity: ImpactSeverity = Field(..., description="Overall impact severity")
-    affected_users: Optional[int] = Field(None, description="Number of affected users")
-    affected_services: Optional[List[str]] = Field(
-        default_factory=list, description="List of affected services"
+    affected_users: int | None = Field(None, description="Number of affected users")
+    affected_services: list[str] | None = Field(
+        default_factory=list,
+        description="List of affected services",
     )
-    revenue_impact_usd: Optional[float] = Field(
-        None, description="Estimated revenue impact in USD"
+    revenue_impact_usd: float | None = Field(
+        None,
+        description="Estimated revenue impact in USD",
     )
 
     # Time metrics
-    downtime_minutes: Optional[float] = Field(
-        None, description="Total downtime in minutes"
+    downtime_minutes: float | None = Field(
+        None,
+        description="Total downtime in minutes",
     )
-    recovery_time_estimate_minutes: Optional[float] = Field(
-        None, description="Estimated recovery time"
+    recovery_time_estimate_minutes: float | None = Field(
+        None,
+        description="Estimated recovery time",
     )
-    time_to_detection_minutes: Optional[float] = Field(
-        None, description="Time to detect the issue"
+    time_to_detection_minutes: float | None = Field(
+        None,
+        description="Time to detect the issue",
     )
-    time_to_resolution_minutes: Optional[float] = Field(
-        None, description="Time to resolve the issue"
+    time_to_resolution_minutes: float | None = Field(
+        None,
+        description="Time to resolve the issue",
     )
 
     # Business metrics
-    sla_violated: Optional[bool] = Field(None, description="Whether SLA was violated")
-    customer_satisfaction_impact: Optional[float] = Field(
-        None, description="Impact on CSAT score"
+    sla_violated: bool | None = Field(None, description="Whether SLA was violated")
+    customer_satisfaction_impact: float | None = Field(
+        None,
+        description="Impact on CSAT score",
     )
-    reputation_risk: Optional[str] = Field(
-        None, description="Reputation risk assessment"
+    reputation_risk: str | None = Field(
+        None,
+        description="Reputation risk assessment",
     )
-    compliance_impact: Optional[List[str]] = Field(
-        default_factory=list, description="Compliance violations"
+    compliance_impact: list[str] | None = Field(
+        default_factory=list,
+        description="Compliance violations",
     )
 
     # Operational impact
-    manual_interventions_required: Optional[int] = Field(
-        None, description="Number of manual interventions"
+    manual_interventions_required: int | None = Field(
+        None,
+        description="Number of manual interventions",
     )
-    automated_recovery_successful: Optional[bool] = Field(
-        None, description="Whether automated recovery worked"
+    automated_recovery_successful: bool | None = Field(
+        None,
+        description="Whether automated recovery worked",
     )
-    escalation_required: Optional[bool] = Field(
-        None, description="Whether escalation was needed"
+    escalation_required: bool | None = Field(
+        None,
+        description="Whether escalation was needed",
     )
-    incident_ticket_ids: Optional[List[str]] = Field(
-        default_factory=list, description="Related incident tickets"
+    incident_ticket_ids: list[str] | None = Field(
+        default_factory=list,
+        description="Related incident tickets",
     )
 
     # Financial impact
-    operational_cost_usd: Optional[float] = Field(
-        None, description="Operational cost of the incident"
+    operational_cost_usd: float | None = Field(
+        None,
+        description="Operational cost of the incident",
     )
-    mitigation_cost_usd: Optional[float] = Field(
-        None, description="Cost of mitigation efforts"
+    mitigation_cost_usd: float | None = Field(
+        None,
+        description="Cost of mitigation efforts",
     )
-    opportunity_cost_usd: Optional[float] = Field(None, description="Opportunity cost")
-    total_cost_usd: Optional[float] = Field(None, description="Total cost impact")
+    opportunity_cost_usd: float | None = Field(None, description="Opportunity cost")
+    total_cost_usd: float | None = Field(None, description="Total cost impact")
 
     # Recovery metrics
-    recovery_actions_taken: Optional[List[str]] = Field(
-        default_factory=list, description="Recovery actions"
+    recovery_actions_taken: list[str] | None = Field(
+        default_factory=list,
+        description="Recovery actions",
     )
-    preventive_measures_implemented: Optional[List[str]] = Field(
-        default_factory=list, description="Preventive measures"
+    preventive_measures_implemented: list[str] | None = Field(
+        default_factory=list,
+        description="Preventive measures",
     )
-    lessons_learned: Optional[List[str]] = Field(
-        default_factory=list, description="Lessons learned"
+    lessons_learned: list[str] | None = Field(
+        default_factory=list,
+        description="Lessons learned",
     )
 
     # Metadata
     assessment_timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When assessment was made"
+        default_factory=datetime.utcnow,
+        description="When assessment was made",
     )
-    assessed_by: Optional[str] = Field(None, description="Who performed the assessment")
-    confidence_score: Optional[float] = Field(
-        None, description="Confidence in the assessment (0-1)"
+    assessed_by: str | None = Field(None, description="Who performed the assessment")
+    confidence_score: float | None = Field(
+        None,
+        description="Confidence in the assessment (0-1)",
     )
 
     model_config = ConfigDict()

@@ -11,23 +11,23 @@ Provides standardized OpenTelemetry setup for all ONEX services with:
 
 import logging
 import os
-from typing import Dict, List, Optional
 
-from opentelemetry import baggage, metrics, trace
+from opentelemetry import metrics, trace
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import (ConsoleMetricExporter,
-                                              PeriodicExportingMetricReader)
+from opentelemetry.sdk.metrics.export import (
+    ConsoleMetricExporter,
+    PeriodicExportingMetricReader,
+)
 from opentelemetry.sdk.trace import Resource, TracerProvider
-from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
-                                            ConsoleSpanExporter)
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from pydantic import BaseModel, Field
 
 # Exporters (with optional imports)
 try:
-    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import \
-        OTLPMetricExporter
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
-        OTLPSpanExporter
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
+        OTLPMetricExporter,
+    )
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 except ImportError:
     OTLPSpanExporter = None
     OTLPMetricExporter = None
@@ -79,14 +79,12 @@ except ImportError:
     DockerResourceDetector = None
 
 try:
-    from opentelemetry.resourcedetector.container import \
-        ContainerResourceDetector
+    from opentelemetry.resourcedetector.container import ContainerResourceDetector
 except ImportError:
     ContainerResourceDetector = None
 
 # Sampling
-from opentelemetry.sdk.trace.sampling import (ALWAYS_ON, ParentBased,
-                                              TraceIdRatioBased)
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from opentelemetry.semconv.resource import ResourceAttributes
 
 
@@ -96,20 +94,24 @@ class ModelOpenTelemetryInitInfo(BaseModel):
     service_name: str = Field(..., description="Name of the initialized service")
     service_version: str = Field(..., description="Version of the initialized service")
     service_namespace: str = Field(
-        ..., description="Namespace of the initialized service"
+        ...,
+        description="Namespace of the initialized service",
     )
     deployment_environment: str = Field(..., description="Deployment environment")
     sampling_rate: float = Field(..., description="Configured sampling rate")
     collector_endpoint: str = Field(..., description="Collector endpoint URL")
     tracer_provider: TracerProvider = Field(
-        ..., description="Initialized tracer provider"
+        ...,
+        description="Initialized tracer provider",
     )
     meter_provider: MeterProvider = Field(..., description="Initialized meter provider")
-    instrumentors_enabled: List[str] = Field(
-        default_factory=list, description="List of enabled instrumentors"
+    instrumentors_enabled: list[str] = Field(
+        default_factory=list,
+        description="List of enabled instrumentors",
     )
-    resource_attributes: Dict[str, str] = Field(
-        default_factory=dict, description="Resource attributes"
+    resource_attributes: dict[str, str] = Field(
+        default_factory=dict,
+        description="Resource attributes",
     )
 
     class Config:
@@ -124,24 +126,26 @@ class ONEXOpenTelemetryConfig:
         service_name: str,
         service_version: str = "1.0.0",
         service_namespace: str = "onex",
-        deployment_environment: str = None,
-        collector_endpoint: str = None,
-        sampling_rate: float = None,
+        deployment_environment: str | None = None,
+        collector_endpoint: str | None = None,
+        sampling_rate: float | None = None,
         enable_console_export: bool = False,
         enable_prometheus_export: bool = True,
         enable_jaeger_export: bool = True,
-        custom_resource_attributes: Optional[Dict[str, str]] = None,
+        custom_resource_attributes: dict[str, str] | None = None,
     ):
         self.service_name = service_name
         self.service_version = service_version
         self.service_namespace = service_namespace
         self.deployment_environment = deployment_environment or os.getenv(
-            "ONEX_ENVIRONMENT", "development"
+            "ONEX_ENVIRONMENT",
+            "development",
         )
 
         # Collector configuration
         self.collector_endpoint = collector_endpoint or os.getenv(
-            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://onex-otel-collector:4317"
+            "OTEL_EXPORTER_OTLP_ENDPOINT",
+            "http://onex-otel-collector:4317",
         )
 
         # Performance configuration
@@ -223,7 +227,8 @@ def create_resource(config: ONEXOpenTelemetryConfig) -> Resource:
 
 
 def setup_tracing(
-    config: ONEXOpenTelemetryConfig, resource: Resource
+    config: ONEXOpenTelemetryConfig,
+    resource: Resource,
 ) -> TracerProvider:
     """Setup distributed tracing with intelligent sampling."""
 
@@ -237,7 +242,9 @@ def setup_tracing(
     if config.collector_endpoint and OTLPSpanExporter:
         try:
             otlp_exporter = OTLPSpanExporter(
-                endpoint=config.collector_endpoint, insecure=True, timeout=10
+                endpoint=config.collector_endpoint,
+                insecure=True,
+                timeout=10,
             )
             tracer_provider.add_span_processor(
                 BatchSpanProcessor(
@@ -246,16 +253,16 @@ def setup_tracing(
                     max_export_batch_size=512,
                     export_timeout_millis=5000,
                     schedule_delay_millis=1000,
-                )
+                ),
             )
             logger.info(
-                f"✅ OTLP trace exporter configured: {config.collector_endpoint}"
+                f"✅ OTLP trace exporter configured: {config.collector_endpoint}",
             )
         except Exception as e:
             logger.warning(f"⚠️ OTLP trace exporter setup failed: {e}")
     elif config.collector_endpoint and not OTLPSpanExporter:
         logger.warning(
-            "⚠️ OTLP trace exporter not available - install opentelemetry-exporter-otlp"
+            "⚠️ OTLP trace exporter not available - install opentelemetry-exporter-otlp",
         )
 
     # Jaeger exporter (fallback)
@@ -271,7 +278,7 @@ def setup_tracing(
             logger.warning(f"⚠️ Jaeger trace exporter setup failed: {e}")
     elif config.enable_jaeger_export and not JaegerExporter:
         logger.warning(
-            "⚠️ Jaeger trace exporter not available - install opentelemetry-exporter-jaeger"
+            "⚠️ Jaeger trace exporter not available - install opentelemetry-exporter-jaeger",
         )
 
     # Console exporter for development
@@ -292,20 +299,22 @@ def setup_metrics(config: ONEXOpenTelemetryConfig, resource: Resource) -> MeterP
     if config.collector_endpoint and OTLPMetricExporter:
         try:
             otlp_metric_exporter = OTLPMetricExporter(
-                endpoint=config.collector_endpoint, insecure=True, timeout=10
+                endpoint=config.collector_endpoint,
+                insecure=True,
+                timeout=10,
             )
             readers.append(
                 PeriodicExportingMetricReader(
                     exporter=otlp_metric_exporter,
                     export_interval_millis=10000,  # 10 seconds
-                )
+                ),
             )
             logger.info("✅ OTLP metric exporter configured")
         except Exception as e:
             logger.warning(f"⚠️ OTLP metric exporter setup failed: {e}")
     elif config.collector_endpoint and not OTLPMetricExporter:
         logger.warning(
-            "⚠️ OTLP metric exporter not available - install opentelemetry-exporter-otlp"
+            "⚠️ OTLP metric exporter not available - install opentelemetry-exporter-otlp",
         )
 
     # Prometheus metrics reader
@@ -318,7 +327,7 @@ def setup_metrics(config: ONEXOpenTelemetryConfig, resource: Resource) -> MeterP
             logger.warning(f"⚠️ Prometheus metric reader setup failed: {e}")
     elif config.enable_prometheus_export and not PrometheusMetricReader:
         logger.warning(
-            "⚠️ Prometheus metric reader not available - install opentelemetry-exporter-prometheus"
+            "⚠️ Prometheus metric reader not available - install opentelemetry-exporter-prometheus",
         )
 
     # Console metrics for development
@@ -328,14 +337,12 @@ def setup_metrics(config: ONEXOpenTelemetryConfig, resource: Resource) -> MeterP
             PeriodicExportingMetricReader(
                 exporter=console_metric_exporter,
                 export_interval_millis=30000,  # 30 seconds
-            )
+            ),
         )
         logger.info("✅ Console metric exporter enabled")
 
     # Create meter provider
-    meter_provider = MeterProvider(resource=resource, metric_readers=readers)
-
-    return meter_provider
+    return MeterProvider(resource=resource, metric_readers=readers)
 
 
 def setup_auto_instrumentation(config: ONEXOpenTelemetryConfig):
@@ -415,14 +422,16 @@ def setup_auto_instrumentation(config: ONEXOpenTelemetryConfig):
         logger.info(f"✅ Auto-instrumentation enabled: {', '.join(instrumentors)}")
     else:
         logger.warning(
-            "⚠️ No instrumentors available - install OpenTelemetry instrumentation packages"
+            "⚠️ No instrumentors available - install OpenTelemetry instrumentation packages",
         )
 
     return instrumentors
 
 
 def initialize_opentelemetry(
-    service_name: str, service_version: str = "1.0.0", **kwargs
+    service_name: str,
+    service_version: str = "1.0.0",
+    **kwargs,
 ) -> ModelOpenTelemetryInitInfo:
     """
     Initialize OpenTelemetry for an ONEX service.
@@ -440,7 +449,9 @@ def initialize_opentelemetry(
 
     # Create configuration
     config = ONEXOpenTelemetryConfig(
-        service_name=service_name, service_version=service_version, **kwargs
+        service_name=service_name,
+        service_version=service_version,
+        **kwargs,
     )
 
     # Create resource
@@ -498,9 +509,6 @@ if __name__ == "__main__":
     service_version = os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
 
     init_info = initialize_opentelemetry(
-        service_name=service_name, service_version=service_version
+        service_name=service_name,
+        service_version=service_version,
     )
-
-    print(f"OpenTelemetry initialized for {service_name}")
-    print(f"Sampling rate: {init_info['sampling_rate']:.1%}")
-    print(f"Instrumentors enabled: {len(init_info['instrumentors_enabled'])}")

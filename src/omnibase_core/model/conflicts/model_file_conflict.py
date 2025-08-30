@@ -9,7 +9,6 @@ simultaneous modifications.
 import hashlib
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -81,25 +80,29 @@ class ModelFileChange(BaseModel):
 
     file_path: str = Field(description="Absolute path to the file")
     change_type: str = Field(
-        description="Type of change (create, modify, delete, rename)"
+        description="Type of change (create, modify, delete, rename)",
     )
     agent_id: str = Field(description="ID of the agent making the change")
     ticket_id: str = Field(description="ID of the ticket this change is for")
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="When the change was made"
+        default_factory=datetime.now,
+        description="When the change was made",
     )
-    content_hash: Optional[str] = Field(
-        default=None, description="Hash of the file content"
+    content_hash: str | None = Field(
+        default=None,
+        description="Hash of the file content",
     )
-    line_ranges: List[tuple] = Field(
+    line_ranges: list[tuple] = Field(
         default_factory=list,
         description="List of (start_line, end_line) tuples for changes",
     )
-    change_summary: Optional[str] = Field(
-        default=None, description="Summary of what was changed"
+    change_summary: str | None = Field(
+        default=None,
+        description="Summary of what was changed",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata about the change"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata about the change",
     )
 
     def calculate_content_hash(self, content: str) -> str:
@@ -114,29 +117,36 @@ class ModelFileLock(BaseModel):
     file_path: str = Field(description="Path to the locked file")
     lock_type: LockType = Field(description="Type of lock")
     status: LockStatus = Field(
-        default=LockStatus.ACTIVE, description="Current status of the lock"
+        default=LockStatus.ACTIVE,
+        description="Current status of the lock",
     )
     agent_id: str = Field(description="ID of the agent holding the lock")
     ticket_id: str = Field(description="ID of the ticket requiring the lock")
     acquired_at: datetime = Field(
-        default_factory=datetime.now, description="When the lock was acquired"
+        default_factory=datetime.now,
+        description="When the lock was acquired",
     )
     expires_at: datetime = Field(description="When the lock expires")
-    released_at: Optional[datetime] = Field(
-        default=None, description="When the lock was released"
+    released_at: datetime | None = Field(
+        default=None,
+        description="When the lock was released",
     )
     lock_reason: str = Field(description="Reason for acquiring the lock")
     priority: int = Field(
-        default=1, description="Priority of the lock (higher = more important)"
+        default=1,
+        description="Priority of the lock (higher = more important)",
     )
     can_share: bool = Field(
-        default=False, description="Whether this lock can be shared with other agents"
+        default=False,
+        description="Whether this lock can be shared with other agents",
     )
-    waiting_agents: List[str] = Field(
-        default_factory=list, description="List of agent IDs waiting for this lock"
+    waiting_agents: list[str] = Field(
+        default_factory=list,
+        description="List of agent IDs waiting for this lock",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional lock metadata"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional lock metadata",
     )
 
     @property
@@ -188,42 +198,51 @@ class ModelFileConflict(BaseModel):
         description="Current status of conflict resolution",
     )
     file_path: str = Field(description="Path to the conflicted file")
-    conflicting_agents: List[str] = Field(
-        description="List of agent IDs involved in the conflict"
+    conflicting_agents: list[str] = Field(
+        description="List of agent IDs involved in the conflict",
     )
-    conflicting_tickets: List[str] = Field(
-        description="List of ticket IDs involved in the conflict"
+    conflicting_tickets: list[str] = Field(
+        description="List of ticket IDs involved in the conflict",
     )
-    conflicting_changes: List[ModelFileChange] = Field(
-        default_factory=list, description="List of conflicting file changes"
+    conflicting_changes: list[ModelFileChange] = Field(
+        default_factory=list,
+        description="List of conflicting file changes",
     )
     detected_at: datetime = Field(
-        default_factory=datetime.now, description="When the conflict was detected"
+        default_factory=datetime.now,
+        description="When the conflict was detected",
     )
-    resolved_at: Optional[datetime] = Field(
-        default=None, description="When the conflict was resolved"
+    resolved_at: datetime | None = Field(
+        default=None,
+        description="When the conflict was resolved",
     )
-    resolution_strategy: Optional[ResolutionStrategy] = Field(
-        default=None, description="Strategy used to resolve the conflict"
+    resolution_strategy: ResolutionStrategy | None = Field(
+        default=None,
+        description="Strategy used to resolve the conflict",
     )
-    resolution_details: Optional[str] = Field(
-        default=None, description="Details about how the conflict was resolved"
+    resolution_details: str | None = Field(
+        default=None,
+        description="Details about how the conflict was resolved",
     )
-    winner_agent: Optional[str] = Field(
-        default=None, description="Agent that won the conflict resolution"
+    winner_agent: str | None = Field(
+        default=None,
+        description="Agent that won the conflict resolution",
     )
-    affected_lines: List[tuple] = Field(
+    affected_lines: list[tuple] = Field(
         default_factory=list,
         description="List of (start_line, end_line) tuples for affected lines",
     )
-    conflict_context: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional context about the conflict"
+    conflict_context: dict[str, str] | None = Field(
+        default=None,
+        description="Additional context about the conflict",
     )
-    escalation_reason: Optional[str] = Field(
-        default=None, description="Reason for escalating the conflict"
+    escalation_reason: str | None = Field(
+        default=None,
+        description="Reason for escalating the conflict",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional conflict metadata"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional conflict metadata",
     )
 
     @property
@@ -241,7 +260,7 @@ class ModelFileConflict(BaseModel):
         ]
 
     @property
-    def resolution_time(self) -> Optional[timedelta]:
+    def resolution_time(self) -> timedelta | None:
         """Get time taken to resolve the conflict."""
         if self.resolved_at:
             return self.resolved_at - self.detected_at
@@ -265,8 +284,8 @@ class ModelFileConflict(BaseModel):
     def resolve_conflict(
         self,
         strategy: ResolutionStrategy,
-        winner_agent: Optional[str] = None,
-        details: Optional[str] = None,
+        winner_agent: str | None = None,
+        details: str | None = None,
     ) -> None:
         """Mark conflict as resolved."""
         self.status = ConflictStatus.RESOLVED
@@ -292,43 +311,53 @@ class ModelConflictResolution(BaseModel):
     resolution_id: str = Field(description="Unique identifier for the resolution")
     conflict_id: str = Field(description="ID of the conflict being resolved")
     strategy: ResolutionStrategy = Field(description="Strategy used for resolution")
-    winner_agent: Optional[str] = Field(
-        default=None, description="Agent that won the resolution"
+    winner_agent: str | None = Field(
+        default=None,
+        description="Agent that won the resolution",
     )
-    actions_taken: List[str] = Field(
+    actions_taken: list[str] = Field(
         default_factory=list,
         description="List of actions taken to resolve the conflict",
     )
-    files_modified: List[str] = Field(
-        default_factory=list, description="List of files modified during resolution"
+    files_modified: list[str] = Field(
+        default_factory=list,
+        description="List of files modified during resolution",
     )
     backup_created: bool = Field(
-        default=False, description="Whether a backup was created"
+        default=False,
+        description="Whether a backup was created",
     )
-    backup_path: Optional[str] = Field(
-        default=None, description="Path to the backup file if created"
+    backup_path: str | None = Field(
+        default=None,
+        description="Path to the backup file if created",
     )
     merge_required: bool = Field(
-        default=False, description="Whether manual merge is required"
+        default=False,
+        description="Whether manual merge is required",
     )
-    merge_conflicts: List[str] = Field(
+    merge_conflicts: list[str] = Field(
         default_factory=list,
         description="List of merge conflicts that need manual resolution",
     )
     success: bool = Field(
-        default=False, description="Whether the resolution was successful"
+        default=False,
+        description="Whether the resolution was successful",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if resolution failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if resolution failed",
     )
     resolution_time: timedelta = Field(
-        default=timedelta(), description="Time taken to resolve the conflict"
+        default=timedelta(),
+        description="Time taken to resolve the conflict",
     )
     resolved_at: datetime = Field(
-        default_factory=datetime.now, description="When the resolution was completed"
+        default_factory=datetime.now,
+        description="When the resolution was completed",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional resolution metadata"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional resolution metadata",
     )
 
 
@@ -337,35 +366,45 @@ class ModelFileMonitor(BaseModel):
 
     monitor_id: str = Field(description="Unique identifier for the monitor")
     file_path: str = Field(description="Path being monitored")
-    watching_agents: Set[str] = Field(
-        default_factory=set, description="Set of agent IDs watching this file"
+    watching_agents: set[str] = Field(
+        default_factory=set,
+        description="Set of agent IDs watching this file",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.now, description="Last modification time of the file"
+        default_factory=datetime.now,
+        description="Last modification time of the file",
     )
-    last_content_hash: Optional[str] = Field(
-        default=None, description="Hash of the last known content"
+    last_content_hash: str | None = Field(
+        default=None,
+        description="Hash of the last known content",
     )
-    change_history: List[ModelFileChange] = Field(
-        default_factory=list, description="History of changes to this file"
+    change_history: list[ModelFileChange] = Field(
+        default_factory=list,
+        description="History of changes to this file",
     )
-    active_locks: List[str] = Field(
-        default_factory=list, description="List of active lock IDs for this file"
+    active_locks: list[str] = Field(
+        default_factory=list,
+        description="List of active lock IDs for this file",
     )
     conflict_count: int = Field(
-        default=0, description="Number of conflicts detected for this file"
+        default=0,
+        description="Number of conflicts detected for this file",
     )
-    last_conflict: Optional[datetime] = Field(
-        default=None, description="When the last conflict was detected"
+    last_conflict: datetime | None = Field(
+        default=None,
+        description="When the last conflict was detected",
     )
     monitor_enabled: bool = Field(
-        default=True, description="Whether monitoring is enabled for this file"
+        default=True,
+        description="Whether monitoring is enabled for this file",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When monitoring was started"
+        default_factory=datetime.now,
+        description="When monitoring was started",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional monitoring metadata"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional monitoring metadata",
     )
 
     @property
@@ -420,43 +459,56 @@ class ModelConflictStatistics(BaseModel):
     """Model for conflict detection statistics."""
 
     total_conflicts_detected: int = Field(
-        default=0, description="Total number of conflicts detected"
+        default=0,
+        description="Total number of conflicts detected",
     )
     conflicts_resolved: int = Field(
-        default=0, description="Number of conflicts successfully resolved"
+        default=0,
+        description="Number of conflicts successfully resolved",
     )
     conflicts_escalated: int = Field(
-        default=0, description="Number of conflicts escalated for manual resolution"
+        default=0,
+        description="Number of conflicts escalated for manual resolution",
     )
     conflicts_failed: int = Field(
-        default=0, description="Number of conflicts that failed to resolve"
+        default=0,
+        description="Number of conflicts that failed to resolve",
     )
-    average_resolution_time: Optional[float] = Field(
-        default=None, description="Average time to resolve conflicts in seconds"
+    average_resolution_time: float | None = Field(
+        default=None,
+        description="Average time to resolve conflicts in seconds",
     )
-    most_contested_files: List[str] = Field(
-        default_factory=list, description="List of files with the most conflicts"
+    most_contested_files: list[str] = Field(
+        default_factory=list,
+        description="List of files with the most conflicts",
     )
-    agent_conflict_counts: Dict[str, int] = Field(
-        default_factory=dict, description="Conflict count per agent"
+    agent_conflict_counts: dict[str, int] = Field(
+        default_factory=dict,
+        description="Conflict count per agent",
     )
-    conflict_types_frequency: Dict[str, int] = Field(
-        default_factory=dict, description="Frequency of different conflict types"
+    conflict_types_frequency: dict[str, int] = Field(
+        default_factory=dict,
+        description="Frequency of different conflict types",
     )
-    resolution_strategies_used: Dict[str, int] = Field(
-        default_factory=dict, description="Frequency of resolution strategies used"
+    resolution_strategies_used: dict[str, int] = Field(
+        default_factory=dict,
+        description="Frequency of resolution strategies used",
     )
-    peak_conflict_times: List[str] = Field(
-        default_factory=list, description="Times when conflicts are most frequent"
+    peak_conflict_times: list[str] = Field(
+        default_factory=list,
+        description="Times when conflicts are most frequent",
     )
     files_under_monitoring: int = Field(
-        default=0, description="Number of files currently being monitored"
+        default=0,
+        description="Number of files currently being monitored",
     )
     active_locks: int = Field(
-        default=0, description="Number of currently active file locks"
+        default=0,
+        description="Number of currently active file locks",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="When statistics were last updated"
+        default_factory=datetime.now,
+        description="When statistics were last updated",
     )
 
     @property
@@ -493,16 +545,20 @@ class ModelConflictStatistics(BaseModel):
             self.resolution_strategies_used.get(strategy, 0) + 1
         )
 
-    def get_top_conflicted_agents(self, limit: int = 5) -> List[tuple]:
+    def get_top_conflicted_agents(self, limit: int = 5) -> list[tuple]:
         """Get agents with the most conflicts."""
         sorted_agents = sorted(
-            self.agent_conflict_counts.items(), key=lambda x: x[1], reverse=True
+            self.agent_conflict_counts.items(),
+            key=lambda x: x[1],
+            reverse=True,
         )
         return sorted_agents[:limit]
 
-    def get_most_common_conflict_types(self, limit: int = 5) -> List[tuple]:
+    def get_most_common_conflict_types(self, limit: int = 5) -> list[tuple]:
         """Get most common conflict types."""
         sorted_types = sorted(
-            self.conflict_types_frequency.items(), key=lambda x: x[1], reverse=True
+            self.conflict_types_frequency.items(),
+            key=lambda x: x[1],
+            reverse=True,
         )
         return sorted_types[:limit]

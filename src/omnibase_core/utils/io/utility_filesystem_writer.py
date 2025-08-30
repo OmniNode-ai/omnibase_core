@@ -4,13 +4,14 @@ Filesystem implementation of ProtocolFileWriter.
 Writes files to the local filesystem with safety checks.
 """
 
+import contextlib
 from pathlib import Path
-from typing import List, Optional, Union
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 
 class UtilityFileSystemWriter:
@@ -24,7 +25,7 @@ class UtilityFileSystemWriter:
     - Structured logging
     """
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         """
         Initialize filesystem writer.
 
@@ -33,7 +34,7 @@ class UtilityFileSystemWriter:
         """
         self.base_path = Path(base_path) if base_path else Path.cwd()
 
-    def write_file(self, path: Union[str, Path], content: str) -> Path:
+    def write_file(self, path: str | Path, content: str) -> Path:
         """
         Write content to a file, creating directories as needed.
 
@@ -51,18 +52,10 @@ class UtilityFileSystemWriter:
         import traceback
 
         call_stack = traceback.format_stack()
-        calling_info = (
-            call_stack[-2].strip() if len(call_stack) > 1 else "Unknown caller"
-        )
+        (call_stack[-2].strip() if len(call_stack) > 1 else "Unknown caller")
 
-        print("🔍 CRITICAL: UtilityFileSystemWriter.write_file() called")
-        print(f"   File path: {path}")
-        print(f"   Content length: {len(content)} characters")
-        print(f"   Content preview: {content[:200]}...")
-        print(f"   Called from: {calling_info}")
-        print("   Full call stack:")
-        for i, frame in enumerate(call_stack[-5:]):  # Show last 5 stack frames
-            print(f"     {i}: {frame.strip()}")
+        for _i, _frame in enumerate(call_stack[-5:]):  # Show last 5 stack frames
+            pass
 
         try:
             file_path = Path(path)
@@ -89,9 +82,10 @@ class UtilityFileSystemWriter:
                 f"Failed to write file: {path}",
                 {"path": str(path), "error": str(e)},
             )
-            raise IOError(f"Cannot write file {path}: {e}")
+            msg = f"Cannot write file {path}: {e}"
+            raise OSError(msg)
 
-    def write_files(self, files: List[tuple[Union[str, Path], str]]) -> List[Path]:
+    def write_files(self, files: list[tuple[str | Path, str]]) -> list[Path]:
         """
         Write multiple files, ensuring all succeed or none are written.
 
@@ -108,14 +102,7 @@ class UtilityFileSystemWriter:
         import traceback
 
         call_stack = traceback.format_stack()
-        calling_info = (
-            call_stack[-2].strip() if len(call_stack) > 1 else "Unknown caller"
-        )
-
-        print("🔍 CRITICAL: UtilityFileSystemWriter.write_files() called")
-        print(f"   Number of files: {len(files)}")
-        print(f"   File paths: {[str(path) for path, _ in files]}")
-        print(f"   Called from: {calling_info}")
+        (call_stack[-2].strip() if len(call_stack) > 1 else "Unknown caller")
 
         written_paths = []
 
@@ -143,19 +130,18 @@ class UtilityFileSystemWriter:
         except Exception as e:
             # Clean up any partially written files
             for path in written_paths:
-                try:
+                with contextlib.suppress(Exception):
                     path.unlink()
-                except:
-                    pass
 
             emit_log_event(
                 LogLevelEnum.ERROR,
                 "Failed to write files atomically",
                 {"error": str(e), "attempted": len(files)},
             )
-            raise IOError(f"Cannot write files atomically: {e}")
+            msg = f"Cannot write files atomically: {e}"
+            raise OSError(msg)
 
-    def ensure_directory(self, path: Union[str, Path]) -> Path:
+    def ensure_directory(self, path: str | Path) -> Path:
         """
         Ensure a directory exists, creating it if necessary.
 
@@ -189,9 +175,10 @@ class UtilityFileSystemWriter:
                 f"Failed to create directory: {path}",
                 {"path": str(path), "error": str(e)},
             )
-            raise IOError(f"Cannot create directory {path}: {e}")
+            msg = f"Cannot create directory {path}: {e}"
+            raise OSError(msg)
 
-    def delete_file(self, path: Union[str, Path]) -> bool:
+    def delete_file(self, path: str | Path) -> bool:
         """
         Delete a file if it exists.
 
@@ -226,4 +213,5 @@ class UtilityFileSystemWriter:
                 f"Failed to delete file: {path}",
                 {"path": str(path), "error": str(e)},
             )
-            raise IOError(f"Cannot delete file {path}: {e}")
+            msg = f"Cannot delete file {path}: {e}"
+            raise OSError(msg)

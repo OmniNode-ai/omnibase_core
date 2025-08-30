@@ -4,8 +4,6 @@ Dictionary Configuration Model for ONEX Configuration System.
 Strongly typed model for dictionary return types.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -16,8 +14,9 @@ class ModelDictConfig(BaseModel):
     Represents configuration dictionaries with proper type safety.
     """
 
-    data: Dict[str, str] = Field(
-        default_factory=dict, description="Configuration data as string key-value pairs"
+    data: dict[str, str] = Field(
+        default_factory=dict,
+        description="Configuration data as string key-value pairs",
     )
 
     def get_value(self, key: str) -> str:

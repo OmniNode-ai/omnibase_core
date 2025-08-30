@@ -12,30 +12,22 @@ import hmac
 import json
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.kafka.model_avro_compatible_data import \
-    ModelAvroCompatibleData
-from omnibase_core.model.kafka.model_content_encoding import \
-    ModelContentEncoding
-from omnibase_core.model.kafka.model_delivery_guarantee import \
-    ModelDeliveryGuarantee
+from omnibase_core.model.kafka.model_avro_compatible_data import ModelAvroCompatibleData
+from omnibase_core.model.kafka.model_content_encoding import ModelContentEncoding
+from omnibase_core.model.kafka.model_delivery_guarantee import ModelDeliveryGuarantee
 from omnibase_core.model.kafka.model_event_priority import ModelEventPriority
-from omnibase_core.model.kafka.model_intelligence_result import \
-    ModelIntelligenceResult
+from omnibase_core.model.kafka.model_intelligence_result import ModelIntelligenceResult
 from omnibase_core.model.kafka.model_payload_data import ModelPayloadData
-from omnibase_core.model.kafka.model_performance_hints import \
-    ModelPerformanceHints
-from omnibase_core.model.kafka.model_retention_policy import \
-    ModelRetentionPolicy
+from omnibase_core.model.kafka.model_performance_hints import ModelPerformanceHints
+from omnibase_core.model.kafka.model_retention_policy import ModelRetentionPolicy
 from omnibase_core.model.kafka.model_routing_context import ModelRoutingContext
 from omnibase_core.model.kafka.model_rule_context import ModelRuleContext
-from omnibase_core.model.kafka.model_security_context import \
-    ModelSecurityContext
+from omnibase_core.model.kafka.model_security_context import ModelSecurityContext
 from omnibase_core.utils.json_encoder import OmniJSONEncoder
 
 
@@ -60,21 +52,26 @@ class ModelOnexEnvelopeV1(BaseModel):
 
     # Core envelope metadata
     envelope_version: str = Field(
-        default="1.0.0", description="Schema version for backward compatibility"
+        default="1.0.0",
+        description="Schema version for backward compatibility",
     )
     op_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique operation identifier"
+        default_factory=lambda: str(uuid4()),
+        description="Unique operation identifier",
     )
     correlation_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Correlation ID for tracking"
+        default_factory=lambda: str(uuid4()),
+        description="Correlation ID for tracking",
     )
 
     # W3C Trace Context for distributed tracing
-    traceparent: Optional[str] = Field(
-        None, description="W3C traceparent header (00-{trace_id}-{span_id}-{flags})"
+    traceparent: str | None = Field(
+        None,
+        description="W3C traceparent header (00-{trace_id}-{span_id}-{flags})",
     )
-    tracestate: Optional[str] = Field(
-        None, description="W3C tracestate header for vendor-specific data"
+    tracestate: str | None = Field(
+        None,
+        description="W3C tracestate header for vendor-specific data",
     )
 
     # Event metadata
@@ -84,74 +81,91 @@ class ModelOnexEnvelopeV1(BaseModel):
     )
     source_service: str = Field(..., description="Originating service identifier")
     source_node_id: str = Field(
-        ..., description="Node identifier where event was generated"
+        ...,
+        description="Node identifier where event was generated",
     )
     event_type: str = Field(..., description="Namespaced event type")
 
     # Payload handling
     payload_type: str = Field(
-        ..., description="Type identifier for payload schema validation"
+        ...,
+        description="Type identifier for payload schema validation",
     )
     payload_schema_version: str = Field(
-        default="1.0.0", description="Payload schema version"
+        default="1.0.0",
+        description="Payload schema version",
     )
     payload: bytes = Field(..., description="JSON-encoded event payload")
     content_encoding: ModelContentEncoding = Field(
-        default=ModelContentEncoding.JSON, description="Payload encoding"
+        default=ModelContentEncoding.JSON,
+        description="Payload encoding",
     )
 
     # Production features
     priority: ModelEventPriority = Field(
-        default=ModelEventPriority.NORMAL, description="Processing priority"
+        default=ModelEventPriority.NORMAL,
+        description="Processing priority",
     )
     delivery_guarantee: ModelDeliveryGuarantee = Field(
-        default=ModelDeliveryGuarantee.AT_LEAST_ONCE, description="Delivery semantics"
+        default=ModelDeliveryGuarantee.AT_LEAST_ONCE,
+        description="Delivery semantics",
     )
-    partition_key: Optional[str] = Field(
-        None, description="Custom partition key override"
+    partition_key: str | None = Field(
+        None,
+        description="Custom partition key override",
     )
 
     # Advanced configuration
     retention_policy: ModelRetentionPolicy = Field(
-        default_factory=ModelRetentionPolicy, description="Retention config"
+        default_factory=ModelRetentionPolicy,
+        description="Retention config",
     )
     security: ModelSecurityContext = Field(
-        default_factory=ModelSecurityContext, description="Security context"
+        default_factory=ModelSecurityContext,
+        description="Security context",
     )
     routing: ModelRoutingContext = Field(
-        default_factory=ModelRoutingContext, description="Routing context"
+        default_factory=ModelRoutingContext,
+        description="Routing context",
     )
     performance_hints: ModelPerformanceHints = Field(
-        default_factory=ModelPerformanceHints, description="Performance hints"
+        default_factory=ModelPerformanceHints,
+        description="Performance hints",
     )
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Extensible metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Extensible metadata",
     )
 
     @field_validator("traceparent")
     @classmethod
-    def validate_traceparent_format(cls, v: Optional[str]) -> Optional[str]:
+    def validate_traceparent_format(cls, v: str | None) -> str | None:
         """Validate W3C traceparent format: 00-{trace_id}-{span_id}-{flags}"""
         if v is None:
             return v
 
         parts = v.split("-")
         if len(parts) != 4:
+            msg = "traceparent must have format: 00-{trace_id}-{span_id}-{flags}"
             raise ValueError(
-                "traceparent must have format: 00-{trace_id}-{span_id}-{flags}"
+                msg,
             )
 
         if parts[0] != "00":
-            raise ValueError("traceparent version must be '00'")
+            msg = "traceparent version must be '00'"
+            raise ValueError(msg)
 
         if len(parts[1]) != 32 or not all(c in "0123456789abcdef" for c in parts[1]):
-            raise ValueError("trace_id must be 32 hex characters")
+            msg = "trace_id must be 32 hex characters"
+            raise ValueError(msg)
 
         if len(parts[2]) != 16 or not all(c in "0123456789abcdef" for c in parts[2]):
-            raise ValueError("span_id must be 16 hex characters")
+            msg = "span_id must be 16 hex characters"
+            raise ValueError(msg)
 
         if len(parts[3]) != 2 or not all(c in "0123456789abcdef" for c in parts[3]):
-            raise ValueError("flags must be 2 hex characters")
+            msg = "flags must be 2 hex characters"
+            raise ValueError(msg)
 
         return v
 
@@ -160,7 +174,7 @@ class ModelOnexEnvelopeV1(BaseModel):
         cls,
         event: ModelOnexEvent,
         source_service: str,
-        payload_type: Optional[str] = None,
+        payload_type: str | None = None,
         **kwargs,
     ) -> "ModelOnexEnvelopeV1":
         """
@@ -266,7 +280,7 @@ class ModelOnexEnvelopeV1(BaseModel):
             payload=json.dumps(payload_data, cls=OmniJSONEncoder).encode("utf-8"),
             partition_key=context.rule_id,
             retention_policy=ModelRetentionPolicy(
-                compaction_key=context.rule_id
+                compaction_key=context.rule_id,
             ),  # Enable compaction for latest decisions
             **kwargs,
         )
@@ -290,7 +304,9 @@ class ModelOnexEnvelopeV1(BaseModel):
     def sign_payload(self, signing_key: str, key_id: str) -> "ModelOnexEnvelopeV1":
         """Sign payload with HMAC-SHA256 for integrity verification"""
         signature = hmac.new(
-            signing_key.encode("utf-8"), self.payload, hashlib.sha256
+            signing_key.encode("utf-8"),
+            self.payload,
+            hashlib.sha256,
         ).hexdigest()
 
         self.security.signature = signature
@@ -303,7 +319,9 @@ class ModelOnexEnvelopeV1(BaseModel):
             return False
 
         expected_signature = hmac.new(
-            signing_key.encode("utf-8"), self.payload, hashlib.sha256
+            signing_key.encode("utf-8"),
+            self.payload,
+            hashlib.sha256,
         ).hexdigest()
 
         return hmac.compare_digest(expected_signature, self.security.signature)
@@ -315,8 +333,9 @@ class ModelOnexEnvelopeV1(BaseModel):
         if self.content_encoding == ModelContentEncoding.JSON_GZIP:
             payload_bytes = gzip.decompress(payload_bytes)
         elif self.content_encoding != ModelContentEncoding.JSON:
+            msg = f"Cannot parse payload with encoding {self.content_encoding}"
             raise ValueError(
-                f"Cannot parse payload with encoding {self.content_encoding}"
+                msg,
             )
 
         payload_dict = json.loads(payload_bytes.decode("utf-8"))
@@ -327,21 +346,21 @@ class ModelOnexEnvelopeV1(BaseModel):
                 payload_type=self.payload_type,
                 data=ModelIntelligenceResult(**payload_dict),
             )
-        elif self.payload_type == "rule_decision":
+        if self.payload_type == "rule_decision":
             context_data = payload_dict.get("context", {})
             return ModelPayloadData(
-                payload_type=self.payload_type, data=ModelRuleContext(**context_data)
-            )
-        else:
-            # For other types, use generic string mapping
-            return ModelPayloadData(
                 payload_type=self.payload_type,
-                data=(
-                    payload_dict
-                    if isinstance(payload_dict, dict)
-                    else {"raw": str(payload_dict)}
-                ),
+                data=ModelRuleContext(**context_data),
             )
+        # For other types, use generic string mapping
+        return ModelPayloadData(
+            payload_type=self.payload_type,
+            data=(
+                payload_dict
+                if isinstance(payload_dict, dict)
+                else {"raw": str(payload_dict)}
+            ),
+        )
 
     def get_partition_key(self) -> str:
         """Get effective partition key for Kafka"""
@@ -359,13 +378,13 @@ class ModelOnexEnvelopeV1(BaseModel):
             payload_data = self.get_payload_json()
             if isinstance(payload_data.data, ModelIntelligenceResult):
                 return payload_data.data.uid
-            elif isinstance(payload_data.data, dict):
+            if isinstance(payload_data.data, dict):
                 return payload_data.data.get("uid", self.op_id)
         elif self.event_type.startswith("rule."):
             payload_data = self.get_payload_json()
             if isinstance(payload_data.data, ModelRuleContext):
                 return payload_data.data.rule_id
-            elif isinstance(payload_data.data, dict):
+            if isinstance(payload_data.data, dict):
                 return payload_data.data.get("rule_id", self.op_id)
 
         return self.op_id
@@ -374,17 +393,19 @@ class ModelOnexEnvelopeV1(BaseModel):
         """Get appropriate Kafka topic name based on event type"""
         if self.event_type.startswith("fs."):
             return "fs.events"
-        elif self.event_type.startswith("intelligence."):
+        if self.event_type.startswith("intelligence."):
             return "intelligence.results"
-        elif self.event_type.startswith("metadata."):
+        if self.event_type.startswith("metadata."):
             return "metadata-updates"
-        elif self.event_type.startswith("rule."):
+        if self.event_type.startswith("rule."):
             return "rules-decisions"
-        else:
-            return "onex.events.default.v1"
+        return "onex.events.default.v1"
 
     def add_trace_context(
-        self, trace_id: str, span_id: str, flags: str = "01"
+        self,
+        trace_id: str,
+        span_id: str,
+        flags: str = "01",
     ) -> "ModelOnexEnvelopeV1":
         """Add W3C trace context for distributed tracing"""
         self.traceparent = f"00-{trace_id}-{span_id}-{flags}"

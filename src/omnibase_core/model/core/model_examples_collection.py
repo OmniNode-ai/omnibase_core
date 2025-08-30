@@ -2,7 +2,7 @@
 Examples collection model.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,22 +17,25 @@ class ModelExamples(BaseModel):
     """
 
     # Example entries - now properly typed as a list of ModelExample
-    examples: List[ModelExample] = Field(
-        default_factory=list, description="List of example data"
+    examples: list[ModelExample] = Field(
+        default_factory=list,
+        description="List of example data",
     )
 
     # Metadata for examples collection
-    metadata: Optional[ModelExampleMetadata] = Field(
-        None, description="Metadata about the examples collection"
+    metadata: ModelExampleMetadata | None = Field(
+        None,
+        description="Metadata about the examples collection",
     )
 
     # Example format
     format: str = Field("json", description="Format of examples (json/yaml/text)")
     schema_compliant: bool = Field(
-        True, description="Whether examples comply with schema"
+        True,
+        description="Whether examples comply with schema",
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         # Return just the examples list for backward compatibility
         if len(self.examples) == 1:
@@ -40,7 +43,7 @@ class ModelExamples(BaseModel):
         return {"examples": [ex.dict(exclude_none=True) for ex in self.examples]}
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["ModelExamples"]:
+    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelExamples"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
@@ -56,7 +59,7 @@ class ModelExamples(BaseModel):
                 for item in data
             ]
             return cls(examples=examples)
-        elif "examples" in data and isinstance(data["examples"], list):
+        if "examples" in data and isinstance(data["examples"], list):
             examples = [
                 (
                     ModelExample(**item)
@@ -71,17 +74,18 @@ class ModelExamples(BaseModel):
                 format=data.get("format", "json"),
                 schema_compliant=data.get("schema_compliant", True),
             )
-        else:
-            # Single example as dict
-            example = (
-                ModelExample(**data)
-                if all(k in data for k in ["input_data", "output_data"])
-                else ModelExample(input_data=data)
-            )
-            return cls(examples=[example])
+        # Single example as dict
+        example = (
+            ModelExample(**data)
+            if all(k in data for k in ["input_data", "output_data"])
+            else ModelExample(input_data=data)
+        )
+        return cls(examples=[example])
 
     def add_example(
-        self, example: Union[ModelExample, Dict[str, Any]], name: Optional[str] = None
+        self,
+        example: ModelExample | dict[str, Any],
+        name: str | None = None,
     ):
         """Add a new example."""
         if isinstance(example, dict):
@@ -96,7 +100,7 @@ class ModelExamples(BaseModel):
 
         self.examples.append(example)
 
-    def get_example(self, index: int = 0) -> Optional[ModelExample]:
+    def get_example(self, index: int = 0) -> ModelExample | None:
         """Get an example by index."""
         if 0 <= index < len(self.examples):
             return self.examples[index]

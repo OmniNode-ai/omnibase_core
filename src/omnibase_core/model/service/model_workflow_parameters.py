@@ -5,12 +5,19 @@ Type-safe workflow parameters that replace Dict[str, Any] usage
 for workflow execution configuration.
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from pydantic import BaseModel, Field
 
 ParameterValue = Union[
-    str, int, bool, float, List[str], List[int], List[float], Dict[str, str]
+    str,
+    int,
+    bool,
+    float,
+    list[str],
+    list[int],
+    list[float],
+    dict[str, str],
 ]
 
 
@@ -22,21 +29,26 @@ class ModelWorkflowParameters(BaseModel):
     with type safety and validation.
     """
 
-    parameters: Dict[str, ParameterValue] = Field(
-        default_factory=dict, description="Workflow parameter values"
+    parameters: dict[str, ParameterValue] = Field(
+        default_factory=dict,
+        description="Workflow parameter values",
     )
 
-    required_parameters: List[str] = Field(
-        default_factory=list, description="List of required parameter names"
+    required_parameters: list[str] = Field(
+        default_factory=list,
+        description="List of required parameter names",
     )
 
-    parameter_metadata: Dict[str, Dict[str, str]] = Field(
-        default_factory=dict, description="Metadata for each parameter"
+    parameter_metadata: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description="Metadata for each parameter",
     )
 
     def get_parameter(
-        self, key: str, default: Optional[ParameterValue] = None
-    ) -> Optional[ParameterValue]:
+        self,
+        key: str,
+        default: ParameterValue | None = None,
+    ) -> ParameterValue | None:
         """
         Get parameter value with type safety.
 
@@ -67,7 +79,7 @@ class ModelWorkflowParameters(BaseModel):
     def get_int(self, key: str, default: int = 0) -> int:
         """Get parameter as integer."""
         value = self.get_parameter(key, default)
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return int(value)
         if isinstance(value, str) and value.isdigit():
             return int(value)
@@ -82,7 +94,7 @@ class ModelWorkflowParameters(BaseModel):
             return value.lower() in ("true", "1", "yes", "on")
         return bool(value) if value is not None else default
 
-    def get_list(self, key: str, default: Optional[List[str]] = None) -> List[str]:
+    def get_list(self, key: str, default: list[str] | None = None) -> list[str]:
         """Get parameter as list."""
         value = self.get_parameter(key, default or [])
         if isinstance(value, list):
@@ -95,7 +107,7 @@ class ModelWorkflowParameters(BaseModel):
         """Check if parameter is required."""
         return key in self.required_parameters
 
-    def validate_required(self) -> List[str]:
+    def validate_required(self) -> list[str]:
         """
         Validate that all required parameters are present.
 
@@ -114,7 +126,7 @@ class ModelWorkflowParameters(BaseModel):
             self.parameter_metadata[key] = {}
         self.parameter_metadata[key][metadata_key] = metadata_value
 
-    def get_metadata(self, key: str, metadata_key: str) -> Optional[str]:
+    def get_metadata(self, key: str, metadata_key: str) -> str | None:
         """Get metadata for a parameter."""
         if key in self.parameter_metadata:
             return self.parameter_metadata[key].get(metadata_key)

@@ -5,7 +5,6 @@ Configuration for universal conversation memory providers.
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -46,7 +45,8 @@ class ModelVectorStoreConfig(BaseModel):
     port: int = Field(..., description="Vector store port")
 
     collection_name: str = Field(
-        "conversation_memory", description="Collection/index name"
+        "conversation_memory",
+        description="Collection/index name",
     )
 
     use_tls: bool = Field(False, description="Use TLS for connection")
@@ -72,7 +72,8 @@ class ModelEmbeddingProviderConfig(BaseModel):
 
     description: str = Field(..., description="Human-readable description")
     priority: int = Field(
-        ..., description="Priority for failover (lower is higher priority)"
+        ...,
+        description="Priority for failover (lower is higher priority)",
     )
 
     max_text_length: int = Field(8192, description="Maximum text length for embedding")
@@ -87,19 +88,20 @@ class ModelMemoryAuthConfig(BaseModel):
 
     auth_type: ModelAuthenticationType = Field(..., description="Authentication method")
 
-    api_key_header: Optional[str] = Field(None, description="API key header name")
-    jwt_issuer: Optional[str] = Field(None, description="JWT issuer for validation")
-    jwt_audience: Optional[str] = Field(None, description="JWT audience for validation")
+    api_key_header: str | None = Field(None, description="API key header name")
+    jwt_issuer: str | None = Field(None, description="JWT issuer for validation")
+    jwt_audience: str | None = Field(None, description="JWT audience for validation")
 
-    oauth2_provider_url: Optional[str] = Field(None, description="OAuth2 provider URL")
-    oauth2_client_id: Optional[str] = Field(None, description="OAuth2 client ID")
-    oauth2_scopes: Optional[List[str]] = Field(
-        None, description="Required OAuth2 scopes"
+    oauth2_provider_url: str | None = Field(None, description="OAuth2 provider URL")
+    oauth2_client_id: str | None = Field(None, description="OAuth2 client ID")
+    oauth2_scopes: list[str] | None = Field(
+        None,
+        description="Required OAuth2 scopes",
     )
 
-    mtls_cert_path: Optional[str] = Field(None, description="mTLS certificate path")
-    mtls_key_path: Optional[str] = Field(None, description="mTLS key path")
-    mtls_ca_path: Optional[str] = Field(None, description="mTLS CA certificate path")
+    mtls_cert_path: str | None = Field(None, description="mTLS certificate path")
+    mtls_key_path: str | None = Field(None, description="mTLS key path")
+    mtls_ca_path: str | None = Field(None, description="mTLS CA certificate path")
 
 
 class ModelMemoryAPIConfig(BaseModel):
@@ -111,7 +113,7 @@ class ModelMemoryAPIConfig(BaseModel):
     base_path: str = Field("/api/v1", description="API base path")
 
     enable_cors: bool = Field(True, description="Enable CORS")
-    cors_origins: List[str] = Field(["*"], description="Allowed CORS origins")
+    cors_origins: list[str] = Field(["*"], description="Allowed CORS origins")
 
     enable_websocket: bool = Field(True, description="Enable WebSocket support")
     websocket_path: str = Field("/ws", description="WebSocket endpoint path")
@@ -121,11 +123,13 @@ class ModelMemoryAPIConfig(BaseModel):
 
     rate_limit_enabled: bool = Field(True, description="Enable rate limiting")
     rate_limit_requests_per_minute: int = Field(
-        100, description="Rate limit per client"
+        100,
+        description="Rate limit per client",
     )
 
-    auth_config: Optional[ModelMemoryAuthConfig] = Field(
-        None, description="Authentication config"
+    auth_config: ModelMemoryAuthConfig | None = Field(
+        None,
+        description="Authentication config",
     )
 
 
@@ -136,14 +140,17 @@ class ModelMemoryProviderConfig(BaseModel):
     provider_type: ModelMemoryProviderType = Field(..., description="Provider type")
 
     vector_store_config: ModelVectorStoreConfig = Field(
-        ..., description="Vector store configuration"
+        ...,
+        description="Vector store configuration",
     )
-    embedding_providers: List[ModelEmbeddingProviderConfig] = Field(
-        ..., description="Embedding providers"
+    embedding_providers: list[ModelEmbeddingProviderConfig] = Field(
+        ...,
+        description="Embedding providers",
     )
 
-    api_config: Optional[ModelMemoryAPIConfig] = Field(
-        None, description="API server configuration"
+    api_config: ModelMemoryAPIConfig | None = Field(
+        None,
+        description="API server configuration",
     )
 
     enable_caching: bool = Field(True, description="Enable result caching")
@@ -156,20 +163,25 @@ class ModelMemoryProviderConfig(BaseModel):
     chunk_overlap: int = Field(200, description="Chunk overlap size")
 
     max_conversation_length: int = Field(
-        100000, description="Maximum conversation length"
+        100000,
+        description="Maximum conversation length",
     )
     max_chunks_per_conversation: int = Field(
-        100, description="Maximum chunks per conversation"
+        100,
+        description="Maximum chunks per conversation",
     )
 
     enable_sensitive_data_sanitization: bool = Field(
-        True, description="Enable data sanitization"
+        True,
+        description="Enable data sanitization",
     )
-    sanitization_patterns: Optional[List[str]] = Field(
-        None, description="Custom sanitization patterns"
+    sanitization_patterns: list[str] | None = Field(
+        None,
+        description="Custom sanitization patterns",
     )
 
-    retention_days: Optional[int] = Field(
-        None, description="Data retention period in days"
+    retention_days: int | None = Field(
+        None,
+        description="Data retention period in days",
     )
     enable_audit_logging: bool = Field(False, description="Enable audit logging")

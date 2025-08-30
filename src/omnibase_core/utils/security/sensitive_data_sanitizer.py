@@ -6,10 +6,10 @@ Provides utilities to detect and sanitize sensitive information before storage.
 
 import logging
 import re
-from typing import List, Optional, Tuple
 
-from omnibase_core.utils.security.models.model_sanitization_result import \
-    ModelSanitizationResult
+from omnibase_core.utils.security.models.model_sanitization_result import (
+    ModelSanitizationResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class SensitiveDataSanitizer:
         ],
     }
 
-    def __init__(self, custom_patterns: Optional[List[Tuple[str, str]]] = None):
+    def __init__(self, custom_patterns: list[tuple[str, str]] | None = None):
         """
         Initialize the sanitizer.
 
@@ -117,7 +117,7 @@ class SensitiveDataSanitizer:
         self.custom_patterns = custom_patterns or []
         self.compiled_patterns = self._compile_patterns()
 
-    def _compile_patterns(self) -> dict[str, List[Tuple[re.Pattern, str]]]:
+    def _compile_patterns(self) -> dict[str, list[tuple[re.Pattern, str]]]:
         """Compile regex patterns for efficiency."""
         compiled = {}
         for category, patterns in self.PATTERNS.items():
@@ -152,7 +152,7 @@ class SensitiveDataSanitizer:
         if original_length > max_length:
             text = text[:max_length]
             logger.warning(
-                f"Text truncated from {original_length} to {max_length} characters"
+                f"Text truncated from {original_length} to {max_length} characters",
             )
 
         sanitized_text = text
@@ -181,7 +181,7 @@ class SensitiveDataSanitizer:
                     total_replacements += len(matches)
                     sanitized_text = pattern.sub(replacement, sanitized_text)
             except re.error as e:
-                logger.error(f"Invalid custom regex pattern: {pattern_str} - {e}")
+                logger.exception(f"Invalid custom regex pattern: {pattern_str} - {e}")
 
         return ModelSanitizationResult(
             original_length=original_length,
@@ -236,7 +236,7 @@ class SensitiveDataSanitizer:
 
         # First sanitize
         result = self.sanitize(
-            text[: max_length * 2]
+            text[: max_length * 2],
         )  # Get more to account for replacements
         preview = result.sanitized_text[:max_length]
 

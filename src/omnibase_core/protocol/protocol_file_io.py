@@ -28,7 +28,7 @@ Enables in-memory/mock implementations for protocol-first stamping tests.
 """
 
 from pathlib import Path
-from typing import Any, List, Optional, Protocol, Union
+from typing import Any, Protocol
 
 
 class ProtocolFileIO(Protocol):
@@ -36,48 +36,50 @@ class ProtocolFileIO(Protocol):
     Protocol for file I/O operations (YAML/JSON/text) for stamping/validation tools.
     """
 
-    def read_yaml(self, path: Union[str, Path]) -> Any:
+    def read_yaml(self, path: str | Path) -> Any:
         """Read YAML content from a file path."""
         ...
 
-    def read_json(self, path: Union[str, Path]) -> Any:
+    def read_json(self, path: str | Path) -> Any:
         """Read JSON content from a file path."""
         ...
 
-    def write_yaml(self, path: Union[str, Path], data: Any) -> None:
+    def write_yaml(self, path: str | Path, data: Any) -> None:
         """Write YAML content to a file path."""
         ...
 
-    def write_json(self, path: Union[str, Path], data: Any) -> None:
+    def write_json(self, path: str | Path, data: Any) -> None:
         """Write JSON content to a file path."""
         ...
 
-    def exists(self, path: Union[str, Path]) -> bool:
+    def exists(self, path: str | Path) -> bool:
         """Check if a file exists."""
         ...
 
-    def is_file(self, path: Union[str, Path]) -> bool:
+    def is_file(self, path: str | Path) -> bool:
         """Check if a path is a file."""
         ...
 
     def list_files(
-        self, directory: Union[str, Path], pattern: Optional[str] = None
-    ) -> List[Path]:
+        self,
+        directory: str | Path,
+        pattern: str | None = None,
+    ) -> list[Path]:
         """List files in a directory, optionally filtered by pattern."""
         ...
 
-    def read_text(self, path: Union[str, Path]) -> str:
+    def read_text(self, path: str | Path) -> str:
         """Read plain text content from a file path."""
         ...
 
-    def write_text(self, path: Union[str, Path], data: str) -> None:
+    def write_text(self, path: str | Path, data: str) -> None:
         """Write plain text content to a file path."""
         ...
 
-    def read_bytes(self, path: Union[str, Path]) -> bytes:
+    def read_bytes(self, path: str | Path) -> bytes:
         """Read binary content from a file path."""
         ...
 
-    def write_bytes(self, path: Union[str, Path], data: bytes) -> None:
+    def write_bytes(self, path: str | Path, data: bytes) -> None:
         """Write binary content to a file path."""
         ...

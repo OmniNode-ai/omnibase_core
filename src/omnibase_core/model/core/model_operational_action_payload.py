@@ -4,29 +4,32 @@ Operational Action Payload Model.
 Payload for operational actions (process, execute, run, etc.).
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import Field, field_validator
 
-from omnibase_core.model.core.model_action_payload_base import \
-    ModelActionPayloadBase
+from omnibase_core.model.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
 
 
 class ModelOperationalActionPayload(ModelActionPayloadBase):
     """Payload for operational actions (process, execute, run, etc.)."""
 
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Parameters for the operation"
+    parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Parameters for the operation",
     )
     async_execution: bool = Field(
-        default=False, description="Whether to execute asynchronously"
+        default=False,
+        description="Whether to execute asynchronously",
     )
-    timeout_seconds: Optional[int] = Field(
-        None, description="Timeout for the operation"
+    timeout_seconds: int | None = Field(
+        None,
+        description="Timeout for the operation",
     )
     retry_count: int = Field(
-        default=0, description="Number of retries if operation fails"
+        default=0,
+        description="Number of retries if operation fails",
     )
 
     @field_validator("action_type")
@@ -36,5 +39,6 @@ class ModelOperationalActionPayload(ModelActionPayloadBase):
         from omnibase_core.model.core.predefined_categories import OPERATION
 
         if v.category != OPERATION:
-            raise ValueError(f"Invalid operational action: {v.name}")
+            msg = f"Invalid operational action: {v.name}"
+            raise ValueError(msg)
         return v

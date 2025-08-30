@@ -2,8 +2,6 @@
 CLI argument model for command specification.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_schema_value import ModelSchemaValue
@@ -16,7 +14,8 @@ class ModelCLIArgument(BaseModel):
     type: str = Field(..., description="Argument type (e.g., 'str', 'bool', 'int')")
     required: bool = Field(..., description="Whether argument is required")
     description: str = Field(..., description="Human-readable argument description")
-    default: Optional[ModelSchemaValue] = Field(
-        None, description="Default value if optional"
+    default: ModelSchemaValue | None = Field(
+        None,
+        description="Default value if optional",
     )
-    choices: Optional[List[str]] = Field(None, description="Valid choices for argument")
+    choices: list[str] | None = Field(None, description="Valid choices for argument")

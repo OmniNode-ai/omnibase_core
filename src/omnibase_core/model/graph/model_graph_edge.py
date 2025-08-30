@@ -6,7 +6,7 @@ including imports, definitions, references, inheritance, and documentation relat
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
@@ -26,11 +26,13 @@ class ModelGraphEdge(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Context information
-    context: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional context about the relationship"
+    context: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional context about the relationship",
     )
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional metadata",
     )
 
 
@@ -40,12 +42,14 @@ class ModelImportEdge(ModelGraphEdge):
     edge_type: str = Field("import", description="Edge type")
     import_statement: str = Field(..., description="The actual import statement")
     import_type: str = Field(..., description="Type: direct/from/relative/absolute")
-    imported_symbols: List[str] = Field(
-        default_factory=list, description="Specific symbols imported"
+    imported_symbols: list[str] = Field(
+        default_factory=list,
+        description="Specific symbols imported",
     )
     line_number: int = Field(..., description="Line number of import statement")
     is_conditional: bool = Field(
-        False, description="Whether import is inside a conditional"
+        False,
+        description="Whether import is inside a conditional",
     )
 
 
@@ -54,7 +58,8 @@ class ModelDefinitionEdge(ModelGraphEdge):
 
     edge_type: str = Field("defines", description="Edge type")
     definition_type: str = Field(
-        ..., description="What type of definition: class/function/variable"
+        ...,
+        description="What type of definition: class/function/variable",
     )
     line_number: int = Field(..., description="Line where symbol is defined")
     scope_level: int = Field(0, description="Nesting level of definition")
@@ -65,7 +70,8 @@ class ModelUsageEdge(ModelGraphEdge):
 
     edge_type: str = Field("uses", description="Edge type")
     usage_type: str = Field(
-        ..., description="Type: call/reference/assignment/inheritance"
+        ...,
+        description="Type: call/reference/assignment/inheritance",
     )
     line_number: int = Field(..., description="Line where usage occurs")
     usage_context: str = Field(..., description="Context of usage")
@@ -96,13 +102,16 @@ class ModelDocumentationEdge(ModelGraphEdge):
 
     edge_type: str = Field("documents", description="Edge type")
     doc_relationship: str = Field(
-        ..., description="Type: docstring/comment/reference/example"
+        ...,
+        description="Type: docstring/comment/reference/example",
     )
     relevance_score: float = Field(
-        1.0, description="Relevance of documentation to symbol"
+        1.0,
+        description="Relevance of documentation to symbol",
     )
-    line_range: Optional[tuple[int, int]] = Field(
-        None, description="Line range of documentation"
+    line_range: tuple[int, int] | None = Field(
+        None,
+        description="Line range of documentation",
     )
 
 
@@ -111,7 +120,7 @@ class ModelReferenceEdge(ModelGraphEdge):
 
     edge_type: str = Field("references", description="Edge type")
     reference_type: str = Field(..., description="Type: inline/external/citation")
-    line_number: Optional[int] = Field(None, description="Line where reference occurs")
+    line_number: int | None = Field(None, description="Line where reference occurs")
     reference_context: str = Field(..., description="Context of the reference")
 
 

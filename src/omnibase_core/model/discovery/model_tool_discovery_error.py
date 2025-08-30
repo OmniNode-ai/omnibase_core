@@ -12,5 +12,7 @@ class ModelToolDiscoveryError(BaseModel):
     error_type: EnumErrorType = Field(..., description="Type of error encountered")
     error_message: str = Field(..., description="Detailed error message", min_length=1)
     discovery_timestamp: float = Field(
-        ..., description="When the error was discovered", gt=0
+        ...,
+        description="When the error was discovered",
+        gt=0,
     )

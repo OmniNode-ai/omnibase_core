@@ -4,26 +4,25 @@ Node metadata block model.
 
 import enum
 from pathlib import Path
-from typing import Annotated, ClassVar, Dict, List, Optional, Type
+from typing import Annotated, ClassVar, Optional
 
 import yaml
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import Lifecycle, MetaTypeEnum
 from omnibase_core.metadata.metadata_constants import get_namespace_prefix
+
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
-from omnibase_core.model.core.model_canonicalization_policy import \
-    ModelCanonicalizationPolicy
-from omnibase_core.model.core.model_dependency_block import \
-    ModelDependencyBlock
+from omnibase_core.model.core.model_canonicalization_policy import (
+    ModelCanonicalizationPolicy,
+)
+from omnibase_core.model.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.model.core.model_entrypoint import EntrypointBlock
 from omnibase_core.model.core.model_function_tool import ModelFunctionTool
 from omnibase_core.model.core.model_io_block import ModelIOBlock
-from omnibase_core.model.core.model_project_metadata import \
-    get_canonical_versions
-from omnibase_core.model.core.model_serializable_dict import \
-    ModelSerializableDict
+from omnibase_core.model.core.model_project_metadata import get_canonical_versions
+from omnibase_core.model.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.model.core.model_tool_collection import ModelToolCollection
 
@@ -60,23 +59,27 @@ class ModelNodeMetadataBlock(BaseModel):
     """
 
     metadata_version: Annotated[
-        str, StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$")
+        str,
+        StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default="0.1.0")
     protocol_version: Annotated[
-        str, StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$")
+        str,
+        StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default="0.1.0")
     owner: Annotated[str, StringConstraints(min_length=1)] = Field(
-        default="OmniNode Team"
+        default="OmniNode Team",
     )
     copyright: Annotated[str, StringConstraints(min_length=1)] = Field(
-        default="OmniNode Team"
+        default="OmniNode Team",
     )
     schema_version: Annotated[
-        str, StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$")
+        str,
+        StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default="0.1.0")
     name: Annotated[str, StringConstraints(min_length=1)]
     version: Annotated[
-        str, StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$")
+        str,
+        StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default="0.1.0")
     uuid: Annotated[
         str,
@@ -87,55 +90,57 @@ class ModelNodeMetadataBlock(BaseModel):
     author: Annotated[str, StringConstraints(min_length=1)]
     created_at: Annotated[str, StringConstraints(min_length=1)]
     last_modified_at: Annotated[str, StringConstraints(min_length=1)] = Field(
-        json_schema_extra={"volatile": True}
+        json_schema_extra={"volatile": True},
     )
     description: Annotated[str, StringConstraints(min_length=1)] = Field(
-        default="Stamped by ONEX"
+        default="Stamped by ONEX",
     )
     state_contract: Annotated[str, StringConstraints(min_length=1)] = Field(
-        default="state_contract://default"
+        default="state_contract://default",
     )
     lifecycle: Lifecycle = Field(default=Lifecycle.ACTIVE)
     hash: Annotated[
-        str, StringConstraints(min_length=1, pattern=r"^[a-fA-F0-9]{64}$")
+        str,
+        StringConstraints(min_length=1, pattern=r"^[a-fA-F0-9]{64}$"),
     ] = Field(json_schema_extra={"volatile": True})
     entrypoint: EntrypointBlock
-    runtime_language_hint: Optional[str] = None
+    runtime_language_hint: str | None = None
     namespace: Namespace = Field(
-        ..., description="Namespace, e.g., <prefix>.tools.<name>"
+        ...,
+        description="Namespace, e.g., <prefix>.tools.<name>",
     )
     meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.TOOL)
-    trust_score: Optional[float] = None
-    tags: Optional[list[str]] = None
-    capabilities: Optional[list[str]] = None
-    protocols_supported: Optional[list[str]] = None
-    base_class: Optional[list[str]] = None
-    dependencies: Optional[List[DependencyBlock]] = None
-    inputs: Optional[list[IOBlock]] = None
-    outputs: Optional[list[IOBlock]] = None
-    environment: Optional[list[str]] = None
-    license: Optional[str] = None
-    signature_block: Optional[SignatureBlock] = None
-    x_extensions: Dict[str, ExtensionValueModel] = Field(default_factory=dict)
-    testing: Optional[TestingBlock] = None
-    os_requirements: Optional[list[str]] = None
-    architectures: Optional[list[str]] = None
-    container_image_reference: Optional[str] = None
-    compliance_profiles: List[str] = Field(default_factory=list)
-    data_handling_declaration: Optional[DataHandlingDeclaration] = None
-    logging_config: Optional[LoggingConfig] = None
-    source_repository: Optional[SourceRepository] = None
-    contracts: Optional[ModelSerializableDict] = None
-    scenarios: Optional[list[str]] = None
-    scenario_test_entrypoint: Optional[str] = Field(
+    trust_score: float | None = None
+    tags: list[str] | None = None
+    capabilities: list[str] | None = None
+    protocols_supported: list[str] | None = None
+    base_class: list[str] | None = None
+    dependencies: list[DependencyBlock] | None = None
+    inputs: list[IOBlock] | None = None
+    outputs: list[IOBlock] | None = None
+    environment: list[str] | None = None
+    license: str | None = None
+    signature_block: SignatureBlock | None = None
+    x_extensions: dict[str, ExtensionValueModel] = Field(default_factory=dict)
+    testing: TestingBlock | None = None
+    os_requirements: list[str] | None = None
+    architectures: list[str] | None = None
+    container_image_reference: str | None = None
+    compliance_profiles: list[str] = Field(default_factory=list)
+    data_handling_declaration: DataHandlingDeclaration | None = None
+    logging_config: LoggingConfig | None = None
+    source_repository: SourceRepository | None = None
+    contracts: ModelSerializableDict | None = None
+    scenarios: list[str] | None = None
+    scenario_test_entrypoint: str | None = Field(
         default=None,
         description="Entrypoint for scenario-based test harness; e.g., 'python -m ...' or CLI command.",
     )
-    test_matrix: Optional[List[TestMatrixEntry]] = None
-    test_coverage: Optional[float] = None  # Percentage, 0-100
+    test_matrix: list[TestMatrixEntry] | None = None
+    test_coverage: float | None = None  # Percentage, 0-100
 
     # Function tools support - unified tools approach
-    tools: Optional[ModelToolCollection] = Field(
+    tools: ModelToolCollection | None = Field(
         default=None,
         description="Function tools within this file (unified tools approach). This is a ModelToolCollection, not a dict.",
     )
@@ -147,7 +152,7 @@ class ModelNodeMetadataBlock(BaseModel):
             "javascript": "javascript>=ES2020",
             "html": "html5",
             # Add more as needed
-        }
+        },
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -163,8 +168,8 @@ class ModelNodeMetadataBlock(BaseModel):
                     )
                     .CanonicalYAMLSerializer()
                     .normalize_body(body)
-                )
-            )
+                ),
+            ),
         )
     )
 
@@ -173,7 +178,10 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @classmethod
     def from_file_or_content(
-        cls, content: str, already_extracted_block: Optional[str] = None, event_bus=None
+        cls,
+        content: str,
+        already_extracted_block: str | None = None,
+        event_bus=None,
     ) -> "ModelNodeMetadataBlock":
         block_yaml = already_extracted_block or content
         data = yaml.safe_load(block_yaml)
@@ -192,7 +200,7 @@ class ModelNodeMetadataBlock(BaseModel):
         return []
 
     @classmethod
-    def get_canonicalizer(cls) -> Optional[object]:
+    def get_canonicalizer(cls) -> object | None:
         policy = cls.canonicalization_policy
         if isinstance(policy, ModelCanonicalizationPolicy):
             return policy.get_canonicalizer()
@@ -207,7 +215,8 @@ class ModelNodeMetadataBlock(BaseModel):
         pass
 
     def to_serializable_dict(
-        self, use_compact_entrypoint: bool = True
+        self,
+        use_compact_entrypoint: bool = True,
     ) -> ModelSerializableDict:
         """
         Canonical serialization for ONEX metadata block:
@@ -220,14 +229,13 @@ class ModelNodeMetadataBlock(BaseModel):
         def serialize_value(val: object) -> str:
             if hasattr(val, "to_serializable_dict"):
                 return str(val.to_serializable_dict())
-            elif isinstance(val, enum.Enum):
+            if isinstance(val, enum.Enum):
                 return str(val.value)
-            elif isinstance(val, list):
+            if isinstance(val, list):
                 return str([serialize_value(v) for v in val])
-            elif isinstance(val, dict):
+            if isinstance(val, dict):
                 return str({k: serialize_value(v) for k, v in val.items()})
-            else:
-                return str(val)
+            return str(val)
 
         canonical_versions = get_canonical_versions()
         PROTOCOL_REQUIRED_FIELDS = {"tools"}
@@ -246,7 +254,7 @@ class ModelNodeMetadataBlock(BaseModel):
             v = getattr(self, k)
             # Omit if optional and value is '', None, {}, or [] (unless protocol-required)
             if (
-                v == "" or v is None or v == {} or v == []
+                v == "" or v is None or v in ({}, [])
             ) and k not in PROTOCOL_REQUIRED_FIELDS:
                 continue
             # Entrypoint as URI string (always)
@@ -272,7 +280,8 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @classmethod
     def from_serializable_dict(
-        cls: Type["ModelNodeMetadataBlock"], data: ModelSerializableDict
+        cls: type["ModelNodeMetadataBlock"],
+        data: ModelSerializableDict,
     ) -> "ModelNodeMetadataBlock":
         # Convert ModelSerializableDict to regular dict for processing
         data_dict = data.data if isinstance(data, ModelSerializableDict) else data
@@ -292,7 +301,7 @@ class ModelNodeMetadataBlock(BaseModel):
             for tool_name, tool_data in data_dict["tools"].items():
                 if isinstance(tool_data, dict):
                     tools_dict[tool_name] = ModelFunctionTool.from_serializable_dict(
-                        tool_data
+                        tool_data,
                     )
                 else:
                     tools_dict[tool_name] = tool_data
@@ -302,13 +311,13 @@ class ModelNodeMetadataBlock(BaseModel):
     @classmethod
     def create_with_defaults(
         cls,
-        name: Optional[str] = None,
-        author: Optional[str] = None,
-        namespace: Optional[Namespace] = None,
-        entrypoint_type: Optional[str] = None,
-        entrypoint_target: Optional[str] = None,
+        name: str | None = None,
+        author: str | None = None,
+        namespace: Namespace | None = None,
+        entrypoint_type: str | None = None,
+        entrypoint_target: str | None = None,
         file_path: Optional["Path"] = None,
-        runtime_language_hint: Optional[str] = None,
+        runtime_language_hint: str | None = None,
         **additional_fields: str,
     ) -> "ModelNodeMetadataBlock":
         """
@@ -353,7 +362,7 @@ class ModelNodeMetadataBlock(BaseModel):
             canonical_namespace = Namespace.from_path(file_path)
         # Entrypoint construction: always use provided type/target (target is stem)
         entrypoint = EntrypointBlock(type=ep_type, target=ep_target)
-        data: Dict[str, str] = {
+        data: dict[str, str] = {
             "name": name or (file_path.stem if file_path is not None else "unknown"),
             "uuid": (
                 additional_fields.get("uuid")
@@ -399,9 +408,7 @@ class ModelNodeMetadataBlock(BaseModel):
             ):
                 tools = None
             else:
-                print(
-                    f"[TRACE] create_with_defaults: tools field present, type: {type(tools)}"
-                )
+                pass
             if tools is not None:
                 data["tools"] = tools
         data.update(additional_fields_dict)
@@ -415,7 +422,8 @@ class ModelNodeMetadataBlock(BaseModel):
         if isinstance(value, str):
             # Accept URI string and convert to EntrypointBlock
             return EntrypointBlock.from_uri(value)
-        raise ValueError("entrypoint must be an EntrypointBlock instance or URI string")
+        msg = "entrypoint must be an EntrypointBlock instance or URI string"
+        raise ValueError(msg)
 
     @field_validator("namespace", mode="before")
     @classmethod

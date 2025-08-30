@@ -8,7 +8,6 @@ Dict[str, Any] and enforcing strong typing standards.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -51,55 +50,64 @@ class ModelTypingViolation(BaseModel):
 
     violation_id: str = Field(description="Unique identifier for this violation")
     violation_type: EnumTypingViolationType = Field(
-        description="Type of typing violation detected"
+        description="Type of typing violation detected",
     )
     severity: EnumTypingViolationSeverity = Field(
-        description="Severity level of this violation"
+        description="Severity level of this violation",
     )
 
     # Location information
-    file_path: Optional[str] = Field(
-        default=None, description="File path where violation was found"
+    file_path: str | None = Field(
+        default=None,
+        description="File path where violation was found",
     )
-    line_number: Optional[int] = Field(
-        default=None, description="Line number where violation occurs"
+    line_number: int | None = Field(
+        default=None,
+        description="Line number where violation occurs",
     )
-    column_number: Optional[int] = Field(
-        default=None, description="Column number where violation starts"
+    column_number: int | None = Field(
+        default=None,
+        description="Column number where violation starts",
     )
 
     # Violation details
     original_code: str = Field(description="Original code that contains the violation")
     problematic_pattern: str = Field(
-        description="Specific pattern that violates typing standards"
+        description="Specific pattern that violates typing standards",
     )
     context: str = Field(description="Surrounding code context for the violation")
 
     # Detection metadata
     detected_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this violation was detected"
+        default_factory=datetime.utcnow,
+        description="When this violation was detected",
     )
     detection_method: str = Field(
-        description="Method used to detect this violation (ast, regex, etc.)"
+        description="Method used to detect this violation (ast, regex, etc.)",
     )
 
     # Suggested correction
-    suggested_correction: Optional[str] = Field(
-        default=None, description="Suggested corrected code"
+    suggested_correction: str | None = Field(
+        default=None,
+        description="Suggested corrected code",
     )
-    correction_strategy: Optional[EnumTypingCorrectionStrategy] = Field(
-        default=None, description="Strategy used for correction"
+    correction_strategy: EnumTypingCorrectionStrategy | None = Field(
+        default=None,
+        description="Strategy used for correction",
     )
 
     # Additional context
-    function_name: Optional[str] = Field(
-        default=None, description="Name of function containing the violation"
+    function_name: str | None = Field(
+        default=None,
+        description="Name of function containing the violation",
     )
-    class_name: Optional[str] = Field(
-        default=None, description="Name of class containing the violation"
+    class_name: str | None = Field(
+        default=None,
+        description="Name of class containing the violation",
     )
-    variable_name: Optional[str] = Field(
-        default=None, description="Name of variable with typing violation"
+    variable_name: str | None = Field(
+        default=None,
+        description="Name of variable with typing violation",
     )
 
 
@@ -111,41 +119,49 @@ class ModelTypingCorrection(BaseModel):
 
     # Correction details
     strategy: EnumTypingCorrectionStrategy = Field(
-        description="Strategy used for this correction"
+        description="Strategy used for this correction",
     )
     original_code: str = Field(description="Original code before correction")
     corrected_code: str = Field(description="Code after applying correction")
 
     # Additional changes required
-    required_imports: List[str] = Field(
-        default_factory=list, description="Import statements that need to be added"
+    required_imports: list[str] = Field(
+        default_factory=list,
+        description="Import statements that need to be added",
     )
-    generated_models: List[str] = Field(
-        default_factory=list, description="New model classes that need to be generated"
+    generated_models: list[str] = Field(
+        default_factory=list,
+        description="New model classes that need to be generated",
     )
 
     # Correction metadata
     applied: bool = Field(
-        default=False, description="Whether this correction has been applied"
+        default=False,
+        description="Whether this correction has been applied",
     )
     confidence_score: float = Field(
-        default=1.0, description="Confidence in this correction (0.0-1.0)"
+        default=1.0,
+        description="Confidence in this correction (0.0-1.0)",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this correction was created"
+        default_factory=datetime.utcnow,
+        description="When this correction was created",
     )
-    applied_at: Optional[datetime] = Field(
-        default=None, description="When this correction was applied"
+    applied_at: datetime | None = Field(
+        default=None,
+        description="When this correction was applied",
     )
 
     # Validation
-    validation_passed: Optional[bool] = Field(
-        default=None, description="Whether corrected code passed validation"
+    validation_passed: bool | None = Field(
+        default=None,
+        description="Whether corrected code passed validation",
     )
-    validation_errors: List[str] = Field(
-        default_factory=list, description="Validation errors if validation failed"
+    validation_errors: list[str] = Field(
+        default_factory=list,
+        description="Validation errors if validation failed",
     )
 
 
@@ -156,42 +172,47 @@ class ModelTypingAnalysisResult(BaseModel):
 
     # Input information
     code_content: str = Field(description="Code that was analyzed")
-    file_path: Optional[str] = Field(
-        default=None, description="Path of file that was analyzed"
+    file_path: str | None = Field(
+        default=None,
+        description="Path of file that was analyzed",
     )
 
     # Analysis results
     violations_found: int = Field(description="Total number of violations detected")
-    violations: List[ModelTypingViolation] = Field(
-        default_factory=list, description="List of all detected violations"
+    violations: list[ModelTypingViolation] = Field(
+        default_factory=list,
+        description="List of all detected violations",
     )
 
     # Correction proposals
     corrections_generated: int = Field(description="Number of corrections generated")
-    corrections: List[ModelTypingCorrection] = Field(
-        default_factory=list, description="List of proposed corrections"
+    corrections: list[ModelTypingCorrection] = Field(
+        default_factory=list,
+        description="List of proposed corrections",
     )
 
     # Analysis metadata
     analysis_duration_ms: float = Field(
-        description="Time taken for analysis in milliseconds"
+        description="Time taken for analysis in milliseconds",
     )
     analyzer_version: str = Field(
-        default="1.0.0", description="Version of the typing analyzer used"
+        default="1.0.0",
+        description="Version of the typing analyzer used",
     )
 
     # Quality metrics
     critical_violations: int = Field(
-        description="Number of critical severity violations"
+        description="Number of critical severity violations",
     )
     high_violations: int = Field(description="Number of high severity violations")
     correctability_score: float = Field(
-        description="Score indicating how easily violations can be corrected"
+        description="Score indicating how easily violations can be corrected",
     )
 
     # Timestamps
     analyzed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this analysis was performed"
+        default_factory=datetime.utcnow,
+        description="When this analysis was performed",
     )
 
 
@@ -201,25 +222,29 @@ class ModelTypingCorrectionBatch(BaseModel):
     batch_id: str = Field(description="Unique identifier for this correction batch")
 
     # Batch contents
-    corrections: List[ModelTypingCorrection] = Field(
-        description="List of corrections in this batch"
+    corrections: list[ModelTypingCorrection] = Field(
+        description="List of corrections in this batch",
     )
     total_corrections: int = Field(description="Total number of corrections in batch")
 
     # Batch execution
     applied_successfully: int = Field(
-        default=0, description="Number of corrections applied successfully"
+        default=0,
+        description="Number of corrections applied successfully",
     )
     failed_corrections: int = Field(
-        default=0, description="Number of corrections that failed"
+        default=0,
+        description="Number of corrections that failed",
     )
 
     # Generated artifacts
-    generated_files: List[str] = Field(
-        default_factory=list, description="New files generated during correction"
+    generated_files: list[str] = Field(
+        default_factory=list,
+        description="New files generated during correction",
     )
-    modified_files: List[str] = Field(
-        default_factory=list, description="Existing files that were modified"
+    modified_files: list[str] = Field(
+        default_factory=list,
+        description="Existing files that were modified",
     )
 
     # Batch metadata
@@ -227,19 +252,21 @@ class ModelTypingCorrectionBatch(BaseModel):
 
     # Quality assurance
     validation_passed: bool = Field(
-        description="Whether all corrections passed validation"
+        description="Whether all corrections passed validation",
     )
     syntax_valid: bool = Field(description="Whether resulting code has valid syntax")
     imports_resolved: bool = Field(
-        description="Whether all required imports were resolved"
+        description="Whether all required imports were resolved",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this batch was created"
+        default_factory=datetime.utcnow,
+        description="When this batch was created",
     )
-    executed_at: Optional[datetime] = Field(
-        default=None, description="When this batch was executed"
+    executed_at: datetime | None = Field(
+        default=None,
+        description="When this batch was executed",
     )
 
 
@@ -256,31 +283,37 @@ class ModelTypingRule(BaseModel):
 
     # Rule configuration
     severity: EnumTypingViolationSeverity = Field(
-        description="Severity level for violations of this rule"
+        description="Severity level for violations of this rule",
     )
     strategy: EnumTypingCorrectionStrategy = Field(
-        description="Default correction strategy for this rule"
+        description="Default correction strategy for this rule",
     )
 
     enabled: bool = Field(
-        default=True, description="Whether this rule is currently active"
+        default=True,
+        description="Whether this rule is currently active",
     )
 
     # Rule effectiveness
     violations_detected: int = Field(
-        default=0, description="Total violations detected by this rule"
+        default=0,
+        description="Total violations detected by this rule",
     )
     corrections_successful: int = Field(
-        default=0, description="Successful corrections made by this rule"
+        default=0,
+        description="Successful corrections made by this rule",
     )
     success_rate: float = Field(
-        default=0.0, description="Success rate for this rule's corrections"
+        default=0.0,
+        description="Success rate for this rule's corrections",
     )
 
     # Rule metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this rule was created"
+        default_factory=datetime.utcnow,
+        description="When this rule was created",
     )
-    last_triggered: Optional[datetime] = Field(
-        default=None, description="Last time this rule detected a violation"
+    last_triggered: datetime | None = Field(
+        default=None,
+        description="Last time this rule detected a violation",
     )

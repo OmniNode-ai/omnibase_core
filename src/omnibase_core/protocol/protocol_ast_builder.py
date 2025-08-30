@@ -6,7 +6,7 @@ nodes for code generation.
 """
 
 import ast
-from typing import List, Optional, Protocol, Union
+from typing import Protocol
 
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.model.core.model_schema import ModelSchema
@@ -20,7 +20,10 @@ class ProtocolASTBuilder(Protocol):
     """
 
     def generate_model_class(
-        self, class_name: str, schema: ModelSchema, base_class: str = "BaseModel"
+        self,
+        class_name: str,
+        schema: ModelSchema,
+        base_class: str = "BaseModel",
     ) -> ast.ClassDef:
         """Generate a Pydantic model class from a schema definition.
 
@@ -35,7 +38,10 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     def generate_model_field(
-        self, field_name: str, field_schema: ModelSchema, required: bool = True
+        self,
+        field_name: str,
+        field_schema: ModelSchema,
+        required: bool = True,
     ) -> ast.AnnAssign:
         """Generate a model field annotation.
 
@@ -50,7 +56,9 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     def generate_enum_class(
-        self, class_name: str, enum_values: List[str]
+        self,
+        class_name: str,
+        enum_values: list[str],
     ) -> ast.ClassDef:
         """Generate an enum class from values.
 
@@ -64,7 +72,10 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     def generate_import_statement(
-        self, module: str, names: List[str], alias: Optional[str] = None
+        self,
+        module: str,
+        names: list[str],
+        alias: str | None = None,
     ) -> ast.ImportFrom:
         """Generate an import statement.
 
@@ -90,7 +101,7 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     @allow_any_type(
-        "Field default values can be any Python value - strings, numbers, functions, etc."
+        "Field default values can be any Python value - strings, numbers, functions, etc.",
     )
     def generate_field_default(self, default_value) -> ast.expr:
         """Generate default value expression for a field.
@@ -104,7 +115,9 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     def generate_validator_method(
-        self, field_name: str, validator_type: str = "field_validator"
+        self,
+        field_name: str,
+        validator_type: str = "field_validator",
     ) -> ast.FunctionDef:
         """Generate a Pydantic validator method.
 
@@ -118,8 +131,9 @@ class ProtocolASTBuilder(Protocol):
         ...
 
     def generate_type_annotation(
-        self, type_string: str
-    ) -> Union[ast.Name, ast.Subscript]:
+        self,
+        type_string: str,
+    ) -> ast.Name | ast.Subscript:
         """Generate type annotation from string.
 
         Args:
@@ -132,9 +146,9 @@ class ProtocolASTBuilder(Protocol):
 
     def generate_module(
         self,
-        imports: List[ast.ImportFrom],
-        classes: List[ast.ClassDef],
-        module_docstring: Optional[str] = None,
+        imports: list[ast.ImportFrom],
+        classes: list[ast.ClassDef],
+        module_docstring: str | None = None,
     ) -> ast.Module:
         """Generate complete module AST.
 

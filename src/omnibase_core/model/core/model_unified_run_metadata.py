@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class ModelUnifiedRunMetadata(BaseModel):
@@ -12,6 +14,6 @@ class ModelUnifiedRunMetadata(BaseModel):
     """
 
     start_time: datetime
-    end_time: Optional[datetime] = None
-    duration: Optional[float] = None
-    run_id: Optional[str] = None
+    end_time: datetime | None = None
+    duration: float | None = None
+    run_id: str | None = None

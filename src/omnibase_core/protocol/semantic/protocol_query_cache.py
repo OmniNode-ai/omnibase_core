@@ -7,10 +7,8 @@ semantic search performance through intelligent caching strategies.
 
 from typing import Protocol
 
-from omnibase_core.model.semantic.model_cache_input_state import \
-    ModelCacheInputState
-from omnibase_core.model.semantic.model_cache_output_state import \
-    ModelCacheOutputState
+from omnibase_core.model.semantic.model_cache_input_state import ModelCacheInputState
+from omnibase_core.model.semantic.model_cache_output_state import ModelCacheOutputState
 
 
 class ProtocolQueryCache(Protocol):
@@ -22,7 +20,8 @@ class ProtocolQueryCache(Protocol):
     """
 
     def get_cached_results(
-        self, input_state: ModelCacheInputState
+        self,
+        input_state: ModelCacheInputState,
     ) -> ModelCacheOutputState:
         """
         Retrieve cached results for a query.

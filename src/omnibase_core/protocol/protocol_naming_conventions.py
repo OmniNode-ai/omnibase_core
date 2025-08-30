@@ -8,7 +8,9 @@ consistent naming across all code generation tools.
 from typing import Protocol
 
 from omnibase_core.model.core.model_onex_base_state import (
-    ModelOnexInputState, ModelOnexOutputState)
+    ModelOnexInputState,
+    ModelOnexOutputState,
+)
 
 
 class ProtocolNamingConventions(Protocol):
@@ -20,7 +22,8 @@ class ProtocolNamingConventions(Protocol):
     """
 
     def convert_naming_convention(
-        self, input_state: ModelOnexInputState
+        self,
+        input_state: ModelOnexInputState,
     ) -> ModelOnexOutputState:
         """
         Convert strings between different naming conventions.
@@ -34,7 +37,8 @@ class ProtocolNamingConventions(Protocol):
         ...
 
     def validate_python_identifier(
-        self, input_state: ModelOnexInputState
+        self,
+        input_state: ModelOnexInputState,
     ) -> ModelOnexOutputState:
         """
         Validate and sanitize Python identifiers.
@@ -48,7 +52,8 @@ class ProtocolNamingConventions(Protocol):
         ...
 
     def generate_class_names(
-        self, input_state: ModelOnexInputState
+        self,
+        input_state: ModelOnexInputState,
     ) -> ModelOnexOutputState:
         """
         Generate appropriate class names from various inputs.
@@ -62,7 +67,8 @@ class ProtocolNamingConventions(Protocol):
         ...
 
     def generate_file_names(
-        self, input_state: ModelOnexInputState
+        self,
+        input_state: ModelOnexInputState,
     ) -> ModelOnexOutputState:
         """
         Generate appropriate file names from class names or other inputs.
@@ -76,7 +82,8 @@ class ProtocolNamingConventions(Protocol):
         ...
 
     def split_into_words(
-        self, input_state: ModelOnexInputState
+        self,
+        input_state: ModelOnexInputState,
     ) -> ModelOnexOutputState:
         """
         Split strings into constituent words handling various naming conventions.

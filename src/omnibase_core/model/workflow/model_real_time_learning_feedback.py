@@ -6,13 +6,13 @@ This model represents real-time learning feedback data structures
 in the ONEX platform's workflow 6 system integration.
 """
 
-from typing import Dict, List, Union
 
 from pydantic import BaseModel, Field
 
 # Type aliases for strong typing
-IntelligenceData = Dict[
-    str, Union[str, int, float, bool, List[str], Dict[str, Union[str, int, float]]]
+IntelligenceData = dict[
+    str,
+    str | int | float | bool | list[str] | dict[str, str | int | float],
 ]
 
 
@@ -20,15 +20,19 @@ class ModelRealTimeLearningFeedback(BaseModel):
     """Real-time learning feedback data structure."""
 
     feedback_type: str = Field(
-        ..., description="Type of feedback (success, error, improvement)"
+        ...,
+        description="Type of feedback (success, error, improvement)",
     )
     source_operation: str = Field(
-        ..., description="Operation that generated the feedback"
+        ...,
+        description="Operation that generated the feedback",
     )
     learning_signal: IntelligenceData = Field(..., description="Learning signal data")
-    adaptation_suggestions: List[str] = Field(
-        default_factory=list, description="Suggested adaptations"
+    adaptation_suggestions: list[str] = Field(
+        default_factory=list,
+        description="Suggested adaptations",
     )
     confidence_score: float = Field(
-        default=0.0, description="Confidence in the learning signal"
+        default=0.0,
+        description="Confidence in the learning signal",
     )

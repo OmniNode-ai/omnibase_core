@@ -7,7 +7,6 @@ parameters for both base and orchestrator-enhanced calculations.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,30 +19,32 @@ class ModelCalculationContext(BaseModel):
     replacing generic Dict usage with strongly typed model.
     """
 
-    ticket_metadata: Optional[Dict[str, str]] = Field(
+    ticket_metadata: dict[str, str] | None = Field(
         default_factory=dict,
         description="Additional ticket metadata for calculation context",
     )
 
-    calculation_options: Optional[Dict[str, bool]] = Field(
-        default_factory=dict, description="Calculation options and feature flags"
+    calculation_options: dict[str, bool] | None = Field(
+        default_factory=dict,
+        description="Calculation options and feature flags",
     )
 
-    performance_hints: Optional[Dict[str, float]] = Field(
+    performance_hints: dict[str, float] | None = Field(
         default_factory=dict,
         description="Performance hints and optimization parameters",
     )
 
-    cache_settings: Optional[Dict[str, int]] = Field(
+    cache_settings: dict[str, int] | None = Field(
         default_factory=dict,
         description="Cache TTL and size settings for this calculation",
     )
 
-    validation_rules: Optional[Dict[str, str]] = Field(
-        default_factory=dict, description="Custom validation rules and constraints"
+    validation_rules: dict[str, str] | None = Field(
+        default_factory=dict,
+        description="Custom validation rules and constraints",
     )
 
-    request_metadata: Optional[Dict[str, str]] = Field(
+    request_metadata: dict[str, str] | None = Field(
         default_factory=dict,
         description="Request-specific metadata (user ID, session, etc.)",
     )
@@ -54,11 +55,13 @@ class ModelCalculationContext(BaseModel):
     )
 
     include_debug_info: bool = Field(
-        default=False, description="Whether to include debug information in results"
+        default=False,
+        description="Whether to include debug information in results",
     )
 
     force_recalculation: bool = Field(
-        default=False, description="Whether to bypass cache and force recalculation"
+        default=False,
+        description="Whether to bypass cache and force recalculation",
     )
 
     class Config:

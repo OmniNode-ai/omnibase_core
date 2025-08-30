@@ -3,7 +3,6 @@ Individual metric value model with metadata.
 """
 
 from datetime import datetime
-from typing import Dict, Optional, Union
 
 from pydantic import BaseModel, Field, field_serializer
 
@@ -11,13 +10,15 @@ from pydantic import BaseModel, Field, field_serializer
 class ModelMetricValue(BaseModel):
     """Individual metric value with metadata."""
 
-    value: Union[int, float, str, bool] = Field(..., description="Metric value")
-    unit: Optional[str] = Field(None, description="Unit of measurement")
-    timestamp: Optional[datetime] = Field(
-        None, description="When the metric was captured"
+    value: int | float | str | bool = Field(..., description="Metric value")
+    unit: str | None = Field(None, description="Unit of measurement")
+    timestamp: datetime | None = Field(
+        None,
+        description="When the metric was captured",
     )
-    labels: Optional[Dict[str, str]] = Field(
-        default_factory=dict, description="Metric labels"
+    labels: dict[str, str] | None = Field(
+        default_factory=dict,
+        description="Metric labels",
     )
 
     @field_serializer("timestamp")

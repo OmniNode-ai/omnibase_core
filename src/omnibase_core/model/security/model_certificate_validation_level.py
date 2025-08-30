@@ -4,8 +4,6 @@ ModelCertificateValidationLevel: Certificate validation configuration.
 This model defines certificate validation requirements and settings.
 """
 
-from typing import List
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -19,38 +17,48 @@ class ModelCertificateValidationLevel(BaseModel):
     )
 
     check_expiration: bool = Field(
-        True, description="Check certificate expiration dates"
+        True,
+        description="Check certificate expiration dates",
     )
 
     check_revocation: bool = Field(
-        True, description="Check certificate revocation status via CRL/OCSP"
+        True,
+        description="Check certificate revocation status via CRL/OCSP",
     )
 
     check_chain: bool = Field(True, description="Validate full certificate chain")
 
     check_hostname: bool = Field(
-        True, description="Verify certificate hostname matches"
+        True,
+        description="Verify certificate hostname matches",
     )
 
     require_ct_logs: bool = Field(
-        False, description="Require Certificate Transparency logs"
+        False,
+        description="Require Certificate Transparency logs",
     )
 
-    trusted_cas: List[str] = Field(
-        default_factory=list, description="List of trusted CA fingerprints"
+    trusted_cas: list[str] = Field(
+        default_factory=list,
+        description="List of trusted CA fingerprints",
     )
 
     max_chain_depth: int = Field(
-        10, description="Maximum certificate chain depth", ge=1, le=20
+        10,
+        description="Maximum certificate chain depth",
+        ge=1,
+        le=20,
     )
 
     allow_self_signed: bool = Field(False, description="Allow self-signed certificates")
 
     minimum_key_size: int = Field(
-        2048, description="Minimum RSA key size in bits", ge=1024
+        2048,
+        description="Minimum RSA key size in bits",
+        ge=1024,
     )
 
-    allowed_signature_algorithms: List[str] = Field(
+    allowed_signature_algorithms: list[str] = Field(
         default_factory=lambda: ["RS256", "RS384", "RS512", "ES256", "ES384", "ES512"],
         description="Allowed signature algorithms",
     )
@@ -61,8 +69,9 @@ class ModelCertificateValidationLevel(BaseModel):
         """Validate certificate validation level."""
         valid_levels = {"none", "basic", "standard", "strict", "paranoid"}
         if v not in valid_levels:
+            msg = f"Invalid validation level: {v}. Must be one of: {valid_levels}"
             raise ValueError(
-                f"Invalid validation level: {v}. Must be one of: {valid_levels}"
+                msg,
             )
         return v
 

@@ -4,8 +4,6 @@ Discovery Error Model
 Base exception for discovery-related errors with correlation tracking.
 """
 
-from typing import List, Optional
-
 
 class ModelDiscoveryError(Exception):
     """
@@ -17,8 +15,8 @@ class ModelDiscoveryError(Exception):
     def __init__(
         self,
         message: str,
-        correlation_id: Optional[str] = None,
-        registry_errors: Optional[List[str]] = None,
+        correlation_id: str | None = None,
+        registry_errors: list[str] | None = None,
     ):
         """
         Initialize discovery error.

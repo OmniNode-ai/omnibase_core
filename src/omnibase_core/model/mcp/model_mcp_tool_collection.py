@@ -1,7 +1,5 @@
 """Strongly typed model for MCP tool collections."""
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.mcp.model_tool_definition import ModelToolDefinition
@@ -10,8 +8,9 @@ from omnibase_core.model.mcp.model_tool_definition import ModelToolDefinition
 class ModelMCPToolCollection(BaseModel):
     """Strongly typed model for external tool collections."""
 
-    tools: Dict[str, ModelToolDefinition] = Field(
-        default_factory=dict, description="Collection of MCP tools"
+    tools: dict[str, ModelToolDefinition] = Field(
+        default_factory=dict,
+        description="Collection of MCP tools",
     )
 
     def add_tool(self, name: str, tool_definition: ModelToolDefinition) -> None:

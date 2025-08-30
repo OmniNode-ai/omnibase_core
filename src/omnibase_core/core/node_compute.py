@@ -19,29 +19,27 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
-from uuid import UUID, uuid4
+from typing import Any, Generic, TypeVar
+from uuid import uuid4
 
-import yaml
 from omnibase.enums.enum_log_level import LogLevelEnum
-from omnibase.enums.enum_node_type import EnumNodeType
 
 # Import contract model for compute nodes
 from omnibase_core.core.contracts.model_contract_compute import (
-    ModelAlgorithmConfig, ModelAlgorithmFactorConfig, ModelContractCompute)
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+    ModelContractCompute,
+)
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.utils.generation.utility_reference_resolver import \
-    UtilityReferenceResolver
+
 # Import utilities for contract loading
-from omnibase_core.utils.io.utility_filesystem_reader import \
-    UtilityFileSystemReader
 
 # Type variables for generic computation
 T_Input = TypeVar("T_Input")
@@ -59,11 +57,11 @@ class ModelComputeInput(Generic[T_Input]):
     def __init__(
         self,
         data: T_Input,
-        operation_id: Optional[str] = None,
+        operation_id: str | None = None,
         computation_type: str = "default",
         cache_enabled: bool = True,
         parallel_enabled: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.data = data
         self.operation_id = operation_id or str(uuid4())
@@ -90,7 +88,7 @@ class ModelComputeOutput(Generic[T_Output]):
         processing_time_ms: float,
         cache_hit: bool = False,
         parallel_execution_used: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         self.result = result
         self.operation_id = operation_id
@@ -110,11 +108,11 @@ class ComputationCache:
     def __init__(self, max_size: int = 1000, default_ttl_minutes: int = 30):
         self.max_size = max_size
         self.default_ttl_minutes = default_ttl_minutes
-        self._cache: Dict[str, Tuple[Any, datetime, int]] = (
+        self._cache: dict[str, tuple[Any, datetime, int]] = (
             {}
         )  # key -> (value, expiry, access_count)
 
-    def get(self, cache_key: str) -> Optional[Any]:
+    def get(self, cache_key: str) -> Any | None:
         """Get cached value if valid and not expired."""
         if cache_key not in self._cache:
             return None
@@ -131,7 +129,10 @@ class ComputationCache:
         return value
 
     def put(
-        self, cache_key: str, value: Any, ttl_minutes: Optional[int] = None
+        self,
+        cache_key: str,
+        value: Any,
+        ttl_minutes: int | None = None,
     ) -> None:
         """Cache value with TTL."""
         # Evict if at capacity
@@ -155,7 +156,7 @@ class ComputationCache:
         """Clear all cached values."""
         self._cache.clear()
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         now = datetime.now()
         expired_count = sum(1 for _, expiry, _ in self._cache.values() if expiry <= now)
@@ -215,17 +216,18 @@ class NodeCompute(NodeCoreBase):
 
         # Initialize caching layer
         self.computation_cache = ComputationCache(
-            max_size=1000, default_ttl_minutes=self.cache_ttl_minutes
+            max_size=1000,
+            default_ttl_minutes=self.cache_ttl_minutes,
         )
 
         # Thread pool for parallel execution
-        self.thread_pool: Optional[ThreadPoolExecutor] = None
+        self.thread_pool: ThreadPoolExecutor | None = None
 
         # Computation registry for algorithm functions
-        self.computation_registry: Dict[str, Callable[..., Any]] = {}
+        self.computation_registry: dict[str, Callable[..., Any]] = {}
 
         # Performance tracking
-        self.computation_metrics: Dict[str, Dict[str, float]] = {}
+        self.computation_metrics: dict[str, dict[str, float]] = {}
 
         # Register built-in RSD computations
         self._register_rsd_computations()
@@ -245,16 +247,15 @@ class NodeCompute(NodeCoreBase):
         """
         try:
             # Load actual contract from file with subcontract resolution
-            from pathlib import Path
 
             import yaml
 
-            from omnibase_core.constants.contract_constants import \
-                CONTRACT_FILENAME
-            from omnibase_core.utils.generation.utility_reference_resolver import \
-                UtilityReferenceResolver
-            from omnibase_core.utils.io.utility_filesystem_reader import \
-                UtilityFileSystemReader
+            from omnibase_core.utils.generation.utility_reference_resolver import (
+                UtilityReferenceResolver,
+            )
+            from omnibase_core.utils.io.utility_filesystem_reader import (
+                UtilityFileSystemReader,
+            )
 
             # Get contract path - find the node.py file and look for contract.yaml
             contract_path = self._find_contract_path()
@@ -268,7 +269,9 @@ class NodeCompute(NodeCoreBase):
 
             # Resolve any $ref references in the contract
             resolved_contract = self._resolve_contract_references(
-                contract_data, contract_path.parent, reference_resolver
+                contract_data,
+                contract_path.parent,
+                reference_resolver,
             )
 
             # Create ModelContractCompute from resolved contract data
@@ -294,7 +297,7 @@ class NodeCompute(NodeCoreBase):
             # CANONICAL PATTERN: Wrap contract loading errors
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract model loading failed for NodeCompute: {str(e)}",
+                message=f"Contract model loading failed for NodeCompute: {e!s}",
                 details={
                     "contract_model_type": "ModelContractCompute",
                     "error_type": type(e).__name__,
@@ -317,8 +320,7 @@ class NodeCompute(NodeCoreBase):
         import inspect
         from pathlib import Path
 
-        from omnibase_core.constants.contract_constants import \
-            CONTRACT_FILENAME
+        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 
         try:
             # Get the module file for the calling class
@@ -345,12 +347,15 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
-                message=f"Error finding contract path: {str(e)}",
+                message=f"Error finding contract path: {e!s}",
                 cause=e,
             )
 
     def _resolve_contract_references(
-        self, data: Any, base_path: Path, reference_resolver: Any
+        self,
+        data: Any,
+        base_path: Path,
+        reference_resolver: Any,
     ) -> Any:
         """
         Recursively resolve all $ref references in contract data.
@@ -373,7 +378,7 @@ class NodeCompute(NodeCoreBase):
                 if "$ref" in data:
                     # Resolve reference to another file
                     ref_file = data["$ref"]
-                    if ref_file.startswith("./") or ref_file.startswith("../"):
+                    if ref_file.startswith(("./", "../")):
                         # Relative path reference
                         ref_path = (base_path / ref_file).resolve()
                     else:
@@ -381,27 +386,30 @@ class NodeCompute(NodeCoreBase):
                         ref_path = Path(ref_file)
 
                     return reference_resolver.resolve_reference(
-                        str(ref_path), base_path
+                        str(ref_path),
+                        base_path,
                     )
-                else:
-                    # Recursively resolve nested dictionaries
-                    return {
-                        key: self._resolve_contract_references(
-                            value, base_path, reference_resolver
-                        )
-                        for key, value in data.items()
-                    }
-            elif isinstance(data, list):
+                # Recursively resolve nested dictionaries
+                return {
+                    key: self._resolve_contract_references(
+                        value,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for key, value in data.items()
+                }
+            if isinstance(data, list):
                 # Recursively resolve lists
                 return [
                     self._resolve_contract_references(
-                        item, base_path, reference_resolver
+                        item,
+                        base_path,
+                        reference_resolver,
                     )
                     for item in data
                 ]
-            else:
-                # Return primitives as-is
-                return data
+            # Return primitives as-is
+            return data
 
         except Exception as e:
             # Log error but don't stop processing
@@ -414,7 +422,8 @@ class NodeCompute(NodeCoreBase):
         return None
 
     async def process(
-        self, input_data: ModelComputeInput[T_Input]
+        self,
+        input_data: ModelComputeInput[T_Input],
     ) -> ModelComputeOutput[T_Output]:
         """
         Pure computation with caching and parallel processing.
@@ -454,7 +463,7 @@ class NodeCompute(NodeCoreBase):
 
             # Execute computation
             if input_data.parallel_enabled and self._supports_parallel_execution(
-                input_data
+                input_data,
             ):
                 result = await self._execute_parallel_computation(input_data)
                 parallel_used = True
@@ -483,7 +492,9 @@ class NodeCompute(NodeCoreBase):
 
             # Update metrics
             await self._update_computation_metrics(
-                input_data.computation_type, processing_time, True
+                input_data.computation_type,
+                processing_time,
+                True,
             )
             await self._update_processing_metrics(processing_time, True)
 
@@ -521,13 +532,15 @@ class NodeCompute(NodeCoreBase):
 
             # Update error metrics
             await self._update_computation_metrics(
-                input_data.computation_type, processing_time, False
+                input_data.computation_type,
+                processing_time,
+                False,
             )
             await self._update_processing_metrics(processing_time, False)
 
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Computation failed: {str(e)}",
+                message=f"Computation failed: {e!s}",
                 context={
                     "node_id": self.node_id,
                     "operation_id": input_data.operation_id,
@@ -599,7 +612,9 @@ class NodeCompute(NodeCoreBase):
         return float(result.result)
 
     def register_computation(
-        self, computation_type: str, computation_func: Callable[..., Any]
+        self,
+        computation_type: str,
+        computation_func: Callable[..., Any],
     ) -> None:
         """
         Register custom computation function.
@@ -633,7 +648,7 @@ class NodeCompute(NodeCoreBase):
             {"node_id": self.node_id, "computation_type": computation_type},
         )
 
-    async def get_computation_metrics(self) -> Dict[str, Dict[str, float]]:
+    async def get_computation_metrics(self) -> dict[str, dict[str, float]]:
         """
         Get detailed computation performance metrics.
 
@@ -665,7 +680,7 @@ class NodeCompute(NodeCoreBase):
 
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeCompute resources initialized",
+            "NodeCompute resources initialized",
             {
                 "node_id": self.node_id,
                 "max_parallel_workers": self.max_parallel_workers,
@@ -685,7 +700,7 @@ class NodeCompute(NodeCoreBase):
 
         emit_log_event(
             LogLevelEnum.INFO,
-            f"NodeCompute resources cleaned up",
+            "NodeCompute resources cleaned up",
             {"node_id": self.node_id},
         )
 
@@ -730,12 +745,13 @@ class NodeCompute(NodeCoreBase):
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:
         """Check if computation supports parallel execution."""
         # For now, only support parallel for batch operations
-        if isinstance(input_data.data, (list, tuple)) and len(input_data.data) > 1:
-            return True
-        return False
+        return bool(
+            isinstance(input_data.data, list | tuple) and len(input_data.data) > 1
+        )
 
     async def _execute_sequential_computation(
-        self, input_data: ModelComputeInput[Any]
+        self,
+        input_data: ModelComputeInput[Any],
     ) -> Any:
         """Execute computation sequentially."""
         computation_type = input_data.computation_type
@@ -743,19 +759,19 @@ class NodeCompute(NodeCoreBase):
         if computation_type in self.computation_registry:
             computation_func = self.computation_registry[computation_type]
             return computation_func(input_data.data)
-        else:
-            raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Unknown computation type: {computation_type}",
-                context={
-                    "node_id": self.node_id,
-                    "computation_type": computation_type,
-                    "available_types": list(self.computation_registry.keys()),
-                },
-            )
+        raise OnexError(
+            error_code=CoreErrorCode.OPERATION_FAILED,
+            message=f"Unknown computation type: {computation_type}",
+            context={
+                "node_id": self.node_id,
+                "computation_type": computation_type,
+                "available_types": list(self.computation_registry.keys()),
+            },
+        )
 
     async def _execute_parallel_computation(
-        self, input_data: ModelComputeInput[Any]
+        self,
+        input_data: ModelComputeInput[Any],
     ) -> Any:
         """Execute computation in parallel using thread pool."""
         if not self.thread_pool:
@@ -774,14 +790,17 @@ class NodeCompute(NodeCoreBase):
 
         # Execute in thread pool
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            self.thread_pool, computation_func, input_data.data
+        return await loop.run_in_executor(
+            self.thread_pool,
+            computation_func,
+            input_data.data,
         )
 
-        return result
-
     async def _update_computation_metrics(
-        self, computation_type: str, processing_time_ms: float, success: bool
+        self,
+        computation_type: str,
+        processing_time_ms: float,
+        success: bool,
     ) -> None:
         """Update computation-specific metrics."""
         if computation_type not in self.computation_metrics:
@@ -804,10 +823,12 @@ class NodeCompute(NodeCoreBase):
 
         # Update timing metrics
         metrics["min_processing_time_ms"] = min(
-            metrics["min_processing_time_ms"], processing_time_ms
+            metrics["min_processing_time_ms"],
+            processing_time_ms,
         )
         metrics["max_processing_time_ms"] = max(
-            metrics["max_processing_time_ms"], processing_time_ms
+            metrics["max_processing_time_ms"],
+            processing_time_ms,
         )
 
         # Update rolling average
@@ -877,7 +898,7 @@ class NodeCompute(NodeCoreBase):
                 in self.computation_registry,
                 "custom_algorithms": [
                     name
-                    for name in self.computation_registry.keys()
+                    for name in self.computation_registry
                     if not name.startswith("rsd_")
                 ],
                 "algorithm_count": len(self.computation_registry),
@@ -912,7 +933,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to generate full compute introspection data: {str(e)}, using fallback",
+                f"Failed to generate full compute introspection data: {e!s}, using fallback",
                 {"node_id": self.node_id, "error": str(e)},
             )
 
@@ -946,13 +967,13 @@ class NodeCompute(NodeCoreBase):
         try:
             # Add registered computation types
             operations.extend(
-                [f"compute_{algo}" for algo in self.computation_registry.keys()]
+                [f"compute_{algo}" for algo in self.computation_registry],
             )
 
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract all compute operations: {str(e)}",
+                f"Failed to extract all compute operations: {e!s}",
                 {"node_id": self.node_id},
             )
 
@@ -1002,7 +1023,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to extract algorithm configuration: {str(e)}",
+                f"Failed to extract algorithm configuration: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"algorithm_type": "default_compute"}
@@ -1051,7 +1072,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get compute resource usage: {str(e)}",
+                f"Failed to get compute resource usage: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown"}
@@ -1071,7 +1092,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get caching status: {str(e)}",
+                f"Failed to get caching status: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"enabled": False, "error": str(e)}
@@ -1109,7 +1130,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Failed to get computation metrics: {str(e)}",
+                f"Failed to get computation metrics: {e!s}",
                 {"node_id": self.node_id},
             )
             return {"status": "unknown", "error": str(e)}
@@ -1117,7 +1138,7 @@ class NodeCompute(NodeCoreBase):
     def _register_rsd_computations(self) -> None:
         """Register built-in RSD computation functions."""
 
-        def rsd_priority_calculation(data: Dict[str, Any]) -> float:
+        def rsd_priority_calculation(data: dict[str, Any]) -> float:
             """Calculate RSD 5-factor priority score."""
             # Extract inputs
             dependency_count = data.get("dependency_count", 0)
@@ -1137,10 +1158,12 @@ class NodeCompute(NodeCoreBase):
 
             # Calculate factor scores (0.0-1.0)
             dependency_score = min(
-                dependency_count / 10.0, 1.0
+                dependency_count / 10.0,
+                1.0,
             )  # Normalize by max 10 deps
             failure_score = min(
-                failure_indicators / 5.0, 1.0
+                failure_indicators / 5.0,
+                1.0,
             )  # Normalize by max 5 indicators
 
             # Time decay with exponential growth after 7 days

@@ -6,14 +6,12 @@ Enables real-time health monitoring in service discovery.
 """
 
 from datetime import datetime
-from typing import Dict, Optional, Union
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.discovery.model_custom_metrics import \
-    ModelCustomMetrics
+from omnibase_core.model.discovery.model_custom_metrics import ModelCustomMetrics
 
 
 class ModelHealthMetrics(BaseModel):
@@ -21,36 +19,44 @@ class ModelHealthMetrics(BaseModel):
 
     # Basic health status
     status: str = Field(
-        ..., description="Health status (healthy, warning, critical, unknown)"
+        ...,
+        description="Health status (healthy, warning, critical, unknown)",
     )
 
     # Performance metrics
-    cpu_usage_percent: Optional[float] = Field(
-        None, description="CPU usage percentage (0-100)"
+    cpu_usage_percent: float | None = Field(
+        None,
+        description="CPU usage percentage (0-100)",
     )
-    memory_usage_percent: Optional[float] = Field(
-        None, description="Memory usage percentage (0-100)"
+    memory_usage_percent: float | None = Field(
+        None,
+        description="Memory usage percentage (0-100)",
     )
-    response_time_ms: Optional[float] = Field(
-        None, description="Average response time in milliseconds"
+    response_time_ms: float | None = Field(
+        None,
+        description="Average response time in milliseconds",
     )
 
     # Operational metrics
-    uptime_seconds: Optional[int] = Field(None, description="Node uptime in seconds")
-    error_rate: Optional[float] = Field(
-        None, description="Error rate percentage (0-100)"
+    uptime_seconds: int | None = Field(None, description="Node uptime in seconds")
+    error_rate: float | None = Field(
+        None,
+        description="Error rate percentage (0-100)",
     )
-    request_count: Optional[int] = Field(None, description="Total requests processed")
+    request_count: int | None = Field(None, description="Total requests processed")
 
     # Health check details
-    health_check_url: Optional[str] = Field(
-        None, description="URL for health check endpoint"
+    health_check_url: str | None = Field(
+        None,
+        description="URL for health check endpoint",
     )
-    last_health_check: Optional[datetime] = Field(
-        None, description="When the last health check was performed"
+    last_health_check: datetime | None = Field(
+        None,
+        description="When the last health check was performed",
     )
-    health_check_duration_ms: Optional[float] = Field(
-        None, description="Duration of last health check in milliseconds"
+    health_check_duration_ms: float | None = Field(
+        None,
+        description="Duration of last health check in milliseconds",
     )
 
     # Custom metrics
@@ -71,7 +77,8 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     # Override event_type to be fixed for this event
     event_type: str = Field(
-        default=CoreEventTypes.NODE_HEALTH_EVENT, description="Event type identifier"
+        default=CoreEventTypes.NODE_HEALTH_EVENT,
+        description="Event type identifier",
     )
 
     # Node identification
@@ -79,30 +86,34 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     # Health information
     health_metrics: ModelHealthMetrics = Field(
-        ..., description="Current health metrics for the node"
+        ...,
+        description="Current health metrics for the node",
     )
 
     # Reporting metadata
-    report_interval_seconds: Optional[int] = Field(
-        None, description="How often this node reports health (for scheduling)"
+    report_interval_seconds: int | None = Field(
+        None,
+        description="How often this node reports health (for scheduling)",
     )
-    next_report_time: Optional[datetime] = Field(
-        None, description="When the next health report is expected"
+    next_report_time: datetime | None = Field(
+        None,
+        description="When the next health report is expected",
     )
 
     # Consul compatibility
-    service_id: Optional[str] = Field(
-        None, description="Service ID for Consul health checks"
+    service_id: str | None = Field(
+        None,
+        description="Service ID for Consul health checks",
     )
-    check_id: Optional[str] = Field(None, description="Health check ID for Consul")
+    check_id: str | None = Field(None, description="Health check ID for Consul")
 
     @classmethod
     def create_healthy_report(
         cls,
         node_id: str,
         node_name: str,
-        uptime_seconds: int = None,
-        response_time_ms: float = None,
+        uptime_seconds: int | None = None,
+        response_time_ms: float | None = None,
         **kwargs,
     ) -> "ModelNodeHealthEvent":
         """
@@ -138,9 +149,9 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         node_id: str,
         node_name: str,
         warning_reason: str,
-        cpu_usage: float = None,
-        memory_usage: float = None,
-        error_rate: float = None,
+        cpu_usage: float | None = None,
+        memory_usage: float | None = None,
+        error_rate: float | None = None,
         **kwargs,
     ) -> "ModelNodeHealthEvent":
         """
@@ -165,7 +176,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             error_rate=error_rate,
             last_health_check=datetime.now(),
             custom_metrics=ModelCustomMetrics.from_dict(
-                {"warning_reason": warning_reason}
+                {"warning_reason": warning_reason},
             ),
         )
 
@@ -178,7 +189,11 @@ class ModelNodeHealthEvent(ModelOnexEvent):
 
     @classmethod
     def create_critical_report(
-        cls, node_id: str, node_name: str, error_message: str, **kwargs
+        cls,
+        node_id: str,
+        node_name: str,
+        error_message: str,
+        **kwargs,
     ) -> "ModelNodeHealthEvent":
         """
         Factory method to create a critical status report.
@@ -196,7 +211,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             status="critical",
             last_health_check=datetime.now(),
             custom_metrics=ModelCustomMetrics.from_dict(
-                {"error_message": error_message}
+                {"error_message": error_message},
             ),
         )
 

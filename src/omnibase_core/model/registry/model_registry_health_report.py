@@ -5,27 +5,26 @@ This module provides comprehensive registry health reporting with business intel
 aggregated analytics, and operational insights for ONEX registry systems.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.model.core.model_examples import ModelNodeInformation
-from omnibase_core.model.core.model_generic_properties import \
-    ModelGenericProperties
-from omnibase_core.model.core.model_monitoring_metrics import \
-    ModelMonitoringMetrics
+from omnibase_core.model.core.model_generic_properties import ModelGenericProperties
+from omnibase_core.model.core.model_monitoring_metrics import ModelMonitoringMetrics
 from omnibase_core.model.core.model_trend_data import ModelTrendData
-from omnibase_core.model.health.model_tool_health import (ModelToolHealth,
-                                                          ToolHealthStatus)
+from omnibase_core.model.health.model_tool_health import (
+    ModelToolHealth,
+    ToolHealthStatus,
+)
 from omnibase_core.model.service.model_service_health import (
-    ModelServiceHealth, ServiceHealthStatus)
+    ModelServiceHealth,
+    ServiceHealthStatus,
+)
 
-from .model_registry_business_impact_summary import \
-    ModelRegistryBusinessImpactSummary
-from .model_registry_component_performance import \
-    ModelRegistryComponentPerformance
+from .model_registry_business_impact_summary import ModelRegistryBusinessImpactSummary
+from .model_registry_component_performance import ModelRegistryComponentPerformance
 from .model_registry_sla_compliance import ModelRegistrySlaCompliance
 
 
@@ -55,17 +54,20 @@ class ModelRegistryHealthReport(BaseModel):
     """
 
     status: RegistryHealthStatus = Field(
-        ..., description="Overall health status of the registry"
+        ...,
+        description="Overall health status of the registry",
     )
 
     tools_count: int = Field(..., description="Total number of registered tools", ge=0)
 
-    tools_health: List[ModelToolHealth] = Field(
-        default_factory=list, description="Health status of all tools"
+    tools_health: list[ModelToolHealth] = Field(
+        default_factory=list,
+        description="Health status of all tools",
     )
 
-    services_health: List[ModelServiceHealth] = Field(
-        default_factory=list, description="Health status of external services"
+    services_health: list[ModelServiceHealth] = Field(
+        default_factory=list,
+        description="Health status of external services",
     )
 
     resolution_context_summary: ModelGenericProperties = Field(
@@ -73,46 +75,58 @@ class ModelRegistryHealthReport(BaseModel):
         description="Summary of resolution context and configuration",
     )
 
-    error_message: Optional[str] = Field(
-        None, description="Error message if health check failed", max_length=1000
+    error_message: str | None = Field(
+        None,
+        description="Error message if health check failed",
+        max_length=1000,
     )
 
-    error_code: Optional[str] = Field(
-        None, description="Specific error code for programmatic handling", max_length=50
+    error_code: str | None = Field(
+        None,
+        description="Specific error code for programmatic handling",
+        max_length=50,
     )
 
-    check_timestamp: Optional[str] = Field(
-        default=None, description="ISO timestamp when health check was performed"
+    check_timestamp: str | None = Field(
+        default=None,
+        description="ISO timestamp when health check was performed",
     )
 
-    check_duration_ms: Optional[int] = Field(
-        default=None, description="Duration of health check in milliseconds", ge=0
+    check_duration_ms: int | None = Field(
+        default=None,
+        description="Duration of health check in milliseconds",
+        ge=0,
     )
 
-    registry_version: Optional[str] = Field(
-        default=None, description="Registry version information", max_length=50
+    registry_version: str | None = Field(
+        default=None,
+        description="Registry version information",
+        max_length=50,
     )
 
-    node_information: Optional[ModelNodeInformation] = Field(
+    node_information: ModelNodeInformation | None = Field(
         None,
         description="Information about the node hosting this registry",
     )
 
-    performance_metrics: Optional[ModelMonitoringMetrics] = Field(
-        None, description="Performance and operational metrics"
+    performance_metrics: ModelMonitoringMetrics | None = Field(
+        None,
+        description="Performance and operational metrics",
     )
 
-    trends: Optional[ModelTrendData] = Field(
-        None, description="Historical trends and pattern analysis"
+    trends: ModelTrendData | None = Field(
+        None,
+        description="Historical trends and pattern analysis",
     )
 
-    alerts: Optional[List[str]] = Field(
-        default_factory=list, description="Active alerts and recommendations"
+    alerts: list[str] | None = Field(
+        default_factory=list,
+        description="Active alerts and recommendations",
     )
 
     @field_validator("check_timestamp")
     @classmethod
-    def validate_check_timestamp(cls, v: Optional[str]) -> Optional[str]:
+    def validate_check_timestamp(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
             return v
@@ -121,7 +135,8 @@ class ModelRegistryHealthReport(BaseModel):
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
         except ValueError:
-            raise ValueError("check_timestamp must be a valid ISO timestamp")
+            msg = "check_timestamp must be a valid ISO timestamp"
+            raise ValueError(msg)
 
     # === Overall Health Analysis ===
 
@@ -169,11 +184,11 @@ class ModelRegistryHealthReport(BaseModel):
         healthy_count = self.get_healthy_tools_count()
         return (healthy_count / len(self.tools_health)) * 100.0
 
-    def get_tools_by_status(self, status: ToolHealthStatus) -> List[ModelToolHealth]:
+    def get_tools_by_status(self, status: ToolHealthStatus) -> list[ModelToolHealth]:
         """Get tools filtered by health status."""
         return [tool for tool in self.tools_health if tool.status == status]
 
-    def get_critical_tools(self) -> List[ModelToolHealth]:
+    def get_critical_tools(self) -> list[ModelToolHealth]:
         """Get tools that require immediate attention."""
         return [tool for tool in self.tools_health if tool.requires_attention()]
 
@@ -182,13 +197,13 @@ class ModelRegistryHealthReport(BaseModel):
     def get_healthy_services_count(self) -> int:
         """Get count of healthy services."""
         return len(
-            [service for service in self.services_health if service.is_healthy()]
+            [service for service in self.services_health if service.is_healthy()],
         )
 
     def get_unhealthy_services_count(self) -> int:
         """Get count of unhealthy services."""
         return len(
-            [service for service in self.services_health if service.is_unhealthy()]
+            [service for service in self.services_health if service.is_unhealthy()],
         )
 
     def get_services_health_percentage(self) -> float:
@@ -200,12 +215,13 @@ class ModelRegistryHealthReport(BaseModel):
         return (healthy_count / len(self.services_health)) * 100.0
 
     def get_services_by_status(
-        self, status: ServiceHealthStatus
-    ) -> List[ModelServiceHealth]:
+        self,
+        status: ServiceHealthStatus,
+    ) -> list[ModelServiceHealth]:
         """Get services filtered by health status."""
         return [service for service in self.services_health if service.status == status]
 
-    def get_critical_services(self) -> List[ModelServiceHealth]:
+    def get_critical_services(self) -> list[ModelServiceHealth]:
         """Get services that require immediate attention."""
         return [
             service for service in self.services_health if service.requires_attention()
@@ -213,7 +229,7 @@ class ModelRegistryHealthReport(BaseModel):
 
     # === Performance Analysis ===
 
-    def get_average_tool_response_time(self) -> Optional[float]:
+    def get_average_tool_response_time(self) -> float | None:
         """Get average response time across all tools."""
         response_times = [
             tool.response_time_ms
@@ -226,7 +242,7 @@ class ModelRegistryHealthReport(BaseModel):
 
         return sum(response_times) / len(response_times)
 
-    def get_average_service_response_time(self) -> Optional[float]:
+    def get_average_service_response_time(self) -> float | None:
         """Get average response time across all services."""
         response_times = [
             service.response_time_ms
@@ -240,8 +256,9 @@ class ModelRegistryHealthReport(BaseModel):
         return sum(response_times) / len(response_times)
 
     def get_slowest_components(
-        self, limit: int = 5
-    ) -> List[ModelRegistryComponentPerformance]:
+        self,
+        limit: int = 5,
+    ) -> list[ModelRegistryComponentPerformance]:
         """Get the slowest performing components."""
         components = []
 
@@ -255,7 +272,7 @@ class ModelRegistryHealthReport(BaseModel):
                         category=tool.tool_type.value,
                         response_time_ms=tool.response_time_ms,
                         status=tool.status.value,
-                    )
+                    ),
                 )
 
         # Add services
@@ -268,7 +285,7 @@ class ModelRegistryHealthReport(BaseModel):
                         category=service.service_type.value,
                         response_time_ms=service.response_time_ms,
                         status=service.status.value,
-                    )
+                    ),
                 )
 
         # Sort by response time and return top N
@@ -308,14 +325,13 @@ class ModelRegistryHealthReport(BaseModel):
 
         if score >= 0.95:
             return "excellent"
-        elif score >= 0.85:
+        if score >= 0.85:
             return "good"
-        elif score >= 0.70:
+        if score >= 0.70:
             return "acceptable"
-        elif score >= 0.50:
+        if score >= 0.50:
             return "poor"
-        else:
-            return "critical"
+        return "critical"
 
     # === Business Intelligence ===
 
@@ -348,30 +364,26 @@ class ModelRegistryHealthReport(BaseModel):
 
         if self.is_critical():
             return "high_negative"
-        elif concerning_performance or not self.is_operational():
+        if concerning_performance or not self.is_operational():
             return "medium_negative"
-        elif self.status == RegistryHealthStatus.DEGRADED:
+        if self.status == RegistryHealthStatus.DEGRADED:
             return "low_negative"
-        else:
-            return "minimal"
+        return "minimal"
 
     def _assess_business_continuity_risk(self) -> str:
         """Assess risk to business continuity."""
         critical_count = len(self.get_critical_tools()) + len(
-            self.get_critical_services()
+            self.get_critical_services(),
         )
         unhealthy_percentage = 100 - self.get_tools_health_percentage()
 
         if self.is_critical() or critical_count > 5:
             return "high"
-        elif (
-            not self.is_operational() or critical_count > 2 or unhealthy_percentage > 25
-        ):
+        if not self.is_operational() or critical_count > 2 or unhealthy_percentage > 25:
             return "medium"
-        elif self.status == RegistryHealthStatus.DEGRADED or critical_count > 0:
+        if self.status == RegistryHealthStatus.DEGRADED or critical_count > 0:
             return "low"
-        else:
-            return "minimal"
+        return "minimal"
 
     def _assess_sla_compliance(self) -> ModelRegistrySlaCompliance:
         """Assess SLA compliance based on health metrics."""
@@ -407,23 +419,21 @@ class ModelRegistryHealthReport(BaseModel):
             avg_service_time and avg_service_time > 5000
         ):
             return "violated"
-        elif (avg_tool_time and avg_tool_time > 500) or (
+        if (avg_tool_time and avg_tool_time > 500) or (
             avg_service_time and avg_service_time > 2000
         ):
             return "at_risk"
-        else:
-            return "met"
+        return "met"
 
     # === Monitoring Integration ===
 
     def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get comprehensive metrics for monitoring systems."""
-        from omnibase_core.model.core.model_monitoring_metrics import \
-            MetricValue
+        from omnibase_core.model.core.model_monitoring_metrics import MetricValue
 
         # Calculate averages
-        avg_tool_time = self.get_average_tool_response_time()
-        avg_service_time = self.get_average_service_response_time()
+        self.get_average_tool_response_time()
+        self.get_average_service_response_time()
 
         # Build custom metrics
         custom_metrics = {
@@ -432,29 +442,30 @@ class ModelRegistryHealthReport(BaseModel):
             "is_critical": MetricValue(value=self.is_critical()),
             "is_operational": MetricValue(value=self.is_operational()),
             "requires_attention": MetricValue(
-                value=self.requires_immediate_attention()
+                value=self.requires_immediate_attention(),
             ),
             "tools_total": MetricValue(value=len(self.tools_health)),
             "tools_healthy": MetricValue(value=self.get_healthy_tools_count()),
             "tools_unhealthy": MetricValue(value=self.get_unhealthy_tools_count()),
             "tools_degraded": MetricValue(value=self.get_degraded_tools_count()),
             "tools_health_percentage": MetricValue(
-                value=self.get_tools_health_percentage()
+                value=self.get_tools_health_percentage(),
             ),
             "services_total": MetricValue(value=len(self.services_health)),
             "services_healthy": MetricValue(value=self.get_healthy_services_count()),
             "services_unhealthy": MetricValue(
-                value=self.get_unhealthy_services_count()
+                value=self.get_unhealthy_services_count(),
             ),
             "services_health_percentage": MetricValue(
-                value=self.get_services_health_percentage()
+                value=self.get_services_health_percentage(),
             ),
             "reliability_score": MetricValue(
-                value=self.calculate_overall_reliability_score()
+                value=self.calculate_overall_reliability_score(),
             ),
             "reliability_category": MetricValue(value=self.get_reliability_category()),
             "critical_components": MetricValue(
-                value=len(self.get_critical_tools()) + len(self.get_critical_services())
+                value=len(self.get_critical_tools())
+                + len(self.get_critical_services()),
             ),
         }
 
@@ -475,8 +486,8 @@ class ModelRegistryHealthReport(BaseModel):
     def create_healthy(
         cls,
         tools_count: int,
-        tools_health: List[ModelToolHealth] = None,
-        services_health: List[ModelServiceHealth] = None,
+        tools_health: list[ModelToolHealth] | None = None,
+        services_health: list[ModelServiceHealth] | None = None,
     ) -> "ModelRegistryHealthReport":
         """Create a healthy registry health report."""
         return cls(
@@ -493,9 +504,9 @@ class ModelRegistryHealthReport(BaseModel):
         cls,
         tools_count: int,
         error_message: str,
-        tools_health: List[ModelToolHealth] = None,
-        services_health: List[ModelServiceHealth] = None,
-        error_code: Optional[str] = None,
+        tools_health: list[ModelToolHealth] | None = None,
+        services_health: list[ModelServiceHealth] | None = None,
+        error_code: str | None = None,
     ) -> "ModelRegistryHealthReport":
         """Create a critical registry health report."""
         return cls(
@@ -513,8 +524,8 @@ class ModelRegistryHealthReport(BaseModel):
         cls,
         tools_count: int,
         degradation_reason: str,
-        tools_health: List[ModelToolHealth] = None,
-        services_health: List[ModelServiceHealth] = None,
+        tools_health: list[ModelToolHealth] | None = None,
+        services_health: list[ModelServiceHealth] | None = None,
     ) -> "ModelRegistryHealthReport":
         """Create a degraded registry health report."""
         return cls(

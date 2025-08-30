@@ -7,10 +7,12 @@ strategies such as BM25 and dense vector search.
 
 from typing import Protocol
 
-from omnibase_core.model.semantic.model_retrieval_input_state import \
-    ModelRetrievalInputState
-from omnibase_core.model.semantic.model_retrieval_output_state import \
-    ModelRetrievalOutputState
+from omnibase_core.model.semantic.model_retrieval_input_state import (
+    ModelRetrievalInputState,
+)
+from omnibase_core.model.semantic.model_retrieval_output_state import (
+    ModelRetrievalOutputState,
+)
 
 
 class ProtocolHybridRetriever(Protocol):
@@ -22,7 +24,8 @@ class ProtocolHybridRetriever(Protocol):
     """
 
     def retrieve(
-        self, input_state: ModelRetrievalInputState
+        self,
+        input_state: ModelRetrievalInputState,
     ) -> ModelRetrievalOutputState:
         """
         Perform hybrid retrieval combining multiple search strategies.

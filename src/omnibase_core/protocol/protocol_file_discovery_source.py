@@ -28,7 +28,7 @@ Defines a standardized interface for discovering and validating files for stampi
 """
 
 from pathlib import Path
-from typing import Optional, Protocol, Set
+from typing import Protocol
 
 from omnibase_core.model.core.model_tree_sync_result import ModelTreeSyncResult
 
@@ -42,10 +42,10 @@ class ProtocolFileDiscoverySource(Protocol):
     def discover_files(
         self,
         directory: Path,
-        include_patterns: Optional[list[str]] = None,
-        exclude_patterns: Optional[list[str]] = None,
-        ignore_file: Optional[Path] = None,
-    ) -> Set[Path]:
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+        ignore_file: Path | None = None,
+    ) -> set[Path]:
         """
         Discover eligible files for stamping/validation in the given directory.
         Args:
@@ -76,7 +76,7 @@ class ProtocolFileDiscoverySource(Protocol):
     def get_canonical_files_from_tree(
         self,
         tree_file: Path,
-    ) -> Set[Path]:
+    ) -> set[Path]:
         """
         Get the set of canonical files listed in a .tree file.
         Args:

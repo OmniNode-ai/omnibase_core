@@ -39,7 +39,8 @@ class ModelOnexUri(BaseModel):
     )
     namespace: str = Field(..., description="Namespace component of the URI")
     version_spec: str = Field(
-        ..., description="Version specifier (semver or constraint)"
+        ...,
+        description="Version specifier (semver or constraint)",
     )
     original: str = Field(..., description="Original URI string as provided")
 

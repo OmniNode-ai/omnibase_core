@@ -7,7 +7,6 @@ and operational metrics for 24/7 automation monitoring.
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -59,32 +58,46 @@ class ModelAgentHealthMetrics(BaseModel):
     last_heartbeat: datetime = Field(..., description="Last heartbeat timestamp")
     error_count: int = Field(0, ge=0, description="Total error count")
     success_rate: float = Field(
-        ..., ge=0, le=100, description="Success rate percentage"
+        ...,
+        ge=0,
+        le=100,
+        description="Success rate percentage",
     )
     tasks_completed: int = Field(0, ge=0, description="Total tasks completed")
     avg_completion_time: float = Field(
-        0.0, ge=0, description="Average task completion time"
+        0.0,
+        ge=0,
+        description="Average task completion time",
     )
     tokens_consumed: int = Field(0, ge=0, description="Total tokens consumed")
     efficiency_score: float = Field(
-        0.0, ge=0, le=100, description="Agent efficiency score"
+        0.0,
+        ge=0,
+        le=100,
+        description="Agent efficiency score",
     )
 
     memory_usage_mb: float = Field(0.0, ge=0, description="Memory usage in megabytes")
     cpu_utilization: float = Field(
-        0.0, ge=0, le=100, description="CPU utilization percentage"
+        0.0,
+        ge=0,
+        le=100,
+        description="CPU utilization percentage",
     )
     network_io_bytes_sec: float = Field(
-        0.0, ge=0, description="Network I/O bytes per second"
+        0.0,
+        ge=0,
+        description="Network I/O bytes per second",
     )
     queue_depth: int = Field(0, ge=0, description="Current queue depth")
 
-    window_id: Optional[str] = Field(None, description="Current operational window")
-    current_task: Optional[str] = Field(None, description="Current task description")
+    window_id: str | None = Field(None, description="Current operational window")
+    current_task: str | None = Field(None, description="Current task description")
 
-    last_error: Optional[str] = Field(None, description="Last error message")
+    last_error: str | None = Field(None, description="Last error message")
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metrics update"
+        default_factory=datetime.utcnow,
+        description="Last metrics update",
     )
 
     def is_healthy(self) -> bool:
@@ -104,35 +117,55 @@ class ModelSystemHealthMetrics(BaseModel):
     """System-wide health metrics."""
 
     api_availability: float = Field(
-        ..., ge=0, le=100, description="API availability percentage"
+        ...,
+        ge=0,
+        le=100,
+        description="API availability percentage",
     )
     database_connectivity: bool = Field(..., description="Database connection status")
     event_bus_latency_ms: float = Field(
-        ..., ge=0, description="Event bus latency in milliseconds"
+        ...,
+        ge=0,
+        description="Event bus latency in milliseconds",
     )
 
     total_throughput_per_hour: int = Field(
-        0, ge=0, description="Total system throughput per hour"
+        0,
+        ge=0,
+        description="Total system throughput per hour",
     )
     aggregate_success_rate: float = Field(
-        0.0, ge=0, le=100, description="System-wide success rate"
+        0.0,
+        ge=0,
+        le=100,
+        description="System-wide success rate",
     )
     system_efficiency: float = Field(
-        0.0, ge=0, le=100, description="Overall system efficiency"
+        0.0,
+        ge=0,
+        le=100,
+        description="Overall system efficiency",
     )
     cost_per_task: float = Field(0.0, ge=0, description="Average cost per task")
 
     available_quota: int = Field(0, ge=0, description="Available token quota")
     agent_pool_size: int = Field(0, ge=0, description="Total agent pool size")
     queue_capacity_percent: float = Field(
-        0.0, ge=0, le=100, description="Queue capacity utilization"
+        0.0,
+        ge=0,
+        le=100,
+        description="Queue capacity utilization",
     )
     resource_headroom_percent: float = Field(
-        0.0, ge=0, le=100, description="Resource headroom percentage"
+        0.0,
+        ge=0,
+        le=100,
+        description="Resource headroom percentage",
     )
 
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Metrics timestamp"
+        default_factory=datetime.utcnow,
+        description="Metrics timestamp",
     )
 
     def get_overall_health(self) -> EnumSystemHealth:
@@ -144,50 +177,59 @@ class ModelSystemHealthMetrics(BaseModel):
             and self.resource_headroom_percent >= 20.0
         ):
             return EnumSystemHealth.HEALTHY
-        elif (
+        if (
             self.api_availability >= 90.0
             and self.database_connectivity
             and self.aggregate_success_rate >= 80.0
             and self.resource_headroom_percent >= 10.0
         ):
             return EnumSystemHealth.DEGRADED
-        else:
-            return EnumSystemHealth.CRITICAL
+        return EnumSystemHealth.CRITICAL
 
 
 class ModelBusinessMetrics(BaseModel):
     """Business KPIs and trends."""
 
     development_velocity: float = Field(
-        0.0, ge=0, description="Development velocity in tickets per day"
+        0.0,
+        ge=0,
+        description="Development velocity in tickets per day",
     )
     cost_efficiency: float = Field(
-        0.0, ge=0, description="Cost efficiency in dollars per ticket"
+        0.0,
+        ge=0,
+        description="Cost efficiency in dollars per ticket",
     )
     quality_score: float = Field(0.0, ge=0, le=100, description="Quality score 0-100")
     roi_metric: float = Field(0.0, description="Return on investment ratio")
 
     velocity_trend: EnumTrendDirection = Field(
-        ..., description="Velocity trend direction"
+        ...,
+        description="Velocity trend direction",
     )
     cost_trend: EnumTrendDirection = Field(..., description="Cost trend direction")
     quality_trend: EnumTrendDirection = Field(
-        ..., description="Quality trend direction"
+        ...,
+        description="Quality trend direction",
     )
     efficiency_improvement_percent: float = Field(
-        0.0, description="Efficiency improvement percentage"
+        0.0,
+        description="Efficiency improvement percentage",
     )
 
     period_start: datetime = Field(..., description="Metrics period start")
     period_end: datetime = Field(..., description="Metrics period end")
 
     tickets_completed: int = Field(
-        0, ge=0, description="Total tickets completed in period"
+        0,
+        ge=0,
+        description="Total tickets completed in period",
     )
     total_cost: float = Field(0.0, ge=0, description="Total cost in period")
 
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Metrics timestamp"
+        default_factory=datetime.utcnow,
+        description="Metrics timestamp",
     )
 
 
@@ -196,12 +238,14 @@ class ModelServiceDependency(BaseModel):
 
     service_name: str = Field(..., description="Service name")
     status: EnumSystemHealth = Field(..., description="Service status")
-    url: Optional[str] = Field(None, description="Service URL")
+    url: str | None = Field(None, description="Service URL")
     last_check: datetime = Field(..., description="Last health check")
     response_time_ms: float = Field(
-        0.0, ge=0, description="Response time in milliseconds"
+        0.0,
+        ge=0,
+        description="Response time in milliseconds",
     )
-    error_message: Optional[str] = Field(None, description="Error message if unhealthy")
+    error_message: str | None = Field(None, description="Error message if unhealthy")
 
 
 class ModelProductionSnapshot(BaseModel):
@@ -211,27 +255,33 @@ class ModelProductionSnapshot(BaseModel):
 
     snapshot_id: str = Field(..., description="Unique snapshot identifier")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Snapshot timestamp"
+        default_factory=datetime.utcnow,
+        description="Snapshot timestamp",
     )
 
     system_health: ModelSystemHealthMetrics = Field(
-        ..., description="System health metrics"
+        ...,
+        description="System health metrics",
     )
     business_metrics: ModelBusinessMetrics = Field(..., description="Business KPIs")
 
-    agent_metrics: List[ModelAgentHealthMetrics] = Field(
-        default_factory=list, description="Individual agent metrics"
+    agent_metrics: list[ModelAgentHealthMetrics] = Field(
+        default_factory=list,
+        description="Individual agent metrics",
     )
 
-    service_dependencies: List[ModelServiceDependency] = Field(
-        default_factory=list, description="Service dependency statuses"
+    service_dependencies: list[ModelServiceDependency] = Field(
+        default_factory=list,
+        description="Service dependency statuses",
     )
 
-    current_window: Optional[str] = Field(
-        None, description="Current operational window"
+    current_window: str | None = Field(
+        None,
+        description="Current operational window",
     )
-    next_transition: Optional[datetime] = Field(
-        None, description="Next window transition"
+    next_transition: datetime | None = Field(
+        None,
+        description="Next window transition",
     )
 
     alerts_active: int = Field(0, ge=0, description="Number of active alerts")
@@ -244,7 +294,7 @@ class ModelProductionSnapshot(BaseModel):
                 agent
                 for agent in self.agent_metrics
                 if agent.status in [EnumAgentState.RUNNING, EnumAgentState.IDLE]
-            ]
+            ],
         )
 
     def get_failed_agents(self) -> int:
@@ -254,7 +304,7 @@ class ModelProductionSnapshot(BaseModel):
                 agent
                 for agent in self.agent_metrics
                 if agent.status == EnumAgentState.FAILED
-            ]
+            ],
         )
 
     def get_total_queue_depth(self) -> int:
@@ -277,12 +327,17 @@ class ModelMetricsAggregation(BaseModel):
     period_start: datetime = Field(..., description="Aggregation period start")
     period_end: datetime = Field(..., description="Aggregation period end")
     interval_minutes: int = Field(
-        ..., gt=0, description="Aggregation interval in minutes"
+        ...,
+        gt=0,
+        description="Aggregation interval in minutes",
     )
 
     avg_throughput: float = Field(0.0, ge=0, description="Average throughput")
     avg_success_rate: float = Field(
-        0.0, ge=0, le=100, description="Average success rate"
+        0.0,
+        ge=0,
+        le=100,
+        description="Average success rate",
     )
     avg_efficiency: float = Field(0.0, ge=0, le=100, description="Average efficiency")
     avg_cost_per_task: float = Field(0.0, ge=0, description="Average cost per task")
@@ -293,11 +348,15 @@ class ModelMetricsAggregation(BaseModel):
     total_cost: float = Field(0.0, ge=0, description="Total cost in period")
 
     uptime_percent: float = Field(
-        0.0, ge=0, le=100, description="System uptime percentage"
+        0.0,
+        ge=0,
+        le=100,
+        description="System uptime percentage",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Aggregation timestamp"
+        default_factory=datetime.utcnow,
+        description="Aggregation timestamp",
     )
 
 
@@ -306,42 +365,60 @@ class ModelPerformanceForecast(BaseModel):
 
     forecast_id: str = Field(..., description="Unique forecast identifier")
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Forecast creation time"
+        default_factory=datetime.utcnow,
+        description="Forecast creation time",
     )
     forecast_horizon_hours: int = Field(
-        ..., gt=0, description="Forecast horizon in hours"
+        ...,
+        gt=0,
+        description="Forecast horizon in hours",
     )
     confidence_interval: float = Field(
-        ..., ge=0, le=1, description="Confidence interval"
+        ...,
+        ge=0,
+        le=1,
+        description="Confidence interval",
     )
 
     predicted_throughput: float = Field(0.0, ge=0, description="Predicted throughput")
     predicted_cost: float = Field(0.0, ge=0, description="Predicted cost")
     predicted_efficiency: float = Field(
-        0.0, ge=0, le=100, description="Predicted efficiency"
+        0.0,
+        ge=0,
+        le=100,
+        description="Predicted efficiency",
     )
 
     throughput_lower_bound: float = Field(
-        0.0, ge=0, description="Throughput lower bound"
+        0.0,
+        ge=0,
+        description="Throughput lower bound",
     )
     throughput_upper_bound: float = Field(
-        0.0, ge=0, description="Throughput upper bound"
+        0.0,
+        ge=0,
+        description="Throughput upper bound",
     )
 
     cost_lower_bound: float = Field(0.0, ge=0, description="Cost lower bound")
     cost_upper_bound: float = Field(0.0, ge=0, description="Cost upper bound")
 
     model_accuracy: float = Field(
-        0.0, ge=0, le=100, description="Historical model accuracy"
+        0.0,
+        ge=0,
+        le=100,
+        description="Historical model accuracy",
     )
     based_on_samples: int = Field(0, ge=0, description="Number of samples used")
 
-    recommendations: List[str] = Field(
-        default_factory=list, description="Forecast-based recommendations"
+    recommendations: list[str] = Field(
+        default_factory=list,
+        description="Forecast-based recommendations",
     )
 
-    risk_factors: List[str] = Field(
-        default_factory=list, description="Identified risk factors"
+    risk_factors: list[str] = Field(
+        default_factory=list,
+        description="Identified risk factors",
     )
 
     def is_high_confidence(self) -> bool:

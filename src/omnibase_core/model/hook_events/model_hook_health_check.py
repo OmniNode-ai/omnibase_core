@@ -1,7 +1,6 @@
 """Model for hook system health check."""
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,8 @@ class ModelHookHealthCheck(BaseModel):
     """
 
     status: str = Field(
-        ..., description="Overall health status: healthy, degraded, unhealthy"
+        ...,
+        description="Overall health status: healthy, degraded, unhealthy",
     )
 
     timestamp: datetime = Field(
@@ -27,41 +27,50 @@ class ModelHookHealthCheck(BaseModel):
     uptime_seconds: int = Field(..., description="Service uptime in seconds")
 
     hooks_received: int = Field(
-        ..., description="Total number of hooks received since startup"
+        ...,
+        description="Total number of hooks received since startup",
     )
 
     hooks_processed: int = Field(
-        ..., description="Total number of hooks successfully processed"
+        ...,
+        description="Total number of hooks successfully processed",
     )
 
     hooks_failed: int = Field(
-        ..., description="Total number of hooks that failed processing"
+        ...,
+        description="Total number of hooks that failed processing",
     )
 
     active_connections: int = Field(
-        ..., description="Current number of active connections"
+        ...,
+        description="Current number of active connections",
     )
 
     kafka_status: str = Field(..., description="Kafka connection status")
 
     postgres_status: str = Field(..., description="PostgreSQL connection status")
 
-    last_hook_received: Optional[datetime] = Field(
-        None, description="Timestamp of the last hook received"
+    last_hook_received: datetime | None = Field(
+        None,
+        description="Timestamp of the last hook received",
     )
 
     error_rate_percent: float = Field(
-        ..., description="Current error rate as a percentage"
+        ...,
+        description="Current error rate as a percentage",
     )
 
     avg_processing_time_ms: float = Field(
-        ..., description="Average hook processing time in milliseconds"
+        ...,
+        description="Average hook processing time in milliseconds",
     )
 
-    dependencies: Dict[str, str] = Field(
-        default_factory=dict, description="Status of dependent services"
+    dependencies: dict[str, str] = Field(
+        default_factory=dict,
+        description="Status of dependent services",
     )
 
-    recent_errors: List[str] = Field(
-        default_factory=list, description="Recent error messages for diagnostics"
+    recent_errors: list[str] = Field(
+        default_factory=list,
+        description="Recent error messages for diagnostics",
     )

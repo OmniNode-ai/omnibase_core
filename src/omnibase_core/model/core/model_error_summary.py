@@ -3,7 +3,7 @@ Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -21,35 +21,42 @@ class ModelErrorSummary(BaseModel):
 
     # Error context
     occurred_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When error occurred"
+        default_factory=datetime.utcnow,
+        description="When error occurred",
     )
-    component: Optional[str] = Field(None, description="Component where error occurred")
-    operation: Optional[str] = Field(None, description="Operation that failed")
+    component: str | None = Field(None, description="Component where error occurred")
+    operation: str | None = Field(None, description="Operation that failed")
 
     # Error details
-    stack_trace: Optional[str] = Field(None, description="Stack trace if available")
-    inner_errors: Optional[List[Dict[str, str]]] = Field(
-        default_factory=list, description="Nested/inner errors"
+    stack_trace: str | None = Field(None, description="Stack trace if available")
+    inner_errors: list[dict[str, str]] | None = Field(
+        default_factory=list,
+        description="Nested/inner errors",
     )
-    context_data: Optional[Dict[str, str]] = Field(
-        default_factory=dict, description="Additional context"
+    context_data: dict[str, str] | None = Field(
+        default_factory=dict,
+        description="Additional context",
     )
 
     # Impact and resolution
-    impact_level: Optional[str] = Field(
-        None, description="Impact level (low/medium/high/critical)"
+    impact_level: str | None = Field(
+        None,
+        description="Impact level (low/medium/high/critical)",
     )
-    affected_resources: Optional[List[str]] = Field(
-        default_factory=list, description="Affected resources"
+    affected_resources: list[str] | None = Field(
+        default_factory=list,
+        description="Affected resources",
     )
-    suggested_actions: Optional[List[str]] = Field(
-        default_factory=list, description="Suggested resolution actions"
+    suggested_actions: list[str] | None = Field(
+        default_factory=list,
+        description="Suggested resolution actions",
     )
 
     # Tracking
-    error_id: Optional[str] = Field(None, description="Unique error instance ID")
-    correlation_id: Optional[str] = Field(
-        None, description="Correlation ID for tracing"
+    error_id: str | None = Field(None, description="Unique error instance ID")
+    correlation_id: str | None = Field(
+        None,
+        description="Correlation ID for tracing",
     )
     has_been_reported: bool = Field(False, description="Whether error was reported")
 
@@ -60,7 +67,7 @@ class ModelErrorSummary(BaseModel):
         return self.dict(exclude_none=True)
 
     @classmethod
-    def from_dict(cls, data: Optional[dict]) -> Optional["ModelErrorSummary"]:
+    def from_dict(cls, data: dict | None) -> Optional["ModelErrorSummary"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

@@ -4,7 +4,6 @@ UUID Service - Centralized UUID generation and validation.
 Provides consistent UUID generation across the ONEX system.
 """
 
-from typing import Optional
 from uuid import UUID, uuid4
 
 
@@ -31,7 +30,7 @@ class UUIDService:
             return False
 
     @staticmethod
-    def parse(uuid_string: str) -> Optional[UUID]:
+    def parse(uuid_string: str) -> UUID | None:
         """Parse a UUID string, return None if invalid."""
         try:
             return UUID(uuid_string)

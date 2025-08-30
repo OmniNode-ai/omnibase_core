@@ -30,7 +30,7 @@ discovering available versions, and managing version compatibility.
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from packaging import version
 
@@ -47,7 +47,7 @@ class NodeVersionResolver:
         """Initialize the version resolver with nodes directory."""
         self.nodes_directory = Path(nodes_directory)
 
-    def discover_node_versions(self, node_name: str) -> List[str]:
+    def discover_node_versions(self, node_name: str) -> list[str]:
         """
         Discover all available versions for a given node.
 
@@ -82,7 +82,7 @@ class NodeVersionResolver:
 
         return sorted(versions, key=version_key)
 
-    def get_latest_version(self, node_name: str) -> Optional[str]:
+    def get_latest_version(self, node_name: str) -> str | None:
         """
         Get the latest version for a given node.
 
@@ -96,8 +96,10 @@ class NodeVersionResolver:
         return versions[-1] if versions else None
 
     def resolve_version(
-        self, node_name: str, requested_version: Optional[str] = None
-    ) -> Optional[str]:
+        self,
+        node_name: str,
+        requested_version: str | None = None,
+    ) -> str | None:
         """
         Resolve a version for a node, defaulting to latest if not specified.
 
@@ -113,15 +115,15 @@ class NodeVersionResolver:
             available_versions = self.discover_node_versions(node_name)
             if requested_version in available_versions:
                 return requested_version
-            else:
-                return None
-        else:
-            # Return latest version
-            return self.get_latest_version(node_name)
+            return None
+        # Return latest version
+        return self.get_latest_version(node_name)
 
     def get_module_path(
-        self, node_name: str, version: Optional[str] = None
-    ) -> Optional[str]:
+        self,
+        node_name: str,
+        version: str | None = None,
+    ) -> str | None:
         """
         Get the Python module path for a node, auto-resolving version if needed.
 
@@ -137,14 +139,14 @@ class NodeVersionResolver:
             return f"omnibase.nodes.{node_name}.{resolved_version}.node"
         return None
 
-    def discover_all_nodes(self) -> Dict[str, List[str]]:
+    def discover_all_nodes(self) -> dict[str, list[str]]:
         """
         Discover all nodes and their available versions.
 
         Returns:
             Dictionary mapping node names to lists of available versions
         """
-        nodes: Dict[str, List[str]] = {}
+        nodes: dict[str, list[str]] = {}
 
         if not self.nodes_directory.exists():
             return nodes
@@ -157,7 +159,7 @@ class NodeVersionResolver:
 
         return nodes
 
-    def get_version_info(self, node_name: str) -> Dict[str, Any]:
+    def get_version_info(self, node_name: str) -> dict[str, Any]:
         """
         Get comprehensive version information for a node.
 
@@ -187,8 +189,9 @@ global_resolver = NodeVersionResolver()
 
 
 def resolve_node_version(
-    node_name: str, version: Optional[str] = None
-) -> Optional[str]:
+    node_name: str,
+    version: str | None = None,
+) -> str | None:
     """
     Resolve a node version, defaulting to latest if not specified.
 
@@ -203,8 +206,9 @@ def resolve_node_version(
 
 
 def get_node_module_path(
-    node_name: str, version: Optional[str] = None
-) -> Optional[str]:
+    node_name: str,
+    version: str | None = None,
+) -> str | None:
     """
     Get the Python module path for a node with auto-version resolution.
 
@@ -218,7 +222,7 @@ def get_node_module_path(
     return global_resolver.get_module_path(node_name, version)
 
 
-def list_available_nodes() -> Dict[str, List[str]]:
+def list_available_nodes() -> dict[str, list[str]]:
     """
     List all available nodes and their versions.
 
@@ -228,7 +232,7 @@ def list_available_nodes() -> Dict[str, List[str]]:
     return global_resolver.discover_all_nodes()
 
 
-def get_node_version_info(node_name: str) -> Dict[str, Any]:
+def get_node_version_info(node_name: str) -> dict[str, Any]:
     """
     Get comprehensive version information for a node.
 

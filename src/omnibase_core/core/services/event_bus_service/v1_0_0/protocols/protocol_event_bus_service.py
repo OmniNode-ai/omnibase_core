@@ -7,7 +7,7 @@ extracted from ModelNodeBase as part of NODEBASE-001 Phase 5 deconstruction.
 Author: ONEX Framework Team
 """
 
-from typing import List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
@@ -27,7 +27,9 @@ class ProtocolEventBusService(Protocol):
     """
 
     def initialize_event_bus(
-        self, event_bus: Optional[ProtocolEventBus] = None, auto_resolve: bool = True
+        self,
+        event_bus: ProtocolEventBus | None = None,
+        auto_resolve: bool = True,
     ) -> ProtocolEventBus:
         """
         Initialize or auto-resolve event bus connection.
@@ -42,7 +44,11 @@ class ProtocolEventBusService(Protocol):
         ...
 
     def emit_node_start(
-        self, node_id: str, node_name: str, correlation_id: UUID, metadata: dict
+        self,
+        node_id: str,
+        node_name: str,
+        correlation_id: UUID,
+        metadata: dict,
     ) -> bool:
         """
         Emit NODE_START event for operation lifecycle tracking.
@@ -109,8 +115,8 @@ class ProtocolEventBusService(Protocol):
         node_id: str,
         node_name: str,
         version: str,
-        actions: List[str],
-        protocols: List[str],
+        actions: list[str],
+        protocols: list[str],
         metadata: dict,
         correlation_id: UUID,
     ) -> bool:
@@ -132,8 +138,10 @@ class ProtocolEventBusService(Protocol):
         ...
 
     def get_event_patterns_from_contract(
-        self, contract_content: object, node_name: str
-    ) -> List[str]:
+        self,
+        contract_content: object,
+        node_name: str,
+    ) -> list[str]:
         """
         Extract event patterns from contract or derive from node name.
 
@@ -147,7 +155,10 @@ class ProtocolEventBusService(Protocol):
         ...
 
     def create_event_envelope(
-        self, event: ModelOnexEvent, source_node_id: str, correlation_id: UUID
+        self,
+        event: ModelOnexEvent,
+        source_node_id: str,
+        correlation_id: UUID,
     ) -> ModelEventEnvelope:
         """
         Create properly formatted event envelope for broadcasting.
@@ -162,7 +173,7 @@ class ProtocolEventBusService(Protocol):
         """
         ...
 
-    def auto_resolve_event_bus_from_environment(self) -> Optional[ProtocolEventBus]:
+    def auto_resolve_event_bus_from_environment(self) -> ProtocolEventBus | None:
         """
         Auto-resolve event bus adapter from environment configuration.
 
@@ -172,7 +183,10 @@ class ProtocolEventBusService(Protocol):
         ...
 
     def setup_event_subscriptions(
-        self, event_bus: ProtocolEventBus, patterns: List[str], event_handler: callable
+        self,
+        event_bus: ProtocolEventBus,
+        patterns: list[str],
+        event_handler: callable,
     ) -> bool:
         """
         Set up event subscriptions for specified patterns.
@@ -188,7 +202,9 @@ class ProtocolEventBusService(Protocol):
         ...
 
     def cleanup_event_subscriptions(
-        self, event_bus: ProtocolEventBus, patterns: List[str]
+        self,
+        event_bus: ProtocolEventBus,
+        patterns: list[str],
     ) -> bool:
         """
         Clean up event subscriptions for specified patterns.

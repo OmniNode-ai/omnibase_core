@@ -12,11 +12,10 @@
 
 import re
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar
 from uuid import UUID
 
-from pydantic import (BaseModel, ConfigDict, Field, field_validator,
-                      model_validator)
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
@@ -45,13 +44,13 @@ class ModelSecureEventPayload(BaseModel):
     )
 
     # Core payload fields with security constraints
-    event_data: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
+    event_data: dict[str, str | int | float | bool | list[str]] = Field(
         default_factory=dict,
         description="Sanitized event payload data with restricted types",
         max_length=50,  # Maximum 50 key-value pairs
     )
 
-    metadata: Dict[str, str] = Field(
+    metadata: dict[str, str] = Field(
         default_factory=dict,
         description="Event metadata (string values only for security)",
         max_length=20,  # Maximum 20 metadata entries
@@ -65,7 +64,7 @@ class ModelSecureEventPayload(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",  # Alphanumeric, underscore, dash only
     )
 
-    correlation_id: Optional[UUID] = Field(
+    correlation_id: UUID | None = Field(
         None,
         description="Correlation UUID for request tracing",
     )
@@ -75,14 +74,14 @@ class ModelSecureEventPayload(BaseModel):
         description="Event creation timestamp (UTC)",
     )
 
-    security_context: Dict[str, str] = Field(
+    security_context: dict[str, str] = Field(
         default_factory=dict,
         description="Security context information",
         max_length=10,  # Limited security context entries
     )
 
     # Security validation patterns
-    MALICIOUS_PATTERNS: ClassVar[List[str]] = [
+    MALICIOUS_PATTERNS: ClassVar[list[str]] = [
         r"<script\b",  # XSS attempts
         r"javascript:",  # JavaScript injection
         r"on\w+\s*=",  # Event handler injection
@@ -101,10 +100,10 @@ class ModelSecureEventPayload(BaseModel):
     ]
 
     # Compiled regex patterns for performance
-    _compiled_patterns: Optional[List[re.Pattern]] = None
+    _compiled_patterns: list[re.Pattern] | None = None
 
     @classmethod
-    def _get_compiled_patterns(cls) -> List[re.Pattern]:
+    def _get_compiled_patterns(cls) -> list[re.Pattern]:
         """Get compiled regex patterns for malicious content detection."""
         if cls._compiled_patterns is None:
             cls._compiled_patterns = [
@@ -114,7 +113,7 @@ class ModelSecureEventPayload(BaseModel):
 
     @field_validator("event_data")
     @classmethod
-    def validate_event_data(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_event_data(cls, v: dict[str, Any]) -> dict[str, Any]:
         """
         Validate and sanitize event data with zero-trust security.
 
@@ -128,8 +127,9 @@ class ModelSecureEventPayload(BaseModel):
             OnexError: If validation fails or malicious content detected
         """
         if not isinstance(v, dict):
+            msg = "Event data must be a dictionary"
             raise OnexError(
-                "Event data must be a dictionary",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_event_data",
@@ -137,8 +137,9 @@ class ModelSecureEventPayload(BaseModel):
 
         # Check size limits (DoS prevention)
         if len(v) > 50:
+            msg = f"Event data exceeds maximum size limit: {len(v)} > 50"
             raise OnexError(
-                f"Event data exceeds maximum size limit: {len(v)} > 50",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_event_data",
@@ -150,8 +151,9 @@ class ModelSecureEventPayload(BaseModel):
         for key, value in v.items():
             # Validate key format
             if not isinstance(key, str) or len(key) > 128:
+                msg = f"Invalid event data key: {key}"
                 raise OnexError(
-                    f"Invalid event data key: {key}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_event_data",
@@ -164,24 +166,28 @@ class ModelSecureEventPayload(BaseModel):
             # Validate and sanitize value based on type
             if isinstance(value, str):
                 if len(value) > 10000:  # 10KB limit per string
+                    msg = f"String value too large: {len(value)} characters"
                     raise OnexError(
-                        f"String value too large: {len(value)} characters",
+                        msg,
                         error_code=CoreErrorCode.VALIDATION_ERROR,
                         component="ModelSecureEventPayload",
                         operation="validate_event_data",
                     )
                 sanitized_value = cls._sanitize_string(value)
                 cls._check_malicious_patterns(
-                    sanitized_value, patterns, f"value for '{key}'"
+                    sanitized_value,
+                    patterns,
+                    f"value for '{key}'",
                 )
 
-            elif isinstance(value, (int, float, bool)):
+            elif isinstance(value, int | float | bool):
                 sanitized_value = value
 
             elif isinstance(value, list):
                 if len(value) > 100:  # Max 100 items per list
+                    msg = f"List too large: {len(value)} items"
                     raise OnexError(
-                        f"List too large: {len(value)} items",
+                        msg,
                         error_code=CoreErrorCode.VALIDATION_ERROR,
                         component="ModelSecureEventPayload",
                         operation="validate_event_data",
@@ -190,15 +196,17 @@ class ModelSecureEventPayload(BaseModel):
                 sanitized_value = []
                 for item in value:
                     if not isinstance(item, str):
+                        msg = f"List items must be strings, got: {type(item)}"
                         raise OnexError(
-                            f"List items must be strings, got: {type(item)}",
+                            msg,
                             error_code=CoreErrorCode.VALIDATION_ERROR,
                             component="ModelSecureEventPayload",
                             operation="validate_event_data",
                         )
                     if len(item) > 1000:  # 1KB limit per list item
+                        msg = f"List item too large: {len(item)} characters"
                         raise OnexError(
-                            f"List item too large: {len(item)} characters",
+                            msg,
                             error_code=CoreErrorCode.VALIDATION_ERROR,
                             component="ModelSecureEventPayload",
                             operation="validate_event_data",
@@ -206,13 +214,16 @@ class ModelSecureEventPayload(BaseModel):
 
                     sanitized_item = cls._sanitize_string(item)
                     cls._check_malicious_patterns(
-                        sanitized_item, patterns, f"list item in '{key}'"
+                        sanitized_item,
+                        patterns,
+                        f"list item in '{key}'",
                     )
                     sanitized_value.append(sanitized_item)
 
             else:
+                msg = f"Unsupported value type: {type(value)} for key '{key}'"
                 raise OnexError(
-                    f"Unsupported value type: {type(value)} for key '{key}'",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_event_data",
@@ -224,7 +235,7 @@ class ModelSecureEventPayload(BaseModel):
 
     @field_validator("metadata")
     @classmethod
-    def validate_metadata(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def validate_metadata(cls, v: dict[str, str]) -> dict[str, str]:
         """
         Validate and sanitize metadata with security controls.
 
@@ -238,16 +249,18 @@ class ModelSecureEventPayload(BaseModel):
             OnexError: If validation fails
         """
         if not isinstance(v, dict):
+            msg = "Metadata must be a dictionary"
             raise OnexError(
-                "Metadata must be a dictionary",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_metadata",
             )
 
         if len(v) > 20:
+            msg = f"Metadata exceeds maximum size limit: {len(v)} > 20"
             raise OnexError(
-                f"Metadata exceeds maximum size limit: {len(v)} > 20",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_metadata",
@@ -259,8 +272,9 @@ class ModelSecureEventPayload(BaseModel):
         for key, value in v.items():
             # Validate types
             if not isinstance(key, str) or not isinstance(value, str):
+                msg = "Metadata keys and values must be strings"
                 raise OnexError(
-                    "Metadata keys and values must be strings",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_metadata",
@@ -268,8 +282,9 @@ class ModelSecureEventPayload(BaseModel):
 
             # Validate lengths
             if len(key) > 128 or len(value) > 1000:
+                msg = "Metadata key/value too large"
                 raise OnexError(
-                    "Metadata key/value too large",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_metadata",
@@ -280,10 +295,14 @@ class ModelSecureEventPayload(BaseModel):
             sanitized_value = cls._sanitize_string(value)
 
             cls._check_malicious_patterns(
-                sanitized_key, patterns, f"metadata key '{key}'"
+                sanitized_key,
+                patterns,
+                f"metadata key '{key}'",
             )
             cls._check_malicious_patterns(
-                sanitized_value, patterns, f"metadata value for '{key}'"
+                sanitized_value,
+                patterns,
+                f"metadata value for '{key}'",
             )
 
             sanitized_metadata[sanitized_key] = sanitized_value
@@ -292,7 +311,7 @@ class ModelSecureEventPayload(BaseModel):
 
     @field_validator("security_context")
     @classmethod
-    def validate_security_context(cls, v: Dict[str, str]) -> Dict[str, str]:
+    def validate_security_context(cls, v: dict[str, str]) -> dict[str, str]:
         """
         Validate security context with strict controls.
 
@@ -306,16 +325,18 @@ class ModelSecureEventPayload(BaseModel):
             OnexError: If validation fails
         """
         if not isinstance(v, dict):
+            msg = "Security context must be a dictionary"
             raise OnexError(
-                "Security context must be a dictionary",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_security_context",
             )
 
         if len(v) > 10:
+            msg = f"Security context exceeds maximum size: {len(v)} > 10"
             raise OnexError(
-                f"Security context exceeds maximum size: {len(v)} > 10",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_security_context",
@@ -340,16 +361,18 @@ class ModelSecureEventPayload(BaseModel):
 
         for key, value in v.items():
             if key not in allowed_keys:
+                msg = f"Unauthorized security context key: {key}"
                 raise OnexError(
-                    f"Unauthorized security context key: {key}",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_security_context",
                 )
 
             if not isinstance(value, str) or len(value) > 256:
+                msg = f"Invalid security context value for '{key}'"
                 raise OnexError(
-                    f"Invalid security context value for '{key}'",
+                    msg,
                     error_code=CoreErrorCode.VALIDATION_ERROR,
                     component="ModelSecureEventPayload",
                     operation="validate_security_context",
@@ -357,7 +380,9 @@ class ModelSecureEventPayload(BaseModel):
 
             sanitized_value = cls._sanitize_string(value)
             cls._check_malicious_patterns(
-                sanitized_value, patterns, f"security context '{key}'"
+                sanitized_value,
+                patterns,
+                f"security context '{key}'",
             )
 
             sanitized_context[key] = sanitized_value
@@ -401,8 +426,9 @@ class ModelSecureEventPayload(BaseModel):
 
         # 100KB total payload limit
         if total_size > 100_000:
+            msg = f"Total payload size exceeds 100KB limit: {total_size} bytes"
             raise OnexError(
-                f"Total payload size exceeds 100KB limit: {total_size} bytes",
+                msg,
                 error_code=CoreErrorCode.VALIDATION_ERROR,
                 component="ModelSecureEventPayload",
                 operation="validate_total_payload_size",
@@ -433,13 +459,14 @@ class ModelSecureEventPayload(BaseModel):
         sanitized = sanitized.strip()
 
         # Replace multiple consecutive whitespace with single space
-        sanitized = re.sub(r"\s+", " ", sanitized)
-
-        return sanitized
+        return re.sub(r"\s+", " ", sanitized)
 
     @classmethod
     def _check_malicious_patterns(
-        cls, value: str, patterns: List[re.Pattern], context: str
+        cls,
+        value: str,
+        patterns: list[re.Pattern],
+        context: str,
     ) -> None:
         """
         Check string for malicious patterns.
@@ -454,8 +481,9 @@ class ModelSecureEventPayload(BaseModel):
         """
         for pattern in patterns:
             if pattern.search(value):
+                msg = f"Malicious pattern detected in {context}: {pattern.pattern}"
                 raise OnexError(
-                    f"Malicious pattern detected in {context}: {pattern.pattern}",
+                    msg,
                     error_code=CoreErrorCode.SECURITY_VIOLATION,
                     component="ModelSecureEventPayload",
                     operation="_check_malicious_patterns",
@@ -489,7 +517,7 @@ class ModelSecureEventPayload(BaseModel):
 
         return total_size
 
-    def to_audit_dict(self) -> Dict[str, Any]:
+    def to_audit_dict(self) -> dict[str, Any]:
         """
         Convert payload to audit-safe dictionary.
 

@@ -5,16 +5,14 @@ This protocol defines the interface for tools that coordinate event-driven
 workflow execution within Workflow scenarios.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from omnibase_core.model.core.model_onex_result import ModelOnexResult
-from omnibase_core.model.workflow.model_workflow_event import \
-    ModelWorkflowEvent
+from omnibase_core.model.workflow.model_workflow_event import ModelWorkflowEvent
 
 if TYPE_CHECKING:
     from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
-    from omnibase_core.protocol.protocol_node_registry import \
-        ProtocolNodeRegistry
+    from omnibase_core.protocol.protocol_node_registry import ProtocolNodeRegistry
 
 
 class ProtocolWorkflowEventCoordinator(Protocol):
@@ -44,7 +42,7 @@ class ProtocolWorkflowEventCoordinator(Protocol):
         """
         ...
 
-    def run(self, input_state: Dict[str, Any]) -> ModelOnexResult:
+    def run(self, input_state: dict[str, Any]) -> ModelOnexResult:
         """
         Run the Workflow event coordinator with the provided input state.
 
@@ -58,7 +56,7 @@ class ProtocolWorkflowEventCoordinator(Protocol):
 
     def coordinate_events(
         self,
-        workflow_events: List[ModelWorkflowEvent],
+        workflow_events: list[ModelWorkflowEvent],
         scenario_id: str,
         correlation_id: str,
     ) -> ModelOnexResult:
@@ -76,7 +74,9 @@ class ProtocolWorkflowEventCoordinator(Protocol):
         ...
 
     def publish_workflow_event(
-        self, event: ModelWorkflowEvent, correlation_id: str
+        self,
+        event: ModelWorkflowEvent,
+        correlation_id: str,
     ) -> ModelOnexResult:
         """
         Publish a Workflow event to the event bus.
@@ -91,7 +91,10 @@ class ProtocolWorkflowEventCoordinator(Protocol):
         ...
 
     def subscribe_to_events(
-        self, event_types: List[str], callback: callable, correlation_id: str
+        self,
+        event_types: list[str],
+        callback: callable,
+        correlation_id: str,
     ) -> ModelOnexResult:
         """
         Subscribe to specific event types.
@@ -106,7 +109,7 @@ class ProtocolWorkflowEventCoordinator(Protocol):
         """
         ...
 
-    def get_event_status(self, event_id: str) -> Optional[Dict[str, Any]]:
+    def get_event_status(self, event_id: str) -> dict[str, Any] | None:
         """
         Get the status of a specific event.
 
@@ -118,7 +121,7 @@ class ProtocolWorkflowEventCoordinator(Protocol):
         """
         ...
 
-    def health_check(self) -> Dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """
         Perform health check for the Workflow event coordinator.
 

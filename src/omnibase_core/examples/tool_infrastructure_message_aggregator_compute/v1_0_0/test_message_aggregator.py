@@ -7,28 +7,34 @@ Achieves >85% code coverage requirement focusing on modernized health_check() me
 """
 
 import asyncio
-import json
 import time
-import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import asyncpg
 import pytest
 from omnibase.enums.enum_health_status import EnumHealthStatus
-from pydantic import ValidationError
 
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.core.onex_error import OnexError
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.models import (
-    ModelMessageAggregatorInput, ModelMessageAggregatorOutput)
+    ModelMessageAggregatorInput,
+    ModelMessageAggregatorOutput,
+)
 from omnibase_core.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node import (
-    MessageAggregator, ModelAggregatedData, ModelAggregationMetrics,
-    ModelAggregationResult, ModelGroupMessage, ModelGroupMessageData,
-    ModelNumericStats, ModelStateData, StateManager, ToolMessageAggregator,
-    main)
+    MessageAggregator,
+    ModelAggregatedData,
+    ModelAggregationMetrics,
+    ModelAggregationResult,
+    ModelGroupMessage,
+    ModelGroupMessageData,
+    ModelNumericStats,
+    ModelStateData,
+    StateManager,
+    ToolMessageAggregator,
+    main,
+)
 
 
 class TestModelValidation:
@@ -119,7 +125,7 @@ class TestModelValidation:
                     data={},
                     metadata={},
                     timestamp=datetime.utcnow().isoformat(),
-                )
+                ),
             ],
         )
         assert combine_data.aggregation_strategy == "combine"
@@ -128,7 +134,11 @@ class TestModelValidation:
     def test_model_numeric_stats_validation(self):
         """Test ModelNumericStats validation."""
         stats = ModelNumericStats(
-            sum=100.0, average=20.0, min=5.0, max=50.0, numeric_count=5
+            sum=100.0,
+            average=20.0,
+            min=5.0,
+            max=50.0,
+            numeric_count=5,
         )
         assert stats.sum == 100.0
         assert stats.average == 20.0
@@ -194,7 +204,8 @@ class TestStateManager:
         )
 
         result = await state_manager.persist_state(
-            state_key="test_key", state_data=state_data
+            state_key="test_key",
+            state_data=state_data,
         )
 
         assert result is False
@@ -265,7 +276,9 @@ class TestStateManager:
 
     @pytest.mark.asyncio
     async def test_cleanup_expired_state_custom_retention(
-        self, state_manager, mock_db_pool
+        self,
+        state_manager,
+        mock_db_pool,
     ):
         """Test cleanup with custom retention period."""
         connection = mock_db_pool.acquire.return_value.__aenter__.return_value
@@ -288,8 +301,7 @@ class TestMessageAggregator:
     @pytest.fixture
     def mock_db_pool(self):
         """Mock asyncpg connection pool."""
-        pool = MagicMock(spec=asyncpg.Pool)
-        return pool
+        return MagicMock(spec=asyncpg.Pool)
 
     @pytest.fixture
     def message_aggregator(self, mock_db_pool):
@@ -311,7 +323,9 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator.aggregate_messages(
-            group_messages, "merge", "test_correlation"
+            group_messages,
+            "merge",
+            "test_correlation",
         )
 
         assert isinstance(result, ModelAggregatedData)
@@ -338,7 +352,9 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator.aggregate_messages(
-            group_messages, "combine", "test_correlation"
+            group_messages,
+            "combine",
+            "test_correlation",
         )
 
         assert result.aggregation_strategy == "combine"
@@ -358,7 +374,9 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator.aggregate_messages(
-            group_messages, "reduce", "test_correlation"
+            group_messages,
+            "reduce",
+            "test_correlation",
         )
 
         assert result.aggregation_strategy == "reduce"
@@ -378,7 +396,9 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator.aggregate_messages(
-            group_messages, "reduce", "test_correlation"
+            group_messages,
+            "reduce",
+            "test_correlation",
         )
 
         assert result.aggregation_strategy == "reduce"
@@ -394,7 +414,9 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator.aggregate_messages(
-            group_messages, "collect", "test_correlation"
+            group_messages,
+            "collect",
+            "test_correlation",
         )
 
         assert result.aggregation_strategy == "collect"
@@ -410,7 +432,9 @@ class TestMessageAggregator:
 
         with pytest.raises(OnexError) as exc_info:
             await message_aggregator.aggregate_messages(
-                group_messages, "unknown_strategy", "test_correlation"
+                group_messages,
+                "unknown_strategy",
+                "test_correlation",
             )
 
         assert "Unknown aggregation strategy: unknown_strategy" in str(exc_info.value)
@@ -454,7 +478,8 @@ class TestMessageAggregator:
         ]
 
         result = await message_aggregator._merge_aggregation(
-            group_messages, "test_correlation"
+            group_messages,
+            "test_correlation",
         )
 
         # Verify conflict resolution
@@ -471,8 +496,7 @@ class TestToolMessageAggregator:
     @pytest.fixture
     def mock_container(self):
         """Mock ONEX container."""
-        container = MagicMock(spec=ONEXContainer)
-        return container
+        return MagicMock(spec=ONEXContainer)
 
     @pytest.fixture
     def aggregator_tool(self, mock_container):
@@ -706,7 +730,7 @@ class TestToolMessageAggregator:
         # Mock db_pool to raise exception on access
         aggregator_tool.db_pool = MagicMock()
         aggregator_tool.db_pool._closed = MagicMock(
-            side_effect=Exception("Access error")
+            side_effect=Exception("Access error"),
         )
 
         result = aggregator_tool.health_check()
@@ -828,7 +852,8 @@ class TestToolMessageAggregator:
         )
 
         result = await aggregator_tool.persist_state(
-            state_key="test_key", state_data=state_data
+            state_key="test_key",
+            state_data=state_data,
         )
 
         assert result.status == "error"
@@ -849,7 +874,8 @@ class TestToolMessageAggregator:
         )
 
         result = await aggregator_tool.persist_state(
-            state_key="test_key", state_data=state_data
+            state_key="test_key",
+            state_data=state_data,
         )
 
         assert result.status == "error"
@@ -1151,7 +1177,7 @@ class TestToolMessageAggregator:
         )
         mock_result.dict = MagicMock(return_value={"merged": "data"})
         aggregator_tool.message_aggregator.aggregate_messages = AsyncMock(
-            return_value=mock_result
+            return_value=mock_result,
         )
 
         # Test aggregation
@@ -1229,7 +1255,7 @@ class TestToolMessageAggregator:
         mock_result.dict = MagicMock(return_value={"empty": "collection"})
         aggregator_tool.message_aggregator = MagicMock()
         aggregator_tool.message_aggregator.aggregate_messages = AsyncMock(
-            return_value=mock_result
+            return_value=mock_result,
         )
 
         result = await aggregator_tool.process(input_data)
@@ -1308,7 +1334,7 @@ class TestToolMessageAggregator:
     def test_main_function(self):
         """Test main function creates aggregator with infrastructure container."""
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node.create_infrastructure_container"
+            "omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node.create_infrastructure_container",
         ) as mock_create_container:
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
@@ -1322,7 +1348,7 @@ class TestToolMessageAggregator:
     def test_main_function_integration(self):
         """Test main function can be called directly."""
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node.create_infrastructure_container"
+            "omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node.create_infrastructure_container",
         ) as mock_create_container:
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
@@ -1353,7 +1379,7 @@ class TestRealPostgreSQLIntegration:
                     password="",
                     min_size=1,
                     max_size=2,
-                )
+                ),
             )
             loop.run_until_complete(pool.close())
             return True
@@ -1383,10 +1409,10 @@ class TestRealPostgreSQLIntegration:
             )
 
             # Create state manager
-            state_manager = StateManager(pool)
+            StateManager(pool)
 
             # Test state persistence
-            state_data = ModelStateData(
+            ModelStateData(
                 operation_type="test_real_db",
                 data={
                     "test_key": "test_value",
@@ -1434,13 +1460,17 @@ class TestComplexScenarios:
         ]
 
         merge_result = await complex_aggregator.message_aggregator.aggregate_messages(
-            merge_messages, "merge", "analytics_merge"
+            merge_messages,
+            "merge",
+            "analytics_merge",
         )
         assert merge_result.aggregation_strategy == "merge"
 
         # Test reduce strategy on same data
         reduce_result = await complex_aggregator.message_aggregator.aggregate_messages(
-            merge_messages, "reduce", "analytics_reduce"
+            merge_messages,
+            "reduce",
+            "analytics_reduce",
         )
         assert reduce_result.aggregation_strategy == "reduce"
         assert (
@@ -1449,7 +1479,9 @@ class TestComplexScenarios:
 
         # Test collect strategy
         collect_result = await complex_aggregator.message_aggregator.aggregate_messages(
-            merge_messages, "collect", "analytics_collect"
+            merge_messages,
+            "collect",
+            "analytics_collect",
         )
         assert collect_result.aggregation_strategy == "collect"
         assert len(collect_result.collected_messages) == 2
@@ -1472,7 +1504,9 @@ class TestComplexScenarios:
         # Test reduce strategy for aggregating metrics
         start_time = time.time()
         result = await complex_aggregator.message_aggregator.aggregate_messages(
-            high_volume_messages, "reduce", "high_volume_test"
+            high_volume_messages,
+            "reduce",
+            "high_volume_test",
         )
         processing_time = time.time() - start_time
 
@@ -1502,7 +1536,9 @@ class TestComplexScenarios:
 
         # Should handle malformed data gracefully
         result = await complex_aggregator.message_aggregator.aggregate_messages(
-            filtered_messages, "collect", "error_recovery_test"
+            filtered_messages,
+            "collect",
+            "error_recovery_test",
         )
 
         assert result.aggregation_strategy == "collect"

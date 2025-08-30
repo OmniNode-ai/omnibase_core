@@ -5,7 +5,6 @@ Defines assignment of a task to a specific agent.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,21 +25,22 @@ class ModelAgentTaskAssignment(BaseModel):
 
     # Assignment metadata
     assigned_at: datetime = Field(default_factory=datetime.now)
-    estimated_completion_seconds: Optional[int] = Field(None)
-    queue_position: Optional[int] = Field(
-        None, description="Position in queue if queued"
+    estimated_completion_seconds: int | None = Field(None)
+    queue_position: int | None = Field(
+        None,
+        description="Position in queue if queued",
     )
 
     # Status
     status: str = Field("assigned", description="assigned, queued, rejected")
-    rejection_reason: Optional[str] = Field(None)
+    rejection_reason: str | None = Field(None)
 
     @classmethod
     def create_event(
         cls,
         node_id: str,
         assignment: "ModelAgentTaskAssignment",
-        correlation_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
     ) -> ModelOnexEvent:
         """Create ONEX event for task assignment."""
         return ModelOnexEvent.create_plugin_event(

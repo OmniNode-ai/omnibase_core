@@ -2,7 +2,7 @@
 Workflow strategy model.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -15,13 +15,14 @@ class ModelWorkflowStrategy(BaseModel):
     Replaces Dict[str, Any] for strategy fields.
     """
 
-    matrix: Optional[ModelMatrixStrategy] = Field(
-        None, description="Matrix configuration"
+    matrix: ModelMatrixStrategy | None = Field(
+        None,
+        description="Matrix configuration",
     )
     fail_fast: bool = Field(True, description="Fail fast on first error")
-    max_parallel: Optional[int] = Field(None, description="Maximum parallel jobs")
+    max_parallel: int | None = Field(None, description="Maximum parallel jobs")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         result = {"fail-fast": self.fail_fast}
         if self.matrix:

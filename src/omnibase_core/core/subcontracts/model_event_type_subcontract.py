@@ -5,7 +5,7 @@ Event Type Subcontract Model - ONEX Standards Compliant.
 Dedicated subcontract model for event-driven architecture functionality providing:
 - Primary event definitions with categories and routing
 - Event publishing and subscription configuration
-- Event transformation and filtering rules  
+- Event transformation and filtering rules
 - Event routing strategies and target groups
 - Event persistence and replay configuration
 
@@ -15,7 +15,7 @@ providing clean separation between node logic and event handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -29,39 +29,54 @@ class ModelEventDefinition(BaseModel):
     """
 
     event_name: str = Field(
-        ..., description="Unique name for the event type", min_length=1
+        ...,
+        description="Unique name for the event type",
+        min_length=1,
     )
 
     event_category: str = Field(
-        ..., description="Category classification for event routing", min_length=1
+        ...,
+        description="Category classification for event routing",
+        min_length=1,
     )
 
     description: str = Field(
-        ..., description="Human-readable event description", min_length=1
+        ...,
+        description="Human-readable event description",
+        min_length=1,
     )
 
     schema_version: str = Field(
-        default="1.0.0", description="Schema version for event structure"
+        default="1.0.0",
+        description="Schema version for event structure",
     )
 
-    required_fields: List[str] = Field(
-        default_factory=list, description="Required fields in event payload"
+    required_fields: list[str] = Field(
+        default_factory=list,
+        description="Required fields in event payload",
     )
 
-    optional_fields: List[str] = Field(
-        default_factory=list, description="Optional fields in event payload"
+    optional_fields: list[str] = Field(
+        default_factory=list,
+        description="Optional fields in event payload",
     )
 
-    routing_key: Optional[str] = Field(
-        default=None, description="Routing key for event distribution"
+    routing_key: str | None = Field(
+        default=None,
+        description="Routing key for event distribution",
     )
 
     priority: int = Field(
-        default=1, description="Event priority for processing order", ge=1, le=10
+        default=1,
+        description="Event priority for processing order",
+        ge=1,
+        le=10,
     )
 
-    ttl_seconds: Optional[int] = Field(
-        default=None, description="Time-to-live for event persistence", ge=1
+    ttl_seconds: int | None = Field(
+        default=None,
+        description="Time-to-live for event persistence",
+        ge=1,
     )
 
 
@@ -74,7 +89,9 @@ class ModelEventTransformation(BaseModel):
     """
 
     transformation_name: str = Field(
-        ..., description="Unique name for the transformation", min_length=1
+        ...,
+        description="Unique name for the transformation",
+        min_length=1,
     )
 
     transformation_type: str = Field(
@@ -83,24 +100,30 @@ class ModelEventTransformation(BaseModel):
         min_length=1,
     )
 
-    conditions: List[str] = Field(
-        default_factory=list, description="Conditions for applying transformation"
+    conditions: list[str] = Field(
+        default_factory=list,
+        description="Conditions for applying transformation",
     )
 
-    mapping_rules: Dict[str, str] = Field(
-        default_factory=dict, description="Field mapping rules for transformation"
+    mapping_rules: dict[str, str] = Field(
+        default_factory=dict,
+        description="Field mapping rules for transformation",
     )
 
-    enrichment_sources: List[str] = Field(
-        default_factory=list, description="External sources for event enrichment"
+    enrichment_sources: list[str] = Field(
+        default_factory=list,
+        description="External sources for event enrichment",
     )
 
-    validation_schema: Optional[str] = Field(
-        default=None, description="Schema for event validation after transformation"
+    validation_schema: str | None = Field(
+        default=None,
+        description="Schema for event validation after transformation",
     )
 
     execution_order: int = Field(
-        default=1, description="Order of transformation execution", ge=1
+        default=1,
+        description="Order of transformation execution",
+        ge=1,
     )
 
 
@@ -118,28 +141,34 @@ class ModelEventRouting(BaseModel):
         min_length=1,
     )
 
-    target_groups: List[str] = Field(
-        default_factory=list, description="Target groups for event routing"
+    target_groups: list[str] = Field(
+        default_factory=list,
+        description="Target groups for event routing",
     )
 
-    routing_rules: List[str] = Field(
-        default_factory=list, description="Conditional routing rules"
+    routing_rules: list[str] = Field(
+        default_factory=list,
+        description="Conditional routing rules",
     )
 
     load_balancing: str = Field(
-        default="round_robin", description="Load balancing strategy for targets"
+        default="round_robin",
+        description="Load balancing strategy for targets",
     )
 
-    retry_policy: Dict[str, Union[int, bool]] = Field(
-        default_factory=dict, description="Retry policy for failed deliveries"
+    retry_policy: dict[str, int | bool] = Field(
+        default_factory=dict,
+        description="Retry policy for failed deliveries",
     )
 
-    dead_letter_queue: Optional[str] = Field(
-        default=None, description="Dead letter queue for undeliverable events"
+    dead_letter_queue: str | None = Field(
+        default=None,
+        description="Dead letter queue for undeliverable events",
     )
 
     circuit_breaker_enabled: bool = Field(
-        default=False, description="Enable circuit breaker for routing failures"
+        default=False,
+        description="Enable circuit breaker for routing failures",
     )
 
 
@@ -152,35 +181,45 @@ class ModelEventPersistence(BaseModel):
     """
 
     persistence_enabled: bool = Field(
-        default=True, description="Whether events should be persisted"
+        default=True,
+        description="Whether events should be persisted",
     )
 
     storage_backend: str = Field(
-        default="kafka", description="Backend storage system for events"
+        default="kafka",
+        description="Backend storage system for events",
     )
 
     retention_policy: str = Field(
-        default="time_based", description="Retention policy for stored events"
+        default="time_based",
+        description="Retention policy for stored events",
     )
 
     retention_days: int = Field(
-        default=30, description="Number of days to retain events", ge=1
+        default=30,
+        description="Number of days to retain events",
+        ge=1,
     )
 
     replay_enabled: bool = Field(
-        default=True, description="Whether event replay is supported"
+        default=True,
+        description="Whether event replay is supported",
     )
 
     snapshot_interval_ms: int = Field(
-        default=300000, description="Interval for event snapshots", ge=1000
+        default=300000,
+        description="Interval for event snapshots",
+        ge=1000,
     )
 
     compression_enabled: bool = Field(
-        default=True, description="Enable compression for stored events"
+        default=True,
+        description="Enable compression for stored events",
     )
 
     encryption_enabled: bool = Field(
-        default=False, description="Enable encryption for stored events"
+        default=False,
+        description="Enable encryption for stored events",
     )
 
 
@@ -196,110 +235,139 @@ class ModelEventTypeSubcontract(BaseModel):
     """
 
     # Primary event configuration
-    primary_events: List[str] = Field(
-        ..., description="Primary events that this node produces/handles", min_length=1
+    primary_events: list[str] = Field(
+        ...,
+        description="Primary events that this node produces/handles",
+        min_length=1,
     )
 
-    event_categories: List[str] = Field(
-        ..., description="Event categories for classification and routing", min_length=1
+    event_categories: list[str] = Field(
+        ...,
+        description="Event categories for classification and routing",
+        min_length=1,
     )
 
     # Event behavior configuration
     publish_events: bool = Field(
-        default=True, description="Whether this node publishes events"
+        default=True,
+        description="Whether this node publishes events",
     )
 
     subscribe_events: bool = Field(
-        default=False, description="Whether this node subscribes to events"
+        default=False,
+        description="Whether this node subscribes to events",
     )
 
     event_routing: str = Field(
-        ..., description="Event routing strategy or target routing group"
+        ...,
+        description="Event routing strategy or target routing group",
     )
 
     # Advanced event definitions (optional)
-    event_definitions: List[ModelEventDefinition] = Field(
-        default_factory=list, description="Detailed event type definitions"
+    event_definitions: list[ModelEventDefinition] = Field(
+        default_factory=list,
+        description="Detailed event type definitions",
     )
 
     # Event processing configuration
-    transformations: List[ModelEventTransformation] = Field(
-        default_factory=list, description="Event transformation specifications"
+    transformations: list[ModelEventTransformation] = Field(
+        default_factory=list,
+        description="Event transformation specifications",
     )
 
-    routing_config: Optional[ModelEventRouting] = Field(
-        default=None, description="Advanced routing configuration"
+    routing_config: ModelEventRouting | None = Field(
+        default=None,
+        description="Advanced routing configuration",
     )
 
-    persistence_config: Optional[ModelEventPersistence] = Field(
-        default=None, description="Event persistence configuration"
+    persistence_config: ModelEventPersistence | None = Field(
+        default=None,
+        description="Event persistence configuration",
     )
 
     # Event filtering and processing
-    event_filters: List[str] = Field(
-        default_factory=list, description="Filters for incoming events"
+    event_filters: list[str] = Field(
+        default_factory=list,
+        description="Filters for incoming events",
     )
 
     batch_processing: bool = Field(
-        default=False, description="Enable batch processing for events"
+        default=False,
+        description="Enable batch processing for events",
     )
 
     batch_size: int = Field(
-        default=100, description="Batch size for event processing", ge=1
+        default=100,
+        description="Batch size for event processing",
+        ge=1,
     )
 
     batch_timeout_ms: int = Field(
-        default=5000, description="Timeout for batch processing", ge=100
+        default=5000,
+        description="Timeout for batch processing",
+        ge=100,
     )
 
     # Event ordering and delivery guarantees
     ordering_required: bool = Field(
-        default=False, description="Whether event ordering must be preserved"
+        default=False,
+        description="Whether event ordering must be preserved",
     )
 
     delivery_guarantee: str = Field(
-        default="at_least_once", description="Delivery guarantee level"
+        default="at_least_once",
+        description="Delivery guarantee level",
     )
 
     deduplication_enabled: bool = Field(
-        default=False, description="Enable event deduplication"
+        default=False,
+        description="Enable event deduplication",
     )
 
     deduplication_window_ms: int = Field(
-        default=60000, description="Deduplication time window", ge=1000
+        default=60000,
+        description="Deduplication time window",
+        ge=1000,
     )
 
     # Performance and monitoring
     async_processing: bool = Field(
-        default=True, description="Enable asynchronous event processing"
+        default=True,
+        description="Enable asynchronous event processing",
     )
 
     max_concurrent_events: int = Field(
-        default=100, description="Maximum concurrent events to process", ge=1
+        default=100,
+        description="Maximum concurrent events to process",
+        ge=1,
     )
 
     event_metrics_enabled: bool = Field(
-        default=True, description="Enable event processing metrics"
+        default=True,
+        description="Enable event processing metrics",
     )
 
     event_tracing_enabled: bool = Field(
-        default=False, description="Enable distributed tracing for events"
+        default=False,
+        description="Enable distributed tracing for events",
     )
 
     @field_validator("primary_events")
     @classmethod
-    def validate_primary_events_not_empty(cls, v: List[str]) -> List[str]:
+    def validate_primary_events_not_empty(cls, v: list[str]) -> list[str]:
         """Validate that primary events list is not empty."""
         if not v:
-            raise ValueError("primary_events must contain at least one event type")
+            msg = "primary_events must contain at least one event type"
+            raise ValueError(msg)
         return v
 
     @field_validator("event_categories")
     @classmethod
-    def validate_event_categories_not_empty(cls, v: List[str]) -> List[str]:
+    def validate_event_categories_not_empty(cls, v: list[str]) -> list[str]:
         """Validate that event categories list is not empty."""
         if not v:
-            raise ValueError("event_categories must contain at least one category")
+            msg = "event_categories must contain at least one category"
+            raise ValueError(msg)
         return v
 
     @field_validator("batch_size")
@@ -308,8 +376,9 @@ class ModelEventTypeSubcontract(BaseModel):
         """Validate batch size when batch processing is enabled."""
         if hasattr(values, "data") and values.data.get("batch_processing", False):
             if v < 1:
+                msg = "batch_size must be positive when batch processing is enabled"
                 raise ValueError(
-                    "batch_size must be positive when batch processing is enabled"
+                    msg,
                 )
         return v
 
@@ -319,8 +388,9 @@ class ModelEventTypeSubcontract(BaseModel):
         """Validate deduplication window when deduplication is enabled."""
         if hasattr(values, "data") and values.data.get("deduplication_enabled", False):
             if v < 1000:
+                msg = "deduplication_window_ms must be at least 1000ms when enabled"
                 raise ValueError(
-                    "deduplication_window_ms must be at least 1000ms when enabled"
+                    msg,
                 )
         return v
 

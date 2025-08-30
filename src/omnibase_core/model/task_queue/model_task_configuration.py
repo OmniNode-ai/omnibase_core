@@ -5,8 +5,6 @@ Provides strongly-typed configuration models to replace Dict[str, Any] usage
 while maintaining flexibility for different task types and execution contexts.
 """
 
-from typing import List, Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -19,69 +17,83 @@ class ModelLLMTaskConfiguration(BaseModel):
     """
 
     # Analysis configuration
-    analysis_depth: Optional[str] = Field(
+    analysis_depth: str | None = Field(
         default=None,
         description="Analysis depth level: 'basic', 'detailed', 'comprehensive'",
     )
 
-    output_format: Optional[str] = Field(
+    output_format: str | None = Field(
         default=None,
         description="Desired output format: 'text', 'json', 'markdown', 'structured'",
     )
 
     # Document processing configuration
-    document_id: Optional[str] = Field(
-        default=None, description="Document ID for document-related tasks"
+    document_id: str | None = Field(
+        default=None,
+        description="Document ID for document-related tasks",
     )
 
-    document_sections: Optional[List[str]] = Field(
-        default=None, description="Specific document sections to process"
+    document_sections: list[str] | None = Field(
+        default=None,
+        description="Specific document sections to process",
     )
 
     # Batch processing configuration
-    batch_size: Optional[int] = Field(
-        default=None, ge=1, le=1000, description="Number of items to process per batch"
+    batch_size: int | None = Field(
+        default=None,
+        ge=1,
+        le=1000,
+        description="Number of items to process per batch",
     )
 
-    parallel_processing: Optional[bool] = Field(
-        default=None, description="Whether to enable parallel processing"
+    parallel_processing: bool | None = Field(
+        default=None,
+        description="Whether to enable parallel processing",
     )
 
     # Generation configuration
-    creativity_level: Optional[str] = Field(
+    creativity_level: str | None = Field(
         default=None,
         description="Creativity level: 'conservative', 'balanced', 'creative'",
     )
 
-    tone: Optional[str] = Field(
+    tone: str | None = Field(
         default=None,
         description="Desired tone: 'formal', 'casual', 'technical', 'friendly'",
     )
 
-    language: Optional[str] = Field(
-        default=None, description="Target language code (e.g., 'en', 'es', 'fr')"
+    language: str | None = Field(
+        default=None,
+        description="Target language code (e.g., 'en', 'es', 'fr')",
     )
 
     # Embeddings configuration
-    embedding_model: Optional[str] = Field(
-        default=None, description="Specific embedding model to use"
+    embedding_model: str | None = Field(
+        default=None,
+        description="Specific embedding model to use",
     )
 
-    vector_dimensions: Optional[int] = Field(
-        default=None, ge=1, description="Number of vector dimensions for embeddings"
+    vector_dimensions: int | None = Field(
+        default=None,
+        ge=1,
+        description="Number of vector dimensions for embeddings",
     )
 
     # Quality and safety configuration
-    content_filter_level: Optional[str] = Field(
-        default=None, description="Content filtering level: 'none', 'basic', 'strict'"
+    content_filter_level: str | None = Field(
+        default=None,
+        description="Content filtering level: 'none', 'basic', 'strict'",
     )
 
-    quality_threshold: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Minimum quality threshold for output"
+    quality_threshold: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Minimum quality threshold for output",
     )
 
     # Custom parameters for extensibility
-    custom_parameters: Optional[dict] = Field(
+    custom_parameters: dict | None = Field(
         default_factory=dict,
         description="Custom task-specific parameters (use sparingly)",
     )
@@ -101,7 +113,7 @@ class ModelLLMTaskConfiguration(BaseModel):
                 "language": "en",
                 "content_filter_level": "basic",
                 "quality_threshold": 0.8,
-            }
+            },
         },
     )
 
@@ -115,62 +127,73 @@ class ModelLLMExecutionContext(BaseModel):
     """
 
     # Worker information
-    worker_id: Optional[str] = Field(
-        default=None, description="ID of the worker that processed the task"
+    worker_id: str | None = Field(
+        default=None,
+        description="ID of the worker that processed the task",
     )
 
-    worker_type: Optional[str] = Field(
+    worker_type: str | None = Field(
         default=None,
         description="Type of worker: 'dramatiq_llm_actor', 'manual', 'batch_processor'",
     )
 
     # Queue information
-    queue_name: Optional[str] = Field(
-        default=None, description="Name of the queue that processed the task"
+    queue_name: str | None = Field(
+        default=None,
+        description="Name of the queue that processed the task",
     )
 
-    routing_decision: Optional[str] = Field(
-        default=None, description="Details about why this queue was selected"
+    routing_decision: str | None = Field(
+        default=None,
+        description="Details about why this queue was selected",
     )
 
     # Processing information
-    task_type: Optional[str] = Field(
-        default=None, description="Type of LLM task that was executed"
+    task_type: str | None = Field(
+        default=None,
+        description="Type of LLM task that was executed",
     )
 
-    model_router_version: Optional[str] = Field(
-        default=None, description="Version of the model router used"
+    model_router_version: str | None = Field(
+        default=None,
+        description="Version of the model router used",
     )
 
     # Error context (if applicable)
-    error_type: Optional[str] = Field(
-        default=None, description="Type of error that occurred (if task failed)"
+    error_type: str | None = Field(
+        default=None,
+        description="Type of error that occurred (if task failed)",
     )
 
-    error_phase: Optional[str] = Field(
+    error_phase: str | None = Field(
         default=None,
         description="Phase where error occurred: 'initialization', 'execution', 'finalization'",
     )
 
-    retry_count: Optional[int] = Field(
-        default=None, ge=0, description="Number of retries attempted"
+    retry_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Number of retries attempted",
     )
 
     # Performance context
-    cpu_usage_percent: Optional[float] = Field(
+    cpu_usage_percent: float | None = Field(
         default=None,
         ge=0.0,
         le=100.0,
         description="CPU usage percentage during execution",
     )
 
-    memory_peak_mb: Optional[int] = Field(
-        default=None, ge=0, description="Peak memory usage in MB"
+    memory_peak_mb: int | None = Field(
+        default=None,
+        ge=0,
+        description="Peak memory usage in MB",
     )
 
     # Custom context for extensibility
-    custom_context: Optional[dict] = Field(
-        default_factory=dict, description="Custom execution context (use sparingly)"
+    custom_context: dict | None = Field(
+        default_factory=dict,
+        description="Custom execution context (use sparingly)",
     )
 
     model_config = ConfigDict(
@@ -188,7 +211,7 @@ class ModelLLMExecutionContext(BaseModel):
                 "retry_count": 0,
                 "cpu_usage_percent": 45.2,
                 "memory_peak_mb": 1840,
-            }
+            },
         },
     )
 
@@ -202,59 +225,71 @@ class ModelLLMStructuredOutput(BaseModel):
     """
 
     # Text analysis results
-    summary: Optional[str] = Field(
-        default=None, description="Generated summary or key points"
+    summary: str | None = Field(
+        default=None,
+        description="Generated summary or key points",
     )
 
-    key_insights: Optional[List[str]] = Field(
-        default=None, description="List of key insights or findings"
+    key_insights: list[str] | None = Field(
+        default=None,
+        description="List of key insights or findings",
     )
 
-    sentiment_score: Optional[float] = Field(
+    sentiment_score: float | None = Field(
         default=None,
         ge=-1.0,
         le=1.0,
         description="Sentiment score from -1 (negative) to 1 (positive)",
     )
 
-    confidence_score: Optional[float] = Field(
-        default=None, ge=0.0, le=1.0, description="Confidence score for the analysis"
+    confidence_score: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score for the analysis",
     )
 
     # Generation results
-    generated_text: Optional[str] = Field(
-        default=None, description="Main generated text content"
+    generated_text: str | None = Field(
+        default=None,
+        description="Main generated text content",
     )
 
-    alternative_versions: Optional[List[str]] = Field(
-        default=None, description="Alternative generated versions"
+    alternative_versions: list[str] | None = Field(
+        default=None,
+        description="Alternative generated versions",
     )
 
     # Embeddings results
-    embeddings: Optional[List[float]] = Field(
-        default=None, description="Generated embedding vectors"
+    embeddings: list[float] | None = Field(
+        default=None,
+        description="Generated embedding vectors",
     )
 
-    embedding_model_used: Optional[str] = Field(
-        default=None, description="Model used for generating embeddings"
+    embedding_model_used: str | None = Field(
+        default=None,
+        description="Model used for generating embeddings",
     )
 
     # Classification results
-    categories: Optional[List[str]] = Field(
-        default=None, description="Identified categories or classifications"
+    categories: list[str] | None = Field(
+        default=None,
+        description="Identified categories or classifications",
     )
 
-    tags: Optional[List[str]] = Field(
-        default=None, description="Generated tags or labels"
+    tags: list[str] | None = Field(
+        default=None,
+        description="Generated tags or labels",
     )
 
     # Quality metrics
-    quality_metrics: Optional[dict] = Field(
-        default_factory=dict, description="Quality assessment metrics"
+    quality_metrics: dict | None = Field(
+        default_factory=dict,
+        description="Quality assessment metrics",
     )
 
     # Custom structured data for extensibility
-    custom_data: Optional[dict] = Field(
+    custom_data: dict | None = Field(
         default_factory=dict,
         description="Custom structured output data (use sparingly)",
     )
@@ -275,6 +310,6 @@ class ModelLLMStructuredOutput(BaseModel):
                 "confidence_score": 0.92,
                 "categories": ["financial_report", "quarterly_analysis"],
                 "tags": ["growth", "revenue", "performance"],
-            }
+            },
         },
     )

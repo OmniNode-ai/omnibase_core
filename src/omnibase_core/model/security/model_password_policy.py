@@ -5,8 +5,6 @@ Typed model for password policy configuration,
 replacing Dict[str, Any] with structured fields.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -20,96 +18,133 @@ class ModelPasswordPolicy(BaseModel):
 
     # Length requirements
     min_length: int = Field(
-        default=8, description="Minimum password length", ge=1, le=256
+        default=8,
+        description="Minimum password length",
+        ge=1,
+        le=256,
     )
 
-    max_length: Optional[int] = Field(
-        default=128, description="Maximum password length", ge=1, le=256
+    max_length: int | None = Field(
+        default=128,
+        description="Maximum password length",
+        ge=1,
+        le=256,
     )
 
     # Character requirements
     require_uppercase: bool = Field(
-        default=True, description="Require at least one uppercase letter"
+        default=True,
+        description="Require at least one uppercase letter",
     )
 
     require_lowercase: bool = Field(
-        default=True, description="Require at least one lowercase letter"
+        default=True,
+        description="Require at least one lowercase letter",
     )
 
     require_numbers: bool = Field(
-        default=True, description="Require at least one number"
+        default=True,
+        description="Require at least one number",
     )
 
     require_symbols: bool = Field(
-        default=False, description="Require at least one special symbol"
+        default=False,
+        description="Require at least one special symbol",
     )
 
     min_uppercase: int = Field(
-        default=1, description="Minimum number of uppercase letters", ge=0
+        default=1,
+        description="Minimum number of uppercase letters",
+        ge=0,
     )
 
     min_lowercase: int = Field(
-        default=1, description="Minimum number of lowercase letters", ge=0
+        default=1,
+        description="Minimum number of lowercase letters",
+        ge=0,
     )
 
     min_numbers: int = Field(
-        default=1, description="Minimum number of numeric characters", ge=0
+        default=1,
+        description="Minimum number of numeric characters",
+        ge=0,
     )
 
     min_symbols: int = Field(
-        default=0, description="Minimum number of special symbols", ge=0
+        default=0,
+        description="Minimum number of special symbols",
+        ge=0,
     )
 
     # Symbol configuration
     allowed_symbols: str = Field(
-        default="!@#$%^&*()_+-=[]{}|;:,.<>?", description="Allowed special symbols"
+        default="!@#$%^&*()_+-=[]{}|;:,.<>?",
+        description="Allowed special symbols",
     )
 
     # Password lifecycle
-    max_age_days: Optional[int] = Field(
-        default=90, description="Maximum password age in days", ge=1
+    max_age_days: int | None = Field(
+        default=90,
+        description="Maximum password age in days",
+        ge=1,
     )
 
     min_age_days: int = Field(
-        default=1, description="Minimum password age before change allowed", ge=0
+        default=1,
+        description="Minimum password age before change allowed",
+        ge=0,
     )
 
     history_count: int = Field(
-        default=5, description="Number of previous passwords to remember", ge=0, le=100
+        default=5,
+        description="Number of previous passwords to remember",
+        ge=0,
+        le=100,
     )
 
     # Additional constraints
     prevent_common_passwords: bool = Field(
-        default=True, description="Prevent use of common/weak passwords"
+        default=True,
+        description="Prevent use of common/weak passwords",
     )
 
     prevent_user_info: bool = Field(
-        default=True, description="Prevent passwords containing user info"
+        default=True,
+        description="Prevent passwords containing user info",
     )
 
     prevent_dictionary_words: bool = Field(
-        default=False, description="Prevent dictionary words in passwords"
+        default=False,
+        description="Prevent dictionary words in passwords",
     )
 
     require_change_on_first_login: bool = Field(
-        default=True, description="Force password change on first login"
+        default=True,
+        description="Force password change on first login",
     )
 
     allow_password_reset: bool = Field(
-        default=True, description="Allow users to reset their own passwords"
+        default=True,
+        description="Allow users to reset their own passwords",
     )
 
     reset_token_validity_minutes: int = Field(
-        default=60, description="Password reset token validity in minutes", ge=1
+        default=60,
+        description="Password reset token validity in minutes",
+        ge=1,
     )
 
     # Failed attempt handling
     max_failed_attempts: int = Field(
-        default=5, description="Maximum failed login attempts before lockout", ge=1
+        default=5,
+        description="Maximum failed login attempts before lockout",
+        ge=1,
     )
 
     lockout_duration_minutes: int = Field(
-        default=30, description="Account lockout duration in minutes", ge=1
+        default=30,
+        description="Account lockout duration in minutes",
+        ge=1,
     )
 
     def to_dict(self) -> dict:

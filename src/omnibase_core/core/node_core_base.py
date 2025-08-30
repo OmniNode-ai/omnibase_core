@@ -19,14 +19,14 @@ Author: ONEX Framework Team
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
@@ -76,8 +76,8 @@ class NodeCoreBase(ABC):
         self.created_at: datetime = datetime.now()
 
         # Core state tracking
-        self.state: Dict[str, str] = {"status": "initialized"}
-        self.metrics: Dict[str, float] = {
+        self.state: dict[str, str] = {"status": "initialized"}
+        self.metrics: dict[str, float] = {
             "initialization_time_ms": 0.0,
             "total_operations": 0.0,
             "avg_processing_time_ms": 0.0,
@@ -86,7 +86,7 @@ class NodeCoreBase(ABC):
         }
 
         # Contract and configuration
-        self.contract_data: Optional[Dict[str, Any]] = None
+        self.contract_data: dict[str, Any] | None = None
         self.version: str = "1.0.0"
 
         # Initialize metrics
@@ -115,7 +115,8 @@ class NodeCoreBase(ABC):
         Raises:
             OnexError: If processing fails or validation errors occur
         """
-        raise NotImplementedError("Subclasses must implement process method")
+        msg = "Subclasses must implement process method"
+        raise NotImplementedError(msg)
 
     async def initialize(self) -> None:
         """
@@ -185,7 +186,7 @@ class NodeCoreBase(ABC):
 
             raise OnexError(
                 error_code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Node initialization failed: {str(e)}",
+                message=f"Node initialization failed: {e!s}",
                 context={
                     "node_id": self.node_id,
                     "node_type": self.__class__.__name__,
@@ -249,7 +250,7 @@ class NodeCoreBase(ABC):
 
             emit_log_event(
                 LogLevelEnum.ERROR,
-                f"Node cleanup failed: {str(e)}",
+                f"Node cleanup failed: {e!s}",
                 {
                     "node_id": self.node_id,
                     "node_type": self.__class__.__name__,
@@ -259,7 +260,7 @@ class NodeCoreBase(ABC):
 
             # Don't raise exception in cleanup to prevent resource leaks
 
-    async def get_performance_metrics(self) -> Dict[str, float]:
+    async def get_performance_metrics(self) -> dict[str, float]:
         """
         Get node performance and quality metrics.
 
@@ -283,7 +284,7 @@ class NodeCoreBase(ABC):
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 
-    async def get_introspection_data(self) -> Dict[str, Any]:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get node introspection data for monitoring and debugging.
 
@@ -314,7 +315,7 @@ class NodeCoreBase(ABC):
         """Get node version."""
         return self.version
 
-    def get_state(self) -> Dict[str, str]:
+    def get_state(self) -> dict[str, str]:
         """Get current node state."""
         return self.state.copy()
 
@@ -337,7 +338,7 @@ class NodeCoreBase(ABC):
             if contract_service and hasattr(contract_service, "get_node_contract"):
                 # Load contract for this node type
                 contract_data = contract_service.get_node_contract(
-                    self.__class__.__name__
+                    self.__class__.__name__,
                 )
                 if contract_data:
                     self.contract_data = contract_data
@@ -359,7 +360,7 @@ class NodeCoreBase(ABC):
             # Contract loading failure is not fatal
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Contract loading failed (continuing without): {str(e)}",
+                f"Contract loading failed (continuing without): {e!s}",
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
 
@@ -370,7 +371,6 @@ class NodeCoreBase(ABC):
         Override in subclasses to add node-type-specific initialization.
         Base implementation does nothing.
         """
-        pass
 
     async def _cleanup_node_resources(self) -> None:
         """
@@ -379,10 +379,11 @@ class NodeCoreBase(ABC):
         Override in subclasses to add node-type-specific cleanup.
         Base implementation does nothing.
         """
-        pass
 
     async def _emit_lifecycle_event(
-        self, event_type: str, metadata: Dict[str, Any]
+        self,
+        event_type: str,
+        metadata: dict[str, Any],
     ) -> None:
         """
         Emit lifecycle transition events.
@@ -420,11 +421,11 @@ class NodeCoreBase(ABC):
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevelEnum.WARNING,
-                f"Event emission failed: {str(e)}",
+                f"Event emission failed: {e!s}",
                 {"node_id": self.node_id, "event_type": event_type},
             )
 
-    def _get_node_capabilities(self) -> Dict[str, bool]:
+    def _get_node_capabilities(self) -> dict[str, bool]:
         """
         Get node capabilities for introspection.
 
@@ -442,7 +443,9 @@ class NodeCoreBase(ABC):
         }
 
     async def _update_processing_metrics(
-        self, processing_time_ms: float, success: bool
+        self,
+        processing_time_ms: float,
+        success: bool,
     ) -> None:
         """
         Update processing metrics after operation completion.

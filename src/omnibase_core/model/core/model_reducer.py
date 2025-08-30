@@ -34,7 +34,6 @@ from pydantic import BaseModel
 
 class ModelState(BaseModel):
     # Placeholder for ONEX state fields
-    pass
 
     # Placeholder for ONEX action fields
     pass

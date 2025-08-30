@@ -6,7 +6,7 @@ graceful deregistration from the service registry.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -33,10 +33,12 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
 
     # Shutdown information
     shutdown_reason: str = Field(
-        ..., description="Reason for shutdown (graceful, error, forced, maintenance)"
+        ...,
+        description="Reason for shutdown (graceful, error, forced, maintenance)",
     )
     shutdown_initiated_at: datetime = Field(
-        default_factory=datetime.now, description="When the shutdown was initiated"
+        default_factory=datetime.now,
+        description="When the shutdown was initiated",
     )
 
     # Operational details
@@ -44,41 +46,49 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         default="stopping",
         description="Final status of the node (stopping, stopped, error)",
     )
-    uptime_seconds: Optional[int] = Field(
-        None, description="Total uptime of the node in seconds"
+    uptime_seconds: int | None = Field(
+        None,
+        description="Total uptime of the node in seconds",
     )
-    requests_processed: Optional[int] = Field(
-        None, description="Total requests processed during node lifetime"
+    requests_processed: int | None = Field(
+        None,
+        description="Total requests processed during node lifetime",
     )
 
     # Cleanup information
-    cleanup_actions: List[str] = Field(
+    cleanup_actions: list[str] = Field(
         default_factory=list,
         description="List of cleanup actions performed during shutdown",
     )
-    cleanup_errors: List[str] = Field(
-        default_factory=list, description="Any errors encountered during cleanup"
+    cleanup_errors: list[str] = Field(
+        default_factory=list,
+        description="Any errors encountered during cleanup",
     )
 
     # Restart information
     restart_expected: bool = Field(
-        False, description="Whether the node is expected to restart"
+        False,
+        description="Whether the node is expected to restart",
     )
-    restart_delay_seconds: Optional[int] = Field(
-        None, description="Expected delay before restart in seconds"
+    restart_delay_seconds: int | None = Field(
+        None,
+        description="Expected delay before restart in seconds",
     )
-    replacement_node_id: Optional[str] = Field(
-        None, description="ID of replacement node if applicable"
+    replacement_node_id: str | None = Field(
+        None,
+        description="ID of replacement node if applicable",
     )
 
     # Consul compatibility
-    service_id: Optional[str] = Field(
-        None, description="Service ID for Consul deregistration"
+    service_id: str | None = Field(
+        None,
+        description="Service ID for Consul deregistration",
     )
 
     # Final metrics
-    final_metrics: Dict[str, Any] = Field(
-        default_factory=dict, description="Final performance metrics before shutdown"
+    final_metrics: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Final performance metrics before shutdown",
     )
 
     @classmethod
@@ -86,8 +96,8 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         cls,
         node_id: str,
         node_name: str,
-        uptime_seconds: int = None,
-        requests_processed: int = None,
+        uptime_seconds: int | None = None,
+        requests_processed: int | None = None,
         **kwargs,
     ) -> "ModelNodeShutdownEvent":
         """
@@ -124,7 +134,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         node_id: str,
         node_name: str,
         error_message: str,
-        uptime_seconds: int = None,
+        uptime_seconds: int | None = None,
         **kwargs,
     ) -> "ModelNodeShutdownEvent":
         """
@@ -157,8 +167,8 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         node_id: str,
         node_name: str,
         maintenance_reason: str,
-        restart_delay_seconds: int = None,
-        replacement_node_id: str = None,
+        restart_delay_seconds: int | None = None,
+        replacement_node_id: str | None = None,
         **kwargs,
     ) -> "ModelNodeShutdownEvent":
         """
@@ -190,7 +200,11 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
 
     @classmethod
     def create_forced_shutdown(
-        cls, node_id: str, node_name: str, force_reason: str, **kwargs
+        cls,
+        node_id: str,
+        node_name: str,
+        force_reason: str,
+        **kwargs,
     ) -> "ModelNodeShutdownEvent":
         """
         Factory method to create a forced shutdown event.

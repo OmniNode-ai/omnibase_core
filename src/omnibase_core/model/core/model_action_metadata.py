@@ -6,16 +6,13 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.model.core.model_performance_metrics import \
-    ModelPerformanceMetrics
-from omnibase_core.model.core.model_security_context import \
-    ModelSecurityContext
+from omnibase_core.model.core.model_performance_metrics import ModelPerformanceMetrics
+from omnibase_core.model.core.model_security_context import ModelSecurityContext
 
 
 class ModelActionMetadata(BaseModel):
@@ -28,7 +25,8 @@ class ModelActionMetadata(BaseModel):
 
     # Core identification
     action_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for this action instance"
+        default_factory=uuid4,
+        description="Unique identifier for this action instance",
     )
     action_type: ModelNodeActionType = Field(..., description="Rich action type model")
     action_name: str = Field(..., description="Human-readable action name")
@@ -38,11 +36,13 @@ class ModelActionMetadata(BaseModel):
         default_factory=uuid4,
         description="Correlation ID for tracking across system boundaries",
     )
-    parent_correlation_id: Optional[UUID] = Field(
-        None, description="Parent correlation ID for action chaining"
+    parent_correlation_id: UUID | None = Field(
+        None,
+        description="Parent correlation ID for action chaining",
     )
-    session_id: Optional[UUID] = Field(
-        None, description="Session ID for grouping related actions"
+    session_id: UUID | None = Field(
+        None,
+        description="Session ID for grouping related actions",
     )
 
     # Trust and security
@@ -59,47 +59,59 @@ class ModelActionMetadata(BaseModel):
 
     # Timing and execution
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the action was created"
+        default_factory=datetime.utcnow,
+        description="When the action was created",
     )
-    started_at: Optional[datetime] = Field(
-        None, description="When action execution started"
+    started_at: datetime | None = Field(
+        None,
+        description="When action execution started",
     )
-    completed_at: Optional[datetime] = Field(
-        None, description="When action execution completed"
+    completed_at: datetime | None = Field(
+        None,
+        description="When action execution completed",
     )
-    timeout_seconds: Optional[int] = Field(
-        None, description="Action timeout in seconds"
+    timeout_seconds: int | None = Field(
+        None,
+        description="Action timeout in seconds",
     )
 
     # Execution context
-    execution_context: Dict[str, Union[str, int, float, bool]] = Field(
-        default_factory=dict, description="Execution environment and context"
+    execution_context: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+        description="Execution environment and context",
     )
-    parameters: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
-        default_factory=dict, description="Action parameters with strong typing"
+    parameters: dict[str, str | int | float | bool | list[str]] = Field(
+        default_factory=dict,
+        description="Action parameters with strong typing",
     )
 
     # Results and status
     status: str = Field(default="created", description="Current action status")
-    result_data: Optional[Dict[str, Union[str, int, float, bool, List[str]]]] = Field(
-        None, description="Action result data"
+    result_data: dict[str, str | int | float | bool | list[str]] | None = Field(
+        None,
+        description="Action result data",
     )
-    error_details: Optional[Dict[str, Union[str, int, bool]]] = Field(
-        None, description="Error details if action failed"
+    error_details: dict[str, str | int | bool] | None = Field(
+        None,
+        description="Error details if action failed",
     )
 
     # Tool-as-a-service metadata
-    service_metadata: Dict[str, Union[str, int, float, bool, List[str]]] = Field(
-        default_factory=dict, description="Service discovery and composition metadata"
+    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
+        default_factory=dict,
+        description="Service discovery and composition metadata",
     )
-    tool_discovery_tags: List[str] = Field(
-        default_factory=list, description="Tags for tool discovery and categorization"
+    tool_discovery_tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for tool discovery and categorization",
     )
-    mcp_endpoint: Optional[str] = Field(
-        None, description="MCP endpoint for this action"
+    mcp_endpoint: str | None = Field(
+        None,
+        description="MCP endpoint for this action",
     )
-    graphql_endpoint: Optional[str] = Field(
-        None, description="GraphQL endpoint for this action"
+    graphql_endpoint: str | None = Field(
+        None,
+        description="GraphQL endpoint for this action",
     )
 
     # Performance tracking
@@ -107,8 +119,9 @@ class ModelActionMetadata(BaseModel):
         default_factory=ModelPerformanceMetrics,  # type: ignore
         description="Structured performance metrics for this action",
     )
-    resource_usage: Dict[str, Union[int, float]] = Field(
-        default_factory=dict, description="Resource usage metrics"
+    resource_usage: dict[str, int | float] = Field(
+        default_factory=dict,
+        description="Resource usage metrics",
     )
 
     def mark_started(self) -> None:
@@ -118,9 +131,7 @@ class ModelActionMetadata(BaseModel):
 
     def mark_completed(
         self,
-        result_data: Optional[
-            Dict[str, Union[str, int, float, bool, List[str]]]
-        ] = None,
+        result_data: dict[str, str | int | float | bool | list[str]] | None = None,
     ) -> None:
         """Mark the action as completed with optional result data."""
         self.completed_at = datetime.utcnow()
@@ -128,43 +139,46 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: Dict[str, Union[str, int, bool]]) -> None:
+    def mark_failed(self, error_details: dict[str, str | int | bool]) -> None:
         """Mark the action as failed with error details."""
         self.completed_at = datetime.utcnow()
         self.status = "failed"
         self.error_details = error_details
 
-    def get_execution_duration(self) -> Optional[float]:
+    def get_execution_duration(self) -> float | None:
         """Get the execution duration in seconds."""
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         return None
 
-    def add_performance_metric(self, name: str, value: Union[int, float]) -> None:
+    def add_performance_metric(self, name: str, value: int | float) -> None:
         """Add a performance metric."""
         if not hasattr(self.performance_metrics, name):
-            raise ValueError(
+            msg = (
                 f"Performance metric '{name}' is not supported. "
                 f"Use one of: {list(self.performance_metrics.__fields__.keys())}"
             )
+            raise ValueError(
+                msg,
+            )
         setattr(self.performance_metrics, name, value)
 
-    def add_resource_usage(self, resource: str, usage: Union[int, float]) -> None:
+    def add_resource_usage(self, resource: str, usage: int | float) -> None:
         """Add resource usage information."""
         self.resource_usage[resource] = usage
 
     def to_service_discovery_metadata(
         self,
-    ) -> Dict[
+    ) -> dict[
         str,
-        Union[
-            str,
-            bool,
-            List[str],
-            Optional[int],
-            Optional[float],
-            Dict[str, Union[str, int, float, bool, List[str]]],
-        ],
+        str
+        | bool
+        | list[str]
+        | int
+        | None
+        | float
+        | None
+        | dict[str, str | int | float | bool | list[str]],
     ]:
         """Generate metadata for service discovery with strong typing."""
         return {

@@ -9,10 +9,12 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.configuration.model_priority_metadata import \
-    ModelPriorityMetadata
-from omnibase_core.model.configuration.model_resource_allocation import \
-    ModelResourceAllocation
+from omnibase_core.model.configuration.model_priority_metadata import (
+    ModelPriorityMetadata,
+)
+from omnibase_core.model.configuration.model_resource_allocation import (
+    ModelResourceAllocation,
+)
 
 
 class ModelExecutionPriority(BaseModel):
@@ -25,33 +27,44 @@ class ModelExecutionPriority(BaseModel):
     """
 
     priority_value: int = Field(
-        ..., description="Priority value (higher = more important)", ge=0, le=100
+        ...,
+        description="Priority value (higher = more important)",
+        ge=0,
+        le=100,
     )
 
     priority_class: str = Field(
-        ..., description="Priority class name", pattern="^[a-z][a-z0-9_-]*$"
+        ...,
+        description="Priority class name",
+        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     display_name: str = Field(..., description="Human-readable priority name")
 
     preemptible: bool = Field(
-        default=True, description="Can be preempted by higher priority"
+        default=True,
+        description="Can be preempted by higher priority",
     )
 
     resource_allocation: ModelResourceAllocation = Field(
-        ..., description="Resource allocation for this priority"
+        ...,
+        description="Resource allocation for this priority",
     )
 
-    max_queue_time_ms: Optional[int] = Field(
-        None, description="Maximum time in queue before escalation", ge=0
+    max_queue_time_ms: int | None = Field(
+        None,
+        description="Maximum time in queue before escalation",
+        ge=0,
     )
 
     escalation_priority: Optional["ModelExecutionPriority"] = Field(
-        None, description="Priority to escalate to after timeout"
+        None,
+        description="Priority to escalate to after timeout",
     )
 
-    metadata: Optional[ModelPriorityMetadata] = Field(
-        None, description="Additional priority metadata"
+    metadata: ModelPriorityMetadata | None = Field(
+        None,
+        description="Additional priority metadata",
     )
 
     def should_preempt(self, other: "ModelExecutionPriority") -> bool:
@@ -92,10 +105,12 @@ class ModelExecutionPriority(BaseModel):
     @classmethod
     def create_realtime(cls) -> "ModelExecutionPriority":
         """Create realtime priority (highest priority, non-preemptible)"""
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=100,
@@ -110,10 +125,12 @@ class ModelExecutionPriority(BaseModel):
     @classmethod
     def create_high(cls) -> "ModelExecutionPriority":
         """Create high priority"""
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=80,
@@ -128,10 +145,12 @@ class ModelExecutionPriority(BaseModel):
     @classmethod
     def create_normal(cls) -> "ModelExecutionPriority":
         """Create normal priority"""
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=50,
@@ -146,10 +165,12 @@ class ModelExecutionPriority(BaseModel):
     @classmethod
     def create_low(cls) -> "ModelExecutionPriority":
         """Create low priority"""
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=20,
@@ -164,10 +185,12 @@ class ModelExecutionPriority(BaseModel):
     @classmethod
     def create_batch(cls) -> "ModelExecutionPriority":
         """Create batch priority (lowest priority, always preemptible)"""
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=10,
@@ -181,7 +204,10 @@ class ModelExecutionPriority(BaseModel):
 
     @classmethod
     def create_custom(
-        cls, priority_value: int, priority_class: str, display_name: str
+        cls,
+        priority_value: int,
+        priority_class: str,
+        display_name: str,
     ) -> "ModelExecutionPriority":
         """
         Create custom priority
@@ -194,10 +220,12 @@ class ModelExecutionPriority(BaseModel):
         Returns:
             Custom execution priority
         """
-        from omnibase_core.model.configuration.model_priority_metadata import \
-            ModelPriorityMetadata
-        from omnibase_core.model.configuration.model_resource_allocation import \
-            ModelResourceAllocation
+        from omnibase_core.model.configuration.model_priority_metadata import (
+            ModelPriorityMetadata,
+        )
+        from omnibase_core.model.configuration.model_resource_allocation import (
+            ModelResourceAllocation,
+        )
 
         return cls(
             priority_value=priority_value,
@@ -206,7 +234,8 @@ class ModelExecutionPriority(BaseModel):
             preemptible=True,
             resource_allocation=ModelResourceAllocation.create_custom(priority_value),
             max_queue_time_ms=max(
-                1000, (100 - priority_value) * 100
+                1000,
+                (100 - priority_value) * 100,
             ),  # Scale with priority
             metadata=ModelPriorityMetadata.create_custom(priority_class),
         )

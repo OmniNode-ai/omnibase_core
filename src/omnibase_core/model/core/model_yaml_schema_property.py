@@ -7,8 +7,6 @@ strongly typed YAML schema property definitions.
 Author: ONEX Framework Team
 """
 
-from typing import List
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -18,15 +16,18 @@ class ModelYamlSchemaProperty(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     property_type: str = Field(
-        ..., description="Property type (string, integer, object, array, etc.)"
+        ...,
+        description="Property type (string, integer, object, array, etc.)",
     )
     description: str = Field(default="", description="Property description")
     required: bool = Field(
-        default=False, description="Whether this property is required"
+        default=False,
+        description="Whether this property is required",
     )
     default_value: str = Field(default="", description="Default value as string")
-    enum_values: List[str] = Field(
-        default_factory=list, description="Enum values if applicable"
+    enum_values: list[str] = Field(
+        default_factory=list,
+        description="Enum values if applicable",
     )
     ref_path: str = Field(default="", description="Reference path if this is a $ref")
     format_type: str = Field(default="", description="Format type (path, uuid, etc.)")

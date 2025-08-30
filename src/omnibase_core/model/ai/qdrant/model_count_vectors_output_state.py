@@ -23,5 +23,6 @@ class ModelCountVectorsOutputState(OnexOutputState):
     count: int = Field(..., description="Number of vectors matching the criteria")
     is_exact: bool = Field(..., description="Whether the count is exact or approximate")
     collection_name: str = Field(
-        ..., description="Name of the collection that was counted"
+        ...,
+        description="Name of the collection that was counted",
     )

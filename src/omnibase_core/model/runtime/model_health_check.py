@@ -5,7 +5,6 @@ Provides models for health monitoring and metrics reporting.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,8 +17,8 @@ class ModelHealthMetric(BaseModel):
     name: str = Field(..., description="Metric name")
     value: float = Field(..., description="Metric value")
     unit: str = Field(..., description="Unit of measurement")
-    threshold_warning: Optional[float] = Field(None, description="Warning threshold")
-    threshold_critical: Optional[float] = Field(None, description="Critical threshold")
+    threshold_warning: float | None = Field(None, description="Warning threshold")
+    threshold_critical: float | None = Field(None, description="Critical threshold")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -29,8 +28,8 @@ class ModelHealthMetric(BaseModel):
                 "unit": "count",
                 "threshold_warning": 1000.0,
                 "threshold_critical": 5000.0,
-            }
-        }
+            },
+        },
     )
 
 
@@ -40,11 +39,12 @@ class ModelHealthCheck(BaseModel):
     status: EnumOnexStatus = Field(..., description="Overall health status")
     timestamp: datetime = Field(..., description="Timestamp of health check")
     service_name: str = Field(..., description="Name of service/component checked")
-    metrics: List[ModelHealthMetric] = Field(
-        default_factory=list, description="Health metrics"
+    metrics: list[ModelHealthMetric] = Field(
+        default_factory=list,
+        description="Health metrics",
     )
-    details: Optional[Dict] = Field(None, description="Additional health details")
-    message: Optional[str] = Field(None, description="Human-readable status message")
+    details: dict | None = Field(None, description="Additional health details")
+    message: str | None = Field(None, description="Human-readable status message")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -58,6 +58,6 @@ class ModelHealthCheck(BaseModel):
                 ],
                 "details": {"last_task_processed": "2024-01-01T11:59:00Z"},
                 "message": "All systems operational",
-            }
-        }
+            },
+        },
     )

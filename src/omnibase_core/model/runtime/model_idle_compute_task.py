@@ -8,20 +8,24 @@ and execution tracking in the idle compute framework.
 import uuid
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.model.core.model_onex_base_state import \
-    ModelOnexInputState as OnexInputState
-from omnibase_core.model.core.model_onex_base_state import OnexOutputState
-from omnibase_core.model.runtime.model_execution_stats import \
-    ModelExecutionStats
-from omnibase_core.model.runtime.model_task_execution_context import \
-    ModelTaskExecutionContext
+from omnibase_core.model.core.model_onex_base_state import (
+    ModelOnexInputState as OnexInputState,
+)
+from omnibase_core.model.core.model_onex_base_state import (
+    OnexOutputState,
+)
+from omnibase_core.model.runtime.model_execution_stats import ModelExecutionStats
+from omnibase_core.model.runtime.model_task_execution_context import (
+    ModelTaskExecutionContext,
+)
 from omnibase_core.model.runtime.model_task_metadata import ModelTaskMetadata
-from omnibase_core.model.runtime.model_task_performance_metrics import \
-    ModelTaskPerformanceMetrics
+from omnibase_core.model.runtime.model_task_performance_metrics import (
+    ModelTaskPerformanceMetrics,
+)
 
 
 class EnumTaskPriority(str, Enum):
@@ -73,31 +77,43 @@ class ModelResourceRequirements(BaseModel):
     """Resource requirements for task execution."""
 
     cpu_percent: float = Field(
-        default=10.0, ge=0.0, le=100.0, description="Required CPU percentage (0-100)"
+        default=10.0,
+        ge=0.0,
+        le=100.0,
+        description="Required CPU percentage (0-100)",
     )
 
     memory_mb: float = Field(
-        default=100.0, ge=0.0, description="Required memory in megabytes"
+        default=100.0,
+        ge=0.0,
+        description="Required memory in megabytes",
     )
 
-    disk_io_mbps: Optional[float] = Field(
-        default=None, ge=0.0, description="Expected disk I/O in MB/s"
+    disk_io_mbps: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Expected disk I/O in MB/s",
     )
 
-    network_io_mbps: Optional[float] = Field(
-        default=None, ge=0.0, description="Expected network I/O in MB/s"
+    network_io_mbps: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Expected network I/O in MB/s",
     )
 
     gpu_required: bool = Field(
-        default=False, description="Whether GPU resources are required"
+        default=False,
+        description="Whether GPU resources are required",
     )
 
-    estimated_duration: Optional[timedelta] = Field(
-        default=None, description="Estimated execution duration"
+    estimated_duration: timedelta | None = Field(
+        default=None,
+        description="Estimated execution duration",
     )
 
-    max_duration: Optional[timedelta] = Field(
-        default=None, description="Maximum allowed execution duration"
+    max_duration: timedelta | None = Field(
+        default=None,
+        description="Maximum allowed execution duration",
     )
 
 
@@ -108,12 +124,14 @@ class ModelTaskExecution(BaseModel):
 
     module_path: str = Field(description="Python module path containing the function")
 
-    args: List[Any] = Field(
-        default_factory=list, description="Positional arguments for function"
+    args: list[Any] = Field(
+        default_factory=list,
+        description="Positional arguments for function",
     )
 
     kwargs: str = Field(
-        default="{}", description="JSON string of keyword arguments for function"
+        default="{}",
+        description="JSON string of keyword arguments for function",
     )
 
     execution_context: "ModelTaskExecutionContext" = Field(
@@ -121,41 +139,52 @@ class ModelTaskExecution(BaseModel):
         description="Execution context and metadata",
     )
 
-    timeout_seconds: Optional[float] = Field(
-        default=None, gt=0.0, description="Execution timeout in seconds"
+    timeout_seconds: float | None = Field(
+        default=None,
+        gt=0.0,
+        description="Execution timeout in seconds",
     )
 
     retry_count: int = Field(
-        default=0, ge=0, le=5, description="Number of retry attempts on failure"
+        default=0,
+        ge=0,
+        le=5,
+        description="Number of retry attempts on failure",
     )
 
     retry_delay_seconds: float = Field(
-        default=1.0, gt=0.0, description="Delay between retry attempts"
+        default=1.0,
+        gt=0.0,
+        description="Delay between retry attempts",
     )
 
 
 class ModelTaskDependencies(BaseModel):
     """Task dependencies and execution ordering."""
 
-    depends_on: List[str] = Field(
-        default_factory=list, description="List of task IDs this task depends on"
+    depends_on: list[str] = Field(
+        default_factory=list,
+        description="List of task IDs this task depends on",
     )
 
-    blocks: List[str] = Field(
-        default_factory=list, description="List of task IDs this task blocks"
+    blocks: list[str] = Field(
+        default_factory=list,
+        description="List of task IDs this task blocks",
     )
 
-    resource_conflicts: List[str] = Field(
+    resource_conflicts: list[str] = Field(
         default_factory=list,
         description="List of task types that conflict with this task",
     )
 
     requires_exclusive_execution: bool = Field(
-        default=False, description="Whether this task requires exclusive system access"
+        default=False,
+        description="Whether this task requires exclusive system access",
     )
 
-    can_preempt: List[EnumTaskPriority] = Field(
-        default_factory=list, description="Which priority levels this task can preempt"
+    can_preempt: list[EnumTaskPriority] = Field(
+        default_factory=list,
+        description="Which priority levels this task can preempt",
     )
 
 
@@ -163,13 +192,15 @@ class ModelIdleComputeTask(BaseModel):
     """Complete task definition for idle compute framework."""
 
     task_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), description="Unique task identifier"
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique task identifier",
     )
 
     name: str = Field(description="Human-readable task name")
 
-    description: Optional[str] = Field(
-        default=None, description="Detailed task description"
+    description: str | None = Field(
+        default=None,
+        description="Detailed task description",
     )
 
     task_type: EnumTaskType = Field(description="Type of task for categorization")
@@ -177,7 +208,8 @@ class ModelIdleComputeTask(BaseModel):
     priority: EnumTaskPriority = Field(description="Task priority level")
 
     execution_mode: EnumExecutionMode = Field(
-        default=EnumExecutionMode.PARALLEL, description="How this task can be executed"
+        default=EnumExecutionMode.PARALLEL,
+        description="How this task can be executed",
     )
 
     resource_requirements: ModelResourceRequirements = Field(
@@ -193,39 +225,47 @@ class ModelIdleComputeTask(BaseModel):
     )
 
     status: EnumTaskStatus = Field(
-        default=EnumTaskStatus.PENDING, description="Current task status"
+        default=EnumTaskStatus.PENDING,
+        description="Current task status",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When task was created"
+        default_factory=datetime.utcnow,
+        description="When task was created",
     )
 
-    scheduled_at: Optional[datetime] = Field(
-        default=None, description="When task was scheduled for execution"
+    scheduled_at: datetime | None = Field(
+        default=None,
+        description="When task was scheduled for execution",
     )
 
-    started_at: Optional[datetime] = Field(
-        default=None, description="When task execution started"
+    started_at: datetime | None = Field(
+        default=None,
+        description="When task execution started",
     )
 
-    completed_at: Optional[datetime] = Field(
-        default=None, description="When task execution completed"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="When task execution completed",
     )
 
     submitter: str = Field(description="ID of process/service that submitted the task")
 
-    tags: List[str] = Field(
-        default_factory=list, description="Tags for task categorization and filtering"
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for task categorization and filtering",
     )
 
     metadata: ModelTaskMetadata = Field(
-        default_factory=ModelTaskMetadata, description="Additional task metadata"
+        default_factory=ModelTaskMetadata,
+        description="Additional task metadata",
     )
 
-    result: Optional[Any] = Field(default=None, description="Task execution result")
+    result: Any | None = Field(default=None, description="Task execution result")
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if task failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if task failed",
     )
 
     execution_stats: ModelExecutionStats = Field(
@@ -234,9 +274,10 @@ class ModelIdleComputeTask(BaseModel):
     )
 
     @validator("scheduled_at")
-    def scheduled_after_created(cls, v, values):
+    def scheduled_after_created(self, v, values):
         if v and "created_at" in values and v < values["created_at"]:
-            raise ValueError("scheduled_at must be after created_at")
+            msg = "scheduled_at must be after created_at"
+            raise ValueError(msg)
         return v
 
 
@@ -247,16 +288,18 @@ class ModelTaskExecutionResult(BaseModel):
 
     status: EnumTaskStatus = Field(description="Final execution status")
 
-    result: Optional[Any] = Field(default=None, description="Task execution result")
+    result: Any | None = Field(default=None, description="Task execution result")
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if execution failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if execution failed",
     )
 
     execution_duration: timedelta = Field(description="How long task took to execute")
 
-    resource_usage: Dict[str, float] = Field(
-        default_factory=dict, description="Actual resource usage during execution"
+    resource_usage: dict[str, float] = Field(
+        default_factory=dict,
+        description="Actual resource usage during execution",
     )
 
     performance_metrics: ModelTaskPerformanceMetrics = Field(
@@ -264,8 +307,9 @@ class ModelTaskExecutionResult(BaseModel):
         description="Performance metrics and statistics",
     )
 
-    warnings: List[str] = Field(
-        default_factory=list, description="Non-fatal warnings during execution"
+    warnings: list[str] = Field(
+        default_factory=list,
+        description="Non-fatal warnings during execution",
     )
 
     retry_count: int = Field(default=0, description="Number of retries attempted")
@@ -286,7 +330,9 @@ class ModelTaskQueueState(BaseModel):
     total_failed_tasks: int = Field(ge=0)
 
     queue_health_score: float = Field(
-        ge=0.0, le=100.0, description="Overall queue health score"
+        ge=0.0,
+        le=100.0,
+        description="Overall queue health score",
     )
 
     average_wait_time: timedelta = Field(description="Average time tasks wait in queue")
@@ -302,11 +348,13 @@ class ModelTaskRegistrationInputState(OnexInputState):
     task: ModelIdleComputeTask = Field(description="Task to register")
 
     immediate_execution: bool = Field(
-        default=False, description="Whether to attempt immediate execution"
+        default=False,
+        description="Whether to attempt immediate execution",
     )
 
     override_resource_checks: bool = Field(
-        default=False, description="Whether to override resource availability checks"
+        default=False,
+        description="Whether to override resource availability checks",
     )
 
 
@@ -315,20 +363,23 @@ class ModelTaskRegistrationOutputState(OnexOutputState):
 
     task_id: str = Field(description="ID of registered task")
 
-    queue_position: Optional[int] = Field(
-        default=None, description="Position in priority queue"
+    queue_position: int | None = Field(
+        default=None,
+        description="Position in priority queue",
     )
 
-    estimated_start_time: Optional[datetime] = Field(
-        default=None, description="Estimated execution start time"
+    estimated_start_time: datetime | None = Field(
+        default=None,
+        description="Estimated execution start time",
     )
 
     registration_success: bool = Field(
-        description="Whether registration was successful"
+        description="Whether registration was successful",
     )
 
-    warning_messages: List[str] = Field(
-        default_factory=list, description="Warning messages about registration"
+    warning_messages: list[str] = Field(
+        default_factory=list,
+        description="Warning messages about registration",
     )
 
     queue_state: ModelTaskQueueState = Field(description="Current state of task queues")
@@ -351,13 +402,14 @@ class ModelTaskProvider(BaseModel):
     provider_name: str = Field(description="Human-readable name for the provider")
 
     provider_type: str = Field(
-        description="Type of provider (e.g., 'document_freshness', 'background_analysis')"
+        description="Type of provider (e.g., 'document_freshness', 'background_analysis')",
     )
 
     status: EnumTaskProviderStatus = Field(default=EnumTaskProviderStatus.ACTIVE)
 
-    configuration: Dict[str, str] = Field(
-        default_factory=dict, description="Provider-specific configuration parameters"
+    configuration: dict[str, str] = Field(
+        default_factory=dict,
+        description="Provider-specific configuration parameters",
     )
 
     priority: EnumTaskPriority = Field(
@@ -372,12 +424,12 @@ class ModelTaskProvider(BaseModel):
     )
 
     resource_limits: ModelResourceRequirements = Field(
-        description="Resource limits for tasks from this provider"
+        description="Resource limits for tasks from this provider",
     )
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    last_task_submitted: Optional[datetime] = Field(default=None)
+    last_task_submitted: datetime | None = Field(default=None)
 
     total_tasks_submitted: int = Field(default=0, ge=0)
 

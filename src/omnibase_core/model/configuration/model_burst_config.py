@@ -5,8 +5,6 @@ Burst configuration model for managing traffic spikes and burst scenarios
 in rate limiting systems with intelligent burst detection and handling.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +17,8 @@ class ModelBurstConfig(BaseModel):
     """
 
     burst_detection_enabled: bool = Field(
-        default=True, description="Whether burst detection is enabled"
+        default=True,
+        description="Whether burst detection is enabled",
     )
 
     burst_capacity_multiplier: float = Field(
@@ -30,7 +29,10 @@ class ModelBurstConfig(BaseModel):
     )
 
     burst_duration_seconds: int = Field(
-        default=30, description="Maximum duration to allow burst traffic", ge=1, le=300
+        default=30,
+        description="Maximum duration to allow burst traffic",
+        ge=1,
+        le=300,
     )
 
     burst_threshold_multiplier: float = Field(
@@ -54,7 +56,7 @@ class ModelBurstConfig(BaseModel):
         le=60,
     )
 
-    max_burst_capacity: Optional[int] = Field(
+    max_burst_capacity: int | None = Field(
         None,
         description="Absolute maximum burst capacity regardless of multiplier",
         ge=1,
@@ -74,7 +76,8 @@ class ModelBurstConfig(BaseModel):
     )
 
     burst_prediction_enabled: bool = Field(
-        default=False, description="Whether to predict bursts based on patterns"
+        default=False,
+        description="Whether to predict bursts based on patterns",
     )
 
     burst_warning_threshold: float = Field(
@@ -117,7 +120,9 @@ class ModelBurstConfig(BaseModel):
         return current_rate >= self.get_burst_threshold(base_limit)
 
     def calculate_degraded_capacity(
-        self, original_capacity: int, time_elapsed: float
+        self,
+        original_capacity: int,
+        time_elapsed: float,
     ) -> int:
         """Calculate burst capacity after degradation over time"""
         if time_elapsed <= 0:

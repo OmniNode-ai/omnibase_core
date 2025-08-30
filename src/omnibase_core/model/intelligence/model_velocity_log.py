@@ -6,7 +6,6 @@ that are written directly to the PostgreSQL database bypassing repository.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,13 +19,15 @@ class ModelVelocityLog(BaseModel):
     """
 
     velocity_id: str = Field(
-        ..., description="Unique identifier for this velocity log entry"
+        ...,
+        description="Unique identifier for this velocity log entry",
     )
 
     agent_id: str = Field(..., description="Agent that performed the development work")
 
     task_description: str = Field(
-        ..., description="Description of the task or work completed"
+        ...,
+        description="Description of the task or work completed",
     )
 
     task_type: str = Field(
@@ -40,25 +41,31 @@ class ModelVelocityLog(BaseModel):
     completed_at: datetime = Field(..., description="When the task was completed")
 
     duration_seconds: float = Field(
-        ..., description="Task duration in seconds (calculated automatically)"
+        ...,
+        description="Task duration in seconds (calculated automatically)",
     )
 
     # Velocity metrics
     lines_of_code_changed: int = Field(
-        default=0, description="Number of lines of code modified"
+        default=0,
+        description="Number of lines of code modified",
     )
 
     files_modified: int = Field(default=0, description="Number of files modified")
 
-    tools_used: List[str] = Field(
-        default_factory=list, description="List of tools used during task execution"
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description="List of tools used during task execution",
     )
 
     success: bool = Field(..., description="Whether the task completed successfully")
 
     # Quality metrics
     complexity_score: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Task complexity score from 0.0-1.0"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Task complexity score from 0.0-1.0",
     )
 
     effectiveness_score: float = Field(
@@ -69,34 +76,41 @@ class ModelVelocityLog(BaseModel):
     )
 
     # Context and metadata
-    work_session_id: Optional[str] = Field(
-        default=None, description="ID of the work session this task belongs to"
+    work_session_id: str | None = Field(
+        default=None,
+        description="ID of the work session this task belongs to",
     )
 
-    branch_name: Optional[str] = Field(
-        default=None, description="Git branch where work was performed"
+    branch_name: str | None = Field(
+        default=None,
+        description="Git branch where work was performed",
     )
 
-    commit_hash: Optional[str] = Field(
-        default=None, description="Git commit hash of completed work"
+    commit_hash: str | None = Field(
+        default=None,
+        description="Git commit hash of completed work",
     )
 
     # JSON data for extensibility
-    metrics: Dict = Field(
-        default_factory=dict, description="Additional metrics data as JSON"
+    metrics: dict = Field(
+        default_factory=dict,
+        description="Additional metrics data as JSON",
     )
 
-    metadata: Dict = Field(
-        default_factory=dict, description="Additional metadata as JSON"
+    metadata: dict = Field(
+        default_factory=dict,
+        description="Additional metadata as JSON",
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this record was created"
+        default_factory=datetime.utcnow,
+        description="When this record was created",
     )
 
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When this record was last updated"
+        default_factory=datetime.utcnow,
+        description="When this record was last updated",
     )
 
     class Config:

@@ -5,32 +5,37 @@ Enables nodes to respond to REQUEST_INTROSPECTION events with real-time status i
 Provides the "request-response" half of the hybrid discovery system.
 """
 
+import contextlib
 import time
-from typing import List, Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery.enum_node_current_status import \
-    NodeCurrentStatusEnum
-from omnibase_core.model.discovery.model_current_tool_availability import \
-    ModelCurrentToolAvailability
-from omnibase_core.model.discovery.model_introspection_additional_info import \
-    ModelIntrospectionAdditionalInfo
-from omnibase_core.model.discovery.model_introspection_filters import \
-    ModelIntrospectionFilters
-from omnibase_core.model.discovery.model_introspection_response_event import \
-    ModelIntrospectionResponseEvent
-from omnibase_core.model.discovery.model_node_introspection_event import \
-    ModelNodeCapabilities
-from omnibase_core.model.discovery.model_performance_metrics import \
-    ModelPerformanceMetrics
-from omnibase_core.model.discovery.model_request_introspection_event import \
-    ModelRequestIntrospectionEvent
-from omnibase_core.model.discovery.model_resource_usage import \
-    ModelResourceUsage
+from omnibase_core.model.discovery.enum_node_current_status import NodeCurrentStatusEnum
+from omnibase_core.model.discovery.model_current_tool_availability import (
+    ModelCurrentToolAvailability,
+)
+from omnibase_core.model.discovery.model_introspection_additional_info import (
+    ModelIntrospectionAdditionalInfo,
+)
+from omnibase_core.model.discovery.model_introspection_filters import (
+    ModelIntrospectionFilters,
+)
+from omnibase_core.model.discovery.model_introspection_response_event import (
+    ModelIntrospectionResponseEvent,
+)
+from omnibase_core.model.discovery.model_node_introspection_event import (
+    ModelNodeCapabilities,
+)
+from omnibase_core.model.discovery.model_performance_metrics import (
+    ModelPerformanceMetrics,
+)
+from omnibase_core.model.discovery.model_request_introspection_event import (
+    ModelRequestIntrospectionEvent,
+)
+from omnibase_core.model.discovery.model_resource_usage import ModelResourceUsage
 
 
 class MixinRequestResponseIntrospection:
@@ -83,7 +88,9 @@ class MixinRequestResponseIntrospection:
                     "event_type": CoreEventTypes.REQUEST_REAL_TIME_INTROSPECTION,
                     "event_bus_type": type(self._event_bus).__name__,
                     "event_bus_connected": getattr(
-                        self._event_bus, "is_connected", lambda: "unknown"
+                        self._event_bus,
+                        "is_connected",
+                        lambda: "unknown",
                     )(),
                 },
             )
@@ -99,8 +106,8 @@ class MixinRequestResponseIntrospection:
                 },
             )
             if hasattr(self, "_logger") and self._logger:
-                self._logger.error(
-                    f"Failed to set up request-response introspection: {e}"
+                self._logger.exception(
+                    f"Failed to set up request-response introspection: {e}",
                 )
 
     def _teardown_request_response_introspection(self) -> None:
@@ -110,8 +117,8 @@ class MixinRequestResponseIntrospection:
                 self._event_bus.unsubscribe(self._handle_introspection_request)
         except Exception as e:
             if hasattr(self, "_logger") and self._logger:
-                self._logger.error(
-                    f"Failed to teardown request-response introspection: {e}"
+                self._logger.exception(
+                    f"Failed to teardown request-response introspection: {e}",
                 )
 
     def _handle_introspection_request(self, envelope_or_event) -> None:
@@ -123,8 +130,7 @@ class MixinRequestResponseIntrospection:
         """
         from omnibase.enums.enum_log_level import LogLevelEnum
 
-        from omnibase_core.core.core_structured_logging import \
-            emit_log_event_sync
+        from omnibase_core.core.core_structured_logging import emit_log_event_sync
 
         # Extract event from envelope if needed
         if hasattr(envelope_or_event, "payload"):
@@ -311,8 +317,9 @@ class MixinRequestResponseIntrospection:
                 )
 
                 # Create envelope for the response
-                from omnibase_core.model.core.model_event_envelope import \
-                    ModelEventEnvelope
+                from omnibase_core.model.core.model_event_envelope import (
+                    ModelEventEnvelope,
+                )
 
                 response_envelope = ModelEventEnvelope.create_broadcast(
                     payload=response,
@@ -333,12 +340,14 @@ class MixinRequestResponseIntrospection:
                         "event_type": response_envelope.payload.event_type,
                         "response_type": type(response).__name__,
                         "envelope_correlation_id": str(
-                            response_envelope.correlation_id
+                            response_envelope.correlation_id,
                         ),
                         "node_name": getattr(self, "node_name", "unknown"),
                         "event_bus_type": type(self._event_bus).__name__,
                         "event_bus_connected": getattr(
-                            self._event_bus, "is_connected", lambda: "unknown"
+                            self._event_bus,
+                            "is_connected",
+                            lambda: "unknown",
                         )(),
                     },
                 )
@@ -383,7 +392,7 @@ class MixinRequestResponseIntrospection:
         except Exception as e:
             emit_log_event_sync(
                 LogLevelEnum.ERROR,
-                f"❌ INTROSPECTION: Error handling request: {str(e)}",
+                f"❌ INTROSPECTION: Error handling request: {e!s}",
                 {
                     "node_name": getattr(self, "node_name", "unknown"),
                     "error": str(e),
@@ -404,8 +413,9 @@ class MixinRequestResponseIntrospection:
 
                 if hasattr(self, "_event_bus") and self._event_bus:
                     # Create envelope for the error response
-                    from omnibase_core.model.core.model_event_envelope import \
-                        ModelEventEnvelope
+                    from omnibase_core.model.core.model_event_envelope import (
+                        ModelEventEnvelope,
+                    )
 
                     error_envelope = ModelEventEnvelope.create_broadcast(
                         payload=error_response,
@@ -447,10 +457,11 @@ class MixinRequestResponseIntrospection:
 
             except Exception as nested_e:
                 if hasattr(self, "_logger") and self._logger:
-                    self._logger.error(f"Failed to send error response: {nested_e}")
+                    self._logger.exception(f"Failed to send error response: {nested_e}")
 
     def _matches_introspection_filters(
-        self, filters: Optional[ModelIntrospectionFilters]
+        self,
+        filters: ModelIntrospectionFilters | None,
     ) -> bool:
         """
         Check if this node matches the introspection request filters.
@@ -527,9 +538,8 @@ class MixinRequestResponseIntrospection:
                 hasattr(self, "_event_bus")
                 and self._event_bus
                 and hasattr(self._event_bus, "is_connected")
-            ):
-                if not self._event_bus.is_connected():
-                    return NodeCurrentStatusEnum.DEGRADED
+            ) and not self._event_bus.is_connected():
+                return NodeCurrentStatusEnum.DEGRADED
         except:
             return NodeCurrentStatusEnum.DEGRADED
 
@@ -551,30 +561,26 @@ class MixinRequestResponseIntrospection:
         # Fallback to basic capabilities
         actions = []
         if hasattr(self, "get_supported_actions"):
-            try:
+            with contextlib.suppress(Exception):
                 actions = self.get_supported_actions()
-            except:
-                pass
 
         protocols = ["event_bus"]
         if hasattr(self, "get_supported_protocols"):
-            try:
+            with contextlib.suppress(Exception):
                 protocols = self.get_supported_protocols()
-            except:
-                pass
 
         metadata = {}
         if hasattr(self, "get_metadata"):
-            try:
+            with contextlib.suppress(Exception):
                 metadata = self.get_metadata()
-            except:
-                pass
 
         return ModelNodeCapabilities(
-            actions=actions, protocols=protocols, metadata=metadata
+            actions=actions,
+            protocols=protocols,
+            metadata=metadata,
         )
 
-    def _get_current_tool_availability(self) -> List[ModelCurrentToolAvailability]:
+    def _get_current_tool_availability(self) -> list[ModelCurrentToolAvailability]:
         """
         Get current tool availability information.
 
@@ -593,14 +599,14 @@ class MixinRequestResponseIntrospection:
                             tool_name=tool_name,
                             status=NodeCurrentStatusEnum.READY,
                             execution_count=0,  # Could be enhanced with actual metrics
-                        )
+                        ),
                     )
             except:
                 pass
 
         return tools
 
-    def _get_current_resource_usage(self) -> Optional[ModelResourceUsage]:
+    def _get_current_resource_usage(self) -> ModelResourceUsage | None:
         """
         Get current resource usage information.
 
@@ -630,7 +636,7 @@ class MixinRequestResponseIntrospection:
             # Error getting resource usage
             return None
 
-    def _get_current_performance_metrics(self) -> Optional[ModelPerformanceMetrics]:
+    def _get_current_performance_metrics(self) -> ModelPerformanceMetrics | None:
         """
         Get current performance metrics.
 
@@ -653,7 +659,7 @@ class MixinRequestResponseIntrospection:
 
     def _get_additional_introspection_info(
         self,
-    ) -> Optional[ModelIntrospectionAdditionalInfo]:
+    ) -> ModelIntrospectionAdditionalInfo | None:
         """
         Get additional node-specific introspection information.
 
@@ -662,7 +668,7 @@ class MixinRequestResponseIntrospection:
         """
         # Create the additional info model
         additional_info = ModelIntrospectionAdditionalInfo(
-            startup_time=self._startup_time
+            startup_time=self._startup_time,
         )
 
         # Add any node-specific information

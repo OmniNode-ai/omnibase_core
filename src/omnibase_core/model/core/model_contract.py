@@ -12,9 +12,11 @@ class ModelContract(BaseModel):
 
     input_state_schema: str = Field(..., description="Input state JSON schema filename")
     output_state_schema: str = Field(
-        ..., description="Output state JSON schema filename"
+        ...,
+        description="Output state JSON schema filename",
     )
     cli_interface: ModelCLIInterface = Field(
-        ..., description="CLI interface specification"
+        ...,
+        description="CLI interface specification",
     )
     protocol_version: str = Field(..., description="ONEX protocol version")

@@ -5,7 +5,7 @@ This model defines the input parameters for counting vectors in collections,
 following ONEX canonical patterns with OnexInputState inheritance.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import Field
 
@@ -23,10 +23,12 @@ class ModelCountVectorsInputState(OnexInputState):
     """
 
     collection_name: str = Field(
-        ..., description="Name of the collection to count vectors in"
+        ...,
+        description="Name of the collection to count vectors in",
     )
-    filter_conditions: Optional[Dict[str, Any]] = Field(
-        default=None, description="Metadata filter conditions for counting"
+    filter_conditions: dict[str, Any] | None = Field(
+        default=None,
+        description="Metadata filter conditions for counting",
     )
     exact: bool = Field(
         default=False,

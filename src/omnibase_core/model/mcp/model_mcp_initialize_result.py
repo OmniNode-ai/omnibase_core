@@ -13,7 +13,8 @@ class ModelMCPInitializeResult(BaseModel):
     """
 
     protocolVersion: str = Field(
-        default="2024-11-05", description="MCP protocol version"
+        default="2024-11-05",
+        description="MCP protocol version",
     )
     capabilities: "ModelMCPCapabilities" = Field(..., description="Server capabilities")
     serverInfo: "ModelMCPServerInfo" = Field(..., description="Server information")

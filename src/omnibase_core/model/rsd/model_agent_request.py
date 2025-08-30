@@ -9,8 +9,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.tools.rsd.shared.enums.enum_rsd_agent_request_type import \
-    EnumRSDAgentRequestType
+from omnibase_core.tools.rsd.shared.enums.enum_rsd_agent_request_type import (
+    EnumRSDAgentRequestType,
+)
 
 
 class ModelAgentRequest(BaseModel):
@@ -30,17 +31,21 @@ class ModelAgentRequest(BaseModel):
     request_type: EnumRSDAgentRequestType = Field(description="Type of agent request")
 
     priority_boost: float = Field(
-        description="Priority boost factor (0.0-2.0)", ge=0.0, le=2.0
+        description="Priority boost factor (0.0-2.0)",
+        ge=0.0,
+        le=2.0,
     )
 
     reason: str = Field(description="Reason for the request")
 
     timestamp: datetime = Field(
-        description="When the request was made", default_factory=datetime.now
+        description="When the request was made",
+        default_factory=datetime.now,
     )
 
     processed: bool = Field(
-        description="Whether request has been processed", default=False
+        description="Whether request has been processed",
+        default=False,
     )
 
     class Config:

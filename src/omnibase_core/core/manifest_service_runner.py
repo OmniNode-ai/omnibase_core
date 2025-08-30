@@ -14,15 +14,17 @@ import sys
 import time
 from pathlib import Path
 from types import FrameType
-from typing import Dict, Optional, Protocol
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
-from omnibase_core.core.tool_manifest_discovery import (ToolManifest,
-                                                        ToolManifestDiscovery)
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+from omnibase_core.core.tool_manifest_discovery import (
+    ToolManifest,
+    ToolManifestDiscovery,
+)
 from omnibase_core.exceptions import OnexError
 
 # Configuration constants
@@ -35,7 +37,7 @@ SIGINT_EXIT_CODE = 130
 class ManifestServiceRunner:
     """Service runner that uses tool manifests for discovery and startup."""
 
-    def __init__(self, domain: Optional[str] = None, base_path: Optional[Path] = None):
+    def __init__(self, domain: str | None = None, base_path: Path | None = None):
         """
         Initialize the manifest service runner.
 
@@ -45,7 +47,7 @@ class ManifestServiceRunner:
         """
         self.domain = domain
         self.discovery = ToolManifestDiscovery(base_path)
-        self.running_tools: Dict[str, object] = {}  # tool_name -> node_instance
+        self.running_tools: dict[str, object] = {}  # tool_name -> node_instance
         self.stop_requested = False
         self.introspection_handler = None
 
@@ -82,7 +84,7 @@ class ManifestServiceRunner:
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
-                    f"❌ Failed to start {manifest.name}: {str(e)}",
+                    f"❌ Failed to start {manifest.name}: {e!s}",
                     {
                         "tool_name": manifest.name,
                         "error": str(e),
@@ -147,6 +149,7 @@ class ManifestServiceRunner:
             from pathlib import Path
 
             from omnibase_core.core.node_base import ModelNodeBase
+
             # Resolve event bus adapter from DI container
             from omnibase_core.core.registry_bootstrap import BootstrapRegistry
 
@@ -172,14 +175,15 @@ class ManifestServiceRunner:
 
             # Create ModelNodeBase instance directly for service mode
             node = ModelNodeBase(
-                contract_path=contract_path, event_bus=event_bus_adapter
+                contract_path=contract_path,
+                event_bus=event_bus_adapter,
             )
 
             # Set up event bus
             await self._setup_event_bus(node, manifest)
 
             # Store the running tool
-            tool_info: Dict[str, object] = {
+            tool_info: dict[str, object] = {
                 "node": node,
                 "manifest": manifest,
                 "started_at": time.time(),
@@ -193,7 +197,8 @@ class ManifestServiceRunner:
                 {
                     "tool_name": manifest.name,
                     "has_introspection_mixin": hasattr(
-                        node, "_setup_request_response_introspection"
+                        node,
+                        "_setup_request_response_introspection",
                     ),
                     "has_event_bus": hasattr(node, "_event_bus")
                     and node._event_bus is not None,
@@ -216,7 +221,7 @@ class ManifestServiceRunner:
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to start {manifest.name}: {str(e)}",
+                message=f"Failed to start {manifest.name}: {e!s}",
                 details={
                     "tool_name": manifest.name,
                     "module": version_info.node_module,
@@ -253,7 +258,8 @@ class ManifestServiceRunner:
 
         # Wait for connection
         connected = await asyncio.to_thread(
-            event_bus_client.wait_for_connection, timeout=30
+            event_bus_client.wait_for_connection,
+            timeout=30,
         )
 
         if not connected:
@@ -266,15 +272,15 @@ class ManifestServiceRunner:
         event_bus_adapter = EventBusAdapter(event_bus_url)
 
         if hasattr(node, "event_bus"):
-            setattr(node, "event_bus", event_bus_adapter)
+            node.event_bus = event_bus_adapter
         if hasattr(node, "_event_bus"):
-            setattr(node, "_event_bus", event_bus_adapter)
+            node._event_bus = event_bus_adapter
 
         # Start event listener
         if hasattr(node, "start_event_listener") and callable(
-            getattr(node, "start_event_listener")
+            node.start_event_listener,
         ):
-            getattr(node, "start_event_listener")()
+            node.start_event_listener()
 
             emit_log_event(
                 LogLevelEnum.INFO,
@@ -289,7 +295,7 @@ class ManifestServiceRunner:
         """Run all tools and keep them running until stopped."""
 
         # Set up signal handlers
-        def signal_handler(signum: int, frame: Optional[FrameType]) -> None:
+        def signal_handler(signum: int, frame: FrameType | None) -> None:
             emit_log_event(
                 LogLevelEnum.INFO,
                 f"📡 Received signal {signum}, initiating graceful shutdown",
@@ -325,7 +331,9 @@ class ManifestServiceRunner:
                 # Health check (could be expanded)
                 if len(self.running_tools) == 0:
                     emit_log_event(
-                        LogLevelEnum.ERROR, "❌ All tools have stopped, exiting", {}
+                        LogLevelEnum.ERROR,
+                        "❌ All tools have stopped, exiting",
+                        {},
                     )
                     break
 
@@ -357,10 +365,12 @@ class ManifestServiceRunner:
                         "node_id": getattr(node, "_node_id", "unknown"),
                         "node_name": getattr(node, "node_name", "unknown"),
                         "has_introspection_setup": hasattr(
-                            node, "_setup_request_response_introspection"
+                            node,
+                            "_setup_request_response_introspection",
                         ),
                         "has_handle_introspection": hasattr(
-                            node, "_handle_introspection_request"
+                            node,
+                            "_handle_introspection_request",
                         ),
                         "event_bus_connected": hasattr(node, "_event_bus")
                         and node._event_bus is not None,
@@ -407,7 +417,7 @@ class ManifestServiceRunner:
             except Exception as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
-                    f"❌ Error stopping {tool_name}: {str(e)}",
+                    f"❌ Error stopping {tool_name}: {e!s}",
                     {"tool_name": tool_name, "error": str(e)},
                 )
 
@@ -419,12 +429,14 @@ async def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Run ONEX tools using manifest discovery"
+        description="Run ONEX tools using manifest discovery",
     )
     parser.add_argument("--domain", help="Domain to run tools for (e.g., 'generation')")
     parser.add_argument("--base-path", help="Base path for tool discovery")
     parser.add_argument(
-        "--list-only", action="store_true", help="Just list discovered tools"
+        "--list-only",
+        action="store_true",
+        help="Just list discovered tools",
     )
 
     args = parser.parse_args()
@@ -436,19 +448,14 @@ async def main() -> None:
         if args.list_only:
             # Just show what would be started
             active_tools = runner.discovery.get_active_tools(args.domain)
-            print(f"\n🚀 Found {len(active_tools)} tools that would be started:")
             for tool in active_tools:
-                version_info = tool.versions[tool.current_version]
-                print(f"  • {tool.name} ({tool.domain}) - {tool.current_version}")
-                print(f"    Module: {version_info.node_module}")
-                print(f"    Events: {tool.service_config.get('event_patterns', [])}")
-                print()
+                tool.versions[tool.current_version]
         else:
             # Run the tools
             await runner.run_forever()
 
     except Exception as e:
-        emit_log_event(LogLevelEnum.ERROR, f"❌ Service runner failed: {str(e)}")
+        emit_log_event(LogLevelEnum.ERROR, f"❌ Service runner failed: {e!s}")
         sys.exit(SERVICE_ERROR_EXIT_CODE)
 
 

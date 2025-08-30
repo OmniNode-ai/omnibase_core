@@ -6,8 +6,6 @@ Configuration model for EventBusService behavior and settings.
 Author: ONEX Framework Team
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -36,18 +34,20 @@ class ModelEventBusConfig(BaseModel):
         description="Automatically resolve event bus from environment if not provided",
     )
 
-    event_bus_url: Optional[str] = Field(
+    event_bus_url: str | None = Field(
         default=None,
         description="Event bus URL override (defaults to EVENT_BUS_URL environment variable)",
     )
 
     connection_timeout_seconds: int = Field(
-        default=30, description="Timeout for event bus connection attempts"
+        default=30,
+        description="Timeout for event bus connection attempts",
     )
 
     # Event pattern configuration
     use_contract_event_patterns: bool = Field(
-        default=True, description="Extract event patterns from contract YAML first"
+        default=True,
+        description="Extract event patterns from contract YAML first",
     )
 
     fallback_to_node_name_patterns: bool = Field(
@@ -55,7 +55,7 @@ class ModelEventBusConfig(BaseModel):
         description="Fall back to node name-based patterns if no contract patterns found",
     )
 
-    default_event_patterns: List[str] = Field(
+    default_event_patterns: list[str] = Field(
         default_factory=lambda: [
             "*.discovery.*",
             "core.discovery.introspection_request",
@@ -65,15 +65,18 @@ class ModelEventBusConfig(BaseModel):
 
     # Publishing configuration
     enable_event_retry: bool = Field(
-        default=True, description="Enable retry logic for failed event publishing"
+        default=True,
+        description="Enable retry logic for failed event publishing",
     )
 
     max_retry_attempts: int = Field(
-        default=3, description="Maximum number of retry attempts for event publishing"
+        default=3,
+        description="Maximum number of retry attempts for event publishing",
     )
 
     retry_delay_seconds: float = Field(
-        default=1.0, description="Delay between retry attempts"
+        default=1.0,
+        description="Delay between retry attempts",
     )
 
     # Envelope configuration
@@ -83,12 +86,14 @@ class ModelEventBusConfig(BaseModel):
     )
 
     include_source_metadata: bool = Field(
-        default=True, description="Include source node metadata in event envelopes"
+        default=True,
+        description="Include source node metadata in event envelopes",
     )
 
     # Logging and monitoring
     enable_event_logging: bool = Field(
-        default=True, description="Enable structured logging for event operations"
+        default=True,
+        description="Enable structured logging for event operations",
     )
 
     log_event_payloads: bool = Field(
@@ -98,16 +103,19 @@ class ModelEventBusConfig(BaseModel):
 
     # Performance configuration
     enable_event_caching: bool = Field(
-        default=True, description="Enable caching for frequently created events"
+        default=True,
+        description="Enable caching for frequently created events",
     )
 
     cache_max_size: int = Field(
-        default=100, description="Maximum number of events to cache"
+        default=100,
+        description="Maximum number of events to cache",
     )
 
     # Error handling configuration
     fail_fast_on_validation_errors: bool = Field(
-        default=True, description="Fail immediately on event validation errors"
+        default=True,
+        description="Fail immediately on event validation errors",
     )
 
     suppress_connection_errors: bool = Field(
@@ -116,7 +124,7 @@ class ModelEventBusConfig(BaseModel):
     )
 
     # Environment variable mappings
-    environment_variable_mappings: Dict[str, str] = Field(
+    environment_variable_mappings: dict[str, str] = Field(
         default_factory=lambda: {
             "EVENT_BUS_URL": "event_bus_url",
             "EVENT_BUS_TIMEOUT": "connection_timeout_seconds",

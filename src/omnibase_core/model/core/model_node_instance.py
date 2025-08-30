@@ -6,16 +6,13 @@ instance management and service discovery.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional
 
 from omnibase.enums.enum_node_status import EnumNodeStatus
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.configuration.model_load_metrics import \
-    ModelLoadMetrics
+from omnibase_core.model.configuration.model_load_metrics import ModelLoadMetrics
 from omnibase_core.model.core.model_capability import ModelCapability
-from omnibase_core.model.core.model_instance_metadata import \
-    ModelInstanceMetadata
+from omnibase_core.model.core.model_instance_metadata import ModelInstanceMetadata
 from omnibase_core.model.core.model_node_reference import ModelNodeReference
 from omnibase_core.model.core.model_node_type import ModelNodeType
 from omnibase_core.model.health.model_health_metrics import ModelHealthMetrics
@@ -36,35 +33,43 @@ class ModelNodeInstance(BaseModel):
     node_type: ModelNodeType = Field(..., description="Type of this node instance")
 
     health_metrics: ModelHealthMetrics = Field(
-        default_factory=ModelHealthMetrics, description="Health metrics"
+        default_factory=ModelHealthMetrics,
+        description="Health metrics",
     )
 
     load_metrics: ModelLoadMetrics = Field(
-        default_factory=ModelLoadMetrics, description="Load metrics"
+        default_factory=ModelLoadMetrics,
+        description="Load metrics",
     )
 
     last_heartbeat: datetime = Field(
-        default_factory=datetime.utcnow, description="Last heartbeat timestamp"
+        default_factory=datetime.utcnow,
+        description="Last heartbeat timestamp",
     )
 
     registration_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Registration timestamp"
+        default_factory=datetime.utcnow,
+        description="Registration timestamp",
     )
 
-    capabilities_verified: List[ModelCapability] = Field(
-        default_factory=list, description="Verified capabilities"
+    capabilities_verified: list[ModelCapability] = Field(
+        default_factory=list,
+        description="Verified capabilities",
     )
 
-    instance_metadata: Optional[ModelInstanceMetadata] = Field(
-        None, description="Additional metadata"
+    instance_metadata: ModelInstanceMetadata | None = Field(
+        None,
+        description="Additional metadata",
     )
 
-    connection_url: Optional[str] = Field(
-        None, description="Connection URL for remote instances"
+    connection_url: str | None = Field(
+        None,
+        description="Connection URL for remote instances",
     )
 
     protocol_version: str = Field(
-        default="1.0.0", description="Protocol version supported"
+        default="1.0.0",
+        description="Protocol version supported",
     )
 
     def is_healthy(self) -> bool:
@@ -135,8 +140,8 @@ class ModelNodeInstance(BaseModel):
 
     def update_metrics(
         self,
-        health: Optional[ModelHealthMetrics] = None,
-        load: Optional[ModelLoadMetrics] = None,
+        health: ModelHealthMetrics | None = None,
+        load: ModelLoadMetrics | None = None,
     ) -> None:
         """
         Update instance metrics.
@@ -153,9 +158,9 @@ class ModelNodeInstance(BaseModel):
 
     def matches_requirements(
         self,
-        required_type: Optional[ModelNodeType] = None,
-        required_capabilities: Optional[List[ModelCapability]] = None,
-        required_labels: Optional[Dict[str, str]] = None,
+        required_type: ModelNodeType | None = None,
+        required_capabilities: list[ModelCapability] | None = None,
+        required_labels: dict[str, str] | None = None,
     ) -> bool:
         """
         Check if instance matches requirements.

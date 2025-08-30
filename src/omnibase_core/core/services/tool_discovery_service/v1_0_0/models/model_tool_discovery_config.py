@@ -7,8 +7,6 @@ as part of NODEBASE-001 Phase 3 deconstruction.
 Author: ONEX Framework Team
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -47,7 +45,7 @@ class ModelToolDiscoveryConfig(BaseModel):
         le=10,
     )
 
-    tool_instantiation_timeout_seconds: Optional[float] = Field(
+    tool_instantiation_timeout_seconds: float | None = Field(
         default=30.0,
         description="Timeout for tool instantiation operations",
         gt=0,

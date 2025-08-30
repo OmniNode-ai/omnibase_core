@@ -5,7 +5,7 @@ Session affinity model for configuring sticky sessions and client-to-node
 routing persistence in load balancing systems.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,55 +20,68 @@ class ModelSessionAffinityMetadata(BaseModel):
         pattern="^(uuid|ulid|nanoid|custom)$",
     )
     include_timestamp: bool = Field(
-        True, description="Include timestamp in session metadata"
+        True,
+        description="Include timestamp in session metadata",
     )
 
     # Client identification
     include_user_agent: bool = Field(
-        True, description="Include user agent in affinity calculation"
+        True,
+        description="Include user agent in affinity calculation",
     )
     include_accept_language: bool = Field(
-        False, description="Include accept-language header in affinity"
+        False,
+        description="Include accept-language header in affinity",
     )
     include_geo_location: bool = Field(
-        False, description="Include geo-location in affinity calculation"
+        False,
+        description="Include geo-location in affinity calculation",
     )
 
     # Session persistence
     persist_across_restarts: bool = Field(
-        False, description="Persist affinity data across server restarts"
+        False,
+        description="Persist affinity data across server restarts",
     )
-    storage_backend: Optional[str] = Field(
+    storage_backend: str | None = Field(
         None,
         description="Storage backend for persistent affinity",
         pattern="^(redis|memcached|dynamodb|custom)$",
     )
 
     # Load balancing hints
-    preferred_node_tags: List[str] = Field(
-        default_factory=list, description="Preferred node tags for affinity"
+    preferred_node_tags: list[str] = Field(
+        default_factory=list,
+        description="Preferred node tags for affinity",
     )
-    excluded_node_tags: List[str] = Field(
-        default_factory=list, description="Node tags to exclude from affinity"
+    excluded_node_tags: list[str] = Field(
+        default_factory=list,
+        description="Node tags to exclude from affinity",
     )
 
     # Failover behavior
-    failover_priority: List[str] = Field(
-        default_factory=list, description="Failover node priority order"
+    failover_priority: list[str] = Field(
+        default_factory=list,
+        description="Failover node priority order",
     )
     preserve_session_data: bool = Field(
-        True, description="Preserve session data during failover"
+        True,
+        description="Preserve session data during failover",
     )
 
     # Monitoring
     track_session_metrics: bool = Field(True, description="Track session-level metrics")
     metrics_sampling_rate: float = Field(
-        1.0, description="Sampling rate for session metrics", ge=0.0, le=1.0
+        1.0,
+        description="Sampling rate for session metrics",
+        ge=0.0,
+        le=1.0,
     )
 
     # Custom extensions
-    custom_extractors: Dict[str, str] = Field(
-        default_factory=dict, description="Custom field extractors (name: regex)"
+    custom_extractors: dict[str, str] = Field(
+        default_factory=dict,
+        description="Custom field extractors (name: regex)",
     )
 
 
@@ -81,7 +94,8 @@ class ModelSessionAffinity(BaseModel):
     """
 
     enabled: bool = Field(
-        default=False, description="Whether session affinity is enabled"
+        default=False,
+        description="Whether session affinity is enabled",
     )
 
     affinity_type: str = Field(
@@ -90,32 +104,40 @@ class ModelSessionAffinity(BaseModel):
         pattern="^(cookie|ip_hash|header|query_param|custom)$",
     )
 
-    cookie_name: Optional[str] = Field(
-        None, description="Cookie name for cookie-based affinity"
+    cookie_name: str | None = Field(
+        None,
+        description="Cookie name for cookie-based affinity",
     )
 
-    cookie_ttl_seconds: Optional[int] = Field(
-        None, description="Cookie TTL in seconds", ge=60, le=86400  # 24 hours max
+    cookie_ttl_seconds: int | None = Field(
+        None,
+        description="Cookie TTL in seconds",
+        ge=60,
+        le=86400,  # 24 hours max
     )
 
-    cookie_domain: Optional[str] = Field(None, description="Cookie domain for affinity")
+    cookie_domain: str | None = Field(None, description="Cookie domain for affinity")
 
-    cookie_path: Optional[str] = Field(None, description="Cookie path for affinity")
+    cookie_path: str | None = Field(None, description="Cookie path for affinity")
 
     cookie_secure: bool = Field(
-        default=True, description="Whether affinity cookie should be secure"
+        default=True,
+        description="Whether affinity cookie should be secure",
     )
 
     cookie_http_only: bool = Field(
-        default=True, description="Whether affinity cookie should be HTTP-only"
+        default=True,
+        description="Whether affinity cookie should be HTTP-only",
     )
 
-    header_name: Optional[str] = Field(
-        None, description="Header name for header-based affinity"
+    header_name: str | None = Field(
+        None,
+        description="Header name for header-based affinity",
     )
 
-    query_param_name: Optional[str] = Field(
-        None, description="Query parameter name for query-based affinity"
+    query_param_name: str | None = Field(
+        None,
+        description="Query parameter name for query-based affinity",
     )
 
     hash_algorithm: str = Field(
@@ -124,7 +146,7 @@ class ModelSessionAffinity(BaseModel):
         pattern="^(md5|sha1|sha256|sha512)$",
     )
 
-    session_timeout_seconds: Optional[int] = Field(
+    session_timeout_seconds: int | None = Field(
         None,
         description="Session timeout in seconds",
         ge=300,  # 5 minutes minimum
@@ -148,8 +170,9 @@ class ModelSessionAffinity(BaseModel):
         le=10,
     )
 
-    custom_affinity_function: Optional[str] = Field(
-        None, description="Custom function name for affinity calculation"
+    custom_affinity_function: str | None = Field(
+        None,
+        description="Custom function name for affinity calculation",
     )
 
     affinity_metadata: ModelSessionAffinityMetadata = Field(
@@ -160,10 +183,10 @@ class ModelSessionAffinity(BaseModel):
     def get_affinity_key(
         self,
         client_ip: str = "",
-        headers: Dict[str, str] = None,
-        query_params: Dict[str, str] = None,
-        cookies: Dict[str, str] = None,
-    ) -> Optional[str]:
+        headers: dict[str, str] | None = None,
+        query_params: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
+    ) -> str | None:
         """Extract affinity key from request components"""
         if not self.enabled:
             return None
@@ -174,18 +197,20 @@ class ModelSessionAffinity(BaseModel):
 
         if self.affinity_type == "ip_hash":
             return client_ip
-        elif self.affinity_type == "cookie" and self.cookie_name:
+        if self.affinity_type == "cookie" and self.cookie_name:
             return cookies.get(self.cookie_name)
-        elif self.affinity_type == "header" and self.header_name:
+        if self.affinity_type == "header" and self.header_name:
             return headers.get(self.header_name)
-        elif self.affinity_type == "query_param" and self.query_param_name:
+        if self.affinity_type == "query_param" and self.query_param_name:
             return query_params.get(self.query_param_name)
 
         return None
 
     def calculate_node_hash(
-        self, affinity_key: str, available_nodes: List[str]
-    ) -> Optional[str]:
+        self,
+        affinity_key: str,
+        available_nodes: list[str],
+    ) -> str | None:
         """Calculate target node based on affinity key"""
         if not affinity_key or not available_nodes:
             return None
@@ -209,7 +234,7 @@ class ModelSessionAffinity(BaseModel):
         node_index = hash_int % len(available_nodes)
         return available_nodes[node_index]
 
-    def should_create_affinity(self, existing_affinity: Optional[str]) -> bool:
+    def should_create_affinity(self, existing_affinity: str | None) -> bool:
         """Check if new affinity should be created"""
         return self.enabled and existing_affinity is None
 
@@ -223,7 +248,7 @@ class ModelSessionAffinity(BaseModel):
 
         return self.sticky_on_failure
 
-    def get_cookie_attributes(self) -> Dict[str, Any]:
+    def get_cookie_attributes(self) -> dict[str, Any]:
         """Get cookie attributes for affinity cookie"""
         if not self.enabled or self.affinity_type != "cookie":
             return {}
@@ -241,7 +266,9 @@ class ModelSessionAffinity(BaseModel):
 
     @classmethod
     def create_cookie_affinity(
-        cls, cookie_name: str = "ONEX_NODE_AFFINITY", ttl_seconds: int = 3600
+        cls,
+        cookie_name: str = "ONEX_NODE_AFFINITY",
+        ttl_seconds: int = 3600,
     ) -> "ModelSessionAffinity":
         """Create cookie-based session affinity"""
         return cls(
@@ -256,7 +283,8 @@ class ModelSessionAffinity(BaseModel):
 
     @classmethod
     def create_ip_hash_affinity(
-        cls, hash_algorithm: str = "sha256"
+        cls,
+        hash_algorithm: str = "sha256",
     ) -> "ModelSessionAffinity":
         """Create IP hash-based session affinity"""
         return cls(

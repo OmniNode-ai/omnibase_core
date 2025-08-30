@@ -4,7 +4,7 @@ CLI interface model for contract representation.
 Represents CLI interface definitions from contracts with strongly typed components.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,15 +15,17 @@ from .model_cli_entrypoint import ModelCliEntrypoint
 class ModelCliInterface(BaseModel):
     """CLI interface definition from contract with strongly typed components."""
 
-    entrypoint: Optional[ModelCliEntrypoint] = Field(
-        None, description="Strongly typed CLI entrypoint"
+    entrypoint: ModelCliEntrypoint | None = Field(
+        None,
+        description="Strongly typed CLI entrypoint",
     )
-    commands: List[ModelCliCommand] = Field(
-        default_factory=list, description="Strongly typed CLI commands"
+    commands: list[ModelCliCommand] = Field(
+        default_factory=list,
+        description="Strongly typed CLI commands",
     )
 
     @classmethod
-    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["ModelCliInterface"]:
+    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelCliInterface"]:
         """Create from contract dict data with backwards compatibility."""
         if data is None:
             return None
@@ -44,8 +46,9 @@ class ModelCliInterface(BaseModel):
                     # Legacy string format
                     commands.append(
                         ModelCliCommand(
-                            name=cmd_data, description=f"Execute {cmd_data} command"
-                        )
+                            name=cmd_data,
+                            description=f"Execute {cmd_data} command",
+                        ),
                     )
                 elif isinstance(cmd_data, dict):
                     # Structured format
@@ -53,7 +56,7 @@ class ModelCliInterface(BaseModel):
 
         return cls(entrypoint=entrypoint, commands=commands)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
         result = {}
 
@@ -65,11 +68,11 @@ class ModelCliInterface(BaseModel):
 
         return result
 
-    def get_command_names(self) -> List[str]:
+    def get_command_names(self) -> list[str]:
         """Get list of command names for backwards compatibility."""
         return [cmd.name for cmd in self.commands]
 
-    def get_entrypoint_string(self) -> Optional[str]:
+    def get_entrypoint_string(self) -> str | None:
         """Get entrypoint as string for backwards compatibility."""
         return self.entrypoint.to_string() if self.entrypoint else None
 

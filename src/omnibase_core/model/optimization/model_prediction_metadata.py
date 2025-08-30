@@ -5,7 +5,6 @@ Metadata for usage prediction.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,4 +15,4 @@ class ModelPredictionMetadata(BaseModel):
     model_version: str = Field("v1.0.0", description="Prediction model version")
     training_samples: int = Field(0, description="Number of training samples")
     feature_count: int = Field(0, description="Number of features used")
-    last_updated: Optional[datetime] = Field(None, description="Model last updated")
+    last_updated: datetime | None = Field(None, description="Model last updated")

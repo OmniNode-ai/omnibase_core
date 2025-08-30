@@ -6,12 +6,12 @@ to monitor and debug service discovery interactions.
 """
 
 import logging
-from typing import Optional
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,9 @@ class MixinDebugDiscoveryLogging:
     """
 
     def setup_discovery_debug_logging(
-        self, node_name: str, additional_context: Optional[dict] = None
+        self,
+        node_name: str,
+        additional_context: dict | None = None,
     ):
         """
         Setup comprehensive discovery event debug logging.
@@ -35,7 +37,6 @@ class MixinDebugDiscoveryLogging:
             node_name: Name of the node for logging context
             additional_context: Additional context fields to include in logs
         """
-        from omnibase_core.constants.event_types import CoreEventTypes
 
         context = {
             "node_name": node_name,
@@ -63,7 +64,8 @@ class MixinDebugDiscoveryLogging:
             # Replace with debug version
             self._handle_introspection_request = (
                 lambda envelope_or_event: self._debug_handle_introspection_request(
-                    envelope_or_event, node_name
+                    envelope_or_event,
+                    node_name,
                 )
             )
 

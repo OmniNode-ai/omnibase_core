@@ -6,7 +6,6 @@ providing common fields and functionality.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,17 +17,18 @@ class ModelMetadataBase(BaseModel):
     """Base metadata model for all metadata types"""
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Creation timestamp",
     )
 
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
 
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Metadata version",
     )
 
-    tags: List[ModelTag] = Field(default_factory=list, description="Metadata tags")
+    tags: list[ModelTag] = Field(default_factory=list, description="Metadata tags")
 
     def add_tag(self, tag: ModelTag) -> None:
         """Add a tag to metadata."""

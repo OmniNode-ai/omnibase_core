@@ -1,12 +1,10 @@
 from abc import abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Protocol
 
-from typing_extensions import Protocol
-
-from omnibase_core.model.registry.model_registry_health_report import \
-    ModelRegistryHealthReport
-from omnibase_core.model.validation.model_validation_result import \
-    ModelValidationResult
+from omnibase_core.model.registry.model_registry_health_report import (
+    ModelRegistryHealthReport,
+)
+from omnibase_core.model.validation.model_validation_result import ModelValidationResult
 
 
 class ProtocolModelRegistryValidator(Protocol):
@@ -38,7 +36,7 @@ class ProtocolModelRegistryValidator(Protocol):
         ...
 
     @abstractmethod
-    def detect_conflicts(self) -> List[str]:
+    def detect_conflicts(self) -> list[str]:
         """Detect conflicts across all registries"""
         ...
 
@@ -48,7 +46,7 @@ class ProtocolModelRegistryValidator(Protocol):
         ...
 
     @abstractmethod
-    def lock_verified_models(self) -> Dict[str, Any]:
+    def lock_verified_models(self) -> dict[str, Any]:
         """Lock verified models with version/timestamp/trust tags"""
         ...
 

@@ -5,7 +5,6 @@ Event sent to request real-time introspection from all connected nodes.
 Enables on-demand discovery of currently available nodes with their current status.
 """
 
-from typing import List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -37,12 +36,16 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         description="Unique ID for matching responses to this request",
     )
     timeout_ms: int = Field(
-        default=5000, description="Request timeout in milliseconds", ge=100, le=60000
+        default=5000,
+        description="Request timeout in milliseconds",
+        ge=100,
+        le=60000,
     )
 
     # Request targeting
-    filters: Optional[ModelIntrospectionFilters] = Field(
-        None, description="Optional filters for targeting specific nodes"
+    filters: ModelIntrospectionFilters | None = Field(
+        None,
+        description="Optional filters for targeting specific nodes",
     )
 
     # Request metadata
@@ -57,10 +60,14 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         description="Whether to include current resource usage in responses",
     )
     include_performance_metrics: bool = Field(
-        default=False, description="Whether to include performance metrics in responses"
+        default=False,
+        description="Whether to include performance metrics in responses",
     )
-    max_responses: Optional[int] = Field(
-        None, description="Maximum number of responses to collect", ge=1, le=1000
+    max_responses: int | None = Field(
+        None,
+        description="Maximum number of responses to collect",
+        ge=1,
+        le=1000,
     )
 
     @classmethod
@@ -68,7 +75,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         cls,
         requester_id: str,
         node_id: str = "discovery_client",
-        filters: Optional[ModelIntrospectionFilters] = None,
+        filters: ModelIntrospectionFilters | None = None,
         timeout_ms: int = 5000,
         include_resource_usage: bool = False,
         **kwargs,
@@ -100,7 +107,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     def create_mcp_discovery_request(
         cls,
         node_id: str = "mcp_server",
-        protocols: List[str] = None,
+        protocols: list[str] | None = None,
         timeout_ms: int = 3000,
         **kwargs,
     ) -> "ModelRequestIntrospectionEvent":

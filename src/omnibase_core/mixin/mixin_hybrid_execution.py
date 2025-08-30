@@ -6,16 +6,16 @@ Supports LlamaIndex workflow orchestration for complex operations.
 """
 
 import json
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
 from omnibase_core.constants import constants_contract_fields as cf
-from omnibase_core.core.core_structured_logging import \
-    emit_log_event_sync as emit_log_event
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.model.core.model_workflow_metrics import \
-    ModelWorkflowMetrics
+from omnibase_core.model.core.model_workflow_metrics import ModelWorkflowMetrics
 
 # Type variables for input/output states
 InputStateT = TypeVar("InputStateT")
@@ -62,8 +62,8 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         """Initialize the hybrid execution mixin."""
         super().__init__(**kwargs)
 
-        self._execution_mode: Optional[str] = None
-        self._workflow_metrics: Optional[ModelWorkflowMetrics] = None
+        self._execution_mode: str | None = None
+        self._workflow_metrics: ModelWorkflowMetrics | None = None
 
         emit_log_event(
             LogLevelEnum.DEBUG,
@@ -73,7 +73,8 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """Direct execution process method."""
-        raise NotImplementedError("Tool must implement process method")
+        msg = "Tool must implement process method"
+        raise NotImplementedError(msg)
 
     def determine_execution_mode(self, input_state: InputStateT) -> str:
         """
@@ -102,13 +103,14 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         # Select mode based on complexity
         if complexity_score > 0.7 and ExecutionMode.WORKFLOW in supported_modes:
             return ExecutionMode.WORKFLOW
-        elif complexity_score > 0.5 and ExecutionMode.ORCHESTRATED in supported_modes:
+        if complexity_score > 0.5 and ExecutionMode.ORCHESTRATED in supported_modes:
             return ExecutionMode.ORCHESTRATED
-        else:
-            return ExecutionMode.DIRECT
+        return ExecutionMode.DIRECT
 
     def execute(
-        self, input_state: InputStateT, mode: Optional[str] = None
+        self,
+        input_state: InputStateT,
+        mode: str | None = None,
     ) -> OutputStateT:
         """
         Execute the tool with automatic mode selection.
@@ -139,18 +141,17 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         # Execute based on mode
         if self._execution_mode == ExecutionMode.DIRECT:
             return self._execute_direct(input_state)
-        elif self._execution_mode == ExecutionMode.WORKFLOW:
+        if self._execution_mode == ExecutionMode.WORKFLOW:
             return self._execute_workflow(input_state)
-        elif self._execution_mode == ExecutionMode.ORCHESTRATED:
+        if self._execution_mode == ExecutionMode.ORCHESTRATED:
             return self._execute_orchestrated(input_state)
-        else:
-            # Fallback to direct
-            emit_log_event(
-                LogLevelEnum.WARNING,
-                f"Unknown execution mode '{self._execution_mode}', falling back to direct",
-                {"mode": self._execution_mode},
-            )
-            return self._execute_direct(input_state)
+        # Fallback to direct
+        emit_log_event(
+            LogLevelEnum.WARNING,
+            f"Unknown execution mode '{self._execution_mode}', falling back to direct",
+            {"mode": self._execution_mode},
+        )
+        return self._execute_direct(input_state)
 
     def _execute_direct(self, input_state: InputStateT) -> OutputStateT:
         """Execute in direct mode."""
@@ -194,8 +195,12 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
             # Import LlamaIndex workflow components
             try:
-                from llama_index.core.workflow import (Event, StartEvent,
-                                                       StopEvent, Workflow)
+                from llama_index.core.workflow import (
+                    Event,
+                    StartEvent,
+                    StopEvent,
+                    Workflow,
+                )
             except ImportError as e:
                 emit_log_event(
                     LogLevelEnum.ERROR,
@@ -334,15 +339,14 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
             f"No workflow implementation provided for {self.__class__.__name__}",
             {"execution_will_fallback": "direct"},
         )
-        return None
 
     @property
-    def execution_mode(self) -> Optional[str]:
+    def execution_mode(self) -> str | None:
         """Get the current execution mode."""
         return self._execution_mode
 
     @property
-    def workflow_metrics(self) -> Optional[ModelWorkflowMetrics]:
+    def workflow_metrics(self) -> ModelWorkflowMetrics | None:
         """Get workflow execution metrics if available."""
         return self._workflow_metrics
 

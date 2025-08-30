@@ -1,13 +1,13 @@
 """Strongly typed model for conversation interaction entries."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.conversation.model_conversation_metadata import \
-    ModelConversationMetadata
+from omnibase_core.model.conversation.model_conversation_metadata import (
+    ModelConversationMetadata,
+)
 
 
 class ModelConversationInteractionEntry(BaseModel):
@@ -18,18 +18,22 @@ class ModelConversationInteractionEntry(BaseModel):
         description="Unique interaction identifier",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Interaction timestamp"
+        default_factory=datetime.utcnow,
+        description="Interaction timestamp",
     )
     user_message: str = Field(..., description="User message (truncated)")
     assistant_action: str = Field(
-        ..., description="Assistant action/response (truncated)"
+        ...,
+        description="Assistant action/response (truncated)",
     )
-    tools_used: List[str] = Field(
-        default_factory=list, description="Tools used in this interaction"
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description="Tools used in this interaction",
     )
     outcome: str = Field(default="in_progress", description="Interaction outcome")
-    metadata: Optional[ModelConversationMetadata] = Field(
-        None, description="Additional metadata"
+    metadata: ModelConversationMetadata | None = Field(
+        None,
+        description="Additional metadata",
     )
 
     class Config:

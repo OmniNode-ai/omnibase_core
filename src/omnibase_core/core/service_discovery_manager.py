@@ -5,7 +5,7 @@ Manages service discovery and resolution with Consul integration.
 Provides fallback strategies and service caching for ONEX container.
 """
 
-from typing import Dict, Optional, Type, TypeVar
+from typing import TypeVar
 
 from omnibase.enums.enum_log_level import LogLevelEnum
 
@@ -15,7 +15,9 @@ from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.exceptions import OnexError
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
 from omnibase_core.tools.registry.tool_consul_service_discovery import (
-    ModelServiceInstance, ToolConsulServiceDiscovery)
+    ModelServiceInstance,
+    ToolConsulServiceDiscovery,
+)
 
 T = TypeVar("T")
 
@@ -29,18 +31,20 @@ class ServiceDiscoveryManager:
     def __init__(
         self,
         consul_client: ToolConsulServiceDiscovery,
-        static_config: Dict[str, object],
+        static_config: dict[str, object],
         logger: ProtocolLogger,
     ):
         self.consul = consul_client
         self.static_config = static_config
         self.logger = logger
-        self.service_cache: Dict[str, object] = (
+        self.service_cache: dict[str, object] = (
             {}
         )  # allow_dict_str_any: service cache needs flexible typing
 
     async def resolve_service(
-        self, protocol_type: Type[T], service_name: Optional[str] = None
+        self,
+        protocol_type: type[T],
+        service_name: str | None = None,
     ) -> T:
         """
         Resolve service instance with Consul discovery and fallback.
@@ -60,7 +64,7 @@ class ServiceDiscoveryManager:
             from typing import cast
 
             cached_service = self.service_cache[cache_key]
-            return cast(T, cached_service)
+            return cast("T", cached_service)
 
         try:
             # Try Consul discovery if service name provided
@@ -88,8 +92,9 @@ class ServiceDiscoveryManager:
             self.service_cache[cache_key] = fallback_service
             return fallback_service
 
+        msg = f"Unable to resolve service for protocol {protocol_name}"
         raise OnexError(
-            f"Unable to resolve service for protocol {protocol_name}",
+            msg,
             error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
@@ -101,8 +106,10 @@ class ServiceDiscoveryManager:
             return False
 
     async def _discover_from_consul(
-        self, protocol_type: Type[T], service_name: str
-    ) -> Optional[T]:
+        self,
+        protocol_type: type[T],
+        service_name: str,
+    ) -> T | None:
         """Discover service instance from Consul."""
         instance = await self.consul.resolve_service(service_name)
         if instance:
@@ -110,7 +117,9 @@ class ServiceDiscoveryManager:
         return None
 
     def _create_service_client(
-        self, protocol_type: Type[T], instance: ModelServiceInstance
+        self,
+        protocol_type: type[T],
+        instance: ModelServiceInstance,
     ) -> T:
         """Create service client from discovered instance."""
         # Build service URL from discovered instance
@@ -120,20 +129,22 @@ class ServiceDiscoveryManager:
         # based on protocol types discovered in contracts
 
         if "Logger" in protocol_type.__name__:
-            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import \
-                ToolLoggerEngineNode
+            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import (
+                ToolLoggerEngineNode,
+            )
 
             return ToolLoggerEngineNode()
 
         # Add more protocol-to-implementation mappings here
         # These would be auto-generated from contract analysis
 
+        msg = f"No service client factory for protocol {protocol_type.__name__}"
         raise OnexError(
-            f"No service client factory for protocol {protocol_type.__name__}",
+            msg,
             error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
-    def _resolve_from_static_config(self, protocol_type: Type[T]) -> Optional[T]:
+    def _resolve_from_static_config(self, protocol_type: type[T]) -> T | None:
         """Resolve service from static configuration."""
         protocol_name = protocol_type.__name__
 
@@ -146,7 +157,9 @@ class ServiceDiscoveryManager:
 
     @allow_dict_str_any("service configuration requires flexible structure")
     def _create_static_service(
-        self, protocol_type: Type[T], config: Dict[str, object]
+        self,
+        protocol_type: type[T],
+        config: dict[str, object],
     ) -> T:
         """Create service from static configuration."""
         # Service type from configuration
@@ -156,17 +169,19 @@ class ServiceDiscoveryManager:
         # based on protocol types and configurations from contracts
 
         if "Logger" in protocol_type.__name__:
-            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import \
-                ToolLoggerEngineNode
+            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import (
+                ToolLoggerEngineNode,
+            )
 
             return ToolLoggerEngineNode()
 
+        msg = f"No static service factory for protocol {protocol_type.__name__}"
         raise OnexError(
-            f"No static service factory for protocol {protocol_type.__name__}",
+            msg,
             error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
-    def _create_fallback_service(self, protocol_type: Type[T]) -> Optional[T]:
+    def _create_fallback_service(self, protocol_type: type[T]) -> T | None:
         """Create fallback service implementation."""
         protocol_name = protocol_type.__name__
 

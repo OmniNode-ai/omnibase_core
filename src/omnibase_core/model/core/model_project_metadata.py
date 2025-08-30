@@ -33,8 +33,12 @@ from pathlib import Path
 import yaml
 
 from omnibase_core.metadata.metadata_constants import (
-    METADATA_VERSION_KEY, NAMESPACE_KEY, PROJECT_ONEX_YAML_FILENAME,
-    PROTOCOL_VERSION_KEY, SCHEMA_VERSION_KEY)
+    METADATA_VERSION_KEY,
+    NAMESPACE_KEY,
+    PROJECT_ONEX_YAML_FILENAME,
+    PROTOCOL_VERSION_KEY,
+    SCHEMA_VERSION_KEY,
+)
 from omnibase_core.model.core.model_onex_version import ModelOnexVersionInfo
 
 # Import separated models
@@ -53,20 +57,20 @@ ProjectMetadataBlock = ModelProjectMetadataBlock
 
 # Re-export for backward compatibility
 __all__ = [
-    "ModelArtifactTypeConfig",
-    "ModelNamespaceConfig",
-    "ModelMetadataValidationConfig",
-    "ModelTreeGeneratorConfig",
-    "ModelProjectMetadataBlock",
     # Backward compatibility
     "ArtifactTypeConfig",
-    "NamespaceConfig",
     "MetadataValidationConfig",
-    "TreeGeneratorConfig",
+    "ModelArtifactTypeConfig",
+    "ModelMetadataValidationConfig",
+    "ModelNamespaceConfig",
+    "ModelProjectMetadataBlock",
+    "ModelTreeGeneratorConfig",
+    "NamespaceConfig",
     "ProjectMetadataBlock",
+    "TreeGeneratorConfig",
+    "get_canonical_namespace_prefix",
     # Utility functions
     "get_canonical_versions",
-    "get_canonical_namespace_prefix",
 ]
 
 PROJECT_ONEX_YAML_PATH = (
@@ -80,7 +84,7 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     Returns an ModelOnexVersionInfo model.
     Raises FileNotFoundError or KeyError if missing.
     """
-    with open(PROJECT_ONEX_YAML_PATH, "r") as f:
+    with open(PROJECT_ONEX_YAML_PATH) as f:
         data = yaml.safe_load(f)
     return ModelOnexVersionInfo(
         metadata_version=data[METADATA_VERSION_KEY],
@@ -95,6 +99,6 @@ def get_canonical_namespace_prefix() -> str:
     Returns a string, e.g., 'omnibase'.
     Raises FileNotFoundError or KeyError if missing.
     """
-    with open(PROJECT_ONEX_YAML_PATH, "r") as f:
+    with open(PROJECT_ONEX_YAML_PATH) as f:
         data = yaml.safe_load(f)
     return data[NAMESPACE_KEY]

@@ -9,8 +9,9 @@ Author: OmniNode Team
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.detection.model_service_detection_config import \
-    ModelServiceDetectionConfig
+from omnibase_core.model.detection.model_service_detection_config import (
+    ModelServiceDetectionConfig,
+)
 from omnibase_core.model.service.model_service_type import ModelServiceType
 
 
@@ -18,10 +19,12 @@ class ModelServiceConfiguration(BaseModel):
     """Configuration for a single service."""
 
     type: ModelServiceType = Field(
-        ..., description="Strongly typed service configuration"
+        ...,
+        description="Strongly typed service configuration",
     )
     detection: ModelServiceDetectionConfig = Field(
-        ..., description="Service detection and health check configuration"
+        ...,
+        description="Service detection and health check configuration",
     )
     priority: int = Field(
         1,
@@ -29,10 +32,12 @@ class ModelServiceConfiguration(BaseModel):
         ge=1,
     )
     required: bool = Field(
-        True, description="Whether this service is required for the registry mode"
+        True,
+        description="Whether this service is required for the registry mode",
     )
     fallback_enabled: bool = Field(
-        True, description="Whether to enable fallback if this service is unavailable"
+        True,
+        description="Whether to enable fallback if this service is unavailable",
     )
 
     def is_high_priority(self) -> bool:

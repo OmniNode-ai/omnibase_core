@@ -5,7 +5,7 @@ Single responsibility: Define type-safe workflow parameters with generic value t
 Replaces all duplicate ModelWorkflowParameter definitions across the codebase.
 """
 
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -23,16 +23,20 @@ class ModelWorkflowParameter(BaseModel, Generic[T]):
     name: str = Field(..., description="Parameter name")
     value: T = Field(..., description="Type-safe parameter value")
     is_required: bool = Field(
-        default=False, description="Whether parameter is required"
+        default=False,
+        description="Whether parameter is required",
     )
     source: str = Field(
-        default="user", description="Source of parameter (user, system, default)"
+        default="user",
+        description="Source of parameter (user, system, default)",
     )
-    description: Optional[str] = Field(
-        default=None, description="Parameter description"
+    description: str | None = Field(
+        default=None,
+        description="Parameter description",
     )
     validated: bool = Field(
-        default=False, description="Whether parameter was validated"
+        default=False,
+        description="Whether parameter was validated",
     )
 
     class Config:
@@ -46,4 +50,4 @@ class ModelWorkflowParameter(BaseModel, Generic[T]):
 
     def __repr__(self) -> str:
         """Detailed representation of the parameter."""
-        return f"ModelWorkflowParameter(name='{self.name}', value={repr(self.value)}, type={type(self.value).__name__})"
+        return f"ModelWorkflowParameter(name='{self.name}', value={self.value!r}, type={type(self.value).__name__})"

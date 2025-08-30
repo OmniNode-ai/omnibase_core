@@ -7,7 +7,6 @@ for work tickets assigned to Claude Code agents.
 
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -41,27 +40,33 @@ class AssignmentReason(str, Enum):
 class ModelWorkAssignmentMetrics(BaseModel):
     """Metrics tracking for work assignment."""
 
-    estimated_duration_hours: Optional[float] = Field(
-        default=None, description="Estimated time to complete the work in hours"
+    estimated_duration_hours: float | None = Field(
+        default=None,
+        description="Estimated time to complete the work in hours",
     )
-    actual_duration_hours: Optional[float] = Field(
-        default=None, description="Actual time taken to complete the work"
+    actual_duration_hours: float | None = Field(
+        default=None,
+        description="Actual time taken to complete the work",
     )
-    complexity_score: Optional[float] = Field(
-        default=None, description="Complexity score (1-10 scale)"
+    complexity_score: float | None = Field(
+        default=None,
+        description="Complexity score (1-10 scale)",
     )
-    effort_estimate: Optional[float] = Field(
-        default=None, description="Effort estimate in story points or hours"
+    effort_estimate: float | None = Field(
+        default=None,
+        description="Effort estimate in story points or hours",
     )
     files_modified_count: int = Field(
-        default=0, description="Number of files modified during assignment"
+        default=0,
+        description="Number of files modified during assignment",
     )
     lines_added: int = Field(default=0, description="Number of lines added")
     lines_removed: int = Field(default=0, description="Number of lines removed")
     tests_added: int = Field(default=0, description="Number of tests added")
     bugs_fixed: int = Field(default=0, description="Number of bugs fixed")
     features_implemented: int = Field(
-        default=0, description="Number of features implemented"
+        default=0,
+        description="Number of features implemented",
     )
 
 
@@ -69,19 +74,22 @@ class ModelWorkAssignmentHistory(BaseModel):
     """History entry for assignment changes."""
 
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Timestamp of the history entry"
+        default_factory=datetime.now,
+        description="Timestamp of the history entry",
     )
     action: str = Field(
-        description="Action taken (assigned, started, paused, resumed, completed, etc.)"
+        description="Action taken (assigned, started, paused, resumed, completed, etc.)",
     )
-    previous_status: Optional[AssignmentStatus] = Field(
-        default=None, description="Previous assignment status"
+    previous_status: AssignmentStatus | None = Field(
+        default=None,
+        description="Previous assignment status",
     )
     new_status: AssignmentStatus = Field(description="New assignment status")
     actor: str = Field(description="Who or what triggered this change")
-    reason: Optional[str] = Field(default=None, description="Reason for the change")
-    additional_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional data about the change"
+    reason: str | None = Field(default=None, description="Reason for the change")
+    additional_data: dict[str, str] | None = Field(
+        default=None,
+        description="Additional data about the change",
     )
 
 
@@ -92,82 +100,102 @@ class ModelWorkAssignment(BaseModel):
     ticket_id: str = Field(description="ID of the work ticket")
     agent_id: str = Field(description="ID of the assigned agent")
     status: AssignmentStatus = Field(
-        default=AssignmentStatus.PENDING, description="Current status of the assignment"
+        default=AssignmentStatus.PENDING,
+        description="Current status of the assignment",
     )
     priority: WorkTicketPriority = Field(
-        description="Priority level of the assigned work"
+        description="Priority level of the assigned work",
     )
     assignment_reason: AssignmentReason = Field(
-        default=AssignmentReason.AUTO_ASSIGNED, description="Reason for this assignment"
+        default=AssignmentReason.AUTO_ASSIGNED,
+        description="Reason for this assignment",
     )
     assigned_at: datetime = Field(
-        default_factory=datetime.now, description="Timestamp when assignment was made"
+        default_factory=datetime.now,
+        description="Timestamp when assignment was made",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="Timestamp when work actually started"
+    started_at: datetime | None = Field(
+        default=None,
+        description="Timestamp when work actually started",
     )
-    completed_at: Optional[datetime] = Field(
-        default=None, description="Timestamp when work was completed"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="Timestamp when work was completed",
     )
-    deadline: Optional[datetime] = Field(
-        default=None, description="Deadline for completion"
+    deadline: datetime | None = Field(
+        default=None,
+        description="Deadline for completion",
     )
     assigned_by: str = Field(description="Who or what made the assignment")
-    reservation_expires_at: Optional[datetime] = Field(
-        default=None, description="When the assignment reservation expires"
+    reservation_expires_at: datetime | None = Field(
+        default=None,
+        description="When the assignment reservation expires",
     )
     progress_percent: float = Field(
-        default=0.0, description="Current progress percentage (0-100)"
+        default=0.0,
+        description="Current progress percentage (0-100)",
     )
-    current_phase: Optional[str] = Field(
+    current_phase: str | None = Field(
         default=None,
         description="Current phase of work (analysis, implementation, testing, etc.)",
     )
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time",
     )
-    checkpoint_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Checkpoint data for work resumption"
+    checkpoint_data: dict[str, str] | None = Field(
+        default=None,
+        description="Checkpoint data for work resumption",
     )
     metrics: ModelWorkAssignmentMetrics = Field(
         default_factory=ModelWorkAssignmentMetrics,
         description="Assignment performance metrics",
     )
-    history: List[ModelWorkAssignmentHistory] = Field(
-        default_factory=list, description="History of assignment changes"
+    history: list[ModelWorkAssignmentHistory] = Field(
+        default_factory=list,
+        description="History of assignment changes",
     )
-    dependencies: List[str] = Field(
+    dependencies: list[str] = Field(
         default_factory=list,
         description="List of ticket IDs this assignment depends on",
     )
-    blocked_by: List[str] = Field(
-        default_factory=list, description="List of ticket IDs blocking this assignment"
+    blocked_by: list[str] = Field(
+        default_factory=list,
+        description="List of ticket IDs blocking this assignment",
     )
-    blocks: List[str] = Field(
-        default_factory=list, description="List of ticket IDs this assignment blocks"
+    blocks: list[str] = Field(
+        default_factory=list,
+        description="List of ticket IDs this assignment blocks",
     )
-    required_capabilities: List[str] = Field(
-        default_factory=list, description="Required capabilities for this assignment"
+    required_capabilities: list[str] = Field(
+        default_factory=list,
+        description="Required capabilities for this assignment",
     )
-    tags: List[str] = Field(default_factory=list, description="Tags for categorization")
-    notes: List[str] = Field(
-        default_factory=list, description="Additional notes about the assignment"
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
+    notes: list[str] = Field(
+        default_factory=list,
+        description="Additional notes about the assignment",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if assignment failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if assignment failed",
     )
     retry_count: int = Field(
-        default=0, description="Number of times this assignment has been retried"
+        default=0,
+        description="Number of times this assignment has been retried",
     )
     max_retries: int = Field(default=3, description="Maximum number of retry attempts")
-    last_heartbeat: Optional[datetime] = Field(
-        default=None, description="Last heartbeat from working agent"
+    last_heartbeat: datetime | None = Field(
+        default=None,
+        description="Last heartbeat from working agent",
     )
-    working_directory: Optional[str] = Field(
-        default=None, description="Working directory for this assignment"
+    working_directory: str | None = Field(
+        default=None,
+        description="Working directory for this assignment",
     )
-    configuration_overrides: Optional[Dict[str, str]] = Field(
-        default=None, description="Configuration overrides for this assignment"
+    configuration_overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Configuration overrides for this assignment",
     )
 
     @property
@@ -203,7 +231,7 @@ class ModelWorkAssignment(BaseModel):
         )
 
     @property
-    def elapsed_time(self) -> Optional[timedelta]:
+    def elapsed_time(self) -> timedelta | None:
         """Get elapsed time since work started."""
         if self.started_at:
             end_time = self.completed_at or datetime.now()
@@ -217,7 +245,7 @@ class ModelWorkAssignment(BaseModel):
         return end_time - self.assigned_at
 
     @property
-    def time_to_start(self) -> Optional[timedelta]:
+    def time_to_start(self) -> timedelta | None:
         """Get time between assignment and actual start."""
         if self.started_at:
             return self.started_at - self.assigned_at
@@ -229,7 +257,7 @@ class ModelWorkAssignment(BaseModel):
         return int(min(100, max(0, self.progress_percent)))
 
     @property
-    def estimated_remaining_time(self) -> Optional[timedelta]:
+    def estimated_remaining_time(self) -> timedelta | None:
         """Estimate remaining time based on progress and elapsed time."""
         if self.elapsed_time and self.progress_percent > 0:
             total_estimated = self.elapsed_time.total_seconds() / (
@@ -261,7 +289,7 @@ class ModelWorkAssignment(BaseModel):
         action: str,
         new_status: AssignmentStatus,
         actor: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> None:
         """Add an entry to the assignment history."""
         entry = ModelWorkAssignmentHistory(
@@ -279,7 +307,7 @@ class ModelWorkAssignment(BaseModel):
         self.started_at = datetime.now()
         self.add_history_entry("started", AssignmentStatus.ACTIVE, "system")
 
-    def pause_work(self, reason: Optional[str] = None) -> None:
+    def pause_work(self, reason: str | None = None) -> None:
         """Pause the work assignment."""
         self.add_history_entry("paused", AssignmentStatus.PAUSED, "system", reason)
 
@@ -306,7 +334,10 @@ class ModelWorkAssignment(BaseModel):
         """Mark assignment as failed."""
         self.error_message = error_message
         self.add_history_entry(
-            "failed", AssignmentStatus.FAILED, "system", error_message
+            "failed",
+            AssignmentStatus.FAILED,
+            "system",
+            error_message,
         )
 
     def reassign(self, new_agent_id: str, reason: str) -> None:
@@ -321,7 +352,7 @@ class ModelWorkAssignment(BaseModel):
             f"Reassigned from {old_agent} to {new_agent_id}: {reason}",
         )
 
-    def update_progress(self, percent: float, phase: Optional[str] = None) -> None:
+    def update_progress(self, percent: float, phase: str | None = None) -> None:
         """Update assignment progress."""
         self.progress_percent = max(0.0, min(100.0, percent))
         if phase:
@@ -332,7 +363,7 @@ class ModelWorkAssignment(BaseModel):
             elapsed = datetime.now() - self.started_at
             total_estimated = elapsed.total_seconds() / (self.progress_percent / 100)
             self.estimated_completion = self.started_at + timedelta(
-                seconds=total_estimated
+                seconds=total_estimated,
             )
 
     def add_note(self, note: str) -> None:
@@ -351,7 +382,7 @@ class ModelWorkAssignment(BaseModel):
         else:
             self.reservation_expires_at = datetime.now() + timedelta(minutes=minutes)
 
-    def create_checkpoint(self, data: Dict[str, str]) -> None:
+    def create_checkpoint(self, data: dict[str, str]) -> None:
         """Create a checkpoint with current state."""
         self.checkpoint_data = {
             **data,
@@ -360,7 +391,7 @@ class ModelWorkAssignment(BaseModel):
             "current_phase": self.current_phase or "",
         }
 
-    def get_performance_score(self) -> Optional[float]:
+    def get_performance_score(self) -> float | None:
         """Calculate performance score based on metrics."""
         if (
             not self.metrics.estimated_duration_hours

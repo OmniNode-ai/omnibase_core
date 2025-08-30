@@ -6,7 +6,6 @@ where all traceability information is guaranteed to be present.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,7 +25,8 @@ class ModelOnexInternalProcessingContext(BaseModel):
 
     # Required traceability fields
     correlation_id: UUID = Field(
-        ..., description="Required correlation ID for tracking"
+        ...,
+        description="Required correlation ID for tracking",
     )
     event_id: UUID = Field(..., description="Required event ID for tracking")
     session_id: UUID = Field(..., description="Required session ID for tracking")
@@ -35,12 +35,14 @@ class ModelOnexInternalProcessingContext(BaseModel):
     node_name: str = Field(..., description="Node performing the processing")
     operation: str = Field(..., description="Operation being performed")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Processing timestamp"
+        default_factory=datetime.utcnow,
+        description="Processing timestamp",
     )
 
     # Optional context data
     additional_data: dict = Field(
-        default_factory=dict, description="Additional processing data"
+        default_factory=dict,
+        description="Additional processing data",
     )
 
     @classmethod
@@ -48,9 +50,9 @@ class ModelOnexInternalProcessingContext(BaseModel):
         cls,
         operation: str,
         node_name: str,
-        correlation_id: Optional[UUID] = None,
-        event_id: Optional[UUID] = None,
-        session_id: Optional[UUID] = None,
+        correlation_id: UUID | None = None,
+        event_id: UUID | None = None,
+        session_id: UUID | None = None,
         **additional_data,
     ) -> "ModelOnexInternalProcessingContext":
         """

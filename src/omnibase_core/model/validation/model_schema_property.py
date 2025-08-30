@@ -2,13 +2,12 @@
 SchemaProperty model.
 """
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from .model_schema import (ModelRequiredFieldsModel,
-                               ModelSchemaPropertiesModel)
+    from .model_schema import ModelRequiredFieldsModel, ModelSchemaPropertiesModel
 
 
 class ModelSchemaProperty(BaseModel):
@@ -17,12 +16,12 @@ class ModelSchemaProperty(BaseModel):
     Includes common JSON Schema fields and is extensible for M1+.
     """
 
-    type: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    default: Optional[Union[str, int, float, bool, list, dict]] = None
-    enum: Optional[List[Union[str, int, float, bool]]] = None
-    format: Optional[str] = None
+    type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    default: str | int | float | bool | list | dict | None = None
+    enum: list[str | int | float | bool] | None = None
+    format: str | None = None
     items: Optional["ModelSchemaProperty"] = None
     properties: Optional["ModelSchemaPropertiesModel"] = None
     required: Optional["ModelRequiredFieldsModel"] = None

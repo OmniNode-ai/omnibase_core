@@ -1,6 +1,6 @@
 """Centralized ModelObjectData implementation."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class ModelObjectData(BaseModel):
     """Generic objectdata model for common use."""
 
-    data: Optional[Dict[str, Any]] = Field(
+    data: dict[str, Any] | None = Field(
         default_factory=dict,
         description="Arbitrary object data for flexible field content",
     )

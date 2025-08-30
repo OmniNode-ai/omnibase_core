@@ -5,12 +5,12 @@ Point-in-time usage snapshot for tracking.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.optimization.model_snapshot_metadata import \
-    ModelSnapshotMetadata
+from omnibase_core.model.optimization.model_snapshot_metadata import (
+    ModelSnapshotMetadata,
+)
 
 
 class ModelUsageSnapshot(BaseModel):
@@ -23,9 +23,10 @@ class ModelUsageSnapshot(BaseModel):
     task_type: str = Field(..., description="Type of task performed")
     success: bool = Field(..., description="Whether task succeeded")
 
-    cost: Optional[float] = Field(None, description="Cost in USD")
-    duration_seconds: Optional[int] = Field(None, description="Task duration")
+    cost: float | None = Field(None, description="Cost in USD")
+    duration_seconds: int | None = Field(None, description="Task duration")
 
-    metadata: Optional[ModelSnapshotMetadata] = Field(
-        default_factory=ModelSnapshotMetadata, description="Additional snapshot data"
+    metadata: ModelSnapshotMetadata | None = Field(
+        default_factory=ModelSnapshotMetadata,
+        description="Additional snapshot data",
     )

@@ -33,11 +33,11 @@ from omnibase_core.protocol.protocol_file_io import ProtocolFileIO
 
 class RealFileIO(ProtocolFileIO):
     def read_yaml(self, path: str | Path) -> object:
-        with builtins.open(path, "r") as f:
+        with builtins.open(path) as f:
             return yaml.safe_load(f)
 
     def read_json(self, path: str | Path) -> object:
-        with builtins.open(path, "r") as f:
+        with builtins.open(path) as f:
             return json.load(f)
 
     def write_yaml(self, path: str | Path, data: object) -> None:
@@ -55,7 +55,9 @@ class RealFileIO(ProtocolFileIO):
         return Path(path).is_file()
 
     def list_files(
-        self, directory: str | Path, pattern: str | None = None
+        self,
+        directory: str | Path,
+        pattern: str | None = None,
     ) -> list[Path]:
         p = Path(directory)
         if pattern:
@@ -64,7 +66,7 @@ class RealFileIO(ProtocolFileIO):
 
     def read_text(self, path: str | Path) -> str:
         """Read plain text content from a file path."""
-        with builtins.open(path, "r", encoding="utf-8") as f:
+        with builtins.open(path, encoding="utf-8") as f:
             return f.read()
 
     def write_text(self, path: str | Path, data: str) -> None:

@@ -5,7 +5,6 @@ Strongly-typed models for workflow orchestration with proper ONEX compliance.
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -47,36 +46,44 @@ class ModelWorkflowStepData(BaseModel):
 
     step_id: str = Field(description="Unique step identifier")
     status: str = Field(description="Step completion status")
-    timestamp: Optional[float] = Field(
-        default=None, description="Step completion timestamp"
+    timestamp: float | None = Field(
+        default=None,
+        description="Step completion timestamp",
     )
-    output: Optional[str] = Field(default=None, description="Step output data")
+    output: str | None = Field(default=None, description="Step output data")
 
 
 class ModelWorkflowRequestData(BaseModel):
     """Data structure for workflow requests."""
 
-    workflow_id: Optional[str] = Field(
-        default=None, description="Unique workflow identifier"
+    workflow_id: str | None = Field(
+        default=None,
+        description="Unique workflow identifier",
     )
     workflow_type: EnumWorkflowType = Field(description="Type of workflow to execute")
-    document: Optional[str] = Field(
-        default=None, description="Document path for processing"
+    document: str | None = Field(
+        default=None,
+        description="Document path for processing",
     )
-    context: Optional[str] = Field(
-        default=None, description="Additional context information"
+    context: str | None = Field(
+        default=None,
+        description="Additional context information",
     )
-    file_path: Optional[str] = Field(
-        default=None, description="File path for PR workflows"
+    file_path: str | None = Field(
+        default=None,
+        description="File path for PR workflows",
     )
-    improvement_context: Optional[str] = Field(
-        default=None, description="Improvement context for PR workflows"
+    improvement_context: str | None = Field(
+        default=None,
+        description="Improvement context for PR workflows",
     )
-    branch_name: Optional[str] = Field(
-        default=None, description="Branch name for PR workflows"
+    branch_name: str | None = Field(
+        default=None,
+        description="Branch name for PR workflows",
     )
-    code: Optional[str] = Field(
-        default=None, description="Code content for analysis workflows"
+    code: str | None = Field(
+        default=None,
+        description="Code content for analysis workflows",
     )
 
 
@@ -86,18 +93,22 @@ class ModelWorkflowState(BaseModel):
     workflow_id: str = Field(description="Unique workflow identifier")
     workflow_type: EnumWorkflowType = Field(description="Type of workflow")
     status: EnumWorkflowStatus = Field(description="Current workflow status")
-    steps_completed: List[ModelWorkflowStepData] = Field(
-        default_factory=list, description="List of completed workflow steps"
+    steps_completed: list[ModelWorkflowStepData] = Field(
+        default_factory=list,
+        description="List of completed workflow steps",
     )
     request_data: ModelWorkflowRequestData = Field(description="Original request data")
-    created_at: Optional[float] = Field(
-        default=None, description="Workflow creation timestamp"
+    created_at: float | None = Field(
+        default=None,
+        description="Workflow creation timestamp",
     )
-    updated_at: Optional[float] = Field(
-        default=None, description="Last update timestamp"
+    updated_at: float | None = Field(
+        default=None,
+        description="Last update timestamp",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if failed",
     )
 
 
@@ -106,7 +117,7 @@ class ModelEventData(BaseModel):
 
     event_type: EnumEventType = Field(description="Type of event")
     node_id: str = Field(description="Node that generated the event")
-    timestamp: Optional[float] = Field(default=None, description="Event timestamp")
+    timestamp: float | None = Field(default=None, description="Event timestamp")
 
 
 class ModelLLMInferenceRequestData(BaseModel):
@@ -116,13 +127,18 @@ class ModelLLMInferenceRequestData(BaseModel):
     workflow_id: str = Field(description="Associated workflow ID")
     step_id: str = Field(description="Workflow step ID")
     prompt: str = Field(description="Prompt for LLM inference")
-    model: Optional[str] = Field(default=None, description="Preferred model name")
-    provider: Optional[str] = Field(default=None, description="Preferred provider")
-    max_tokens: Optional[int] = Field(
-        default=None, description="Maximum tokens to generate", gt=0
+    model: str | None = Field(default=None, description="Preferred model name")
+    provider: str | None = Field(default=None, description="Preferred provider")
+    max_tokens: int | None = Field(
+        default=None,
+        description="Maximum tokens to generate",
+        gt=0,
     )
-    temperature: Optional[float] = Field(
-        default=None, description="Temperature for generation", ge=0.0, le=2.0
+    temperature: float | None = Field(
+        default=None,
+        description="Temperature for generation",
+        ge=0.0,
+        le=2.0,
     )
 
 
@@ -134,12 +150,15 @@ class ModelLLMInferenceResponseData(BaseModel):
     model: str = Field(description="Model used for generation")
     provider: str = Field(description="Provider used for generation")
     duration: float = Field(description="Generation duration in seconds", ge=0.0)
-    tokens_generated: Optional[int] = Field(
-        default=None, description="Number of tokens generated", ge=0
+    tokens_generated: int | None = Field(
+        default=None,
+        description="Number of tokens generated",
+        ge=0,
     )
     success: bool = Field(description="Whether generation was successful")
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if failed",
     )
 
 
@@ -150,8 +169,10 @@ class ModelPRCreatedData(BaseModel):
     pr_url: str = Field(description="URL of created pull request")
     file_path: str = Field(description="Path of modified file")
     branch: str = Field(description="Branch name for PR")
-    pr_number: Optional[int] = Field(
-        default=None, description="PR number if available", gt=0
+    pr_number: int | None = Field(
+        default=None,
+        description="PR number if available",
+        gt=0,
     )
 
 
@@ -159,9 +180,12 @@ class ModelNodeCapabilities(BaseModel):
     """Node capability announcement data."""
 
     node_id: str = Field(description="Node identifier")
-    capabilities: List[str] = Field(description="List of supported capabilities")
+    capabilities: list[str] = Field(description="List of supported capabilities")
     status: str = Field(description="Node status (ready, busy, error)")
-    version: Optional[str] = Field(default=None, description="Node version")
-    load: Optional[float] = Field(
-        default=None, description="Current node load (0.0-1.0)", ge=0.0, le=1.0
+    version: str | None = Field(default=None, description="Node version")
+    load: float | None = Field(
+        default=None,
+        description="Current node load (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
     )

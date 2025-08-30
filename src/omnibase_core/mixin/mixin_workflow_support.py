@@ -7,7 +7,7 @@ and Workflow context detection for tools participating in workflows.
 
 import os
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.model.core.model_onex_event import OnexEvent
@@ -25,12 +25,12 @@ class MixinDagSupport:
     - Supporting both Workflow and non-Workflow execution modes
     """
 
-    def __init__(self, event_bus: Optional[ProtocolEventBus] = None, **kwargs):
+    def __init__(self, event_bus: ProtocolEventBus | None = None, **kwargs):
         """Initialize Workflow support mixin."""
         super().__init__(**kwargs)
         self._event_bus = event_bus
-        self._dag_correlation_id: Optional[str] = None
-        self._workflow_node_id: Optional[str] = None
+        self._dag_correlation_id: str | None = None
+        self._workflow_node_id: str | None = None
 
     def is_dag_enabled(self) -> bool:
         """
@@ -67,7 +67,10 @@ class MixinDagSupport:
         self._workflow_node_id = node_id
 
     def emit_dag_completion_event(
-        self, result: Any, status: str, error_message: Optional[str] = None
+        self,
+        result: Any,
+        status: str,
+        error_message: str | None = None,
     ) -> None:
         """
         Emit Workflow completion event for workflow coordination.
@@ -82,7 +85,8 @@ class MixinDagSupport:
 
         # Get correlation and node IDs
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID", str(uuid.uuid4())
+            "ONEX_Workflow_CORRELATION_ID",
+            str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")
 
@@ -121,7 +125,8 @@ class MixinDagSupport:
             return
 
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID", str(uuid.uuid4())
+            "ONEX_Workflow_CORRELATION_ID",
+            str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")
 
@@ -159,18 +164,17 @@ class MixinDagSupport:
         }
         return status_mapping.get(status.lower(), EnumExecutionStatus.COMPLETED)
 
-    def _serialize_result(self, result: Any) -> Dict[str, Any]:
+    def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize tool result for event emission."""
         try:
             if hasattr(result, "model_dump"):
                 # Pydantic model
                 return result.model_dump()
-            elif hasattr(result, "__dict__"):
+            if hasattr(result, "__dict__"):
                 # Regular object
                 return {k: str(v) for k, v in result.__dict__.items()}
-            else:
-                # Simple value
-                return {"value": str(result)}
+            # Simple value
+            return {"value": str(result)}
         except Exception:
             return {"serialization_error": "Could not serialize result"}
 
@@ -188,7 +192,7 @@ class MixinDagSupport:
                 self.logger_tool.log(f"[Workflow] {message}")
             else:
                 # Fallback to print
-                print(f"[Workflow WARNING] {message}")
+                pass
         except Exception:
             # Silent failure - don't disrupt tool execution
             pass

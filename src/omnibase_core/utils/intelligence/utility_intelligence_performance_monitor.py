@@ -5,19 +5,15 @@ capture operations, including timing, memory usage, and effectiveness metrics.
 """
 
 import logging
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 import psutil
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.intelligence.model_agent_debug_intelligence import (
-    EnumAgentType, EnumProblemType, EnumSolutionEffectiveness)
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +26,8 @@ class PerformanceMetrics:
     operation_type: str = ""
     agent_name: str = ""
     start_time: datetime = field(default_factory=datetime.utcnow)
-    end_time: Optional[datetime] = None
-    duration_ms: Optional[float] = None
+    end_time: datetime | None = None
+    duration_ms: float | None = None
     memory_before_mb: float = 0.0
     memory_after_mb: float = 0.0
     memory_peak_mb: float = 0.0
@@ -39,7 +35,7 @@ class PerformanceMetrics:
     entries_processed: int = 0
     errors_encountered: int = 0
     success: bool = False
-    context: Dict[str, Union[str, int, float, bool]] = field(default_factory=dict)
+    context: dict[str, str | int | float | bool] = field(default_factory=dict)
 
     def calculate_duration(self) -> float:
         """Calculate operation duration in milliseconds."""
@@ -70,8 +66,8 @@ class UtilityIntelligencePerformanceMonitor:
 
     def __init__(self):
         """Initialize performance monitor."""
-        self._active_operations: Dict[UUID, PerformanceMetrics] = {}
-        self._completed_operations: List[PerformanceMetrics] = []
+        self._active_operations: dict[UUID, PerformanceMetrics] = {}
+        self._completed_operations: list[PerformanceMetrics] = []
         self._max_history = 1000  # Keep last 1000 operations
 
         # System monitoring
@@ -81,7 +77,7 @@ class UtilityIntelligencePerformanceMonitor:
         self,
         operation_type: str,
         agent_name: str,
-        context: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        context: dict[str, str | int | float | bool] | None = None,
     ) -> UUID:
         """Start monitoring a new intelligence operation.
 
@@ -127,9 +123,9 @@ class UtilityIntelligencePerformanceMonitor:
     def update_operation(
         self,
         operation_id: UUID,
-        entries_processed: Optional[int] = None,
-        errors_encountered: Optional[int] = None,
-        context_update: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        entries_processed: int | None = None,
+        errors_encountered: int | None = None,
+        context_update: dict[str, str | int | float | bool] | None = None,
     ):
         """Update metrics for an ongoing operation.
 
@@ -158,11 +154,12 @@ class UtilityIntelligencePerformanceMonitor:
 
         # Update memory peak
         current_memory = self._process.memory_info().rss / (1024 * 1024)
-        if current_memory > metrics.memory_peak_mb:
-            metrics.memory_peak_mb = current_memory
+        metrics.memory_peak_mb = max(metrics.memory_peak_mb, current_memory)
 
     def complete_operation(
-        self, operation_id: UUID, success: bool = True
+        self,
+        operation_id: UUID,
+        success: bool = True,
     ) -> PerformanceMetrics:
         """Complete monitoring for an operation.
 
@@ -225,10 +222,10 @@ class UtilityIntelligencePerformanceMonitor:
 
     def get_operation_statistics(
         self,
-        agent_name: Optional[str] = None,
-        operation_type: Optional[str] = None,
-        time_window_hours: Optional[int] = None,
-    ) -> Dict[str, Union[int, float, List[str]]]:
+        agent_name: str | None = None,
+        operation_type: str | None = None,
+        time_window_hours: int | None = None,
+    ) -> dict[str, int | float | list[str]]:
         """Get performance statistics for operations.
 
         Args:
@@ -276,7 +273,7 @@ class UtilityIntelligencePerformanceMonitor:
         )
 
         acceptable_ops = len(
-            [op for op in filtered_ops if op.is_performance_acceptable()]
+            [op for op in filtered_ops if op.is_performance_acceptable()],
         )
         acceptable_rate = acceptable_ops / total_ops if total_ops > 0 else 0.0
 
@@ -288,7 +285,9 @@ class UtilityIntelligencePerformanceMonitor:
             )
 
         top_operation_types = sorted(
-            op_type_counts.items(), key=lambda x: x[1], reverse=True
+            op_type_counts.items(),
+            key=lambda x: x[1],
+            reverse=True,
         )[:5]
 
         return {
@@ -308,8 +307,9 @@ class UtilityIntelligencePerformanceMonitor:
         }
 
     def get_agent_performance_report(
-        self, agent_name: str
-    ) -> Dict[str, Union[int, float, List[str]]]:
+        self,
+        agent_name: str,
+    ) -> dict[str, int | float | list[str]]:
         """Get comprehensive performance report for a specific agent.
 
         Args:
@@ -327,7 +327,8 @@ class UtilityIntelligencePerformanceMonitor:
 
         # Get recent performance (last 24 hours)
         recent_stats = self.get_operation_statistics(
-            agent_name=agent_name, time_window_hours=24
+            agent_name=agent_name,
+            time_window_hours=24,
         )
 
         # Get overall performance
@@ -348,10 +349,10 @@ class UtilityIntelligencePerformanceMonitor:
         performance_trend = "stable"
         if recent_ops and older_ops:
             recent_avg_duration = sum(op.duration_ms or 0 for op in recent_ops) / len(
-                recent_ops
+                recent_ops,
             )
             older_avg_duration = sum(op.duration_ms or 0 for op in older_ops) / len(
-                older_ops
+                older_ops,
             )
 
             if recent_avg_duration > older_avg_duration * 1.2:
@@ -370,7 +371,8 @@ class UtilityIntelligencePerformanceMonitor:
         }
 
     def _calculate_efficiency_score(
-        self, operations: List[PerformanceMetrics]
+        self,
+        operations: list[PerformanceMetrics],
     ) -> float:
         """Calculate an efficiency score based on multiple performance factors."""
         if not operations:
@@ -452,7 +454,9 @@ def monitor_intelligence_operation(operation_type: str):
                 # Complete monitoring with failure
                 monitor_attr.complete_operation(operation_id, success=False)
                 monitor_attr.update_operation(
-                    operation_id, errors_encountered=1, context_update={"error": str(e)}
+                    operation_id,
+                    errors_encountered=1,
+                    context_update={"error": str(e)},
                 )
                 raise
 
@@ -466,8 +470,8 @@ performance_monitor = UtilityIntelligencePerformanceMonitor()
 
 
 def get_intelligence_performance_stats(
-    agent_name: Optional[str] = None,
-) -> Dict[str, Union[int, float, List[str]]]:
+    agent_name: str | None = None,
+) -> dict[str, int | float | list[str]]:
     """Convenience function to get intelligence performance statistics.
 
     Args:
@@ -481,7 +485,7 @@ def get_intelligence_performance_stats(
 
 def get_agent_performance_report(
     agent_name: str,
-) -> Dict[str, Union[int, float, List[str]]]:
+) -> dict[str, int | float | list[str]]:
     """Convenience function to get agent performance report.
 
     Args:

@@ -28,11 +28,13 @@ class ModelEventBusInputOutputState(BaseModel):
     """
 
     input_state: ModelEventBusInputState = Field(
-        ..., description="Input state for the event bus operation"
+        ...,
+        description="Input state for the event bus operation",
     )
 
     output_state: ModelEventBusOutputState = Field(
-        ..., description="Output state for the event bus operation"
+        ...,
+        description="Output state for the event bus operation",
     )
 
     # === Utility Methods ===
@@ -71,11 +73,14 @@ class ModelEventBusInputOutputState(BaseModel):
         from omnibase_core.enums.onex_status import OnexStatus
 
         input_state = ModelEventBusInputState(
-            version=input_version, input_field=input_field
+            version=input_version,
+            input_field=input_field,
         )
 
         output_state = ModelEventBusOutputState(
-            version=output_version, status=OnexStatus(status), message=message
+            version=output_version,
+            status=OnexStatus(status),
+            message=message,
         )
 
         return cls(input_state=input_state, output_state=output_state)
@@ -98,7 +103,10 @@ class ModelEventBusInputOutputState(BaseModel):
 
     @classmethod
     def create_failed(
-        cls, version: str, input_field: str, error_message: str
+        cls,
+        version: str,
+        input_field: str,
+        error_message: str,
     ) -> "ModelEventBusInputOutputState":
         """Create a failed operation state."""
         return cls.create_from_versions(

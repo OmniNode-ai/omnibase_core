@@ -9,5 +9,3 @@ from omnibase_core.core.introspection import MinimalIntrospection
 
 class NodeIntrospection(MinimalIntrospection):
     """Introspection handler that reads everything from contract.yaml."""
-
-    pass

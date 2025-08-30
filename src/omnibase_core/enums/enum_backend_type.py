@@ -22,6 +22,7 @@ class EnumBackendType(Enum):
         try:
             return cls(value.lower())
         except ValueError:
+            msg = f"Invalid backend type: {value}. Must be one of: {[e.value for e in cls]}"
             raise ValueError(
-                f"Invalid backend type: {value}. Must be one of: {[e.value for e in cls]}"
+                msg,
             )

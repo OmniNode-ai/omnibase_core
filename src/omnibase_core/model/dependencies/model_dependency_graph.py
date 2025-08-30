@@ -9,7 +9,6 @@ for intelligent work coordination.
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -40,28 +39,34 @@ class ModelDependencyEdge(BaseModel):
 
     source_id: str = Field(description="ID of the source work item")
     target_id: str = Field(
-        description="ID of the target work item that depends on source"
+        description="ID of the target work item that depends on source",
     )
     dependency_type: DependencyType = Field(
-        description="Type of dependency relationship"
+        description="Type of dependency relationship",
     )
     status: DependencyStatus = Field(
-        default=DependencyStatus.PENDING, description="Current status of the dependency"
+        default=DependencyStatus.PENDING,
+        description="Current status of the dependency",
     )
     weight: float = Field(
-        default=1.0, description="Weight of the dependency (priority/importance)"
+        default=1.0,
+        description="Weight of the dependency (priority/importance)",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the dependency was created"
+        default_factory=datetime.now,
+        description="When the dependency was created",
     )
-    resolved_at: Optional[datetime] = Field(
-        default=None, description="When the dependency was resolved"
+    resolved_at: datetime | None = Field(
+        default=None,
+        description="When the dependency was resolved",
     )
-    description: Optional[str] = Field(
-        default=None, description="Human-readable description of the dependency"
+    description: str | None = Field(
+        default=None,
+        description="Human-readable description of the dependency",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata for the dependency"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata for the dependency",
     )
 
     @property
@@ -79,7 +84,7 @@ class ModelDependencyEdge(BaseModel):
         self.status = DependencyStatus.SATISFIED
         self.resolved_at = datetime.now()
 
-    def violate(self, reason: Optional[str] = None) -> None:
+    def violate(self, reason: str | None = None) -> None:
         """Mark dependency as violated."""
         self.status = DependencyStatus.VIOLATED
         if reason and self.metadata:
@@ -93,32 +98,41 @@ class ModelDependencyNode(BaseModel):
     title: str = Field(description="Human-readable title of the work item")
     status: str = Field(description="Current status of the work item")
     priority: float = Field(
-        default=1.0, description="Priority of the work item (higher = more important)"
+        default=1.0,
+        description="Priority of the work item (higher = more important)",
     )
-    estimated_duration: Optional[float] = Field(
-        default=None, description="Estimated duration in hours"
+    estimated_duration: float | None = Field(
+        default=None,
+        description="Estimated duration in hours",
     )
-    assigned_agent: Optional[str] = Field(
-        default=None, description="Agent assigned to this work item"
+    assigned_agent: str | None = Field(
+        default=None,
+        description="Agent assigned to this work item",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the work item was created"
+        default_factory=datetime.now,
+        description="When the work item was created",
     )
-    started_at: Optional[datetime] = Field(
-        default=None, description="When work on this item started"
+    started_at: datetime | None = Field(
+        default=None,
+        description="When work on this item started",
     )
-    completed_at: Optional[datetime] = Field(
-        default=None, description="When the work item was completed"
+    completed_at: datetime | None = Field(
+        default=None,
+        description="When the work item was completed",
     )
-    dependencies_in: List[str] = Field(
-        default_factory=list, description="List of edge IDs for incoming dependencies"
+    dependencies_in: list[str] = Field(
+        default_factory=list,
+        description="List of edge IDs for incoming dependencies",
     )
-    dependencies_out: List[str] = Field(
-        default_factory=list, description="List of edge IDs for outgoing dependencies"
+    dependencies_out: list[str] = Field(
+        default_factory=list,
+        description="List of edge IDs for outgoing dependencies",
     )
-    tags: List[str] = Field(default_factory=list, description="Tags for categorization")
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata for the node"
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata for the node",
     )
 
     @property
@@ -136,7 +150,7 @@ class ModelDependencyNode(BaseModel):
         """Check if work item is assigned to an agent."""
         return self.assigned_agent is not None
 
-    def start_work(self, agent_id: Optional[str] = None) -> None:
+    def start_work(self, agent_id: str | None = None) -> None:
         """Mark work item as started."""
         self.started_at = datetime.now()
         if agent_id:
@@ -150,25 +164,30 @@ class ModelDependencyNode(BaseModel):
 class ModelTopologicalSort(BaseModel):
     """Result of topological sorting operation."""
 
-    sorted_nodes: List[str] = Field(description="Nodes in topologically sorted order")
-    cycles: List[List[str]] = Field(
-        default_factory=list, description="Any cycles detected in the graph"
+    sorted_nodes: list[str] = Field(description="Nodes in topologically sorted order")
+    cycles: list[list[str]] = Field(
+        default_factory=list,
+        description="Any cycles detected in the graph",
     )
-    levels: List[List[str]] = Field(
-        default_factory=list, description="Nodes grouped by dependency levels"
+    levels: list[list[str]] = Field(
+        default_factory=list,
+        description="Nodes grouped by dependency levels",
     )
-    critical_path: List[str] = Field(
-        default_factory=list, description="Critical path through the dependency graph"
+    critical_path: list[str] = Field(
+        default_factory=list,
+        description="Critical path through the dependency graph",
     )
-    parallel_groups: List[List[str]] = Field(
+    parallel_groups: list[list[str]] = Field(
         default_factory=list,
         description="Groups of nodes that can be executed in parallel",
     )
     sort_timestamp: datetime = Field(
-        default_factory=datetime.now, description="When the sort was performed"
+        default_factory=datetime.now,
+        description="When the sort was performed",
     )
     algorithm_used: str = Field(
-        default="kahn", description="Algorithm used for sorting"
+        default="kahn",
+        description="Algorithm used for sorting",
     )
 
     @property
@@ -196,34 +215,41 @@ class ModelDependencyGraph(BaseModel):
 
     graph_id: str = Field(description="Unique identifier for the graph")
     name: str = Field(description="Human-readable name for the graph")
-    nodes: Dict[str, ModelDependencyNode] = Field(
-        default_factory=dict, description="Nodes in the graph (node_id -> node)"
+    nodes: dict[str, ModelDependencyNode] = Field(
+        default_factory=dict,
+        description="Nodes in the graph (node_id -> node)",
     )
-    edges: Dict[str, ModelDependencyEdge] = Field(
-        default_factory=dict, description="Edges in the graph (edge_id -> edge)"
+    edges: dict[str, ModelDependencyEdge] = Field(
+        default_factory=dict,
+        description="Edges in the graph (edge_id -> edge)",
     )
-    adjacency_list: Dict[str, List[str]] = Field(
+    adjacency_list: dict[str, list[str]] = Field(
         default_factory=dict,
         description="Adjacency list representation (node_id -> [dependent_node_ids])",
     )
-    reverse_adjacency_list: Dict[str, List[str]] = Field(
+    reverse_adjacency_list: dict[str, list[str]] = Field(
         default_factory=dict,
         description="Reverse adjacency list (node_id -> [dependency_node_ids])",
     )
-    in_degree: Dict[str, int] = Field(
-        default_factory=dict, description="In-degree count for each node"
+    in_degree: dict[str, int] = Field(
+        default_factory=dict,
+        description="In-degree count for each node",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="When the graph was created"
+        default_factory=datetime.now,
+        description="When the graph was created",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.now, description="When the graph was last modified"
+        default_factory=datetime.now,
+        description="When the graph was last modified",
     )
-    last_sort: Optional[ModelTopologicalSort] = Field(
-        default=None, description="Result of last topological sort"
+    last_sort: ModelTopologicalSort | None = Field(
+        default=None,
+        description="Result of last topological sort",
     )
-    metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Additional metadata for the graph"
+    metadata: dict[str, str] | None = Field(
+        default=None,
+        description="Additional metadata for the graph",
     )
 
     @property
@@ -265,7 +291,7 @@ class ModelDependencyGraph(BaseModel):
         # Remove all edges involving this node
         edges_to_remove = []
         for edge_id, edge in self.edges.items():
-            if edge.source_id == node_id or edge.target_id == node_id:
+            if node_id in (edge.source_id, edge.target_id):
                 edges_to_remove.append(edge_id)
 
         for edge_id in edges_to_remove:
@@ -329,7 +355,8 @@ class ModelDependencyGraph(BaseModel):
 
             # Update in-degree
             self.in_degree[edge.target_id] = max(
-                0, self.in_degree.get(edge.target_id, 0) - 1
+                0,
+                self.in_degree.get(edge.target_id, 0) - 1,
             )
 
         # Update node edge lists
@@ -344,15 +371,15 @@ class ModelDependencyGraph(BaseModel):
         self.last_modified = datetime.now()
         return True
 
-    def get_node_dependencies(self, node_id: str) -> List[str]:
+    def get_node_dependencies(self, node_id: str) -> list[str]:
         """Get list of nodes that this node depends on."""
         return self.reverse_adjacency_list.get(node_id, [])
 
-    def get_node_dependents(self, node_id: str) -> List[str]:
+    def get_node_dependents(self, node_id: str) -> list[str]:
         """Get list of nodes that depend on this node."""
         return self.adjacency_list.get(node_id, [])
 
-    def get_ready_nodes(self) -> List[str]:
+    def get_ready_nodes(self) -> list[str]:
         """Get nodes that are ready for execution (no pending dependencies)."""
         ready_nodes = []
         for node_id, node in self.nodes.items():
@@ -367,7 +394,7 @@ class ModelDependencyGraph(BaseModel):
                     ready_nodes.append(node_id)
         return ready_nodes
 
-    def get_blocked_nodes(self) -> List[str]:
+    def get_blocked_nodes(self) -> list[str]:
         """Get nodes that are blocked by pending dependencies."""
         blocked_nodes = []
         for node_id, node in self.nodes.items():
@@ -381,7 +408,7 @@ class ModelDependencyGraph(BaseModel):
                     blocked_nodes.append(node_id)
         return blocked_nodes
 
-    def mark_node_completed(self, node_id: str) -> List[str]:
+    def mark_node_completed(self, node_id: str) -> list[str]:
         """Mark a node as completed and return newly ready nodes."""
         if node_id in self.nodes:
             self.nodes[node_id].complete_work()
@@ -397,7 +424,7 @@ class ModelDependencyGraph(BaseModel):
             return self.get_ready_nodes()
         return []
 
-    def get_critical_path(self) -> List[str]:
+    def get_critical_path(self) -> list[str]:
         """Calculate critical path through the dependency graph."""
         # Critical path calculation using topological sort
         if not self.nodes:
@@ -407,7 +434,7 @@ class ModelDependencyGraph(BaseModel):
         max_depth = 0
         critical_nodes = []
 
-        def calculate_depth(node_id: str, visited: Set[str]) -> int:
+        def calculate_depth(node_id: str, visited: set[str]) -> int:
             if node_id in visited:
                 return 0  # Cycle detection
 
@@ -435,14 +462,14 @@ class ModelDependencyGraph(BaseModel):
 
         return critical_nodes
 
-    def detect_cycles(self) -> List[List[str]]:
+    def detect_cycles(self) -> list[list[str]]:
         """Detect cycles in the dependency graph using DFS."""
         white = set(self.nodes.keys())  # Unvisited
         gray = set()  # Currently visiting
         black = set()  # Completed
         cycles = []
 
-        def dfs(node_id: str, path: List[str]) -> None:
+        def dfs(node_id: str, path: list[str]) -> None:
             if node_id in gray:
                 # Found a cycle
                 cycle_start = path.index(node_id)
@@ -469,7 +496,7 @@ class ModelDependencyGraph(BaseModel):
 
         return cycles
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert graph to dictionary representation."""
         return {
             "graph_id": self.graph_id,
@@ -494,7 +521,7 @@ class ModelDependencyGraph(BaseModel):
         return json.dumps(self.to_dict(), indent=2)
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "ModelDependencyGraph":
+    def from_dict(cls, data: dict) -> "ModelDependencyGraph":
         """Create graph from dictionary representation."""
         # Convert node and edge data back to models
         nodes = {

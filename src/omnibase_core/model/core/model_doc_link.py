@@ -22,12 +22,10 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
 class ModelDocLink(BaseModel):
     url: str
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: str | None = None
+    description: str | None = None

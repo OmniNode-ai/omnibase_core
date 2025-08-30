@@ -36,7 +36,7 @@ The introspection system enables:
 - Event-driven discovery and communication
 """
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.model.core.model_cli_argument import ModelCLIArgument
@@ -46,20 +46,22 @@ from omnibase_core.model.core.model_contract import ModelContract
 from omnibase_core.model.core.model_dependencies import ModelDependencies
 from omnibase_core.model.core.model_error_code import ModelErrorCode
 from omnibase_core.model.core.model_error_codes import ModelErrorCodes
+
 # Import all separated models
 from omnibase_core.model.core.model_event_channels import ModelEventChannels
-from omnibase_core.model.core.model_node_metadata_info import \
-    ModelNodeMetadataInfo
-from omnibase_core.model.core.model_performance_profile_info import \
-    ModelPerformanceProfileInfo
+from omnibase_core.model.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.model.core.model_performance_profile_info import (
+    ModelPerformanceProfileInfo,
+)
 from omnibase_core.model.core.model_state import ModelState
 from omnibase_core.model.core.model_state_field import ModelStateField
 from omnibase_core.model.core.model_state_models import ModelStates
 from omnibase_core.model.core.model_version_status import ModelVersionStatus
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_introspection_response import \
-        ModelNodeIntrospectionResponse
+    from omnibase_core.model.core.model_node_introspection_response import (
+        ModelNodeIntrospectionResponse,
+    )
 
 # Backward compatibility aliases
 EventChannelsModel = ModelEventChannels
@@ -85,8 +87,8 @@ def create_node_introspection_response(
     state_models: ModelStates,
     error_codes: ModelErrorCodes,
     dependencies: ModelDependencies,
-    capabilities: Optional[List[EnumNodeCapability]] = None,
-    event_channels: Optional[ModelEventChannels] = None,
+    capabilities: list[EnumNodeCapability] | None = None,
+    event_channels: ModelEventChannels | None = None,
     introspection_version: str = "1.0.0",
 ) -> "ModelNodeIntrospectionResponse":
     """
@@ -105,8 +107,9 @@ def create_node_introspection_response(
     Returns:
         ModelNodeIntrospectionResponse: Standardized introspection response
     """
-    from omnibase_core.model.core.model_node_introspection_response import \
-        ModelNodeIntrospectionResponse
+    from omnibase_core.model.core.model_node_introspection_response import (
+        ModelNodeIntrospectionResponse,
+    )
 
     return ModelNodeIntrospectionResponse(
         node_metadata=node_metadata,

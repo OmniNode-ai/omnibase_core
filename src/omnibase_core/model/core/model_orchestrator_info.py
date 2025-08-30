@@ -3,12 +3,11 @@ Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fi
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.model.core.model_orchestrator_metrics import \
-    ModelOrchestratorMetrics
+from omnibase_core.model.core.model_orchestrator_metrics import ModelOrchestratorMetrics
 
 
 class ModelOrchestratorInfo(BaseModel):
@@ -20,81 +19,91 @@ class ModelOrchestratorInfo(BaseModel):
     # Orchestrator identification
     orchestrator_id: str = Field(..., description="Unique orchestrator identifier")
     orchestrator_type: str = Field(
-        ..., description="Orchestrator type (kubernetes/swarm/nomad/custom)"
+        ...,
+        description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
     orchestrator_version: str = Field(..., description="Orchestrator version")
 
     # Cluster information
-    cluster_name: Optional[str] = Field(None, description="Cluster name")
-    cluster_region: Optional[str] = Field(None, description="Cluster region")
-    cluster_zone: Optional[str] = Field(None, description="Cluster availability zone")
+    cluster_name: str | None = Field(None, description="Cluster name")
+    cluster_region: str | None = Field(None, description="Cluster region")
+    cluster_zone: str | None = Field(None, description="Cluster availability zone")
 
     # Node information
-    node_id: Optional[str] = Field(None, description="Node identifier")
-    node_name: Optional[str] = Field(None, description="Node name")
-    node_role: Optional[str] = Field(None, description="Node role (master/worker/edge)")
+    node_id: str | None = Field(None, description="Node identifier")
+    node_name: str | None = Field(None, description="Node name")
+    node_role: str | None = Field(None, description="Node role (master/worker/edge)")
 
     # Workflow information
-    workflow_id: Optional[str] = Field(None, description="Current workflow ID")
-    workflow_name: Optional[str] = Field(None, description="Workflow name")
-    workflow_step: Optional[str] = Field(None, description="Current workflow step")
-    workflow_status: Optional[str] = Field(None, description="Workflow status")
+    workflow_id: str | None = Field(None, description="Current workflow ID")
+    workflow_name: str | None = Field(None, description="Workflow name")
+    workflow_step: str | None = Field(None, description="Current workflow step")
+    workflow_status: str | None = Field(None, description="Workflow status")
 
     # Execution context
-    execution_id: Optional[str] = Field(None, description="Execution identifier")
-    parent_execution_id: Optional[str] = Field(None, description="Parent execution ID")
-    root_execution_id: Optional[str] = Field(None, description="Root execution ID")
+    execution_id: str | None = Field(None, description="Execution identifier")
+    parent_execution_id: str | None = Field(None, description="Parent execution ID")
+    root_execution_id: str | None = Field(None, description="Root execution ID")
 
     # Timing information
-    scheduled_at: Optional[datetime] = Field(
-        None, description="Scheduled execution time"
+    scheduled_at: datetime | None = Field(
+        None,
+        description="Scheduled execution time",
     )
-    started_at: Optional[datetime] = Field(None, description="Actual start time")
-    completed_at: Optional[datetime] = Field(None, description="Completion time")
+    started_at: datetime | None = Field(None, description="Actual start time")
+    completed_at: datetime | None = Field(None, description="Completion time")
 
     # Resource allocation
-    cpu_request: Optional[str] = Field(None, description="CPU request (e.g., '100m')")
-    cpu_limit: Optional[str] = Field(None, description="CPU limit (e.g., '1000m')")
-    memory_request: Optional[str] = Field(
-        None, description="Memory request (e.g., '128Mi')"
+    cpu_request: str | None = Field(None, description="CPU request (e.g., '100m')")
+    cpu_limit: str | None = Field(None, description="CPU limit (e.g., '1000m')")
+    memory_request: str | None = Field(
+        None,
+        description="Memory request (e.g., '128Mi')",
     )
-    memory_limit: Optional[str] = Field(
-        None, description="Memory limit (e.g., '512Mi')"
+    memory_limit: str | None = Field(
+        None,
+        description="Memory limit (e.g., '512Mi')",
     )
 
     # Labels and annotations
-    labels: Dict[str, str] = Field(
-        default_factory=dict, description="Orchestrator labels"
+    labels: dict[str, str] = Field(
+        default_factory=dict,
+        description="Orchestrator labels",
     )
-    annotations: Dict[str, str] = Field(
-        default_factory=dict, description="Orchestrator annotations"
+    annotations: dict[str, str] = Field(
+        default_factory=dict,
+        description="Orchestrator annotations",
     )
 
     # Metrics
-    metrics: Optional[ModelOrchestratorMetrics] = Field(
-        None, description="Orchestrator metrics"
+    metrics: ModelOrchestratorMetrics | None = Field(
+        None,
+        description="Orchestrator metrics",
     )
 
     # Service mesh information
-    service_mesh: Optional[str] = Field(
-        None, description="Service mesh type (istio/linkerd/consul)"
+    service_mesh: str | None = Field(
+        None,
+        description="Service mesh type (istio/linkerd/consul)",
     )
     sidecar_injected: bool = Field(False, description="Whether sidecar is injected")
 
     # Custom orchestrator data
-    custom_data: Dict[str, Any] = Field(
-        default_factory=dict, description="Custom orchestrator-specific data"
+    custom_data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Custom orchestrator-specific data",
     )
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return self.dict(exclude_none=True)
 
     @classmethod
     def from_dict(
-        cls, data: Optional[Dict[str, Any]]
+        cls,
+        data: dict[str, Any] | None,
     ) -> Optional["ModelOrchestratorInfo"]:
         """Create from dictionary for easy migration."""
         if data is None:
