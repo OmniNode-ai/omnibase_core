@@ -1,0 +1,26 @@
+"""
+Model for Docker command configuration.
+"""
+
+from typing import List
+
+from pydantic import BaseModel, Field
+
+
+class ModelDockerCommand(BaseModel):
+    """Docker command configuration."""
+
+    command: List[str] = Field(description="Command as list of strings")
+
+    @classmethod
+    def from_string(cls, cmd_string: str) -> "ModelDockerCommand":
+        """Create from a string command."""
+        import shlex
+
+        return cls(command=shlex.split(cmd_string))
+
+    def to_string(self) -> str:
+        """Convert to shell command string."""
+        import shlex
+
+        return " ".join(shlex.quote(arg) for arg in self.command)

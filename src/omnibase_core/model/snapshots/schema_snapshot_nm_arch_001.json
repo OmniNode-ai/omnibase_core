@@ -1,0 +1,1120 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T09:50:07.538220",
+    "source_file": "src/omnibase/model/model_service_configuration.py",
+    "purpose": "Pre-split validation for nm_arch_001",
+    "models_count": 7,
+    "enums_count": 0
+  },
+  "schemas": {
+    "ModelServiceEndpoint": {
+      "description": "Strongly typed service endpoint configuration.",
+      "properties": {
+        "url": {
+          "description": "Service endpoint URL (http/https/redis/postgresql/etc.)",
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "port": {
+          "anyOf": [
+            {
+              "maximum": 65535,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Service port (extracted from URL if not specified)",
+          "title": "Port"
+        },
+        "protocol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Protocol scheme (extracted from URL if not specified)",
+          "title": "Protocol"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "ModelServiceEndpoint",
+      "type": "object"
+    },
+    "ModelKafkaBroker": {
+      "description": "Strongly typed Kafka broker configuration.",
+      "properties": {
+        "host": {
+          "description": "Kafka broker hostname",
+          "title": "Host",
+          "type": "string"
+        },
+        "port": {
+          "default": 9092,
+          "description": "Kafka broker port",
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Port",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "host"
+      ],
+      "title": "ModelKafkaBroker",
+      "type": "object"
+    },
+    "ModelServiceDetectionConfig": {
+      "$defs": {
+        "ModelKafkaBroker": {
+          "description": "Strongly typed Kafka broker configuration.",
+          "properties": {
+            "host": {
+              "description": "Kafka broker hostname",
+              "title": "Host",
+              "type": "string"
+            },
+            "port": {
+              "default": 9092,
+              "description": "Kafka broker port",
+              "maximum": 65535,
+              "minimum": 1,
+              "title": "Port",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "host"
+          ],
+          "title": "ModelKafkaBroker",
+          "type": "object"
+        },
+        "ModelServiceEndpoint": {
+          "description": "Strongly typed service endpoint configuration.",
+          "properties": {
+            "url": {
+              "description": "Service endpoint URL (http/https/redis/postgresql/etc.)",
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Url",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Service port (extracted from URL if not specified)",
+              "title": "Port"
+            },
+            "protocol": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Protocol scheme (extracted from URL if not specified)",
+              "title": "Protocol"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ModelServiceEndpoint",
+          "type": "object"
+        }
+      },
+      "description": "Configuration for service detection and health checking.",
+      "properties": {
+        "endpoints": {
+          "description": "List of service endpoints for detection",
+          "items": {
+            "$ref": "#/$defs/ModelServiceEndpoint"
+          },
+          "title": "Endpoints",
+          "type": "array"
+        },
+        "health_check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Health check endpoint path or command",
+          "title": "Health Check"
+        },
+        "timeout": {
+          "default": 5,
+          "description": "Connection timeout in seconds",
+          "maximum": 300,
+          "minimum": 1,
+          "title": "Timeout",
+          "type": "integer"
+        },
+        "admin_timeout": {
+          "anyOf": [
+            {
+              "maximum": 300,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Admin operation timeout in seconds (for Kafka, etc.)",
+          "title": "Admin Timeout"
+        },
+        "brokers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ModelKafkaBroker"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Kafka broker configurations (for event_bus services)",
+          "title": "Brokers"
+        }
+      },
+      "required": [
+        "endpoints"
+      ],
+      "title": "ModelServiceDetectionConfig",
+      "type": "object"
+    },
+    "ModelServiceConfiguration": {
+      "$defs": {
+        "ModelKafkaBroker": {
+          "description": "Strongly typed Kafka broker configuration.",
+          "properties": {
+            "host": {
+              "description": "Kafka broker hostname",
+              "title": "Host",
+              "type": "string"
+            },
+            "port": {
+              "default": 9092,
+              "description": "Kafka broker port",
+              "maximum": 65535,
+              "minimum": 1,
+              "title": "Port",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "host"
+          ],
+          "title": "ModelKafkaBroker",
+          "type": "object"
+        },
+        "ModelServiceDetectionConfig": {
+          "description": "Configuration for service detection and health checking.",
+          "properties": {
+            "endpoints": {
+              "description": "List of service endpoints for detection",
+              "items": {
+                "$ref": "#/$defs/ModelServiceEndpoint"
+              },
+              "title": "Endpoints",
+              "type": "array"
+            },
+            "health_check": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Health check endpoint path or command",
+              "title": "Health Check"
+            },
+            "timeout": {
+              "default": 5,
+              "description": "Connection timeout in seconds",
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Timeout",
+              "type": "integer"
+            },
+            "admin_timeout": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Admin operation timeout in seconds (for Kafka, etc.)",
+              "title": "Admin Timeout"
+            },
+            "brokers": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/ModelKafkaBroker"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Kafka broker configurations (for event_bus services)",
+              "title": "Brokers"
+            }
+          },
+          "required": [
+            "endpoints"
+          ],
+          "title": "ModelServiceDetectionConfig",
+          "type": "object"
+        },
+        "ModelServiceEndpoint": {
+          "description": "Strongly typed service endpoint configuration.",
+          "properties": {
+            "url": {
+              "description": "Service endpoint URL (http/https/redis/postgresql/etc.)",
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Url",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Service port (extracted from URL if not specified)",
+              "title": "Port"
+            },
+            "protocol": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Protocol scheme (extracted from URL if not specified)",
+              "title": "Protocol"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ModelServiceEndpoint",
+          "type": "object"
+        },
+        "ServiceTypeEnum": {
+          "description": "Enumeration of supported service types.",
+          "enum": [
+            "service_discovery",
+            "event_bus",
+            "cache",
+            "database",
+            "rest_api",
+            "custom"
+          ],
+          "title": "ServiceTypeEnum",
+          "type": "string"
+        }
+      },
+      "description": "Configuration for a single service.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/ServiceTypeEnum",
+          "description": "Type of service (service_discovery, event_bus, etc.)"
+        },
+        "detection": {
+          "$ref": "#/$defs/ModelServiceDetectionConfig",
+          "description": "Service detection and health check configuration"
+        },
+        "priority": {
+          "default": 1,
+          "description": "Service priority (1=highest, higher numbers=lower priority)",
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "required": {
+          "default": true,
+          "description": "Whether this service is required for the registry mode",
+          "title": "Required",
+          "type": "boolean"
+        },
+        "fallback_enabled": {
+          "default": true,
+          "description": "Whether to enable fallback if this service is unavailable",
+          "title": "Fallback Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "detection"
+      ],
+      "title": "ModelServiceConfiguration",
+      "type": "object"
+    },
+    "ModelRegistryModeConfig": {
+      "$defs": {
+        "FallbackStrategyEnum": {
+          "description": "Enumeration of fallback strategies when services are unavailable.",
+          "enum": [
+            "bootstrap",
+            "emergency",
+            "local",
+            "degraded",
+            "fail_fast"
+          ],
+          "title": "FallbackStrategyEnum",
+          "type": "string"
+        }
+      },
+      "description": "Configuration for a registry mode (production, development, etc.).",
+      "properties": {
+        "required_services": {
+          "description": "List of service names required for this mode",
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Services",
+          "type": "array"
+        },
+        "fallback_strategy": {
+          "$ref": "#/$defs/FallbackStrategyEnum",
+          "default": "bootstrap",
+          "description": "Fallback strategy when required services unavailable"
+        },
+        "health_check_interval": {
+          "default": 30,
+          "description": "Health check interval in seconds",
+          "maximum": 300,
+          "minimum": 5,
+          "title": "Health Check Interval",
+          "type": "integer"
+        },
+        "circuit_breaker_threshold": {
+          "default": 5,
+          "description": "Number of failures before circuit breaker opens",
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Circuit Breaker Threshold",
+          "type": "integer"
+        },
+        "circuit_breaker_timeout": {
+          "default": 60,
+          "description": "Circuit breaker timeout in seconds",
+          "maximum": 600,
+          "minimum": 10,
+          "title": "Circuit Breaker Timeout",
+          "type": "integer"
+        }
+      },
+      "title": "ModelRegistryModeConfig",
+      "type": "object"
+    },
+    "ModelServiceRegistryConfig": {
+      "$defs": {
+        "FallbackStrategyEnum": {
+          "description": "Enumeration of fallback strategies when services are unavailable.",
+          "enum": [
+            "bootstrap",
+            "emergency",
+            "local",
+            "degraded",
+            "fail_fast"
+          ],
+          "title": "FallbackStrategyEnum",
+          "type": "string"
+        },
+        "ModelKafkaBroker": {
+          "description": "Strongly typed Kafka broker configuration.",
+          "properties": {
+            "host": {
+              "description": "Kafka broker hostname",
+              "title": "Host",
+              "type": "string"
+            },
+            "port": {
+              "default": 9092,
+              "description": "Kafka broker port",
+              "maximum": 65535,
+              "minimum": 1,
+              "title": "Port",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "host"
+          ],
+          "title": "ModelKafkaBroker",
+          "type": "object"
+        },
+        "ModelRegistryModeConfig": {
+          "description": "Configuration for a registry mode (production, development, etc.).",
+          "properties": {
+            "required_services": {
+              "description": "List of service names required for this mode",
+              "items": {
+                "type": "string"
+              },
+              "title": "Required Services",
+              "type": "array"
+            },
+            "fallback_strategy": {
+              "$ref": "#/$defs/FallbackStrategyEnum",
+              "default": "bootstrap",
+              "description": "Fallback strategy when required services unavailable"
+            },
+            "health_check_interval": {
+              "default": 30,
+              "description": "Health check interval in seconds",
+              "maximum": 300,
+              "minimum": 5,
+              "title": "Health Check Interval",
+              "type": "integer"
+            },
+            "circuit_breaker_threshold": {
+              "default": 5,
+              "description": "Number of failures before circuit breaker opens",
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Circuit Breaker Threshold",
+              "type": "integer"
+            },
+            "circuit_breaker_timeout": {
+              "default": 60,
+              "description": "Circuit breaker timeout in seconds",
+              "maximum": 600,
+              "minimum": 10,
+              "title": "Circuit Breaker Timeout",
+              "type": "integer"
+            }
+          },
+          "title": "ModelRegistryModeConfig",
+          "type": "object"
+        },
+        "ModelServiceConfiguration": {
+          "description": "Configuration for a single service.",
+          "properties": {
+            "type": {
+              "$ref": "#/$defs/ServiceTypeEnum",
+              "description": "Type of service (service_discovery, event_bus, etc.)"
+            },
+            "detection": {
+              "$ref": "#/$defs/ModelServiceDetectionConfig",
+              "description": "Service detection and health check configuration"
+            },
+            "priority": {
+              "default": 1,
+              "description": "Service priority (1=highest, higher numbers=lower priority)",
+              "minimum": 1,
+              "title": "Priority",
+              "type": "integer"
+            },
+            "required": {
+              "default": true,
+              "description": "Whether this service is required for the registry mode",
+              "title": "Required",
+              "type": "boolean"
+            },
+            "fallback_enabled": {
+              "default": true,
+              "description": "Whether to enable fallback if this service is unavailable",
+              "title": "Fallback Enabled",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "detection"
+          ],
+          "title": "ModelServiceConfiguration",
+          "type": "object"
+        },
+        "ModelServiceDetectionConfig": {
+          "description": "Configuration for service detection and health checking.",
+          "properties": {
+            "endpoints": {
+              "description": "List of service endpoints for detection",
+              "items": {
+                "$ref": "#/$defs/ModelServiceEndpoint"
+              },
+              "title": "Endpoints",
+              "type": "array"
+            },
+            "health_check": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Health check endpoint path or command",
+              "title": "Health Check"
+            },
+            "timeout": {
+              "default": 5,
+              "description": "Connection timeout in seconds",
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Timeout",
+              "type": "integer"
+            },
+            "admin_timeout": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Admin operation timeout in seconds (for Kafka, etc.)",
+              "title": "Admin Timeout"
+            },
+            "brokers": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/ModelKafkaBroker"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Kafka broker configurations (for event_bus services)",
+              "title": "Brokers"
+            }
+          },
+          "required": [
+            "endpoints"
+          ],
+          "title": "ModelServiceDetectionConfig",
+          "type": "object"
+        },
+        "ModelServiceEndpoint": {
+          "description": "Strongly typed service endpoint configuration.",
+          "properties": {
+            "url": {
+              "description": "Service endpoint URL (http/https/redis/postgresql/etc.)",
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Url",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Service port (extracted from URL if not specified)",
+              "title": "Port"
+            },
+            "protocol": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Protocol scheme (extracted from URL if not specified)",
+              "title": "Protocol"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ModelServiceEndpoint",
+          "type": "object"
+        },
+        "ServiceTypeEnum": {
+          "description": "Enumeration of supported service types.",
+          "enum": [
+            "service_discovery",
+            "event_bus",
+            "cache",
+            "database",
+            "rest_api",
+            "custom"
+          ],
+          "title": "ServiceTypeEnum",
+          "type": "string"
+        }
+      },
+      "description": "Complete service registry configuration.",
+      "properties": {
+        "services": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ModelServiceConfiguration"
+          },
+          "description": "Service configurations keyed by service name",
+          "title": "Services",
+          "type": "object"
+        },
+        "registry_modes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ModelRegistryModeConfig"
+          },
+          "description": "Registry mode configurations",
+          "title": "Registry Modes",
+          "type": "object"
+        },
+        "default_mode": {
+          "default": "development",
+          "description": "Default registry mode if not specified",
+          "title": "Default Mode",
+          "type": "string"
+        },
+        "configuration_version": {
+          "default": "1.0",
+          "description": "Configuration schema version",
+          "title": "Configuration Version",
+          "type": "string"
+        }
+      },
+      "title": "ModelServiceRegistryConfig",
+      "type": "object"
+    },
+    "ModelRegistryConfig": {
+      "$defs": {
+        "FallbackStrategyEnum": {
+          "description": "Enumeration of fallback strategies when services are unavailable.",
+          "enum": [
+            "bootstrap",
+            "emergency",
+            "local",
+            "degraded",
+            "fail_fast"
+          ],
+          "title": "FallbackStrategyEnum",
+          "type": "string"
+        },
+        "ModelKafkaBroker": {
+          "description": "Strongly typed Kafka broker configuration.",
+          "properties": {
+            "host": {
+              "description": "Kafka broker hostname",
+              "title": "Host",
+              "type": "string"
+            },
+            "port": {
+              "default": 9092,
+              "description": "Kafka broker port",
+              "maximum": 65535,
+              "minimum": 1,
+              "title": "Port",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "host"
+          ],
+          "title": "ModelKafkaBroker",
+          "type": "object"
+        },
+        "ModelRegistryModeConfig": {
+          "description": "Configuration for a registry mode (production, development, etc.).",
+          "properties": {
+            "required_services": {
+              "description": "List of service names required for this mode",
+              "items": {
+                "type": "string"
+              },
+              "title": "Required Services",
+              "type": "array"
+            },
+            "fallback_strategy": {
+              "$ref": "#/$defs/FallbackStrategyEnum",
+              "default": "bootstrap",
+              "description": "Fallback strategy when required services unavailable"
+            },
+            "health_check_interval": {
+              "default": 30,
+              "description": "Health check interval in seconds",
+              "maximum": 300,
+              "minimum": 5,
+              "title": "Health Check Interval",
+              "type": "integer"
+            },
+            "circuit_breaker_threshold": {
+              "default": 5,
+              "description": "Number of failures before circuit breaker opens",
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Circuit Breaker Threshold",
+              "type": "integer"
+            },
+            "circuit_breaker_timeout": {
+              "default": 60,
+              "description": "Circuit breaker timeout in seconds",
+              "maximum": 600,
+              "minimum": 10,
+              "title": "Circuit Breaker Timeout",
+              "type": "integer"
+            }
+          },
+          "title": "ModelRegistryModeConfig",
+          "type": "object"
+        },
+        "ModelServiceConfiguration": {
+          "description": "Configuration for a single service.",
+          "properties": {
+            "type": {
+              "$ref": "#/$defs/ServiceTypeEnum",
+              "description": "Type of service (service_discovery, event_bus, etc.)"
+            },
+            "detection": {
+              "$ref": "#/$defs/ModelServiceDetectionConfig",
+              "description": "Service detection and health check configuration"
+            },
+            "priority": {
+              "default": 1,
+              "description": "Service priority (1=highest, higher numbers=lower priority)",
+              "minimum": 1,
+              "title": "Priority",
+              "type": "integer"
+            },
+            "required": {
+              "default": true,
+              "description": "Whether this service is required for the registry mode",
+              "title": "Required",
+              "type": "boolean"
+            },
+            "fallback_enabled": {
+              "default": true,
+              "description": "Whether to enable fallback if this service is unavailable",
+              "title": "Fallback Enabled",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "detection"
+          ],
+          "title": "ModelServiceConfiguration",
+          "type": "object"
+        },
+        "ModelServiceDetectionConfig": {
+          "description": "Configuration for service detection and health checking.",
+          "properties": {
+            "endpoints": {
+              "description": "List of service endpoints for detection",
+              "items": {
+                "$ref": "#/$defs/ModelServiceEndpoint"
+              },
+              "title": "Endpoints",
+              "type": "array"
+            },
+            "health_check": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Health check endpoint path or command",
+              "title": "Health Check"
+            },
+            "timeout": {
+              "default": 5,
+              "description": "Connection timeout in seconds",
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Timeout",
+              "type": "integer"
+            },
+            "admin_timeout": {
+              "anyOf": [
+                {
+                  "maximum": 300,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Admin operation timeout in seconds (for Kafka, etc.)",
+              "title": "Admin Timeout"
+            },
+            "brokers": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/$defs/ModelKafkaBroker"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Kafka broker configurations (for event_bus services)",
+              "title": "Brokers"
+            }
+          },
+          "required": [
+            "endpoints"
+          ],
+          "title": "ModelServiceDetectionConfig",
+          "type": "object"
+        },
+        "ModelServiceEndpoint": {
+          "description": "Strongly typed service endpoint configuration.",
+          "properties": {
+            "url": {
+              "description": "Service endpoint URL (http/https/redis/postgresql/etc.)",
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "title": "Url",
+              "type": "string"
+            },
+            "port": {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Service port (extracted from URL if not specified)",
+              "title": "Port"
+            },
+            "protocol": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Protocol scheme (extracted from URL if not specified)",
+              "title": "Protocol"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "title": "ModelServiceEndpoint",
+          "type": "object"
+        },
+        "ModelServiceRegistryConfig": {
+          "description": "Complete service registry configuration.",
+          "properties": {
+            "services": {
+              "additionalProperties": {
+                "$ref": "#/$defs/ModelServiceConfiguration"
+              },
+              "description": "Service configurations keyed by service name",
+              "title": "Services",
+              "type": "object"
+            },
+            "registry_modes": {
+              "additionalProperties": {
+                "$ref": "#/$defs/ModelRegistryModeConfig"
+              },
+              "description": "Registry mode configurations",
+              "title": "Registry Modes",
+              "type": "object"
+            },
+            "default_mode": {
+              "default": "development",
+              "description": "Default registry mode if not specified",
+              "title": "Default Mode",
+              "type": "string"
+            },
+            "configuration_version": {
+              "default": "1.0",
+              "description": "Configuration schema version",
+              "title": "Configuration Version",
+              "type": "string"
+            }
+          },
+          "title": "ModelServiceRegistryConfig",
+          "type": "object"
+        },
+        "ServiceTypeEnum": {
+          "description": "Enumeration of supported service types.",
+          "enum": [
+            "service_discovery",
+            "event_bus",
+            "cache",
+            "database",
+            "rest_api",
+            "custom"
+          ],
+          "title": "ServiceTypeEnum",
+          "type": "string"
+        }
+      },
+      "description": "Registry configuration for dependency injection and tool resolution.",
+      "properties": {
+        "mode": {
+          "default": "development",
+          "description": "Registry mode (production, development, bootstrap, etc.)",
+          "title": "Mode",
+          "type": "string"
+        },
+        "service_config": {
+          "$ref": "#/$defs/ModelServiceRegistryConfig",
+          "description": "Service registry configuration"
+        },
+        "consul_endpoint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Consul endpoint for service discovery",
+          "title": "Consul Endpoint"
+        },
+        "kafka_brokers": {
+          "description": "Kafka broker endpoints",
+          "items": {
+            "type": "string"
+          },
+          "title": "Kafka Brokers",
+          "type": "array"
+        },
+        "redis_endpoint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Redis endpoint for caching",
+          "title": "Redis Endpoint"
+        },
+        "enable_circuit_breaker": {
+          "default": true,
+          "description": "Enable circuit breaker for service failures",
+          "title": "Enable Circuit Breaker",
+          "type": "boolean"
+        },
+        "enable_health_checks": {
+          "default": true,
+          "description": "Enable health checks for services",
+          "title": "Enable Health Checks",
+          "type": "boolean"
+        },
+        "cache_ttl": {
+          "default": 300,
+          "description": "Cache TTL in seconds",
+          "maximum": 3600,
+          "minimum": 60,
+          "title": "Cache Ttl",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "service_config"
+      ],
+      "title": "ModelRegistryConfig",
+      "type": "object"
+    }
+  },
+  "hashes": {
+    "ModelServiceEndpoint": "c3f49377086c34036097d4dc5c563e1fd27a782bedb8d5704f3db8fa09fd000a",
+    "ModelKafkaBroker": "611fd505999de54cfe4beb313d12c261f46ea005374496c4efe5a6beb6ffdb46",
+    "ModelServiceDetectionConfig": "6c04b15e474a0e33396f0c11203e5322a644c4d1dde64c99267fae651fbd3701",
+    "ModelServiceConfiguration": "34040fdda0a7bc00c9af9e05fb03b855553d6eaed6fda33e4dcc530aadd781de",
+    "ModelRegistryModeConfig": "2c6ad45f8fec0fe23371b984a0235977d50a8fcf40454b04eede5da3b7e6aa43",
+    "ModelServiceRegistryConfig": "522d01bc8aeb1fd0ab943f6347849e37d951520336ee4bb286787467ef8eb3f2",
+    "ModelRegistryConfig": "80cad2fa618233366f1b8c8fb83beaf260aede30d7c5a52dafd3692de2394a33"
+  }
+}

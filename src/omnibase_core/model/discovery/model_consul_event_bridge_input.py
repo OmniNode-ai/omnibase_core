@@ -1,0 +1,35 @@
+"""Consul Event Bridge Input model for ONEX Discovery & Integration Event Registry.
+
+This module defines the input model for Consul Event Bridge operations.
+"""
+
+from typing import Dict, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.model.discovery.model_event_descriptor import \
+    ModelEventDescriptor
+
+
+class ModelConsulEventBridgeInput(BaseModel):
+    """Input model for Consul Event Bridge operations."""
+
+    bridge_action: str = Field(..., description="Bridge action to perform")
+
+    event_descriptor: Optional[ModelEventDescriptor] = Field(
+        None, description="ONEX event to bridge to Consul"
+    )
+
+    consul_service_data: Optional[Dict[str, str]] = Field(
+        None, description="Consul service data to bridge to ONEX event"
+    )
+
+    sync_required: bool = Field(
+        False, description="Whether to perform state synchronization"
+    )
+
+    monitoring_callback: Optional[str] = Field(
+        None, description="Callback function name for monitoring"
+    )
+
+    model_config = ConfigDict(extra="forbid")

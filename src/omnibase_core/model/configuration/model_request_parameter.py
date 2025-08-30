@@ -1,0 +1,36 @@
+"""
+Request Parameter Model for ONEX Configuration System.
+
+Strongly typed model for HTTP request parameters.
+"""
+
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+
+class ModelRequestParameter(BaseModel):
+    """
+    Strongly typed model for HTTP request parameters.
+
+    Represents query parameters that can be sent in HTTP requests
+    with proper type safety.
+    """
+
+    name: str = Field(..., description="Parameter name")
+    value: str = Field(..., description="Parameter value")
+
+    # For multiple values with same name
+    multiple_values: Optional[List[str]] = Field(
+        default=None, description="Multiple values for the same parameter name"
+    )
+
+    def get_value(self) -> str:
+        """Get the primary value."""
+        return self.value
+
+    def get_all_values(self) -> List[str]:
+        """Get all values including multiples."""
+        if self.multiple_values:
+            return [self.value] + self.multiple_values
+        return [self.value]

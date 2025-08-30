@@ -1,0 +1,50 @@
+"""Event Discovery Request model for ONEX Discovery & Integration Event Registry.
+
+This module defines the request model for event discovery queries.
+"""
+
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.model.discovery.model_event_descriptor import (
+    DiscoveryPhaseEnum, EventTypeEnum, ServiceStatusEnum)
+
+
+class ModelEventDiscoveryRequest(BaseModel):
+    """Request model for event discovery queries."""
+
+    query_id: str = Field(..., description="Unique query identifier")
+    correlation_id: str = Field(..., description="Correlation ID for response matching")
+
+    # Discovery Filters
+    service_name_pattern: Optional[str] = Field(
+        None, description="Service name pattern to match"
+    )
+    event_types: List[EventTypeEnum] = Field(
+        default_factory=list, description="Event types to include"
+    )
+    discovery_phases: List[DiscoveryPhaseEnum] = Field(
+        default_factory=list, description="Discovery phases to include"
+    )
+    consul_tags: List[str] = Field(
+        default_factory=list, description="Required Consul tags"
+    )
+
+    # Container Adapter Filters
+    container_status_filter: List[ServiceStatusEnum] = Field(
+        default_factory=list, description="Container status filter"
+    )
+    hub_domain_filter: Optional[str] = Field(None, description="Hub domain filter")
+    trust_level_filter: List[str] = Field(
+        default_factory=list, description="Trust level filter"
+    )
+
+    # Query Configuration
+    max_results: int = Field(100, description="Maximum number of results to return")
+    include_inactive: bool = Field(
+        False, description="Whether to include inactive services"
+    )
+    timeout_seconds: int = Field(30, description="Query timeout in seconds")
+
+    model_config = ConfigDict(use_enum_values=True, extra="forbid")

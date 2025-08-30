@@ -1,0 +1,253 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T12:21:56.224813",
+    "source_file": "src/omnibase/model/model_scenario_precondition.py",
+    "ticket": "nm_arch_008_model_scenario_precondition_split",
+    "total_models": 2,
+    "purpose": "Pre-split validation baseline",
+    "actual_models": [
+      "ModelServicePreConditionResult",
+      "ModelScenarioPreConditionResult"
+    ],
+    "utility_enums": [
+      "PreConditionStatusEnum"
+    ]
+  },
+  "schemas": {
+    "ModelServicePreConditionResult": {
+      "schema_hash": "a7b8ecfef8a9da4d7fcace15086ccb716599b0b15fed2affe58a41418ba526fa",
+      "field_count": 7,
+      "required_fields": 3,
+      "schema": {
+        "$defs": {
+          "PreConditionStatusEnum": {
+            "description": "Status of a pre-condition check.",
+            "enum": [
+              "healthy",
+              "unhealthy",
+              "skipped",
+              "error"
+            ],
+            "title": "PreConditionStatusEnum",
+            "type": "string"
+          }
+        },
+        "description": "Result of a single service pre-condition check.",
+        "properties": {
+          "service_name": {
+            "description": "Name of the external service",
+            "title": "Service Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/PreConditionStatusEnum",
+            "description": "Pre-condition check status"
+          },
+          "is_required": {
+            "description": "Whether this service is required for the scenario",
+            "title": "Is Required",
+            "type": "boolean"
+          },
+          "response_time_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Health check response time in milliseconds",
+            "title": "Response Time Ms"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if check failed",
+            "title": "Error Message"
+          },
+          "details": {
+            "additionalProperties": true,
+            "description": "Additional diagnostic details",
+            "title": "Details",
+            "type": "object"
+          },
+          "timestamp": {
+            "description": "When the check was performed",
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "service_name",
+          "status",
+          "is_required"
+        ],
+        "title": "ModelServicePreConditionResult",
+        "type": "object"
+      }
+    },
+    "ModelScenarioPreConditionResult": {
+      "schema_hash": "fd99c34806fc5b1a8234cd7548cf351e0c3d6e5b999cc8b4082c627cce69232f",
+      "field_count": 9,
+      "required_fields": 4,
+      "schema": {
+        "$defs": {
+          "ModelServicePreConditionResult": {
+            "description": "Result of a single service pre-condition check.",
+            "properties": {
+              "service_name": {
+                "description": "Name of the external service",
+                "title": "Service Name",
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/$defs/PreConditionStatusEnum",
+                "description": "Pre-condition check status"
+              },
+              "is_required": {
+                "description": "Whether this service is required for the scenario",
+                "title": "Is Required",
+                "type": "boolean"
+              },
+              "response_time_ms": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Health check response time in milliseconds",
+                "title": "Response Time Ms"
+              },
+              "error_message": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Error message if check failed",
+                "title": "Error Message"
+              },
+              "details": {
+                "additionalProperties": true,
+                "description": "Additional diagnostic details",
+                "title": "Details",
+                "type": "object"
+              },
+              "timestamp": {
+                "description": "When the check was performed",
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              }
+            },
+            "required": [
+              "service_name",
+              "status",
+              "is_required"
+            ],
+            "title": "ModelServicePreConditionResult",
+            "type": "object"
+          },
+          "PreConditionStatusEnum": {
+            "description": "Status of a pre-condition check.",
+            "enum": [
+              "healthy",
+              "unhealthy",
+              "skipped",
+              "error"
+            ],
+            "title": "PreConditionStatusEnum",
+            "type": "string"
+          }
+        },
+        "description": "Canonical model for scenario pre-condition validation results.\nContains structured reporting of all service health checks and timing metrics.",
+        "properties": {
+          "scenario_name": {
+            "description": "Name of the scenario being validated",
+            "title": "Scenario Name",
+            "type": "string"
+          },
+          "overall_status": {
+            "$ref": "#/$defs/PreConditionStatusEnum",
+            "description": "Overall pre-condition status"
+          },
+          "services_checked": {
+            "description": "Results for each service checked",
+            "items": {
+              "$ref": "#/$defs/ModelServicePreConditionResult"
+            },
+            "title": "Services Checked",
+            "type": "array"
+          },
+          "total_check_time_ms": {
+            "description": "Total time for all pre-condition checks",
+            "title": "Total Check Time Ms",
+            "type": "number"
+          },
+          "required_services_healthy": {
+            "description": "Whether all required services are healthy",
+            "title": "Required Services Healthy",
+            "type": "boolean"
+          },
+          "optional_services_count": {
+            "default": 0,
+            "description": "Number of optional services checked",
+            "title": "Optional Services Count",
+            "type": "integer"
+          },
+          "required_services_count": {
+            "default": 0,
+            "description": "Number of required services checked",
+            "title": "Required Services Count",
+            "type": "integer"
+          },
+          "skipped_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Reason if pre-conditions were skipped",
+            "title": "Skipped Reason"
+          },
+          "timestamp": {
+            "description": "When pre-condition validation started",
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_name",
+          "overall_status",
+          "total_check_time_ms",
+          "required_services_healthy"
+        ],
+        "title": "ModelScenarioPreConditionResult",
+        "type": "object"
+      }
+    }
+  }
+}

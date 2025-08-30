@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T12:06:40.611369",
+    "source_file": "src/omnibase/model/model_registry_validation.py",
+    "ticket": "nm_arch_007_model_registry_validation_split",
+    "total_models": 2,
+    "purpose": "Pre-split validation baseline",
+    "actual_models": [
+      "ModelMissingTool",
+      "ModelRegistryValidationResult"
+    ]
+  },
+  "schemas": {
+    "ModelMissingTool": {
+      "schema_hash": "207010de63e694f85a0b2dc15f776cf2111ee81474dc2270707de3ca2c42405f",
+      "field_count": 3,
+      "required_fields": 3,
+      "schema": {
+        "description": "Model for a missing tool in registry validation.",
+        "properties": {
+          "tool_name": {
+            "description": "Name of the missing tool",
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Reason why the tool is missing or invalid",
+            "title": "Reason",
+            "type": "string"
+          },
+          "expected_type": {
+            "description": "Expected type annotation for the tool",
+            "title": "Expected Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_name",
+          "reason",
+          "expected_type"
+        ],
+        "title": "ModelMissingTool",
+        "type": "object"
+      }
+    },
+    "ModelRegistryValidationResult": {
+      "schema_hash": "1c7c41850484d793f55151fd81e97a2272086281fc1ce3ef413b3e76321c8204",
+      "field_count": 5,
+      "required_fields": 3,
+      "schema": {
+        "$defs": {
+          "ModelMissingTool": {
+            "description": "Model for a missing tool in registry validation.",
+            "properties": {
+              "tool_name": {
+                "description": "Name of the missing tool",
+                "title": "Tool Name",
+                "type": "string"
+              },
+              "reason": {
+                "description": "Reason why the tool is missing or invalid",
+                "title": "Reason",
+                "type": "string"
+              },
+              "expected_type": {
+                "description": "Expected type annotation for the tool",
+                "title": "Expected Type",
+                "type": "string"
+              }
+            },
+            "required": [
+              "tool_name",
+              "reason",
+              "expected_type"
+            ],
+            "title": "ModelMissingTool",
+            "type": "object"
+          }
+        },
+        "description": "Result of registry validation operation.",
+        "properties": {
+          "is_valid": {
+            "description": "Whether the registry passed validation",
+            "title": "Is Valid",
+            "type": "boolean"
+          },
+          "node_class_name": {
+            "description": "Name of the node class being validated against",
+            "title": "Node Class Name",
+            "type": "string"
+          },
+          "required_tools_count": {
+            "description": "Number of required tools for the node",
+            "title": "Required Tools Count",
+            "type": "integer"
+          },
+          "missing_tools": {
+            "description": "List of missing or invalid tools",
+            "items": {
+              "$ref": "#/$defs/ModelMissingTool"
+            },
+            "title": "Missing Tools",
+            "type": "array"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if validation failed",
+            "title": "Error Message"
+          }
+        },
+        "required": [
+          "is_valid",
+          "node_class_name",
+          "required_tools_count"
+        ],
+        "title": "ModelRegistryValidationResult",
+        "type": "object"
+      }
+    }
+  }
+}

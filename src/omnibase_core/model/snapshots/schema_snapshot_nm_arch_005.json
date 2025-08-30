@@ -1,0 +1,279 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T11:38:51.372706",
+    "source_file": "src/omnibase/model/model_registry_health.py",
+    "ticket": "nm_arch_005_model_registry_health_split",
+    "total_models": 3,
+    "purpose": "Pre-split validation baseline",
+    "actual_models": [
+      "ModelToolHealth",
+      "ModelServiceHealth",
+      "ModelRegistryHealthReport"
+    ],
+    "ticket_expected": [
+      "ModelRegistryHealthCheck",
+      "ModelRegistryHealthMetrics",
+      "ModelRegistryHealth"
+    ],
+    "note": "Actual models differ from ticket expectations - ticket needs updating"
+  },
+  "schemas": {
+    "ModelToolHealth": {
+      "schema_hash": "b9e01f815748cef62349b54890bcb2f1639f08181746b0ab14e52662f0fb1e50",
+      "field_count": 5,
+      "required_fields": 4,
+      "schema": {
+        "description": "Health status of a single tool in the registry.",
+        "properties": {
+          "tool_name": {
+            "description": "Name of the tool",
+            "title": "Tool Name",
+            "type": "string"
+          },
+          "status": {
+            "description": "Health status: available, unavailable, error",
+            "title": "Status",
+            "type": "string"
+          },
+          "tool_type": {
+            "description": "Type/class name of the tool",
+            "title": "Tool Type",
+            "type": "string"
+          },
+          "is_callable": {
+            "description": "Whether the tool is callable",
+            "title": "Is Callable",
+            "type": "boolean"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if tool is unhealthy",
+            "title": "Error Message"
+          }
+        },
+        "required": [
+          "tool_name",
+          "status",
+          "tool_type",
+          "is_callable"
+        ],
+        "title": "ModelToolHealth",
+        "type": "object"
+      }
+    },
+    "ModelServiceHealth": {
+      "schema_hash": "67191b3a077e8706e14650534495a8ec79be256355e7f13ee37474e4e830ad0a",
+      "field_count": 5,
+      "required_fields": 4,
+      "schema": {
+        "description": "Health status of an external service.",
+        "properties": {
+          "service_name": {
+            "description": "Name of the external service",
+            "title": "Service Name",
+            "type": "string"
+          },
+          "service_type": {
+            "description": "Type of the service (kafka, postgresql, etc.)",
+            "title": "Service Type",
+            "type": "string"
+          },
+          "status": {
+            "description": "Health status: reachable, unreachable, error",
+            "title": "Status",
+            "type": "string"
+          },
+          "connection_string": {
+            "description": "Safe connection string (no credentials)",
+            "title": "Connection String",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if service is unhealthy",
+            "title": "Error Message"
+          }
+        },
+        "required": [
+          "service_name",
+          "service_type",
+          "status",
+          "connection_string"
+        ],
+        "title": "ModelServiceHealth",
+        "type": "object"
+      }
+    },
+    "ModelRegistryHealthReport": {
+      "schema_hash": "fe1f1ee4724f25de9e7393271f1fd9a22db1d550206595e9d65f0158e573ecd0",
+      "field_count": 6,
+      "required_fields": 2,
+      "schema": {
+        "$defs": {
+          "ModelServiceHealth": {
+            "description": "Health status of an external service.",
+            "properties": {
+              "service_name": {
+                "description": "Name of the external service",
+                "title": "Service Name",
+                "type": "string"
+              },
+              "service_type": {
+                "description": "Type of the service (kafka, postgresql, etc.)",
+                "title": "Service Type",
+                "type": "string"
+              },
+              "status": {
+                "description": "Health status: reachable, unreachable, error",
+                "title": "Status",
+                "type": "string"
+              },
+              "connection_string": {
+                "description": "Safe connection string (no credentials)",
+                "title": "Connection String",
+                "type": "string"
+              },
+              "error_message": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Error message if service is unhealthy",
+                "title": "Error Message"
+              }
+            },
+            "required": [
+              "service_name",
+              "service_type",
+              "status",
+              "connection_string"
+            ],
+            "title": "ModelServiceHealth",
+            "type": "object"
+          },
+          "ModelToolHealth": {
+            "description": "Health status of a single tool in the registry.",
+            "properties": {
+              "tool_name": {
+                "description": "Name of the tool",
+                "title": "Tool Name",
+                "type": "string"
+              },
+              "status": {
+                "description": "Health status: available, unavailable, error",
+                "title": "Status",
+                "type": "string"
+              },
+              "tool_type": {
+                "description": "Type/class name of the tool",
+                "title": "Tool Type",
+                "type": "string"
+              },
+              "is_callable": {
+                "description": "Whether the tool is callable",
+                "title": "Is Callable",
+                "type": "boolean"
+              },
+              "error_message": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Error message if tool is unhealthy",
+                "title": "Error Message"
+              }
+            },
+            "required": [
+              "tool_name",
+              "status",
+              "tool_type",
+              "is_callable"
+            ],
+            "title": "ModelToolHealth",
+            "type": "object"
+          }
+        },
+        "description": "Complete health report for a registry.",
+        "properties": {
+          "status": {
+            "description": "Overall health status: healthy, degraded, error",
+            "title": "Status",
+            "type": "string"
+          },
+          "tools_count": {
+            "description": "Number of available tools",
+            "title": "Tools Count",
+            "type": "integer"
+          },
+          "tools_health": {
+            "description": "Health status of all tools",
+            "items": {
+              "$ref": "#/$defs/ModelToolHealth"
+            },
+            "title": "Tools Health",
+            "type": "array"
+          },
+          "services_health": {
+            "description": "Health status of external services",
+            "items": {
+              "$ref": "#/$defs/ModelServiceHealth"
+            },
+            "title": "Services Health",
+            "type": "array"
+          },
+          "resolution_context_summary": {
+            "additionalProperties": true,
+            "description": "Summary of resolution context",
+            "title": "Resolution Context Summary",
+            "type": "object"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Error message if health check failed",
+            "title": "Error Message"
+          }
+        },
+        "required": [
+          "status",
+          "tools_count"
+        ],
+        "title": "ModelRegistryHealthReport",
+        "type": "object"
+      }
+    }
+  }
+}

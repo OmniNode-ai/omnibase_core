@@ -1,0 +1,70 @@
+"""Clean model for tool execution events."""
+
+import json
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class ModelToolExecutionEvent(BaseModel):
+    """Clean, simple model for tool execution events.
+
+    Uses JSON serialization for parameters to maintain type safety
+    while avoiding complex Union types or generic dictionaries.
+    """
+
+    # Event metadata
+    event_type: str = Field(..., description="pre-execution or post-execution")
+    tool_name: str = Field(..., description="Name of the tool being executed")
+    session_id: str = Field(..., description="Claude session identifier")
+    conversation_id: Optional[str] = Field(
+        None, description="Correlated conversation ID"
+    )
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    hook_version: str = Field("1.0.0", description="Hook system version")
+
+    # Pre-execution data
+    parameters_json: Optional[str] = Field(
+        None, description="JSON-serialized tool parameters for pre-execution events"
+    )
+
+    # Post-execution data
+    result: Optional[str] = Field(None, description="Tool execution result")
+    success: Optional[bool] = Field(None, description="Whether execution succeeded")
+    duration_ms: Optional[int] = Field(
+        None, description="Execution duration in milliseconds"
+    )
+    error_message: Optional[str] = Field(None, description="Error message if failed")
+    error_type: Optional[str] = Field(None, description="Type of error if failed")
+    result_size_bytes: Optional[int] = Field(None, description="Size of result data")
+
+    # Claude Code additional fields
+    claude_message: Optional[str] = Field(None, description="Claude message content")
+    error: Optional[str] = Field(None, description="Error details from Claude Code")
+    topic: Optional[str] = Field(
+        None, description="Kafka topic or similar routing info"
+    )
+    working_directory: Optional[str] = Field(None, description="Working directory path")
+    hook_type: Optional[str] = Field(None, description="Hook type from Claude Code")
+
+    @field_validator("parameters_json")
+    @classmethod
+    def validate_parameters_json(cls, v):
+        """Validate that parameters_json is valid JSON if provided."""
+        if v is not None:
+            try:
+                json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError("parameters_json must be valid JSON")
+        return v
+
+    def get_parameters(self) -> dict:
+        """Parse and return parameters as a dictionary."""
+        if self.parameters_json:
+            return json.loads(self.parameters_json)
+        return {}
+
+    def set_parameters(self, params: dict) -> None:
+        """Set parameters from a dictionary."""
+        self.parameters_json = json.dumps(params) if params else None

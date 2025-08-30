@@ -1,0 +1,966 @@
+"""
+Event Listener Mixin for ONEX Tool Nodes.
+
+Provides event-driven execution capabilities to tool nodes by:
+- Subscribing to events based on tool's contract
+- Converting events to tool input state
+- Executing tool's process method
+- Publishing completion events
+- Managing event lifecycle and error handling
+"""
+
+import re
+import threading
+import time
+from pathlib import Path
+from typing import Callable, Generic, Optional, Type, TypeVar
+
+from omnibase.enums.enum_log_level import LogLevelEnum
+from pydantic import ValidationError
+
+from omnibase_core.core.core_structured_logging import \
+    emit_log_event_sync as emit_log_event
+from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
+
+# Generic type variables for input and output states
+InputStateT = TypeVar("InputStateT")
+OutputStateT = TypeVar("OutputStateT")
+
+
+class MixinEventListener(Generic[InputStateT, OutputStateT]):
+    """
+    Mixin that provides event listening capabilities to tool nodes.
+
+    Tools that inherit from this mixin can automatically:
+    - Listen for events matching their contract patterns
+    - Process events through their standard process() method
+    - Publish completion events with results
+
+    Usage:
+        class MyTool(MixinEventListener, ProtocolReducer):
+            def __init__(self, event_bus=None, **kwargs):
+                super().__init__(**kwargs)
+                self.event_bus = event_bus
+                # Start listening if event bus provided
+                if event_bus:
+                    self.start_event_listener()
+    """
+
+    def __init__(self, **kwargs):
+        """Initialize the event listener mixin."""
+        super().__init__(**kwargs)
+        self._event_listener_thread = None
+        self._stop_event = threading.Event()
+        self._event_subscriptions = []
+
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🏗️ MIXIN_INIT: Initializing MixinEventListener",
+            {
+                "mixin_class": self.__class__.__name__,
+                "has_event_bus_attr": hasattr(self, "event_bus"),
+                "event_bus_available": hasattr(self, "event_bus")
+                and getattr(self, "event_bus", None) is not None,
+            },
+        )
+
+        # Auto-start listener if event bus is available after full initialization
+        # This is deferred to allow the concrete class to finish initialization
+        if hasattr(self, "event_bus") and self.event_bus:
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "⏰ MIXIN_INIT: Scheduling auto-start of event listener",
+                {
+                    "node_class": self.__class__.__name__,
+                    "event_bus_type": type(self.event_bus).__name__,
+                    "delay_seconds": 0.1,
+                },
+            )
+            # Use a timer to start after init completes
+            threading.Timer(0.1, self.start_event_listener).start()
+        else:
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                "⏭️ MIXIN_INIT: No event bus available, skipping auto-start",
+                {
+                    "node_class": self.__class__.__name__,
+                    "has_event_bus_attr": hasattr(self, "event_bus"),
+                },
+            )
+
+    def get_node_name(self) -> str:
+        """Get the node name from the implementing class."""
+        if hasattr(self, "node_name"):
+            return self.node_name
+        else:
+            # Fallback: derive from class name
+            class_name = self.__class__.__name__
+            # Convert CamelCase to snake_case
+            return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
+
+    @property
+    def event_bus(self) -> Optional[ProtocolEventBus]:
+        """Get event bus instance from implementing class."""
+        return getattr(self, "_event_bus", None)
+
+    @event_bus.setter
+    def event_bus(self, value: ProtocolEventBus):
+        """Set event bus instance."""
+        self._event_bus = value
+
+    def process(self, input_state: InputStateT) -> OutputStateT:
+        """Process method that should be implemented by the tool."""
+        raise NotImplementedError("Tool must implement process method")
+
+    def get_event_patterns(self) -> list[str]:
+        """
+        Get event patterns this tool should listen for.
+
+        By default, derives from contract or node name.
+        Override this method to customize event patterns.
+
+        Returns:
+            List of event patterns to subscribe to
+        """
+        # First try to read event_subscriptions from contract YAML
+        if hasattr(self, "contract_path"):
+            try:
+                contract_path = Path(self.contract_path)
+                if contract_path.exists():
+                    import yaml
+
+                    with open(contract_path, "r") as f:
+                        contract = yaml.safe_load(f)
+
+                    event_subscriptions = contract.get("event_subscriptions", [])
+                    if event_subscriptions:
+                        event_types = [
+                            sub.get("event_type")
+                            for sub in event_subscriptions
+                            if sub.get("event_type")
+                        ]
+                        if event_types:
+                            emit_log_event(
+                                LogLevelEnum.INFO,
+                                "📋 EVENT_PATTERNS: Found event_subscriptions in contract",
+                                {
+                                    "node_name": self.get_node_name(),
+                                    "event_types": event_types,
+                                    "subscription_count": len(event_types),
+                                },
+                            )
+                            return event_types
+
+                    # If no event_subscriptions, try legacy pattern derivation
+                    emit_log_event(
+                        LogLevelEnum.DEBUG,
+                        "📋 EVENT_PATTERNS: No event_subscriptions in contract, using legacy patterns",
+                        {"node_name": self.get_node_name()},
+                    )
+
+                    # Extract domain from path (e.g., "generation" from tools/generation/...)
+                    parts = contract_path.parts
+                    if "tools" in parts:
+                        tool_idx = parts.index("tools")
+                        if tool_idx + 1 < len(parts):
+                            domain = parts[tool_idx + 1]
+
+                            # Map node name to event pattern
+                            # e.g., tool_contract_validator -> contract.validate
+                            node_type = (
+                                self.get_node_name()
+                                .replace("tool_", "")
+                                .replace("_", ".")
+                            )
+
+                            # Special mappings for known tools
+                            event_mappings = {
+                                "contract.validator": "contract.validate",
+                                "ast.generator": "ast.generate",
+                                "ast.renderer": "ast.render",
+                                "scenario.generator": "scenario.generate",
+                            }
+
+                            event_type = event_mappings.get(node_type, node_type)
+                            return [f"{domain}.{event_type}"]
+            except (ValueError, ValidationError) as e:
+                # FAIL-FAST: Re-raise validation errors immediately to crash the service
+                emit_log_event(
+                    LogLevelEnum.ERROR,
+                    f"💥 FAIL-FAST: Contract validation failed: {e}",
+                    {"node_name": self.get_node_name()},
+                )
+                raise e  # Re-raise to crash the service
+            except Exception as e:
+                emit_log_event(
+                    LogLevelEnum.WARNING,
+                    f"Failed to read event patterns from contract: {e}",
+                    {"node_name": self.get_node_name()},
+                )
+
+        # Fallback: use node name
+        return [f"*.{self.get_node_name()}"]
+
+    def get_completion_event_type(self, input_event_type: str) -> str:
+        """
+        Get completion event type for a given input event.
+
+        Args:
+            input_event_type: The input event type (e.g., "generation.contract.validate")
+
+        Returns:
+            Completion event type (e.g., "generation.validation.complete")
+        """
+        # Map input events to completion events
+        completion_mappings = {
+            "contract.validate": "validation.complete",
+            "ast.generate": "ast_batch.generated",
+            "ast.render": "files.rendered",
+            "scenario.generate": "scenarios.generated",
+        }
+
+        # Extract event suffix (e.g., "contract.validate" from "generation.contract.validate")
+        parts = input_event_type.split(".")
+        if len(parts) >= 2:
+            event_suffix = ".".join(parts[-2:])
+            if event_suffix in completion_mappings:
+                domain = ".".join(parts[:-2])
+                return f"{domain}.{completion_mappings[event_suffix]}"
+
+        # Default: append .complete
+        return f"{input_event_type}.complete"
+
+    def start_event_listener(self):
+        """Start listening for events in a background thread if event bus available."""
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "🔄 EVENT_LISTENER_START: Starting event listener",
+            {
+                "node_name": self.get_node_name(),
+                "event_bus_available": bool(self.event_bus),
+                "event_bus_type": (
+                    type(self.event_bus).__name__ if self.event_bus else None
+                ),
+            },
+        )
+
+        if not self.event_bus:
+            emit_log_event(
+                LogLevelEnum.WARNING,
+                "❌ EVENT_LISTENER_START: No event bus available, running in CLI-only mode",
+                {"node_name": self.get_node_name()},
+            )
+            return
+
+        if self._event_listener_thread and self._event_listener_thread.is_alive():
+            emit_log_event(
+                LogLevelEnum.WARNING,
+                "⚠️ EVENT_LISTENER_START: Event listener already running",
+                {
+                    "node_name": self.get_node_name(),
+                    "existing_thread": self._event_listener_thread.name,
+                },
+            )
+            return
+
+        self._stop_event.clear()
+        self._event_listener_thread = threading.Thread(
+            target=self._event_listener_loop,
+            name=f"{self.get_node_name()}_event_listener",
+        )
+        self._event_listener_thread.daemon = True
+        self._event_listener_thread.start()
+
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "✅ EVENT_LISTENER_START: Event listener started successfully",
+            {
+                "node_name": self.get_node_name(),
+                "thread_name": self._event_listener_thread.name,
+                "thread_alive": self._event_listener_thread.is_alive(),
+                "patterns_to_subscribe": self.get_event_patterns(),
+            },
+        )
+
+    def stop_event_listener(self):
+        """Stop the event listener thread."""
+        if self._event_listener_thread and self._event_listener_thread.is_alive():
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "Stopping event listener",
+                {"node_name": self.get_node_name()},
+            )
+
+            self._stop_event.set()
+
+            # Unsubscribe from all events
+            for pattern in self._event_subscriptions:
+                try:
+                    self.event_bus.unsubscribe(pattern)
+                except Exception as e:
+                    emit_log_event(
+                        LogLevelEnum.WARNING,
+                        f"Failed to unsubscribe from {pattern}: {e}",
+                        {"node_name": self.get_node_name()},
+                    )
+
+            self._event_subscriptions.clear()
+
+            # Wait for thread to finish
+            self._event_listener_thread.join(timeout=5)
+
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "Event listener stopped",
+                {"node_name": self.get_node_name()},
+            )
+
+    def _event_listener_loop(self):
+        """Main event listener loop running in background thread."""
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "🚀 EVENT_LISTENER_LOOP: Starting main event listener loop",
+            {"node_name": self.get_node_name()},
+        )
+
+        try:
+            # Get event patterns to subscribe to
+            patterns = self.get_event_patterns()
+
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "📋 EVENT_LISTENER_LOOP: Subscribing to event patterns",
+                {
+                    "node_name": self.get_node_name(),
+                    "patterns": patterns,
+                    "pattern_count": len(patterns),
+                },
+            )
+
+            # Subscribe to each pattern
+            for i, pattern in enumerate(patterns):
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    f"🔗 EVENT_LISTENER_LOOP: Subscribing to pattern {i+1}/{len(patterns)}",
+                    {
+                        "node_name": self.get_node_name(),
+                        "pattern": pattern,
+                        "subscription_index": i,
+                    },
+                )
+
+                handler = self._create_event_handler(pattern)
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    f"🔗 EVENT_LISTENER_LOOP: Creating handler for pattern {pattern}",
+                    {
+                        "node_name": self.get_node_name(),
+                        "pattern": pattern,
+                        "handler_function": (
+                            handler.__name__
+                            if hasattr(handler, "__name__")
+                            else str(handler)
+                        ),
+                    },
+                )
+
+                self.event_bus.subscribe(handler, pattern)
+                self._event_subscriptions.append(pattern)
+
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    f"✅ EVENT_LISTENER_LOOP: Successfully subscribed to pattern {i+1}/{len(patterns)}",
+                    {
+                        "node_name": self.get_node_name(),
+                        "pattern": pattern,
+                        "total_subscriptions": len(self._event_subscriptions),
+                        "event_bus_type": type(self.event_bus).__name__,
+                    },
+                )
+
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "🎯 EVENT_LISTENER_LOOP: All subscriptions complete, starting event wait loop",
+                {
+                    "node_name": self.get_node_name(),
+                    "total_subscriptions": len(self._event_subscriptions),
+                    "subscribed_patterns": self._event_subscriptions,
+                },
+            )
+
+            # Keep thread alive
+            loop_count = 0
+            while not self._stop_event.is_set():
+                loop_count += 1
+                if loop_count % 60 == 0:  # Log every minute
+                    emit_log_event(
+                        LogLevelEnum.DEBUG,
+                        "💓 EVENT_LISTENER_LOOP: Heartbeat - still listening for events",
+                        {
+                            "node_name": self.get_node_name(),
+                            "loop_count": loop_count,
+                            "active_subscriptions": len(self._event_subscriptions),
+                        },
+                    )
+                time.sleep(1)
+
+            emit_log_event(
+                LogLevelEnum.INFO,
+                "🛑 EVENT_LISTENER_LOOP: Stop event received, ending event listener loop",
+                {"node_name": self.get_node_name(), "total_loops": loop_count},
+            )
+
+        except Exception as e:
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                f"❌ EVENT_LISTENER_LOOP: Critical error in event listener: {e}",
+                {
+                    "node_name": self.get_node_name(),
+                    "error_type": type(e).__name__,
+                    "error_details": str(e),
+                },
+            )
+
+    def _create_event_handler(self, pattern: str) -> Callable:
+        """Create an event handler for a specific pattern."""
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🎯 CREATE_EVENT_HANDLER: Creating event handler for pattern",
+            {"node_name": self.get_node_name(), "pattern": pattern},
+        )
+
+        def handler(envelope):
+            """Handle incoming event envelope."""
+            # Handle both envelope and direct event for compatibility
+            if hasattr(envelope, "payload"):
+                # This is a ModelEventEnvelope
+                event = envelope.payload
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    "📨 EVENT_RECEIVED: Received event envelope for processing",
+                    {
+                        "node_name": self.get_node_name(),
+                        "envelope_id": getattr(envelope, "envelope_id", "unknown"),
+                        "event_type": getattr(event, "event_type", "unknown"),
+                        "event_id": getattr(event, "event_id", "unknown"),
+                        "correlation_id": getattr(event, "correlation_id", "unknown"),
+                        "pattern_matched": pattern,
+                        "event_source": getattr(event, "node_id", "unknown"),
+                        "envelope_type": type(envelope).__name__,
+                        "event_data_type": type(event).__name__,
+                    },
+                )
+            else:
+                # Direct event (legacy compatibility)
+                event = envelope
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    "📨 EVENT_RECEIVED: Received direct event for processing",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_type": getattr(event, "event_type", "unknown"),
+                        "event_id": getattr(event, "event_id", "unknown"),
+                        "correlation_id": getattr(event, "correlation_id", "unknown"),
+                        "pattern_matched": pattern,
+                        "event_source": getattr(event, "node_id", "unknown"),
+                        "event_data_type": type(event).__name__,
+                    },
+                )
+
+            # Check for specific event handler methods (e.g., handle_ast_batch_event)
+            event_type = getattr(event, "event_type", pattern)
+            specific_handler_name = (
+                f"handle_{event_type.replace('.', '_').replace('-', '_')}_event"
+            )
+
+            if hasattr(self, specific_handler_name):
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    f"🎯 EVENT_ROUTING: Found specific handler {specific_handler_name}",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_type": event_type,
+                        "handler_method": specific_handler_name,
+                    },
+                )
+                try:
+                    specific_handler = getattr(self, specific_handler_name)
+                    # Pass the original envelope if it was an envelope, otherwise the event
+                    handler_param = envelope if hasattr(envelope, "payload") else event
+                    specific_handler(handler_param)
+                    emit_log_event(
+                        LogLevelEnum.INFO,
+                        f"✅ EVENT_ROUTING: Successfully processed via {specific_handler_name}",
+                        {"node_name": self.get_node_name(), "event_type": event_type},
+                    )
+                    return
+                except Exception as e:
+                    emit_log_event(
+                        LogLevelEnum.ERROR,
+                        f"❌ EVENT_ROUTING: Specific handler {specific_handler_name} failed: {e}",
+                        {"node_name": self.get_node_name(), "event_type": event_type},
+                    )
+                    # Fall through to generic processing
+
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                f"🔄 EVENT_ROUTING: Using generic processing for {event_type}",
+                {"node_name": self.get_node_name(), "event_type": event_type},
+            )
+
+            try:
+                # Convert event to input state
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "🔄 EVENT_PROCESSING: Converting event to input state",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_type": event.event_type,
+                        "event_id": event.event_id,
+                    },
+                )
+
+                input_state = self._event_to_input_state(event)
+
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "✅ EVENT_PROCESSING: Successfully converted event to input state",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_id": event.event_id,
+                        "input_state_type": type(input_state).__name__,
+                    },
+                )
+
+                # Process using tool's process method
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    "⚙️ EVENT_PROCESSING: Starting tool processing",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_id": event.event_id,
+                        "input_state_type": type(input_state).__name__,
+                    },
+                )
+
+                output_state = self.process(input_state)
+
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    "✅ EVENT_PROCESSING: Tool processing completed successfully",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_id": event.event_id,
+                        "output_state_type": type(output_state).__name__,
+                    },
+                )
+
+                # Publish completion event
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "📤 EVENT_PUBLISHING: Publishing completion event",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_id": event.event_id,
+                        "correlation_id": event.correlation_id,
+                    },
+                )
+
+                self._publish_completion_event(event, output_state)
+
+                emit_log_event(
+                    LogLevelEnum.INFO,
+                    "🎉 EVENT_COMPLETE: Event processing and publishing completed",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_id": event.event_id,
+                        "correlation_id": event.correlation_id,
+                    },
+                )
+
+            except Exception as e:
+                emit_log_event(
+                    LogLevelEnum.ERROR,
+                    "❌ EVENT_PROCESSING: Failed to process event",
+                    {
+                        "node_name": self.get_node_name(),
+                        "event_type": event.event_type,
+                        "event_id": event.event_id,
+                        "error_type": type(e).__name__,
+                        "error_details": str(e),
+                    },
+                )
+
+                # Publish error completion event
+                self._publish_error_event(event, str(e))
+
+        return handler
+
+    def _event_to_input_state(self, event: ModelOnexEvent) -> InputStateT:
+        """
+        Convert event to tool's input state.
+
+        Override this method to customize event to input state conversion.
+
+        Args:
+            event: Incoming ONEX event
+
+        Returns:
+            Input state for tool's process method
+        """
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🔍 EVENT_TO_INPUT_STATE: Starting event data conversion",
+            {
+                "node_name": self.get_node_name(),
+                "event_type": event.event_type,
+                "event_id": event.event_id,
+                "event_data_type": type(event.data).__name__,
+            },
+        )
+
+        # Get input state class
+        input_state_class = self._get_input_state_class()
+
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🏗️ EVENT_TO_INPUT_STATE: Retrieved input state class",
+            {
+                "node_name": self.get_node_name(),
+                "input_state_class": (
+                    input_state_class.__name__ if input_state_class else None
+                ),
+                "class_found": bool(input_state_class),
+            },
+        )
+
+        # Extract data from event
+        event_data = event.data
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "📋 EVENT_TO_INPUT_STATE: Extracting data from event",
+            {
+                "node_name": self.get_node_name(),
+                "event_data_type": type(event_data).__name__,
+                "has_payload": hasattr(event_data, "payload"),
+            },
+        )
+
+        if hasattr(event_data, "payload") and hasattr(event_data.payload, "data"):
+            data = event_data.payload.data
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                "📦 EVENT_TO_INPUT_STATE: Using payload.data from event",
+                {
+                    "node_name": self.get_node_name(),
+                    "data_type": type(data).__name__,
+                    "data_preview": str(data)[:200] if data else None,
+                },
+            )
+        else:
+            data = event_data
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                "📦 EVENT_TO_INPUT_STATE: Using direct event data",
+                {
+                    "node_name": self.get_node_name(),
+                    "data_type": type(data).__name__,
+                    "data_preview": str(data)[:200] if data else None,
+                },
+            )
+
+        # Create input state instance
+        if input_state_class:
+            try:
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "🏗️ EVENT_TO_INPUT_STATE: Creating input state instance",
+                    {
+                        "node_name": self.get_node_name(),
+                        "target_class": input_state_class.__name__,
+                        "data_is_dict": isinstance(data, dict),
+                    },
+                )
+
+                # Convert event data to input state
+                if isinstance(data, dict):
+                    result = input_state_class(**data)
+                    emit_log_event(
+                        LogLevelEnum.DEBUG,
+                        "✅ EVENT_TO_INPUT_STATE: Created input state from dict",
+                        {
+                            "node_name": self.get_node_name(),
+                            "result_type": type(result).__name__,
+                        },
+                    )
+                    return result
+                else:
+                    # Try to extract dict from model
+                    if hasattr(data, "model_dump"):
+                        dict_data = data.model_dump()
+                        result = input_state_class(**dict_data)
+                        emit_log_event(
+                            LogLevelEnum.DEBUG,
+                            "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
+                            {"node_name": self.get_node_name()},
+                        )
+                        return result
+                    elif hasattr(data, "dict"):
+                        dict_data = data.dict()
+                        result = input_state_class(**dict_data)
+                        emit_log_event(
+                            LogLevelEnum.DEBUG,
+                            "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
+                            {"node_name": self.get_node_name()},
+                        )
+                        return result
+                    else:
+                        result = input_state_class(data=data)
+                        emit_log_event(
+                            LogLevelEnum.DEBUG,
+                            "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
+                            {"node_name": self.get_node_name()},
+                        )
+                        return result
+            except Exception as e:
+                emit_log_event(
+                    LogLevelEnum.ERROR,
+                    "❌ EVENT_TO_INPUT_STATE: Failed to create input state from event",
+                    {
+                        "node_name": self.get_node_name(),
+                        "error_type": type(e).__name__,
+                        "error_details": str(e),
+                        "data_type": type(data).__name__,
+                        "target_class": input_state_class.__name__,
+                    },
+                )
+                raise ValueError(f"Failed to convert event data to input state: {e}")
+        else:
+            # No input state class found - this is a critical error
+            emit_log_event(
+                LogLevelEnum.ERROR,
+                "❌ EVENT_TO_INPUT_STATE: No input state class found",
+                {"node_name": self.get_node_name()},
+            )
+            raise ValueError(
+                f"Could not find input state class for {self.get_node_name()}. "
+                f"Event listener requires proper type conversion."
+            )
+
+    def _get_input_state_class(self) -> Optional[Type]:
+        """Get the input state class for this tool."""
+        # Try to find input state class from type hints
+        if hasattr(self.process, "__annotations__"):
+            annotations = self.process.__annotations__
+            if "input_state" in annotations:
+                return annotations["input_state"]
+
+        # Try common patterns
+        module_name = self.__class__.__module__
+        if ".tools." in module_name:
+            # Try to import from models
+            try:
+                # Module path is like: omnibase.tools.generation.tool_contract_validator.v1_0_0.node
+                # We need: omnibase.tools.generation.tool_contract_validator.v1_0_0.models.model_input_state
+                base_module = module_name.rsplit(".", 1)[0]  # Remove .node
+                models_module = f"{base_module}.models.model_input_state"
+
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    f"Looking for input state in: {models_module}",
+                    {"node_name": self.get_node_name()},
+                )
+
+                import importlib
+
+                module = importlib.import_module(models_module)
+
+                # Look for input state class
+                for attr_name in dir(module):
+                    if "InputState" in attr_name and attr_name.startswith("Model"):
+                        emit_log_event(
+                            LogLevelEnum.DEBUG,
+                            f"Found input state class: {attr_name}",
+                            {"node_name": self.get_node_name()},
+                        )
+                        return getattr(module, attr_name)
+
+            except Exception as e:
+                emit_log_event(
+                    LogLevelEnum.WARNING,
+                    f"Failed to import input state module: {e}",
+                    {"node_name": self.get_node_name(), "module": models_module},
+                )
+
+        return None
+
+    def _publish_completion_event(
+        self, input_event: ModelOnexEvent, output_state: OutputStateT
+    ):
+        """Publish completion event with results."""
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "📤 PUBLISH_COMPLETION: Starting completion event publishing",
+            {
+                "node_name": self.get_node_name(),
+                "input_event_type": input_event.event_type,
+                "input_event_id": input_event.event_id,
+                "correlation_id": input_event.correlation_id,
+                "output_state_type": type(output_state).__name__,
+            },
+        )
+
+        completion_event_type = self.get_completion_event_type(input_event.event_type)
+
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🔄 PUBLISH_COMPLETION: Determined completion event type",
+            {
+                "node_name": self.get_node_name(),
+                "input_event_type": input_event.event_type,
+                "completion_event_type": completion_event_type,
+            },
+        )
+
+        # Create completion event data
+        completion_data = {
+            "status": "success",
+            "node_name": self.get_node_name(),
+            "correlation_id": input_event.correlation_id,
+            "input_event_id": input_event.event_id,
+        }
+
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "📋 PUBLISH_COMPLETION: Created base completion data",
+            {
+                "node_name": self.get_node_name(),
+                "completion_data_keys": list(completion_data.keys()),
+            },
+        )
+
+        # Add output state data
+        if output_state:
+            emit_log_event(
+                LogLevelEnum.DEBUG,
+                "📦 PUBLISH_COMPLETION: Adding output state to completion data",
+                {
+                    "node_name": self.get_node_name(),
+                    "output_state_type": type(output_state).__name__,
+                    "has_model_dump": hasattr(output_state, "model_dump"),
+                    "has_dict": hasattr(output_state, "dict"),
+                },
+            )
+
+            if hasattr(output_state, "model_dump"):
+                completion_data["result"] = output_state.model_dump()
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "✅ PUBLISH_COMPLETION: Added output state via model_dump",
+                    {"node_name": self.get_node_name()},
+                )
+            elif hasattr(output_state, "dict"):
+                completion_data["result"] = output_state.dict()
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "✅ PUBLISH_COMPLETION: Added output state via dict method",
+                    {"node_name": self.get_node_name()},
+                )
+            else:
+                completion_data["result"] = str(output_state)
+                emit_log_event(
+                    LogLevelEnum.DEBUG,
+                    "✅ PUBLISH_COMPLETION: Added output state as string",
+                    {"node_name": self.get_node_name()},
+                )
+
+        # Create completion event
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "🏗️ PUBLISH_COMPLETION: Creating completion event object",
+            {
+                "node_name": self.get_node_name(),
+                "completion_event_type": completion_event_type,
+                "data_size": len(str(completion_data)),
+            },
+        )
+
+        completion_event = ModelOnexEvent(
+            event_type=completion_event_type,
+            node_id=self.get_node_name(),
+            correlation_id=input_event.correlation_id,
+            causation_id=input_event.event_id,
+            data=completion_data,
+        )
+
+        emit_log_event(
+            LogLevelEnum.DEBUG,
+            "✅ PUBLISH_COMPLETION: Completion event object created",
+            {
+                "node_name": self.get_node_name(),
+                "completion_event_id": completion_event.event_id,
+                "completion_event_type": completion_event.event_type,
+            },
+        )
+
+        # Publish
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "🚀 PUBLISH_COMPLETION: Publishing completion event to event bus",
+            {
+                "node_name": self.get_node_name(),
+                "completion_event_id": completion_event.event_id,
+                "completion_event_type": completion_event_type,
+                "event_bus_type": type(self.event_bus).__name__,
+            },
+        )
+
+        self.event_bus.publish_event(completion_event)
+
+        emit_log_event(
+            LogLevelEnum.INFO,
+            "🎉 PUBLISH_COMPLETION: Successfully published completion event",
+            {
+                "node_name": self.get_node_name(),
+                "completion_event_type": completion_event_type,
+                "completion_event_id": completion_event.event_id,
+                "correlation_id": input_event.correlation_id,
+                "input_event_id": input_event.event_id,
+            },
+        )
+
+    def _publish_error_event(self, input_event: ModelOnexEvent, error_message: str):
+        """Publish error completion event."""
+        completion_event_type = self.get_completion_event_type(input_event.event_type)
+
+        # Create error event data
+        error_data = {
+            "status": "error",
+            "node_name": self.get_node_name(),
+            "correlation_id": input_event.correlation_id,
+            "input_event_id": input_event.event_id,
+            "error": error_message,
+        }
+
+        # Create error event
+        error_event = ModelOnexEvent(
+            event_type=completion_event_type,
+            node_id=self.get_node_name(),
+            correlation_id=input_event.correlation_id,
+            causation_id=input_event.event_id,
+            data=error_data,
+        )
+
+        # Publish
+        self.event_bus.publish_event(error_event)
+
+        emit_log_event(
+            LogLevelEnum.ERROR,
+            f"Published error event: {completion_event_type}",
+            {
+                "node_name": self.get_node_name(),
+                "correlation_id": input_event.correlation_id,
+                "error": error_message,
+            },
+        )
