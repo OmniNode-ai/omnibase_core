@@ -10,11 +10,11 @@ Author: OmniNode Team
 import os
 from pathlib import Path
 
+from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.model.service.model_event_bus_config import ModelEventBusConfig
 from omnibase_core.model.service.model_health_check_config import ModelHealthCheckConfig
-from omnibase_core.model.service.model_log_level_enum import ModelLogLevelEnum
 from omnibase_core.model.service.model_monitoring_config import ModelMonitoringConfig
 from omnibase_core.model.service.model_network_config import ModelNetworkConfig
 from omnibase_core.model.service.model_resource_limits import ModelResourceLimits
@@ -45,8 +45,8 @@ class ModelNodeServiceConfig(BaseModel):
         None,
         description="Override node ID for service instance",
     )
-    log_level: ModelLogLevelEnum = Field(
-        ModelLogLevelEnum.INFO,
+    log_level: LogLevel = Field(
+        LogLevel.INFO,
         description="Logging level",
     )
     debug_mode: bool = Field(False, description="Enable debug mode")
@@ -234,7 +234,7 @@ class ModelNodeServiceConfig(BaseModel):
             "node_name": node_name,
             "node_version": os.getenv("NODE_VERSION", "1.0.0"),
             "node_id": os.getenv("NODE_ID"),
-            "log_level": os.getenv("LOG_LEVEL", ModelLogLevelEnum.INFO.value),
+            "log_level": os.getenv("LOG_LEVEL", LogLevel.INFO.value),
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
         }
 

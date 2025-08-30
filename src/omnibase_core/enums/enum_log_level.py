@@ -2,15 +2,15 @@
 # author: OmniNode Team
 # copyright: OmniNode.ai
 # created_at: '2025-05-28T13:24:07.772489'
-# description: Stamped by ToolPython
-# entrypoint: python://log_level
+# description: Severity levels for validation and generation results
+# entrypoint: python://severity_level
 # hash: 1fda8bf538c4432877895fbc1c58c62713ba884ce851d63771d09d7bfab6397c
-# last_modified_at: '2025-05-29T14:13:58.550556+00:00'
+# last_modified_at: '2025-08-30T20:30:00.000000+00:00'
 # lifecycle: active
 # meta_type: tool
 # metadata_version: 0.1.0
-# name: log_level.py
-# namespace: python://omnibase.enums.log_level
+# name: severity_level.py
+# namespace: python://omnibase.enums.severity_level
 # owner: OmniNode Team
 # protocol_version: 0.1.0
 # runtime_language_hint: python>=3.11
@@ -21,20 +21,17 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
+"""
+Severity levels for validation and generation results.
+Note: For logging levels, use LogLevel from omnibase.protocols.types instead.
+"""
 
 from enum import Enum
 
 
-class LogLevelEnum(str, Enum):
-    TRACE = "trace"
-    DEBUG = "debug"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-
 class SeverityLevelEnum(str, Enum):
+    """Severity levels for validation and generation result classification."""
+
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"

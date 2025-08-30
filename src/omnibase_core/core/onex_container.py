@@ -8,6 +8,7 @@ without legacy registry dependencies.
 import os
 from typing import Any, TypeVar
 
+from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")
@@ -69,7 +70,7 @@ class ONEXContainer:
         # Service not found
         raise OnexError(
             message=f"Unable to resolve service for protocol: {protocol_name}",
-            error_code="SERVICE_RESOLUTION_FAILED",
+            error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
     def has_service(self, protocol_name: str) -> bool:
