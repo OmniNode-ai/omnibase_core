@@ -131,10 +131,17 @@ class ContractLoader:
             if current_mtime <= cached.last_modified:
                 return self._convert_contract_content_to_dict(cached.content)
 
-        # Load from file
+        # Load from file with security validation
         try:
             with open(file_path, encoding="utf-8") as f:
-                content = yaml.safe_load(f)
+                # Read file content first for security validation
+                raw_content = f.read()
+
+                # Validate YAML content for security
+                self._validate_yaml_content_security(raw_content, file_path)
+
+                # Parse with safe_load
+                content = yaml.safe_load(raw_content)
 
             if content is None:
                 content = {}
@@ -340,3 +347,62 @@ class ContractLoader:
             return False
         except Exception:
             return False
+
+    def _validate_yaml_content_security(self, content: str, file_path: Path) -> None:
+        """
+        Validate YAML content for security concerns before parsing.
+
+        Args:
+            content: Raw YAML content string
+            file_path: Path to the file being loaded (for error reporting)
+
+        Raises:
+            OnexError: If security validation fails
+        """
+        # Check for excessively large content (DoS protection)
+        max_size = 10 * 1024 * 1024  # 10MB limit
+        if len(content) > max_size:
+            raise OnexError(
+                f"YAML file too large ({len(content)} bytes, max {max_size}): {file_path}",
+                CoreErrorCode.VALIDATION_FAILED,
+            )
+
+        # Check for suspicious YAML constructs
+        suspicious_patterns = [
+            "!!python",  # Python object instantiation
+            "!!map",  # Explicit map constructor
+            "!!omap",  # Ordered map constructor
+            "!!pairs",  # Pairs constructor
+            "!!set",  # Set constructor
+            "!!binary",  # Binary data
+            "__import__",  # Python import function
+            "eval(",  # Python eval function
+            "exec(",  # Python exec function
+        ]
+
+        for pattern in suspicious_patterns:
+            if pattern in content:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Suspicious YAML pattern detected in {file_path}: {pattern}",
+                    source="contract_loader",
+                    metadata={
+                        "pattern": pattern,
+                        "file_path": str(file_path),
+                    },
+                )
+
+        # Check for YAML bombs (deeply nested structures)
+        nesting_depth = 0
+        max_nesting = 50
+
+        for char in content:
+            if char in ["{", "["]:
+                nesting_depth += 1
+                if nesting_depth > max_nesting:
+                    raise OnexError(
+                        f"YAML nesting too deep (>{max_nesting} levels) in {file_path}",
+                        CoreErrorCode.VALIDATION_FAILED,
+                    )
+            elif char in ["}", "]"]:
+                nesting_depth = max(0, nesting_depth - 1)

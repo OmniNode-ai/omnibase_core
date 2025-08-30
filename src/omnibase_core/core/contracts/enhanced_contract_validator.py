@@ -1144,8 +1144,8 @@ class {class_name}(Enum):
             spec.naming_convention,
         )
 
-        # Generate field definitions (simplified for example)
-        fields = "    # TODO: Generate actual fields from contract schema"
+        # Generate field definitions from contract schema
+        fields = self._generate_pydantic_fields(contract_data)
 
         return self.type_templates["pydantic_model"].format(
             contract_name=contract_data.get("contract_name", "unknown"),
@@ -1168,8 +1168,8 @@ class {class_name}(Enum):
             spec.naming_convention,
         )
 
-        # Generate method definitions (simplified for example)
-        methods = "    # TODO: Generate actual methods from contract specification"
+        # Generate method definitions from contract specification
+        methods = self._generate_protocol_methods(contract_data)
 
         return self.type_templates["protocol"].format(
             contract_name=contract_data.get("contract_name", "unknown"),
@@ -1189,8 +1189,8 @@ class {class_name}(Enum):
         node_name = contract_data.get("node_name", "unknown")
         class_name = self._format_class_name(f"Enum{node_name}", spec.naming_convention)
 
-        # Generate enum values (simplified for example)
-        values = "    # TODO: Generate actual values from contract enumeration"
+        # Generate enum values from contract enumeration
+        values = self._generate_enum_values(contract_data)
 
         return self.type_templates["enum"].format(
             contract_name=contract_data.get("contract_name", "unknown"),
@@ -1210,6 +1210,111 @@ class {class_name}(Enum):
             return words[0].lower() + "".join(word.capitalize() for word in words[1:])
         # snake_case
         return name.lower()
+
+    def _generate_pydantic_fields(self, contract_data: dict[str, Any]) -> str:
+        """Generate Pydantic field definitions from contract schema."""
+        fields = []
+
+        # Extract fields from contract schema if available
+        schema = contract_data.get("schema", {})
+        properties = schema.get("properties", {})
+
+        if not properties:
+            # Default field if no schema is provided
+            fields.append(
+                '    data: Any = Field(default=None, description="Contract data")'
+            )
+        else:
+            for field_name, field_spec in properties.items():
+                field_type = self._map_json_schema_type(
+                    field_spec.get("type", "string")
+                )
+                description = field_spec.get("description", f"{field_name} field")
+                default = field_spec.get("default", "...")
+
+                if default == "...":
+                    fields.append(
+                        f'    {field_name}: {field_type} = Field(description="{description}")'
+                    )
+                else:
+                    fields.append(
+                        f'    {field_name}: {field_type} = Field(default={repr(default)}, description="{description}")'
+                    )
+
+        return "\n".join(fields) if fields else "    pass  # No fields defined"
+
+    def _generate_protocol_methods(self, contract_data: dict[str, Any]) -> str:
+        """Generate Protocol method definitions from contract specification."""
+        methods = []
+
+        # Extract methods from contract specification
+        operations = contract_data.get("operations", [])
+
+        if not operations:
+            # Default method if no operations defined
+            methods.append("    async def execute(self, input_data: Any) -> Any:")
+            methods.append('        """Execute the contract operation."""')
+            methods.append("        ...")
+        else:
+            for operation in operations:
+                method_name = operation.get("name", "execute")
+                input_type = operation.get("input_type", "Any")
+                output_type = operation.get("output_type", "Any")
+                description = operation.get(
+                    "description", f"Execute {method_name} operation"
+                )
+
+                methods.append(
+                    f"    async def {method_name}(self, input_data: {input_type}) -> {output_type}:"
+                )
+                methods.append(f'        """{description}."""')
+                methods.append("        ...")
+                methods.append("")
+
+        return "\n".join(methods).rstrip()
+
+    def _generate_enum_values(self, contract_data: dict[str, Any]) -> str:
+        """Generate enum values from contract enumeration."""
+        values = []
+
+        # Extract enum values from contract
+        enum_values = contract_data.get("enum_values", [])
+
+        if not enum_values:
+            # Default values if no enumeration provided
+            values.append('    UNKNOWN = "unknown"')
+            values.append('    DEFAULT = "default"')
+        else:
+            for value_spec in enum_values:
+                if isinstance(value_spec, str):
+                    # Simple string value
+                    name = value_spec.upper().replace(" ", "_").replace("-", "_")
+                    values.append(f'    {name} = "{value_spec}"')
+                elif isinstance(value_spec, dict):
+                    # Complex value specification
+                    name = (
+                        value_spec.get("name", "UNKNOWN")
+                        .upper()
+                        .replace(" ", "_")
+                        .replace("-", "_")
+                    )
+                    value = value_spec.get("value", name.lower())
+                    values.append(f'    {name} = "{value}"')
+
+        return "\n".join(values) if values else "    pass  # No enum values defined"
+
+    def _map_json_schema_type(self, json_type: str) -> str:
+        """Map JSON Schema type to Python type annotation."""
+        type_mapping = {
+            "string": "str",
+            "integer": "int",
+            "number": "float",
+            "boolean": "bool",
+            "array": "list[Any]",
+            "object": "dict[str, Any]",
+            "null": "None",
+        }
+        return type_mapping.get(json_type, "Any")
 
     # === UTILITY METHODS ===
 

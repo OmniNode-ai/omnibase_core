@@ -14,6 +14,9 @@ from .enum_data_classification import EnumDataClassification
 # Metadata-related enums
 from .enum_metadata import Lifecycle, MetaTypeEnum
 
+# Namespace-related enums
+from .enum_namespace_strategy import NamespaceStrategyEnum
+
 # Event and logging enums
 from .events import EnumLogLevel
 
@@ -44,6 +47,8 @@ __all__ = [
     "EnumOperationStatus",
     "EnumValidationLevel",
     "EnumValidationMode",
+    # Namespace domain
+    "NamespaceStrategyEnum",
     # Metadata domain
     "Lifecycle",
     "MetaTypeEnum",
