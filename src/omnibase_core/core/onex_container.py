@@ -24,17 +24,24 @@ import os
 import threading
 from typing import Any, TypeVar
 
-# Optional imports for testing - allows test isolation
+# Import with fallback for isolated testing - avoids circular dependencies
 try:
     from omnibase_core.core.core_error_codes import CoreErrorCode
     from omnibase_core.exceptions.base_onex_error import OnexError
 except ImportError:
-    # Test fallback - minimal error handling for test isolation
-    class CoreErrorCode:
+    # Fallback for testing isolation - minimal implementations
+    class CoreErrorCode:  # type: ignore[no-redef]
         SERVICE_RESOLUTION_FAILED = "ONEX_CORE_091_SERVICE_RESOLUTION_FAILED"
+        INVALID_CONFIGURATION = "ONEX_CORE_041_INVALID_CONFIGURATION"
 
-    class OnexError(Exception):
-        def __init__(self, code, message, details=None, cause=None):
+    class OnexError(Exception):  # type: ignore[no-redef]
+        def __init__(
+            self,
+            code: str,
+            message: str,
+            details: dict[str, Any] | None = None,
+            cause: Exception | None = None,
+        ) -> None:
             self.code = code
             self.message = message
             self.details = details or {}
@@ -76,7 +83,7 @@ class ONEXContainer:
         """
         if not isinstance(config, dict):
             raise OnexError(
-                code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+                code=CoreErrorCode.INVALID_CONFIGURATION,
                 message="Configuration must be a dictionary",
             )
         self._config.update(config)

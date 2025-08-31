@@ -18,8 +18,8 @@ from unittest.mock import patch
 
 import pytest
 
-# Direct import of real container implementation to avoid circular dependencies
-# This eliminates code duplication by using the actual production code
+# Import production implementation directly - no code duplication
+# Using importlib to avoid circular dependencies while eliminating duplicate code
 container_path = (
     Path(__file__).parent.parent.parent
     / "src"
