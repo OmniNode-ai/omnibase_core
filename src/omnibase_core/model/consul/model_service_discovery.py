@@ -2,8 +2,9 @@
 Consul service discovery models.
 """
 
-from omnibase.enums.enum_health_status import EnumHealthStatus
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.node import EnumHealthStatus
 
 
 class ModelServiceInstance(BaseModel):

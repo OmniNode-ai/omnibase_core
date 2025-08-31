@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from omnibase.enums.enum_log_level import SeverityLevelEnum
 from pydantic import BaseModel
+
+from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 
 class ModelGenerationResult(BaseModel):
@@ -28,10 +29,10 @@ class ModelGenerationResult(BaseModel):
         return len(self.warnings) > 0
 
     @property
-    def severity(self) -> SeverityLevelEnum:
+    def severity(self) -> EnumLogLevel:
         """Get overall severity level"""
         if self.has_errors:
-            return SeverityLevelEnum.ERROR
+            return EnumLogLevel.ERROR
         if self.has_warnings:
-            return SeverityLevelEnum.WARNING
-        return SeverityLevelEnum.SUCCESS
+            return EnumLogLevel.WARNING
+        return EnumLogLevel.SUCCESS

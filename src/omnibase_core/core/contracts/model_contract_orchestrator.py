@@ -19,18 +19,16 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel, Field, field_validator
 
 if TYPE_CHECKING:
-    from omnibase.enums.enum_node_type import EnumNodeType
-
     from omnibase_core.core.model_contract_base import ModelContractBase
     from omnibase_core.core.subcontracts import (
         ModelEventTypeSubcontract,
         ModelRoutingSubcontract,
         ModelStateManagementSubcontract,
     )
+    from omnibase_core.enums.node import EnumNodeType
 else:
-    from omnibase.enums.enum_node_type import EnumNodeType
-
     from omnibase_core.core.model_contract_base import ModelContractBase
+    from omnibase_core.enums.node import EnumNodeType
 
 
 class ModelDependencySpec(BaseModel):

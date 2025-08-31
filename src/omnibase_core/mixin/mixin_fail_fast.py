@@ -338,7 +338,10 @@ class MixinFailFast:
             ContractViolationError if condition is False
         """
         if not condition:
-            raise OnexError(message, error_code=CoreErrorCode.CONTRACT_VIOLATION)
+            raise OnexError(
+                code=CoreErrorCode.CONTRACT_VIOLATION,
+                message=message,
+            )
 
     def _handle_critical_error(self, message: str, **details) -> None:
         """

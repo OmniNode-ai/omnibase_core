@@ -15,7 +15,7 @@ from .enum_data_classification import EnumDataClassification
 from .enum_ignore_pattern_source import IgnorePatternSourceEnum, TraversalModeEnum
 
 # Log level enum
-from .enum_log_level import EnumLogLevel, SeverityLevelEnum
+from .enum_log_level import EnumLogLevel
 
 # Metadata-related enums
 from .enum_metadata import (

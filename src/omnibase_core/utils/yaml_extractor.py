@@ -28,7 +28,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
 
 def extract_example_from_schema(

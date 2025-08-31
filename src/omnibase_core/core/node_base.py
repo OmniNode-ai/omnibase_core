@@ -15,11 +15,11 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.core_uuid_service import UUIDService
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.models.model_node_base import ModelNodeBase
 from omnibase_core.core.monadic.model_node_result import (
     ErrorInfo,

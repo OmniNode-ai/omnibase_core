@@ -1,7 +1,8 @@
 """Validation profile model for configuring tool validation strategies."""
 
-from omnibase.enums.enum_validation_mode import EnumValidationMode
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.validation import EnumValidationMode
 
 
 class ModelValidationProfile(BaseModel):

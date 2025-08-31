@@ -5,9 +5,9 @@ Structured model for health status, used by health check mixins
 and monitoring systems throughout ONEX.
 """
 
-from omnibase.enums.enum_health_status import EnumHealthStatus
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_details import ModelHealthDetails
 
 

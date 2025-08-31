@@ -9,12 +9,11 @@ Service hosting is handled by the infrastructure reducer.
 import asyncio
 from uuid import uuid4
 
-from omnibase.enums.enum_health_status import EnumHealthStatus
-
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.discovery.model_tool_invocation_event import (

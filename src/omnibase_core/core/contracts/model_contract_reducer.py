@@ -13,7 +13,6 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any, Literal
 
-from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.model_contract_base import ModelContractBase
@@ -24,6 +23,7 @@ from omnibase_core.core.subcontracts import (
     ModelFSMSubcontract,
     ModelStateManagementSubcontract,
 )
+from omnibase_core.enums.node import EnumNodeType
 
 
 class ModelDependencySpec(BaseModel):

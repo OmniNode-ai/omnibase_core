@@ -14,8 +14,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from abc import ABC, abstractmethod
 
-from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.node import EnumNodeType
 
 
 class ModelPerformanceRequirements(BaseModel):

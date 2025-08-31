@@ -7,8 +7,8 @@ import time
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.decorators import allow_dict_str_any
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.model.core.model_onex_event import (
     DiscoveryRequestModelMetadata,
     DiscoveryResponseModelMetadata,

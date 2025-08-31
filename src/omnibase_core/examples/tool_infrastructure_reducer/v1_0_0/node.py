@@ -13,12 +13,12 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 import yaml
-from omnibase.enums.enum_health_status import EnumHealthStatus
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeReducerService
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import OnexEvent
 from omnibase_core.model.registry.model_registry_event import (

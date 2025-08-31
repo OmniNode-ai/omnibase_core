@@ -7,9 +7,9 @@ instance management and service discovery.
 
 from datetime import datetime
 
-from omnibase.enums.enum_node_status import EnumNodeStatus
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.node import EnumNodeStatus
 from omnibase_core.model.configuration.model_load_metrics import ModelLoadMetrics
 from omnibase_core.model.core.model_capability import ModelCapability
 from omnibase_core.model.core.model_instance_metadata import ModelInstanceMetadata

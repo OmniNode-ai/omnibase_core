@@ -35,7 +35,7 @@ Usage:
 
 from typing import Protocol
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
 # EnumToolNames removed - using direct string references
 from omnibase_core.mixin.mixin_event_handler import MixinEventHandler

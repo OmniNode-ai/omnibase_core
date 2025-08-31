@@ -25,7 +25,7 @@
 Log levels and severity levels for ONEX.
 
 EnumLogLevel: Based on SPI LogLevel Literal type for consistency
-SeverityLevelEnum: For validation and generation result classification
+EnumLogLevel: For validation and generation result classification
 """
 
 from enum import Enum
@@ -43,7 +43,7 @@ class EnumLogLevel(str, Enum):
     FATAL = "fatal"
 
 
-class SeverityLevelEnum(str, Enum):
+class EnumLogLevel(str, Enum):
     """Severity levels for validation and generation result classification."""
 
     ERROR = "error"

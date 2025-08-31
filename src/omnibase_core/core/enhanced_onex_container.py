@@ -20,7 +20,7 @@ from uuid import uuid4
 from dependency_injector import containers, providers
 
 from omnibase_core.core.common_types import ModelStateValue
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.monadic.model_node_result import (
     ErrorInfo,
     ErrorType,

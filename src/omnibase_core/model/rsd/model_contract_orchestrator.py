@@ -14,9 +14,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Literal
 
-from omnibase.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, Field, validator
 
+from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.model.rsd.model_contract_base import ModelContractBase
 
 

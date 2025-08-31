@@ -5,8 +5,9 @@ Provides strongly-typed health check responses to replace Dict[str, Any] usage
 with proper ONEX naming conventions.
 """
 
-from omnibase.enums.enum_health_status import EnumHealthStatus
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.enums.node import EnumHealthStatus
 
 
 class ModelLLMHealthResponse(BaseModel):

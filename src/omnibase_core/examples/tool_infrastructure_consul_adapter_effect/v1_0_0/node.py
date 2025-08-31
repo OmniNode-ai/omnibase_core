@@ -4,8 +4,6 @@ import asyncio
 import logging
 import os
 
-from omnibase.enums.enum_health_status import EnumHealthStatus
-
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_effect import (
     EffectType,
@@ -14,6 +12,7 @@ from omnibase_core.core.node_effect import (
 )
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
     ModelConsulAdapterInput,

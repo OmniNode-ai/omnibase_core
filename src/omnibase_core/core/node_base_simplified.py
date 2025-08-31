@@ -119,7 +119,7 @@ class ModelNodeBase(ProtocolReducer):
                 )
         except Exception as e:
             raise OnexError(
-                error_code=CoreErrorCode.INITIALIZATION_FAILED,
+                code=CoreErrorCode.INITIALIZATION_FAILED,
                 message=f"ModelNodeBase initialization failed: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
@@ -155,7 +155,7 @@ class ModelNodeBase(ProtocolReducer):
                 if isinstance(e, OnexError)
                 else OnexError(
                     message=f"Node execution failed: {e!s}",
-                    error_code=CoreErrorCode.OPERATION_FAILED,
+                    code=CoreErrorCode.OPERATION_FAILED,
                     correlation_id=str(correlation_uuid),
                     context={"node_name": self.state.node_name},
                 )
@@ -177,7 +177,7 @@ class ModelNodeBase(ProtocolReducer):
             if hasattr(self._main_tool, "run"):
                 return self._main_tool.run(input_state)
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process() or run() method",
                 context={"node_name": self.state.node_name},
             )
@@ -185,7 +185,7 @@ class ModelNodeBase(ProtocolReducer):
             if isinstance(e, OnexError):
                 raise
             raise OnexError(
-                error_code=CoreErrorCode.OPERATION_FAILED,
+                code=CoreErrorCode.OPERATION_FAILED,
                 message=f"Tool execution failed: {e!s}",
                 context={"node_name": self.state.node_name},
             ) from e
@@ -200,7 +200,7 @@ class ModelNodeBase(ProtocolReducer):
             )
         except Exception as e:
             raise OnexError(
-                error_code=CoreErrorCode.RESOURCE_UNAVAILABLE,
+                code=CoreErrorCode.RESOURCE_UNAVAILABLE,
                 message=f"Health check failed: {e!s}",
                 context={
                     "correlation_id": str(UUIDService.generate_correlation_id()),

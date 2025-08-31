@@ -40,7 +40,8 @@
       "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/constants/**)",
-      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)"
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
+      "Bash(gh api:*)"
     ],
     "deny": [],
     "ask": []

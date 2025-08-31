@@ -19,7 +19,7 @@ import lz4.frame
 import orjson
 from pydantic import BaseModel, Field, model_validator
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
 
 class EnumSessionHealthStatus(str, Enum):

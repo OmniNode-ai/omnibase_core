@@ -8,7 +8,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.enums import SeverityLevelEnum
+from omnibase_core.enums import EnumLogLevel
 from omnibase_core.model.core.model_base_error import ModelBaseError
 
 from .model_validate_message_context import ModelValidateMessageContext
@@ -19,8 +19,8 @@ class ModelValidateMessage(ModelBaseError):
 
     file: str | None = None
     line: int | None = None
-    severity: SeverityLevelEnum = Field(
-        default=SeverityLevelEnum.ERROR,
+    severity: EnumLogLevel = Field(
+        default=EnumLogLevel.ERROR,
         description="error|warning|info|debug|critical|success|unknown",
     )
     code: str = "unknown"

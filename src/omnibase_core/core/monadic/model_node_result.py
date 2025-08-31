@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Generic, Optional, TypeVar
 
 from omnibase_core.core.common_types import ModelStateValue
-from omnibase_core.core.core_errors import OnexError
+from omnibase_core.core.errors.core_errors import OnexError
 
 T = TypeVar("T")
 U = TypeVar("U")
