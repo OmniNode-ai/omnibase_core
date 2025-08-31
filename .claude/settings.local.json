@@ -31,7 +31,9 @@
       "mcp__archon__session_info",
       "mcp__archon__health_check",
       "Read(/Users/jonah/.claude/agents/**)",
-      "Bash(gh pr comment:*)"
+      "Bash(gh pr comment:*)",
+      "mcp__archon__update_document",
+      "mcp__archon__search_code_examples"
     ],
     "deny": [],
     "ask": []

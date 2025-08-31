@@ -5,7 +5,7 @@ epic: "EPIC-001-core-framework-stabilization"
 phase: "Phase 1 - Core Functionality"
 type: "validation"
 priority: "high"
-status: "backlog"
+status: "completed"
 complexity: "medium"
 estimated_hours: 4
 
@@ -37,21 +37,21 @@ non_functional_requirements:
 
 # Acceptance Criteria
 acceptance_criteria:
-  - [ ] No legacy registry imports or references in ONEXContainer
-  - [ ] Protocol-based service resolution works for common protocols
-  - [ ] Container supports protocol shortcuts (event_bus -> ProtocolEventBus)
-  - [ ] Proper OnexError handling for unresolved services
-  - [ ] Container configuration works without registry dependencies
-  - [ ] Unit tests validate clean protocol-based behavior
+  - [x] No legacy registry imports or references in ONEXContainer
+  - [x] Protocol-based service resolution works for common protocols
+  - [x] Container supports protocol shortcuts (event_bus -> ProtocolEventBus)
+  - [x] Proper OnexError handling for unresolved services
+  - [x] Container configuration works without registry dependencies
+  - [x] Unit tests validate clean protocol-based behavior
 
 # Definition of Done
 definition_of_done:
-  - [ ] Code audit completed with clean bill of health
-  - [ ] Protocol-based resolution validated with tests
-  - [ ] Container handles missing services gracefully
-  - [ ] Documentation updated to reflect clean architecture
-  - [ ] No TODO comments related to registry cleanup
-  - [ ] Example usage patterns documented
+  - [x] Code audit completed with clean bill of health
+  - [x] Protocol-based resolution validated with tests
+  - [x] Container handles missing services gracefully
+  - [x] Documentation updated to reflect clean architecture
+  - [x] No TODO comments related to registry cleanup
+  - [x] Example usage patterns documented
 
 # Dependencies
 dependencies:
@@ -66,14 +66,14 @@ dependencies:
 # ONEX Compliance
 onex_compliance:
   standards_checklist:
-    - [ ] No `Any` types used (validate existing usage is appropriate)
-    - [ ] Proper OnexError usage (validate error handling patterns)
-    - [ ] Contract-driven architecture (protocol-based DI validation)
-    - [ ] Registry pattern compliance (ensure no legacy registry coupling)
-    - [ ] Duck typing protocols (validate protocol resolution)
-    - [ ] ONEX naming conventions (validate method and variable names)
-    - [ ] Quality gates implemented (comprehensive testing)
-    - [ ] No AI attribution in commits
+    - [x] No `Any` types used (validate existing usage is appropriate)
+    - [x] Proper OnexError usage (validate error handling patterns)
+    - [x] Contract-driven architecture (protocol-based DI validation)
+    - [x] Registry pattern compliance (ensure no legacy registry coupling)
+    - [x] Duck typing protocols (validate protocol resolution)
+    - [x] ONEX naming conventions (validate method and variable names)
+    - [x] Quality gates implemented (comprehensive testing)
+    - [x] No AI attribution in commits
   compliance_notes: "Critical validation of core DI container architecture"
 
 # Technical Implementation
