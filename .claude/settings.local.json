@@ -33,7 +33,9 @@
       "Read(/Users/jonah/.claude/agents/**)",
       "Bash(gh pr comment:*)",
       "mcp__archon__update_document",
-      "mcp__archon__search_code_examples"
+      "mcp__archon__search_code_examples",
+      "mcp__archon__list_documents",
+      "mcp__archon__update_document"
     ],
     "deny": [],
     "ask": []
