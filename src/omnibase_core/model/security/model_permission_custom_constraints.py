@@ -78,7 +78,7 @@ class ModelPermissionCustomConstraints(BaseModel):
         description="Context keys that must be present",
     )
 
-    required_context_values: dict[str, str] = Field(
+    required_context_info: ValidationInfo = Field(
         default_factory=dict,
         description="Required context key-value pairs",
     )

@@ -167,7 +167,7 @@ class ModelOnexReply(BaseModel):
     def validate_success_consistency(
         self,
         v: bool,
-        values: dict[str, bool | str | ModelOnexErrorDetails],
+        info: ValidationInfo,
     ) -> bool:
         """Validate success field consistency with status."""
         status = values.get("status")
@@ -189,7 +189,7 @@ class ModelOnexReply(BaseModel):
     def validate_data_type_consistency(
         self,
         v: str | None,
-        values: dict[str, str | BaseModel],
+        info: ValidationInfo,
     ) -> str | None:
         """Validate data_type is specified when data is present."""
         data = values.get("data")
@@ -202,7 +202,7 @@ class ModelOnexReply(BaseModel):
     def validate_error_consistency(
         self,
         v: ModelOnexErrorDetails | None,
-        values: dict[str, bool | str],
+        info: ValidationInfo,
     ) -> ModelOnexErrorDetails | None:
         """Validate error details consistency with status."""
         status = values.get("status")

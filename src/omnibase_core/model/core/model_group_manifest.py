@@ -8,7 +8,8 @@ Represents the highest level of organization for ONEX tool groups.
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic.dataclasses import ValidationInfo
 
 from omnibase_core.model.core.model_semver import ModelSemVer, SemVerField
 
@@ -194,22 +195,24 @@ class ModelGroupManifest(BaseModel):
         frozen = True
         use_enum_values = True
 
-    @validator("total_tools", "active_tools")
-    def validate_tool_counts(self, v: int) -> int:
+    @field_validator("total_tools", "active_tools")
+    @classmethod
+    def validate_tool_counts(cls, v: int) -> int:
         """Validate tool count is non-negative."""
         if v < 0:
             msg = "Tool counts must be non-negative"
             raise ValueError(msg)
         return v
 
-    @validator("active_tools")
+    @field_validator("active_tools")
+    @classmethod
     def validate_active_tools_count(
-        self,
+        cls,
         v: int,
-        values: dict[str, int | str | ModelSemVer],
+        info: ValidationInfo,
     ) -> int:
         """Validate active tools count doesn't exceed total."""
-        total = values.get("total_tools", 0)
+        total = info.data.get("total_tools", 0)
         if not isinstance(total, int):
             total = 0
         if v > total:
@@ -217,8 +220,9 @@ class ModelGroupManifest(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("tools")
-    def validate_tools_list(self, v: list[ModelGroupTool]) -> list[ModelGroupTool]:
+    @field_validator("tools")
+    @classmethod
+    def validate_tools_list(cls, v: list[ModelGroupTool]) -> list[ModelGroupTool]:
         """Validate tools list consistency."""
         if not v:
             msg = "tools list cannot be empty"

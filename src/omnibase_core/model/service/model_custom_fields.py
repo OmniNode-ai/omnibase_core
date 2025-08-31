@@ -36,7 +36,7 @@ class ModelCustomFields(BaseModel):
     )
 
     # Field values
-    field_values: dict[str, Any] = Field(
+    field_info: ValidationInfo = Field(
         default_factory=dict,
         description="Custom field values",
     )

@@ -167,7 +167,7 @@ class ModelOnexSecurityContext(BaseModel):
     def validate_token_expiry(
         self,
         v: datetime | None,
-        values: dict[str, str | datetime],
+        info: ValidationInfo,
     ) -> datetime | None:
         """Validate token expiry is in the future."""
         if v is not None and v <= datetime.utcnow():
