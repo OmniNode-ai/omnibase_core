@@ -434,8 +434,7 @@ class TestIntegration:
     def test_factory_and_global_container_integration(self):
         """Test integration between factory function and global container."""
         # Reset global state
-        global _container
-        _container = None
+        onex_container_module._container = None
 
         # Create using factory
         factory_container = create_onex_container()

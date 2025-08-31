@@ -5,23 +5,10 @@ ONEX Error System
 Standardized error handling for the ONEX framework.
 """
 
-from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-
-class CoreErrorCode(str, Enum):
-    """Core error codes for ONEX system."""
-
-    VALIDATION_ERROR = "VALIDATION_ERROR"
-    OPERATION_FAILED = "OPERATION_FAILED"
-    NOT_FOUND = "NOT_FOUND"
-    CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
-    DEPENDENCY_ERROR = "DEPENDENCY_ERROR"
-    NETWORK_ERROR = "NETWORK_ERROR"
-    TIMEOUT_ERROR = "TIMEOUT_ERROR"
-    PERMISSION_ERROR = "PERMISSION_ERROR"
-    RESOURCE_ERROR = "RESOURCE_ERROR"
-    INTERNAL_ERROR = "INTERNAL_ERROR"
+if TYPE_CHECKING:
+    from omnibase_core.core.core_error_codes import CoreErrorCode
 
 
 class OnexError(Exception):
@@ -33,7 +20,7 @@ class OnexError(Exception):
 
     def __init__(
         self,
-        code: CoreErrorCode,
+        code: "CoreErrorCode",
         message: str,
         details: dict[str, Any] | None = None,
         cause: Exception | None = None,
