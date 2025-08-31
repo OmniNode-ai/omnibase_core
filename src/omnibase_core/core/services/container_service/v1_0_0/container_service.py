@@ -22,9 +22,9 @@ from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.models.model_contract_content import ModelContractContent
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_contract_content import ModelContractContent
 
 from .models.model_container_config import ModelContainerConfig
 from .models.model_container_result import ModelContainerResult

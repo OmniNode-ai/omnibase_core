@@ -74,7 +74,7 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Config/settings output
-    config_info: ValidationInfo | None = Field(
+    config_details: dict[str, Any] | None = Field(
         None,
         description="Configuration values",
     )

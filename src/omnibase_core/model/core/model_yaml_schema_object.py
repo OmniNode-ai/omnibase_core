@@ -9,7 +9,7 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.models.model_yaml_schema_property import ModelYamlSchemaProperty
+from omnibase_core.model.core.model_yaml_schema_property import ModelYamlSchemaProperty
 
 
 class ModelYamlSchemaObject(BaseModel):

@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.model_contract_base import ModelContractBase
+from omnibase_core.core.contracts.model_contract_base import ModelContractBase
 from omnibase_core.core.subcontracts import (
     ModelCachingSubcontract,
     ModelEventTypeSubcontract,

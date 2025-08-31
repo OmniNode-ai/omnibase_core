@@ -30,13 +30,12 @@ from typing import (
 )
 from uuid import uuid4
 
+# Import contract model for reducer nodes
+from omnibase_core.core.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-
-# Import contract model for reducer nodes
-from omnibase_core.core.model_contract_reducer import ModelContractReducer
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

@@ -24,13 +24,13 @@ from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.node_reducer_service import NodeReducerService
 
-# Infrastructure container
-from omnibase_core.tools.infrastructure.container import create_infrastructure_container
+# Infrastructure container - TODO: Implement when tools/infrastructure module is available
+# from omnibase_core.tools.infrastructure.container import create_infrastructure_container
 
 __all__ = [
     "NodeComputeService",
     "NodeEffectService",
     "NodeOrchestratorService",
     "NodeReducerService",
-    "create_infrastructure_container",
+    # "create_infrastructure_container",  # TODO: Uncomment when infrastructure module is available
 ]

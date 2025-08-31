@@ -20,7 +20,6 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.models.model_node_base import ModelNodeBase
 from omnibase_core.core.monadic.model_node_result import (
     ErrorInfo,
     ErrorType,
@@ -40,6 +39,7 @@ from omnibase_core.mixin.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
 from omnibase_core.mixin.mixin_tool_execution import MixinToolExecution
+from omnibase_core.model.core.model_node_base import ModelNodeBase
 from omnibase_core.model.core.model_reducer import ActionModel, ModelState
 from omnibase_core.protocol.protocol_workflow_reducer import ProtocolWorkflowReducer
 

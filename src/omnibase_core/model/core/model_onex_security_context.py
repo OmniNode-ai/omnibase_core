@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationInfo, validator
 
 
 class EnumSecurityProfile(str, Enum):

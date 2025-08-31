@@ -8,8 +8,6 @@ from pathlib import Path
 
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.models.model_node_base import ModelNodeBase
-from omnibase_core.core.models.model_registry_reference import ModelRegistryReference
 from omnibase_core.core.services.cli_service.v1_0_0.cli_service import CliService
 from omnibase_core.core.services.container_service.v1_0_0.container_service import (
     ContainerService,
@@ -26,6 +24,8 @@ from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus
 from omnibase_core.core.services.tool_discovery_service.v1_0_0.tool_discovery_service import (
     ToolDiscoveryService,
 )
+from omnibase_core.model.core.model_node_base import ModelNodeBase
+from omnibase_core.model.core.model_registry_reference import ModelRegistryReference
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.protocol.protocol_reducer import ProtocolReducer
 from omnibase_core.protocol.protocol_registry import ProtocolRegistry

@@ -32,9 +32,6 @@ from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
-from omnibase_core.core.models.model_hub_contract_config import (
-    ModelUnifiedHubContract,
-)
 from omnibase_core.core.node_base import ModelNodeBase
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.decorators import standard_error_handling
@@ -42,6 +39,9 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.mixin.mixin_debug_discovery_logging import MixinDebugDiscoveryLogging
 from omnibase_core.mixin.mixin_service_registry import MixinServiceRegistry
+from omnibase_core.model.core.model_hub_contract_config import (
+    ModelUnifiedHubContract,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
         except Exception as e:
             logger.exception(f"Failed to load hub contract: {e}")
             # Return minimal default configuration
-            from omnibase_core.core.models.model_hub_contract_config import (
+            from omnibase_core.model.core.model_hub_contract_config import (
                 ModelHubConfiguration,
             )
 

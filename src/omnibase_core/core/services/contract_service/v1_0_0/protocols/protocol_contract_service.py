@@ -8,7 +8,7 @@ and caching operations following ONEX duck typing standards.
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.core.models.model_contract_content import ModelContractContent
+from omnibase_core.model.core.model_contract_content import ModelContractContent
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 

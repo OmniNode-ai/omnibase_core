@@ -14,9 +14,9 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.constants.event_types import CoreEventTypes
-from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.discovery.model_tool_invocation_event import (

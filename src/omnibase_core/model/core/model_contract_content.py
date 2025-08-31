@@ -11,14 +11,14 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.models.model_contract_definitions import (
+from omnibase_core.enums.node import EnumNodeType
+from omnibase_core.model.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
-from omnibase_core.core.models.model_contract_dependency import ModelContractDependency
-from omnibase_core.core.models.model_tool_specification import ModelToolSpecification
-from omnibase_core.core.models.model_yaml_schema_object import ModelYamlSchemaObject
-from omnibase_core.enums.node import EnumNodeType
+from omnibase_core.model.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.model.core.model_tool_specification import ModelToolSpecification
+from omnibase_core.model.core.model_yaml_schema_object import ModelYamlSchemaObject
 
 
 class ModelContractContent(BaseModel):

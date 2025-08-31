@@ -9,9 +9,10 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.enums.enum_business_logic_pattern import (
-    EnumBusinessLogicPattern,
-)
+# TODO: Import when enum is available
+# from omnibase_core.core.enums.enum_business_logic_pattern import (
+#     EnumBusinessLogicPattern,
+# )
 
 
 class ModelToolSpecification(BaseModel):
@@ -23,7 +24,8 @@ class ModelToolSpecification(BaseModel):
         ...,
         description="Main tool class name for instantiation",
     )
-    business_logic_pattern: EnumBusinessLogicPattern = Field(
-        default=EnumBusinessLogicPattern.COMPUTE,
-        description="Business logic pattern type",
-    )
+    # TODO: Re-enable when enum is available
+    # business_logic_pattern: EnumBusinessLogicPattern = Field(
+    #     default=EnumBusinessLogicPattern.COMPUTE,
+    #     description="Business logic pattern type",
+    # )
