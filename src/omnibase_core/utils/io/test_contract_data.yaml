@@ -1,0 +1,363 @@
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_name: tool_contract_driven_generator
+node_version: 1.0.0
+description: Generates strongly-typed Pydantic models from YAML contract specifications with AST-based code generation and ONEX standards compliance
+
+input_state:
+  type: object
+  properties:
+    action:
+      $ref: "#/definitions/ModelActionSpec"
+    version:
+      $ref: "#/definitions/ModelSemVer"
+    contract_path:
+      type: string
+      description: "Path to contract.yaml file to process"
+      format: path
+    output_format:
+      type: string
+      enum: ["ast_models", "python_source", "model_metadata"]
+      description: "Output format for generated models"
+    config:
+      $ref: "#/definitions/ModelGenerationConfig"
+  required:
+    - action
+    - version
+    - contract_path
+    - output_format
+
+output_state:
+  type: object
+  properties:
+    action:
+      $ref: "#/definitions/ModelActionSpec"
+    version:
+      $ref: "#/definitions/ModelSemVer"
+    status:
+      type: string
+      enum: ["success", "error", "warning"]
+    generation_result:
+      $ref: "#/definitions/ModelGenerationResult"
+    processing_stats:
+      $ref: "#/definitions/ModelProcessingStats"
+    validation_result:
+      $ref: "#/definitions/ModelValidationResult"
+    error_details:
+      $ref: "#/definitions/ModelOnexError"
+  required:
+    - action
+    - version
+    - status
+    - generation_result
+
+definitions:
+  ModelActionSpec:
+    type: object
+    properties:
+      action_name:
+        type: string
+        enum:
+          - "generate_from_contract"
+          - "resolve_references"
+          - "generate_enums"
+          - "validate_contract"
+          - "analyze_contract"
+      action_type:
+        type: string
+        enum: ["generation", "validation", "analysis"]
+      category:
+        type: string
+        enum: ["contract-generation", "reference-resolution", "enum-generation", "contract-validation", "contract-analysis"]
+      display_name:
+        type: string
+      description:
+        type: string
+    required:
+      - action_name
+      - action_type
+      - category
+
+  ModelSemVer:
+    type: object
+    properties:
+      major:
+        type: integer
+        minimum: 0
+      minor:
+        type: integer
+        minimum: 0
+      patch:
+        type: integer
+        minimum: 0
+    required:
+      - major
+      - minor
+      - patch
+
+  ModelGenerationConfig:
+    type: object
+    properties:
+      generate_enums:
+        type: boolean
+        default: true
+      handle_external_refs:
+        type: boolean
+        default: true
+      enforce_model_naming:
+        type: boolean
+        default: true
+      generate_action_models:
+        type: boolean
+        default: true
+      resolve_subcontracts:
+        type: boolean
+        default: true
+      include_docstrings:
+        type: boolean
+        default: true
+      validate_types:
+        type: boolean
+        default: true
+    required: []
+
+  ModelGenerationResult:
+    type: object
+    properties:
+      contract_name:
+        type: string
+        description: "Name of the contract that was processed"
+      models_generated:
+        type: array
+        items:
+          $ref: "#/definitions/ModelGeneratedModel"
+      enums_generated:
+        type: array
+        items:
+          $ref: "#/definitions/ModelGeneratedEnum"
+      references_resolved:
+        type: array
+        items:
+          $ref: "#/definitions/ModelResolvedReference"
+      ast_nodes:
+        type: array
+        items:
+          $ref: "#/definitions/ModelASTNode"
+      total_models:
+        type: integer
+        minimum: 0
+      total_enums:
+        type: integer
+        minimum: 0
+      total_references:
+        type: integer
+        minimum: 0
+    required:
+      - contract_name
+      - models_generated
+      - enums_generated
+      - references_resolved
+      - total_models
+      - total_enums
+      - total_references
+
+  ModelGeneratedModel:
+    type: object
+    properties:
+      model_name:
+        type: string
+        description: "Name of the generated model"
+      model_type:
+        type: string
+        enum: ["input_state", "output_state", "definition", "action"]
+        description: "Type of model generated"
+      fields:
+        type: array
+        items:
+          $ref: "#/definitions/ModelFieldInfo"
+      base_class:
+        type: string
+        description: "Base class the model inherits from"
+      docstring:
+        type: string
+        description: "Docstring for the model"
+      external_references:
+        type: array
+        items:
+          type: string
+        description: "External references used by this model"
+    required:
+      - model_name
+      - model_type
+      - fields
+      - base_class
+
+  ModelGeneratedEnum:
+    type: object
+    properties:
+      enum_name:
+        type: string
+        description: "Name of the generated enum"
+      enum_values:
+        type: array
+        items:
+          type: string
+        description: "Values in the enum"
+      source_field:
+        type: string
+        description: "Source field that generated this enum"
+    required:
+      - enum_name
+      - enum_values
+
+  ModelResolvedReference:
+    type: object
+    properties:
+      original_ref:
+        type: string
+        description: "Original reference string"
+      resolved_type:
+        type: string
+        description: "Resolved type name"
+      ref_type:
+        type: string
+        enum: ["internal", "external", "subcontract"]
+        description: "Type of reference"
+      source_file:
+        type: string
+        description: "Source file path if external"
+    required:
+      - original_ref
+      - resolved_type
+      - ref_type
+
+  ModelFieldInfo:
+    type: object
+    properties:
+      field_name:
+        type: string
+        description: "Name of the field"
+      field_type:
+        type: string
+        description: "Type annotation for the field"
+      is_required:
+        type: boolean
+        description: "Whether the field is required"
+      default_value:
+        type: string
+        description: "Default value if any"
+      description:
+        type: string
+        description: "Field description"
+      constraints:
+        type: object
+        description: "Field constraints (min, max, etc.)"
+    required:
+      - field_name
+      - field_type
+      - is_required
+
+  ModelASTNode:
+    type: object
+    properties:
+      node_type:
+        type: string
+        enum: ["class", "enum", "function", "import"]
+        description: "Type of AST node"
+      node_name:
+        type: string
+        description: "Name of the node"
+      source_code:
+        type: string
+        description: "Generated source code"
+      line_count:
+        type: integer
+        minimum: 0
+        description: "Number of lines in generated code"
+    required:
+      - node_type
+      - node_name
+      - source_code
+
+  ModelProcessingStats:
+    type: object
+    properties:
+      start_time:
+        type: string
+        format: date-time
+      end_time:
+        type: string
+        format: date-time
+      duration_seconds:
+        type: number
+        minimum: 0
+      contracts_processed:
+        type: integer
+        minimum: 0
+      models_generated:
+        type: integer
+        minimum: 0
+      enums_generated:
+        type: integer
+        minimum: 0
+      references_resolved:
+        type: integer
+        minimum: 0
+      ast_nodes_created:
+        type: integer
+        minimum: 0
+    required:
+      - start_time
+      - duration_seconds
+
+  ModelValidationResult:
+    type: object
+    properties:
+      contract_valid:
+        type: boolean
+        description: "Whether the contract is valid"
+      syntax_valid:
+        type: boolean
+        description: "Whether generated code has valid syntax"
+      types_valid:
+        type: boolean
+        description: "Whether all type annotations are valid"
+      references_valid:
+        type: boolean
+        description: "Whether all references are valid"
+      validation_errors:
+        type: array
+        items:
+          type: string
+        description: "List of validation error messages"
+      warnings:
+        type: array
+        items:
+          type: string
+        description: "List of validation warnings"
+    required:
+      - contract_valid
+      - syntax_valid
+      - types_valid
+      - references_valid
+
+  ModelOnexError:
+    type: object
+    properties:
+      error_code:
+        type: string
+        description: "Structured error code"
+      error_message:
+        type: string
+        description: "Human-readable error message"
+      error_context:
+        type: object
+        description: "Additional error context"
+      stack_trace:
+        type: string
+        description: "Stack trace if available"
+    required:
+      - error_code
+      - error_message

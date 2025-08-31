@@ -1,0 +1,19 @@
+"""
+Security rule model for individual security rules.
+"""
+
+from pydantic import BaseModel, Field
+
+
+class ModelSecurityRule(BaseModel):
+    """Individual security rule."""
+
+    rule_id: str = Field(..., description="Unique rule identifier")
+    rule_type: str = Field(..., description="Rule type (allow/deny/audit)")
+    resource_pattern: str = Field(..., description="Resource pattern to match")
+    actions: list[str] = Field(
+        default_factory=list,
+        description="Actions covered by rule",
+    )
+    conditions: dict[str, str] | None = Field(None, description="Rule conditions")
+    priority: int = Field(0, description="Rule priority (higher = more important)")

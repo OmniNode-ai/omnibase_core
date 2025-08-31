@@ -1,0 +1,318 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T11:06:32.372296",
+    "source_file": "src/omnibase/model/model_secret_management.py",
+    "ticket": "nm_arch_003_model_secret_management_split",
+    "total_models": 4,
+    "purpose": "Pre-split validation baseline"
+  },
+  "schemas": {
+    "ModelSecretConfig": {
+      "schema_hash": "0b28449572007ae246ae649fe29e2f1a589956814327a5e58d11b59a262a1a8c",
+      "field_count": 5,
+      "required_fields": 0,
+      "schema": {
+        "$defs": {
+          "SecretBackendEnum": {
+            "description": "Supported secret backend types.",
+            "enum": [
+              "environment",
+              "dotenv",
+              "vault",
+              "kubernetes",
+              "file"
+            ],
+            "title": "SecretBackendEnum",
+            "type": "string"
+          }
+        },
+        "description": "Configuration for secret management backend.",
+        "properties": {
+          "backend": {
+            "$ref": "#/$defs/SecretBackendEnum",
+            "default": "environment",
+            "description": "Secret backend type"
+          },
+          "dotenv_path": {
+            "anyOf": [
+              {
+                "format": "path",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to .env file for development",
+            "title": "Dotenv Path"
+          },
+          "vault_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vault server URL",
+            "title": "Vault Url"
+          },
+          "vault_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Vault authentication token",
+            "title": "Vault Token"
+          },
+          "auto_load_dotenv": {
+            "default": true,
+            "description": "Automatically load .env file if present",
+            "title": "Auto Load Dotenv",
+            "type": "boolean"
+          }
+        },
+        "title": "ModelSecretConfig",
+        "type": "object"
+      }
+    },
+    "ModelSecureCredentials": {
+      "schema_hash": "a95476f2d53c0572e471b2a96ee58526e4ec43d2dbec2633865bbaadcd224c90",
+      "field_count": 0,
+      "required_fields": 0,
+      "schema": {
+        "description": "Base model for secure credential handling.",
+        "properties": {},
+        "title": "ModelSecureCredentials",
+        "type": "object"
+      }
+    },
+    "ModelKafkaSecureConfig": {
+      "schema_hash": "6f6f7dd4a56dbef0f2d8de3b7b327dd5e33084e7d168a7e13a03dada9b3518e1",
+      "field_count": 8,
+      "required_fields": 1,
+      "schema": {
+        "description": "Secure Kafka configuration with SecretStr for sensitive fields.",
+        "properties": {
+          "bootstrap_servers": {
+            "description": "Kafka bootstrap servers (comma-separated)",
+            "maxLength": 500,
+            "pattern": "^[a-zA-Z0-9\\-\\.:,\\s]+$",
+            "title": "Bootstrap Servers",
+            "type": "string"
+          },
+          "security_protocol": {
+            "default": "PLAINTEXT",
+            "description": "Security protocol",
+            "pattern": "^(PLAINTEXT|SSL|SASL_PLAINTEXT|SASL_SSL)$",
+            "title": "Security Protocol",
+            "type": "string"
+          },
+          "sasl_username": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SASL username",
+            "title": "Sasl Username"
+          },
+          "sasl_password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SASL password (secured)",
+            "title": "Sasl Password"
+          },
+          "ssl_keyfile_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL key file",
+            "title": "Ssl Keyfile Path"
+          },
+          "ssl_keyfile_password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SSL key file password (secured)",
+            "title": "Ssl Keyfile Password"
+          },
+          "ssl_certfile_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL certificate file",
+            "title": "Ssl Certfile Path"
+          },
+          "ssl_cafile_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL CA file",
+            "title": "Ssl Cafile Path"
+          }
+        },
+        "required": [
+          "bootstrap_servers"
+        ],
+        "title": "ModelKafkaSecureConfig",
+        "type": "object"
+      }
+    },
+    "ModelDatabaseSecureConfig": {
+      "schema_hash": "4c918149f8990cbcb150d099461d2f00a25369ec40f2b3820c53a849a90f4649",
+      "field_count": 9,
+      "required_fields": 5,
+      "schema": {
+        "description": "Secure database configuration with SecretStr for sensitive fields.",
+        "properties": {
+          "host": {
+            "description": "Database host",
+            "maxLength": 255,
+            "pattern": "^[a-zA-Z0-9\\-\\.]+$",
+            "title": "Host",
+            "type": "string"
+          },
+          "port": {
+            "description": "Database port",
+            "maximum": 65535,
+            "minimum": 1,
+            "title": "Port",
+            "type": "integer"
+          },
+          "database": {
+            "description": "Database name",
+            "maxLength": 100,
+            "pattern": "^[a-zA-Z0-9_\\-]+$",
+            "title": "Database",
+            "type": "string"
+          },
+          "username": {
+            "description": "Database username",
+            "maxLength": 100,
+            "title": "Username",
+            "type": "string"
+          },
+          "password": {
+            "description": "Database password (secured)",
+            "format": "password",
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "ssl_enabled": {
+            "default": false,
+            "description": "Whether to use SSL connection",
+            "title": "Ssl Enabled",
+            "type": "boolean"
+          },
+          "ssl_cert_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL certificate",
+            "title": "Ssl Cert Path"
+          },
+          "ssl_key_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL key file",
+            "title": "Ssl Key Path"
+          },
+          "ssl_key_password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SSL key password (secured)",
+            "title": "Ssl Key Password"
+          }
+        },
+        "required": [
+          "host",
+          "port",
+          "database",
+          "username",
+          "password"
+        ],
+        "title": "ModelDatabaseSecureConfig",
+        "type": "object"
+      }
+    }
+  }
+}

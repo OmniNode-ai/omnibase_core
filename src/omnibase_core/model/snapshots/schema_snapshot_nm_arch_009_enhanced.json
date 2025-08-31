@@ -1,0 +1,452 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T13:00:06.467416",
+    "source_file": "Multiple enhanced files",
+    "ticket": "nm_arch_009_model_tool_collection_split",
+    "total_models": 2,
+    "purpose": "Post-enhancement validation",
+    "transformation": "Basic models -> Enterprise-grade tool management",
+    "actual_models": [
+      "ModelToolCollection",
+      "ModelMetadataToolCollection"
+    ]
+  },
+  "schemas": {
+    "ModelToolCollection": {
+      "schema_hash": "5bf5f0298838747c8007378e052c2851c74b66b38d8ea7c3a0e7c870b342abd4",
+      "field_count": 18,
+      "required_fields": 1,
+      "schema": {
+        "$defs": {
+          "ToolCapabilityLevel": {
+            "description": "Tool capability levels.",
+            "enum": [
+              "basic",
+              "advanced",
+              "enterprise",
+              "experimental"
+            ],
+            "title": "ToolCapabilityLevel",
+            "type": "string"
+          },
+          "ToolCategory": {
+            "description": "Tool categories for organization.",
+            "enum": [
+              "core",
+              "registry",
+              "validation",
+              "transformation",
+              "output",
+              "utility",
+              "custom"
+            ],
+            "title": "ToolCategory",
+            "type": "string"
+          },
+          "ToolCompatibilityMode": {
+            "description": "Tool compatibility modes.",
+            "enum": [
+              "strict",
+              "compatible",
+              "legacy",
+              "experimental"
+            ],
+            "title": "ToolCompatibilityMode",
+            "type": "string"
+          },
+          "ToolMetadata": {
+            "description": "Comprehensive metadata for a registered tool.",
+            "properties": {
+              "name": {
+                "description": "Tool name",
+                "title": "Name",
+                "type": "string"
+              },
+              "tool_class": {
+                "description": "Tool class name",
+                "title": "Tool Class",
+                "type": "string"
+              },
+              "module_path": {
+                "description": "Tool module path",
+                "title": "Module Path",
+                "type": "string"
+              },
+              "registration_time": {
+                "description": "When tool was registered",
+                "format": "date-time",
+                "title": "Registration Time",
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/$defs/ToolRegistrationStatus",
+                "default": "registered",
+                "description": "Registration status"
+              },
+              "category": {
+                "$ref": "#/$defs/ToolCategory",
+                "default": "custom",
+                "description": "Tool category"
+              },
+              "capability_level": {
+                "$ref": "#/$defs/ToolCapabilityLevel",
+                "default": "basic",
+                "description": "Capability level"
+              },
+              "compatibility_mode": {
+                "$ref": "#/$defs/ToolCompatibilityMode",
+                "default": "compatible",
+                "description": "Compatibility mode"
+              },
+              "performance_metrics": {
+                "$ref": "#/$defs/ToolPerformanceMetrics",
+                "description": "Performance metrics"
+              },
+              "validation_result": {
+                "$ref": "#/$defs/ToolValidationResult",
+                "description": "Validation results"
+              },
+              "description": {
+                "default": "",
+                "description": "Tool description",
+                "title": "Description",
+                "type": "string"
+              },
+              "version": {
+                "default": "1.0.0",
+                "description": "Tool version",
+                "title": "Version",
+                "type": "string"
+              },
+              "author": {
+                "default": "Unknown",
+                "description": "Tool author",
+                "title": "Author",
+                "type": "string"
+              },
+              "documentation_url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Documentation URL",
+                "title": "Documentation Url"
+              },
+              "configuration_schema": {
+                "additionalProperties": true,
+                "description": "Configuration schema",
+                "title": "Configuration Schema",
+                "type": "object"
+              },
+              "dependencies": {
+                "description": "Tool dependencies",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Dependencies",
+                "type": "array"
+              },
+              "required_protocols": {
+                "description": "Required protocol interfaces",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Required Protocols",
+                "type": "array"
+              },
+              "optional_protocols": {
+                "description": "Optional protocol interfaces",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Optional Protocols",
+                "type": "array"
+              },
+              "security_level": {
+                "default": "standard",
+                "description": "Security clearance level",
+                "title": "Security Level",
+                "type": "string"
+              },
+              "compliance_tags": {
+                "description": "Compliance tags",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Compliance Tags",
+                "type": "array"
+              },
+              "audit_trail": {
+                "description": "Audit trail entries",
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "title": "Audit Trail",
+                "type": "array"
+              }
+            },
+            "required": [
+              "name",
+              "tool_class",
+              "module_path"
+            ],
+            "title": "ToolMetadata",
+            "type": "object"
+          },
+          "ToolPerformanceMetrics": {
+            "description": "Performance metrics for tool execution.",
+            "properties": {
+              "avg_execution_time_ms": {
+                "default": 0.0,
+                "description": "Average execution time in milliseconds",
+                "title": "Avg Execution Time Ms",
+                "type": "number"
+              },
+              "success_rate_percent": {
+                "default": 100.0,
+                "description": "Success rate percentage",
+                "title": "Success Rate Percent",
+                "type": "number"
+              },
+              "error_rate_percent": {
+                "default": 0.0,
+                "description": "Error rate percentage",
+                "title": "Error Rate Percent",
+                "type": "number"
+              },
+              "total_executions": {
+                "default": 0,
+                "description": "Total number of executions",
+                "title": "Total Executions",
+                "type": "integer"
+              },
+              "last_execution_time": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Last execution timestamp",
+                "title": "Last Execution Time"
+              },
+              "memory_usage_mb": {
+                "default": 0.0,
+                "description": "Average memory usage in MB",
+                "title": "Memory Usage Mb",
+                "type": "number"
+              },
+              "cpu_usage_percent": {
+                "default": 0.0,
+                "description": "Average CPU usage percentage",
+                "title": "Cpu Usage Percent",
+                "type": "number"
+              }
+            },
+            "title": "ToolPerformanceMetrics",
+            "type": "object"
+          },
+          "ToolRegistrationStatus": {
+            "description": "Status of tool registration.",
+            "enum": [
+              "registered",
+              "pending",
+              "failed",
+              "deprecated",
+              "disabled"
+            ],
+            "title": "ToolRegistrationStatus",
+            "type": "string"
+          },
+          "ToolValidationResult": {
+            "description": "Result of tool validation checks.",
+            "properties": {
+              "is_valid": {
+                "default": true,
+                "description": "Whether tool is valid",
+                "title": "Is Valid",
+                "type": "boolean"
+              },
+              "validation_errors": {
+                "description": "Validation error messages",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Validation Errors",
+                "type": "array"
+              },
+              "validation_warnings": {
+                "description": "Validation warnings",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Validation Warnings",
+                "type": "array"
+              },
+              "interface_compliance": {
+                "default": true,
+                "description": "Whether tool complies with ProtocolTool interface",
+                "title": "Interface Compliance",
+                "type": "boolean"
+              },
+              "signature_valid": {
+                "default": true,
+                "description": "Whether tool signature is valid",
+                "title": "Signature Valid",
+                "type": "boolean"
+              },
+              "dependencies_satisfied": {
+                "default": true,
+                "description": "Whether tool dependencies are satisfied",
+                "title": "Dependencies Satisfied",
+                "type": "boolean"
+              }
+            },
+            "title": "ToolValidationResult",
+            "type": "object"
+          }
+        },
+        "description": "Enterprise-grade collection of executable tools for ONEX registries.\n\nEnhanced with comprehensive tool management, performance monitoring,\nvalidation capabilities, and operational insights for production deployment.",
+        "properties": {
+          "tools": {
+            "additionalProperties": true,
+            "description": "Mapping of tool names to ProtocolTool implementations",
+            "title": "Tools",
+            "type": "object"
+          },
+          "tool_metadata": {
+            "additionalProperties": {
+              "$ref": "#/$defs/ToolMetadata"
+            },
+            "description": "Comprehensive metadata for each registered tool",
+            "title": "Tool Metadata",
+            "type": "object"
+          },
+          "collection_id": {
+            "description": "Unique collection identifier",
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "collection_name": {
+            "default": "default",
+            "description": "Human-readable collection name",
+            "title": "Collection Name",
+            "type": "string"
+          },
+          "collection_version": {
+            "default": "1.0.0",
+            "description": "Collection version",
+            "title": "Collection Version",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Collection creation time",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "last_modified": {
+            "description": "Last modification time",
+            "format": "date-time",
+            "title": "Last Modified",
+            "type": "string"
+          },
+          "max_tools": {
+            "default": 100,
+            "description": "Maximum number of tools allowed",
+            "title": "Max Tools",
+            "type": "integer"
+          },
+          "auto_validation": {
+            "default": true,
+            "description": "Whether to automatically validate tools",
+            "title": "Auto Validation",
+            "type": "boolean"
+          },
+          "performance_monitoring": {
+            "default": true,
+            "description": "Whether to track performance metrics",
+            "title": "Performance Monitoring",
+            "type": "boolean"
+          },
+          "strict_mode": {
+            "default": false,
+            "description": "Whether to enforce strict validation",
+            "title": "Strict Mode",
+            "type": "boolean"
+          },
+          "total_registrations": {
+            "default": 0,
+            "description": "Total number of tool registrations",
+            "title": "Total Registrations",
+            "type": "integer"
+          },
+          "active_tool_count": {
+            "default": 0,
+            "description": "Number of active tools",
+            "title": "Active Tool Count",
+            "type": "integer"
+          },
+          "deprecated_tool_count": {
+            "default": 0,
+            "description": "Number of deprecated tools",
+            "title": "Deprecated Tool Count",
+            "type": "integer"
+          },
+          "failed_registration_count": {
+            "default": 0,
+            "description": "Number of failed registrations",
+            "title": "Failed Registration Count",
+            "type": "integer"
+          },
+          "security_policy": {
+            "additionalProperties": true,
+            "description": "Security policy configuration",
+            "title": "Security Policy",
+            "type": "object"
+          },
+          "compliance_requirements": {
+            "description": "Compliance requirements",
+            "items": {
+              "type": "string"
+            },
+            "title": "Compliance Requirements",
+            "type": "array"
+          },
+          "access_control": {
+            "additionalProperties": true,
+            "description": "Access control settings",
+            "title": "Access Control",
+            "type": "object"
+          }
+        },
+        "required": [
+          "collection_id"
+        ],
+        "title": "ModelToolCollection",
+        "type": "object"
+      }
+    },
+    "ModelMetadataToolCollection": {
+      "schema_hash": "19333b0fd91246bc9837d746a10621091efd29df83c7e0075a8b728ab790d32b",
+      "field_count": 0,
+      "required_fields": 0,
+      "schema": {
+        "additionalProperties": true,
+        "description": "Enterprise-grade collection of metadata/documentation tools for ONEX metadata blocks.\n\nEnhanced with comprehensive tool analytics, usage tracking, performance monitoring,\nand operational insights for documentation and metadata management systems.",
+        "title": "ModelMetadataToolCollection",
+        "type": "object"
+      }
+    }
+  }
+}

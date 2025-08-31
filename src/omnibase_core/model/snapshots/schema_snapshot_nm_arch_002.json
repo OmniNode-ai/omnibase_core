@@ -1,0 +1,738 @@
+{
+  "metadata": {
+    "timestamp": "2025-06-27T10:42:27.386727",
+    "source_file": "src/omnibase/model/model_external_service_config.py",
+    "ticket": "nm_arch_002_model_external_service_config_split",
+    "total_models": 6,
+    "purpose": "Pre-split validation baseline"
+  },
+  "schemas": {
+    "ModelKafkaConnectionConfig": {
+      "schema_hash": "13c0cd6de788d03aa58a26bf6f9cf1f008dedefbd42942033af22aa543434a13",
+      "field_count": 10,
+      "required_fields": 1,
+      "schema": {
+        "description": "Validated connection configuration for Kafka services.",
+        "properties": {
+          "bootstrap_servers": {
+            "description": "Kafka bootstrap servers (comma-separated)",
+            "maxLength": 500,
+            "pattern": "^[a-zA-Z0-9\\-\\.:,\\s]+$",
+            "title": "Bootstrap Servers",
+            "type": "string"
+          },
+          "topic_prefix": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "pattern": "^[a-zA-Z0-9_\\-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Prefix for topic names",
+            "title": "Topic Prefix"
+          },
+          "consumer_group": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "pattern": "^[a-zA-Z0-9_\\-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Consumer group ID",
+            "title": "Consumer Group"
+          },
+          "timeout_ms": {
+            "default": 5000,
+            "description": "Connection timeout in milliseconds",
+            "maximum": 300000,
+            "minimum": 1000,
+            "title": "Timeout Ms",
+            "type": "integer"
+          },
+          "security_protocol": {
+            "default": "PLAINTEXT",
+            "description": "Security protocol (PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL)",
+            "pattern": "^(PLAINTEXT|SSL|SASL_PLAINTEXT|SASL_SSL)$",
+            "title": "Security Protocol",
+            "type": "string"
+          },
+          "sasl_username": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SASL username for authentication",
+            "title": "Sasl Username"
+          },
+          "sasl_password": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "SASL password for authentication (secured)",
+            "title": "Sasl Password"
+          },
+          "ssl_keyfile": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL key file",
+            "title": "Ssl Keyfile"
+          },
+          "ssl_certfile": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL certificate file",
+            "title": "Ssl Certfile"
+          },
+          "ssl_cafile": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path to SSL CA file",
+            "title": "Ssl Cafile"
+          }
+        },
+        "required": [
+          "bootstrap_servers"
+        ],
+        "title": "ModelKafkaConnectionConfig",
+        "type": "object"
+      }
+    },
+    "ModelDatabaseConnectionConfig": {
+      "schema_hash": "69dcebf626a5b659049092eb07843d4b2bd5433fbf38d1562f13abc6dc9c0851",
+      "field_count": 7,
+      "required_fields": 5,
+      "schema": {
+        "description": "Validated connection configuration for database services.",
+        "properties": {
+          "host": {
+            "description": "Database host",
+            "maxLength": 255,
+            "pattern": "^[a-zA-Z0-9\\-\\.]+$",
+            "title": "Host",
+            "type": "string"
+          },
+          "port": {
+            "description": "Database port",
+            "maximum": 65535,
+            "minimum": 1,
+            "title": "Port",
+            "type": "integer"
+          },
+          "database": {
+            "description": "Database name",
+            "maxLength": 100,
+            "pattern": "^[a-zA-Z0-9_\\-]+$",
+            "title": "Database",
+            "type": "string"
+          },
+          "username": {
+            "description": "Database username",
+            "maxLength": 100,
+            "title": "Username",
+            "type": "string"
+          },
+          "password": {
+            "description": "Database password (secured)",
+            "format": "password",
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "ssl_enabled": {
+            "default": false,
+            "description": "Whether to use SSL connection",
+            "title": "Ssl Enabled",
+            "type": "boolean"
+          },
+          "connection_timeout": {
+            "default": 30,
+            "description": "Connection timeout in seconds",
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Connection Timeout",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "host",
+          "port",
+          "database",
+          "username",
+          "password"
+        ],
+        "title": "ModelDatabaseConnectionConfig",
+        "type": "object"
+      }
+    },
+    "ModelRestApiConnectionConfig": {
+      "schema_hash": "8d8b3c9282f60be4baa2b185799404ab4c0b6035bef58d3f2acd986b240e82a0",
+      "field_count": 6,
+      "required_fields": 1,
+      "schema": {
+        "description": "Validated connection configuration for REST API services.",
+        "properties": {
+          "base_url": {
+            "description": "Base URL for the REST API",
+            "maxLength": 500,
+            "pattern": "^https?://[a-zA-Z0-9\\-\\.:]+(/.*)?$",
+            "title": "Base Url",
+            "type": "string"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "API key for authentication (secured)",
+            "title": "Api Key"
+          },
+          "bearer_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Bearer token for authentication (secured)",
+            "title": "Bearer Token"
+          },
+          "timeout_seconds": {
+            "default": 30,
+            "description": "Request timeout in seconds",
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Timeout Seconds",
+            "type": "integer"
+          },
+          "max_retries": {
+            "default": 3,
+            "description": "Maximum number of retries",
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Max Retries",
+            "type": "integer"
+          },
+          "headers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Additional HTTP headers",
+            "title": "Headers"
+          }
+        },
+        "required": [
+          "base_url"
+        ],
+        "title": "ModelRestApiConnectionConfig",
+        "type": "object"
+      }
+    },
+    "ModelExternalServiceConfig": {
+      "schema_hash": "d1d09abbc6e26d18a16576ba22824cd363833f8b0e0c92b072a11eb4b2056758",
+      "field_count": 7,
+      "required_fields": 2,
+      "schema": {
+        "$defs": {
+          "ModelDatabaseConnectionConfig": {
+            "description": "Validated connection configuration for database services.",
+            "properties": {
+              "host": {
+                "description": "Database host",
+                "maxLength": 255,
+                "pattern": "^[a-zA-Z0-9\\-\\.]+$",
+                "title": "Host",
+                "type": "string"
+              },
+              "port": {
+                "description": "Database port",
+                "maximum": 65535,
+                "minimum": 1,
+                "title": "Port",
+                "type": "integer"
+              },
+              "database": {
+                "description": "Database name",
+                "maxLength": 100,
+                "pattern": "^[a-zA-Z0-9_\\-]+$",
+                "title": "Database",
+                "type": "string"
+              },
+              "username": {
+                "description": "Database username",
+                "maxLength": 100,
+                "title": "Username",
+                "type": "string"
+              },
+              "password": {
+                "description": "Database password (secured)",
+                "format": "password",
+                "title": "Password",
+                "type": "string",
+                "writeOnly": true
+              },
+              "ssl_enabled": {
+                "default": false,
+                "description": "Whether to use SSL connection",
+                "title": "Ssl Enabled",
+                "type": "boolean"
+              },
+              "connection_timeout": {
+                "default": 30,
+                "description": "Connection timeout in seconds",
+                "maximum": 300,
+                "minimum": 1,
+                "title": "Connection Timeout",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "host",
+              "port",
+              "database",
+              "username",
+              "password"
+            ],
+            "title": "ModelDatabaseConnectionConfig",
+            "type": "object"
+          },
+          "ModelKafkaConnectionConfig": {
+            "description": "Validated connection configuration for Kafka services.",
+            "properties": {
+              "bootstrap_servers": {
+                "description": "Kafka bootstrap servers (comma-separated)",
+                "maxLength": 500,
+                "pattern": "^[a-zA-Z0-9\\-\\.:,\\s]+$",
+                "title": "Bootstrap Servers",
+                "type": "string"
+              },
+              "topic_prefix": {
+                "anyOf": [
+                  {
+                    "maxLength": 50,
+                    "pattern": "^[a-zA-Z0-9_\\-]*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Prefix for topic names",
+                "title": "Topic Prefix"
+              },
+              "consumer_group": {
+                "anyOf": [
+                  {
+                    "maxLength": 100,
+                    "pattern": "^[a-zA-Z0-9_\\-]*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Consumer group ID",
+                "title": "Consumer Group"
+              },
+              "timeout_ms": {
+                "default": 5000,
+                "description": "Connection timeout in milliseconds",
+                "maximum": 300000,
+                "minimum": 1000,
+                "title": "Timeout Ms",
+                "type": "integer"
+              },
+              "security_protocol": {
+                "default": "PLAINTEXT",
+                "description": "Security protocol (PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL)",
+                "pattern": "^(PLAINTEXT|SSL|SASL_PLAINTEXT|SASL_SSL)$",
+                "title": "Security Protocol",
+                "type": "string"
+              },
+              "sasl_username": {
+                "anyOf": [
+                  {
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "SASL username for authentication",
+                "title": "Sasl Username"
+              },
+              "sasl_password": {
+                "anyOf": [
+                  {
+                    "format": "password",
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "SASL password for authentication (secured)",
+                "title": "Sasl Password"
+              },
+              "ssl_keyfile": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Path to SSL key file",
+                "title": "Ssl Keyfile"
+              },
+              "ssl_certfile": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Path to SSL certificate file",
+                "title": "Ssl Certfile"
+              },
+              "ssl_cafile": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Path to SSL CA file",
+                "title": "Ssl Cafile"
+              }
+            },
+            "required": [
+              "bootstrap_servers"
+            ],
+            "title": "ModelKafkaConnectionConfig",
+            "type": "object"
+          },
+          "ModelRestApiConnectionConfig": {
+            "description": "Validated connection configuration for REST API services.",
+            "properties": {
+              "base_url": {
+                "description": "Base URL for the REST API",
+                "maxLength": 500,
+                "pattern": "^https?://[a-zA-Z0-9\\-\\.:]+(/.*)?$",
+                "title": "Base Url",
+                "type": "string"
+              },
+              "api_key": {
+                "anyOf": [
+                  {
+                    "format": "password",
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "API key for authentication (secured)",
+                "title": "Api Key"
+              },
+              "bearer_token": {
+                "anyOf": [
+                  {
+                    "format": "password",
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Bearer token for authentication (secured)",
+                "title": "Bearer Token"
+              },
+              "timeout_seconds": {
+                "default": 30,
+                "description": "Request timeout in seconds",
+                "maximum": 300,
+                "minimum": 1,
+                "title": "Timeout Seconds",
+                "type": "integer"
+              },
+              "max_retries": {
+                "default": 3,
+                "description": "Maximum number of retries",
+                "maximum": 10,
+                "minimum": 0,
+                "title": "Max Retries",
+                "type": "integer"
+              },
+              "headers": {
+                "anyOf": [
+                  {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Additional HTTP headers",
+                "title": "Headers"
+              }
+            },
+            "required": [
+              "base_url"
+            ],
+            "title": "ModelRestApiConnectionConfig",
+            "type": "object"
+          },
+          "ModelRetryConfig": {
+            "description": "Configuration for retry behavior with external services.",
+            "properties": {
+              "max_attempts": {
+                "default": 3,
+                "description": "Maximum number of retry attempts",
+                "maximum": 10,
+                "minimum": 1,
+                "title": "Max Attempts",
+                "type": "integer"
+              },
+              "backoff_seconds": {
+                "default": 1.0,
+                "description": "Base backoff time between retries",
+                "maximum": 60.0,
+                "minimum": 0.1,
+                "title": "Backoff Seconds",
+                "type": "number"
+              },
+              "exponential_backoff": {
+                "default": true,
+                "description": "Whether to use exponential backoff",
+                "title": "Exponential Backoff",
+                "type": "boolean"
+              }
+            },
+            "title": "ModelRetryConfig",
+            "type": "object"
+          }
+        },
+        "description": "Canonical model for external service configuration in scenarios.\nUsed when dependency_mode is 'real' to configure connections to external services.\nEnhanced with security validation and service-specific configuration schemas.",
+        "properties": {
+          "service_name": {
+            "description": "Name of the external service (e.g., 'kafka', 'database', 'api')",
+            "maxLength": 100,
+            "pattern": "^[a-zA-Z0-9_\\-]+$",
+            "title": "Service Name",
+            "type": "string"
+          },
+          "service_type": {
+            "description": "Type of service (e.g., 'event_bus', 'database', 'rest_api')",
+            "maxLength": 50,
+            "pattern": "^[a-zA-Z0-9_\\-]+$",
+            "title": "Service Type",
+            "type": "string"
+          },
+          "connection_config": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ModelKafkaConnectionConfig"
+              },
+              {
+                "$ref": "#/$defs/ModelDatabaseConnectionConfig"
+              },
+              {
+                "$ref": "#/$defs/ModelRestApiConnectionConfig"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ],
+            "description": "Service-specific connection configuration with validation",
+            "title": "Connection Config"
+          },
+          "health_check_enabled": {
+            "default": true,
+            "description": "Whether to perform health checks before using this service",
+            "title": "Health Check Enabled",
+            "type": "boolean"
+          },
+          "health_check_timeout": {
+            "default": 5,
+            "description": "Timeout in seconds for health check operations",
+            "maximum": 300,
+            "minimum": 1,
+            "title": "Health Check Timeout",
+            "type": "integer"
+          },
+          "required": {
+            "default": true,
+            "description": "Whether this service is required for the scenario. If False, gracefully degrade if unavailable.",
+            "title": "Required",
+            "type": "boolean"
+          },
+          "retry_config": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ModelRetryConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Retry configuration for service operations"
+          }
+        },
+        "required": [
+          "service_name",
+          "service_type"
+        ],
+        "title": "ModelExternalServiceConfig",
+        "type": "object"
+      }
+    },
+    "ModelRetryConfig": {
+      "schema_hash": "1d0f66ed5cfa1ec3ab9c3c01b18fd7cb85e87b8ac9304be4fd3e50a3e3596a75",
+      "field_count": 3,
+      "required_fields": 0,
+      "schema": {
+        "description": "Configuration for retry behavior with external services.",
+        "properties": {
+          "max_attempts": {
+            "default": 3,
+            "description": "Maximum number of retry attempts",
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "backoff_seconds": {
+            "default": 1.0,
+            "description": "Base backoff time between retries",
+            "maximum": 60.0,
+            "minimum": 0.1,
+            "title": "Backoff Seconds",
+            "type": "number"
+          },
+          "exponential_backoff": {
+            "default": true,
+            "description": "Whether to use exponential backoff",
+            "title": "Exponential Backoff",
+            "type": "boolean"
+          }
+        },
+        "title": "ModelRetryConfig",
+        "type": "object"
+      }
+    },
+    "ModelTemplateVariables": {
+      "schema_hash": "e3d786fe0eaa6d2542bd288b29187de47a90d76c9c513ef802fbee34c10455ca",
+      "field_count": 1,
+      "required_fields": 0,
+      "schema": {
+        "description": "Canonical model for scenario template variables.\nUsed with scenario inheritance ('extends' field) for parameterized templates.",
+        "properties": {
+          "variables": {
+            "additionalProperties": true,
+            "description": "Key-value pairs for template variable substitution",
+            "title": "Variables",
+            "type": "object"
+          }
+        },
+        "title": "ModelTemplateVariables",
+        "type": "object"
+      }
+    }
+  }
+}
