@@ -35,7 +35,10 @@
       "mcp__archon__update_document",
       "mcp__archon__search_code_examples",
       "mcp__archon__list_documents",
-      "mcp__archon__update_document"
+      "mcp__archon__update_document",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/**)"
     ],
     "deny": [],
     "ask": []
