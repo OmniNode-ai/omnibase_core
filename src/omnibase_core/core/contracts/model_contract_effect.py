@@ -192,8 +192,9 @@ class ModelRetryConfig(BaseModel):
     )
 
     @field_validator("max_delay_ms")
+    @classmethod
     def validate_max_delay_greater_than_base(
-        self,
+        cls,
         v: int,
         values: dict[str, object],
     ) -> int:

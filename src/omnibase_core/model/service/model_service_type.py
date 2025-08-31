@@ -76,7 +76,8 @@ class ModelServiceType(BaseModel):
     )
 
     @field_validator("custom_type_name", mode="before")
-    def validate_custom_name_consistency(self, v, info):
+    @classmethod
+    def validate_custom_name_consistency(cls, v, info):
         """Ensure custom_type_name is provided when type_category is CUSTOM"""
         if hasattr(info, "data") and info.data:
             type_category = info.data.get("type_category")

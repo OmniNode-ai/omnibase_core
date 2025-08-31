@@ -9,131 +9,84 @@ This test suite includes a standalone implementation to avoid circular
 import issues with the broader codebase during testing.
 """
 
+# Import standalone implementations directly in the test file to avoid circular dependencies
 import os
 from typing import Any, Protocol, TypeVar
 from unittest.mock import patch
 
 import pytest
 
-T = TypeVar("T")
 
-# === ERROR HANDLING STUBS ===
-
-
+# Standalone implementation for testing
 class CoreErrorCode:
-    """Minimal error code definitions for testing."""
-
     SERVICE_RESOLUTION_FAILED = "ONEX_CORE_091_SERVICE_RESOLUTION_FAILED"
 
 
 class OnexError(Exception):
-    """Minimal OnexError implementation for testing."""
-
-    def __init__(self, message: str, error_code: str = None, **kwargs):
-        super().__init__(message)
+    def __init__(self, code, message, details=None, cause=None):
+        self.code = code
         self.message = message
-        self.error_code = error_code
-
-
-# === CONTAINER IMPLEMENTATION ===
+        self.details = details or {}
+        self.cause = cause
+        super().__init__(f"[{code}] {message}")
 
 
 class ONEXContainer:
-    """
-    Protocol-driven ONEX dependency injection container.
-
-    Provides clean dependency injection for ONEX tools and nodes using
-    protocol-based service resolution without legacy registry coupling.
-    """
-
     def __init__(self) -> None:
-        """Initialize the container."""
         self._services: dict[str, Any] = {}
         self._config: dict[str, Any] = {}
 
     def configure(self, config: dict[str, Any]) -> None:
-        """Configure the container with settings."""
         self._config.update(config)
 
-    def register_service(self, protocol_name: str, service_instance: Any) -> None:
-        """Register a service instance for a protocol."""
-        self._services[protocol_name] = service_instance
+    def register_service(self, protocol_name: str, service: Any) -> None:
+        self._services[protocol_name] = service
 
     def get_service(self, protocol_name: str) -> Any:
-        """
-        Get service by protocol name.
-
-        Clean protocol-based resolution only, without registry lookup.
-
-        Args:
-            protocol_name: Protocol interface name (e.g., "ProtocolEventBus")
-
-        Returns:
-            Service implementation instance
-
-        Raises:
-            OnexError: If service cannot be resolved
-        """
-        # Handle direct protocol name resolution
         if protocol_name in self._services:
             return self._services[protocol_name]
 
-        # Handle common protocol shortcuts
-        protocol_shortcuts = {
+        shortcut_mapping = {
             "event_bus": "ProtocolEventBus",
             "logger": "ProtocolLogger",
             "health_check": "ProtocolHealthCheck",
         }
 
-        # Try shortcut resolution
-        if protocol_name in protocol_shortcuts:
-            full_protocol_name = protocol_shortcuts[protocol_name]
-            if full_protocol_name in self._services:
-                return self._services[full_protocol_name]
+        if protocol_name in shortcut_mapping:
+            full_name = shortcut_mapping[protocol_name]
+            if full_name in self._services:
+                return self._services[full_name]
 
-        # Service not found
         raise OnexError(
-            message=f"Unable to resolve service for protocol: {protocol_name}",
-            error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            f"Unable to resolve service for protocol: {protocol_name}",
         )
 
     def has_service(self, protocol_name: str) -> bool:
-        """Check if service is available for protocol."""
         return protocol_name in self._services
 
 
-# === CONTAINER FACTORY ===
-
-
 def create_onex_container() -> ONEXContainer:
-    """
-    Create and configure ONEX container.
-
-    Returns configured container with basic service setup.
-    """
     container = ONEXContainer()
-
-    # Load basic configuration from environment
-    config = {
+    default_config = {
         "logging": {"level": os.getenv("LOG_LEVEL", "INFO")},
         "environment": os.getenv("ENVIRONMENT", "development"),
     }
-
-    container.configure(config)
-
+    container.configure(default_config)
     return container
 
 
-# === GLOBAL CONTAINER INSTANCE ===
 _container: ONEXContainer | None = None
 
 
 def get_container() -> ONEXContainer:
-    """Get or create global container instance."""
     global _container
     if _container is None:
         _container = create_onex_container()
     return _container
+
+
+T = TypeVar("T")
 
 
 # === TEST PROTOCOL DEFINITIONS ===
@@ -283,7 +236,7 @@ class TestONEXContainer:
             container.get_service("NonExistentProtocol")
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert error.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
         assert (
             "Unable to resolve service for protocol: NonExistentProtocol"
             in error.message
@@ -298,7 +251,7 @@ class TestONEXContainer:
             container.get_service("event_bus")
 
         error = exc_info.value
-        assert error.error_code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert error.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
         assert "Unable to resolve service for protocol: event_bus" in error.message
 
     def test_configuration_method(self):
@@ -477,7 +430,7 @@ class TestErrorHandling:
         with pytest.raises(OnexError) as exc_info:
             container.get_service("")
 
-        assert exc_info.value.error_code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert exc_info.value.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
 
     def test_none_service_registration(self):
         """Test that None can be registered as a service (valid use case)."""

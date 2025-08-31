@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from omnibase.enums.enum_node_status import EnumNodeStatus
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
+from omnibase_core.enums.node import EnumNodeStatus
 
 if TYPE_CHECKING:
     from omnibase_core.model.core.model_io_block import ModelIOBlock

@@ -11,6 +11,9 @@ from .enum_artifact_type import ArtifactTypeEnum
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
 
+# File pattern enums
+from .enum_ignore_pattern_source import IgnorePatternSourceEnum, TraversalModeEnum
+
 # Metadata-related enums
 from .enum_metadata import Lifecycle, MetaTypeEnum
 
@@ -52,4 +55,7 @@ __all__ = [
     # Metadata domain
     "Lifecycle",
     "MetaTypeEnum",
+    # File pattern domain
+    "IgnorePatternSourceEnum",
+    "TraversalModeEnum",
 ]

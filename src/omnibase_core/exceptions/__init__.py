@@ -12,4 +12,33 @@ except ImportError:
         """Minimal CLI adapter for exit code handling."""
 
 
-__all__ = ["CLIAdapter", "ModelOnexError", "OnexError"]
+# Import error code functions
+try:
+    from omnibase_core.core.errors.core_errors import (
+        get_error_codes_for_component,
+        list_registered_components,
+        register_error_codes,
+    )
+except ImportError:
+
+    def get_error_codes_for_component(component: str):
+        """Fallback implementation."""
+        return None
+
+    def list_registered_components():
+        """Fallback implementation."""
+        return []
+
+    def register_error_codes(component: str, error_code_enum):
+        """Fallback implementation."""
+        pass
+
+
+__all__ = [
+    "CLIAdapter",
+    "ModelOnexError",
+    "OnexError",
+    "get_error_codes_for_component",
+    "list_registered_components",
+    "register_error_codes",
+]

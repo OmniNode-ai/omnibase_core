@@ -177,7 +177,8 @@ class ModelToolCollection(BaseModel):
         return total_score / len(self.tool_metadata)
 
     @field_validator("max_tools")
-    def validate_max_tools(self, v, info):
+    @classmethod
+    def validate_max_tools(cls, v, info):
         """Validate maximum tools limit."""
         if v < 1 or v > 1000:
             msg = "max_tools must be between 1 and 1000"
