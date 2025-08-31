@@ -8,13 +8,13 @@ following ONEX canonical patterns without hardcoded tool logic.
 from pathlib import Path
 
 import yaml
-from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.decorators import allow_any_type
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,

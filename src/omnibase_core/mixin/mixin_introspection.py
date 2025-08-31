@@ -34,10 +34,10 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Any
 
-from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.model.core.model_node_introspection import (
     CLIArgumentModel,
     CLIInterfaceModel,

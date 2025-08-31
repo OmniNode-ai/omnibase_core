@@ -15,8 +15,6 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -32,6 +30,7 @@ from omnibase_core.core.monadic.model_node_result import (
     NodeResult,
 )
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.mixin.mixin_event_listener import MixinEventListener
 from omnibase_core.mixin.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,

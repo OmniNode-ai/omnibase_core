@@ -27,7 +27,6 @@ from uuid import uuid4
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from omnibase.protocols.types import LogLevel
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.core_structured_logging import (
@@ -39,6 +38,7 @@ from omnibase_core.core.models.model_hub_contract_config import (
 from omnibase_core.core.node_base import ModelNodeBase
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.decorators import standard_error_handling
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.mixin.mixin_debug_discovery_logging import MixinDebugDiscoveryLogging
 from omnibase_core.mixin.mixin_service_registry import MixinServiceRegistry

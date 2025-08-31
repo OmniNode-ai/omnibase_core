@@ -10,34 +10,21 @@ to eliminate code duplication while avoiding circular import issues.
 """
 
 # Use real implementation to eliminate code duplication
-import importlib.util
 import os
-from pathlib import Path
 from typing import Protocol, TypeVar
 from unittest.mock import patch
 
 import pytest
 
+from omnibase_core.core.core_error_codes import CoreErrorCode
+
 # Import production implementation directly - no code duplication
-# Using importlib to avoid circular dependencies while eliminating duplicate code
-container_path = (
-    Path(__file__).parent.parent.parent
-    / "src"
-    / "omnibase_core"
-    / "core"
-    / "onex_container.py"
+from omnibase_core.core.onex_container import (
+    ONEXContainer,
+    create_onex_container,
+    get_container,
 )
-spec = importlib.util.spec_from_file_location("onex_container", container_path)
-onex_container_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(onex_container_module)
-
-# Import classes from the real implementation (zero duplication)
-ONEXContainer = onex_container_module.ONEXContainer
-create_onex_container = onex_container_module.create_onex_container
-get_container = onex_container_module.get_container
-CoreErrorCode = onex_container_module.CoreErrorCode
-OnexError = onex_container_module.OnexError
-
+from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")
 

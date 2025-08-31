@@ -2,4 +2,8 @@
 from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
 # Re-export SPI types
-from omnibase.protocols.types import LogLevel, ProtocolLogContext, ProtocolLogEntry
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.enum_log_level import (
+    ProtocolLogContext,
+    ProtocolLogEntry,
+)

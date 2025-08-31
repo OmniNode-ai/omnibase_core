@@ -12,9 +12,8 @@ import asyncio
 import threading
 from uuid import UUID
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.core.core_uuid_service import UUIDService
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 # Thread-local correlation ID context
 _context = threading.local()

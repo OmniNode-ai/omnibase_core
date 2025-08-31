@@ -10,11 +10,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
 @dataclass

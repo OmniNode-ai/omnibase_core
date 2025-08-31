@@ -22,8 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from omnibase.protocols.types import LogLevel
-
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.model.core.model_base_error import ModelBaseError
 
 # Import separated models

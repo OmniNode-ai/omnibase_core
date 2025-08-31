@@ -43,6 +43,7 @@ Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
 import re
 from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -507,7 +508,7 @@ class OnexError(Exception):
     (for serialization/deserialization) through composition.
     """
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         """Initialize with automatic correlation_id and timestamp if not provided."""
         if "correlation_id" not in data:
             data["correlation_id"] = str(UUIDService.generate_correlation_id())
@@ -521,7 +522,7 @@ class OnexError(Exception):
         super().__init__(self._model.message)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type, handler):
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
         """Provide Pydantic core schema for OnexError serialization."""
         from pydantic_core import core_schema
 
@@ -535,7 +536,7 @@ class OnexError(Exception):
         )
 
     @classmethod
-    def _validate_from_dict(cls, data, info=None):
+    def _validate_from_dict(cls, data: Any, info: Any = None) -> Any:
         """Validate data into OnexError."""
         if isinstance(data, OnexError):
             return data
@@ -544,7 +545,7 @@ class OnexError(Exception):
         msg = f"Cannot convert {type(data)} to OnexError"
         raise ValueError(msg)
 
-    def _serialize_to_dict(self):
+    def _serialize_to_dict(self) -> dict[str, Any]:
         """Serialize OnexError to dictionary."""
         return self.to_dict()
 
@@ -578,7 +579,7 @@ class OnexError(Exception):
         """Error context."""
         return self._model.context
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert OnexError to dictionary."""
         return {
             "message": self.message,
@@ -590,7 +591,7 @@ class OnexError(Exception):
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "OnexError":
+    def from_dict(cls, data: dict[str, Any]) -> "OnexError":
         """Create OnexError from dictionary."""
         error_code = None
         if data.get("error_code"):
@@ -639,9 +640,8 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.protocols.types import LogLevel
-
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         exit_code = get_exit_code_for_status(status)
 
@@ -680,11 +680,10 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.protocols.types import LogLevel
-
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-        exit_code = error.get_exit_code()
+        exit_code = getattr(error, "code", "UNKNOWN_ERROR")
         emit_log_event_sync(
             level=LogLevel.ERROR,
             message=str(error),
@@ -730,8 +729,8 @@ def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
     if component not in _ERROR_CODE_REGISTRIES:
         msg = f"No error codes registered for component: {component}"
         raise OnexError(
-            msg,
-            CoreErrorCode.ITEM_NOT_REGISTERED,
+            message=msg,
+            error_code=CoreErrorCode.ITEM_NOT_REGISTERED,
         )
     return _ERROR_CODE_REGISTRIES[component]
 

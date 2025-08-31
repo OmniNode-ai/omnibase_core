@@ -27,6 +27,7 @@ mypy = "^1.13.0"
 black = "^24.10.0"
 isort = "^5.13.0"
 ruff = "^0.8.0"
+types-pyyaml = "^6.0.12.20250822"
 
 [tool.ruff]
 target-version = "py312"

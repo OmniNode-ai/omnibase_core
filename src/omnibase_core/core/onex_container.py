@@ -24,30 +24,8 @@ import os
 import threading
 from typing import Any, TypeVar
 
-# Import with fallback for isolated testing - avoids circular dependencies
-try:
-    from omnibase_core.core.core_error_codes import CoreErrorCode
-    from omnibase_core.exceptions.base_onex_error import OnexError
-except ImportError:
-    # Fallback for testing isolation - minimal implementations
-    class CoreErrorCode:  # type: ignore[no-redef]
-        SERVICE_RESOLUTION_FAILED = "ONEX_CORE_091_SERVICE_RESOLUTION_FAILED"
-        INVALID_CONFIGURATION = "ONEX_CORE_041_INVALID_CONFIGURATION"
-
-    class OnexError(Exception):  # type: ignore[no-redef]
-        def __init__(
-            self,
-            code: str,
-            message: str,
-            details: dict[str, Any] | None = None,
-            cause: Exception | None = None,
-        ) -> None:
-            self.code = code
-            self.message = message
-            self.details = details or {}
-            self.cause = cause
-            super().__init__(f"[{code}] {message}")
-
+from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")
 

@@ -30,8 +30,8 @@ Implements ProtocolFileDiscoverySource.
 from pathlib import Path
 
 import yaml
-from omnibase.protocols.types import LogLevel
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.model.core.model_onex_message_result import ModelOnexMessage
 from omnibase_core.model.core.model_tree_sync_result import (
     ModelTreeSyncResult,
