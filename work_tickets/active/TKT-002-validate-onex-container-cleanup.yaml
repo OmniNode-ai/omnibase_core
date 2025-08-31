@@ -1,0 +1,150 @@
+---
+ticket_id: TKT-002
+title: "Validate ONEXContainer Legacy Registry Cleanup"
+epic: "EPIC-001-core-framework-stabilization"
+phase: "Phase 1 - Core Functionality"
+type: "validation"
+priority: "high"
+status: "backlog"
+complexity: "medium"
+estimated_hours: 4
+
+# Problem Statement
+problem_statement: |
+  README.md mentions removing legacy registry dependencies from ONEXContainer, but analysis 
+  shows the current implementation appears clean. Need thorough validation to ensure no 
+  legacy registry references remain and that protocol-based resolution works correctly.
+
+# Business Impact
+business_impact:
+  severity: "high"
+  scope: "architecture"
+  description: "Legacy registry dependencies would violate ONEX protocol-driven DI principles and create technical debt"
+
+# Requirements
+functional_requirements:
+  - Comprehensive audit of ONEXContainer for any legacy registry references
+  - Validate protocol-based service resolution works correctly
+  - Ensure no specialized_registries or legacy imports remain
+  - Test container with realistic protocol scenarios
+  - Document clean protocol-based patterns
+
+non_functional_requirements:
+  - ONEXContainer must use ONLY protocol-based resolution
+  - No coupling to legacy registry systems
+  - Clean separation of concerns with single responsibility
+  - Performance must be acceptable for DI resolution
+
+# Acceptance Criteria
+acceptance_criteria:
+  - [ ] No legacy registry imports or references in ONEXContainer
+  - [ ] Protocol-based service resolution works for common protocols
+  - [ ] Container supports protocol shortcuts (event_bus -> ProtocolEventBus)
+  - [ ] Proper OnexError handling for unresolved services
+  - [ ] Container configuration works without registry dependencies
+  - [ ] Unit tests validate clean protocol-based behavior
+
+# Definition of Done
+definition_of_done:
+  - [ ] Code audit completed with clean bill of health
+  - [ ] Protocol-based resolution validated with tests
+  - [ ] Container handles missing services gracefully
+  - [ ] Documentation updated to reflect clean architecture
+  - [ ] No TODO comments related to registry cleanup
+  - [ ] Example usage patterns documented
+
+# Dependencies
+dependencies:
+  blocks: 
+    - "TKT-003-validate-import-resolution"
+    - "TKT-008-node-base-testing"
+  blocked_by: 
+    - "TKT-001-complete-package-structure"
+  related: 
+    - "TKT-004-development-environment-setup"
+
+# ONEX Compliance
+onex_compliance:
+  standards_checklist:
+    - [ ] No `Any` types used (validate existing usage is appropriate)
+    - [ ] Proper OnexError usage (validate error handling patterns)
+    - [ ] Contract-driven architecture (protocol-based DI validation)
+    - [ ] Registry pattern compliance (ensure no legacy registry coupling)
+    - [ ] Duck typing protocols (validate protocol resolution)
+    - [ ] ONEX naming conventions (validate method and variable names)
+    - [ ] Quality gates implemented (comprehensive testing)
+    - [ ] No AI attribution in commits
+  compliance_notes: "Critical validation of core DI container architecture"
+
+# Technical Implementation
+implementation_plan:
+  - step: "Audit ONEXContainer source code"
+    details: "Line-by-line review for legacy registry references"
+  - step: "Create comprehensive test scenarios"
+    details: "Test protocol resolution, shortcuts, error handling"
+  - step: "Validate service registration and retrieval"
+    details: "Test realistic usage patterns with common protocols"
+  - step: "Document clean architecture patterns"
+    details: "Update docstrings and create usage examples"
+
+# Risk Assessment
+risks:
+  - risk: "Hidden legacy dependencies in imports"
+    probability: "low"
+    impact: "high"
+    mitigation: "Comprehensive grep search and import analysis"
+  - risk: "Protocol resolution performance issues"
+    probability: "very_low"
+    impact: "medium"
+    mitigation: "Benchmark critical path operations"
+  - risk: "Missing protocol scenarios"
+    probability: "medium"
+    impact: "medium"
+    mitigation: "Test with all example node implementations"
+
+# Success Metrics
+success_metrics:
+  - metric: "Legacy reference count"
+    target: "0 legacy registry references"
+    measurement: "Code audit and grep search results"
+  - metric: "Protocol resolution success"
+    target: "100% success for registered protocols"
+    measurement: "Unit test pass rate"
+  - metric: "Error handling coverage"
+    target: "100% coverage of error scenarios"
+    measurement: "Test coverage analysis"
+
+# Files Involved
+files_involved:
+  - path: "src/omnibase/core/onex_container.py"
+    type: "validate"
+    description: "Core DI container implementation"
+  - path: "tests/test_onex_container.py"
+    type: "enhance"
+    description: "Comprehensive container testing"
+
+# Test Plan
+test_plan:
+  unit_tests:
+    - "test_protocol_service_registration"
+    - "test_protocol_service_resolution"
+    - "test_protocol_shortcuts"
+    - "test_missing_service_error_handling"
+    - "test_container_configuration"
+  integration_tests:
+    - "test_container_with_example_nodes"
+    - "test_protocol_based_workflow"
+  validation_tests:
+    - "Code audit for legacy references"
+    - "Performance benchmarking"
+
+# Notes
+notes: |
+  This validation is critical for ensuring the core DI container follows
+  ONEX protocol-driven principles without legacy coupling. The container
+  is the foundation for all node implementations.
+  
+# Created
+created_date: "2024-12-19"
+created_by: "ticket_manager_agent"
+last_updated: "2024-12-19"
