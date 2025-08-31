@@ -13,15 +13,15 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import Any, Literal
 
-from omnibase.enums.enum_node_type import EnumNodeType
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from omnibase_core.core.model_contract_base import ModelContractBase
+from omnibase_core.core.contracts.model_contract_base import ModelContractBase
 from omnibase_core.core.subcontracts import (
     ModelCachingSubcontract,
     ModelEventTypeSubcontract,
     ModelRoutingSubcontract,
 )
+from omnibase_core.enums.node import EnumNodeType
 
 
 class ModelDependencySpec(BaseModel):
@@ -192,13 +192,14 @@ class ModelRetryConfig(BaseModel):
     )
 
     @field_validator("max_delay_ms")
+    @classmethod
     def validate_max_delay_greater_than_base(
-        self,
+        cls,
         v: int,
-        values: dict[str, object],
+        info: ValidationInfo,
     ) -> int:
         """Validate max_delay_ms is greater than base_delay_ms."""
-        if "base_delay_ms" in values and v <= values["base_delay_ms"]:
+        if "base_delay_ms" in info.data and v <= info.data["base_delay_ms"]:
             msg = "max_delay_ms must be greater than base_delay_ms"
             raise ValueError(msg)
         return v

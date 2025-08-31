@@ -13,10 +13,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import asyncpg
 import pytest
-from omnibase.enums.enum_health_status import EnumHealthStatus
 
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.core.onex_error import OnexError
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.models import (
     ModelMessageAggregatorInput,

@@ -74,7 +74,7 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Config/settings output
-    config_values: dict[str, str] | None = Field(
+    config_details: dict[str, Any] | None = Field(
         None,
         description="Configuration values",
     )

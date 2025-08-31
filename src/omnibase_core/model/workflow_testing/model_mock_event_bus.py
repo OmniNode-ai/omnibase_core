@@ -9,8 +9,9 @@ to replace Dict[str, Any] usage with proper type safety.
 from datetime import datetime
 from uuid import UUID
 
-from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
 class ModelMockEventBusConfig(BaseModel):

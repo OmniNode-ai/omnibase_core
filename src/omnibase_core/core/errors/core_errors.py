@@ -738,9 +738,8 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.protocols.types import LogLevel
-
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         exit_code = get_exit_code_for_status(status)
 
@@ -779,9 +778,8 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase.protocols.types import LogLevel
-
         from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         exit_code = error.get_exit_code()
         emit_log_event_sync(

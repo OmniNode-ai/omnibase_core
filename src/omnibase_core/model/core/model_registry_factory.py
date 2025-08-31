@@ -9,9 +9,9 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.models.model_contract_content import ModelContractContent
-from omnibase_core.core.models.model_registry_cache_entry import ModelRegistryCacheEntry
-from omnibase_core.core.models.model_registry_configuration import (
+from omnibase_core.model.core.model_contract_content import ModelContractContent
+from omnibase_core.model.core.model_registry_cache_entry import ModelRegistryCacheEntry
+from omnibase_core.model.core.model_registry_configuration import (
     ModelRegistryConfiguration,
 )
 

@@ -26,15 +26,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from omnibase.protocols.types import LogLevel, SeverityLevelEnum
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 if TYPE_CHECKING:
     from datetime import datetime
 
     from .model_onex_message_context import ModelOnexMessageContext
 
-__all__ = ["ModelOnexMessage", "SeverityLevelEnum"]
+__all__ = ["ModelOnexMessage"]
 
 
 class ModelOnexMessage(BaseModel):
@@ -48,8 +49,8 @@ class ModelOnexMessage(BaseModel):
     remediation: str | None = None
     rendered_markdown: str | None = None
     doc_link: str | None = None
-    level: LogLevel = Field(
-        LogLevel.INFO,
+    level: EnumLogLevel = Field(
+        EnumLogLevel.INFO,
         description="Message level: info, warning, error, etc.",
     )
     file: str | None = Field(None, description="File path related to the message.")
@@ -59,7 +60,7 @@ class ModelOnexMessage(BaseModel):
     )
     column: int | None = None
     details: str | None = Field(None, description="Detailed message or context.")
-    severity: SeverityLevelEnum | None = None
+    severity: EnumLogLevel | None = None
     code: str | None = Field(None, description="Error or warning code, if any.")
     context: ModelOnexMessageContext | None = Field(
         None,

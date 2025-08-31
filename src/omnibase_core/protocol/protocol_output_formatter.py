@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.enums import EnumOutputFormat
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.model.core.model_output_data import ModelOutputData
 
 

@@ -22,20 +22,24 @@
 # === /OmniNode:Metadata ===
 
 """
-Severity levels for validation and generation results.
-Note: For logging levels, use LogLevel from omnibase.protocols.types instead.
+Log levels and severity levels for ONEX.
+
+EnumLogLevel: Based on SPI LogLevel Literal type for consistency
+EnumLogLevel: For validation and generation result classification
 """
 
 from enum import Enum
 
 
-class SeverityLevelEnum(str, Enum):
-    """Severity levels for validation and generation result classification."""
+class EnumLogLevel(str, Enum):
+    """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
 
-    ERROR = "error"
-    WARNING = "warning"
-    INFO = "info"
+    TRACE = "trace"
     DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
     CRITICAL = "critical"
+    FATAL = "fatal"
     SUCCESS = "success"
     UNKNOWN = "unknown"

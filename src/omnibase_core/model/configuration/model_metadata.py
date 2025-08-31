@@ -171,6 +171,7 @@ if TYPE_CHECKING:
         return v
 
     @field_validator("entrypoint", mode="before")
+    @classmethod
     def validate_entrypoint(cls, v):
         if v is None or v == "":
             return None

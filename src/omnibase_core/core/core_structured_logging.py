@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from omnibase.protocols.types import LogLevel
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
 def emit_log_event_sync(

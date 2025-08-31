@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationInfo, validator
 
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.protocols.protocol_onex_validation import ModelOnexMetadata
@@ -167,10 +167,10 @@ class ModelOnexReply(BaseModel):
     def validate_success_consistency(
         self,
         v: bool,
-        values: dict[str, bool | str | ModelOnexErrorDetails],
+        info: ValidationInfo,
     ) -> bool:
         """Validate success field consistency with status."""
-        status = values.get("status")
+        status = info.data.get("status")
         if status == EnumOnexReplyStatus.SUCCESS:
             return True
         if status in [
@@ -189,10 +189,10 @@ class ModelOnexReply(BaseModel):
     def validate_data_type_consistency(
         self,
         v: str | None,
-        values: dict[str, str | BaseModel],
+        info: ValidationInfo,
     ) -> str | None:
         """Validate data_type is specified when data is present."""
-        data = values.get("data")
+        data = info.data.get("data")
         if data is not None and (v is None or not v.strip()):
             msg = "data_type must be specified when data is present"
             raise ValueError(msg)
@@ -202,11 +202,11 @@ class ModelOnexReply(BaseModel):
     def validate_error_consistency(
         self,
         v: ModelOnexErrorDetails | None,
-        values: dict[str, bool | str],
+        info: ValidationInfo,
     ) -> ModelOnexErrorDetails | None:
         """Validate error details consistency with status."""
-        status = values.get("status")
-        success = values.get("success", True)
+        status = info.data.get("status")
+        success = info.data.get("success", True)
 
         if (
             not success

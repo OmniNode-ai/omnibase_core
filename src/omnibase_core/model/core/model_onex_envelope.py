@@ -11,10 +11,10 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.core.adapters.adapter_bus_shim import ModelEventBusMessage
-from omnibase_core.core.models.model_onex_security_context import (
+from omnibase_core.core.protocols.protocol_onex_validation import ModelOnexMetadata
+from omnibase_core.model.core.model_onex_security_context import (
     ModelOnexSecurityContext,
 )
-from omnibase_core.core.protocols.protocol_onex_validation import ModelOnexMetadata
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 

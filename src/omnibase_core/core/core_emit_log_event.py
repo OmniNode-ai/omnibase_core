@@ -13,9 +13,8 @@ import os
 from datetime import datetime
 from uuid import UUID
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.core.core_uuid_service import UUIDService
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.model.core.model_log_entry import LogModelContext
 from omnibase_core.protocol.protocol_event_bus_types import ProtocolEventBus
 

@@ -10,9 +10,9 @@ Author: OmniNode Team
 import os
 from pathlib import Path
 
-from omnibase.protocols.types import LogLevel
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.enums.events import EnumLogLevel as LogLevel
 from omnibase_core.model.service.model_event_bus_config import ModelEventBusConfig
 from omnibase_core.model.service.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.model.service.model_monitoring_config import ModelMonitoringConfig

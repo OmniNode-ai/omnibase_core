@@ -20,10 +20,10 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 from uuid import uuid4
 
 import pytest
-from omnibase.enums.enum_health_status import EnumHealthStatus
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.registry.model_registry_event import (
     ModelRegistryResponseEvent,

@@ -9,7 +9,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.models.model_core_errors import OnexError
+from omnibase_core.model.core.model_core_errors import OnexError
 from omnibase_core.model.core.model_semver import ModelSemVer
 
 

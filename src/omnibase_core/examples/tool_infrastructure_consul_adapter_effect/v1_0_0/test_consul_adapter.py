@@ -14,8 +14,8 @@ from uuid import uuid4
 import consul as python_consul
 import pytest
 
-from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
     ModelConsulHealthResponse,
     ModelConsulHealthStatus,
@@ -607,8 +607,8 @@ class TestConsulAdapterEffect:
     @pytest.mark.asyncio
     async def test_process_error_handling_delete_operations(self, consul_adapter):
         """Test error handling for delete operations in process method."""
-        from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
         from omnibase_core.core.node_effect import EffectType, ModelEffectInput
+        from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError
 
         # Test KV delete without key_path
         delete_input_no_key = ModelEffectInput(

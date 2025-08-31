@@ -9,7 +9,7 @@ import json
 import logging
 from typing import Any
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.model_publisher_config import ModelPublisherConfig
 
 logger = logging.getLogger(__name__)

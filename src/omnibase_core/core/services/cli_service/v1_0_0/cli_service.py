@@ -13,12 +13,10 @@ import time
 from pathlib import Path
 from typing import Protocol, Union
 
-from omnibase.protocols.types import LogLevel
-
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_config import (
     ModelCliConfig,
 )
@@ -40,6 +38,7 @@ from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_parsed_args
 from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_result import (
     ModelCliResult,
 )
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
 

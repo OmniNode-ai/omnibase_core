@@ -12,12 +12,11 @@ from datetime import datetime
 from functools import wraps
 from typing import TypeVar
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_onex_error import ModelOnexError
 
@@ -339,7 +338,10 @@ class MixinFailFast:
             ContractViolationError if condition is False
         """
         if not condition:
-            raise OnexError(message, error_code=CoreErrorCode.CONTRACT_VIOLATION)
+            raise OnexError(
+                code=CoreErrorCode.CONTRACT_VIOLATION,
+                message=message,
+            )
 
     def _handle_critical_error(self, message: str, **details) -> None:
         """

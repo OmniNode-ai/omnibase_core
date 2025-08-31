@@ -138,7 +138,8 @@ class ModelMetadataBlock(BaseModel):
         return v
 
     @field_validator("entrypoint", mode="before")
-    def validate_entrypoint(self, v):
+    @classmethod
+    def validate_entrypoint(cls, v):
         if v is None or v == "":
             return None
         if isinstance(v, str) and "://" in v:

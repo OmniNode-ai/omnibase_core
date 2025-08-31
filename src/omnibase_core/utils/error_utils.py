@@ -2,7 +2,7 @@
 Error utilities for consistent error handling in ONEX system.
 """
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
 
 def handle_exception(

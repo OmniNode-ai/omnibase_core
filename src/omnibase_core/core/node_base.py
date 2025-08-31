@@ -15,14 +15,11 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase.protocols.types import LogLevel
-
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.core.models.model_node_base import ModelNodeBase
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.monadic.model_node_result import (
     ErrorInfo,
     ErrorType,
@@ -32,6 +29,7 @@ from omnibase_core.core.monadic.model_node_result import (
     NodeResult,
 )
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.mixin.mixin_event_listener import MixinEventListener
 from omnibase_core.mixin.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
@@ -41,6 +39,7 @@ from omnibase_core.mixin.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
 from omnibase_core.mixin.mixin_tool_execution import MixinToolExecution
+from omnibase_core.model.core.model_node_base import ModelNodeBase
 from omnibase_core.model.core.model_reducer import ActionModel, ModelState
 from omnibase_core.protocol.protocol_workflow_reducer import ProtocolWorkflowReducer
 

@@ -12,21 +12,21 @@ Author: ONEX Framework Team
 from pathlib import Path
 
 import yaml
-from omnibase.protocols.types import LogLevel
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.models.model_contract_cache import ModelContractCache
-from omnibase_core.core.models.model_contract_content import ModelContractContent
-from omnibase_core.core.models.model_contract_definitions import (
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_contract_cache import ModelContractCache
+from omnibase_core.model.core.model_contract_content import ModelContractContent
+from omnibase_core.model.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
-from omnibase_core.core.models.model_contract_loader import ModelContractLoader
-from omnibase_core.core.models.model_tool_specification import ModelToolSpecification
-from omnibase_core.core.models.model_yaml_schema_object import ModelYamlSchemaObject
+from omnibase_core.model.core.model_contract_loader import ModelContractLoader
 from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.model.core.model_tool_specification import ModelToolSpecification
+from omnibase_core.model.core.model_yaml_schema_object import ModelYamlSchemaObject
 
 
 class ContractLoader:
@@ -220,7 +220,7 @@ class ContractLoader:
             # Parse dependencies section (optional, for Phase 0 pattern)
             dependencies = None
             if "dependencies" in raw_content:
-                from omnibase_core.core.models.model_contract_dependency import (
+                from omnibase_core.model.core.model_contract_dependency import (
                     ModelContractDependency,
                 )
 

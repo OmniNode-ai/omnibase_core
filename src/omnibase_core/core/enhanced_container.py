@@ -11,8 +11,6 @@ import time
 from pathlib import Path
 from typing import TypeVar
 
-from omnibase.protocols.types import LogLevel
-
 from omnibase_core.cache.memory_mapped_tool_cache import (
     MemoryMappedToolCache,
 )
@@ -20,6 +18,7 @@ from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.monitoring.performance_monitor import (
     PerformanceMonitor,
 )
