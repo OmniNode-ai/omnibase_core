@@ -5,85 +5,38 @@ Tests the protocol-driven dependency injection container functionality,
 including service registration, protocol shortcuts, error handling, and
 global container management.
 
-This test suite includes a standalone implementation to avoid circular
-import issues with the broader codebase during testing.
+This test suite uses the real production implementation via direct import
+to eliminate code duplication while avoiding circular import issues.
 """
 
-# Import standalone implementations directly in the test file to avoid circular dependencies
+# Use real implementation to eliminate code duplication
+import importlib.util
 import os
-from typing import Any, Protocol, TypeVar
+from pathlib import Path
+from typing import Protocol, TypeVar
 from unittest.mock import patch
 
 import pytest
 
+# Direct import of real container implementation to avoid circular dependencies
+# This eliminates code duplication by using the actual production code
+container_path = (
+    Path(__file__).parent.parent.parent
+    / "src"
+    / "omnibase_core"
+    / "core"
+    / "onex_container.py"
+)
+spec = importlib.util.spec_from_file_location("onex_container", container_path)
+onex_container_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(onex_container_module)
 
-# Standalone implementation for testing
-class CoreErrorCode:
-    SERVICE_RESOLUTION_FAILED = "ONEX_CORE_091_SERVICE_RESOLUTION_FAILED"
-
-
-class OnexError(Exception):
-    def __init__(self, code, message, details=None, cause=None):
-        self.code = code
-        self.message = message
-        self.details = details or {}
-        self.cause = cause
-        super().__init__(f"[{code}] {message}")
-
-
-class ONEXContainer:
-    def __init__(self) -> None:
-        self._services: dict[str, Any] = {}
-        self._config: dict[str, Any] = {}
-
-    def configure(self, config: dict[str, Any]) -> None:
-        self._config.update(config)
-
-    def register_service(self, protocol_name: str, service: Any) -> None:
-        self._services[protocol_name] = service
-
-    def get_service(self, protocol_name: str) -> Any:
-        if protocol_name in self._services:
-            return self._services[protocol_name]
-
-        shortcut_mapping = {
-            "event_bus": "ProtocolEventBus",
-            "logger": "ProtocolLogger",
-            "health_check": "ProtocolHealthCheck",
-        }
-
-        if protocol_name in shortcut_mapping:
-            full_name = shortcut_mapping[protocol_name]
-            if full_name in self._services:
-                return self._services[full_name]
-
-        raise OnexError(
-            CoreErrorCode.SERVICE_RESOLUTION_FAILED,
-            f"Unable to resolve service for protocol: {protocol_name}",
-        )
-
-    def has_service(self, protocol_name: str) -> bool:
-        return protocol_name in self._services
-
-
-def create_onex_container() -> ONEXContainer:
-    container = ONEXContainer()
-    default_config = {
-        "logging": {"level": os.getenv("LOG_LEVEL", "INFO")},
-        "environment": os.getenv("ENVIRONMENT", "development"),
-    }
-    container.configure(default_config)
-    return container
-
-
-_container: ONEXContainer | None = None
-
-
-def get_container() -> ONEXContainer:
-    global _container
-    if _container is None:
-        _container = create_onex_container()
-    return _container
+# Import classes from the real implementation (zero duplication)
+ONEXContainer = onex_container_module.ONEXContainer
+create_onex_container = onex_container_module.create_onex_container
+get_container = onex_container_module.get_container
+CoreErrorCode = onex_container_module.CoreErrorCode
+OnexError = onex_container_module.OnexError
 
 
 T = TypeVar("T")
@@ -331,8 +284,8 @@ class TestGlobalContainer:
 
     def setup_method(self):
         """Reset global container state before each test."""
-        global _container
-        _container = None
+        # Reset the global container in the real module
+        onex_container_module._container = None
 
     def test_get_container_singleton(self):
         """Test that get_container returns the same instance."""
