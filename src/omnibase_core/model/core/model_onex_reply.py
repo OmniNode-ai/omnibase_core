@@ -170,7 +170,7 @@ class ModelOnexReply(BaseModel):
         info: ValidationInfo,
     ) -> bool:
         """Validate success field consistency with status."""
-        status = values.get("status")
+        status = info.data.get("status")
         if status == EnumOnexReplyStatus.SUCCESS:
             return True
         if status in [
@@ -192,7 +192,7 @@ class ModelOnexReply(BaseModel):
         info: ValidationInfo,
     ) -> str | None:
         """Validate data_type is specified when data is present."""
-        data = values.get("data")
+        data = info.data.get("data")
         if data is not None and (v is None or not v.strip()):
             msg = "data_type must be specified when data is present"
             raise ValueError(msg)
@@ -205,8 +205,8 @@ class ModelOnexReply(BaseModel):
         info: ValidationInfo,
     ) -> ModelOnexErrorDetails | None:
         """Validate error details consistency with status."""
-        status = values.get("status")
-        success = values.get("success", True)
+        status = info.data.get("status")
+        success = info.data.get("success", True)
 
         if (
             not success

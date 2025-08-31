@@ -102,10 +102,19 @@ class ONEXContainer:
             if full_protocol_name in self._services:
                 return self._services[full_protocol_name]
 
-        # Service not found
+        # Service not found - provide enhanced error context
+        available_services = list(self._services.keys())
+        available_shortcuts = ["event_bus", "logger", "health_check"]
+
         raise OnexError(
             code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
             message=f"Unable to resolve service for protocol: {protocol_name}",
+            details={
+                "requested_protocol": protocol_name,
+                "available_services": available_services,
+                "available_shortcuts": available_shortcuts,
+                "total_services_registered": len(available_services),
+            },
         )
 
     def has_service(self, protocol_name: str) -> bool:
