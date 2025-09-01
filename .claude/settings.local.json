@@ -41,7 +41,8 @@
       "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/constants/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "mcp__archon__list_tasks"
     ],
     "deny": [],
     "ask": []

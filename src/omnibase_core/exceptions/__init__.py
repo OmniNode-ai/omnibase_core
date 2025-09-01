@@ -3,13 +3,8 @@
 from .base_onex_error import OnexError
 from .model_onex_error import ModelOnexError
 
-# Import CLIAdapter from model_core_errors
-try:
-    from omnibase_core.model.core.model_core_errors import CLIAdapter
-except ImportError:
-    # Fallback minimal CLIAdapter if import fails
-    class CLIAdapter:
-        """Minimal CLI adapter for exit code handling."""
+# CLIAdapter should be imported directly from core.errors.core_errors
+# Removed import to fix circular dependency
 
 
 # Import error code functions
@@ -35,7 +30,6 @@ except ImportError:
 
 
 __all__ = [
-    "CLIAdapter",
     "ModelOnexError",
     "OnexError",
     "get_error_codes_for_component",
