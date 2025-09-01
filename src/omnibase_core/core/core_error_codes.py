@@ -351,27 +351,15 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
 
 
 # === Backward Compatibility Imports ===
-# Import OnexError and utilities from new locations to maintain compatibility
-# These imports allow existing code to continue working without changes
-from omnibase_core.exceptions import (
-    CLIAdapter,
-    OnexError,
-    get_error_codes_for_component,
-    list_registered_components,
-    register_error_codes,
-)
+# Removed imports that were causing circular dependencies
+# Users should import these directly from omnibase_core.exceptions or omnibase_core.core.errors.core_errors
 
 # Re-export for compatibility
 __all__ = [
-    "CLIAdapter",  # Re-exported from exceptions module
     "CLIExitCode",
     "CoreErrorCode",
-    "OnexError",  # Re-exported from exceptions module
     "OnexErrorCode",
     "get_core_error_description",
-    "get_error_codes_for_component",  # Re-exported from exceptions module
     "get_exit_code_for_core_error",
     "get_exit_code_for_status",
-    "list_registered_components",  # Re-exported from exceptions module
-    "register_error_codes",  # Re-exported from exceptions module
 ]

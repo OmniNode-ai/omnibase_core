@@ -3,8 +3,6 @@
 from omnibase.protocols.core.protocol_workflow_reducer import (
     ProtocolWorkflow,
     ProtocolWorkflowReducer,
-    ProtocolWorkflowStep,
-    ProtocolWorkflowStepContext,
 )
 
 # Re-export SPI workflow types
