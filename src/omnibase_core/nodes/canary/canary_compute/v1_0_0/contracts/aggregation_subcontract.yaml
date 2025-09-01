@@ -1,0 +1,252 @@
+# Message Aggregator Aggregation Subcontract - Cross-Group Message Processing
+# This subcontract defines aggregation strategies for cross-group message coordination
+
+contract_type: "message_aggregator_aggregation_subcontract"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  name: "MessageAggregatorAggregationSubcontract"
+  description: "Cross-group message aggregation strategies with intelligent coordination"
+  author: "ONEX Framework Team"
+  created: "2025-08-21"
+  purpose: "Define efficient cross-group message aggregation and coordination patterns"
+
+business_logic:
+  pattern: "cross_group_message_aggregation"
+  ai_agent:
+    capabilities: ["message_aggregation", "group_coordination", "conflict_resolution"]
+    coordination_patterns: ["scatter_gather", "reduce_merge", "consensus_building"]
+    performance_targets:
+      aggregation_latency: "<100ms"
+      throughput: "1000 messages/sec"
+      consistency_guarantee: "eventual_consistency"
+
+# Cross-Group Aggregation Strategy
+aggregation_strategy:
+  name: "CrossGroupIntelligentAggregation"
+  description: "Intelligent message aggregation across multiple tool groups with conflict resolution"
+
+  # Aggregation patterns for different message types
+  aggregation_patterns:
+    merge_aggregation:
+      description: "Merge messages with deep object merging"
+      merge_strategy: "recursive_merge"
+      conflict_resolution: "timestamp_priority"
+      data_validation: "schema_based"
+
+      merge_rules:
+        - "preserve_all_unique_keys"
+        - "resolve_conflicts_by_timestamp"
+        - "validate_merged_schema"
+        - "maintain_message_provenance"
+
+    combine_aggregation:
+      description: "Combine messages into collections"
+      combination_strategy: "append_with_metadata"
+      ordering: "timestamp_based"
+      deduplication: "content_hash_based"
+
+      combination_rules:
+        - "append_unique_messages"
+        - "preserve_temporal_ordering"
+        - "include_source_group_metadata"
+        - "filter_duplicate_content"
+
+    reduce_aggregation:
+      description: "Reduce messages using aggregation functions"
+      reduction_functions: ["sum", "count", "average", "max", "min"]
+      grouping_strategy: "field_based_grouping"
+      intermediate_results: "persisted"
+
+      reduction_rules:
+        - "group_by_specified_fields"
+        - "apply_reduction_functions"
+        - "handle_missing_values"
+        - "preserve_statistical_metadata"
+
+    collect_aggregation:
+      description: "Collect messages without processing"
+      collection_strategy: "append_only"
+      metadata_preservation: "full"
+      ordering: "arrival_order"
+
+      collection_rules:
+        - "preserve_original_messages"
+        - "maintain_arrival_timestamps"
+        - "include_group_source_info"
+        - "support_partial_collections"
+
+# Cross-Group Coordination Mechanisms
+coordination_mechanisms:
+  group_discovery:
+    discovery_method: "registry_based"
+    health_checking: "periodic_ping"
+    failure_detection: "timeout_based"
+
+    discovery_steps:
+      - "query_group_registry"
+      - "validate_group_availability"
+      - "establish_communication_channels"
+      - "negotiate_aggregation_protocols"
+
+  message_collection:
+    collection_strategy: "parallel_with_timeout"
+    timeout_handling: "partial_results_acceptable"
+    retry_mechanism: "exponential_backoff"
+
+    collection_steps:
+      - "broadcast_aggregation_request"
+      - "collect_responses_with_timeout"
+      - "validate_response_schemas"
+      - "handle_partial_collections"
+
+  consensus_building:
+    consensus_algorithm: "majority_vote"
+    conflict_resolution: "weighted_priority"
+    validation_threshold: "67_percent"
+
+    consensus_steps:
+      - "collect_all_group_responses"
+      - "identify_conflicting_data"
+      - "apply_resolution_strategies"
+      - "validate_consensus_result"
+
+# State Management Integration
+state_coordination:
+  distributed_state:
+    state_distribution: "partitioned_by_correlation_id"
+    consistency_model: "eventual_consistency"
+    synchronization: "periodic_sync"
+
+    state_partitioning:
+      - "partition_key": "correlation_id"
+      - "partition_strategy": "hash_based"
+      - "replication_factor": 2
+      - "consistency_level": "quorum"
+
+  state_persistence:
+    persistence_strategy: "write_through"
+    storage_backend: "postgresql_jsonb"
+    backup_frequency: "continuous"
+
+    persistence_operations:
+      - "persist_intermediate_results"
+      - "snapshot_aggregation_state"
+      - "maintain_operation_history"
+      - "enable_rollback_capability"
+
+# Performance Optimization
+performance_optimization:
+  parallel_processing:
+    parallelization_level: "group_level"
+    thread_pool_size: 15
+    async_execution: true
+    backpressure_handling: "queue_with_limit"
+
+  caching_strategy:
+    intermediate_result_caching: true
+    cache_eviction: "lru_with_ttl"
+    cache_size_limit: "100mb"
+    cache_hit_optimization: "predictive_prefetch"
+
+  resource_management:
+    memory_limit: "512mb"
+    cpu_utilization_target: "70_percent"
+    connection_pooling: true
+    batch_processing: true
+
+# Error Handling and Recovery
+error_handling:
+  group_unavailability:
+    handling_strategy: "continue_with_available_groups"
+    minimum_group_threshold: "50_percent"
+    timeout_escalation: "alert_and_continue"
+
+    recovery_actions:
+      - "mark_group_unavailable"
+      - "continue_with_partial_data"
+      - "schedule_retry_attempts"
+      - "update_health_metrics"
+
+  message_validation_failures:
+    validation_strategy: "strict_schema_validation"
+    failure_handling: "reject_invalid_messages"
+    error_reporting: "detailed_validation_errors"
+
+    validation_actions:
+      - "validate_message_schema"
+      - "check_required_fields"
+      - "verify_data_types"
+      - "log_validation_failures"
+
+  aggregation_conflicts:
+    conflict_detection: "automatic"
+    resolution_strategy: "configurable_rules"
+    escalation_path: "manual_review"
+
+    conflict_resolution:
+      - "detect_conflicting_data"
+      - "apply_resolution_rules"
+      - "preserve_conflict_metadata"
+      - "enable_manual_override"
+
+# Quality Assurance
+quality_assurance:
+  data_integrity:
+    validation_rules: "comprehensive_schema_validation"
+    consistency_checks: "cross_group_consistency"
+    audit_trail: "complete_operation_history"
+
+  performance_monitoring:
+    latency_tracking: "end_to_end_latency"
+    throughput_measurement: "messages_per_second"
+    resource_utilization: "memory_and_cpu_monitoring"
+
+  reliability_features:
+    fault_tolerance: "graceful_degradation"
+    recovery_mechanisms: "automatic_retry_with_backoff"
+    health_monitoring: "continuous_health_assessment"
+
+# Observability
+observability:
+  aggregation_metrics:
+    - "message_aggregator.messages_processed_total"
+    - "message_aggregator.aggregation_duration_ms"
+    - "message_aggregator.group_coordination_success_rate"
+    - "message_aggregator.conflict_resolution_count"
+
+  coordination_metrics:
+    - "message_aggregator.groups_discovered"
+    - "message_aggregator.group_availability_ratio"
+    - "message_aggregator.consensus_achievement_rate"
+    - "message_aggregator.partial_collection_rate"
+
+  aggregation_events:
+    - "aggregation_started"
+    - "groups_discovered"
+    - "messages_collected"
+    - "conflicts_resolved"
+    - "aggregation_completed"
+
+# Code Generation Targets
+generation_targets:
+  python_runtime:
+    aggregation_strategies: true
+    coordination_mechanisms: true
+    conflict_resolution_logic: true
+    performance_monitors: true
+
+  configuration_schema:
+    aggregation_configuration: true
+    group_definitions: true
+    performance_thresholds: true
+
+# Integration with Main Contract and State Management
+integration:
+  main_contract_field: "aggregation_configuration"
+  state_management_integration: "coordinated_state_persistence"
+  mapping_strategy: "direct_embedding"
+  backward_compatibility: true

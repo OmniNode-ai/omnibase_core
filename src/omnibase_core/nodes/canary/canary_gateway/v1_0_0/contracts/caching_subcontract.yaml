@@ -1,0 +1,201 @@
+# Group Gateway Caching Subcontract - PostgreSQL-Based Response Caching
+# This subcontract defines caching behavior for Group Gateway using PostgreSQL JSONB storage
+
+contract_type: "group_gateway_caching_subcontract"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  name: "GroupGatewayCachingSubcontract"
+  description: "PostgreSQL-based response caching for Group Gateway with JSONB storage"
+  author: "ONEX Framework Team"
+  created: "2025-08-21"
+  purpose: "Define efficient PostgreSQL caching patterns for message routing responses"
+
+business_logic:
+  pattern: "postgresql_response_caching"
+  ai_agent:
+    capabilities: ["response_caching", "cache_invalidation", "postgresql_jsonb"]
+    coordination_patterns: ["cache_aside", "write_through"]
+    performance_targets:
+      cache_hit_ratio: ">80%"
+      cache_lookup_latency: "<5ms"
+      cache_storage_efficiency: ">90%"
+
+# PostgreSQL Caching Strategy
+caching_strategy:
+  name: "PostgreSQLJSONBCaching"
+  description: "High-performance caching using PostgreSQL JSONB columns"
+
+  # Cache storage configuration
+  storage_configuration:
+    table_name: "response_cache"
+    key_column: "cache_key"
+    data_column: "response_data" # JSONB column
+    metadata_columns:
+      - "created_at"
+      - "expires_at"
+      - "access_count"
+      - "last_accessed"
+      - "correlation_id"
+
+  # Cache key generation
+  key_generation:
+    strategy: "composite_hash"
+    components:
+      - "tool_target_list_hash"
+      - "message_data_hash"
+      - "operation_type"
+    hash_algorithm: "sha256"
+    key_format: "gw_{operation}_{hash}"
+
+  # Cache expiration policies
+  expiration_policies:
+    default_ttl: "300s" # 5 minutes
+    max_ttl: "3600s" # 1 hour
+    adaptive_ttl: true
+    access_based_extension: true
+
+  # Cache invalidation rules
+  invalidation_rules:
+    time_based:
+      - "expire_after_ttl"
+      - "cleanup_expired_entries"
+
+    event_based:
+      - "invalidate_on_tool_change"
+      - "invalidate_on_configuration_change"
+
+    size_based:
+      - "lru_eviction_when_full"
+      - "max_cache_size_100mb"
+
+# Cache Operations
+cache_operations:
+  lookup_operation:
+    strategy: "indexed_jsonb_lookup"
+    performance_optimization:
+      - "btree_index_on_cache_key"
+      - "gin_index_on_response_data"
+      - "partial_index_on_active_entries"
+
+    lookup_steps:
+      - "generate_cache_key"
+      - "check_expiration"
+      - "retrieve_jsonb_data"
+      - "update_access_metrics"
+
+  store_operation:
+    strategy: "upsert_with_jsonb"
+    performance_optimization:
+      - "jsonb_compression"
+      - "batch_upsert_operations"
+      - "async_metadata_updates"
+
+    storage_steps:
+      - "generate_cache_key"
+      - "serialize_response_to_jsonb"
+      - "upsert_with_expiration"
+      - "update_statistics"
+
+  cleanup_operation:
+    strategy: "periodic_maintenance"
+    cleanup_frequency: "300s" # Every 5 minutes
+    cleanup_operations:
+      - "delete_expired_entries"
+      - "vacuum_cache_table"
+      - "update_access_statistics"
+
+# Cache Performance Configuration
+performance_configuration:
+  connection_pooling:
+    cache_connection_pool_size: 5
+    connection_timeout: "10s"
+    query_timeout: "5s"
+
+  batch_operations:
+    batch_size: 50
+    batch_timeout_ms: 100
+    parallel_operations: true
+
+  monitoring_metrics:
+    - "cache_hit_rate"
+    - "cache_miss_rate"
+    - "average_lookup_time"
+    - "cache_size_bytes"
+    - "cleanup_frequency"
+
+# Cache Consistency Patterns
+consistency_patterns:
+  cache_aside:
+    description: "Application manages cache, database is source of truth"
+    read_pattern:
+      - "check_cache_first"
+      - "on_miss_query_database"
+      - "populate_cache_async"
+
+    write_pattern:
+      - "update_database_first"
+      - "invalidate_cache_entry"
+      - "optional_warm_cache"
+
+  write_through:
+    description: "Cache and database updated synchronously"
+    write_pattern:
+      - "write_to_cache_and_database"
+      - "ensure_consistency"
+      - "rollback_on_failure"
+
+# Error Handling
+error_handling:
+  cache_miss_handling:
+    - "fallback_to_direct_execution"
+    - "populate_cache_on_success"
+    - "log_miss_for_analytics"
+
+  cache_failure_handling:
+    - "bypass_cache_on_error"
+    - "continue_without_caching"
+    - "alert_on_repeated_failures"
+    - "automatic_reconnection"
+
+  database_connection_errors:
+    - "retry_with_exponential_backoff"
+    - "circuit_breaker_pattern"
+    - "fallback_to_memory_cache"
+    - "degrade_gracefully"
+
+# Observability
+observability:
+  cache_metrics:
+    - "group_gateway.cache_hit_ratio"
+    - "group_gateway.cache_lookup_duration"
+    - "group_gateway.cache_size_entries"
+    - "group_gateway.cache_eviction_rate"
+
+  cache_events:
+    - "cache_hit"
+    - "cache_miss"
+    - "cache_eviction"
+    - "cache_cleanup_completed"
+
+# Code Generation Targets
+generation_targets:
+  python_runtime:
+    cache_implementation: true
+    postgresql_adapter: true
+    jsonb_serializers: true
+    performance_monitors: true
+
+  database_schema:
+    table_definitions: true
+    index_definitions: true
+    maintenance_procedures: true
+
+# Integration with Main Contract
+integration:
+  main_contract_field: "caching_configuration"
+  mapping_strategy: "direct_embedding"
+  backward_compatibility: true

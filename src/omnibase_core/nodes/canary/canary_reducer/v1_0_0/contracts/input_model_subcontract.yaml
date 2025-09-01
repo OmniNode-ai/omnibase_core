@@ -1,0 +1,64 @@
+# Infrastructure Reducer Input Model Subcontract
+# Input data structures for normalized infrastructure service
+
+name: InfrastructureReducerInputModel
+model_type: input
+
+models:
+  ModelInfrastructureReducerInput:
+    description: "Primary input model for infrastructure reducer operations"
+    fields:
+      - name: operation_type
+        type: string
+        required: true
+        validation:
+          enum: [bootstrap, health_check, process_adapters, aggregate_results, status_query]
+        description: "Type of infrastructure operation to perform"
+
+      - name: adapter_names
+        type: array
+        item_type: string
+        required: false
+        description: "Specific adapters to operate on (empty = all)"
+
+      - name: adapter_data
+        type: dict
+        required: false
+        description: "Data to pass to adapters for processing"
+
+      - name: correlation_id
+        type: string
+        required: false
+        description: "Request correlation ID for tracking"
+
+      - name: timeout_seconds
+        type: integer
+        required: false
+        default: 30
+        validation:
+          min: 1
+          max: 300
+        description: "Operation timeout in seconds"
+
+  ModelAdapterHealthQuery:
+    description: "Health check query for specific adapters"
+    fields:
+      - name: adapter_name
+        type: string
+        required: true
+        description: "Name of adapter to health check"
+
+      - name: include_metrics
+        type: boolean
+        required: false
+        default: false
+        description: "Include detailed performance metrics"
+
+validation_rules:
+  - rule: "operation_type_validation"
+    description: "Validate operation type is supported"
+    applies_to: [ModelInfrastructureReducerInput]
+
+  - rule: "timeout_bounds"
+    description: "Ensure timeout is within acceptable bounds"
+    applies_to: [ModelInfrastructureReducerInput]

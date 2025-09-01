@@ -1,0 +1,558 @@
+# FSM Subcontract - Pure YAML Contract
+# Simplified ONEX contract pattern with actual FSM definition
+
+# === CORE IDENTIFICATION ===
+name: "infrastructure_reducer_fsm"
+description: "Finite state machine for infrastructure reducer with adapter loading and health monitoring"
+subcontract_type: "FSM"
+
+# === ACTUAL FSM DEFINITION ===
+# Pure YAML FSM definition - no JSON Schema embedding
+state_machine_name: "InfrastructureReducerFSM"
+state_machine_version: {major: 1, minor: 0, patch: 0}
+initial_state: "idle"
+
+# Terminal and error states
+terminal_states:
+  - "disabled"
+error_states:
+  - "error"
+
+# Complete state definitions
+states:
+  - state_name: "idle"
+    state_type: "operational"
+    description: "Initial idle state before bootstrap"
+    is_terminal: false
+    is_recoverable: true
+    entry_actions:
+      - "log_entry"
+    exit_actions:
+      - "log_exit"
+    required_data: []
+    optional_data:
+      - "correlation_id"
+    validation_rules: []
+
+  - state_name: "loading_adapters"
+    state_type: "operational"
+    description: "Loading infrastructure adapters"
+    is_terminal: false
+    is_recoverable: true
+    timeout_ms: 30000
+    entry_actions:
+      - "log_entry"
+      - "start_adapter_loading"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "adapter_configs"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_adapter_configs"
+
+  - state_name: "adapters_loaded"
+    state_type: "operational"
+    description: "Adapters successfully loaded"
+    is_terminal: false
+    is_recoverable: true
+    entry_actions:
+      - "log_entry"
+      - "validate_adapters"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "loaded_adapters"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_loaded_adapters"
+
+  - state_name: "health_checking"
+    state_type: "operational"
+    description: "Performing health checks on external services"
+    is_terminal: false
+    is_recoverable: true
+    timeout_ms: 15000
+    entry_actions:
+      - "log_entry"
+      - "start_health_checks"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "health_endpoints"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_health_endpoints"
+
+  - state_name: "ready"
+    state_type: "operational"
+    description: "Ready to process infrastructure requests"
+    is_terminal: false
+    is_recoverable: true
+    entry_actions:
+      - "log_entry"
+      - "emit_ready_event"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "infrastructure_status"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_ready_state"
+
+  - state_name: "processing"
+    state_type: "operational"
+    description: "Processing infrastructure request"
+    is_terminal: false
+    is_recoverable: true
+    timeout_ms: 60000
+    entry_actions:
+      - "log_entry"
+      - "start_processing"
+    exit_actions:
+      - "log_exit"
+      - "cleanup_processing"
+    required_data:
+      - "request_data"
+      - "adapter_results"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_request_data"
+
+  - state_name: "error"
+    state_type: "error"
+    description: "Error state requiring intervention"
+    is_terminal: false
+    is_recoverable: true
+    entry_actions:
+      - "log_entry"
+      - "emit_error_alert"
+      - "log_error_details"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "error_details"
+    optional_data:
+      - "correlation_id"
+      - "recovery_suggestions"
+    validation_rules:
+      - "validate_error_details"
+
+  - state_name: "recovering"
+    state_type: "operational"
+    description: "Attempting recovery from error state"
+    is_terminal: false
+    is_recoverable: true
+    timeout_ms: 45000
+    entry_actions:
+      - "log_entry"
+      - "start_recovery"
+    exit_actions:
+      - "log_exit"
+    required_data:
+      - "recovery_plan"
+    optional_data:
+      - "correlation_id"
+    validation_rules:
+      - "validate_recovery_plan"
+
+  - state_name: "disabled"
+    state_type: "terminal"
+    description: "Service disabled, no further processing"
+    is_terminal: true
+    is_recoverable: false
+    entry_actions:
+      - "log_entry"
+      - "cleanup_resources"
+    exit_actions: []
+    required_data:
+      - "disable_reason"
+    optional_data:
+      - "correlation_id"
+    validation_rules: []
+
+# Complete transition definitions
+transitions:
+  - transition_name: "bootstrap_to_loading"
+    from_state: "idle"
+    to_state: "loading_adapters"
+    trigger: "ev_bootstrap"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "log_bootstrap"
+        action_type: "log"
+        action_config:
+          level: "INFO"
+          message: "Starting infrastructure bootstrap"
+        execution_order: 1
+        is_critical: false
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "adapters_loaded_success"
+    from_state: "loading_adapters"
+    to_state: "adapters_loaded"
+    trigger: "ev_adapters_loaded_ok"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "validate_adapters"
+        action_type: "validate"
+        action_config:
+          validation_type: "adapter_health"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions:
+      - "bootstrap_to_loading"
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "adapters_load_failed"
+    from_state: "loading_adapters"
+    to_state: "error"
+    trigger: "ev_adapters_load_fail"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "log_adapter_failure"
+        action_type: "log"
+        action_config:
+          level: "ERROR"
+          message: "Failed to load infrastructure adapters"
+        execution_order: 1
+        is_critical: false
+      - action_name: "emit_error_alert"
+        action_type: "event"
+        action_config:
+          event_type: "infrastructure_error"
+          alert_level: "high"
+        execution_order: 2
+        is_critical: false
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: true
+    max_retries: 3
+    retry_delay_ms: 5000
+
+  - transition_name: "start_health_check"
+    from_state: "adapters_loaded"
+    to_state: "health_checking"
+    trigger: "ev_health_check_start"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "initiate_health_checks"
+        action_type: "modify"
+        action_config:
+          operation: "start_health_monitoring"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "health_check_success"
+    from_state: "health_checking"
+    to_state: "ready"
+    trigger: "ev_health_check_ok"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "set_ready_status"
+        action_type: "modify"
+        action_config:
+          status: "ready"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "health_check_failed"
+    from_state: "health_checking"
+    to_state: "error"
+    trigger: "ev_health_check_fail"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "log_health_failure"
+        action_type: "log"
+        action_config:
+          level: "ERROR"
+          message: "Infrastructure health check failed"
+        execution_order: 1
+        is_critical: false
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: true
+    max_retries: 2
+    retry_delay_ms: 10000
+
+  - transition_name: "start_processing"
+    from_state: "ready"
+    to_state: "processing"
+    trigger: "ev_process_request"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "begin_request_processing"
+        action_type: "modify"
+        action_config:
+          operation: "process_infrastructure_request"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "processing_complete"
+    from_state: "processing"
+    to_state: "ready"
+    trigger: "ev_aggregation_complete"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "finalize_results"
+        action_type: "modify"
+        action_config:
+          operation: "finalize_aggregation"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "processing_failed"
+    from_state: "processing"
+    to_state: "error"
+    trigger: "ev_aggregation_fail"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "log_processing_failure"
+        action_type: "log"
+        action_config:
+          level: "ERROR"
+          message: "Infrastructure processing failed"
+        execution_order: 1
+        is_critical: false
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: true
+    max_retries: 1
+    retry_delay_ms: 5000
+
+  - transition_name: "error_recovery"
+    from_state: "error"
+    to_state: "recovering"
+    trigger: "ev_recover_start"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "begin_recovery"
+        action_type: "modify"
+        action_config:
+          operation: "start_error_recovery"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "recovery_success"
+    from_state: "recovering"
+    to_state: "ready"
+    trigger: "ev_recover_ok"
+    priority: 1
+    conditions: []
+    actions:
+      - action_name: "complete_recovery"
+        action_type: "modify"
+        action_config:
+          operation: "complete_recovery"
+          status: "ready"
+        execution_order: 1
+        is_critical: true
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+  - transition_name: "disable_service"
+    from_state: "*"
+    to_state: "disabled"
+    trigger: "ev_disable"
+    priority: 10
+    conditions: []
+    actions:
+      - action_name: "cleanup_resources"
+        action_type: "cleanup"
+        action_config:
+          cleanup_type: "full"
+        execution_order: 1
+        is_critical: true
+      - action_name: "log_disable"
+        action_type: "log"
+        action_config:
+          level: "INFO"
+          message: "Infrastructure service disabled"
+        execution_order: 2
+        is_critical: false
+    rollback_transitions: []
+    is_atomic: true
+    retry_enabled: false
+    max_retries: 1
+    retry_delay_ms: 1000
+
+# FSM operations
+operations:
+  - operation_name: "create"
+    operation_type: "create"
+    description: "Create new infrastructure state"
+    requires_atomic_execution: true
+    supports_rollback: true
+    allowed_from_states:
+      - "idle"
+    blocked_from_states:
+      - "disabled"
+    required_permissions:
+      - "infrastructure_create"
+    side_effects:
+      - "state_change"
+      - "resource_allocation"
+    performance_impact: "medium"
+    timeout_ms: 30000
+
+  - operation_name: "update"
+    operation_type: "update"
+    description: "Update infrastructure state"
+    requires_atomic_execution: true
+    supports_rollback: true
+    allowed_from_states:
+      - "ready"
+      - "processing"
+    blocked_from_states:
+      - "disabled"
+      - "error"
+    required_permissions:
+      - "infrastructure_update"
+    side_effects:
+      - "state_change"
+    performance_impact: "low"
+    timeout_ms: 15000
+
+  - operation_name: "transition"
+    operation_type: "transition"
+    description: "Execute state transition"
+    requires_atomic_execution: true
+    supports_rollback: true
+    allowed_from_states: []
+    blocked_from_states: []
+    required_permissions:
+      - "infrastructure_transition"
+    side_effects:
+      - "state_change"
+      - "event_emission"
+    performance_impact: "low"
+    timeout_ms: 10000
+
+  - operation_name: "snapshot"
+    operation_type: "snapshot"
+    description: "Create state snapshot for recovery"
+    requires_atomic_execution: true
+    supports_rollback: true
+    allowed_from_states:
+      - "ready"
+      - "processing"
+    blocked_from_states:
+      - "disabled"
+    required_permissions:
+      - "infrastructure_snapshot"
+    side_effects:
+      - "storage_write"
+    performance_impact: "medium"
+    timeout_ms: 20000
+
+  - operation_name: "restore"
+    operation_type: "restore"
+    description: "Restore from state snapshot"
+    requires_atomic_execution: true
+    supports_rollback: true
+    allowed_from_states:
+      - "error"
+      - "recovering"
+    blocked_from_states:
+      - "disabled"
+    required_permissions:
+      - "infrastructure_restore"
+    side_effects:
+      - "state_change"
+      - "resource_allocation"
+    performance_impact: "high"
+    timeout_ms: 45000
+
+# FSM configuration
+persistence_enabled: true
+checkpoint_interval_ms: 30000
+max_checkpoints: 10
+recovery_enabled: true
+rollback_enabled: true
+conflict_resolution_strategy: "priority_based"
+concurrent_transitions_allowed: false
+transition_timeout_ms: 5000
+strict_validation_enabled: true
+state_monitoring_enabled: true
+event_logging_enabled: true
+
+# === VALIDATION RULES ===
+validation_rules:
+  - field: "state_machine_name"
+    type: "string"
+    required: true
+    description: "FSM name must be present"
+
+  - field: "initial_state"
+    type: "string"
+    required: true
+    description: "Initial state must be defined"
+
+  - field: "states"
+    type: "array"
+    required: true
+    description: "State definitions must be present"
+
+  - field: "transitions"
+    type: "array"
+    required: true
+    description: "Transition definitions must be present"
+
+# === GENERATION METADATA ===
+generation_metadata:
+  model_prefix: "Model"
+  file_naming_convention: "snake_case"
+  output_directory: "models"
+  generate_validators: true
+  generate_examples: true
+  strict_typing: true

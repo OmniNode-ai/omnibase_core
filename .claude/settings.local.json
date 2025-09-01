@@ -42,7 +42,20 @@
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/constants/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/**)",
       "Bash(gh api:*)",
-      "mcp__archon__list_tasks"
+      "mcp__archon__list_tasks",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/**)",
+      "mcp__serena__replace_symbol_body",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/container/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/container/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/tools/infrastructure/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_orchestrator/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_orchestrator/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_orchestrator/v1_0_0/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_message_aggregator_compute/v1_0_0/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_consul_adapter_effect/v1_0_0/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)"
     ],
     "deny": [],
     "ask": []
