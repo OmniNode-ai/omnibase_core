@@ -15,12 +15,13 @@ from datetime import datetime, timedelta
 from typing import Callable, Dict, List, Optional, Union
 
 import asyncpg
+from pydantic import BaseModel, Field
+
+from omnibase_core.core.errors.onex_error import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeComputeService
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.core.onex_error import OnexError
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from pydantic import BaseModel, Field
 
 from .models import ModelMessageAggregatorInput, ModelMessageAggregatorOutput
 
