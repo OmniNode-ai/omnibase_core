@@ -1,0 +1,251 @@
+# StateManagementSubcontract - State persistence, management, and consistency for stateful REDUCER nodes
+# Generated from state_management.yaml using automated conversion
+
+contract_type: state_management_subcontract
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+metadata:
+  name: StateManagementSubcontract
+  description: State persistence, management, and consistency for stateful REDUCER nodes
+  author: ONEX Framework Team
+  created: '2025-09-01'
+  purpose: Define comprehensive state management patterns
+  applicable_node_types:
+    - REDUCER
+business_logic:
+  pattern: state_management
+  ai_agent:
+    capabilities:
+      - state_management_management
+    coordination_patterns:
+      - state_management_coordination
+    performance_targets:
+      default_timeout: 30s
+actions:
+  persist_state:
+    description: Persist current state to configured storage backend
+    operation_type: state_management
+    inputs:
+      state_key:
+        type: object
+        description: Input parameter state_key
+        required: true
+      state_data:
+        type: object
+        description: Input parameter state_data
+        required: true
+      persistence_options:
+        type: object
+        description: Input parameter persistence_options
+        required: true
+    outputs:
+      persistence_result:
+        type: ModelPersistenceResult
+        description: Output data persistence_result
+      state_version:
+        type: ModelStateVersion
+        description: Output data state_version
+    required: true
+    timeout_ms: 5000
+  restore_state:
+    description: Restore state from storage backend
+    operation_type: state_management
+    inputs:
+      state_key:
+        type: object
+        description: Input parameter state_key
+        required: true
+      version_filter:
+        type: object
+        description: Input parameter version_filter
+        required: true
+    outputs:
+      state_data:
+        type: ModelStateData
+        description: Output data state_data
+      restoration_metadata:
+        type: ModelRestorationMetadata
+        description: Output data restoration_metadata
+    required: true
+    timeout_ms: 3000
+  create_state_snapshot:
+    description: Create a point-in-time snapshot of current state
+    operation_type: state_management
+    inputs:
+      snapshot_config:
+        type: object
+        description: Input parameter snapshot_config
+        required: true
+      metadata:
+        type: object
+        description: Input parameter metadata
+        required: true
+    outputs:
+      snapshot_id:
+        type: ModelSnapshotId
+        description: Output data snapshot_id
+      snapshot_metadata:
+        type: ModelSnapshotMetadata
+        description: Output data snapshot_metadata
+    required: false
+    timeout_ms: 10000
+  manage_state_lifecycle:
+    description: Manage state lifecycle including cleanup and archival
+    operation_type: state_management
+    inputs:
+      lifecycle_config:
+        type: object
+        description: Input parameter lifecycle_config
+        required: true
+      retention_policy:
+        type: object
+        description: Input parameter retention_policy
+        required: true
+    outputs:
+      lifecycle_actions:
+        type: ModelLifecycleActions
+        description: Output data lifecycle_actions
+      cleanup_summary:
+        type: ModelCleanupSummary
+        description: Output data cleanup_summary
+    required: false
+    timeout_ms: 15000
+  validate_state_consistency:
+    description: Validate state consistency and integrity
+    operation_type: state_management
+    inputs:
+      consistency_checks:
+        type: object
+        description: Input parameter consistency_checks
+        required: true
+      validation_scope:
+        type: object
+        description: Input parameter validation_scope
+        required: true
+    outputs:
+      consistency_report:
+        type: ModelConsistencyReport
+        description: Output data consistency_report
+      validation_errors:
+        type: ModelValidationErrors
+        description: Output data validation_errors
+    required: false
+    timeout_ms: 8000
+output_models:
+  ModelStateManagementSubcontract:
+    description: Main model for StateManagementSubcontract
+    fields:
+      subcontract_name:
+        type: str
+        description: Name of the subcontract
+        required: false
+        default: service_resolution_subcontract
+      subcontract_version:
+        type: str
+        description: Version of the subcontract
+        required: false
+        default: 1.0.0
+      applicable_node_types:
+        type: List[str]
+        description: Node types this subcontract applies to
+        required: false
+        default:
+          - COMPUTE
+          - EFFECT
+          - REDUCER
+          - ORCHESTRATOR
+      primary_strategy:
+        type: str
+        description: Primary service resolution strategy
+        required: false
+        default: consul
+      fallback_strategy:
+        type: str
+        description: Fallback service resolution strategy
+        required: false
+        default: environment
+      cache_enabled:
+        type: bool
+        description: Whether service resolution caching is enabled
+        required: false
+        default: true
+      cache_ttl_ms:
+        type: int
+        description: Cache time-to-live in milliseconds
+        required: false
+        default: 300000
+      health_check_interval_ms:
+        type: int
+        description: Health check interval in milliseconds
+        required: false
+        default: 30000
+      max_retries:
+        type: int
+        description: Maximum number of resolution retries
+        required: false
+        default: 3
+      retry_delay_ms:
+        type: int
+        description: Delay between retries in milliseconds
+        required: false
+        default: 500
+      exponential_backoff:
+        type: bool
+        description: Whether to use exponential backoff for retries
+        required: false
+        default: true
+dependencies:
+  - name: state_management_capability
+    type: capability
+    description: Provides state management capabilities
+requires_dependencies:
+  - name: protocol_state_management
+    type: protocol
+    description: Protocol for state management operations
+    optional: true
+metrics:
+  - name: state_persistence_operations
+    type: counter
+    description: Number of state persistence operations
+    labels:
+      - operation_type
+      - success
+      - storage_backend
+  - name: state_persistence_time
+    type: histogram
+    description: Time taken for state persistence operations
+    labels:
+      - operation_type
+      - storage_backend
+  - name: state_size
+    type: histogram
+    description: Size of persisted state data
+    labels:
+      - state_type
+      - compression_enabled
+  - name: active_state_keys
+    type: gauge
+    description: Number of active state keys being managed
+    labels: []
+  - name: state_consistency_violations
+    type: counter
+    description: Number of state consistency violations detected
+    labels:
+      - violation_type
+      - severity
+  - name: state_snapshots_created
+    type: counter
+    description: Number of state snapshots created
+    labels: []
+  - name: aggregation_operations
+    type: counter
+    description: Number of state aggregation operations
+    labels:
+      - aggregation_type
+      - success
+integration:
+  main_contract_field: state_management_configuration
+  mapping_strategy: direct_embedding
+  backward_compatibility: true

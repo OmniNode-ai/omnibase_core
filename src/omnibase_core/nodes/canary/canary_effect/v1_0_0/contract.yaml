@@ -156,6 +156,19 @@ actions:
     description: "Get performance and operational metrics"
     inputs: []
 
+# === SUBCONTRACTS ===
+subcontracts:
+  - path: "../../subcontracts/external_dependencies_subcontract.yaml"
+    integration_field: "external_dependencies_configuration"
+  - path: "../../subcontracts/health_check_subcontract.yaml"
+    integration_field: "health_check_configuration"
+  - path: "../../subcontracts/introspection_subcontract.yaml"
+    integration_field: "introspection_configuration"
+  - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
+    integration_field: "performance_monitoring_configuration"
+  - path: "../../subcontracts/request_response_subcontract.yaml"
+    integration_field: "request_response_configuration"
+
 # === DEFINITIONS (Required by ModelContractContent) ===
 definitions:
   models: {}

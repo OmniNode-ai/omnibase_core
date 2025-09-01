@@ -55,7 +55,15 @@
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/generation/tool_subcontract_loader/v1_0_0/models/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/model/health/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/contracts/models/**)",
+      "Bash(env PYTHONPATH=src poetry run python -m omnibase.validate.contract_validator --directory /Volumes/PRO-G40/Code/omnibase-core/src/omnibase_core/nodes/canary/mixins/)",
+      "Read(/Users/jonah/Code/omnibase_3/src/omnibase/core/subcontracts/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/**)",
+      "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/types/**)",
+      "mcp__serena__think_about_task_adherence"
     ],
     "deny": [],
     "ask": []

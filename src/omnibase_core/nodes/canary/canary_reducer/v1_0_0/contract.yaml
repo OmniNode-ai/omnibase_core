@@ -28,10 +28,10 @@ input_state:
   required: ["adapter_results"]
   properties:
     adapter_results:
-      type: "array"
+      property_type: "array"
       description: "Results from infrastructure adapters to aggregate"
     operation_type:
-      type: "string"
+      property_type: "string"
       description: "Type of aggregation operation to perform"
 
 output_state:
@@ -39,13 +39,13 @@ output_state:
   required: ["status", "aggregated_result"]
   properties:
     status:
-      type: "string"
+      property_type: "string"
       description: "Operation status"
     aggregated_result:
-      type: "object"
+      property_type: "object"
       description: "Aggregated results from infrastructure adapters"
     error_message:
-      type: "string"
+      property_type: "string"
       description: "Error message if operation failed"
 
 # === REDUCER CONFIGURATION WITH SUBCONTRACTS ===
@@ -237,6 +237,21 @@ definitions:
   models: {}
   schemas: {}
   responses: {}
+
+# === SUBCONTRACTS ===
+subcontracts:
+  - path: "../../subcontracts/state_management_subcontract.yaml"
+    integration_field: "state_management_configuration"
+  - path: "../../subcontracts/service_resolution_subcontract.yaml"
+    integration_field: "service_resolution_configuration"
+  - path: "../../subcontracts/health_check_subcontract.yaml"
+    integration_field: "health_check_configuration"
+  - path: "../../subcontracts/introspection_subcontract.yaml"
+    integration_field: "introspection_configuration"
+  - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
+    integration_field: "performance_monitoring_configuration"
+  - path: "../../subcontracts/request_response_subcontract.yaml"
+    integration_field: "request_response_configuration"
 
 # === VALIDATION ===
 validation_rules:

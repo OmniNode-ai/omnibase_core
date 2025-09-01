@@ -17,6 +17,9 @@ from omnibase_core.model.core.model_contract_definitions import (
 )
 from omnibase_core.model.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.model.core.model_subcontract_reference import (
+    ModelSubcontractReference,
+)
 from omnibase_core.model.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.model.core.model_yaml_schema_object import ModelYamlSchemaObject
 
@@ -56,18 +59,18 @@ class ModelContractContent(BaseModel):
     input_model: str | None = Field(None, description="Input model class name")
     output_model: str | None = Field(None, description="Output model class name")
     main_tool_class: str | None = Field(None, description="Main tool class name")
-    dependencies: list[ModelContractDependency] | None = Field(
+    dependencies: list[ModelContractDependency] | list[str] | None = Field(
         None,
-        description="Contract dependencies for Phase 0 pattern",
+        description="Contract dependencies (can be ModelContractDependency objects or strings)",
     )
     actions: list[dict[str, Any]] | None = Field(
         None,
         description="Available actions",
     )
     primary_actions: list[str] | None = Field(None, description="Primary actions")
-    validation_rules: list[dict[str, Any]] | None = Field(
+    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
         None,
-        description="Validation rules",
+        description="Validation rules (can be dict or list format)",
     )
 
     # === INFRASTRUCTURE FIELDS ===
@@ -161,6 +164,10 @@ class ModelContractContent(BaseModel):
         None,
         description="Observability configuration",
     )
+    event_type: dict[str, Any] | None = Field(
+        None,
+        description="Event type configuration for publish/subscribe patterns",
+    )
 
     # === ONEX COMPLIANCE FLAGS ===
     contract_driven: bool | None = Field(
@@ -175,6 +182,12 @@ class ModelContractContent(BaseModel):
     zero_any_types: bool | None = Field(
         None,
         description="Zero Any types compliance",
+    )
+
+    # === SUBCONTRACTS ===
+    subcontracts: list[ModelSubcontractReference] | None = Field(
+        None,
+        description="Subcontract references for mixin functionality",
     )
 
     # === DEPRECATED/LEGACY FIELDS ===
