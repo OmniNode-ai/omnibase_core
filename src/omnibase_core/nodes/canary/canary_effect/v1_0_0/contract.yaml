@@ -126,6 +126,32 @@ io_operations:
     timeout_seconds: 3
     validation_enabled: true
 
+# === SERVICE CONFIGURATION ===
+service_configuration:
+  is_persistent_service: false
+  default_port: 8087
+
+  # Consul adapter HTTP endpoints
+  http_endpoints:
+    - path: "/health"
+      method: "GET"
+      description: "Consul adapter health status"
+    - path: "/consul/status"
+      method: "GET"
+      description: "Get current consul connection status"
+    - path: "/consul/kv"
+      method: "GET"
+      description: "List consul key-value pairs"
+
+# === ACTIONS ===
+actions:
+  - name: "consul_operation"
+    description: "Perform consul API operation"
+    inputs: ["action", "operation_type"]
+  - name: "health_check"
+    description: "Check consul adapter health"
+    inputs: []
+
 # === DEFINITIONS (Required by ModelContractContent) ===
 definitions:
   models: {}

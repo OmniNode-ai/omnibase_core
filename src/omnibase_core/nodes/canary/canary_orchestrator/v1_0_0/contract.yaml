@@ -102,6 +102,32 @@ workflow_registry:
   workflow_selection_strategy: "explicit"
   max_concurrent_workflows: 3
 
+# === SERVICE CONFIGURATION ===
+service_configuration:
+  is_persistent_service: true
+  default_port: 8088
+
+  # Orchestrator HTTP endpoints
+  http_endpoints:
+    - path: "/health"
+      method: "GET"
+      description: "Orchestrator health status"
+    - path: "/workflows/status"
+      method: "GET"
+      description: "Get current workflow status"
+    - path: "/workflows/list"
+      method: "GET"
+      description: "List available workflows"
+
+# === ACTIONS ===
+actions:
+  - name: "start_workflow"
+    description: "Start infrastructure workflow"
+    inputs: ["operation_type", "workflow_id"]
+  - name: "stop_workflow"
+    description: "Stop running workflow"
+    inputs: ["workflow_id"]
+
 # === PERFORMANCE (Required for ORCHESTRATOR nodes) ===
 performance:
   single_operation_max_ms: 1000
