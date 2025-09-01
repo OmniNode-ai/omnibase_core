@@ -15,8 +15,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+
 from omnibase_core.constants.event_types import CoreEventTypes
-from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
@@ -25,7 +26,10 @@ from omnibase_core.model.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
 from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase_core.model.discovery.model_tool_response_event import ModelToolResponseEvent
+from omnibase_core.model.discovery.model_tool_response_event import (
+    ModelToolResponseEvent,
+)
+
 from .node import (
     NodeCanaryOrchestrator,
     main,
@@ -1163,7 +1167,9 @@ class TestInfrastructureOrchestrator:
 
     def test_node_orchestrator_service_inheritance(self, orchestrator):
         """Test proper inheritance from NodeOrchestratorService."""
-        from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+        from omnibase_core.core.infrastructure_service_bases import (
+            NodeOrchestratorService,
+        )
 
         assert isinstance(orchestrator, NodeOrchestratorService)
 

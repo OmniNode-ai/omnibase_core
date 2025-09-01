@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_effect import (
     EffectType,
     ModelEffectInput,
@@ -17,6 +17,7 @@ from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
+
 from .models import (
     ModelConsulAdapterHealth,
     ModelConsulAdapterInput,
@@ -352,7 +353,10 @@ class NodeCanaryEffect(NodeEffectService):
             }
 
             # Return the result directly since we override process completely
-            from omnibase_core.core.node_effect import ModelEffectOutput, TransactionState
+            from omnibase_core.core.node_effect import (
+                ModelEffectOutput,
+                TransactionState,
+            )
 
             return ModelEffectOutput(
                 result=result_data,
