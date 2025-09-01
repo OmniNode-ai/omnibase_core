@@ -125,7 +125,13 @@ class ModelFSMTransition(BaseModel):
         }
 
 
-# Import forward references after model definition
+# Import forward references after model definition to avoid circular imports
+# Only rebuild when the types are actually needed for runtime validation
+try:
+    from .model_fsm_effect import ModelFSMEffect
+    from .model_fsm_guard import ModelFSMGuard
 
-# Update forward references
-ModelFSMTransition.model_rebuild()
+    ModelFSMTransition.model_rebuild()
+except ImportError:
+    # Forward references will be resolved when needed
+    pass
