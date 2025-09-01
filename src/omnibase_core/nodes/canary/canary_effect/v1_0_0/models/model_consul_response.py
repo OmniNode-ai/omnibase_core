@@ -8,7 +8,7 @@ Strongly typed response models for consul adapter operations.
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.core.errors.onex_error import OnexError
 from omnibase_core.model.core.model_semver import ModelSemVer
