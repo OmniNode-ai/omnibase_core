@@ -16,15 +16,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import asyncpg
 import pytest
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.core.onex_error import OnexError
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.models import (
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_error import OnexError
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from .models import (
     ModelMessageAggregatorInput,
     ModelMessageAggregatorOutput,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_compute.v1_0_0.node import (
+from .node import (
     MessageAggregator,
     ModelAggregatedData,
     ModelAggregationMetrics,
@@ -34,7 +34,7 @@ from omnibase.tools.infrastructure.tool_infrastructure_message_aggregator_comput
     ModelNumericStats,
     ModelStateData,
     StateManager,
-    ToolMessageAggregator,
+    NodeCanaryCompute,
     main,
 )
 from pydantic import ValidationError
@@ -474,8 +474,8 @@ class TestMessageAggregator:
         assert merged_data["unique2"] == "data2"
 
 
-class TestToolMessageAggregator:
-    """Comprehensive test suite for the main ToolMessageAggregator class."""
+class TestNodeCanaryCompute:
+    """Comprehensive test suite for the main NodeCanaryCompute class."""
 
     @pytest.fixture
     def mock_container(self):
@@ -485,11 +485,11 @@ class TestToolMessageAggregator:
 
     @pytest.fixture
     def aggregator_tool(self, mock_container):
-        """Create ToolMessageAggregator instance."""
-        return ToolMessageAggregator(mock_container)
+        """Create NodeCanaryCompute instance."""
+        return NodeCanaryCompute(mock_container)
 
     def test_tool_initialization(self, aggregator_tool, mock_container):
-        """Test ToolMessageAggregator initialization."""
+        """Test NodeCanaryCompute initialization."""
         assert aggregator_tool.domain == "infrastructure"
         assert aggregator_tool.db_pool is None
         assert aggregator_tool.state_manager is None
@@ -1325,7 +1325,7 @@ class TestToolMessageAggregator:
             result = main()
 
             mock_create_container.assert_called_once()
-            assert isinstance(result, ToolMessageAggregator)
+            assert isinstance(result, NodeCanaryCompute)
             assert result.domain == "infrastructure"
 
     def test_main_function_integration(self):
@@ -1339,7 +1339,7 @@ class TestToolMessageAggregator:
             # Test direct execution
             result = main()
             assert result is not None
-            assert isinstance(result, ToolMessageAggregator)
+            assert isinstance(result, NodeCanaryCompute)
 
 
 class TestRealPostgreSQLIntegration:
@@ -1422,7 +1422,7 @@ class TestComplexScenarios:
     def complex_aggregator(self):
         """Setup complex aggregator for scenario testing."""
         container = MagicMock(spec=ONEXContainer)
-        aggregator = ToolMessageAggregator(container)
+        aggregator = NodeCanaryCompute(container)
 
         # Mock database components
         mock_pool = MagicMock()

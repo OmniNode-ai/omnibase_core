@@ -16,9 +16,9 @@ from uuid import uuid4
 
 import consul as python_consul
 import pytest
-from omnibase.core.models.model_core_errors import CoreErrorCode, OnexError
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
+from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.onex_container import ONEXContainer
+from .models import (
     ModelConsulAdapterHealth,
     ModelConsulHealthCheckNode,
     ModelConsulHealthResponse,
@@ -29,8 +29,8 @@ from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_
     ModelConsulServiceRegistration,
     ModelConsulServiceResponse,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
-    ToolInfrastructureConsulAdapterEffect,
+from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
+    NodeCanaryEffect,
 )
 
 
@@ -70,7 +70,7 @@ class TestConsulAdapterEffect:
     @pytest.fixture
     async def consul_adapter(self, container, consul_env_vars):
         """Create and initialize Consul adapter."""
-        adapter = ToolInfrastructureConsulAdapterEffect(container)
+        adapter = NodeCanaryEffect(container)
         await adapter.initialize_consul_client()
         yield adapter
 
@@ -100,7 +100,7 @@ class TestConsulAdapterEffect:
         """Test initialization fails without CONSUL_HOST."""
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(OnexError) as exc_info:
-                ToolInfrastructureConsulAdapterEffect(container)
+                NodeCanaryEffect(container)
 
             assert exc_info.value.error_code == CoreErrorCode.MISSING_REQUIRED_PARAMETER
             assert "CONSUL_HOST" in str(exc_info.value)
@@ -109,7 +109,7 @@ class TestConsulAdapterEffect:
         """Test initialization fails without CONSUL_PORT."""
         with patch.dict(os.environ, {"CONSUL_HOST": "localhost"}, clear=True):
             with pytest.raises(OnexError) as exc_info:
-                ToolInfrastructureConsulAdapterEffect(container)
+                NodeCanaryEffect(container)
 
             assert exc_info.value.error_code == CoreErrorCode.MISSING_REQUIRED_PARAMETER
             assert "CONSUL_PORT" in str(exc_info.value)
@@ -120,7 +120,7 @@ class TestConsulAdapterEffect:
             os.environ, {"CONSUL_HOST": "localhost", "CONSUL_PORT": "8500"}, clear=True
         ):
             with pytest.raises(OnexError) as exc_info:
-                ToolInfrastructureConsulAdapterEffect(container)
+                NodeCanaryEffect(container)
 
             assert exc_info.value.error_code == CoreErrorCode.MISSING_REQUIRED_PARAMETER
             assert "CONSUL_DATACENTER" in str(exc_info.value)
@@ -136,7 +136,7 @@ class TestConsulAdapterEffect:
             },
         ):
             with pytest.raises(OnexError) as exc_info:
-                ToolInfrastructureConsulAdapterEffect(container)
+                NodeCanaryEffect(container)
 
             assert exc_info.value.error_code == CoreErrorCode.PARAMETER_TYPE_MISMATCH
             assert "must be a valid integer" in str(exc_info.value)
@@ -170,7 +170,7 @@ class TestConsulAdapterEffect:
                 "CONSUL_DATACENTER": "dc1",
             },
         ):
-            adapter = ToolInfrastructureConsulAdapterEffect(container)
+            adapter = NodeCanaryEffect(container)
 
             with pytest.raises(OnexError) as exc_info:
                 await adapter.initialize_consul_client()
@@ -200,7 +200,7 @@ class TestConsulAdapterEffect:
                 "CONSUL_DATACENTER": "dc1",
             },
         ):
-            adapter = ToolInfrastructureConsulAdapterEffect(container)
+            adapter = NodeCanaryEffect(container)
 
             health_status = await adapter.health_check_consul()
 
@@ -348,7 +348,7 @@ class TestConsulAdapterEffect:
         self, consul_adapter, real_consul_client
     ):
         """Test service registration with health check."""
-        from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
+        from .models import (
             ModelConsulHealthCheck,
         )
 
@@ -502,7 +502,7 @@ class TestConsulAdapterEffect:
 
     def test_main_function(self):
         """Test main entry point function."""
-        from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
+        from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.node import (
             main,
         )
 
@@ -515,7 +515,7 @@ class TestConsulAdapterEffect:
             },
         ):
             result = main()
-            assert isinstance(result, ToolInfrastructureConsulAdapterEffect)
+            assert isinstance(result, NodeCanaryEffect)
             assert result.node_type == "effect"
             assert result.domain == "infrastructure"
 
@@ -524,7 +524,7 @@ class TestConsulAdapterEffect:
         self, consul_adapter, real_consul_client
     ):
         """Test process method with KV delete operations."""
-        from omnibase.core.node_effect import EffectType, ModelEffectInput
+        from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 
         test_key = f"test/process-delete-{uuid4()}"
         test_value = f"process-test-value-{int(time.time())}"
@@ -561,7 +561,7 @@ class TestConsulAdapterEffect:
         self, consul_adapter, real_consul_client
     ):
         """Test process method with service deregister operations."""
-        from omnibase.core.node_effect import EffectType, ModelEffectInput
+        from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 
         service_id = f"test-process-deregister-{uuid4()}"
         service_name = "test-process-service"
@@ -602,8 +602,8 @@ class TestConsulAdapterEffect:
     @pytest.mark.asyncio
     async def test_process_error_handling_delete_operations(self, consul_adapter):
         """Test error handling for delete operations in process method."""
-        from omnibase.core.models.model_core_errors import CoreErrorCode, OnexError
-        from omnibase.core.node_effect import EffectType, ModelEffectInput
+        from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
+        from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 
         # Test KV delete without key_path
         delete_input_no_key = ModelEffectInput(

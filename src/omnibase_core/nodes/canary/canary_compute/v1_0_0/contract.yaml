@@ -51,7 +51,7 @@ tool_specification:
   tool_name: "tool_infrastructure_message_aggregator_compute"
   version: {major: 1, minor: 0, patch: 0}
   description: "Cross-group message aggregation and state management with PostgreSQL persistence"
-  main_tool_class: "MessageAggregator"
+  main_tool_class: "NodeCanaryCompute"
   container_injection: "ONEXContainer"
   business_logic_pattern: "compute"
 
@@ -66,13 +66,7 @@ metadata:
 # === SERVICE CONFIGURATION ===
 service_configuration:
   is_persistent_service: false
-  requires_external_dependencies: true
-
-  external_services:
-    - name: "postgresql"
-      endpoint: "postgresql://localhost:5432"
-      health_check: "SELECT 1"
-      required: true
+  requires_external_dependencies: false
 
 # === INPUT/OUTPUT ===
 input_state:
@@ -115,8 +109,6 @@ actions:
 # === DEPENDENCIES ===
 dependencies:
   - "omnibase.protocol.protocol_event_bus"
-  - "omnibase.protocol.protocol_postgresql"
-  - "omnibase.protocol.protocol_file_system"
 
 # === PERFORMANCE (Required for COMPUTE nodes) ===
 performance:
@@ -139,13 +131,7 @@ service_resolution:
     fallback: "event_bus_client"
     discovery: "consul"
 
-  postgresql:
-    protocol: "ProtocolPostgreSQL"
-    strategy: "direct_connection"
-    connection_pool_size: 15
-
 infrastructure:
-  postgresql: {strategy: "direct", env_variable: "POSTGRESQL_URL", service_name: "postgresql"}
   event_bus: {strategy: "hybrid", primary: "kafka", fallback: "http", consul_discovery: true}
 
 # === ONEX COMPLIANCE ===

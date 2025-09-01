@@ -1,0 +1,226 @@
+# ONEX Mixin: State Management
+# Provides standardized state persistence and management for REDUCER nodes only
+
+mixin_name: "mixin_state_management"
+mixin_version: {major: 1, minor: 0, patch: 0}
+description: "State persistence, management, and consistency for stateful REDUCER nodes"
+applicable_node_types: ["REDUCER"]  # REDUCER only - architectural constraint
+
+# === STATE MANAGEMENT ACTIONS ===
+actions:
+  - name: "persist_state"
+    description: "Persist current state to configured storage backend"
+    inputs: ["state_key", "state_data", "persistence_options"]
+    outputs: ["persistence_result", "state_version"]
+    required: true
+    timeout_ms: 5000
+
+  - name: "restore_state"
+    description: "Restore state from storage backend"
+    inputs: ["state_key", "version_filter"]
+    outputs: ["state_data", "restoration_metadata"]
+    required: true
+    timeout_ms: 3000
+
+  - name: "create_state_snapshot"
+    description: "Create a point-in-time snapshot of current state"
+    inputs: ["snapshot_config", "metadata"]
+    outputs: ["snapshot_id", "snapshot_metadata"]
+    required: false
+    timeout_ms: 10000
+
+  - name: "manage_state_lifecycle"
+    description: "Manage state lifecycle including cleanup and archival"
+    inputs: ["lifecycle_config", "retention_policy"]
+    outputs: ["lifecycle_actions", "cleanup_summary"]
+    required: false
+    timeout_ms: 15000
+
+  - name: "validate_state_consistency"
+    description: "Validate state consistency and integrity"
+    inputs: ["consistency_checks", "validation_scope"]
+    outputs: ["consistency_report", "validation_errors"]
+    required: false
+    timeout_ms: 8000
+
+# === STATE MANAGEMENT CONFIGURATION ===
+state_management_config:
+  storage_backend: "postgresql"  # postgresql, redis, cassandra, file
+  consistency_level: "strong"    # strong, eventual, weak
+  transaction_isolation: "serializable"
+  auto_persistence: true
+  persistence_interval_ms: 30000  # 30 seconds
+  snapshot_retention_days: 30
+  state_compression: true
+  encryption_at_rest: true
+  
+# === STORAGE BACKENDS ===
+storage_backends:
+  postgresql:
+    enabled: true
+    connection_pool_size: 10
+    transaction_timeout_ms: 30000
+    schema_name: "onex_state"
+    table_prefix: "state_"
+    
+  redis:
+    enabled: false
+    cluster_mode: true
+    persistence_mode: "AOF"  # AOF, RDB, both
+    memory_policy: "allkeys-lru"
+    
+  cassandra:
+    enabled: false
+    consistency_level: "QUORUM"
+    replication_factor: 3
+    keyspace: "onex_state"
+
+# === STATE VERSIONING ===
+state_versioning:
+  enabled: true
+  versioning_strategy: "timestamp"  # timestamp, sequential, semantic
+  max_versions_per_key: 100
+  auto_cleanup_enabled: true
+  cleanup_threshold_versions: 50
+  
+# === CONSISTENCY PATTERNS ===
+consistency_patterns:
+  aggregation_state:
+    consistency_level: "strong"
+    conflict_resolution: "last_write_wins"
+    merge_strategy: "deep_merge"
+    
+  temporary_state:
+    consistency_level: "eventual"
+    ttl_seconds: 3600  # 1 hour
+    cleanup_strategy: "lazy"
+    
+  checkpoint_state:
+    consistency_level: "strong"
+    immutable: true
+    compression_enabled: true
+
+# === OUTPUT MODELS ===
+output_models:
+  state_data:
+    state_key: "string"
+    state_value: "object"
+    version: "string"
+    timestamp: "datetime"
+    checksum: "string"
+    metadata:
+      type: "object"
+      properties:
+        size_bytes: "integer"
+        compression_ratio: "float"
+        encryption_enabled: "boolean"
+        
+  persistence_result:
+    success: "boolean"
+    state_key: "string"
+    state_version: "string"
+    persistence_time_ms: "integer"
+    storage_backend: "string"
+    storage_location: "string"
+    
+  snapshot_metadata:
+    snapshot_id: "string"
+    creation_timestamp: "datetime"
+    state_keys_count: "integer"
+    total_size_bytes: "integer"
+    compression_enabled: "boolean"
+    encryption_enabled: "boolean"
+    storage_location: "string"
+    
+  consistency_report:
+    validation_timestamp: "datetime"
+    total_keys_checked: "integer"
+    consistency_score: "float"
+    issues_found:
+      type: "array"
+      items:
+        issue_type: "enum[CORRUPTION,INCONSISTENCY,MISSING_DATA,VERSION_CONFLICT]"
+        state_key: "string"
+        description: "string"
+        severity: "enum[LOW,MEDIUM,HIGH,CRITICAL]"
+        suggested_action: "string"
+
+# === AGGREGATION PATTERNS FOR REDUCER NODES ===
+aggregation_patterns:
+  message_aggregation:
+    strategy: "accumulate"
+    window_size_ms: 5000
+    trigger_conditions: ["size_threshold", "time_threshold", "event_trigger"]
+    state_persistence: "after_aggregation"
+    
+  state_reduction:
+    strategy: "merge_reduce"
+    merge_function: "custom"
+    conflict_resolution: "timestamp_wins"
+    state_persistence: "incremental"
+    
+  batch_processing:
+    strategy: "batch_accumulate"
+    batch_size: 1000
+    batch_timeout_ms: 10000
+    state_persistence: "per_batch"
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "state_persistence"
+    type: "capability"
+    description: "Provides state persistence and retrieval capabilities"
+    
+  - name: "state_consistency"
+    type: "capability"
+    description: "Provides state consistency validation and management"
+    
+  - name: "state_aggregation"
+    type: "capability"
+    description: "Provides state aggregation and reduction capabilities"
+
+# === DEPENDENCIES REQUIRED ===
+requires_dependencies:
+  - name: "protocol_database"
+    type: "protocol"
+    description: "Database protocol for state persistence"
+    
+  - name: "protocol_cache"
+    type: "protocol"
+    description: "Cache protocol for state caching"
+    optional: true
+
+# === METRICS ===
+metrics:
+  - name: "state_persistence_operations"
+    type: "counter"
+    description: "Number of state persistence operations"
+    labels: ["operation_type", "success", "storage_backend"]
+    
+  - name: "state_persistence_time"
+    type: "histogram"
+    description: "Time taken for state persistence operations"
+    labels: ["operation_type", "storage_backend"]
+    
+  - name: "state_size"
+    type: "histogram"
+    description: "Size of persisted state data"
+    labels: ["state_type", "compression_enabled"]
+    
+  - name: "active_state_keys"
+    type: "gauge"
+    description: "Number of active state keys being managed"
+    
+  - name: "state_consistency_violations"
+    type: "counter"
+    description: "Number of state consistency violations detected"
+    labels: ["violation_type", "severity"]
+    
+  - name: "state_snapshots_created"
+    type: "counter"
+    description: "Number of state snapshots created"
+    
+  - name: "aggregation_operations"
+    type: "counter"
+    description: "Number of state aggregation operations"
+    labels: ["aggregation_type", "success"]

@@ -10,7 +10,7 @@ name: "infrastructure_orchestrator"
 version: {major: 1, minor: 0, patch: 0}
 description: "Infrastructure Orchestrator - Maintains infrastructure connections and coordinates adapter tools"
 node_type: "ORCHESTRATOR"
-main_tool_class: "ToolInfrastructureOrchestrator"
+main_tool_class: "NodeCanaryOrchestrator"
 input_model: "omnibase.core.node_orchestrator.ModelOrchestratorInput"
 output_model: "omnibase.core.node_orchestrator.ModelOrchestratorOutput"
 
@@ -19,7 +19,7 @@ tool_specification:
   tool_name: "tool_infrastructure_orchestrator"
   version: {major: 1, minor: 0, patch: 0}
   description: "Infrastructure Orchestrator - Maintains infrastructure connections and coordinates adapter tools"
-  main_tool_class: "ToolInfrastructureOrchestrator"
+  main_tool_class: "NodeCanaryOrchestrator"
   container_injection: "ONEXContainer"
   business_logic_pattern: "orchestrator"
 

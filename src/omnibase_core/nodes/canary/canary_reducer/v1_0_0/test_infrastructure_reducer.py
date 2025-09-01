@@ -26,26 +26,26 @@ from uuid import UUID, uuid4
 
 import pytest
 import yaml
-from omnibase.constants.contract_constants import CONTRACT_FILENAME
-from omnibase.core.core_errors import CoreErrorCode, OnexError
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.model.core.model_onex_event import OnexEvent
-from omnibase.model.registry.model_registry_event import (
+from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.model.registry.model_registry_event import (
     ModelRegistryRequestEvent,
     ModelRegistryResponseEvent,
     RegistryOperations,
     get_operation_for_endpoint,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.models.model_infrastructure_reducer_input import (
+from .models.model_infrastructure_reducer_input import (
     ModelInfrastructureReducerInput,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.models.model_infrastructure_reducer_output import (
+from .models.model_infrastructure_reducer_output import (
     ModelInfrastructureReducerOutput,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node import (
-    ToolInfrastructureReducer,
+from .node import (
+    NodeCanaryReducer,
 )
 
 
@@ -99,11 +99,11 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load"),
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
             assert hasattr(reducer, "loaded_adapters")
@@ -121,11 +121,11 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load"),
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer.logger = mock_logger
 
             # Trigger initialization logging
@@ -143,14 +143,14 @@ class TestInfrastructureReducerInitialization:
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=mock_contract_content),
             patch.object(
-                ToolInfrastructureReducer,
+                NodeCanaryReducer,
                 "_load_adapter_from_metadata",
                 return_value=mock_adapter_instance,
             ),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Should have loaded adapters
             assert len(reducer.loaded_adapters) > 0
@@ -162,15 +162,15 @@ class TestInfrastructureReducerInitialization:
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=mock_contract_content),
             patch.object(
-                ToolInfrastructureReducer,
+                NodeCanaryReducer,
                 "_load_adapter_from_metadata",
                 side_effect=Exception("Loading failed"),
             ),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
             # Should not raise exception, but continue with other adapters
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Failed adapters should not be in loaded_adapters
             assert isinstance(reducer.loaded_adapters, dict)
@@ -184,15 +184,15 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=mock_contract_content),
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(
-                ToolInfrastructureReducer,
+                NodeCanaryReducer,
                 "_load_adapter_from_metadata",
                 return_value=mock_component_instance,
             ),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Should have loaded specialized components
             assert isinstance(reducer.specialized_components, dict)
@@ -204,16 +204,16 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=mock_contract_content),
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(
-                ToolInfrastructureReducer,
+                NodeCanaryReducer,
                 "_load_adapter_from_metadata",
                 side_effect=Exception("Component loading failed"),
             ),
         ):
 
             # Should not raise exception
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Failed components should not be in specialized_components
             assert isinstance(reducer.specialized_components, dict)
@@ -238,7 +238,7 @@ class TestInfrastructureReducerAdapterLoading:
                     "current_development": "1.1.0",
                     "discovery": {
                         "version_directory_pattern": "v{major}_{minor}_{patch}",
-                        "main_class_name": "ToolInfrastructureConsulAdapterEffect",
+                        "main_class_name": "NodeCanaryEffect",
                     },
                 }
             },
@@ -256,10 +256,10 @@ class TestInfrastructureReducerAdapterLoading:
             patch("yaml.safe_load", return_value=sample_manifest_content),
             patch("importlib.import_module") as mock_import,
             patch("getattr", return_value=mock_adapter_class),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
                 "consul_adapter",
@@ -282,10 +282,10 @@ class TestInfrastructureReducerAdapterLoading:
             patch("yaml.safe_load", return_value=sample_manifest_content),
             patch("importlib.import_module") as mock_import,
             patch("getattr", return_value=mock_adapter_class),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
                 "consul_adapter",
@@ -305,10 +305,10 @@ class TestInfrastructureReducerAdapterLoading:
             patch(
                 "importlib.import_module", side_effect=ImportError("Module not found")
             ),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             with pytest.raises(ImportError):
                 reducer._load_adapter_from_metadata(
@@ -321,10 +321,10 @@ class TestInfrastructureReducerAdapterLoading:
         """Test handling of missing metadata files."""
         with (
             patch("builtins.open", side_effect=FileNotFoundError("File not found")),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             with pytest.raises(FileNotFoundError):
                 reducer._load_adapter_from_metadata(
@@ -346,10 +346,10 @@ class TestInfrastructureReducerHealthCheck:
     def reducer_with_mocked_loading(self, mock_container):
         """Create reducer with mocked loading methods."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-            return ToolInfrastructureReducer(mock_container)
+            return NodeCanaryReducer(mock_container)
 
     def test_health_check_no_adapters_or_components(self, reducer_with_mocked_loading):
         """Test health check when no adapters or components are loaded."""
@@ -693,10 +693,10 @@ class TestInfrastructureReducerLegacyHealthCheck:
     def reducer_with_mocked_loading(self, mock_container):
         """Create reducer with mocked loading methods."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-            return ToolInfrastructureReducer(mock_container)
+            return NodeCanaryReducer(mock_container)
 
     @pytest.mark.asyncio
     async def test_aggregate_health_status_healthy(self, reducer_with_mocked_loading):
@@ -841,11 +841,11 @@ class TestInfrastructureReducerIntrospection:
     def reducer_with_adapters(self, mock_container):
         """Create reducer with mock adapters loaded."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Add mock loaded adapters
             reducer.loaded_adapters = {
@@ -979,11 +979,11 @@ class TestInfrastructureReducerIntrospection:
     def test_get_introspection_data_complete_failure(self, mock_container):
         """Test introspection data when everything fails."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Remove attributes to simulate failure
             del reducer.loaded_adapters
@@ -1010,10 +1010,10 @@ class TestInfrastructureReducerServiceMode:
     def reducer_with_mocked_loading(self, mock_container):
         """Create reducer with mocked loading methods."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-            return ToolInfrastructureReducer(mock_container)
+            return NodeCanaryReducer(mock_container)
 
     @pytest.mark.asyncio
     async def test_start_service_mode_success(self, reducer_with_mocked_loading):
@@ -1182,11 +1182,11 @@ class TestInfrastructureReducerIntrospectionHandling:
     def reducer_with_adapters(self, mock_container):
         """Create reducer with mock adapters and event bus."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer._node_id = uuid4()
             reducer._event_bus = MagicMock()
 
@@ -1339,11 +1339,11 @@ class TestInfrastructureReducerRegistryDelegation:
     def reducer_with_registry_component(self, mock_container):
         """Create reducer with registry catalog aggregator component."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer.node_id = uuid4()
             reducer._event_bus_active = False
 
@@ -1507,11 +1507,11 @@ class TestInfrastructureReducerFallbackDirectCalls:
     def reducer_with_registry_methods(self, mock_container):
         """Create reducer with registry component that has all methods."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Create mock registry with all expected methods
             mock_registry = MagicMock()
@@ -1644,11 +1644,11 @@ class TestInfrastructureReducerFallbackDirectCalls:
     async def test_fallback_no_registry_component(self, mock_container):
         """Test fallback when registry component is not available."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer.specialized_components = {}  # No registry component
 
             result = await reducer._fallback_to_direct_calls(
@@ -1665,11 +1665,11 @@ class TestInfrastructureReducerFallbackDirectCalls:
     async def test_fallback_missing_method(self, mock_container):
         """Test fallback when registry component doesn't have required method."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Create mock registry without list_registry_tools method
             mock_registry = MagicMock()
@@ -1731,11 +1731,11 @@ class TestInfrastructureReducerStatusAndListMethods:
     def reducer_with_adapters(self, mock_container):
         """Create reducer with mock adapters and components."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Add mock adapters with health check methods
             mock_adapter1 = MagicMock()
@@ -1815,11 +1815,11 @@ class TestInfrastructureReducerStatusAndListMethods:
     ):
         """Test infrastructure status when adapter doesn't have health_check method."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Add adapter without health_check method
             mock_adapter = MagicMock()
@@ -1839,11 +1839,11 @@ class TestInfrastructureReducerStatusAndListMethods:
     ):
         """Test infrastructure status when adapter health check raises exception."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Add adapter with failing health check
             mock_adapter = MagicMock()
@@ -1902,11 +1902,11 @@ class TestInfrastructureReducerEventBusOperations:
     def reducer_with_event_bus(self, mock_container):
         """Create reducer with mock event bus."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer.node_id = uuid4()
             reducer.event_bus = MagicMock()
             reducer._pending_registry_requests = {}
@@ -2073,25 +2073,25 @@ class TestInfrastructureReducerMainFunction:
     """Test the main function and module entry point."""
 
     def test_main_function_returns_reducer_instance(self):
-        """Test that main function returns a ToolInfrastructureReducer instance."""
+        """Test that main function returns a NodeCanaryReducer instance."""
         with (
             patch(
                 "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container"
             ) as mock_create_container,
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
-            from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node import (
+            from .node import (
                 main,
             )
 
             result = main()
 
-            assert isinstance(result, ToolInfrastructureReducer)
+            assert isinstance(result, NodeCanaryReducer)
             mock_create_container.assert_called_once()
 
     def test_main_function_container_creation(self):
@@ -2100,14 +2100,14 @@ class TestInfrastructureReducerMainFunction:
             patch(
                 "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container"
             ) as mock_create_container,
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
-            from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node import (
+            from .node import (
                 main,
             )
 
@@ -2130,22 +2130,22 @@ class TestInfrastructureReducerComprehensiveCoverage:
     def test_init_domain_assignment(self, mock_container):
         """Test that domain is correctly assigned during initialization."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
 
     def test_init_private_attributes_initialization(self, mock_container):
         """Test that private attributes are properly initialized."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             assert isinstance(reducer._pending_registry_requests, dict)
             assert reducer._event_bus_active is False
@@ -2172,14 +2172,14 @@ class TestInfrastructureReducerComprehensiveCoverage:
         mock_adapter_class = MagicMock(return_value=mock_adapter_instance)
 
         with (
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=sample_manifest),
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Test with unsupported version strategy - should fallback to current_stable
             result = reducer._load_adapter_from_metadata(
@@ -2191,11 +2191,11 @@ class TestInfrastructureReducerComprehensiveCoverage:
     def test_health_check_unknown_format_handling(self, mock_container):
         """Test health check handling of unknown result formats."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
 
             # Create adapter that returns unknown format
             mock_adapter = MagicMock()
@@ -2216,11 +2216,11 @@ class TestInfrastructureReducerComprehensiveCoverage:
     def test_introspection_data_no_mixin_attribute(self, mock_container):
         """Test introspection data when _gather_introspection_data attribute doesn't exist."""
         with (
-            patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
-            patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
+            patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
+            patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
 
-            reducer = ToolInfrastructureReducer(mock_container)
+            reducer = NodeCanaryReducer(mock_container)
             reducer.loaded_adapters = {}
             reducer.specialized_components = {}
 

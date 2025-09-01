@@ -13,16 +13,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
-from omnibase.core.model_contract_base import ModelContractBase
+from omnibase_core.core.model_contract_base import ModelContractBase
 
 # Import node-specific contract models
-from omnibase.core.model_contract_compute import ModelContractCompute
-from omnibase.core.model_contract_effect import ModelContractEffect
-from omnibase.core.model_contract_orchestrator import ModelContractOrchestrator
-from omnibase.core.model_contract_reducer import ModelContractReducer
+from omnibase_core.core.model_contract_compute import ModelContractCompute
+from omnibase_core.core.model_contract_effect import ModelContractEffect
+from omnibase_core.core.model_contract_orchestrator import ModelContractOrchestrator
+from omnibase_core.core.model_contract_reducer import ModelContractReducer
 
 # Import for node type validation
-from omnibase.enums.enum_node_type import EnumNodeType
+from omnibase_core.enums.enum_node_type import EnumNodeType
 from pydantic import BaseModel, ValidationError
 
 
@@ -1001,7 +1001,7 @@ def main():
 
         aggregator_path = (
             infrastructure_path
-            / "tool_infrastructure_message_aggregator_compute/v1_0_0/contract.yaml"
+            / "canary_compute/v1_0_0/contract.yaml"
         )
         if not aggregator_path.exists():
             print("❌ Message aggregator contract not found")

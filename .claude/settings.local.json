@@ -55,7 +55,8 @@
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_consul_adapter_effect/v1_0_0/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)",
-      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)"
+      "Read(/Volumes/PRO-G40/Code/omnibase_3/src/omnibase/tools/infrastructure/**)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

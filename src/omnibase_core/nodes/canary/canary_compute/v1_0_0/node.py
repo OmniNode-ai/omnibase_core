@@ -15,11 +15,11 @@ from datetime import datetime, timedelta
 from typing import Callable, Dict, List, Optional, Union
 
 import asyncpg
-from omnibase.core.infrastructure_service_bases import NodeComputeService
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.core.onex_error import OnexError
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.core.infrastructure_service_bases import NodeComputeService
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_error import OnexError
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from pydantic import BaseModel, Field
 
 from .models import ModelMessageAggregatorInput, ModelMessageAggregatorOutput
@@ -448,7 +448,7 @@ class MessageAggregator:
         return result
 
 
-class ToolMessageAggregator(NodeComputeService):
+class NodeCanaryCompute(NodeComputeService):
     """
     Message Aggregator tool for ONEX Messaging Architecture v0.2.
 
@@ -791,10 +791,10 @@ class ToolMessageAggregator(NodeComputeService):
 
 def main():
     """Main entry point for Message Aggregator - returns node instance with infrastructure container"""
-    from omnibase.tools.infrastructure.container import create_infrastructure_container
+    from ..container import create_infrastructure_container
 
     container = create_infrastructure_container()
-    return ToolMessageAggregator(container)
+    return NodeCanaryCompute(container)
 
 
 if __name__ == "__main__":

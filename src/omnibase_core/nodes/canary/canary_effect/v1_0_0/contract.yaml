@@ -18,7 +18,7 @@ tool_specification:
   tool_name: "tool_infrastructure_consul_adapter_effect"
   version: {major: 1, minor: 0, patch: 0}
   description: "Infrastructure Consul Adapter - Message Bus to Consul API Bridge"
-  main_tool_class: "ToolInfrastructureConsulAdapterEffect"
+  main_tool_class: "NodeCanaryEffect"
   container_injection: "ONEXContainer"
   business_logic_pattern: "effect"
 

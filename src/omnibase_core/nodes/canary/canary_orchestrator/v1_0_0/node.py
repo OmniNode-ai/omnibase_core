@@ -11,26 +11,26 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
-from omnibase.constants.contract_constants import CONTRACT_FILENAME
-from omnibase.constants.event_types import CoreEventTypes
-from omnibase.core.core_errors import CoreErrorCode, OnexError
-from omnibase.core.infrastructure_service_bases import NodeOrchestratorService
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.model.discovery.model_tool_invocation_event import (
+from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.model.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase.model.discovery.model_tool_response_event import ModelToolResponseEvent
+from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.model.discovery.model_tool_response_event import ModelToolResponseEvent
 
 from .protocols.protocol_infrastructure_orchestrator import (
     ProtocolInfrastructureOrchestrator,
 )
 
 
-class ToolInfrastructureOrchestrator(NodeOrchestratorService):
+class NodeCanaryOrchestrator(NodeOrchestratorService):
     """
     Infrastructure Orchestrator following modern 4-node architecture.
 
@@ -337,10 +337,10 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
 
 def main():
     """Main entry point for Infrastructure Orchestrator - returns node instance with infrastructure container"""
-    from omnibase.tools.infrastructure.container import create_infrastructure_container
+    from ..container import create_infrastructure_container
 
     container = create_infrastructure_container()
-    return ToolInfrastructureOrchestrator(container)
+    return NodeCanaryOrchestrator(container)
 
 
 if __name__ == "__main__":

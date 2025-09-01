@@ -14,9 +14,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Union
 
 import asyncpg
-from omnibase.core.errors import OnexError
-from omnibase.core.infrastructure_service_bases import NodeEffectService
-from omnibase.core.onex_container import ONEXContainer
+from omnibase_core.core.errors import OnexError
+from omnibase_core.core.infrastructure_service_bases import NodeEffectService
+from omnibase_core.core.onex_container import ONEXContainer
 from pydantic import BaseModel, Field
 
 from .models import (
@@ -151,7 +151,7 @@ class ResponseAggregator:
         return f"gw_{operation_type}_{hash_digest}"
 
 
-class ToolGroupGateway(NodeEffectService):
+class NodeCanaryGateway(NodeEffectService):
     """
     Group Gateway tool for ONEX Messaging Architecture v0.2.
 
@@ -421,10 +421,10 @@ class ToolGroupGateway(NodeEffectService):
 
 def main():
     """Main entry point for Group Gateway - returns node instance with infrastructure container"""
-    from omnibase.tools.infrastructure.container import create_infrastructure_container
+    from ..container import create_infrastructure_container
 
     container = create_infrastructure_container()
-    return ToolGroupGateway(container)
+    return NodeCanaryGateway(container)
 
 
 if __name__ == "__main__":

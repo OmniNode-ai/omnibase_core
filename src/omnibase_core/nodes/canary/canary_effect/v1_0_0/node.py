@@ -7,17 +7,17 @@ import os
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from omnibase.core.core_errors import CoreErrorCode, OnexError
-from omnibase.core.node_effect import (
+from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.node_effect import (
     EffectType,
     ModelEffectInput,
     ModelEffectOutput,
 )
-from omnibase.core.node_effect_service import NodeEffectService
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
+from omnibase_core.core.node_effect_service import NodeEffectService
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from .models import (
     ModelConsulAdapterHealth,
     ModelConsulAdapterInput,
     ModelConsulHealthCheckNode,
@@ -28,7 +28,7 @@ from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_
     ModelConsulServiceRegistration,
     ModelConsulServiceResponse,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models.model_consul_adapter_response import (
+from .models.model_consul_adapter_response import (
     ModelConsulHealthStatus,
     ModelConsulOperationResponse,
 )
@@ -145,7 +145,7 @@ class MockConsulClient:
         self.health = MockHealth(self)
 
 
-class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
+class NodeCanaryEffect(NodeEffectService):
     """
     Consul Adapter - Event-Driven Infrastructure Effect
 
@@ -352,7 +352,7 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
             }
 
             # Return the result directly since we override process completely
-            from omnibase.core.node_effect import ModelEffectOutput, TransactionState
+            from omnibase_core.core.node_effect import ModelEffectOutput, TransactionState
 
             return ModelEffectOutput(
                 result=result_data,
@@ -806,12 +806,12 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
 
 async def main():
     """Main entry point for Consul Adapter - runs in service mode with MixinNodeService"""
-    from omnibase.tools.infrastructure.container import create_infrastructure_container
+    from ..container import create_infrastructure_container
 
     # Create infrastructure container with all shared dependencies
     container = create_infrastructure_container()
 
-    adapter = ToolInfrastructureConsulAdapterEffect(container)
+    adapter = NodeCanaryEffect(container)
 
     # Initialize the adapter
     await adapter.initialize()

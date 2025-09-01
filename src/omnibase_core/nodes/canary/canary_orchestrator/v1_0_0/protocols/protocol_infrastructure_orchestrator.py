@@ -9,7 +9,7 @@ following ONEX protocol patterns.
 from abc import abstractmethod
 from typing import Any, Dict, Protocol
 
-from omnibase.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ONEXContainer
 
 
 class ProtocolInfrastructureOrchestrator(Protocol):

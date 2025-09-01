@@ -13,8 +13,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 import aiohttp
-from omnibase.core.base_error import OnexError
-from omnibase.messaging import (
+from omnibase_core.core.base_error import OnexError
+from omnibase_core.messaging import (
     CommandRequest,
     GroupGateway,
     HeartbeatEvent,
@@ -456,7 +456,7 @@ class InfrastructureReducerMessagingMixin:
     """
     Mixin to add messaging capabilities to Infrastructure Reducer
 
-    This can be mixed into the existing ToolInfrastructureReducer class
+    This can be mixed into the existing NodeCanaryReducer class
     to enable messaging integration without breaking existing functionality.
     """
 

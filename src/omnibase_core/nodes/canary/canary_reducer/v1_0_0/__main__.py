@@ -15,9 +15,9 @@ from pathlib import Path
 src_path = Path(__file__).parents[5] / "src"
 sys.path.insert(0, str(src_path))
 
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node import (
-    ToolInfrastructureReducer,
+from omnibase_core.core.onex_container import ONEXContainer
+from .node import (
+    NodeCanaryReducer,
 )
 
 
@@ -30,7 +30,7 @@ async def main():
 
     try:
         # Initialize the infrastructure reducer
-        reducer = ToolInfrastructureReducer(container)
+        reducer = NodeCanaryReducer(container)
         print("✅ Infrastructure Reducer initialized")
 
         # Start in service mode to enable discovery handlers

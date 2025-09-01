@@ -12,14 +12,14 @@ input_model: "ModelInfrastructureReducerInput"
 output_model: "ModelInfrastructureReducerOutput"
 description: "Infrastructure adapter aggregation and service coordination contract for ONEX infrastructure tool group"
 node_type: "REDUCER"
-main_tool_class: "ToolInfrastructureReducer"
+main_tool_class: "NodeCanaryReducer"
 
 # === TOOL SPECIFICATION ===
 tool_specification:
   tool_name: "tool_infrastructure_reducer"
   version: {major: 1, minor: 0, patch: 0}
   description: "Infrastructure adapter aggregation and service coordination for ONEX infrastructure tool group"
-  main_tool_class: "ToolInfrastructureReducer"
+  main_tool_class: "NodeCanaryReducer"
   container_injection: "ONEXContainer"
   business_logic_pattern: "reducer"
 

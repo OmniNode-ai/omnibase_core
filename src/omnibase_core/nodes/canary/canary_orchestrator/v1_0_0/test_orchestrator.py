@@ -15,22 +15,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
-from omnibase.constants.event_types import CoreEventTypes
-from omnibase.core.models.model_core_errors import CoreErrorCode, OnexError
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.model.discovery.model_tool_invocation_event import (
+from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.models.model_core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.model.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase.model.discovery.model_tool_response_event import ModelToolResponseEvent
-from omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node import (
-    ToolInfrastructureOrchestrator,
+from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.model.discovery.model_tool_response_event import ModelToolResponseEvent
+from .node import (
+    NodeCanaryOrchestrator,
     main,
 )
-from omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.protocols.protocol_infrastructure_orchestrator import (
+from .protocols.protocol_infrastructure_orchestrator import (
     ProtocolInfrastructureOrchestrator,
 )
 
@@ -64,7 +64,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            return ToolInfrastructureOrchestrator(container)
+            return NodeCanaryOrchestrator(container)
 
     @pytest.fixture
     def sample_tool_response(self):
@@ -117,7 +117,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         assert orchestrator.event_bus is None
         assert orchestrator.domain == "infrastructure"
@@ -132,7 +132,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         # Should not raise error even without subscribe method
         assert orchestrator.event_bus == mock_event_bus
@@ -175,7 +175,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         result = orchestrator.health_check()
 
@@ -196,7 +196,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         result = orchestrator.health_check()
 
@@ -215,7 +215,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         result = orchestrator.health_check()
 
@@ -234,7 +234,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         result = orchestrator.health_check()
 
@@ -252,7 +252,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         # Remove pending invocations attribute
         delattr(orchestrator, "_pending_invocations")
@@ -1009,7 +1009,7 @@ class TestInfrastructureOrchestrator:
             "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
-            orchestrator = ToolInfrastructureOrchestrator(container)
+            orchestrator = NodeCanaryOrchestrator(container)
 
         assert orchestrator.event_bus == mock_event_bus
 
@@ -1033,7 +1033,7 @@ class TestInfrastructureOrchestrator:
                 result = main()
 
                 mock_create_container.assert_called_once()
-                assert isinstance(result, ToolInfrastructureOrchestrator)
+                assert isinstance(result, NodeCanaryOrchestrator)
                 assert result.domain == "infrastructure"
 
     def test_main_function_integration(self):
@@ -1163,7 +1163,7 @@ class TestInfrastructureOrchestrator:
 
     def test_node_orchestrator_service_inheritance(self, orchestrator):
         """Test proper inheritance from NodeOrchestratorService."""
-        from omnibase.core.infrastructure_service_bases import NodeOrchestratorService
+        from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
 
         assert isinstance(orchestrator, NodeOrchestratorService)
 
@@ -1178,7 +1178,7 @@ class TestInfrastructureOrchestrator:
 
     def test_all_protocol_methods_implemented(self, orchestrator):
         """Test that all protocol methods are properly implemented."""
-        from omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.protocols.protocol_infrastructure_orchestrator import (
+        from .protocols.protocol_infrastructure_orchestrator import (
             ProtocolInfrastructureOrchestrator,
         )
 

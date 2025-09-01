@@ -66,7 +66,7 @@ tool_specification:
   tool_name: "tool_infrastructure_group_gateway_effect"
   version: {major: 1, minor: 0, patch: 0}
   description: "Message routing and response aggregation with PostgreSQL persistence"
-  main_tool_class: "ToolGroupGateway"
+  main_tool_class: "NodeCanaryGateway"
   container_injection: "ONEXContainer"
   business_logic_pattern: "effect"
 

@@ -16,14 +16,14 @@ from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 import yaml
-from omnibase.constants.contract_constants import CONTRACT_FILENAME
-from omnibase.core.core_errors import CoreErrorCode, OnexError
-from omnibase.core.infrastructure_service_bases import NodeReducerService
-from omnibase.core.onex_container import ONEXContainer
-from omnibase.enums.enum_health_status import EnumHealthStatus
-from omnibase.model.core.model_health_status import ModelHealthStatus
-from omnibase.model.core.model_onex_event import OnexEvent
-from omnibase.model.registry.model_registry_event import (
+from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+from omnibase_core.core.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.infrastructure_service_bases import NodeReducerService
+from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.model.registry.model_registry_event import (
     ModelRegistryRequestEvent,
     ModelRegistryResponseEvent,
     RegistryOperations,
@@ -31,7 +31,7 @@ from omnibase.model.registry.model_registry_event import (
 )
 
 
-class ToolInfrastructureReducer(NodeReducerService):
+class NodeCanaryReducer(NodeReducerService):
     """
     Infrastructure Reducer implementation following modern 4-node architecture.
 
@@ -263,7 +263,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         This manually implements what MixinRequestResponseIntrospection does,
         but without the 'bool' callable error on is_connected.
         """
-        from omnibase.constants.event_types import CoreEventTypes
+        from omnibase_core.constants.event_types import CoreEventTypes
 
         if not hasattr(self, "_event_bus") or self._event_bus is None:
             print("   ⚠️ No event bus available for introspection subscription")
@@ -302,13 +302,13 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             from uuid import uuid4
 
-            from omnibase.model.discovery.enum_node_current_status import (
+            from omnibase_core.model.discovery.enum_node_current_status import (
                 NodeCurrentStatusEnum,
             )
-            from omnibase.model.discovery.model_current_tool_availability import (
+            from omnibase_core.model.discovery.model_current_tool_availability import (
                 ModelCurrentToolAvailability,
             )
-            from omnibase.model.discovery.model_introspection_response_event import (
+            from omnibase_core.model.discovery.model_introspection_response_event import (
                 ModelIntrospectionResponseEvent,
             )
 
@@ -1119,10 +1119,10 @@ class ToolInfrastructureReducer(NodeReducerService):
 
 def main():
     """Main entry point for Infrastructure Reducer - returns node instance with infrastructure container"""
-    from omnibase.tools.infrastructure.container import create_infrastructure_container
+    from ..container import create_infrastructure_container
 
     container = create_infrastructure_container()
-    return ToolInfrastructureReducer(container)
+    return NodeCanaryReducer(container)
 
 
 if __name__ == "__main__":
