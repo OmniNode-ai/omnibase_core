@@ -130,6 +130,9 @@ def create_onex_container() -> ONEXContainer:
     Create and configure ONEX container.
 
     Returns configured container with basic service setup.
+
+    Note: For SPI compliance, consider using create_spi_service_registry()
+    from omnibase_core.core.spi_service_registry instead.
     """
     container = ONEXContainer()
 
