@@ -6,7 +6,6 @@ This model represents input data structure for intelligence pipeline workflows
 in the ONEX platform's workflow 6 system integration.
 """
 
-
 from pydantic import BaseModel, Field
 
 # Type aliases for strong typing

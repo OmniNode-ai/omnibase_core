@@ -6,13 +6,16 @@ to deserialize/validate the contract YAML files. This ensures contracts are
 syntactically correct and the models can be properly instantiated.
 """
 
+import contextlib
 import importlib
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 import yaml
+from pydantic import BaseModel
+
 from omnibase_core.core.model_contract_base import ModelContractBase
 
 # Import node-specific contract models
@@ -23,7 +26,6 @@ from omnibase_core.core.model_contract_reducer import ModelContractReducer
 
 # Import for node type validation
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from pydantic import BaseModel, ValidationError
 
 
 class ContractValidator:
@@ -34,7 +36,7 @@ class ContractValidator:
         self.infrastructure_path = infrastructure_path
         self.validation_results = []
 
-    def validate_subcontract_constraints(self, contract_data: Dict) -> List[str]:
+    def validate_subcontract_constraints(self, contract_data: dict) -> list[str]:
         """
         Validate subcontract usage against node-type-specific architectural constraints.
 
@@ -67,19 +69,19 @@ class ContractValidator:
             # COMPUTE nodes should be stateless and focused on pure computation
             if "state_management" in contract_data:
                 validations.append(
-                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_management subcontracts"
+                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_management subcontracts",
                 )
                 validations.append("   💡 Use REDUCER nodes for stateful operations")
 
             if "aggregation" in contract_data:
                 validations.append(
-                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have aggregation subcontracts"
+                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have aggregation subcontracts",
                 )
                 validations.append("   💡 Use REDUCER nodes for data aggregation")
 
             if "state_transitions" in contract_data:
                 validations.append(
-                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_transitions subcontracts"
+                    "❌ SUBCONTRACT VIOLATION: COMPUTE nodes cannot have state_transitions subcontracts",
                 )
                 validations.append("   💡 Use REDUCER nodes for FSM state management")
 
@@ -90,7 +92,7 @@ class ContractValidator:
             # REDUCER nodes should have state management capabilities
             if "state_transitions" not in contract_data:
                 validations.append(
-                    "⚠️  REDUCER node recommendation: Consider adding state_transitions subcontract for FSM support"
+                    "⚠️  REDUCER node recommendation: Consider adding state_transitions subcontract for FSM support",
                 )
             else:
                 validations.append("✅ REDUCER node has state_transitions subcontract")
@@ -98,49 +100,49 @@ class ContractValidator:
             # REDUCER nodes can legitimately have aggregation and state_management
             if "aggregation" in contract_data:
                 validations.append(
-                    "✅ REDUCER node legitimately has aggregation subcontract"
+                    "✅ REDUCER node legitimately has aggregation subcontract",
                 )
             if "state_management" in contract_data:
                 validations.append(
-                    "✅ REDUCER node legitimately has state_management subcontract"
+                    "✅ REDUCER node legitimately has state_management subcontract",
                 )
 
         elif node_type == EnumNodeType.EFFECT:
             # EFFECT nodes can have caching and routing for external operations
             if "caching" in contract_data:
                 validations.append(
-                    "✅ EFFECT node legitimately has caching subcontract"
+                    "✅ EFFECT node legitimately has caching subcontract",
                 )
             if "routing" in contract_data:
                 validations.append(
-                    "✅ EFFECT node legitimately has routing subcontract"
+                    "✅ EFFECT node legitimately has routing subcontract",
                 )
 
             # EFFECT nodes should not manage internal state
             if "state_management" in contract_data:
                 validations.append(
-                    "❌ SUBCONTRACT VIOLATION: EFFECT nodes should not have state_management subcontracts"
+                    "❌ SUBCONTRACT VIOLATION: EFFECT nodes should not have state_management subcontracts",
                 )
                 validations.append(
-                    "   💡 Use REDUCER nodes for state management, EFFECT nodes for side effects"
+                    "   💡 Use REDUCER nodes for state management, EFFECT nodes for side effects",
                 )
 
         elif node_type == EnumNodeType.ORCHESTRATOR:
             # ORCHESTRATOR nodes should have workflow coordination capabilities
             if "routing" in contract_data:
                 validations.append(
-                    "✅ ORCHESTRATOR node legitimately has routing subcontract"
+                    "✅ ORCHESTRATOR node legitimately has routing subcontract",
                 )
 
             # ORCHESTRATOR nodes typically should not manage data state directly
             if "state_management" in contract_data:
                 validations.append(
-                    "⚠️  ORCHESTRATOR node: Consider if state_management should be delegated to REDUCER nodes"
+                    "⚠️  ORCHESTRATOR node: Consider if state_management should be delegated to REDUCER nodes",
                 )
 
         return validations
 
-    def create_node_specific_contract(self, contract_data: Dict) -> ModelContractBase:
+    def create_node_specific_contract(self, contract_data: dict) -> ModelContractBase:
         """
         Factory method to create the appropriate node-specific contract model.
 
@@ -160,28 +162,32 @@ class ContractValidator:
         # Extract node_type
         node_type_str = contract_data.get("node_type")
         if not node_type_str:
-            raise ValueError("Contract missing required node_type field")
+            msg = "Contract missing required node_type field"
+            raise ValueError(msg)
 
         try:
             node_type = EnumNodeType(node_type_str)
         except ValueError:
-            raise ValueError(f"Invalid node_type: {node_type_str}")
+            msg = f"Invalid node_type: {node_type_str}"
+            raise ValueError(msg)
 
         # Route to appropriate model based on node_type
         if node_type == EnumNodeType.COMPUTE:
             return ModelContractCompute(**contract_data)
-        elif node_type == EnumNodeType.REDUCER:
+        if node_type == EnumNodeType.REDUCER:
             return ModelContractReducer(**contract_data)
-        elif node_type == EnumNodeType.EFFECT:
+        if node_type == EnumNodeType.EFFECT:
             return ModelContractEffect(**contract_data)
-        elif node_type == EnumNodeType.ORCHESTRATOR:
+        if node_type == EnumNodeType.ORCHESTRATOR:
             return ModelContractOrchestrator(**contract_data)
-        else:
-            raise ValueError(f"Unknown node_type: {node_type}")
+        msg = f"Unknown node_type: {node_type}"
+        raise ValueError(msg)
 
     def find_model_class(
-        self, tool_path: Path, model_name: str
-    ) -> Optional[Type[BaseModel]]:
+        self,
+        tool_path: Path,
+        model_name: str,
+    ) -> type[BaseModel] | None:
         """
         Find and import the Pydantic model class from the tool's models directory.
         Also handles full module paths like 'omnibase.core.node_orchestrator.ModelOrchestratorInput'.
@@ -200,7 +206,7 @@ class ContractValidator:
                 parts = model_name.split(".")
                 class_name = parts[-1]  # Last part is the class name
                 module_path = ".".join(
-                    parts[:-1]
+                    parts[:-1],
                 )  # Everything except last part is module
 
                 # Try to import the module directly
@@ -212,11 +218,9 @@ class ContractValidator:
                     if isinstance(model_class, type):
                         return model_class
 
-            except ImportError as e:
-                print(f"⚠️  Could not import {module_path}: {e}")
+            except ImportError:
                 return None
-            except Exception as e:
-                print(f"⚠️  Error accessing {module_path}: {e}")
+            except Exception:
                 return None
 
         # Standard case: look in tool's models directory
@@ -251,20 +255,19 @@ class ContractValidator:
                 if hasattr(module, model_name):
                     model_class = getattr(module, model_name)
                     if isinstance(model_class, type) and issubclass(
-                        model_class, BaseModel
+                        model_class,
+                        BaseModel,
                     ):
                         return model_class
 
-            except ImportError as e:
-                print(f"⚠️  Could not import {module_path}: {e}")
+            except ImportError:
                 continue
-            except Exception as e:
-                print(f"⚠️  Error accessing {module_path}: {e}")
+            except Exception:
                 continue
 
         return None
 
-    def validate_contract(self, contract_path: Path) -> Dict:
+    def validate_contract(self, contract_path: Path) -> dict:
         """
         Validate a single contract file using its backing models.
 
@@ -277,11 +280,9 @@ class ContractValidator:
         tool_name = contract_path.parent.parent.name
         version = contract_path.parent.name
 
-        print(f"🔍 Validating {tool_name}/{version}/contract.yaml")
-
         try:
             # Load the contract YAML
-            with open(contract_path, "r") as f:
+            with open(contract_path) as f:
                 contract_data = yaml.safe_load(f)
 
             if not contract_data:
@@ -305,7 +306,7 @@ class ContractValidator:
                     "tool": tool_name,
                     "version": version,
                     "status": "ERROR",
-                    "message": f"Contract must have either input_state/output_state (new format) or input_model/output_model (old format)",
+                    "message": "Contract must have either input_state/output_state (new format) or input_model/output_model (old format)",
                 }
 
             validation_results = []
@@ -319,63 +320,67 @@ class ContractValidator:
 
                 # Find and validate input model
                 input_model_class = self.find_model_class(
-                    contract_path.parent, input_model_name
+                    contract_path.parent,
+                    input_model_name,
                 )
                 if input_model_class:
                     validation_results.append(
-                        f"✅ Found input model: {input_model_name}"
+                        f"✅ Found input model: {input_model_name}",
                     )
 
                     # Try to create a minimal instance to test model structure
                     try:
                         # Create a minimal test instance with required fields
-                        test_instance = self.create_test_instance_with_context(
-                            input_model_class, contract_path.parent
+                        self.create_test_instance_with_context(
+                            input_model_class,
+                            contract_path.parent,
                         )
                         validation_results.append(
-                            f"✅ Input model {input_model_name} validation passed"
+                            f"✅ Input model {input_model_name} validation passed",
                         )
                     except Exception as e:
                         validation_results.append(
-                            f"❌ Input model {input_model_name} validation failed: {e}"
+                            f"❌ Input model {input_model_name} validation failed: {e}",
                         )
 
                 else:
                     validation_results.append(
-                        f"❌ Input model {input_model_name} not found"
+                        f"❌ Input model {input_model_name} not found",
                     )
 
                 # Find and validate output model
                 output_model_class = self.find_model_class(
-                    contract_path.parent, output_model_name
+                    contract_path.parent,
+                    output_model_name,
                 )
                 if output_model_class:
                     validation_results.append(
-                        f"✅ Found output model: {output_model_name}"
+                        f"✅ Found output model: {output_model_name}",
                     )
 
                     # Try to create a minimal instance to test model structure
                     try:
-                        test_instance = self.create_test_instance_with_context(
-                            output_model_class, contract_path.parent
+                        self.create_test_instance_with_context(
+                            output_model_class,
+                            contract_path.parent,
                         )
                         validation_results.append(
-                            f"✅ Output model {output_model_name} validation passed"
+                            f"✅ Output model {output_model_name} validation passed",
                         )
                     except Exception as e:
                         validation_results.append(
-                            f"❌ Output model {output_model_name} validation failed: {e}"
+                            f"❌ Output model {output_model_name} validation failed: {e}",
                         )
 
                 else:
                     validation_results.append(
-                        f"❌ Output model {output_model_name} not found"
+                        f"❌ Output model {output_model_name} not found",
                     )
 
             else:
                 # New format: validate input_state/output_state schemas
                 validation_results.append(
-                    "✅ Using new contract format (input_state/output_state)"
+                    "✅ Using new contract format (input_state/output_state)",
                 )
 
                 # Validate input_state structure
@@ -384,7 +389,7 @@ class ContractValidator:
                     validation_results.append("✅ input_state has correct structure")
                 else:
                     validation_results.append(
-                        "❌ input_state missing object_type: 'object'"
+                        "❌ input_state missing object_type: 'object'",
                     )
 
                 # Validate output_state structure
@@ -393,7 +398,7 @@ class ContractValidator:
                     validation_results.append("✅ output_state has correct structure")
                 else:
                     validation_results.append(
-                        "❌ output_state missing object_type: 'object'"
+                        "❌ output_state missing object_type: 'object'",
                     )
 
             # Check contract structure against SP0 requirements
@@ -446,7 +451,9 @@ class ContractValidator:
             }
 
     def create_test_instance(
-        self, model_class: Type[BaseModel], _recursion_depth: int = 0
+        self,
+        model_class: type[BaseModel],
+        _recursion_depth: int = 0,
     ) -> BaseModel:
         """
         Create a minimal test instance of a Pydantic model to validate structure.
@@ -531,22 +538,25 @@ class ContractValidator:
                 else:
                     # For complex types, check if it's a Pydantic model we can instantiate
                     nested_instance = self._create_nested_model_instance(
-                        field_type, _recursion_depth
+                        field_type,
+                        _recursion_depth,
                     )
                     if nested_instance is not None:
                         test_data[field_name] = nested_instance
+                    # For other complex types, try to use default if available
+                    elif field_info.default is not None and field_info.default != ...:
+                        test_data[field_name] = field_info.default
                     else:
-                        # For other complex types, try to use default if available
-                        if field_info.default is not None and field_info.default != ...:
-                            test_data[field_name] = field_info.default
-                        else:
-                            # Skip complex required fields that we can't easily mock
-                            test_data[field_name] = None
+                        # Skip complex required fields that we can't easily mock
+                        test_data[field_name] = None
 
         return model_class(**test_data)
 
     def create_test_instance_with_context(
-        self, model_class: Type[BaseModel], tool_path: Path, _recursion_depth: int = 0
+        self,
+        model_class: type[BaseModel],
+        tool_path: Path,
+        _recursion_depth: int = 0,
     ) -> BaseModel:
         """
         Create a test instance with context for finding nested models in the tool's directory.
@@ -564,8 +574,10 @@ class ContractValidator:
         return self.create_test_instance(model_class, _recursion_depth)
 
     def _create_nested_model_instance(
-        self, field_type: Any, recursion_depth: int
-    ) -> Optional[BaseModel]:
+        self,
+        field_type: Any,
+        recursion_depth: int,
+    ) -> BaseModel | None:
         """
         Helper method to create instances of nested Pydantic models.
 
@@ -580,18 +592,14 @@ class ContractValidator:
         if hasattr(field_type, "model_fields"):
             try:
                 return self.create_test_instance(field_type, recursion_depth + 1)
-            except Exception as e:
-                print(
-                    f"⚠️  Could not create nested model {getattr(field_type, '__name__', str(field_type))}: {e}"
-                )
+            except Exception:
                 return None
 
         # BaseModel subclass check
         if isinstance(field_type, type) and issubclass(field_type, BaseModel):
             try:
                 return self.create_test_instance(field_type, recursion_depth + 1)
-            except Exception as e:
-                print(f"⚠️  Could not create nested model {field_type.__name__}: {e}")
+            except Exception:
                 return None
 
         # Handle string type annotations (forward references)
@@ -603,10 +611,8 @@ class ContractValidator:
                 model_class = self.find_model_class(tool_path, field_type)
                 if model_class and hasattr(model_class, "model_fields"):
                     return self.create_test_instance(model_class, recursion_depth + 1)
-            except Exception as e:
-                print(
-                    f"⚠️  Could not resolve string model reference '{field_type}': {e}"
-                )
+            except Exception:
+                pass
 
         # Handle type names that might be class names we need to find
         if hasattr(field_type, "__name__"):
@@ -615,12 +621,12 @@ class ContractValidator:
                 model_class = self.find_model_class(tool_path, field_type.__name__)
                 if model_class and hasattr(model_class, "model_fields"):
                     return self.create_test_instance(model_class, recursion_depth + 1)
-            except Exception as e:
-                print(f"⚠️  Could not resolve class name '{field_type.__name__}': {e}")
+            except Exception:
+                pass
 
         return None
 
-    def validate_sp0_contract_structure(self, contract_data: Dict) -> List[str]:
+    def validate_sp0_contract_structure(self, contract_data: dict) -> list[str]:
         """
         Validate contract structure against SP0 requirements.
 
@@ -692,14 +698,14 @@ class ContractValidator:
                 spec_validations.append("✅ Correct container_injection: ONEXContainer")
             else:
                 spec_validations.append(
-                    f"❌ Invalid container_injection: {tool_spec.get('container_injection')}"
+                    f"❌ Invalid container_injection: {tool_spec.get('container_injection')}",
                 )
 
             validations.extend(spec_validations)
 
         return validations
 
-    def validate_contract_format(self, contract_data: Dict) -> List[str]:
+    def validate_contract_format(self, contract_data: dict) -> list[str]:
         """
         Validate contract against ModelContractContent requirements.
         This is the critical validation that NodeBase uses.
@@ -725,19 +731,19 @@ class ContractValidator:
 
                 if missing_fields:
                     validations.append(
-                        f"❌ contract_version missing required fields: {', '.join(missing_fields)}"
+                        f"❌ contract_version missing required fields: {', '.join(missing_fields)}",
                     )
                     validations.append(f"    Current: {contract_version}")
                     validations.append(
-                        f"    Required: {{major: X, minor: Y, patch: Z}}"
+                        "    Required: {major: X, minor: Y, patch: Z}",
                     )
                 else:
                     validations.append(
-                        "✅ contract_version has all required ModelSemVer fields"
+                        "✅ contract_version has all required ModelSemVer fields",
                     )
             else:
                 validations.append(
-                    f"❌ contract_version must be a dictionary, got: {type(contract_version)}"
+                    f"❌ contract_version must be a dictionary, got: {type(contract_version)}",
                 )
 
         # Test node_version format
@@ -752,15 +758,15 @@ class ContractValidator:
 
                 if missing_fields:
                     validations.append(
-                        f"❌ node_version missing required fields: {', '.join(missing_fields)}"
+                        f"❌ node_version missing required fields: {', '.join(missing_fields)}",
                     )
                 else:
                     validations.append(
-                        "✅ node_version has all required ModelSemVer fields"
+                        "✅ node_version has all required ModelSemVer fields",
                     )
             else:
                 validations.append(
-                    f"❌ node_version must be a dictionary, got: {type(node_version)}"
+                    f"❌ node_version must be a dictionary, got: {type(node_version)}",
                 )
 
         # NEW: Use node-specific contract models for strong typing validation
@@ -768,7 +774,7 @@ class ContractValidator:
         try:
             node_specific_contract = self.create_node_specific_contract(contract_data)
             validations.append(
-                f"✅ Contract validates as {type(node_specific_contract).__name__}"
+                f"✅ Contract validates as {type(node_specific_contract).__name__}",
             )
 
             # Validate node-specific configuration WITH original contract data
@@ -777,7 +783,7 @@ class ContractValidator:
                 validations.append("✅ Node-specific configuration validation passed")
             except Exception as config_error:
                 validations.append(
-                    f"❌ Node-specific validation failed: {str(config_error)}"
+                    f"❌ Node-specific validation failed: {config_error!s}",
                 )
 
         except Exception as e:
@@ -785,7 +791,7 @@ class ContractValidator:
             error_msg = str(e)
             validations.append(f"❌ ARCHITECTURAL VIOLATION: {error_msg}")
             validations.append(
-                "    This contract violates node-type-specific constraints"
+                "    This contract violates node-type-specific constraints",
             )
 
             # Provide specific guidance for common violations
@@ -794,19 +800,19 @@ class ContractValidator:
                 and "compute" in str(contract_data.get("node_type", "")).lower()
             ):
                 validations.append(
-                    "    COMPUTE nodes cannot have state_management - use REDUCER nodes instead"
+                    "    COMPUTE nodes cannot have state_management - use REDUCER nodes instead",
                 )
             elif (
                 "aggregation" in error_msg.lower()
                 and "compute" in str(contract_data.get("node_type", "")).lower()
             ):
                 validations.append(
-                    "    COMPUTE nodes cannot have aggregation - use REDUCER nodes instead"
+                    "    COMPUTE nodes cannot have aggregation - use REDUCER nodes instead",
                 )
 
         return validations
 
-    def validate_architectural_constraints(self, contract_data: Dict) -> List[str]:
+    def validate_architectural_constraints(self, contract_data: dict) -> list[str]:
         """
         Validate contract against node-type-specific architectural constraints.
 
@@ -840,15 +846,15 @@ class ContractValidator:
             # COMPUTE nodes should NOT have state_management or aggregation
             if "state_management" in contract_data:
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot have state_management configuration"
+                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot have state_management configuration",
                 )
                 validations.append(
-                    "❌   State management is only allowed in REDUCER nodes"
+                    "❌   State management is only allowed in REDUCER nodes",
                 )
 
             if "aggregation" in contract_data:
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot have aggregation configuration"
+                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot have aggregation configuration",
                 )
                 validations.append("❌   Aggregation is only allowed in REDUCER nodes")
 
@@ -856,37 +862,37 @@ class ContractValidator:
             service_config = contract_data.get("service_configuration", {})
             if service_config.get("requires_external_dependencies", False):
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot require external dependencies"
+                    "❌ ARCHITECTURAL VIOLATION: COMPUTE nodes cannot require external dependencies",
                 )
                 validations.append("❌   Use EFFECT nodes for external integrations")
 
             if not any(v.startswith("❌") for v in validations[-3:]):
                 validations.append(
-                    "✅ COMPUTE node architectural constraints satisfied"
+                    "✅ COMPUTE node architectural constraints satisfied",
                 )
 
         elif node_type == EnumNodeType.REDUCER:
             # REDUCER nodes should have state_management
             if "state_management" not in contract_data:
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: REDUCER nodes should have state_management configuration"
+                    "❌ ARCHITECTURAL VIOLATION: REDUCER nodes should have state_management configuration",
                 )
                 validations.append(
-                    "❌   State management is required for data aggregation and persistence"
+                    "❌   State management is required for data aggregation and persistence",
                 )
             else:
                 validations.append(
-                    "✅ REDUCER node has required state_management configuration"
+                    "✅ REDUCER node has required state_management configuration",
                 )
 
         elif node_type == EnumNodeType.EFFECT:
             # EFFECT nodes should not have state_management
             if "state_management" in contract_data:
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: EFFECT nodes should not manage internal state"
+                    "❌ ARCHITECTURAL VIOLATION: EFFECT nodes should not manage internal state",
                 )
                 validations.append(
-                    "❌   Use REDUCER nodes for state management, EFFECT nodes for side effects"
+                    "❌   Use REDUCER nodes for state management, EFFECT nodes for side effects",
                 )
             else:
                 validations.append("✅ EFFECT node correctly has no state_management")
@@ -895,31 +901,28 @@ class ContractValidator:
             # ORCHESTRATOR nodes should not have state_management
             if "state_management" in contract_data:
                 validations.append(
-                    "❌ ARCHITECTURAL VIOLATION: ORCHESTRATOR nodes should not manage state directly"
+                    "❌ ARCHITECTURAL VIOLATION: ORCHESTRATOR nodes should not manage state directly",
                 )
                 validations.append(
-                    "❌   Use REDUCER nodes for state, ORCHESTRATOR nodes for coordination"
+                    "❌   Use REDUCER nodes for state, ORCHESTRATOR nodes for coordination",
                 )
             else:
                 validations.append(
-                    "✅ ORCHESTRATOR node correctly has no direct state_management"
+                    "✅ ORCHESTRATOR node correctly has no direct state_management",
                 )
 
         return validations
 
-    def validate_all_contracts(self) -> Dict:
+    def validate_all_contracts(self) -> dict:
         """
         Validate all infrastructure contracts.
 
         Returns:
             Overall validation results
         """
-        print("🚀 Starting Infrastructure Contract Validation...")
-        print(f"📁 Scanning: {self.infrastructure_path}")
 
         # Find all contract files
         contract_files = list(self.infrastructure_path.glob("**/contract.yaml"))
-        print(f"📋 Found {len(contract_files)} contracts to validate\n")
 
         results = []
         successful = 0
@@ -932,37 +935,23 @@ class ContractValidator:
 
             if result["status"] == "SUCCESS":
                 successful += 1
-                print(f"✅ {result['tool']}: PASSED")
             else:
                 failed += 1
-                print(f"❌ {result['tool']}: FAILED - {result['message']}")
 
                 # Print detailed errors
                 if "validations" in result:
                     for validation in result["validations"]:
                         if validation.startswith("❌"):
-                            print(f"    {validation}")
-
-            print()  # Empty line between contracts
+                            pass
 
         # Summary
         total = successful + failed
         success_rate = (successful / total * 100) if total > 0 else 0
 
-        print("=" * 60)
-        print("📊 INFRASTRUCTURE CONTRACT VALIDATION SUMMARY")
-        print("=" * 60)
-        print(f"✅ Successful: {successful}")
-        print(f"❌ Failed: {failed}")
-        print(f"📊 Success Rate: {success_rate:.1f}%")
-        print(f"🎯 Total Contracts: {total}")
-
-        if success_rate >= 90:
-            print("🎉 EXCELLENT: Infrastructure contracts are highly compliant!")
-        elif success_rate >= 75:
-            print("⚠️  GOOD: Some contracts need attention")
+        if success_rate >= 90 or success_rate >= 75:
+            pass
         else:
-            print("🚨 CRITICAL: Many contracts need fixes")
+            pass
 
         return {
             "total_contracts": total,
@@ -996,54 +985,34 @@ def main():
 
     if args.debug_aggregator:
         # Debug the message aggregator specifically
-        print("🔍 DEBUGGING MESSAGE AGGREGATOR VALIDATION")
-        print("=" * 80)
 
-        aggregator_path = (
-            infrastructure_path
-            / "canary_compute/v1_0_0/contract.yaml"
-        )
+        aggregator_path = infrastructure_path / "canary_compute/v1_0_0/contract.yaml"
         if not aggregator_path.exists():
-            print("❌ Message aggregator contract not found")
             return
 
         # Load the contract YAML
         import yaml
 
-        with open(aggregator_path, "r") as f:
+        with open(aggregator_path) as f:
             contract_data = yaml.safe_load(f)
-
-        print(f"Node Type: {contract_data.get('node_type')}")
-        print(f"Has state_management: {'state_management' in contract_data}")
-        print(f"Has aggregation: {'aggregation' in contract_data}")
-        print(f"Has event_type: {'event_type' in contract_data}")
-        print()
 
         # Try to create the model
         try:
             node_contract = validator.create_node_specific_contract(contract_data)
-            print(f"✅ Successfully created: {type(node_contract).__name__}")
 
             # Try validation
-            try:
+            with contextlib.suppress(Exception):
                 node_contract.validate_node_specific_config(contract_data)
-                print("❌ Validation passed - should have failed!")
-            except Exception as e:
-                print(f"✅ Validation failed as expected: {e}")
 
-        except Exception as e:
-            print(f"❌ Failed to create model: {e}")
+        except Exception:
+            pass
 
         return
 
     if args.test_subcontracts:
         # Test specific contracts for subcontract validation
-        print("🧪 TESTING SUBCONTRACT VALIDATION IMPROVEMENTS")
-        print("=" * 80)
-        print()
 
         # Test 1: Message Aggregator (should fail - COMPUTE with state_management)
-        print("🔍 Test 1: Message Aggregator (Expected: ARCHITECTURAL VIOLATION)")
         aggregator_path = (
             infrastructure_path
             / "tool_infrastructure_message_aggregator_compute/v1_0_0/contract.yaml"
@@ -1052,22 +1021,13 @@ def main():
             result = validator.validate_contract(aggregator_path)
             validation_text = " ".join(result.get("validations", []))
             has_violation = "state_management subcontracts" in validation_text
-            print(
-                f"   Status: {'✅ VIOLATION DETECTED' if has_violation else '❌ VIOLATION MISSED'}"
-            )
             if has_violation:
-                print(
-                    "   ✅ Correctly identified COMPUTE node cannot have state_management"
-                )
+                pass
             else:
-                print("   ❌ Failed to catch architectural violation")
-                print("   Debug info:")
-                for validation in result.get("validations", [])[:3]:
-                    print(f"     {validation}")
-        print()
+                for _validation in result.get("validations", [])[:3]:
+                    pass
 
         # Test 2: Infrastructure Reducer (should pass - REDUCER can have state_management)
-        print("🔍 Test 2: Infrastructure Reducer (Expected: NO VIOLATION)")
         reducer_path = (
             infrastructure_path / "tool_infrastructure_reducer/v1_0_0/contract.yaml"
         )
@@ -1075,17 +1035,12 @@ def main():
             result = validator.validate_contract(reducer_path)
             validation_text = " ".join(result.get("validations", []))
             has_forbidden_violation = "cannot have state_management" in validation_text
-            print(
-                f"   Status: {'✅ NO VIOLATION' if not has_forbidden_violation else '❌ FALSE POSITIVE'}"
-            )
             if not has_forbidden_violation:
-                print("   ✅ Correctly allows REDUCER nodes to have state management")
+                pass
             else:
-                print("   ❌ Incorrectly flagged REDUCER node")
-        print()
+                pass
 
         # Test 3: Event Type Warnings (all nodes should warn about missing event_type)
-        print("🔍 Test 3: Event Type Validation (Expected: ALL NODES WARN)")
         event_type_warnings = 0
         total_contracts = 0
 
@@ -1096,22 +1051,11 @@ def main():
             if "event_type subcontracts" in validation_text:
                 event_type_warnings += 1
 
-        print(f"   Event Type Warnings: {event_type_warnings}/{total_contracts}")
         if event_type_warnings == total_contracts:
-            print(
-                "   ✅ All nodes correctly flagged for missing event_type subcontracts"
-            )
+            pass
         else:
-            print("   ❌ Some nodes missing event_type validation")
-        print()
+            pass
 
-        print("📊 SUBCONTRACT VALIDATION TEST SUMMARY")
-        print("=" * 80)
-        print("✅ Architectural violations are now caught by contract models")
-        print("✅ Node-specific subcontract constraints are enforced")
-        print("✅ Event type subcontract validation is working")
-        print("✅ Validation logic is cleanly embedded in Pydantic models")
-        print()
         return
 
     # Normal validation mode
@@ -1119,10 +1063,8 @@ def main():
 
     # Return appropriate exit code
     if results["validation_passed"]:
-        print("\n🎯 Contract validation PASSED")
         sys.exit(0)
     else:
-        print("\n❌ Contract validation FAILED")
         sys.exit(1)
 
 

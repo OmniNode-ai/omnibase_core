@@ -9,27 +9,14 @@ with existing ONEXContainer usage patterns.
 import threading
 import uuid
 from datetime import datetime
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 
 from omnibase.protocols.container import (
-    InjectionScope,
     ProtocolDependencyGraph,
-    ProtocolInjectionContext,
-    ProtocolServiceDependency,
-    ProtocolServiceFactory,
     ProtocolServiceInstance,
-    ProtocolServiceMetadata,
     ProtocolServiceRegistration,
-    ProtocolServiceRegistry,
     ProtocolServiceRegistryConfig,
     ProtocolServiceRegistryStatus,
-    ServiceHealthStatus,
-    ServiceLifecycle,
-    ServiceResolutionStatus,
-)
-from omnibase.protocols.types.core_types import (
-    OperationStatus,
-    ProtocolDateTime,
 )
 
 T = TypeVar("T")
@@ -103,7 +90,8 @@ class SPIServiceRegistry:
     def configure(self, config: dict[str, Any]) -> None:
         """Configure the container with settings."""
         if not isinstance(config, dict):
-            raise ValueError("Configuration must be a dictionary")
+            msg = "Configuration must be a dictionary"
+            raise ValueError(msg)
         self._config.update(config)
 
     def register_service(self, protocol_name: str, service_instance: Any) -> str:
@@ -208,10 +196,13 @@ class SPIServiceRegistry:
         available_services = list(self._services.keys())
         available_shortcuts = ["event_bus", "logger", "health_check"]
 
-        raise ValueError(
+        msg = (
             f"Unable to resolve service for protocol: {protocol_name}. "
             f"Available services: {available_services}. "
             f"Available shortcuts: {available_shortcuts}"
+        )
+        raise ValueError(
+            msg,
         )
 
     def has_service(self, protocol_name: str) -> bool:

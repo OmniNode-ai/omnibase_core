@@ -5,9 +5,13 @@ Generated from FSM subcontract following ONEX contract-driven patterns.
 Provides transition specification including conditions, effects, and recovery mechanisms.
 """
 
-from typing import List, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from .model_fsm_effect import ModelFSMEffect
+    from .model_fsm_guard import ModelFSMGuard
 
 
 class ModelFSMTransition(BaseModel):
@@ -38,7 +42,9 @@ class ModelFSMTransition(BaseModel):
     )
 
     to_state: str = Field(
-        ..., description="Target state name", pattern=r"^[a-z][a-z0-9_]*$"
+        ...,
+        description="Target state name",
+        pattern=r"^[a-z][a-z0-9_]*$",
     )
 
     trigger: str = Field(
@@ -55,33 +61,40 @@ class ModelFSMTransition(BaseModel):
     )
 
     # Transition logic
-    conditions: List["ModelFSMGuard"] = Field(
+    conditions: list["ModelFSMGuard"] = Field(
         default_factory=list,
         description="Guard conditions that must be true for transition",
     )
 
-    actions: List["ModelFSMEffect"] = Field(
-        default_factory=list, description="Actions to execute during transition"
+    actions: list["ModelFSMEffect"] = Field(
+        default_factory=list,
+        description="Actions to execute during transition",
     )
 
     # Recovery configuration
-    rollback_transitions: List[str] = Field(
-        default_factory=list, description="Transitions to execute for rollback"
+    rollback_transitions: list[str] = Field(
+        default_factory=list,
+        description="Transitions to execute for rollback",
     )
 
     is_atomic: bool = Field(
-        default=True, description="Whether this transition must complete atomically"
+        default=True,
+        description="Whether this transition must complete atomically",
     )
 
     retry_enabled: bool = Field(
-        default=False, description="Whether this transition supports retry on failure"
+        default=False,
+        description="Whether this transition supports retry on failure",
     )
 
-    max_retries: Optional[int] = Field(
-        default=None, description="Maximum number of retry attempts", ge=1, le=10
+    max_retries: int | None = Field(
+        default=None,
+        description="Maximum number of retry attempts",
+        ge=1,
+        le=10,
     )
 
-    retry_delay_ms: Optional[int] = Field(
+    retry_delay_ms: int | None = Field(
         default=None,
         description="Delay between retry attempts in milliseconds",
         ge=100,
@@ -103,19 +116,16 @@ class ModelFSMTransition(BaseModel):
                         "action_type": "log",
                         "execution_order": 1,
                         "is_critical": False,
-                    }
+                    },
                 ],
                 "rollback_transitions": [],
                 "is_atomic": True,
                 "retry_enabled": False,
-            }
+            },
         }
 
 
-from .model_fsm_effect import ModelFSMEffect
-
 # Import forward references after model definition
-from .model_fsm_guard import ModelFSMGuard
 
 # Update forward references
 ModelFSMTransition.model_rebuild()

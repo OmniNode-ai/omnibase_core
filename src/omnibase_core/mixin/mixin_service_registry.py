@@ -371,7 +371,7 @@ class MixinServiceRegistry:
 
         except Exception as e:
             logger.exception(
-                f"❌ Failed to send introspection request to {node_id}: {e}"
+                f"❌ Failed to send introspection request to {node_id}: {e}",
             )
 
     def _handle_introspection_response(self, envelope):

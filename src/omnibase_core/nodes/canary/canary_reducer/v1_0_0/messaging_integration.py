@@ -6,22 +6,19 @@ Provides backward compatibility while enabling modern messaging patterns.
 """
 
 import asyncio
-import json
 import logging
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
 
 import aiohttp
+from pydantic import BaseModel, Field
+
 from omnibase_core.core.base_error import OnexError
 from omnibase_core.messaging import (
     CommandRequest,
-    GroupGateway,
     HeartbeatEvent,
-    LocalToolRegistry,
     ToolMetadata,
 )
-from pydantic import BaseModel, Field
 
 
 class ModelInfrastructureMetadata(BaseModel):
@@ -44,12 +41,13 @@ class ModelHeartbeatData(BaseModel):
 class ModelCommandParameters(BaseModel):
     """Model for command parameters."""
 
-    registry_request: Optional[Dict[str, str]] = Field(
-        default=None, description="Registry request data"
+    registry_request: dict[str, str] | None = Field(
+        default=None,
+        description="Registry request data",
     )
-    endpoint_path: Optional[str] = Field(default=None, description="API endpoint path")
-    http_method: Optional[str] = Field(default=None, description="HTTP method")
-    source: Optional[str] = Field(default=None, description="Request source identifier")
+    endpoint_path: str | None = Field(default=None, description="API endpoint path")
+    http_method: str | None = Field(default=None, description="HTTP method")
+    source: str | None = Field(default=None, description="Request source identifier")
 
 
 class ModelCommandResponse(BaseModel):
@@ -57,10 +55,11 @@ class ModelCommandResponse(BaseModel):
 
     status: str = Field(..., description="Command execution status")
     correlation_id: str = Field(..., description="Correlation identifier")
-    result: Dict[str, str] = Field(
-        default_factory=dict, description="Command result data"
+    result: dict[str, str] = Field(
+        default_factory=dict,
+        description="Command result data",
     )
-    error: Optional[str] = Field(default=None, description="Error message if failed")
+    error: str | None = Field(default=None, description="Error message if failed")
     timestamp: str = Field(..., description="Response timestamp")
 
 
@@ -68,11 +67,13 @@ class ModelRegistryRequest(BaseModel):
     """Model for registry request data."""
 
     operation_type: str = Field(..., description="Type of registry operation")
-    parameters: Dict[str, str] = Field(
-        default_factory=dict, description="Operation parameters"
+    parameters: dict[str, str] = Field(
+        default_factory=dict,
+        description="Operation parameters",
     )
-    timeout_ms: Optional[int] = Field(
-        default=5000, description="Request timeout in milliseconds"
+    timeout_ms: int | None = Field(
+        default=5000,
+        description="Request timeout in milliseconds",
     )
 
 
@@ -80,9 +81,10 @@ class ModelRegistryResponse(BaseModel):
     """Model for registry response data."""
 
     status: str = Field(..., description="Operation status")
-    data: Dict[str, str] = Field(default_factory=dict, description="Response data")
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if failed"
+    data: dict[str, str] = Field(default_factory=dict, description="Response data")
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if failed",
     )
     endpoint_path: str = Field(..., description="API endpoint path")
     http_method: str = Field(..., description="HTTP method used")
@@ -114,7 +116,7 @@ class MessagingIntegration:
         self.group = group
 
         # HTTP session for API calls
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         # Tool metadata for registry
         # Create metadata using proper model
@@ -145,7 +147,7 @@ class MessagingIntegration:
 
         # Heartbeat tracking
         self.heartbeat_interval = 30  # seconds
-        self.heartbeat_task: Optional[asyncio.Task] = None
+        self.heartbeat_task: asyncio.Task | None = None
         self.start_time = datetime.utcnow()
 
     async def initialize(self) -> None:
@@ -163,9 +165,10 @@ class MessagingIntegration:
             logging.info(f"Messaging integration initialized for {self.tool_id}")
 
         except Exception as e:
-            logging.error(f"Failed to initialize messaging integration: {e}")
+            logging.exception(f"Failed to initialize messaging integration: {e}")
+            msg = f"Messaging integration initialization failed: {e!s}"
             raise OnexError(
-                f"Messaging integration initialization failed: {str(e)}"
+                msg,
             ) from e
 
     async def register_tool(self) -> None:
@@ -173,7 +176,7 @@ class MessagingIntegration:
         try:
             self.tool_metadata.last_heartbeat = datetime.utcnow()
             self.tool_metadata.uptime_seconds = int(
-                (datetime.utcnow() - self.start_time).total_seconds()
+                (datetime.utcnow() - self.start_time).total_seconds(),
             )
 
             async with self.session.post(
@@ -186,13 +189,15 @@ class MessagingIntegration:
                     logging.info(f"Successfully registered tool: {result}")
                 else:
                     error_text = await response.text()
+                    msg = f"Tool registration failed: {response.status} - {error_text}"
                     raise OnexError(
-                        f"Tool registration failed: {response.status} - {error_text}"
+                        msg,
                     )
 
         except Exception as e:
-            logging.error(f"Failed to register tool: {e}")
-            raise OnexError(f"Tool registration failed: {str(e)}") from e
+            logging.exception(f"Failed to register tool: {e}")
+            msg = f"Tool registration failed: {e!s}"
+            raise OnexError(msg) from e
 
     async def start_heartbeat(self) -> None:
         """Start heartbeat task"""
@@ -207,7 +212,7 @@ class MessagingIntegration:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logging.error(f"Heartbeat error: {e}")
+                logging.exception(f"Heartbeat error: {e}")
 
     async def send_heartbeat(self) -> None:
         """Send heartbeat to Local Tool Registry"""
@@ -224,7 +229,7 @@ class MessagingIntegration:
                     timestamp=datetime.utcnow().isoformat(),
                     loaded_adapters=len(getattr(self, "loaded_adapters", {})),
                     pending_requests=len(
-                        getattr(self, "_pending_registry_requests", {})
+                        getattr(self, "_pending_registry_requests", {}),
                     ),
                     memory_usage_mb=self._get_memory_usage(),
                 ).dict(),
@@ -240,11 +245,11 @@ class MessagingIntegration:
                 else:
                     error_text = await response.text()
                     logging.warning(
-                        f"Heartbeat failed: {response.status} - {error_text}"
+                        f"Heartbeat failed: {response.status} - {error_text}",
                     )
 
         except Exception as e:
-            logging.error(f"Failed to send heartbeat: {e}")
+            logging.exception(f"Failed to send heartbeat: {e}")
 
     async def submit_command(
         self,
@@ -285,30 +290,35 @@ class MessagingIntegration:
 
                     # Wait for completion
                     completion_response = await self._wait_for_command_completion(
-                        correlation_id, timeout_ms
+                        correlation_id,
+                        timeout_ms,
                     )
                     return ModelCommandResponse(
                         status=completion_response.get("status", "unknown"),
                         correlation_id=completion_response.get(
-                            "correlation_id", correlation_id
+                            "correlation_id",
+                            correlation_id,
                         ),
                         result=completion_response.get("result", {}),
                         error=completion_response.get("error"),
                         timestamp=datetime.utcnow().isoformat(),
                     )
-                else:
-                    error_text = await response.text()
-                    raise OnexError(
-                        f"Command submission failed: {response.status} - {error_text}"
-                    )
+                error_text = await response.text()
+                msg = f"Command submission failed: {response.status} - {error_text}"
+                raise OnexError(
+                    msg,
+                )
 
         except Exception as e:
-            logging.error(f"Failed to submit command {command}: {e}")
-            raise OnexError(f"Command submission failed: {str(e)}") from e
+            logging.exception(f"Failed to submit command {command}: {e}")
+            msg = f"Command submission failed: {e!s}"
+            raise OnexError(msg) from e
 
     async def _wait_for_command_completion(
-        self, correlation_id: str, timeout_ms: int
-    ) -> Dict[str, str]:
+        self,
+        correlation_id: str,
+        timeout_ms: int,
+    ) -> dict[str, str]:
         """Wait for command completion and return aggregated response"""
         try:
             # Poll for completion
@@ -317,12 +327,11 @@ class MessagingIntegration:
 
             while True:
                 async with self.session.get(
-                    f"{self.group_gateway_url}/v0/status/{correlation_id}"
+                    f"{self.group_gateway_url}/v0/status/{correlation_id}",
                 ) as response:
                     if response.status == 200:
-                        result = await response.json()
-                        return result
-                    elif response.status == 404:
+                        return await response.json()
+                    if response.status == 404:
                         # Still processing, wait
                         elapsed = (datetime.utcnow() - start_time).total_seconds()
                         if elapsed >= timeout_seconds:
@@ -335,12 +344,13 @@ class MessagingIntegration:
                         await asyncio.sleep(0.5)  # Poll every 500ms
                     else:
                         error_text = await response.text()
+                        msg = f"Status check failed: {response.status} - {error_text}"
                         raise OnexError(
-                            f"Status check failed: {response.status} - {error_text}"
+                            msg,
                         )
 
         except Exception as e:
-            logging.error(f"Failed to wait for command completion: {e}")
+            logging.exception(f"Failed to wait for command completion: {e}")
             return {
                 "status": "error",
                 "correlation_id": correlation_id,
@@ -387,11 +397,14 @@ class MessagingIntegration:
             )
 
         except Exception as e:
-            logging.error(f"Failed to delegate registry request: {e}")
-            raise OnexError(f"Registry request delegation failed: {str(e)}") from e
+            logging.exception(f"Failed to delegate registry request: {e}")
+            msg = f"Registry request delegation failed: {e!s}"
+            raise OnexError(msg) from e
 
     def _map_registry_request_to_command(
-        self, endpoint_path: str, http_method: str
+        self,
+        endpoint_path: str,
+        http_method: str,
     ) -> str:
         """Map registry endpoint to messaging command"""
         # Map common registry operations to commands
@@ -418,7 +431,9 @@ class MessagingIntegration:
             return 0.0
 
     async def update_health_status(
-        self, status: str, metadata: Optional[ModelInfrastructureMetadata] = None
+        self,
+        status: str,
+        metadata: ModelInfrastructureMetadata | None = None,
     ) -> None:
         """Update tool health status"""
         try:
@@ -430,7 +445,7 @@ class MessagingIntegration:
             await self.send_heartbeat()
 
         except Exception as e:
-            logging.error(f"Failed to update health status: {e}")
+            logging.exception(f"Failed to update health status: {e}")
 
     async def shutdown(self) -> None:
         """Shutdown messaging integration"""
@@ -449,7 +464,7 @@ class MessagingIntegration:
             logging.info("Messaging integration shutdown complete")
 
         except Exception as e:
-            logging.error(f"Error during messaging integration shutdown: {e}")
+            logging.exception(f"Error during messaging integration shutdown: {e}")
 
 
 class InfrastructureReducerMessagingMixin:
@@ -479,7 +494,7 @@ class InfrastructureReducerMessagingMixin:
             # Pass adapter info to messaging
             if hasattr(self, "loaded_adapters"):
                 self.messaging.tool_metadata.metadata["loaded_adapters"] = list(
-                    self.loaded_adapters.keys()
+                    self.loaded_adapters.keys(),
                 )
 
             await self.messaging.initialize()
@@ -503,29 +518,34 @@ class InfrastructureReducerMessagingMixin:
             if self._messaging_initialized:
                 # Try messaging approach first
                 return await self.messaging.delegate_registry_request_via_messaging(
-                    registry_request, endpoint_path, http_method
+                    registry_request,
+                    endpoint_path,
+                    http_method,
                 )
-            else:
-                # Fallback to original implementation
-                if hasattr(super(), "delegate_registry_request"):
-                    return await super().delegate_registry_request(
-                        registry_request, endpoint_path, http_method
-                    )
-                else:
-                    raise OnexError("No registry delegation method available")
+            # Fallback to original implementation
+            if hasattr(super(), "delegate_registry_request"):
+                return await super().delegate_registry_request(
+                    registry_request,
+                    endpoint_path,
+                    http_method,
+                )
+            msg = "No registry delegation method available"
+            raise OnexError(msg)
 
         except Exception as e:
             # Fallback on messaging errors
             if hasattr(super(), "delegate_registry_request"):
                 if hasattr(self, "logger") and self.logger:
                     self.logger.warning(
-                        f"Messaging delegation failed, using fallback: {e}"
+                        f"Messaging delegation failed, using fallback: {e}",
                     )
                 return await super().delegate_registry_request(
-                    registry_request, endpoint_path, http_method
+                    registry_request,
+                    endpoint_path,
+                    http_method,
                 )
-            else:
-                raise OnexError(f"Registry delegation failed: {str(e)}") from e
+            msg = f"Registry delegation failed: {e!s}"
+            raise OnexError(msg) from e
 
     async def shutdown_messaging(self) -> None:
         """Shutdown messaging integration"""

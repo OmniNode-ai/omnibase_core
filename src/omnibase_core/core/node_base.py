@@ -192,7 +192,6 @@ class ModelNodeBase(
                 hasattr(contract_content, "dependencies")
                 and contract_content.dependencies is not None
             ):
-
                 # Create container from contract dependencies
                 from omnibase_core.core.services.container_service.v1_0_0.container_service import (
                     ContainerService,
@@ -405,7 +404,9 @@ class ModelNodeBase(
 
             execution_context.logs.append(
                 LogEntry(
-                    "ERROR", f"Node execution failed: {e.message}", datetime.now()
+                    "ERROR",
+                    f"Node execution failed: {e.message}",
+                    datetime.now(),
                 ),
             )
 

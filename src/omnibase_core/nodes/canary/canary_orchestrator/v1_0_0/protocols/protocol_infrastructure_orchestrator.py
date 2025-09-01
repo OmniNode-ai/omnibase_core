@@ -7,7 +7,7 @@ following ONEX protocol patterns.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Protocol
+from typing import Any, Protocol
 
 from omnibase_core.core.onex_container import ONEXContainer
 
@@ -25,7 +25,7 @@ class ProtocolInfrastructureOrchestrator(Protocol):
         ...
 
     @abstractmethod
-    async def coordinate_infrastructure_bootstrap(self) -> Dict[str, Any]:
+    async def coordinate_infrastructure_bootstrap(self) -> dict[str, Any]:
         """
         Coordinate bootstrap of infrastructure adapter services.
 
@@ -35,7 +35,7 @@ class ProtocolInfrastructureOrchestrator(Protocol):
         ...
 
     @abstractmethod
-    async def coordinate_infrastructure_health_check(self) -> Dict[str, Any]:
+    async def coordinate_infrastructure_health_check(self) -> dict[str, Any]:
         """
         Monitor infrastructure adapter health.
 
@@ -46,8 +46,9 @@ class ProtocolInfrastructureOrchestrator(Protocol):
 
     @abstractmethod
     async def coordinate_infrastructure_failover(
-        self, failed_adapter: str
-    ) -> Dict[str, Any]:
+        self,
+        failed_adapter: str,
+    ) -> dict[str, Any]:
         """
         Coordinate infrastructure failover scenarios.
 

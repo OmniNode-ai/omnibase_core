@@ -411,7 +411,7 @@ class ModelPermission(BaseModel):
         # Geographic constraints = more specific
         return bool(
             self.geographic_constraints_enabled
-            and not other.geographic_constraints_enabled
+            and not other.geographic_constraints_enabled,
         )
 
     def _matches_pattern(self, value: str, pattern: str) -> bool:

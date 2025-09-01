@@ -36,9 +36,10 @@ class ServiceDiscoveryManager:
         self.consul = consul_client
         self.static_config = static_config
         self.logger = logger
-        self.service_cache: dict[str, object] = (
-            {}
-        )  # allow_dict_str_any: service cache needs flexible typing
+        self.service_cache: dict[
+            str,
+            object,
+        ] = {}  # allow_dict_str_any: service cache needs flexible typing
 
     async def resolve_service(
         self,

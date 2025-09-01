@@ -7,10 +7,7 @@ Achieves >85% code coverage requirement focusing on modernized health_check() me
 """
 
 import asyncio
-import json
-import os
 import time
-from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
@@ -65,7 +62,7 @@ class TestInfrastructureOrchestrator:
     def orchestrator(self, container):
         """Create Infrastructure Orchestrator instance for testing."""
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             return NodeCanaryOrchestrator(container)
@@ -109,7 +106,8 @@ class TestInfrastructureOrchestrator:
 
         # Verify response handler setup
         mock_event_bus.subscribe.assert_called_once_with(
-            CoreEventTypes.TOOL_RESPONSE, orchestrator._handle_tool_response
+            CoreEventTypes.TOOL_RESPONSE,
+            orchestrator._handle_tool_response,
         )
 
     def test_initialization_no_event_bus(self):
@@ -118,7 +116,7 @@ class TestInfrastructureOrchestrator:
         container.get_service = MagicMock(return_value=None)
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -133,7 +131,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.return_value = mock_event_bus
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -176,7 +174,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.return_value = None
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -197,7 +195,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.return_value = mock_event_bus
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -216,7 +214,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.return_value = mock_event_bus
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -235,7 +233,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.return_value = mock_event_bus
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -247,13 +245,15 @@ class TestInfrastructureOrchestrator:
         assert "Event bus missing methods: subscribe, publish" in result.message
 
     def test_health_check_pending_invocations_not_initialized(
-        self, container, mock_event_bus
+        self,
+        container,
+        mock_event_bus,
     ):
         """Test health check when pending invocations tracking is not initialized."""
         container.get_service.return_value = mock_event_bus
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -357,7 +357,9 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_handle_tool_response_success(
-        self, orchestrator, sample_tool_response
+        self,
+        orchestrator,
+        sample_tool_response,
     ):
         """Test successful tool response handling."""
         correlation_id = str(sample_tool_response.correlation_id)
@@ -405,7 +407,9 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_handle_tool_response_unknown_correlation_id(
-        self, orchestrator, sample_tool_response
+        self,
+        orchestrator,
+        sample_tool_response,
     ):
         """Test handling tool response with unknown correlation ID."""
         # Create envelope without setting up pending invocation
@@ -422,7 +426,9 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_handle_tool_response_future_already_done(
-        self, orchestrator, sample_tool_response
+        self,
+        orchestrator,
+        sample_tool_response,
     ):
         """Test handling tool response when future is already resolved."""
         correlation_id = str(sample_tool_response.correlation_id)
@@ -456,15 +462,18 @@ class TestInfrastructureOrchestrator:
         envelope.payload.correlation_id = "invalid_uuid"
 
         # Mock isinstance to return True but then cause str() to fail
-        with patch("builtins.isinstance", return_value=True):
-            with patch(
-                "builtins.str", side_effect=Exception("String conversion failed")
-            ):
-                with pytest.raises(OnexError) as exc_info:
-                    await orchestrator._handle_tool_response(envelope)
+        with (
+            patch("builtins.isinstance", return_value=True),
+            patch(
+                "builtins.str",
+                side_effect=Exception("String conversion failed"),
+            ),
+        ):
+            with pytest.raises(OnexError) as exc_info:
+                await orchestrator._handle_tool_response(envelope)
 
-                assert "Tool response handling failed" in str(exc_info.value)
-                assert exc_info.value.error_code == CoreErrorCode.OPERATION_FAILED
+            assert "Tool response handling failed" in str(exc_info.value)
+            assert exc_info.value.error_code == CoreErrorCode.OPERATION_FAILED
 
     # =============================================================================
     # Adapter Coordination Tests
@@ -472,7 +481,10 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_coordinate_adapter_success(
-        self, orchestrator, mock_event_bus, sample_tool_invocation
+        self,
+        orchestrator,
+        mock_event_bus,
+        sample_tool_invocation,
     ):
         """Test successful adapter coordination."""
 
@@ -489,7 +501,7 @@ class TestInfrastructureOrchestrator:
                             "result": {"bootstrapped": True},
                             "error": None,
                             "metadata": {"duration": 2.5},
-                        }
+                        },
                     )
 
         mock_event_bus.publish_event_async = AsyncMock(side_effect=mock_publish)
@@ -498,7 +510,8 @@ class TestInfrastructureOrchestrator:
         delattr(mock_event_bus, "publish")
 
         result = await orchestrator._coordinate_adapter(
-            "tool_consul_adapter", sample_tool_invocation
+            "tool_consul_adapter",
+            sample_tool_invocation,
         )
 
         assert result["status"] == "success"
@@ -508,7 +521,10 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_coordinate_adapter_with_sync_publish(
-        self, orchestrator, mock_event_bus, sample_tool_invocation
+        self,
+        orchestrator,
+        mock_event_bus,
+        sample_tool_invocation,
     ):
         """Test adapter coordination using synchronous publish method."""
 
@@ -532,7 +548,8 @@ class TestInfrastructureOrchestrator:
         mock_event_bus.publish.side_effect = mock_publish
 
         result = await orchestrator._coordinate_adapter(
-            "tool_vault_adapter", sample_tool_invocation
+            "tool_vault_adapter",
+            sample_tool_invocation,
         )
 
         assert result["status"] == "success"
@@ -541,14 +558,18 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_coordinate_adapter_timeout(
-        self, orchestrator, mock_event_bus, sample_tool_invocation
+        self,
+        orchestrator,
+        mock_event_bus,
+        sample_tool_invocation,
     ):
         """Test adapter coordination timeout."""
         # Mock event bus that doesn't respond
         mock_event_bus.publish = MagicMock()
 
         result = await orchestrator._coordinate_adapter(
-            "tool_slow_adapter", sample_tool_invocation
+            "tool_slow_adapter",
+            sample_tool_invocation,
         )
 
         assert result["status"] == "timeout"
@@ -568,13 +589,15 @@ class TestInfrastructureOrchestrator:
                 await orchestrator._coordinate_adapter("tool_error_adapter", {})
 
             assert "Adapter coordination failed for tool_error_adapter" in str(
-                exc_info.value
+                exc_info.value,
             )
             assert exc_info.value.error_code == CoreErrorCode.OPERATION_FAILED
 
     @pytest.mark.asyncio
     async def test_coordinate_adapter_invocation_event_creation(
-        self, orchestrator, mock_event_bus
+        self,
+        orchestrator,
+        mock_event_bus,
     ):
         """Test proper creation of tool invocation events."""
         captured_envelope = None
@@ -640,7 +663,7 @@ class TestInfrastructureOrchestrator:
             }
 
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=mock_coordinate_adapter
+            side_effect=mock_coordinate_adapter,
         )
 
         result = await orchestrator.coordinate_infrastructure_bootstrap()
@@ -661,25 +684,26 @@ class TestInfrastructureOrchestrator:
         ]
 
         orchestrator._coordinate_adapter.assert_has_calls(
-            [pytest.mock.call(adapter, params) for adapter, params in expected_calls]
+            [pytest.mock.call(adapter, params) for adapter, params in expected_calls],
         )
 
     @pytest.mark.asyncio
     async def test_coordinate_infrastructure_bootstrap_partial_failure(
-        self, orchestrator
+        self,
+        orchestrator,
     ):
         """Test infrastructure bootstrap with partial adapter failures."""
 
         async def mock_coordinate_adapter(adapter_name, request):
             if adapter_name == "tool_consul_adapter":
                 return {"status": "success", "result": {"bootstrapped": True}}
-            elif adapter_name == "tool_vault_adapter":
+            if adapter_name == "tool_vault_adapter":
                 return {"status": "error", "error": "Connection refused"}
-            else:  # kafka_wrapper
-                return {"status": "timeout", "error": "Response timeout"}
+            # kafka_wrapper
+            return {"status": "timeout", "error": "Response timeout"}
 
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=mock_coordinate_adapter
+            side_effect=mock_coordinate_adapter,
         )
 
         result = await orchestrator.coordinate_infrastructure_bootstrap()
@@ -695,7 +719,7 @@ class TestInfrastructureOrchestrator:
     async def test_coordinate_infrastructure_bootstrap_exception(self, orchestrator):
         """Test infrastructure bootstrap with coordination exception."""
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=Exception("Coordination failure")
+            side_effect=Exception("Coordination failure"),
         )
 
         with pytest.raises(OnexError) as exc_info:
@@ -716,7 +740,7 @@ class TestInfrastructureOrchestrator:
             return {"status": "healthy", "adapter": adapter_name}
 
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=mock_coordinate_adapter
+            side_effect=mock_coordinate_adapter,
         )
 
         with pytest.warns(None) as warning_list:
@@ -744,11 +768,10 @@ class TestInfrastructureOrchestrator:
         async def mock_coordinate_adapter(adapter_name, request):
             if adapter_name == "tool_consul_adapter":
                 return {"status": "healthy"}
-            else:
-                return {"status": "degraded", "warning": "High memory usage"}
+            return {"status": "degraded", "warning": "High memory usage"}
 
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=mock_coordinate_adapter
+            side_effect=mock_coordinate_adapter,
         )
 
         result = await orchestrator.coordinate_infrastructure_health_check()
@@ -760,7 +783,7 @@ class TestInfrastructureOrchestrator:
     async def test_coordinate_infrastructure_health_check_exception(self, orchestrator):
         """Test infrastructure health check coordination with exception."""
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=Exception("Health check failure")
+            side_effect=Exception("Health check failure"),
         )
 
         with pytest.raises(OnexError) as exc_info:
@@ -784,7 +807,7 @@ class TestInfrastructureOrchestrator:
             }
 
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=mock_coordinate_adapter
+            side_effect=mock_coordinate_adapter,
         )
 
         result = await orchestrator.coordinate_infrastructure_failover("kafka_wrapper")
@@ -794,7 +817,8 @@ class TestInfrastructureOrchestrator:
         assert result["failover_result"]["status"] == "success"
 
         orchestrator._coordinate_adapter.assert_called_once_with(
-            "tool_kafka_wrapper", {"operation": "enable_fallback_mode"}
+            "tool_kafka_wrapper",
+            {"operation": "enable_fallback_mode"},
         )
 
     @pytest.mark.asyncio
@@ -819,11 +843,12 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_coordinate_infrastructure_failover_unknown_adapter(
-        self, orchestrator
+        self,
+        orchestrator,
     ):
         """Test failover coordination for unknown adapter."""
         result = await orchestrator.coordinate_infrastructure_failover(
-            "unknown_adapter"
+            "unknown_adapter",
         )
 
         assert result["status"] == "failover_coordinated"
@@ -834,7 +859,7 @@ class TestInfrastructureOrchestrator:
     async def test_coordinate_infrastructure_failover_exception(self, orchestrator):
         """Test failover coordination with exception."""
         orchestrator._coordinate_adapter = AsyncMock(
-            side_effect=Exception("Failover coordination error")
+            side_effect=Exception("Failover coordination error"),
         )
 
         with pytest.raises(OnexError) as exc_info:
@@ -925,9 +950,7 @@ class TestInfrastructureOrchestrator:
 
         assert len(results) == 5
         assert all(result["status"] == "success" for result in results)
-        assert (
-            len(set(result["result"]["op_id"] for result in results)) == 5
-        )  # All unique
+        assert len({result["result"]["op_id"] for result in results}) == 5  # All unique
 
     @pytest.mark.asyncio
     async def test_pending_invocations_management(self, orchestrator):
@@ -936,7 +959,7 @@ class TestInfrastructureOrchestrator:
 
         # Start an operation that will timeout
         task = asyncio.create_task(
-            orchestrator._coordinate_adapter("slow_adapter", {"operation": "slow"})
+            orchestrator._coordinate_adapter("slow_adapter", {"operation": "slow"}),
         )
 
         # Wait a bit for the invocation to be registered
@@ -1010,7 +1033,7 @@ class TestInfrastructureOrchestrator:
         container.get_service.assert_called_with("ProtocolEventBus")
 
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
         ) as mock_path:
             mock_path.return_value.parent = MagicMock()
             orchestrator = NodeCanaryOrchestrator(container)
@@ -1024,10 +1047,10 @@ class TestInfrastructureOrchestrator:
     def test_main_function(self):
         """Test main function creates orchestrator with infrastructure container."""
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.create_infrastructure_container"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.create_infrastructure_container",
         ) as mock_create_container:
             with patch(
-                "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+                "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
             ) as mock_path:
                 mock_path.return_value.parent = MagicMock()
                 mock_container = MagicMock()
@@ -1043,10 +1066,10 @@ class TestInfrastructureOrchestrator:
     def test_main_function_integration(self):
         """Test main function can be called directly."""
         with patch(
-            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.create_infrastructure_container"
+            "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.create_infrastructure_container",
         ) as mock_create_container:
             with patch(
-                "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path"
+                "omnibase.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node.Path",
             ) as mock_path:
                 mock_path.return_value.parent = MagicMock()
                 mock_container = MagicMock()
@@ -1065,7 +1088,6 @@ class TestInfrastructureOrchestrator:
     async def test_high_throughput_operations(self, orchestrator, mock_event_bus):
         """Test orchestrator performance under high throughput operations."""
         start_time = time.time()
-        operation_results = []
 
         def fast_mock_publish(envelope):
             correlation_id = str(envelope.correlation_id)
@@ -1078,7 +1100,7 @@ class TestInfrastructureOrchestrator:
                             "result": {"operation_time": time.time()},
                             "error": None,
                             "metadata": {},
-                        }
+                        },
                     )
 
         mock_event_bus.publish.side_effect = fast_mock_publish
@@ -1086,7 +1108,8 @@ class TestInfrastructureOrchestrator:
         # Execute 50 concurrent operations
         tasks = [
             orchestrator._coordinate_adapter(
-                f"adapter_{i % 5}", {"operation": f"op_{i}"}
+                f"adapter_{i % 5}",
+                {"operation": f"op_{i}"},
             )
             for i in range(50)
         ]
@@ -1151,7 +1174,8 @@ class TestInfrastructureOrchestrator:
 
             # Send response back to orchestrator
             envelope = ModelEventEnvelope(
-                correlation_id=event.correlation_id, payload=response
+                correlation_id=event.correlation_id,
+                payload=response,
             )
             await orchestrator._handle_tool_response(envelope)
 
@@ -1159,7 +1183,8 @@ class TestInfrastructureOrchestrator:
         orchestrator.event_bus = real_event_bus
 
         result = await orchestrator._coordinate_adapter(
-            "realistic_adapter", {"operation": "test"}
+            "realistic_adapter",
+            {"operation": "test"},
         )
 
         assert result["status"] == "success"
@@ -1206,7 +1231,9 @@ class TestInfrastructureOrchestrator:
         """Test consistent usage of ONEX error codes."""
         # Test that OnexError is used with proper error codes
         with patch.object(
-            orchestrator, "_coordinate_adapter", side_effect=Exception("Test error")
+            orchestrator,
+            "_coordinate_adapter",
+            side_effect=Exception("Test error"),
         ):
             with pytest.raises(OnexError) as exc_info:
                 asyncio.run(orchestrator.coordinate_infrastructure_bootstrap())
@@ -1215,7 +1242,9 @@ class TestInfrastructureOrchestrator:
 
     @pytest.mark.asyncio
     async def test_comprehensive_workflow_simulation(
-        self, orchestrator, mock_event_bus
+        self,
+        orchestrator,
+        mock_event_bus,
     ):
         """Test comprehensive workflow covering all major functionality."""
         # Step 1: Check initial health
@@ -1234,7 +1263,7 @@ class TestInfrastructureOrchestrator:
                             "result": {"bootstrapped": True},
                             "error": None,
                             "metadata": {},
-                        }
+                        },
                     )
 
         mock_event_bus.publish.side_effect = bootstrap_mock_publish
@@ -1243,7 +1272,7 @@ class TestInfrastructureOrchestrator:
 
         # Step 3: Simulate failover scenario
         failover_result = await orchestrator.coordinate_infrastructure_failover(
-            "kafka_wrapper"
+            "kafka_wrapper",
         )
         assert failover_result["status"] == "failover_coordinated"
 

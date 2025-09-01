@@ -1,6 +1,6 @@
 """Input model for Consul Adapter operations."""
 
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,8 +10,8 @@ class ModelConsulKvData(BaseModel):
 
     key: str = Field(..., description="Consul key")
     value: str = Field(..., description="Consul value")
-    flags: Optional[int] = Field(None, description="Consul flags")
-    session: Optional[str] = Field(None, description="Session ID")
+    flags: int | None = Field(None, description="Consul flags")
+    session: str | None = Field(None, description="Session ID")
 
 
 class ModelConsulServiceConfig(BaseModel):
@@ -21,10 +21,10 @@ class ModelConsulServiceConfig(BaseModel):
     service_name: str = Field(..., description="Service name")
     address: str = Field(..., description="Service address")
     port: int = Field(..., description="Service port")
-    tags: Optional[List[str]] = Field(None, description="Service tags")
-    check_http: Optional[str] = Field(None, description="HTTP health check URL")
-    check_interval: Optional[str] = Field(None, description="Health check interval")
-    check_timeout: Optional[str] = Field(None, description="Health check timeout")
+    tags: list[str] | None = Field(None, description="Service tags")
+    check_http: str | None = Field(None, description="HTTP health check URL")
+    check_interval: str | None = Field(None, description="Health check interval")
+    check_timeout: str | None = Field(None, description="Health check timeout")
 
 
 class ModelConsulAdapterInput(BaseModel):
@@ -39,13 +39,16 @@ class ModelConsulAdapterInput(BaseModel):
         "health_check",
     ] = Field(..., description="Consul operation to perform")
     operation_type: str = Field(..., description="Type of consul operation")
-    key_path: Optional[str] = Field(None, description="Consul key-value path")
-    kv_data: Optional[ModelConsulKvData] = Field(
-        None, description="Structured KV data for put operations"
+    key_path: str | None = Field(None, description="Consul key-value path")
+    kv_data: ModelConsulKvData | None = Field(
+        None,
+        description="Structured KV data for put operations",
     )
-    service_config: Optional[ModelConsulServiceConfig] = Field(
-        None, description="Service registration/deregistration configuration"
+    service_config: ModelConsulServiceConfig | None = Field(
+        None,
+        description="Service registration/deregistration configuration",
     )
-    recurse: Optional[bool] = Field(
-        False, description="For KV delete operations, delete recursively"
+    recurse: bool | None = Field(
+        False,
+        description="For KV delete operations, delete recursively",
     )

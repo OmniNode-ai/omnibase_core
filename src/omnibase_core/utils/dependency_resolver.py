@@ -228,7 +228,7 @@ class UtilityDependencyResolver:
             raise
         except Exception as e:
             self.logger.exception(
-                f"Dependency resolution failed for node {node_id}: {e}"
+                f"Dependency resolution failed for node {node_id}: {e}",
             )
             msg = f"Failed to resolve dependencies: {e}"
             raise DependencyResolutionError(msg)

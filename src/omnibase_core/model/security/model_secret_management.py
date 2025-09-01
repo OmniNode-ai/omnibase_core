@@ -22,7 +22,6 @@ Original models migrated to:
 
 # === Backward Compatibility Imports ===
 
-
 # Import all extracted models for backward compatibility
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_config import ModelSecretConfig

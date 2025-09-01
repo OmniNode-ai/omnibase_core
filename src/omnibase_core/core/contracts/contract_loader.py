@@ -362,8 +362,9 @@ class ContractLoader:
         # Check for excessively large content (DoS protection)
         max_size = 10 * 1024 * 1024  # 10MB limit
         if len(content) > max_size:
+            msg = f"YAML file too large ({len(content)} bytes, max {max_size}): {file_path}"
             raise OnexError(
-                f"YAML file too large ({len(content)} bytes, max {max_size}): {file_path}",
+                msg,
                 CoreErrorCode.VALIDATION_FAILED,
             )
 
@@ -400,8 +401,11 @@ class ContractLoader:
             if char in ["{", "["]:
                 nesting_depth += 1
                 if nesting_depth > max_nesting:
+                    msg = (
+                        f"YAML nesting too deep (>{max_nesting} levels) in {file_path}"
+                    )
                     raise OnexError(
-                        f"YAML nesting too deep (>{max_nesting} levels) in {file_path}",
+                        msg,
                         CoreErrorCode.VALIDATION_FAILED,
                     )
             elif char in ["}", "]"]:

@@ -46,7 +46,8 @@ class ModelClaudeCodePreExecutionHookInput(BaseModel):
     tool_name: str = Field(..., description="Name of the tool being executed")
     session_id: str | None = Field(None, description="Claude session identifier")
     tool_input: str | dict[str, str | int | float | bool | None] | None = Field(
-        None, description="Tool parameters as JSON string or dict"
+        None,
+        description="Tool parameters as JSON string or dict",
     )
 
     # Claude Code specific fields

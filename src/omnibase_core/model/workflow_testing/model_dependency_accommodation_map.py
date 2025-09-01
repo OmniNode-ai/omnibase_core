@@ -5,7 +5,6 @@ ONEX Dependency Accommodation Map Model
 Model for mapping dependency names to their accommodation options in workflow testing.
 """
 
-
 from pydantic import BaseModel
 
 from omnibase_core.model.workflow_testing.model_workflow_testing_configuration import (

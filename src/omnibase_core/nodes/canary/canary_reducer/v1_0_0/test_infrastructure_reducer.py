@@ -16,36 +16,20 @@ and provides thorough testing of:
 """
 
 import asyncio
-import json
-import os
-import time
-import uuid
-from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
-import yaml
 
-from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.core.model_onex_event import OnexEvent
 from omnibase_core.model.registry.model_registry_event import (
-    ModelRegistryRequestEvent,
     ModelRegistryResponseEvent,
     RegistryOperations,
-    get_operation_for_endpoint,
 )
 
-from .models.model_infrastructure_reducer_input import (
-    ModelInfrastructureReducerInput,
-)
-from .models.model_infrastructure_reducer_output import (
-    ModelInfrastructureReducerOutput,
-)
 from .node import (
     NodeCanaryReducer,
 )
@@ -91,9 +75,9 @@ class TestInfrastructureReducerInitialization:
                         "component_type": "delegated_reducer",
                         "readiness_check": "infrastructure_ready",
                         "description": "Registry catalog aggregation component",
-                    }
+                    },
                 ],
-            }
+            },
         }
 
     def test_init_successful(self, mock_container):
@@ -104,7 +88,6 @@ class TestInfrastructureReducerInitialization:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
@@ -126,7 +109,6 @@ class TestInfrastructureReducerInitialization:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer.logger = mock_logger
 
@@ -139,7 +121,7 @@ class TestInfrastructureReducerInitialization:
     def test_adapter_loading_success(self, mock_container, mock_contract_content):
         """Test successful loading of infrastructure adapters."""
         mock_adapter_instance = MagicMock()
-        mock_adapter_class = MagicMock(return_value=mock_adapter_instance)
+        MagicMock(return_value=mock_adapter_instance)
 
         with (
             patch("builtins.open"),
@@ -151,12 +133,11 @@ class TestInfrastructureReducerInitialization:
             ),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Should have loaded adapters
             assert len(reducer.loaded_adapters) > 0
-            assert "consul_adapter" in [name for name in reducer.loaded_adapters.keys()]
+            assert "consul_adapter" in list(reducer.loaded_adapters.keys())
 
     def test_adapter_loading_failure(self, mock_container, mock_contract_content):
         """Test handling of adapter loading failures."""
@@ -170,7 +151,6 @@ class TestInfrastructureReducerInitialization:
             ),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             # Should not raise exception, but continue with other adapters
             reducer = NodeCanaryReducer(mock_container)
 
@@ -178,7 +158,9 @@ class TestInfrastructureReducerInitialization:
             assert isinstance(reducer.loaded_adapters, dict)
 
     def test_specialized_components_loading_success(
-        self, mock_container, mock_contract_content
+        self,
+        mock_container,
+        mock_contract_content,
     ):
         """Test successful loading of specialized components."""
         mock_component_instance = MagicMock()
@@ -193,14 +175,15 @@ class TestInfrastructureReducerInitialization:
                 return_value=mock_component_instance,
             ),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Should have loaded specialized components
             assert isinstance(reducer.specialized_components, dict)
 
     def test_specialized_components_loading_failure(
-        self, mock_container, mock_contract_content
+        self,
+        mock_container,
+        mock_contract_content,
     ):
         """Test handling of specialized component loading failures."""
         with (
@@ -213,7 +196,6 @@ class TestInfrastructureReducerInitialization:
                 side_effect=Exception("Component loading failed"),
             ),
         ):
-
             # Should not raise exception
             reducer = NodeCanaryReducer(mock_container)
 
@@ -242,12 +224,14 @@ class TestInfrastructureReducerAdapterLoading:
                         "version_directory_pattern": "v{major}_{minor}_{patch}",
                         "main_class_name": "NodeCanaryEffect",
                     },
-                }
+                },
             },
         }
 
     def test_load_adapter_from_metadata_success(
-        self, mock_container, sample_manifest_content
+        self,
+        mock_container,
+        sample_manifest_content,
     ):
         """Test successful adapter loading from metadata."""
         mock_adapter_instance = MagicMock()
@@ -256,11 +240,10 @@ class TestInfrastructureReducerAdapterLoading:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=sample_manifest_content),
-            patch("importlib.import_module") as mock_import,
+            patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
@@ -273,7 +256,9 @@ class TestInfrastructureReducerAdapterLoading:
             mock_adapter_class.assert_called_once_with(mock_container)
 
     def test_load_adapter_from_metadata_with_current_development(
-        self, mock_container, sample_manifest_content
+        self,
+        mock_container,
+        sample_manifest_content,
     ):
         """Test adapter loading with current_development version strategy."""
         mock_adapter_instance = MagicMock()
@@ -282,11 +267,10 @@ class TestInfrastructureReducerAdapterLoading:
         with (
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=sample_manifest_content),
-            patch("importlib.import_module") as mock_import,
+            patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
@@ -298,18 +282,20 @@ class TestInfrastructureReducerAdapterLoading:
             assert result == mock_adapter_instance
 
     def test_load_adapter_from_metadata_import_failure(
-        self, mock_container, sample_manifest_content
+        self,
+        mock_container,
+        sample_manifest_content,
     ):
         """Test handling of import failures during adapter loading."""
         with (
             patch("builtins.open"),
             patch("yaml.safe_load", return_value=sample_manifest_content),
             patch(
-                "importlib.import_module", side_effect=ImportError("Module not found")
+                "importlib.import_module",
+                side_effect=ImportError("Module not found"),
             ),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             with pytest.raises(ImportError):
@@ -325,7 +311,6 @@ class TestInfrastructureReducerAdapterLoading:
             patch("builtins.open", side_effect=FileNotFoundError("File not found")),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             with pytest.raises(FileNotFoundError):
@@ -375,12 +360,14 @@ class TestInfrastructureReducerHealthCheck:
         # Create mock healthy adapters
         mock_adapter1 = MagicMock()
         mock_adapter1.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Adapter 1 healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Adapter 1 healthy",
         )
 
         mock_adapter2 = MagicMock()
         mock_adapter2.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Adapter 2 healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Adapter 2 healthy",
         )
 
         reducer.loaded_adapters = {
@@ -405,12 +392,14 @@ class TestInfrastructureReducerHealthCheck:
         # Create mock adapters with mixed health
         mock_adapter1 = MagicMock()
         mock_adapter1.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Adapter 1 healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Adapter 1 healthy",
         )
 
         mock_adapter2 = MagicMock()
         mock_adapter2.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.DEGRADED, message="Adapter 2 degraded"
+            status=EnumHealthStatus.DEGRADED,
+            message="Adapter 2 degraded",
         )
 
         reducer.loaded_adapters = {
@@ -435,12 +424,14 @@ class TestInfrastructureReducerHealthCheck:
         # Create mock unhealthy adapters
         mock_adapter1 = MagicMock()
         mock_adapter1.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.UNHEALTHY, message="Adapter 1 failed"
+            status=EnumHealthStatus.UNHEALTHY,
+            message="Adapter 1 failed",
         )
 
         mock_adapter2 = MagicMock()
         mock_adapter2.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Adapter 2 healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Adapter 2 healthy",
         )
 
         reducer.loaded_adapters = {
@@ -465,12 +456,14 @@ class TestInfrastructureReducerHealthCheck:
         # Create mock failed adapters
         mock_adapter1 = MagicMock()
         mock_adapter1.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.UNHEALTHY, message="Adapter 1 failed"
+            status=EnumHealthStatus.UNHEALTHY,
+            message="Adapter 1 failed",
         )
 
         mock_adapter2 = MagicMock()
         mock_adapter2.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.UNHEALTHY, message="Adapter 2 failed"
+            status=EnumHealthStatus.UNHEALTHY,
+            message="Adapter 2 failed",
         )
 
         reducer.loaded_adapters = {
@@ -544,7 +537,8 @@ class TestInfrastructureReducerHealthCheck:
         assert result.status == EnumHealthStatus.DEGRADED
 
     def test_health_check_adapter_without_health_check_method(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check with adapter that doesn't have health_check method."""
         reducer = reducer_with_mocked_loading
@@ -563,7 +557,8 @@ class TestInfrastructureReducerHealthCheck:
         )  # Should assume healthy if loaded
 
     def test_health_check_adapter_health_check_exception(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check when adapter health check raises exception."""
         reducer = reducer_with_mocked_loading
@@ -582,19 +577,22 @@ class TestInfrastructureReducerHealthCheck:
         )  # Should mark as degraded when exception occurs
 
     def test_health_check_with_specialized_components(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check including specialized components."""
         reducer = reducer_with_mocked_loading
 
         mock_adapter = MagicMock()
         mock_adapter.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Adapter healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Adapter healthy",
         )
 
         mock_component = MagicMock()
         mock_component.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.HEALTHY, message="Component healthy"
+            status=EnumHealthStatus.HEALTHY,
+            message="Component healthy",
         )
 
         reducer.loaded_adapters = {"adapter1": mock_adapter}
@@ -610,14 +608,16 @@ class TestInfrastructureReducerHealthCheck:
         )
 
     def test_health_check_specialized_component_failure(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check with failed specialized components."""
         reducer = reducer_with_mocked_loading
 
         mock_component = MagicMock()
         mock_component.health_check.return_value = ModelHealthStatus(
-            status=EnumHealthStatus.UNHEALTHY, message="Component failed"
+            status=EnumHealthStatus.UNHEALTHY,
+            message="Component failed",
         )
 
         reducer.loaded_adapters = {}
@@ -629,7 +629,8 @@ class TestInfrastructureReducerHealthCheck:
         assert result.status == EnumHealthStatus.DEGRADED  # Mixed health states
 
     def test_health_check_specialized_component_without_health_check(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check with specialized component without health_check method."""
         reducer = reducer_with_mocked_loading
@@ -648,14 +649,15 @@ class TestInfrastructureReducerHealthCheck:
         )  # Should assume healthy if loaded
 
     def test_health_check_specialized_component_exception(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test health check when specialized component health check raises exception."""
         reducer = reducer_with_mocked_loading
 
         mock_component = MagicMock()
         mock_component.health_check.side_effect = Exception(
-            "Component health check failed"
+            "Component health check failed",
         )
 
         reducer.loaded_adapters = {}
@@ -673,7 +675,9 @@ class TestInfrastructureReducerHealthCheck:
 
         # Make the health check itself raise an exception
         with patch.object(
-            reducer, "loaded_adapters", side_effect=Exception("System failure")
+            reducer,
+            "loaded_adapters",
+            side_effect=Exception("System failure"),
         ):
             result = reducer.health_check()
 
@@ -708,7 +712,8 @@ class TestInfrastructureReducerLegacyHealthCheck:
         # Mock the modernized health_check to return healthy
         with patch.object(reducer, "health_check") as mock_health_check:
             mock_health_check.return_value = ModelHealthStatus(
-                status=EnumHealthStatus.HEALTHY, message="Infrastructure healthy"
+                status=EnumHealthStatus.HEALTHY,
+                message="Infrastructure healthy",
             )
 
             adapter_health_statuses = {
@@ -735,7 +740,8 @@ class TestInfrastructureReducerLegacyHealthCheck:
 
         with patch.object(reducer, "health_check") as mock_health_check:
             mock_health_check.return_value = ModelHealthStatus(
-                status=EnumHealthStatus.DEGRADED, message="Infrastructure degraded"
+                status=EnumHealthStatus.DEGRADED,
+                message="Infrastructure degraded",
             )
 
             adapter_health_statuses = {
@@ -752,14 +758,16 @@ class TestInfrastructureReducerLegacyHealthCheck:
 
     @pytest.mark.asyncio
     async def test_aggregate_health_status_unavailable(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test aggregate_health_status with unavailable status."""
         reducer = reducer_with_mocked_loading
 
         with patch.object(reducer, "health_check") as mock_health_check:
             mock_health_check.return_value = ModelHealthStatus(
-                status=EnumHealthStatus.UNHEALTHY, message="Infrastructure unhealthy"
+                status=EnumHealthStatus.UNHEALTHY,
+                message="Infrastructure unhealthy",
             )
 
             adapter_health_statuses = {
@@ -776,14 +784,16 @@ class TestInfrastructureReducerLegacyHealthCheck:
 
     @pytest.mark.asyncio
     async def test_aggregate_health_status_mixed_states(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test aggregate_health_status with mixed adapter states."""
         reducer = reducer_with_mocked_loading
 
         with patch.object(reducer, "health_check") as mock_health_check:
             mock_health_check.return_value = ModelHealthStatus(
-                status=EnumHealthStatus.DEGRADED, message="Infrastructure degraded"
+                status=EnumHealthStatus.DEGRADED,
+                message="Infrastructure degraded",
             )
 
             adapter_health_statuses = {
@@ -806,14 +816,16 @@ class TestInfrastructureReducerLegacyHealthCheck:
 
     @pytest.mark.asyncio
     async def test_aggregate_health_status_unknown_format(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test aggregate_health_status with unknown adapter health format."""
         reducer = reducer_with_mocked_loading
 
         with patch.object(reducer, "health_check") as mock_health_check:
             mock_health_check.return_value = ModelHealthStatus(
-                status=EnumHealthStatus.DEGRADED, message="Infrastructure degraded"
+                status=EnumHealthStatus.DEGRADED,
+                message="Infrastructure degraded",
             )
 
             adapter_health_statuses = {
@@ -827,7 +839,7 @@ class TestInfrastructureReducerLegacyHealthCheck:
             assert result["ready_services"] == []
             assert result["degraded_services"] == []
             assert result["failed_services"] == [
-                "vault_adapter"
+                "vault_adapter",
             ]  # Unknown status treated as failed
 
 
@@ -846,16 +858,15 @@ class TestInfrastructureReducerIntrospection:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Add mock loaded adapters
             reducer.loaded_adapters = {
                 "consul_adapter": MagicMock(
-                    __class__=MagicMock(__name__="ConsulAdapter")
+                    __class__=MagicMock(__name__="ConsulAdapter"),
                 ),
                 "vault_adapter": MagicMock(
-                    __class__=MagicMock(__name__="VaultAdapter")
+                    __class__=MagicMock(__name__="VaultAdapter"),
                 ),
             }
 
@@ -863,12 +874,12 @@ class TestInfrastructureReducerIntrospection:
             reducer.specialized_components = {
                 "registry_aggregator": {
                     "instance": MagicMock(
-                        __class__=MagicMock(__name__="RegistryAggregator")
+                        __class__=MagicMock(__name__="RegistryAggregator"),
                     ),
                     "component_type": "delegated_reducer",
                     "readiness_check": "infrastructure_ready",
                     "description": "Registry catalog aggregation",
-                }
+                },
             }
 
             return reducer
@@ -891,7 +902,8 @@ class TestInfrastructureReducerIntrospection:
         assert "http" in result["protocols"]
 
     def test_get_introspection_data_with_infrastructure_tools(
-        self, reducer_with_adapters
+        self,
+        reducer_with_adapters,
     ):
         """Test introspection data includes infrastructure tools information."""
         reducer = reducer_with_adapters
@@ -968,7 +980,7 @@ class TestInfrastructureReducerIntrospection:
         reducer = reducer_with_adapters
 
         reducer._gather_introspection_data = MagicMock(
-            side_effect=Exception("Mixin failed")
+            side_effect=Exception("Mixin failed"),
         )
 
         result = reducer.get_introspection_data()
@@ -984,7 +996,6 @@ class TestInfrastructureReducerIntrospection:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Remove attributes to simulate failure
@@ -1024,18 +1035,22 @@ class TestInfrastructureReducerServiceMode:
 
         with (
             patch.object(
-                reducer, "_subscribe_to_tool_invocations", new_callable=AsyncMock
+                reducer,
+                "_subscribe_to_tool_invocations",
+                new_callable=AsyncMock,
             ) as mock_subscribe,
             patch.object(
-                reducer, "_setup_infrastructure_introspection"
+                reducer,
+                "_setup_infrastructure_introspection",
             ) as mock_setup_introspection,
             patch.object(reducer, "_register_signal_handlers") as mock_register_signals,
             patch.object(
-                reducer, "_service_event_loop", new_callable=AsyncMock
+                reducer,
+                "_service_event_loop",
+                new_callable=AsyncMock,
             ) as mock_event_loop,
-            patch("asyncio.create_task") as mock_create_task,
+            patch("asyncio.create_task"),
         ):
-
             await reducer.start_service_mode()
 
             assert reducer._service_running is True
@@ -1047,7 +1062,8 @@ class TestInfrastructureReducerServiceMode:
 
     @pytest.mark.asyncio
     async def test_start_service_mode_already_running(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test start_service_mode when service is already running."""
         reducer = reducer_with_mocked_loading
@@ -1057,12 +1073,13 @@ class TestInfrastructureReducerServiceMode:
         await reducer.start_service_mode()
 
         reducer._log_warning.assert_called_once_with(
-            "Service already running, ignoring start request"
+            "Service already running, ignoring start request",
         )
 
     @pytest.mark.asyncio
     async def test_start_service_mode_introspection_setup_failure(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test start_service_mode when introspection setup fails."""
         reducer = reducer_with_mocked_loading
@@ -1071,7 +1088,9 @@ class TestInfrastructureReducerServiceMode:
 
         with (
             patch.object(
-                reducer, "_subscribe_to_tool_invocations", new_callable=AsyncMock
+                reducer,
+                "_subscribe_to_tool_invocations",
+                new_callable=AsyncMock,
             ),
             patch.object(
                 reducer,
@@ -1082,16 +1101,16 @@ class TestInfrastructureReducerServiceMode:
             patch.object(reducer, "_service_event_loop", new_callable=AsyncMock),
             patch("asyncio.create_task"),
         ):
-
             await reducer.start_service_mode()
 
             reducer._log_error.assert_called_once_with(
-                "Failed to set up infrastructure introspection: Setup failed"
+                "Failed to set up infrastructure introspection: Setup failed",
             )
 
     @pytest.mark.asyncio
     async def test_start_service_mode_general_failure(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test start_service_mode when general startup fails."""
         reducer = reducer_with_mocked_loading
@@ -1102,7 +1121,6 @@ class TestInfrastructureReducerServiceMode:
             "_subscribe_to_tool_invocations",
             side_effect=Exception("Startup failed"),
         ):
-
             with pytest.raises(OnexError) as exc_info:
                 await reducer.start_service_mode()
 
@@ -1120,7 +1138,8 @@ class TestInfrastructureReducerServiceMode:
         # No exception should be raised
 
     def test_setup_infrastructure_introspection_no_event_bus(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test infrastructure introspection setup when no event bus is available."""
         reducer = reducer_with_mocked_loading
@@ -1130,11 +1149,12 @@ class TestInfrastructureReducerServiceMode:
             reducer._setup_infrastructure_introspection()
 
             mock_print.assert_called_with(
-                "   ⚠️ No event bus available for introspection subscription"
+                "   ⚠️ No event bus available for introspection subscription",
             )
 
     def test_setup_infrastructure_introspection_success(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test successful infrastructure introspection setup."""
         reducer = reducer_with_mocked_loading
@@ -1148,14 +1168,15 @@ class TestInfrastructureReducerServiceMode:
             # Should subscribe to both event types
             assert mock_event_bus.subscribe.call_count == 2
             mock_print.assert_any_call(
-                "   🔍 Subscribed to core.discovery.node_introspection"
+                "   🔍 Subscribed to core.discovery.node_introspection",
             )
             mock_print.assert_any_call(
-                "   🔍 Subscribed to core.discovery.realtime_request"
+                "   🔍 Subscribed to core.discovery.realtime_request",
             )
 
     def test_setup_infrastructure_introspection_exception(
-        self, reducer_with_mocked_loading
+        self,
+        reducer_with_mocked_loading,
     ):
         """Test infrastructure introspection setup when subscription fails."""
         reducer = reducer_with_mocked_loading
@@ -1168,7 +1189,7 @@ class TestInfrastructureReducerServiceMode:
             reducer._setup_infrastructure_introspection()
 
             mock_print.assert_any_call(
-                "   ❌ Failed to set up infrastructure introspection: Subscription failed"
+                "   ❌ Failed to set up infrastructure introspection: Subscription failed",
             )
 
 
@@ -1187,7 +1208,6 @@ class TestInfrastructureReducerIntrospectionHandling:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer._node_id = uuid4()
             reducer._event_bus = MagicMock()
@@ -1195,7 +1215,7 @@ class TestInfrastructureReducerIntrospectionHandling:
             # Add mock loaded adapters
             reducer.loaded_adapters = {
                 "consul_adapter": MagicMock(
-                    __class__=MagicMock(__name__="ConsulAdapter")
+                    __class__=MagicMock(__name__="ConsulAdapter"),
                 ),
             }
 
@@ -1203,16 +1223,17 @@ class TestInfrastructureReducerIntrospectionHandling:
             reducer.specialized_components = {
                 "registry_aggregator": {
                     "instance": MagicMock(
-                        __class__=MagicMock(__name__="RegistryAggregator")
+                        __class__=MagicMock(__name__="RegistryAggregator"),
                     ),
                     "component_type": "delegated_reducer",
-                }
+                },
             }
 
             return reducer
 
     def test_handle_infrastructure_introspection_request_success(
-        self, reducer_with_adapters
+        self,
+        reducer_with_adapters,
     ):
         """Test successful handling of introspection request."""
         reducer = reducer_with_adapters
@@ -1225,7 +1246,6 @@ class TestInfrastructureReducerIntrospectionHandling:
             patch("builtins.print") as mock_print,
             patch("time.time", return_value=1234567890),
         ):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             # Should publish introspection response
@@ -1244,14 +1264,15 @@ class TestInfrastructureReducerIntrospectionHandling:
             )  # 1 adapter + 1 component
 
             mock_print.assert_any_call(
-                f"   🔍 Handling introspection request from test_source"
+                "   🔍 Handling introspection request from test_source",
             )
             mock_print.assert_any_call(
-                "   ✅ Published introspection response with 2 tools"
+                "   ✅ Published introspection response with 2 tools",
             )
 
     def test_handle_infrastructure_introspection_request_no_event_bus(
-        self, reducer_with_adapters
+        self,
+        reducer_with_adapters,
     ):
         """Test introspection request handling when no event bus is available."""
         reducer = reducer_with_adapters
@@ -1263,11 +1284,12 @@ class TestInfrastructureReducerIntrospectionHandling:
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             mock_print.assert_any_call(
-                "   ⚠️ No event bus available to publish response"
+                "   ⚠️ No event bus available to publish response",
             )
 
     def test_handle_infrastructure_introspection_request_exception(
-        self, reducer_with_adapters
+        self,
+        reducer_with_adapters,
     ):
         """Test introspection request handling when exception occurs."""
         reducer = reducer_with_adapters
@@ -1275,23 +1297,23 @@ class TestInfrastructureReducerIntrospectionHandling:
         # Mock event to raise exception when accessed
         mock_event = MagicMock()
         mock_event.source_node_id = PropertyMock(
-            side_effect=Exception("Event access failed")
+            side_effect=Exception("Event access failed"),
         )
 
         with (
             patch("builtins.print") as mock_print,
             patch("traceback.print_exc") as mock_traceback,
         ):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             mock_print.assert_any_call(
-                "   ❌ Failed to handle introspection request: Event access failed"
+                "   ❌ Failed to handle introspection request: Event access failed",
             )
             mock_traceback.assert_called_once()
 
     def test_handle_infrastructure_introspection_creates_tool_availabilities(
-        self, reducer_with_adapters
+        self,
+        reducer_with_adapters,
     ):
         """Test that introspection request creates proper tool availability entries."""
         reducer = reducer_with_adapters
@@ -1300,7 +1322,6 @@ class TestInfrastructureReducerIntrospectionHandling:
         mock_event.correlation_id = uuid4()
 
         with patch("builtins.print"), patch("time.time", return_value=1234567890):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             # Check the published response
@@ -1344,7 +1365,6 @@ class TestInfrastructureReducerRegistryDelegation:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer.node_id = uuid4()
             reducer._event_bus_active = False
@@ -1357,14 +1377,15 @@ class TestInfrastructureReducerRegistryDelegation:
                     "component_type": "delegated_reducer",
                     "readiness_check": "infrastructure_ready",
                     "description": "Registry catalog aggregation",
-                }
+                },
             }
 
             return reducer
 
     @pytest.mark.asyncio
     async def test_delegate_registry_request_infrastructure_not_ready(
-        self, reducer_with_registry_component
+        self,
+        reducer_with_registry_component,
     ):
         """Test registry delegation when infrastructure is not ready."""
         reducer = reducer_with_registry_component
@@ -1382,7 +1403,9 @@ class TestInfrastructureReducerRegistryDelegation:
             return_value=mock_status,
         ):
             result = await reducer.delegate_registry_request(
-                {"param": "value"}, "/registry/tools", "GET"
+                {"param": "value"},
+                "/registry/tools",
+                "GET",
             )
 
             assert result["status"] == "error"
@@ -1391,7 +1414,8 @@ class TestInfrastructureReducerRegistryDelegation:
 
     @pytest.mark.asyncio
     async def test_delegate_registry_request_fallback_to_direct_calls(
-        self, reducer_with_registry_component
+        self,
+        reducer_with_registry_component,
     ):
         """Test registry delegation falls back to direct calls when event bus is not active."""
         reducer = reducer_with_registry_component
@@ -1403,7 +1427,7 @@ class TestInfrastructureReducerRegistryDelegation:
             "instance"
         ]
         mock_registry.list_registry_tools = AsyncMock(
-            return_value={"tools": ["tool1", "tool2"]}
+            return_value={"tools": ["tool1", "tool2"]},
         )
 
         with patch.object(
@@ -1413,7 +1437,9 @@ class TestInfrastructureReducerRegistryDelegation:
             return_value=mock_status,
         ):
             result = await reducer.delegate_registry_request(
-                {}, "/registry/tools", "GET"
+                {},
+                "/registry/tools",
+                "GET",
             )
 
             assert result == {"tools": ["tool1", "tool2"]}
@@ -1421,7 +1447,8 @@ class TestInfrastructureReducerRegistryDelegation:
 
     @pytest.mark.asyncio
     async def test_delegate_registry_request_unsupported_endpoint(
-        self, reducer_with_registry_component
+        self,
+        reducer_with_registry_component,
     ):
         """Test registry delegation with unsupported endpoint."""
         reducer = reducer_with_registry_component
@@ -1435,7 +1462,9 @@ class TestInfrastructureReducerRegistryDelegation:
             return_value=mock_status,
         ):
             result = await reducer.delegate_registry_request(
-                {}, "/unsupported/endpoint", "GET"
+                {},
+                "/unsupported/endpoint",
+                "GET",
             )
 
             assert result["status"] == "error"
@@ -1444,7 +1473,8 @@ class TestInfrastructureReducerRegistryDelegation:
 
     @pytest.mark.asyncio
     async def test_delegate_registry_request_event_driven_success(
-        self, reducer_with_registry_component
+        self,
+        reducer_with_registry_component,
     ):
         """Test successful event-driven registry delegation."""
         reducer = reducer_with_registry_component
@@ -1461,14 +1491,17 @@ class TestInfrastructureReducerRegistryDelegation:
                 return_value=mock_status,
             ),
             patch.object(
-                reducer, "_send_registry_event_request", new_callable=AsyncMock
+                reducer,
+                "_send_registry_event_request",
+                new_callable=AsyncMock,
             ) as mock_send_event,
         ):
-
             mock_send_event.return_value = {"result": "success"}
 
             result = await reducer.delegate_registry_request(
-                {"param": "value"}, "/registry/tools", "GET"
+                {"param": "value"},
+                "/registry/tools",
+                "GET",
             )
 
             assert result == {"result": "success"}
@@ -1476,7 +1509,8 @@ class TestInfrastructureReducerRegistryDelegation:
 
     @pytest.mark.asyncio
     async def test_delegate_registry_request_exception(
-        self, reducer_with_registry_component
+        self,
+        reducer_with_registry_component,
     ):
         """Test registry delegation when exception occurs."""
         reducer = reducer_with_registry_component
@@ -1488,7 +1522,9 @@ class TestInfrastructureReducerRegistryDelegation:
             side_effect=Exception("Status check failed"),
         ):
             result = await reducer.delegate_registry_request(
-                {}, "/registry/tools", "GET"
+                {},
+                "/registry/tools",
+                "GET",
             )
 
             assert result["status"] == "error"
@@ -1512,35 +1548,34 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Create mock registry with all expected methods
             mock_registry = MagicMock()
             mock_registry.list_registry_tools = AsyncMock(
-                return_value={"tools": ["tool1"]}
+                return_value={"tools": ["tool1"]},
             )
             mock_registry.get_aggregated_catalog = AsyncMock(
-                return_value={"catalog": "data"}
+                return_value={"catalog": "data"},
             )
             mock_registry.get_aggregation_metrics = AsyncMock(
-                return_value={"metrics": "data"}
+                return_value={"metrics": "data"},
             )
             mock_registry.trigger_bootstrap_workflow = AsyncMock(
-                return_value={"bootstrap": "success"}
+                return_value={"bootstrap": "success"},
             )
             mock_registry.trigger_hello_coordination = AsyncMock(
-                return_value={"hello": "success"}
+                return_value={"hello": "success"},
             )
             mock_registry.trigger_consul_sync = AsyncMock(
-                return_value={"sync": "success"}
+                return_value={"sync": "success"},
             )
 
             reducer.specialized_components = {
                 "registry_catalog_aggregator": {
                     "instance": mock_registry,
                     "component_type": "delegated_reducer",
-                }
+                },
             }
 
             return reducer
@@ -1573,7 +1608,8 @@ class TestInfrastructureReducerFallbackDirectCalls:
 
     @pytest.mark.asyncio
     async def test_fallback_get_aggregation_metrics(
-        self, reducer_with_registry_methods
+        self,
+        reducer_with_registry_methods,
     ):
         """Test fallback to get_aggregation_metrics method."""
         reducer = reducer_with_registry_methods
@@ -1588,14 +1624,17 @@ class TestInfrastructureReducerFallbackDirectCalls:
 
     @pytest.mark.asyncio
     async def test_fallback_trigger_bootstrap_workflow(
-        self, reducer_with_registry_methods
+        self,
+        reducer_with_registry_methods,
     ):
         """Test fallback to trigger_bootstrap_workflow method."""
         reducer = reducer_with_registry_methods
 
         request_data = {"bootstrap": "config"}
         result = await reducer._fallback_to_direct_calls(
-            request_data, "/registry/bootstrap", "POST"
+            request_data,
+            "/registry/bootstrap",
+            "POST",
         )
 
         assert result == {"bootstrap": "success"}
@@ -1603,19 +1642,22 @@ class TestInfrastructureReducerFallbackDirectCalls:
             "registry_catalog_aggregator"
         ]["instance"]
         registry_instance.trigger_bootstrap_workflow.assert_called_once_with(
-            request_data
+            request_data,
         )
 
     @pytest.mark.asyncio
     async def test_fallback_trigger_hello_coordination(
-        self, reducer_with_registry_methods
+        self,
+        reducer_with_registry_methods,
     ):
         """Test fallback to trigger_hello_coordination method."""
         reducer = reducer_with_registry_methods
 
         request_data = {"hello": "config"}
         result = await reducer._fallback_to_direct_calls(
-            request_data, "/registry/hello-coordinate", "POST"
+            request_data,
+            "/registry/hello-coordinate",
+            "POST",
         )
 
         assert result == {"hello": "success"}
@@ -1623,7 +1665,7 @@ class TestInfrastructureReducerFallbackDirectCalls:
             "registry_catalog_aggregator"
         ]["instance"]
         registry_instance.trigger_hello_coordination.assert_called_once_with(
-            request_data
+            request_data,
         )
 
     @pytest.mark.asyncio
@@ -1633,7 +1675,9 @@ class TestInfrastructureReducerFallbackDirectCalls:
 
         request_data = {"sync": "config"}
         result = await reducer._fallback_to_direct_calls(
-            request_data, "/registry/consul-sync", "POST"
+            request_data,
+            "/registry/consul-sync",
+            "POST",
         )
 
         assert result == {"sync": "success"}
@@ -1649,12 +1693,13 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer.specialized_components = {}  # No registry component
 
             result = await reducer._fallback_to_direct_calls(
-                {}, "/registry/tools", "GET"
+                {},
+                "/registry/tools",
+                "GET",
             )
 
             assert result["status"] == "error"
@@ -1670,7 +1715,6 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Create mock registry without list_registry_tools method
@@ -1678,11 +1722,13 @@ class TestInfrastructureReducerFallbackDirectCalls:
             del mock_registry.list_registry_tools  # Remove the method
 
             reducer.specialized_components = {
-                "registry_catalog_aggregator": {"instance": mock_registry}
+                "registry_catalog_aggregator": {"instance": mock_registry},
             }
 
             result = await reducer._fallback_to_direct_calls(
-                {}, "/registry/tools", "GET"
+                {},
+                "/registry/tools",
+                "GET",
             )
 
             assert result["status"] == "error"
@@ -1694,7 +1740,9 @@ class TestInfrastructureReducerFallbackDirectCalls:
         reducer = reducer_with_registry_methods
 
         result = await reducer._fallback_to_direct_calls(
-            {}, "/unsupported/endpoint", "GET"
+            {},
+            "/unsupported/endpoint",
+            "GET",
         )
 
         assert result["status"] == "error"
@@ -1736,20 +1784,19 @@ class TestInfrastructureReducerStatusAndListMethods:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Add mock adapters with health check methods
             mock_adapter1 = MagicMock()
             mock_adapter1.health_check = AsyncMock(
-                return_value={"status": "healthy", "message": "OK"}
+                return_value={"status": "healthy", "message": "OK"},
             )
             mock_adapter1.__class__.__name__ = "ConsulAdapter"
             mock_adapter1.__class__.__module__ = "consul_module"
 
             mock_adapter2 = MagicMock()
             mock_adapter2.health_check = AsyncMock(
-                return_value={"status": "degraded", "message": "Warning"}
+                return_value={"status": "degraded", "message": "Warning"},
             )
             mock_adapter2.__class__.__name__ = "VaultAdapter"
             mock_adapter2.__class__.__module__ = "vault_module"
@@ -1770,7 +1817,7 @@ class TestInfrastructureReducerStatusAndListMethods:
                     "component_type": "delegated_reducer",
                     "readiness_check": "infrastructure_ready",
                     "description": "Registry catalog aggregation",
-                }
+                },
             }
 
             return reducer
@@ -1813,14 +1860,14 @@ class TestInfrastructureReducerStatusAndListMethods:
 
     @pytest.mark.asyncio
     async def test_get_infrastructure_status_adapter_without_health_check(
-        self, mock_container
+        self,
+        mock_container,
     ):
         """Test infrastructure status when adapter doesn't have health_check method."""
         with (
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Add adapter without health_check method
@@ -1837,20 +1884,20 @@ class TestInfrastructureReducerStatusAndListMethods:
 
     @pytest.mark.asyncio
     async def test_get_infrastructure_status_adapter_health_check_exception(
-        self, mock_container
+        self,
+        mock_container,
     ):
         """Test infrastructure status when adapter health check raises exception."""
         with (
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Add adapter with failing health check
             mock_adapter = MagicMock()
             mock_adapter.health_check = AsyncMock(
-                side_effect=Exception("Health check failed")
+                side_effect=Exception("Health check failed"),
             )
             reducer.loaded_adapters = {"test_adapter": mock_adapter}
             reducer.specialized_components = {}
@@ -1907,7 +1954,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer.node_id = uuid4()
             reducer.event_bus = MagicMock()
@@ -1926,7 +1972,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.get_event_loop") as mock_event_loop,
             patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
@@ -1935,10 +1980,14 @@ class TestInfrastructureReducerEventBusOperations:
             reducer.event_bus.publish_async = AsyncMock()
 
             with patch.object(
-                reducer, "_setup_registry_response_listener"
+                reducer,
+                "_setup_registry_response_listener",
             ) as mock_setup_listener:
                 result = await reducer._send_registry_event_request(
-                    "LIST_TOOLS", "/registry/tools", "GET", {"param": "value"}
+                    "LIST_TOOLS",
+                    "/registry/tools",
+                    "GET",
+                    {"param": "value"},
                 )
 
                 assert result == {"result": "success"}
@@ -1955,11 +2004,10 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.get_event_loop") as mock_event_loop,
             patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
-            mock_wait_for.side_effect = asyncio.TimeoutError("Request timed out")
+            mock_wait_for.side_effect = TimeoutError("Request timed out")
 
             reducer.event_bus.publish_async = AsyncMock()
 
@@ -1985,19 +2033,21 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.Future") as mock_future_class,
             patch("asyncio.get_event_loop") as mock_event_loop,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
 
             reducer.event_bus.publish_async = AsyncMock(
-                side_effect=Exception("Publish failed")
+                side_effect=Exception("Publish failed"),
             )
 
             with patch.object(reducer, "_setup_registry_response_listener"):
                 with pytest.raises(OnexError) as exc_info:
                     await reducer._send_registry_event_request(
-                        "LIST_TOOLS", "/registry/tools", "GET", {"param": "value"}
+                        "LIST_TOOLS",
+                        "/registry/tools",
+                        "GET",
+                        {"param": "value"},
                     )
 
                 assert exc_info.value.error_code == CoreErrorCode.OPERATION_FAILED
@@ -2038,7 +2088,7 @@ class TestInfrastructureReducerEventBusOperations:
 
         # Set up pending request
         reducer._pending_registry_requests[str(correlation_id)] = {
-            "operation": "test_operation"
+            "operation": "test_operation",
         }
 
         # Create the response handler manually to test it
@@ -2058,7 +2108,7 @@ class TestInfrastructureReducerEventBusOperations:
                                     "message": response_data.error_message,
                                     "error_code": response_data.error_code,
                                     "correlation_id": str(correlation_id),
-                                }
+                                },
                             )
 
                     await reducer.event_bus.unsubscribe_async(response_handler)
@@ -2078,12 +2128,11 @@ class TestInfrastructureReducerMainFunction:
         """Test that main function returns a NodeCanaryReducer instance."""
         with (
             patch(
-                "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container"
+                "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container",
             ) as mock_create_container,
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
@@ -2100,12 +2149,11 @@ class TestInfrastructureReducerMainFunction:
         """Test that main function creates infrastructure container correctly."""
         with (
             patch(
-                "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container"
+                "omnibase.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node.create_infrastructure_container",
             ) as mock_create_container,
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
@@ -2135,7 +2183,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
@@ -2146,7 +2193,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             assert isinstance(reducer._pending_registry_requests, dict)
@@ -2166,7 +2212,7 @@ class TestInfrastructureReducerComprehensiveCoverage:
                         "version_directory_pattern": "v{major}_{minor}_{patch}",
                         "main_class_name": "TestAdapter",
                     },
-                }
+                },
             },
         }
 
@@ -2180,12 +2226,13 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Test with unsupported version strategy - should fallback to current_stable
             result = reducer._load_adapter_from_metadata(
-                "test_adapter", "test.namespace.tool.manifest", "unsupported_strategy"
+                "test_adapter",
+                "test.namespace.tool.manifest",
+                "unsupported_strategy",
             )
 
             assert result == mock_adapter_instance
@@ -2196,7 +2243,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
 
             # Create adapter that returns unknown format
@@ -2221,7 +2267,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(NodeCanaryReducer, "_load_infrastructure_adapters"),
             patch.object(NodeCanaryReducer, "_load_specialized_components"),
         ):
-
             reducer = NodeCanaryReducer(mock_container)
             reducer.loaded_adapters = {}
             reducer.specialized_components = {}
@@ -2242,15 +2287,8 @@ class TestInfrastructureReducerComprehensiveCoverage:
 @pytest.fixture(scope="session", autouse=True)
 def test_completion_update():
     """Update todo status when all tests complete."""
-    yield
+    return
     # This runs after all tests complete
-    print("\n✅ Comprehensive infrastructure reducer test suite completed")
-    print("   📊 Coverage Target: >85% line coverage achieved")
-    print(
-        "   🔧 Tested: Health check modernization, registry delegation, adapter loading"
-    )
-    print("   🧪 Test Methods: 44+ comprehensive test methods implemented")
-    print("   🎯 Issues Fixed: 10% coverage issue resolved with comprehensive testing")
 
 
 if __name__ == "__main__":

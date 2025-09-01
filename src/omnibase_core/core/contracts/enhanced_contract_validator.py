@@ -1222,23 +1222,23 @@ class {class_name}(Enum):
         if not properties:
             # Default field if no schema is provided
             fields.append(
-                '    data: Any = Field(default=None, description="Contract data")'
+                '    data: Any = Field(default=None, description="Contract data")',
             )
         else:
             for field_name, field_spec in properties.items():
                 field_type = self._map_json_schema_type(
-                    field_spec.get("type", "string")
+                    field_spec.get("type", "string"),
                 )
                 description = field_spec.get("description", f"{field_name} field")
                 default = field_spec.get("default", "...")
 
                 if default == "...":
                     fields.append(
-                        f'    {field_name}: {field_type} = Field(description="{description}")'
+                        f'    {field_name}: {field_type} = Field(description="{description}")',
                     )
                 else:
                     fields.append(
-                        f'    {field_name}: {field_type} = Field(default={repr(default)}, description="{description}")'
+                        f'    {field_name}: {field_type} = Field(default={default!r}, description="{description}")',
                     )
 
         return "\n".join(fields) if fields else "    pass  # No fields defined"
@@ -1261,11 +1261,12 @@ class {class_name}(Enum):
                 input_type = operation.get("input_type", "Any")
                 output_type = operation.get("output_type", "Any")
                 description = operation.get(
-                    "description", f"Execute {method_name} operation"
+                    "description",
+                    f"Execute {method_name} operation",
                 )
 
                 methods.append(
-                    f"    async def {method_name}(self, input_data: {input_type}) -> {output_type}:"
+                    f"    async def {method_name}(self, input_data: {input_type}) -> {output_type}:",
                 )
                 methods.append(f'        """{description}."""')
                 methods.append("        ...")

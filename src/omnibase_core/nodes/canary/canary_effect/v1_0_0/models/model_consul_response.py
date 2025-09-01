@@ -6,9 +6,8 @@ Strongly typed response models for consul adapter operations.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from omnibase_core.core.errors.onex_error import OnexError
 from omnibase_core.model.core.model_semver import ModelSemVer
@@ -57,7 +56,7 @@ class ModelConsulHealthStatus(BaseModel):
     status: str = Field(description="Health status (healthy/unhealthy/degraded)")
     consul_agent: str = Field(description="Consul agent node name")
     datacenter: str = Field(description="Consul datacenter")
-    error: Optional[str] = Field(default=None, description="Error message if unhealthy")
+    error: str | None = Field(default=None, description="Error message if unhealthy")
 
 
 class ModelConsulKVResponse(BaseModel):
@@ -65,8 +64,8 @@ class ModelConsulKVResponse(BaseModel):
 
     status: str = Field(description="Operation status (success/not_found/failed)")
     key: str = Field(description="KV store key")
-    value: Optional[str] = Field(default=None, description="KV store value")
-    modify_index: Optional[int] = Field(default=None, description="Consul modify index")
+    value: str | None = Field(default=None, description="KV store value")
+    modify_index: int | None = Field(default=None, description="Consul modify index")
 
 
 class ModelConsulHealthCheck(BaseModel):
@@ -84,8 +83,9 @@ class ModelConsulServiceRegistration(BaseModel):
     name: str = Field(description="Service name")
     port: int = Field(description="Service port")
     address: str = Field(default="localhost", description="Service address")
-    health_check: Optional[ModelConsulHealthCheck] = Field(
-        default=None, description="Health check configuration"
+    health_check: ModelConsulHealthCheck | None = Field(
+        default=None,
+        description="Health check configuration",
     )
 
 
@@ -96,14 +96,14 @@ class ModelConsulServiceInfo(BaseModel):
     name: str = Field(description="Service name")
     port: int = Field(description="Service port")
     address: str = Field(description="Service address")
-    tags: List[str] = Field(default_factory=list, description="Service tags")
+    tags: list[str] = Field(default_factory=list, description="Service tags")
 
 
 class ModelConsulServiceListResponse(BaseModel):
     """Consul service list response."""
 
     status: str = Field(description="Operation status")
-    services: List[ModelConsulServiceInfo] = Field(description="List of services")
+    services: list[ModelConsulServiceInfo] = Field(description="List of services")
     count: int = Field(description="Number of services")
 
 
@@ -118,9 +118,9 @@ class ModelConsulServiceResponse(BaseModel):
 class ModelConsulHealthCheckNode(BaseModel):
     """Consul health check node information."""
 
-    node: Optional[str] = Field(default=None, description="Node name")
-    service_id: Optional[str] = Field(default=None, description="Service ID")
-    service_name: Optional[str] = Field(default=None, description="Service name")
+    node: str | None = Field(default=None, description="Node name")
+    service_id: str | None = Field(default=None, description="Service ID")
+    service_name: str | None = Field(default=None, description="Service name")
     status: str = Field(description="Health status")
 
 
@@ -128,12 +128,14 @@ class ModelConsulHealthResponse(BaseModel):
     """Consul health check response."""
 
     status: str = Field(description="Operation status")
-    service_name: Optional[str] = Field(default=None, description="Service name")
-    health_checks: Optional[List[ModelConsulHealthCheckNode]] = Field(
-        default=None, description="Health check details for specific service"
+    service_name: str | None = Field(default=None, description="Service name")
+    health_checks: list[ModelConsulHealthCheckNode] | None = Field(
+        default=None,
+        description="Health check details for specific service",
     )
-    health_summary: Optional[Dict[str, Dict[str, str]]] = Field(
-        default=None, description="Health summary for all services"
+    health_summary: dict[str, dict[str, str]] | None = Field(
+        default=None,
+        description="Health summary for all services",
     )
 
 
@@ -150,11 +152,12 @@ class ModelConsulResponse(BaseModel):
 
     version: ModelSemVer = Field(description="Model version")
     operation_type: EnumConsulOperationType = Field(
-        description="Type of consul operation"
+        description="Type of consul operation",
     )
     status: EnumConsulStatus = Field(description="Operation status")
     success: bool = Field(description="Whether operation succeeded")
-    data: Optional[Dict] = Field(default=None, description="Operation response data")
-    error: Optional[OnexError] = Field(
-        default=None, description="Error details if operation failed"
+    data: dict | None = Field(default=None, description="Operation response data")
+    error: OnexError | None = Field(
+        default=None,
+        description="Error details if operation failed",
     )

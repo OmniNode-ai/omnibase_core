@@ -6,7 +6,6 @@ Strongly typed Pydantic model for tool registration and instance management.
 Replaces Dict[str, Type] and Dict[str, object] patterns.
 """
 
-
 from pydantic import BaseModel, Field
 
 

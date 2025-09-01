@@ -465,7 +465,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
 
                 except ImportError as e:
                     logger.exception(
-                        f"❌ Import error in event_bus_client provider: {e}"
+                        f"❌ Import error in event_bus_client provider: {e}",
                     )
                     logger.info("🔄 Attempting manual EventBusClient import...")
                     # Fallback: Try manual import and creation
@@ -491,7 +491,7 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
 
                 except Exception as e:
                     logger.exception(
-                        f"❌ event_bus_client provider resolution failed: {e}"
+                        f"❌ event_bus_client provider resolution failed: {e}",
                     )
                     logger.exception(f"📋 Exception type: {type(e).__name__}")
                     logger.exception(f"📋 Exception details: {e!s}")

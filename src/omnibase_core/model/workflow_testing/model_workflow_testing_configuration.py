@@ -6,7 +6,6 @@ This module provides Pydantic models for workflow testing configuration,
 supporting flexible dependency accommodation and comprehensive test workflows.
 """
 
-
 from pydantic import BaseModel, Field, validator
 
 from omnibase_core.enums.enum_workflow_testing import (

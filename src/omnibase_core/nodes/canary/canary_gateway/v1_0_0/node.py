@@ -5,19 +5,17 @@ This tool implements the Group Gateway component of ONEX Messaging Architecture 
 providing intelligent message routing, response aggregation, and PostgreSQL-based caching.
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Union
 
 import asyncpg
+
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
-from pydantic import BaseModel, Field
 
 from .models import (
     ModelAggregatedResponse,
@@ -38,9 +36,9 @@ class ResponseAggregator:
 
     async def aggregate_responses(
         self,
-        responses: List[Dict[str, str]],
+        responses: list[dict[str, str]],
         operation_type: str,
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
     ) -> ModelAggregatedResponse:
         """Aggregate multiple tool responses into a single response."""
         try:
@@ -65,11 +63,13 @@ class ResponseAggregator:
             )
 
         except Exception as e:
-            raise OnexError(f"Failed to aggregate responses: {str(e)}") from e
+            msg = f"Failed to aggregate responses: {e!s}"
+            raise OnexError(msg) from e
 
     async def get_cached_response(
-        self, cache_key: str
-    ) -> Optional[ModelAggregatedResponse]:
+        self,
+        cache_key: str,
+    ) -> ModelAggregatedResponse | None:
         """Retrieve cached response from PostgreSQL."""
         try:
             async with self.db_pool.acquire() as conn:
@@ -97,7 +97,7 @@ class ResponseAggregator:
                 return None
 
         except Exception as e:
-            self.logger.error(f"Cache lookup failed: {e}")
+            self.logger.exception(f"Cache lookup failed: {e}")
             return None
 
     async def cache_response(
@@ -128,13 +128,13 @@ class ResponseAggregator:
             return True
 
         except Exception as e:
-            self.logger.error(f"Cache storage failed: {e}")
+            self.logger.exception(f"Cache storage failed: {e}")
             return False
 
     def generate_cache_key(
         self,
         operation_type: str,
-        target_tools: List[str],
+        target_tools: list[str],
         message_data: ModelMessageData,
     ) -> str:
         """Generate cache key for request."""
@@ -162,8 +162,8 @@ class NodeCanaryGateway(NodeEffectService):
     def __init__(self, container: ONEXContainer):
         """Initialize Group Gateway with container injection."""
         super().__init__(container)
-        self.db_pool: Optional[asyncpg.Pool] = None
-        self.response_aggregator: Optional[ResponseAggregator] = None
+        self.db_pool: asyncpg.Pool | None = None
+        self.response_aggregator: ResponseAggregator | None = None
         self.routing_metrics = {
             "total_requests": 0,
             "successful_requests": 0,
@@ -195,7 +195,8 @@ class NodeCanaryGateway(NodeEffectService):
             self.logger.info("Group Gateway initialized successfully")
 
         except Exception as e:
-            raise OnexError(f"Failed to initialize Group Gateway: {str(e)}") from e
+            msg = f"Failed to initialize Group Gateway: {e!s}"
+            raise OnexError(msg) from e
 
     async def cleanup(self) -> None:
         """Clean up database connections."""
@@ -204,10 +205,10 @@ class NodeCanaryGateway(NodeEffectService):
 
     async def route_message(
         self,
-        target_tools: List[str],
+        target_tools: list[str],
         message_data: ModelMessageData,
         operation_type: str = "route",
-        correlation_id: Optional[str] = None,
+        correlation_id: str | None = None,
         timeout_ms: int = 30000,
         cache_strategy: str = "cache_aside",
     ) -> ModelGroupGatewayOutput:
@@ -219,14 +220,16 @@ class NodeCanaryGateway(NodeEffectService):
 
             # Generate cache key
             cache_key = self.response_aggregator.generate_cache_key(
-                operation_type, target_tools, message_data
+                operation_type,
+                target_tools,
+                message_data,
             )
 
             # Check cache first (cache-aside pattern)
             cached_response = None
             if cache_strategy == "cache_aside":
                 cached_response = await self.response_aggregator.get_cached_response(
-                    cache_key
+                    cache_key,
                 )
 
                 if cached_response:
@@ -245,18 +248,23 @@ class NodeCanaryGateway(NodeEffectService):
 
             # Route to target tools (simplified implementation)
             responses = await self._execute_routing(
-                target_tools, message_data, timeout_ms
+                target_tools,
+                message_data,
+                timeout_ms,
             )
 
             # Aggregate responses
             aggregated_response = await self.response_aggregator.aggregate_responses(
-                responses, operation_type, correlation_id
+                responses,
+                operation_type,
+                correlation_id,
             )
 
             # Cache the response
             if cache_strategy in ["cache_aside", "write_through"]:
                 await self.response_aggregator.cache_response(
-                    cache_key, aggregated_response
+                    cache_key,
+                    aggregated_response,
                 )
 
             # Update metrics
@@ -273,7 +281,7 @@ class NodeCanaryGateway(NodeEffectService):
 
         except Exception as e:
             self.routing_metrics["failed_requests"] += 1
-            self.logger.error(f"Message routing failed: {e}")
+            self.logger.exception(f"Message routing failed: {e}")
 
             return ModelGroupGatewayOutput(
                 status="error",
@@ -283,8 +291,11 @@ class NodeCanaryGateway(NodeEffectService):
             )
 
     async def _execute_routing(
-        self, target_tools: List[str], message_data: ModelMessageData, timeout_ms: int
-    ) -> List[Dict[str, str]]:
+        self,
+        target_tools: list[str],
+        message_data: ModelMessageData,
+        timeout_ms: int,
+    ) -> list[dict[str, str]]:
         """Execute routing to target tools (simplified implementation)."""
         # This is a simplified implementation - in production, this would
         # make actual HTTP/gRPC calls to target tools
@@ -308,7 +319,7 @@ class NodeCanaryGateway(NodeEffectService):
                         "status": "error",
                         "error": str(e),
                         "timestamp": datetime.utcnow().isoformat(),
-                    }
+                    },
                 )
 
         return responses
@@ -318,7 +329,7 @@ class NodeCanaryGateway(NodeEffectService):
         avg_response_time = 0
         if self.routing_metrics["response_times"]:
             avg_response_time = sum(self.routing_metrics["response_times"]) / len(
-                self.routing_metrics["response_times"]
+                self.routing_metrics["response_times"],
             )
 
         total_cache_requests = (
@@ -352,28 +363,33 @@ class NodeCanaryGateway(NodeEffectService):
                         await conn.fetchval("SELECT 1")
                     health_status["postgresql"] = "healthy"
                 except Exception as e:
-                    health_status["postgresql"] = f"unhealthy: {str(e)}"
+                    health_status["postgresql"] = f"unhealthy: {e!s}"
 
             overall_status = (
                 "healthy" if health_status["postgresql"] == "healthy" else "degraded"
             )
 
             return ModelGroupGatewayOutput(
-                status=overall_status, aggregated_response=health_status
+                status=overall_status,
+                aggregated_response=health_status,
             )
 
         except Exception as e:
             return ModelGroupGatewayOutput(
-                status="error", aggregated_response={}, error_message=str(e)
+                status="error",
+                aggregated_response={},
+                error_message=str(e),
             )
 
     async def clear_cache(
-        self, cache_pattern: Optional[str] = None
+        self,
+        cache_pattern: str | None = None,
     ) -> ModelGroupGatewayOutput:
         """Clear response cache entries."""
         try:
             if not self.db_pool:
-                raise OnexError("Database pool not initialized")
+                msg = "Database pool not initialized"
+                raise OnexError(msg)
 
             async with self.db_pool.acquire() as conn:
                 if cache_pattern:
@@ -394,12 +410,15 @@ class NodeCanaryGateway(NodeEffectService):
 
         except Exception as e:
             return ModelGroupGatewayOutput(
-                status="error", aggregated_response={}, error_message=str(e)
+                status="error",
+                aggregated_response={},
+                error_message=str(e),
             )
 
     # Main processing method for NodeBase
     async def process(
-        self, input_data: ModelGroupGatewayInput
+        self,
+        input_data: ModelGroupGatewayInput,
     ) -> ModelGroupGatewayOutput:
         """Process Group Gateway requests."""
         if input_data.operation_type in ["route", "broadcast", "aggregate"]:
@@ -411,17 +430,16 @@ class NodeCanaryGateway(NodeEffectService):
                 timeout_ms=input_data.timeout_ms or 30000,
                 cache_strategy=input_data.cache_strategy or "cache_aside",
             )
-        else:
-            return ModelGroupGatewayOutput(
-                status="error",
-                aggregated_response={},
-                error_message=f"Unknown operation type: {input_data.operation_type}",
-            )
+        return ModelGroupGatewayOutput(
+            status="error",
+            aggregated_response={},
+            error_message=f"Unknown operation type: {input_data.operation_type}",
+        )
 
 
 def main():
     """Main entry point for Group Gateway - returns node instance with infrastructure container"""
-    from ..container import create_infrastructure_container
+    from canary.canary_gateway.container import create_infrastructure_container
 
     container = create_infrastructure_container()
     return NodeCanaryGateway(container)

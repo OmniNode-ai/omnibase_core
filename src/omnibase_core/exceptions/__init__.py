@@ -18,7 +18,7 @@ except ImportError:
 
     def get_error_codes_for_component(component: str):
         """Fallback implementation."""
-        return None
+        return
 
     def list_registered_components():
         """Fallback implementation."""
@@ -26,7 +26,6 @@ except ImportError:
 
     def register_error_codes(component: str, error_code_enum):
         """Fallback implementation."""
-        pass
 
 
 __all__ = [

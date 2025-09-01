@@ -5,7 +5,6 @@ Infrastructure Orchestrator Response Models.
 Strongly typed response models for infrastructure orchestrator operations.
 """
 
-
 from pydantic import BaseModel, Field
 
 

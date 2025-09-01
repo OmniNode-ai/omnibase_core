@@ -697,13 +697,17 @@ class NodeReducer(NodeCoreBase):
                 )
                 batches_processed = 1
             elif input_data.streaming_mode == StreamingMode.INCREMENTAL:
-                result, items_processed, batches_processed = (
-                    await self._process_incremental(input_data, conflict_resolver)
-                )
+                (
+                    result,
+                    items_processed,
+                    batches_processed,
+                ) = await self._process_incremental(input_data, conflict_resolver)
             elif input_data.streaming_mode == StreamingMode.WINDOWED:
-                result, items_processed, batches_processed = (
-                    await self._process_windowed(input_data, conflict_resolver)
-                )
+                (
+                    result,
+                    items_processed,
+                    batches_processed,
+                ) = await self._process_windowed(input_data, conflict_resolver)
             else:
                 result, items_processed = await self._process_batch(
                     input_data,

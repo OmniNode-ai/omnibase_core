@@ -22,9 +22,9 @@ from .model_consul_response import (
 )
 
 __all__ = [
+    "ModelConsulAdapterHealth",
     "ModelConsulAdapterInput",
     "ModelConsulAdapterOutput",
-    "ModelConsulAdapterHealth",
     "ModelConsulHealthCheck",
     "ModelConsulHealthCheckNode",
     "ModelConsulHealthResponse",

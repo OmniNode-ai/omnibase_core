@@ -107,9 +107,10 @@ class ComputationCache:
     def __init__(self, max_size: int = 1000, default_ttl_minutes: int = 30):
         self.max_size = max_size
         self.default_ttl_minutes = default_ttl_minutes
-        self._cache: dict[str, tuple[Any, datetime, int]] = (
-            {}
-        )  # key -> (value, expiry, access_count)
+        self._cache: dict[
+            str,
+            tuple[Any, datetime, int],
+        ] = {}  # key -> (value, expiry, access_count)
 
     def get(self, cache_key: str) -> Any | None:
         """Get cached value if valid and not expired."""
@@ -745,7 +746,7 @@ class NodeCompute(NodeCoreBase):
         """Check if computation supports parallel execution."""
         # For now, only support parallel for batch operations
         return bool(
-            isinstance(input_data.data, list | tuple) and len(input_data.data) > 1
+            isinstance(input_data.data, list | tuple) and len(input_data.data) > 1,
         )
 
     async def _execute_sequential_computation(

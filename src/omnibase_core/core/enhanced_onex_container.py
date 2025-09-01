@@ -586,7 +586,9 @@ def _create_workflow_coordinator(factory):
                 )
                 # Execute workflow using the configured type and input data
                 workflow_result = await self._execute_workflow_type(
-                    workflow_type, input_data, config
+                    workflow_type,
+                    input_data,
+                    config,
                 )
 
                 return NodeResult.success(
@@ -628,7 +630,7 @@ def _create_workflow_coordinator(factory):
                 # would depend on the specific workflow framework being used
                 if hasattr(workflow, "run"):
                     result = await workflow.run(input_data)
-                elif hasattr(workflow, "__call__"):
+                elif callable(workflow):
                     result = await workflow(input_data)
                 else:
                     # Fallback: return input data as placeholder

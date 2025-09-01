@@ -6,7 +6,7 @@ Provides event specification including payload schema and processing configurati
 """
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +42,8 @@ class ModelFSMEvent(BaseModel):
     )
 
     event_type: FSMEventType = Field(
-        ..., description="Type classification of the event"
+        ...,
+        description="Type classification of the event",
     )
 
     description: str = Field(
@@ -54,14 +55,18 @@ class ModelFSMEvent(BaseModel):
 
     # Event configuration
     priority: int = Field(
-        default=1, description="Event priority for conflict resolution", ge=1, le=10
+        default=1,
+        description="Event priority for conflict resolution",
+        ge=1,
+        le=10,
     )
 
-    payload_schema: Optional[Dict[str, Any]] = Field(
-        default=None, description="JSON Schema for event payload validation"
+    payload_schema: dict[str, Any] | None = Field(
+        default=None,
+        description="JSON Schema for event payload validation",
     )
 
-    timeout_ms: Optional[int] = Field(
+    timeout_ms: int | None = Field(
         default=None,
         description="Timeout for event processing in milliseconds",
         ge=100,
@@ -80,5 +85,5 @@ class ModelFSMEvent(BaseModel):
                     "properties": {"correlation_id": {"type": "string"}},
                 },
                 "timeout_ms": 5000,
-            }
+            },
         }

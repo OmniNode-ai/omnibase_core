@@ -6,7 +6,6 @@ Provides operation specification including permissions, constraints, and side ef
 """
 
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -62,7 +61,8 @@ class ModelFSMOperation(BaseModel):
     )
 
     operation_type: FSMOperationType = Field(
-        ..., description="Type classification of the operation"
+        ...,
+        description="Type classification of the operation",
     )
 
     description: str = Field(
@@ -74,32 +74,36 @@ class ModelFSMOperation(BaseModel):
 
     # Operation requirements
     requires_atomic_execution: bool = Field(
-        ..., description="Whether this operation must execute atomically"
+        ...,
+        description="Whether this operation must execute atomically",
     )
 
     supports_rollback: bool = Field(
-        ..., description="Whether this operation supports rollback"
+        ...,
+        description="Whether this operation supports rollback",
     )
 
     # State constraints
-    allowed_from_states: List[str] = Field(
+    allowed_from_states: list[str] = Field(
         default_factory=list,
         description="States from which this operation can be executed",
     )
 
-    blocked_from_states: List[str] = Field(
-        default_factory=list, description="States from which this operation is blocked"
+    blocked_from_states: list[str] = Field(
+        default_factory=list,
+        description="States from which this operation is blocked",
     )
 
     # Security and permissions
-    required_permissions: List[str] = Field(
+    required_permissions: list[str] = Field(
         default_factory=list,
         description="Permissions required to execute this operation",
     )
 
     # Operation characteristics
-    side_effects: List[FSMSideEffect] = Field(
-        default_factory=list, description="Side effects of executing this operation"
+    side_effects: list[FSMSideEffect] = Field(
+        default_factory=list,
+        description="Side effects of executing this operation",
     )
 
     performance_impact: FSMPerformanceImpact = Field(
@@ -128,5 +132,5 @@ class ModelFSMOperation(BaseModel):
                 "side_effects": ["state_change", "resource_allocation"],
                 "performance_impact": "medium",
                 "timeout_ms": 30000,
-            }
+            },
         }

@@ -1,802 +1,376 @@
+#!/usr/bin/env python3
 """
-Message Aggregator - Cross-group message aggregation and state management.
+Canary Compute - Business logic processing for canary deployments.
 
-This tool implements the Message Aggregator component of ONEX Messaging Architecture v0.2,
-providing cross-group message coordination, intelligent aggregation strategies,
-and PostgreSQL-based state persistence.
+This node handles computational tasks in a controlled canary environment, providing
+data processing, algorithm execution, and business logic computation without side effects.
 """
 
-import asyncio
-import json
 import logging
-import time
 import uuid
-from datetime import datetime, timedelta
-from typing import Callable, Dict, List, Optional, Union
+from datetime import datetime
+from typing import Any
 
-import asyncpg
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.errors.onex_error import OnexError
-from omnibase_core.core.infrastructure_service_bases import NodeComputeService
+from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutput
+from omnibase_core.core.node_compute_service import NodeComputeService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 
-from .models import ModelMessageAggregatorInput, ModelMessageAggregatorOutput
 
+class ModelCanaryComputeInput(BaseModel):
+    """Input model for canary compute operations."""
 
-# Internal helper models (not part of contract)
-class ModelGroupMessage(BaseModel):
-    """Model for group message data."""
-
-    group_id: str = Field(..., description="Tool group identifier")
-    message_content: str = Field(..., description="Message content")
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Message metadata"
+    operation_type: str = Field(..., description="Type of compute operation")
+    data_payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Input data for computation",
     )
-    timestamp: Optional[str] = Field(None, description="Message timestamp")
-
-
-class ModelAggregationResult(BaseModel):
-    """Model for aggregation result data."""
-
-    strategy_used: str = Field(..., description="Aggregation strategy used")
-    total_messages: int = Field(..., description="Total number of messages processed")
-    result_data: Dict[str, str] = Field(
-        default_factory=dict, description="Aggregated result"
+    parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Operation parameters",
     )
-    processing_time_ms: float = Field(
-        ..., description="Processing time in milliseconds"
+    correlation_id: str | None = Field(None, description="Request correlation ID")
+
+
+class ModelCanaryComputeOutput(BaseModel):
+    """Output model for canary compute operations."""
+
+    computation_result: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Computation result data",
     )
-
-
-class ModelAggregationMetrics(BaseModel):
-    """Model for aggregation performance metrics."""
-
-    total_operations: int = Field(
-        ..., description="Total number of aggregation operations"
+    success: bool = Field(True, description="Whether computation succeeded")
+    error_message: str | None = Field(None, description="Error message if failed")
+    execution_time_ms: int | None = Field(
+        None,
+        description="Execution time in milliseconds",
     )
-    successful_operations: int = Field(
-        ..., description="Number of successful operations"
-    )
-    failed_operations: int = Field(..., description="Number of failed operations")
-    average_processing_time_ms: float = Field(
-        ..., description="Average processing time"
-    )
-    groups_processed: int = Field(..., description="Number of groups processed")
-    state_persistence_count: int = Field(
-        ..., description="Number of state persistence operations"
-    )
-
-
-class ModelStateData(BaseModel):
-    """Model for state persistence data."""
-
-    operation_type: str = Field(..., description="Type of state operation")
-    data: Dict[str, str] = Field(default_factory=dict, description="State data content")
-    timestamp: str = Field(..., description="State creation timestamp")
-    correlation_id: Optional[str] = Field(
-        default=None, description="State correlation ID"
-    )
-
-
-class ModelGroupMessageData(BaseModel):
-    """Model for group message data with processing metadata."""
-
-    group_id: str = Field(..., description="Tool group identifier")
-    message_content: str = Field(..., description="Message content")
-    data: Dict[str, str] = Field(default_factory=dict, description="Message data")
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Message metadata"
-    )
-    timestamp: str = Field(..., description="Message timestamp")
-    message_hash: Optional[int] = Field(
-        default=None, description="Message content hash"
-    )
-
-
-class ModelAggregatedData(BaseModel):
-    """Model for aggregated message data."""
-
-    aggregation_strategy: str = Field(..., description="Strategy used for aggregation")
-    correlation_id: Optional[str] = Field(
-        default=None, description="Correlation identifier"
-    )
-    timestamp: str = Field(..., description="Aggregation timestamp")
-    groups_processed: List[str] = Field(
-        default_factory=list, description="List of processed groups"
-    )
-    merged_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Merged data for merge strategy"
-    )
-    combined_messages: Optional[List[ModelGroupMessageData]] = Field(
-        default=None, description="Combined messages for combine strategy"
-    )
-    reduced_data: Optional[Dict[str, str]] = Field(
-        default=None, description="Reduced data for reduce strategy"
-    )
-    collected_messages: Optional[Dict[str, str]] = Field(
-        default=None, description="Collected messages for collect strategy"
-    )
-    conflicts_resolved: Optional[int] = Field(
-        default=None, description="Number of conflicts resolved"
-    )
-    total_messages: Optional[int] = Field(
-        default=None, description="Total number of messages processed"
-    )
-    collection_metadata: Optional[Dict[str, str]] = Field(
-        default=None, description="Collection metadata"
-    )
-
-
-class ModelNumericStats(BaseModel):
-    """Model for numeric statistics in reduce operations."""
-
-    sum: float = Field(..., description="Sum of numeric values")
-    average: float = Field(..., description="Average of numeric values")
-    min: float = Field(..., description="Minimum value")
-    max: float = Field(..., description="Maximum value")
-    numeric_count: int = Field(..., description="Count of numeric values")
-
-
-class StateManager:
-    """Handles state persistence and recovery with PostgreSQL."""
-
-    def __init__(self, db_pool: asyncpg.Pool):
-        """Initialize with database connection pool."""
-        self.db_pool = db_pool
-        self.logger = logging.getLogger(__name__)
-
-    async def persist_state(
-        self,
-        state_key: str,
-        state_data: ModelStateData,
-        correlation_id: Optional[str] = None,
-    ) -> bool:
-        """Persist aggregation state to PostgreSQL."""
-        try:
-            request_id = str(uuid.uuid4())
-
-            async with self.db_pool.acquire() as conn:
-                await conn.execute(
-                    """
-                    INSERT INTO aggregation_requests (
-                        request_id, correlation_id, operation_type, request_data, status
-                    ) VALUES ($1, $2, $3, $4, $5)
-                    """,
-                    request_id,
-                    correlation_id or state_key,
-                    "persist_state",
-                    json.dumps(state_data.dict()),
-                    "completed",
-                )
-
-                # Create snapshot
-                await conn.execute(
-                    """
-                    INSERT INTO aggregation_state_snapshots (
-                        snapshot_id, correlation_id, snapshot_data, snapshot_version
-                    ) VALUES ($1, $2, $3, $4)
-                    ON CONFLICT (correlation_id) DO UPDATE SET
-                        snapshot_data = EXCLUDED.snapshot_data,
-                        snapshot_version = aggregation_state_snapshots.snapshot_version + 1,
-                        created_at = NOW()
-                    """,
-                    str(uuid.uuid4()),
-                    correlation_id or state_key,
-                    json.dumps(state_data.dict()),
-                    1,
-                )
-
-            self.logger.info(f"State persisted successfully for key: {state_key}")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"State persistence failed: {e}")
-            return False
-
-    async def restore_state(self, state_key: str) -> Optional[ModelStateData]:
-        """Restore aggregation state from PostgreSQL."""
-        try:
-            async with self.db_pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    """
-                    SELECT snapshot_data, snapshot_version, created_at
-                    FROM aggregation_state_snapshots
-                    WHERE correlation_id = $1
-                    ORDER BY snapshot_version DESC
-                    LIMIT 1
-                    """,
-                    state_key,
-                )
-
-                if row:
-                    snapshot_data = row["snapshot_data"]
-                    self.logger.info(
-                        f"State restored successfully for key: {state_key}"
-                    )
-                    return ModelStateData(
-                        operation_type="restore",
-                        data=snapshot_data if isinstance(snapshot_data, dict) else {},
-                        timestamp=datetime.utcnow().isoformat(),
-                        correlation_id=state_key,
-                    )
-
-                return None
-
-        except Exception as e:
-            self.logger.error(f"State restoration failed: {e}")
-            return None
-
-    async def cleanup_expired_state(self, retention_days: int = 7) -> int:
-        """Clean up expired state records."""
-        try:
-            cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
-
-            async with self.db_pool.acquire() as conn:
-                # Clean up old requests
-                result1 = await conn.execute(
-                    "DELETE FROM aggregation_requests WHERE created_at < $1",
-                    cutoff_date,
-                )
-
-                # Clean up old snapshots (keep latest for each correlation_id)
-                await conn.execute(
-                    """
-                    DELETE FROM aggregation_state_snapshots
-                    WHERE created_at < $1
-                    AND snapshot_id NOT IN (
-                        SELECT DISTINCT ON (correlation_id) snapshot_id
-                        FROM aggregation_state_snapshots
-                        ORDER BY correlation_id, snapshot_version DESC
-                    )
-                    """,
-                    cutoff_date,
-                )
-
-                cleaned_count = int(result1.split()[-1]) if result1 else 0
-                return cleaned_count
-
-        except Exception as e:
-            self.logger.error(f"State cleanup failed: {e}")
-            return 0
-
-
-class MessageAggregator:
-    """Handles cross-group message aggregation with multiple strategies."""
-
-    def __init__(self, db_pool: asyncpg.Pool):
-        """Initialize with database connection pool."""
-        self.db_pool = db_pool
-        self.logger = logging.getLogger(__name__)
-
-    async def aggregate_messages(
-        self,
-        group_messages: List[Dict[str, str]],
-        strategy: str,
-        correlation_id: Optional[str] = None,
-    ) -> ModelAggregatedData:
-        """Aggregate messages from multiple groups using specified strategy."""
-        try:
-            if strategy == "merge":
-                return await self._merge_aggregation(group_messages, correlation_id)
-            elif strategy == "combine":
-                return await self._combine_aggregation(group_messages, correlation_id)
-            elif strategy == "reduce":
-                return await self._reduce_aggregation(group_messages, correlation_id)
-            elif strategy == "collect":
-                return await self._collect_aggregation(group_messages, correlation_id)
-            else:
-                raise OnexError(f"Unknown aggregation strategy: {strategy}")
-
-        except Exception as e:
-            raise OnexError(f"Message aggregation failed: {str(e)}") from e
-
-    async def _merge_aggregation(
-        self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
-    ) -> ModelAggregatedData:
-        """Merge messages with deep object merging and conflict resolution."""
-        merged_data = {}
-        conflicts_resolved = 0
-        groups_processed = []
-
-        # Deep merge with conflict resolution
-        for idx, group_data in enumerate(group_messages):
-            group_id = group_data.get("group_id", f"group_{idx}")
-            groups_processed.append(group_id)
-            merged_data = self._deep_merge(merged_data, group_data, f"group_{group_id}")
-
-        return ModelAggregatedData(
-            aggregation_strategy="merge",
-            correlation_id=correlation_id,
-            timestamp=datetime.utcnow().isoformat(),
-            groups_processed=groups_processed,
-            merged_data=merged_data,
-            conflicts_resolved=conflicts_resolved,
-        )
-
-    async def _combine_aggregation(
-        self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
-    ) -> ModelAggregatedData:
-        """Combine messages into collections with metadata preservation."""
-        combined_messages = []
-        total_messages = 0
-        groups_processed = []
-
-        for idx, group_data in enumerate(group_messages):
-            group_id = group_data.get("group_id", f"group_{idx}")
-            groups_processed.append(group_id)
-
-            message_entry = ModelGroupMessageData(
-                group_id=group_id,
-                message_content=group_data.get("message_content", ""),
-                data=group_data,
-                metadata=group_data.get("metadata", {}),
-                timestamp=datetime.utcnow().isoformat(),
-                message_hash=hash(str(group_data)),
-            )
-            combined_messages.append(message_entry)
-            total_messages += 1
-
-        return ModelAggregatedData(
-            aggregation_strategy="combine",
-            correlation_id=correlation_id,
-            timestamp=datetime.utcnow().isoformat(),
-            groups_processed=groups_processed,
-            combined_messages=combined_messages,
-            total_messages=total_messages,
-        )
-
-    async def _reduce_aggregation(
-        self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
-    ) -> ModelAggregatedData:
-        """Reduce messages using aggregation functions."""
-        groups_processed = [
-            msg.get("group_id", f"group_{i}") for i, msg in enumerate(group_messages)
-        ]
-        reduced_data = {
-            "count": str(len(group_messages)),
-            "groups": ",".join(groups_processed),
-        }
-
-        # Simple reduction - count numeric values
-        numeric_values = []
-        for group_data in group_messages:
-            if "value" in group_data:
-                try:
-                    numeric_value = float(group_data["value"])
-                    numeric_values.append(numeric_value)
-                except (ValueError, TypeError):
-                    pass
-
-        if numeric_values:
-            stats = ModelNumericStats(
-                sum=sum(numeric_values),
-                average=sum(numeric_values) / len(numeric_values),
-                min=min(numeric_values),
-                max=max(numeric_values),
-                numeric_count=len(numeric_values),
-            )
-            reduced_data.update(
-                {
-                    "sum": str(stats.sum),
-                    "average": str(stats.average),
-                    "min": str(stats.min),
-                    "max": str(stats.max),
-                    "numeric_count": str(stats.numeric_count),
-                }
-            )
-
-        return ModelAggregatedData(
-            aggregation_strategy="reduce",
-            correlation_id=correlation_id,
-            timestamp=datetime.utcnow().isoformat(),
-            groups_processed=groups_processed,
-            reduced_data=reduced_data,
-        )
-
-    async def _collect_aggregation(
-        self,
-        group_messages: List[Dict[str, str]],
-        correlation_id: Optional[str],
-    ) -> ModelAggregatedData:
-        """Collect messages without processing, preserving original structure."""
-        collected_messages = {}
-        groups_processed = []
-        collection_metadata = {
-            "total_groups": str(len(group_messages)),
-        }
-
-        # Convert messages to string format for collection
-        for idx, group_data in enumerate(group_messages):
-            group_id = group_data.get("group_id", f"group_{idx}")
-            groups_processed.append(group_id)
-
-            message_content = group_data.get("message_content", str(group_data))
-            collected_messages[group_id] = message_content
-            collection_metadata[f"{group_id}_size"] = str(len(message_content))
-
-        return ModelAggregatedData(
-            aggregation_strategy="collect",
-            correlation_id=correlation_id,
-            timestamp=datetime.utcnow().isoformat(),
-            groups_processed=groups_processed,
-            collected_messages=collected_messages,
-            collection_metadata=collection_metadata,
-        )
-
-    def _deep_merge(
-        self, dict1: Dict[str, str], dict2: Dict[str, str], source_prefix: str
-    ) -> Dict[str, str]:
-        """Deep merge two dictionaries with conflict tracking."""
-        result = dict1.copy()
-
-        for key, value in dict2.items():
-            if key in result:
-                # Conflict resolution - timestamp priority (keep newer)
-                result[f"{key}_{source_prefix}"] = str(value)
-                self.logger.debug(f"Conflict resolved for key {key}: kept both values")
-            else:
-                result[key] = str(value)
-
-        return result
+    correlation_id: str | None = Field(None, description="Request correlation ID")
 
 
 class NodeCanaryCompute(NodeComputeService):
     """
-    Message Aggregator tool for ONEX Messaging Architecture v0.2.
+    Canary Compute Node - Business logic processing for canary deployments.
 
-    Provides cross-group message aggregation, intelligent coordination strategies,
-    and PostgreSQL-based state management for distributed message processing.
+    This node handles computational tasks without side effects, providing
+    safe processing capabilities for testing new business logic.
     """
 
     def __init__(self, container: ONEXContainer):
-        """Initialize Message Aggregator with container injection."""
+        """Initialize the Canary Compute node."""
         super().__init__(container)
-        self.domain = "infrastructure"
-        self.db_pool: Optional[asyncpg.Pool] = None
-        self.state_manager: Optional[StateManager] = None
-        self.message_aggregator: Optional[MessageAggregator] = None
-        self.operation_metrics = {
-            "total_operations": 0,
-            "successful_operations": 0,
-            "failed_operations": 0,
-            "processing_times": [],
-            "groups_processed": 0,
-            "state_persistence_count": 0,
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.operation_count = 0
+        self.success_count = 0
+        self.error_count = 0
+
+    async def compute(
+        self,
+        compute_input: ModelComputeInput,
+    ) -> ModelComputeOutput:
+        """
+        Perform a canary computation operation.
+
+        Args:
+            compute_input: Input data for the computation
+
+        Returns:
+            ModelComputeOutput: Result of the computation
+        """
+        start_time = datetime.now()
+        correlation_id = str(uuid.uuid4())
+
+        try:
+            self.operation_count += 1
+
+            # Parse input
+            input_data = ModelCanaryComputeInput.model_validate(compute_input.data)
+            input_data.correlation_id = correlation_id
+
+            self.logger.info(
+                "Starting canary compute operation: %s [correlation_id=%s]",
+                input_data.operation_type,
+                correlation_id,
+            )
+
+            # Perform the actual computation
+            result = await self._execute_canary_computation(input_data)
+
+            self.success_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+
+            # Create output
+            output = ModelCanaryComputeOutput(
+                computation_result=result,
+                success=True,
+                execution_time_ms=execution_time,
+                correlation_id=correlation_id,
+            )
+
+            self.logger.info(
+                "Canary compute operation completed successfully "
+                "[correlation_id=%s, duration=%sms]",
+                correlation_id,
+                execution_time,
+            )
+
+            return ModelComputeOutput(
+                data=output.model_dump(),
+                metadata={
+                    "node_type": "canary_compute",
+                    "execution_time_ms": execution_time,
+                },
+            )
+
+        except Exception as e:
+            self.error_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+
+            self.logger.exception(
+                "Canary compute operation failed: %s [correlation_id=%s, duration=%sms]",
+                e,
+                correlation_id,
+                execution_time,
+            )
+
+            output = ModelCanaryComputeOutput(
+                computation_result={},
+                success=False,
+                error_message=str(e),
+                execution_time_ms=execution_time,
+                correlation_id=correlation_id,
+            )
+
+            return ModelComputeOutput(
+                data=output.model_dump(),
+                metadata={
+                    "node_type": "canary_compute",
+                    "execution_time_ms": execution_time,
+                    "error": True,
+                },
+            )
+
+    async def _execute_canary_computation(
+        self,
+        input_data: ModelCanaryComputeInput,
+    ) -> dict[str, Any]:
+        """
+        Execute the specific canary computation based on type.
+
+        Args:
+            input_data: Validated input data
+
+        Returns:
+            Dict containing computation results
+        """
+        operation_type = input_data.operation_type
+        data_payload = input_data.data_payload
+        parameters = input_data.parameters
+
+        if operation_type == "data_validation":
+            return await self._validate_data(data_payload, parameters)
+        if operation_type == "business_logic":
+            return await self._execute_business_logic(data_payload, parameters)
+        if operation_type == "data_transformation":
+            return await self._transform_data(data_payload, parameters)
+        if operation_type == "calculation":
+            return await self._perform_calculation(data_payload, parameters)
+        if operation_type == "algorithm_execution":
+            return await self._execute_algorithm(data_payload, parameters)
+        msg = f"Unsupported canary compute operation: {operation_type}"
+        raise ValueError(msg)
+
+    async def _validate_data(
+        self,
+        data: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Validate data structure and content."""
+        validation_rules = parameters.get("rules", [])
+        errors = []
+        warnings = []
+
+        # Basic validation logic
+        for rule in validation_rules:
+            field = rule.get("field")
+            rule_type = rule.get("type")
+
+            if field not in data:
+                if rule.get("required", False):
+                    errors.append(f"Required field '{field}' missing")
+                continue
+
+            value = data[field]
+
+            if rule_type == "string" and not isinstance(value, str):
+                errors.append(f"Field '{field}' must be string")
+            elif rule_type == "number" and not isinstance(value, int | float):
+                errors.append(f"Field '{field}' must be number")
+
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings,
+            "validated_fields": len(data),
         }
 
-    async def initialize(self) -> None:
-        """Initialize database connections and components."""
-        try:
-            # Initialize PostgreSQL connection pool
-            self.db_pool = await asyncpg.create_pool(
-                host="localhost",
-                port=5432,
-                database="omnibase",
-                user="postgres",
-                password="",
-                min_size=10,
-                max_size=25,
-            )
-
-            # Initialize components
-            self.state_manager = StateManager(self.db_pool)
-            self.message_aggregator = MessageAggregator(self.db_pool)
-
-            self.logger.info("Message Aggregator initialized successfully")
-
-        except Exception as e:
-            raise OnexError(f"Failed to initialize Message Aggregator: {str(e)}") from e
-
-    async def cleanup(self) -> None:
-        """Clean up database connections."""
-        if self.db_pool:
-            await self.db_pool.close()
-
-    def health_check(self) -> ModelHealthStatus:
-        """Single comprehensive health check for message aggregator."""
-        try:
-            issues = []
-
-            # Check PostgreSQL connectivity
-            if not self.db_pool:
-                issues.append("PostgreSQL connection pool not initialized")
-            elif hasattr(self.db_pool, "_closed") and self.db_pool._closed:
-                issues.append("PostgreSQL connection pool is closed")
-
-            # Check aggregation components
-            if not self.state_manager:
-                issues.append("State manager not initialized")
-            if not self.message_aggregator:
-                issues.append("Message aggregator not initialized")
-
-            # Check state manager database connectivity
-            if self.state_manager and not getattr(self.state_manager, "db_pool", None):
-                issues.append("State manager database pool not available")
-
-            # Check operation metrics
-            metrics = self.operation_metrics
-            total_ops = metrics.get("total_operations", 0)
-            successful_ops = metrics.get("successful_operations", 0)
-            failed_ops = metrics.get("failed_operations", 0)
-            processing_times = metrics.get("processing_times", [])
-
-            success_rate = (successful_ops / total_ops * 100) if total_ops > 0 else 100
-            avg_processing_time = (
-                sum(processing_times) / len(processing_times) if processing_times else 0
-            )
-
-            # Determine overall health status
-            if issues:
-                return ModelHealthStatus(
-                    status=(
-                        EnumHealthStatus.CRITICAL
-                        if "not initialized" in str(issues)
-                        else EnumHealthStatus.DEGRADED
-                    ),
-                    message=f"Critical components failed: {', '.join(issues)}",
-                )
-            elif failed_ops > 0 and success_rate < 95:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.DEGRADED,
-                    message=f"High error rate: {success_rate:.1f}% success, {failed_ops} failures, avg time: {avg_processing_time:.1f}ms",
-                )
-            elif avg_processing_time > 10000:  # 10 seconds
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.WARNING,
-                    message=f"Slow processing detected: avg {avg_processing_time:.1f}ms, success rate: {success_rate:.1f}%",
-                )
-            else:
-                # Get pool info if available
-                pool_info = ""
-                if self.db_pool and hasattr(self.db_pool, "get_size"):
-                    try:
-                        pool_size = self.db_pool.get_size()
-                        min_size = self.db_pool.get_min_size()
-                        max_size = self.db_pool.get_max_size()
-                        pool_info = f", DB pool: {pool_size}/{min_size}-{max_size}"
-                    except:
-                        pool_info = ", DB pool: active"
-
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.HEALTHY,
-                    message=f"Message aggregator healthy: {total_ops} ops, {success_rate:.1f}% success, avg: {avg_processing_time:.1f}ms{pool_info}",
-                )
-
-        except Exception as e:
-            self.logger.error(f"Message aggregator health check failed: {e}")
-            return ModelHealthStatus(
-                status=EnumHealthStatus.ERROR,
-                message=f"Health check failed: {str(e)}",
-            )
-
-    async def aggregate_messages(
+    async def _execute_business_logic(
         self,
-        group_messages: List[Dict[str, str]],
-        aggregation_strategy: str,
-        correlation_id: Optional[str] = None,
-        timeout_ms: int = 60000,
-    ) -> ModelMessageAggregatorOutput:
-        """Aggregate messages from multiple tool groups."""
-        start_time = time.time()
+        data: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute business logic rules on data."""
+        logic_type = parameters.get("logic_type", "default")
 
-        try:
-            self.operation_metrics["total_operations"] += 1
-            self.operation_metrics["groups_processed"] += len(group_messages)
+        if logic_type == "customer_scoring":
+            # Simple customer scoring logic
+            score = 0
+            if data.get("purchase_history", 0) > 1000:
+                score += 20
+            if data.get("loyalty_years", 0) > 2:
+                score += 15
+            if data.get("support_tickets", 0) < 3:
+                score += 10
 
-            # Execute aggregation
-            aggregated_result = await self.message_aggregator.aggregate_messages(
-                group_messages, aggregation_strategy, correlation_id
-            )
+            return {
+                "logic_type": logic_type,
+                "customer_score": score,
+                "tier": "premium" if score > 30 else "standard",
+                "processed_fields": list(data.keys()),
+            }
 
-            # Update metrics
-            processing_time = (time.time() - start_time) * 1000
-            self.operation_metrics["processing_times"].append(processing_time)
-            self.operation_metrics["successful_operations"] += 1
+        return {
+            "logic_type": logic_type,
+            "result": "business_logic_executed",
+            "input_processed": True,
+        }
 
-            return ModelMessageAggregatorOutput(
-                status="success",
-                aggregated_result=ModelAggregationResult(
-                    strategy_used=aggregation_strategy,
-                    total_messages=len(group_messages),
-                    result_data=(
-                        aggregated_result.dict()
-                        if hasattr(aggregated_result, "dict")
-                        else {}
-                    ),
-                    processing_time_ms=processing_time,
-                ),
-                aggregation_metrics=self._get_aggregation_metrics(),
-            )
-
-        except Exception as e:
-            self.operation_metrics["failed_operations"] += 1
-            self.logger.error(f"Message aggregation failed: {e}")
-
-            return ModelMessageAggregatorOutput(
-                status="error",
-                aggregated_result=ModelAggregationResult(
-                    strategy_used=aggregation_strategy,
-                    total_messages=0,
-                    result_data={},
-                    processing_time_ms=0.0,
-                ),
-                error_message=str(e),
-                aggregation_metrics=self._get_aggregation_metrics(),
-            )
-
-    async def persist_state(
+    async def _transform_data(
         self,
-        state_key: str,
-        state_data: ModelStateData,
-        correlation_id: Optional[str] = None,
-    ) -> ModelMessageAggregatorOutput:
-        """Persist aggregation state to PostgreSQL."""
-        try:
-            success = await self.state_manager.persist_state(
-                state_key, state_data, correlation_id
-            )
+        data: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Transform data structure according to rules."""
+        transformation = parameters.get("transformation", "normalize")
 
-            if success:
-                self.operation_metrics["state_persistence_count"] += 1
-                return ModelMessageAggregatorOutput(
-                    status="success",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="persist",
-                        total_messages=1,
-                        result_data={
-                            "persistence_status": "completed",
-                            "state_key": state_key,
-                        },
-                        processing_time_ms=0.0,
-                    ),
-                )
-            else:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="persist",
-                        total_messages=0,
-                        result_data={},
-                        processing_time_ms=0.0,
-                    ),
-                    error_message="State persistence failed",
-                )
+        if transformation == "normalize":
+            # Simple normalization
+            normalized = {}
+            for key, value in data.items():
+                if isinstance(value, str):
+                    normalized[key] = value.lower().strip()
+                elif isinstance(value, int | float):
+                    normalized[key] = float(value)
+                else:
+                    normalized[key] = value
 
-        except Exception as e:
-            return ModelMessageAggregatorOutput(
-                status="error",
-                aggregated_result=ModelAggregationResult(
-                    strategy_used="persist",
-                    total_messages=0,
-                    result_data={},
-                    processing_time_ms=0.0,
-                ),
-                error_message=str(e),
-            )
+            return {
+                "transformation": transformation,
+                "original_fields": len(data),
+                "transformed_data": normalized,
+            }
 
-    async def restore_state(self, state_key: str) -> ModelMessageAggregatorOutput:
-        """Restore aggregation state from PostgreSQL."""
-        try:
-            state_data = await self.state_manager.restore_state(state_key)
+        return {
+            "transformation": transformation,
+            "result": "data_transformed",
+            "original_count": len(data),
+        }
 
-            if state_data:
-                return ModelMessageAggregatorOutput(
-                    status="success",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="restore",
-                        total_messages=1,
-                        result_data={"restoration_status": "completed"},
-                        processing_time_ms=0.0,
-                    ),
-                    state_snapshot=state_data.data,
-                )
-            else:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result=ModelAggregationResult(
-                        strategy_used="restore",
-                        total_messages=0,
-                        result_data={},
-                        processing_time_ms=0.0,
-                    ),
-                    error_message=f"No state found for key: {state_key}",
-                )
+    async def _perform_calculation(
+        self,
+        data: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Perform mathematical calculations on data."""
+        calculation_type = parameters.get("calculation", "sum")
+        numeric_fields = [k for k, v in data.items() if isinstance(v, int | float)]
 
-        except Exception as e:
-            return ModelMessageAggregatorOutput(
-                status="error",
-                aggregated_result=ModelAggregationResult(
-                    strategy_used="restore",
-                    total_messages=0,
-                    result_data={},
-                    processing_time_ms=0.0,
-                ),
-                error_message=str(e),
-            )
+        if not numeric_fields:
+            return {
+                "calculation": calculation_type,
+                "result": 0,
+                "message": "No numeric fields found",
+            }
 
-    def _get_aggregation_metrics(self) -> ModelAggregationMetrics:
-        """Get current aggregation metrics."""
-        avg_processing_time = 0
-        if self.operation_metrics["processing_times"]:
-            avg_processing_time = sum(self.operation_metrics["processing_times"]) / len(
-                self.operation_metrics["processing_times"]
-            )
+        values = [data[field] for field in numeric_fields]
 
-        return ModelAggregationMetrics(
-            total_operations=self.operation_metrics["total_operations"],
-            successful_operations=self.operation_metrics["successful_operations"],
-            failed_operations=self.operation_metrics["failed_operations"],
-            average_processing_time_ms=avg_processing_time,
-            groups_processed=self.operation_metrics["groups_processed"],
-            state_persistence_count=self.operation_metrics["state_persistence_count"],
+        if calculation_type == "sum":
+            result = sum(values)
+        elif calculation_type == "average":
+            result = sum(values) / len(values)
+        elif calculation_type == "max":
+            result = max(values)
+        elif calculation_type == "min":
+            result = min(values)
+        else:
+            result = sum(values)  # default to sum
+
+        return {
+            "calculation": calculation_type,
+            "result": result,
+            "fields_processed": numeric_fields,
+            "value_count": len(values),
+        }
+
+    async def _execute_algorithm(
+        self,
+        data: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute algorithmic processing on data."""
+        algorithm = parameters.get("algorithm", "simple_sort")
+
+        if algorithm == "simple_sort":
+            # Sort data by keys
+            sorted_keys = sorted(data.keys())
+            sorted_data = {k: data[k] for k in sorted_keys}
+
+            return {
+                "algorithm": algorithm,
+                "original_order": list(data.keys()),
+                "sorted_order": sorted_keys,
+                "sorted_data": sorted_data,
+            }
+
+        return {
+            "algorithm": algorithm,
+            "result": "algorithm_executed",
+            "data_processed": len(data),
+        }
+
+    async def get_health_status(self) -> ModelHealthStatus:
+        """Get the health status of the canary compute node."""
+        status = EnumHealthStatus.HEALTHY
+        details = {
+            "node_type": "canary_compute",
+            "operation_count": self.operation_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "success_rate": self.success_count / max(1, self.operation_count),
+        }
+
+        # Mark as degraded if error rate is high
+        if (
+            self.operation_count > 10
+            and (self.error_count / self.operation_count) > 0.1
+        ):
+            status = EnumHealthStatus.DEGRADED
+
+        return ModelHealthStatus(
+            status=status,
+            timestamp=datetime.now(),
+            details=details,
         )
 
-    # Main processing method for NodeBase
-    async def process(
-        self, input_data: ModelMessageAggregatorInput
-    ) -> ModelMessageAggregatorOutput:
-        """Process Message Aggregator requests."""
-        if input_data.operation_type == "aggregate":
-            return await self.aggregate_messages(
-                group_messages=input_data.group_messages,
-                aggregation_strategy=input_data.aggregation_strategy,
-                correlation_id=input_data.correlation_id,
-                timeout_ms=input_data.timeout_ms or 60000,
-            )
-        elif input_data.operation_type == "persist":
-            if not input_data.state_key:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result={},
-                    error_message="state_key required for persist operation",
-                )
-            # Convert group_messages to state data format
-            state_data = ModelStateData(
-                operation_type="persist",
-                data={
-                    f"message_{i}": str(msg)
-                    for i, msg in enumerate(input_data.group_messages)
-                },
-                timestamp=datetime.utcnow().isoformat(),
-                correlation_id=input_data.correlation_id,
-            )
-            return await self.persist_state(
-                state_key=input_data.state_key,
-                state_data=state_data,
-                correlation_id=input_data.correlation_id,
-            )
-        elif input_data.operation_type == "restore":
-            if not input_data.state_key:
-                return ModelMessageAggregatorOutput(
-                    status="error",
-                    aggregated_result={},
-                    error_message="state_key required for restore operation",
-                )
-            return await self.restore_state(input_data.state_key)
-        else:
-            return ModelMessageAggregatorOutput(
-                status="error",
-                aggregated_result={},
-                error_message=f"Unknown operation type: {input_data.operation_type}",
-            )
-
-
-def main():
-    """Main entry point for Message Aggregator - returns node instance with infrastructure container"""
-    from ..container import create_infrastructure_container
-
-    container = create_infrastructure_container()
-    return NodeCanaryCompute(container)
-
-
-if __name__ == "__main__":
-    main()
+    def get_metrics(self) -> dict[str, Any]:
+        """Get performance and operational metrics."""
+        return {
+            "operation_count": self.operation_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "success_rate": self.success_count / max(1, self.operation_count),
+            "node_type": "canary_compute",
+        }

@@ -1,16 +1,17 @@
-# ONEX Tool Contract: Message Aggregator
-# Cross-group message aggregation and state management with PostgreSQL persistence
+# Canary Compute - ONEX Contract
+# Compute node for canary deployment business logic processing
 
-# === CORE NODE IDENTITY ===
+# === REQUIRED ROOT FIELDS ===
 contract_version: {major: 1, minor: 0, patch: 0}
-node_name: "tool_infrastructure_message_aggregator_compute"
+node_name: "canary_compute"
 node_version: {major: 1, minor: 0, patch: 0}
-contract_name: "tool_infrastructure_message_aggregator_compute_contract"
-description: "Cross-group message aggregation and state management with PostgreSQL persistence"
-name: "tool_infrastructure_message_aggregator_compute"
+contract_name: "canary_compute_contract"
+description: "Canary Compute Node - Business logic processing for canary deployments"
+node_type: "COMPUTE"
+name: "canary_compute"
 version: {major: 1, minor: 0, patch: 0}
-input_model: "ModelMessageAggregatorInput"
-output_model: "ModelMessageAggregatorOutput"
+input_model: "ModelCanaryComputeInput"
+output_model: "ModelCanaryComputeOutput"
 
 # === NODE CLASSIFICATION ===
 node_type: "COMPUTE"

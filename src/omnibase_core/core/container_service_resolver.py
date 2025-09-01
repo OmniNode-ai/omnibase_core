@@ -98,11 +98,11 @@ def create_get_service_method(
                         protocol_name=protocol_name,
                         health_status="healthy",
                     )
-                else:
-                    raise OnexError(
-                        f"Vault client not available in container: {protocol_name}",
-                        CoreErrorCode.SERVICE_RESOLUTION_FAILED,
-                    )
+                msg = f"Vault client not available in container: {protocol_name}"
+                raise OnexError(
+                    msg,
+                    CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+                )
 
         # Handle generation tool registries with registry pattern
         if service_name:

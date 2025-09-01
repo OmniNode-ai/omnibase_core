@@ -16,11 +16,9 @@ Per user requirements:
 """
 
 import types
-from typing import Optional, Type, TypeVar, Union
+from typing import TypeVar
 
 from omnibase_core.core.onex_container import ONEXContainer
-from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
-from omnibase_core.protocol.protocol_schema_loader import ProtocolSchemaLoader
 from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 T = TypeVar("T")
@@ -35,7 +33,6 @@ class TemporaryEventBusClient:
     def publish(self, event):
         """Publish event to subscribers."""
         # TODO: Implement proper event publishing
-        pass
 
     def subscribe(self, event_type, handler):
         """Subscribe to event type."""
@@ -46,7 +43,6 @@ class TemporaryEventBusClient:
     async def publish_event_async(self, event):
         """Async event publishing."""
         # TODO: Implement proper async event publishing
-        pass
 
 
 def create_infrastructure_container() -> ONEXContainer:
@@ -102,8 +98,8 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
 
     def get_service(
         self,
-        protocol_type_or_name: Union[Type[T], str],
-        service_name: Optional[str] = None,
+        protocol_type_or_name: type[T] | str,
+        service_name: str | None = None,
     ) -> T:
         """
         Infrastructure-aware get_service method.
@@ -132,9 +128,12 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
                 return self._service_registry[protocol_name]
 
         # If not found, raise descriptive error
-        raise KeyError(
+        msg = (
             f"Service '{service_name or protocol_type_or_name}' not found in infrastructure container. "
             f"Available services: {list(getattr(self, '_service_registry', {}).keys())}"
+        )
+        raise KeyError(
+            msg,
         )
 
     # Bind the method to the container instance

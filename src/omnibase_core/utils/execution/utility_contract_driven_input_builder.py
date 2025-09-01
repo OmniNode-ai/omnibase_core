@@ -5,6 +5,7 @@ Contract-Driven Input Builder Utility
 Creates proper input states for tools based on their contracts,
 following ONEX canonical patterns without hardcoded tool logic.
 """
+
 from pathlib import Path
 
 import yaml

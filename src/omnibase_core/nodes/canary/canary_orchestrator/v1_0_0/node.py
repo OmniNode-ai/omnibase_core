@@ -1,349 +1,361 @@
 #!/usr/bin/env python3
 """
-Infrastructure Orchestrator - Pure Workflow Coordination.
+Canary Orchestrator - Workflow coordination for canary deployments.
 
-Coordinates infrastructure adapter workflows without hosting any services.
-Service hosting is handled by the infrastructure reducer.
+This node orchestrates workflows in a controlled canary environment, providing
+event-driven coordination and workflow management for testing new deployments.
 """
 
-import asyncio
-from pathlib import Path
-from typing import Callable, Dict, List, Optional
-from uuid import uuid4
+import logging
+import uuid
+from datetime import datetime
+from typing import Any
 
-from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
-from omnibase_core.constants.event_types import CoreEventTypes
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+from pydantic import BaseModel, Field
+
+from omnibase_core.core.node_orchestrator import (
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+)
+from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.discovery.model_tool_invocation_event import (
-    ModelToolInvocationEvent,
-)
-from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase_core.model.discovery.model_tool_response_event import (
-    ModelToolResponseEvent,
-)
 
-from .protocols.protocol_infrastructure_orchestrator import (
-    ProtocolInfrastructureOrchestrator,
-)
+
+class ModelCanaryOrchestratorInput(BaseModel):
+    """Input model for canary orchestrator operations."""
+
+    workflow_type: str = Field(..., description="Type of workflow to orchestrate")
+    workflow_payload: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Workflow execution data",
+    )
+    parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Orchestration parameters",
+    )
+    correlation_id: str | None = Field(None, description="Request correlation ID")
+
+
+class ModelCanaryOrchestratorOutput(BaseModel):
+    """Output model for canary orchestrator operations."""
+
+    orchestration_result: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Orchestration result data",
+    )
+    success: bool = Field(True, description="Whether orchestration succeeded")
+    error_message: str | None = Field(None, description="Error message if failed")
+    execution_time_ms: int | None = Field(
+        None,
+        description="Execution time in milliseconds",
+    )
+    correlation_id: str | None = Field(None, description="Request correlation ID")
 
 
 class NodeCanaryOrchestrator(NodeOrchestratorService):
     """
-    Infrastructure Orchestrator following modern 4-node architecture.
+    Canary Orchestrator Node - Workflow coordination for canary deployments.
 
-    Pure workflow coordination - no service hosting.
-    Coordinates consul, vault, and kafka adapters through event delegation.
+    This node orchestrates workflows through event-driven coordination,
+    providing safe workflow management for testing new deployment patterns.
     """
 
     def __init__(self, container: ONEXContainer):
-        """Initialize infrastructure orchestrator with container injection."""
+        """Initialize the Canary Orchestrator node."""
         super().__init__(container)
-        self.domain = "infrastructure"
-        # Get event bus from container for publishing tool invocations
-        self.event_bus = container.get_service("ProtocolEventBus")
-        # Track pending invocations for response correlation
-        self._pending_invocations: Dict[str, asyncio.Future] = {}
-        # Subscribe to tool response events
-        self._setup_response_handler()
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.operation_count = 0
+        self.success_count = 0
+        self.error_count = 0
 
-    def _setup_response_handler(self):
-        """Set up handler for tool response events."""
-        # Subscribe to TOOL_RESPONSE events
-        if hasattr(self.event_bus, "subscribe"):
-            self.event_bus.subscribe(
-                CoreEventTypes.TOOL_RESPONSE, self._handle_tool_response
-            )
-
-    def health_check(self) -> ModelHealthStatus:
-        """Single comprehensive health check for infrastructure orchestrator."""
-        try:
-            # Check event bus connectivity
-            event_bus_healthy = True
-            event_bus_message = "Event bus connected and fully functional"
-
-            if not self.event_bus:
-                event_bus_healthy = False
-                event_bus_message = (
-                    "Event bus not initialized - orchestration cannot function"
-                )
-            else:
-                # Check if event bus has required methods
-                required_methods = ["subscribe", "publish"]
-                missing_methods = [
-                    method
-                    for method in required_methods
-                    if not hasattr(self.event_bus, method)
-                ]
-                if missing_methods:
-                    event_bus_healthy = False
-                    event_bus_message = (
-                        f"Event bus missing methods: {', '.join(missing_methods)}"
-                    )
-
-            # Check adapter availability
-            adapter_healthy = True
-            adapter_message = "Orchestrator ready to coordinate infrastructure adapters"
-
-            if not hasattr(self, "_pending_invocations"):
-                adapter_healthy = False
-                adapter_message = "Orchestrator invocation tracking not initialized"
-
-            # Check orchestration state
-            pending_count = (
-                len(self._pending_invocations)
-                if hasattr(self, "_pending_invocations")
-                else 0
-            )
-
-            # Determine overall health status
-            if not event_bus_healthy:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.CRITICAL,
-                    message=f"Critical failure - {event_bus_message}",
-                )
-            elif not adapter_healthy:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.UNHEALTHY,
-                    message=f"Orchestrator not ready - {adapter_message}",
-                )
-            elif pending_count > 50:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.DEGRADED,
-                    message=f"High pending invocations: {pending_count} (possible coordination delays)",
-                )
-            elif pending_count > 20:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.WARNING,
-                    message=f"Moderate pending invocations: {pending_count} (monitor coordination performance)",
-                )
-            else:
-                return ModelHealthStatus(
-                    status=EnumHealthStatus.HEALTHY,
-                    message=f"Orchestrator healthy - {pending_count} pending invocations, event bus and adapters ready",
-                )
-
-        except Exception as e:
-            self.logger.error(f"Orchestrator health check failed: {e}")
-            return ModelHealthStatus(
-                status=EnumHealthStatus.ERROR,
-                message=f"Health check failed: {str(e)}",
-            )
-
-    async def _handle_tool_response(self, envelope: ModelEventEnvelope):
-        """Handle tool response events for our invocations."""
-        try:
-            if not isinstance(envelope.payload, ModelToolResponseEvent):
-                return
-
-            response = envelope.payload
-            correlation_id = str(response.correlation_id)
-
-            # Check if this response is for one of our pending invocations
-            if correlation_id in self._pending_invocations:
-                future = self._pending_invocations.pop(correlation_id)
-                if not future.done():
-                    # Resolve the future with the response data
-                    future.set_result(
-                        {
-                            "status": response.status,
-                            "result": response.result,
-                            "error": response.error,
-                            "metadata": response.metadata,
-                        }
-                    )
-        except Exception as e:
-            self.logger.error(f"Failed to handle tool response: {e}")
-            raise OnexError(
-                message=f"Tool response handling failed: {e}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
-            ) from e
-
-    async def _coordinate_adapter(self, adapter_name: str, request: dict) -> dict:
+    async def orchestrate(
+        self,
+        orchestrator_input: ModelOrchestratorInput,
+    ) -> ModelOrchestratorOutput:
         """
-        Coordinate with infrastructure adapter tools via event bus.
+        Perform canary workflow orchestration.
 
         Args:
-            adapter_name: Name of the adapter tool
-            request: Request parameters for the adapter
+            orchestrator_input: Input data for orchestration
 
         Returns:
-            Response from the adapter tool
+            ModelOrchestratorOutput: Result of the orchestration
         """
+        start_time = datetime.now()
+        correlation_id = str(uuid.uuid4())
+
         try:
-            # Create correlation ID for tracking response
-            correlation_id = uuid4()
+            self.operation_count += 1
 
-            # Build tool invocation event
-            invocation_event = ModelToolInvocationEvent(
-                target_node_id=adapter_name,
-                target_node_name=adapter_name,
-                tool_name=adapter_name,
-                action=request.get("operation", "execute"),
-                parameters=ModelToolParameters(action_parameters=request),
-                correlation_id=correlation_id,
-                source_node_id=self.node_id,
-                source_node_name="infrastructure_orchestrator",
+            # Parse input
+            input_data = ModelCanaryOrchestratorInput.model_validate(
+                orchestrator_input.data,
             )
+            input_data.correlation_id = correlation_id
 
-            # Create future to wait for response
-            response_future = asyncio.Future()
-            self._pending_invocations[str(correlation_id)] = response_future
-
-            # Wrap event in envelope
-            envelope = ModelEventEnvelope(
-                correlation_id=correlation_id,
-                payload=invocation_event,
-            )
-
-            # Publish invocation event
             self.logger.info(
-                f"Coordinating with {adapter_name} via event bus: {request}"
-            )
-            if hasattr(self.event_bus, "publish"):
-                self.event_bus.publish(envelope)
-            else:
-                # Fallback for async publish
-                await self.event_bus.publish_event_async(invocation_event)
-
-            # Wait for response with timeout
-            try:
-                response = await asyncio.wait_for(response_future, timeout=30.0)
-                return response
-            except asyncio.TimeoutError:
-                self._pending_invocations.pop(str(correlation_id), None)
-                self.logger.warning(f"Timeout waiting for response from {adapter_name}")
-                return {
-                    "status": "timeout",
-                    "adapter": adapter_name,
-                    "operation": request.get("operation"),
-                    "error": f"No response from {adapter_name} within 30 seconds",
-                }
-
-        except Exception as e:
-            self.logger.error(f"Failed to coordinate with {adapter_name}: {e}")
-            raise OnexError(
-                message=f"Adapter coordination failed for {adapter_name}: {e}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
-            ) from e
-
-    async def coordinate_infrastructure_bootstrap(self) -> dict:
-        """Coordinate bootstrap of infrastructure adapter services"""
-        try:
-            # Coordinate Consul adapter startup
-            consul_result = await self._coordinate_adapter(
-                "tool_consul_adapter", {"operation": "bootstrap", "priority": "high"}
+                "Starting canary orchestration: %s [correlation_id=%s]",
+                input_data.workflow_type,
+                correlation_id,
             )
 
-            # Coordinate Vault adapter startup
-            vault_result = await self._coordinate_adapter(
-                "tool_vault_adapter", {"operation": "bootstrap", "priority": "high"}
+            # Execute the workflow orchestration
+            result = await self._execute_canary_orchestration(input_data)
+
+            self.success_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+
+            # Create output
+            output = ModelCanaryOrchestratorOutput(
+                orchestration_result=result,
+                success=True,
+                execution_time_ms=execution_time,
+                correlation_id=correlation_id,
             )
 
-            # Coordinate Kafka wrapper startup
-            kafka_result = await self._coordinate_adapter(
-                "tool_kafka_wrapper", {"operation": "bootstrap", "priority": "medium"}
+            self.logger.info(
+                "Canary orchestration completed successfully "
+                "[correlation_id=%s, duration=%sms]",
+                correlation_id,
+                execution_time,
             )
 
-            return {
-                "status": "success",
-                "bootstrap_results": {
-                    "consul_adapter": consul_result,
-                    "vault_adapter": vault_result,
-                    "kafka_wrapper": kafka_result,
+            return ModelOrchestratorOutput(
+                data=output.model_dump(),
+                metadata={
+                    "node_type": "canary_orchestrator",
+                    "execution_time_ms": execution_time,
                 },
-            }
-
-        except Exception as e:
-            self.logger.error(f"Infrastructure bootstrap failed: {e}")
-            raise OnexError(
-                message=f"Infrastructure bootstrap failed: {e}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
-            ) from e
-
-    async def coordinate_infrastructure_health_check(self) -> dict:
-        """
-        Monitor infrastructure adapter health - DEPRECATED.
-
-        This method is deprecated in favor of the standardized health_check() method
-        provided by MixinHealthCheck framework. Use get_health_checks() for granular
-        health monitoring of orchestrator components.
-        """
-        self.logger.warning(
-            "coordinate_infrastructure_health_check() is deprecated, use standardized health_check() from MixinHealthCheck"
-        )
-        try:
-            health_checks = {}
-
-            for adapter in ["consul_adapter", "vault_adapter", "kafka_wrapper"]:
-                health_result = await self._coordinate_adapter(
-                    f"tool_{adapter}", {"operation": "health_check"}
-                )
-                health_checks[adapter] = health_result
-
-            # Determine overall health
-            all_healthy = all(
-                result.get("status") == "healthy" for result in health_checks.values()
             )
 
-            return {
-                "status": "healthy" if all_healthy else "degraded",
-                "adapter_health": health_checks,
-                "deprecation_notice": "Use standardized health_check() method instead",
-            }
-
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
-            raise OnexError(
-                message=f"Infrastructure health check failed: {e}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
-            ) from e
+            self.error_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-    async def coordinate_infrastructure_failover(self, failed_adapter: str) -> dict:
-        """Coordinate infrastructure failover scenarios"""
-        try:
-            self.logger.warning(f"Coordinating failover for {failed_adapter}")
+            self.logger.exception(
+                "Canary orchestration failed: %s [correlation_id=%s, duration=%sms]",
+                e,
+                correlation_id,
+                execution_time,
+            )
 
-            # Implement failover logic based on adapter type
-            if failed_adapter == "kafka_wrapper":
-                # Activate in-memory fallback mode
-                failover_result = await self._coordinate_adapter(
-                    "tool_kafka_wrapper", {"operation": "enable_fallback_mode"}
-                )
-            elif failed_adapter in ["consul_adapter", "vault_adapter"]:
-                # Log critical infrastructure failure
-                failover_result = {
-                    "status": "critical",
-                    "message": f"Critical infrastructure failure: {failed_adapter}",
-                }
-            else:
-                failover_result = {"status": "unknown_adapter"}
+            output = ModelCanaryOrchestratorOutput(
+                orchestration_result={},
+                success=False,
+                error_message=str(e),
+                execution_time_ms=execution_time,
+                correlation_id=correlation_id,
+            )
 
-            return {
-                "status": "failover_coordinated",
-                "failed_adapter": failed_adapter,
-                "failover_result": failover_result,
-            }
+            return ModelOrchestratorOutput(
+                data=output.model_dump(),
+                metadata={
+                    "node_type": "canary_orchestrator",
+                    "execution_time_ms": execution_time,
+                    "error": True,
+                },
+            )
 
-        except Exception as e:
-            self.logger.error(f"Failover coordination failed: {e}")
-            raise OnexError(
-                message=f"Failover coordination failed: {e}",
-                error_code=CoreErrorCode.OPERATION_FAILED,
-            ) from e
+    async def _execute_canary_orchestration(
+        self,
+        input_data: ModelCanaryOrchestratorInput,
+    ) -> dict[str, Any]:
+        """
+        Execute the specific canary orchestration based on workflow type.
 
+        Args:
+            input_data: Validated input data
 
-def main():
-    """Main entry point for Infrastructure Orchestrator - returns node instance with infrastructure container"""
-    from ..container import create_infrastructure_container
+        Returns:
+            Dict containing orchestration results
+        """
+        workflow_type = input_data.workflow_type
+        workflow_payload = input_data.workflow_payload
+        parameters = input_data.parameters
 
-    container = create_infrastructure_container()
-    return NodeCanaryOrchestrator(container)
+        if workflow_type == "deployment_workflow":
+            return await self._orchestrate_deployment(workflow_payload, parameters)
+        if workflow_type == "testing_workflow":
+            return await self._orchestrate_testing(workflow_payload, parameters)
+        if workflow_type == "rollback_workflow":
+            return await self._orchestrate_rollback(workflow_payload, parameters)
+        if workflow_type == "health_check_workflow":
+            return await self._orchestrate_health_checks(workflow_payload, parameters)
+        if workflow_type == "monitoring_workflow":
+            return await self._orchestrate_monitoring(workflow_payload, parameters)
+        msg = f"Unsupported canary workflow type: {workflow_type}"
+        raise ValueError(msg)
 
+    async def _orchestrate_deployment(
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Orchestrate canary deployment workflow."""
+        deployment_strategy = parameters.get("strategy", "blue_green")
+        target_percentage = parameters.get("target_percentage", 10)
 
-if __name__ == "__main__":
-    main()
+        # Simulate deployment orchestration steps
+        steps = [
+            {"step": "validate_config", "status": "completed", "duration_ms": 100},
+            {"step": "prepare_canary", "status": "completed", "duration_ms": 250},
+            {"step": "deploy_canary", "status": "completed", "duration_ms": 500},
+            {"step": "configure_traffic", "status": "completed", "duration_ms": 150},
+        ]
+
+        return {
+            "workflow": "deployment_workflow",
+            "strategy": deployment_strategy,
+            "target_percentage": target_percentage,
+            "steps_completed": len(steps),
+            "steps": steps,
+            "deployment_id": str(uuid.uuid4()),
+            "status": "deployed",
+        }
+
+    async def _orchestrate_testing(
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Orchestrate canary testing workflow."""
+        test_types = parameters.get("test_types", ["smoke", "integration"])
+        test_duration = parameters.get("duration_minutes", 15)
+
+        # Simulate testing orchestration
+        test_results = []
+        for test_type in test_types:
+            test_results.append(
+                {
+                    "test_type": test_type,
+                    "status": "passed",
+                    "duration_ms": 200 + len(test_type) * 10,
+                    "test_id": str(uuid.uuid4()),
+                },
+            )
+
+        return {
+            "workflow": "testing_workflow",
+            "test_types": test_types,
+            "duration_minutes": test_duration,
+            "tests_executed": len(test_results),
+            "test_results": test_results,
+            "overall_status": "passed",
+        }
+
+    async def _orchestrate_rollback(
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Orchestrate canary rollback workflow."""
+        rollback_reason = parameters.get("reason", "manual_trigger")
+        preserve_logs = parameters.get("preserve_logs", True)
+
+        # Simulate rollback orchestration steps
+        rollback_steps = [
+            {"step": "stop_traffic", "status": "completed", "duration_ms": 50},
+            {"step": "drain_connections", "status": "completed", "duration_ms": 200},
+            {"step": "restore_previous", "status": "completed", "duration_ms": 300},
+            {"step": "verify_rollback", "status": "completed", "duration_ms": 150},
+        ]
+
+        return {
+            "workflow": "rollback_workflow",
+            "reason": rollback_reason,
+            "preserve_logs": preserve_logs,
+            "rollback_steps": rollback_steps,
+            "rollback_id": str(uuid.uuid4()),
+            "status": "rolled_back",
+        }
+
+    async def _orchestrate_health_checks(
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Orchestrate health check workflow."""
+        check_interval = parameters.get("interval_seconds", 30)
+        check_timeout = parameters.get("timeout_seconds", 5)
+
+        # Simulate health check orchestration
+        health_checks = [
+            {"service": "canary_api", "status": "healthy", "response_time": 45},
+            {"service": "canary_db", "status": "healthy", "response_time": 12},
+            {"service": "canary_cache", "status": "healthy", "response_time": 8},
+        ]
+
+        return {
+            "workflow": "health_check_workflow",
+            "interval_seconds": check_interval,
+            "timeout_seconds": check_timeout,
+            "checks_performed": len(health_checks),
+            "health_checks": health_checks,
+            "overall_health": "healthy",
+        }
+
+    async def _orchestrate_monitoring(
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Orchestrate monitoring workflow."""
+        metrics_to_monitor = parameters.get("metrics", ["cpu", "memory", "requests"])
+        alert_thresholds = parameters.get("thresholds", {})
+
+        # Simulate monitoring orchestration
+        monitoring_setup = []
+        for metric in metrics_to_monitor:
+            threshold = alert_thresholds.get(metric, "default")
+            monitoring_setup.append(
+                {
+                    "metric": metric,
+                    "threshold": threshold,
+                    "status": "active",
+                    "monitor_id": str(uuid.uuid4()),
+                },
+            )
+
+        return {
+            "workflow": "monitoring_workflow",
+            "metrics_count": len(metrics_to_monitor),
+            "monitoring_setup": monitoring_setup,
+            "alerting_enabled": len(alert_thresholds) > 0,
+            "status": "monitoring_active",
+        }
+
+    async def get_health_status(self) -> ModelHealthStatus:
+        """Get the health status of the canary orchestrator node."""
+        status = EnumHealthStatus.HEALTHY
+        details = {
+            "node_type": "canary_orchestrator",
+            "operation_count": self.operation_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "success_rate": self.success_count / max(1, self.operation_count),
+        }
+
+        # Mark as degraded if error rate is high
+        if (
+            self.operation_count > 10
+            and (self.error_count / self.operation_count) > 0.1
+        ):
+            status = EnumHealthStatus.DEGRADED
+
+        return ModelHealthStatus(
+            status=status,
+            timestamp=datetime.now(),
+            details=details,
+        )
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Get performance and operational metrics."""
+        return {
+            "operation_count": self.operation_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "success_rate": self.success_count / max(1, self.operation_count),
+            "node_type": "canary_orchestrator",
+        }

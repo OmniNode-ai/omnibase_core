@@ -1,18 +1,17 @@
-# Infrastructure Reducer - ONEX Reducer Contract
-# Reducer node for infrastructure adapter aggregation and service coordination
+# Canary Reducer - ONEX Contract
+# Reducer node for canary deployment state aggregation and HTTP service hosting
 
 # === REQUIRED ROOT FIELDS ===
 contract_version: {major: 1, minor: 0, patch: 0}
-node_name: "tool_infrastructure_reducer"
-contract_name: "infrastructure_reducer_contract"
+node_name: "canary_reducer"
 node_version: {major: 1, minor: 0, patch: 0}
-name: "infrastructure_reducer"
-version: {major: 1, minor: 0, patch: 0}
-input_model: "ModelInfrastructureReducerInput"
-output_model: "ModelInfrastructureReducerOutput"
-description: "Infrastructure adapter aggregation and service coordination contract for ONEX infrastructure tool group"
+contract_name: "canary_reducer_contract"
+description: "Canary Reducer Node - State aggregation and HTTP services for canary deployments"
 node_type: "REDUCER"
-main_tool_class: "NodeCanaryReducer"
+name: "canary_reducer"
+version: {major: 1, minor: 0, patch: 0}
+input_model: "ModelCanaryReducerInput"
+output_model: "ModelCanaryReducerOutput"
 
 # === TOOL SPECIFICATION ===
 tool_specification:

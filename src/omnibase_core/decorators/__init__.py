@@ -22,7 +22,7 @@ __all__ = [
     "allow_legacy_pattern",
     "allow_mixed_types",
     "exclude_from_onex_standards",
+    "io_error_handling",
     "standard_error_handling",
     "validation_error_handling",
-    "io_error_handling",
 ]

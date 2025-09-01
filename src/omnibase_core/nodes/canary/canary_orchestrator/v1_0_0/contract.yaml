@@ -1,18 +1,17 @@
-# Infrastructure Orchestrator - ONEX Orchestrator Contract
-# Orchestrator node for infrastructure workflow coordination
+# Canary Orchestrator - ONEX Contract
+# Orchestrator node for canary deployment workflow coordination
 
 # === REQUIRED ROOT FIELDS ===
 contract_version: {major: 1, minor: 0, patch: 0}
-node_name: "tool_infrastructure_orchestrator"
+node_name: "canary_orchestrator"
 node_version: {major: 1, minor: 0, patch: 0}
-contract_name: "tool_infrastructure_orchestrator_contract"
-name: "infrastructure_orchestrator"
-version: {major: 1, minor: 0, patch: 0}
-description: "Infrastructure Orchestrator - Maintains infrastructure connections and coordinates adapter tools"
+contract_name: "canary_orchestrator_contract"
+description: "Canary Orchestrator Node - Workflow coordination for canary deployments"
 node_type: "ORCHESTRATOR"
-main_tool_class: "NodeCanaryOrchestrator"
-input_model: "omnibase.core.node_orchestrator.ModelOrchestratorInput"
-output_model: "omnibase.core.node_orchestrator.ModelOrchestratorOutput"
+name: "canary_orchestrator"
+version: {major: 1, minor: 0, patch: 0}
+input_model: "ModelCanaryOrchestratorInput"
+output_model: "ModelCanaryOrchestratorOutput"
 
 # === TOOL SPECIFICATION ===
 tool_specification:
