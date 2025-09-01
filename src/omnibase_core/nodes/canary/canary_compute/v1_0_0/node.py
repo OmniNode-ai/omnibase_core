@@ -11,13 +11,15 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutput
 from omnibase_core.core.node_compute_service import NodeComputeService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 
 
 class ModelCanaryComputeInput(BaseModel):
@@ -33,6 +35,39 @@ class ModelCanaryComputeInput(BaseModel):
         description="Operation parameters",
     )
     correlation_id: str | None = Field(None, description="Request correlation ID")
+
+    @validator("operation_type")
+    def validate_operation_type(cls, v):
+        """Validate operation type against allowed values."""
+        allowed_operations = {
+            "add",
+            "multiply",
+            "aggregate",
+            "customer_score",
+            "risk_assessment",
+            "data_transformation",
+            "health_metrics",
+            "statistical_analysis",
+        }
+        if v not in allowed_operations:
+            raise ValueError(
+                f"Invalid operation_type: {v}. Must be one of {allowed_operations}"
+            )
+        return v
+
+    @validator("correlation_id")
+    def validate_correlation_id(cls, v):
+        """Validate correlation ID format if provided."""
+        if v is not None:
+            if not isinstance(v, str):
+                raise ValueError("correlation_id must be a string")
+            if len(v) < 8 or len(v) > 128:
+                raise ValueError("correlation_id must be between 8 and 128 characters")
+            if not v.replace("-", "").replace("_", "").isalnum():
+                raise ValueError(
+                    "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
+                )
+        return v
 
 
 class ModelCanaryComputeOutput(BaseModel):
@@ -63,6 +98,8 @@ class NodeCanaryCompute(NodeComputeService):
         """Initialize the Canary Compute node."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.config = get_canary_config()
+        self.error_handler = get_error_handler(self.logger)
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
@@ -86,9 +123,24 @@ class NodeCanaryCompute(NodeComputeService):
         try:
             self.operation_count += 1
 
-            # Parse input
+            # Parse and validate input data
             input_data = ModelCanaryComputeInput.model_validate(compute_input.data)
-            input_data.correlation_id = correlation_id
+
+            # Use provided correlation_id or generate new one
+            if input_data.correlation_id:
+                correlation_id = input_data.correlation_id
+                # Validate the provided correlation_id
+                if not self.error_handler.validate_correlation_id(correlation_id):
+                    raise ValueError("Invalid correlation_id format")
+            else:
+                input_data.correlation_id = correlation_id
+
+            # Create operation context for error handling
+            operation_context = self.error_handler.create_operation_context(
+                operation_name=f"compute_{input_data.operation_type}",
+                input_data=input_data.model_dump(),
+                correlation_id=correlation_id,
+            )
 
             self.logger.info(
                 "Starting canary compute operation: %s [correlation_id=%s]",
@@ -96,7 +148,7 @@ class NodeCanaryCompute(NodeComputeService):
                 correlation_id,
             )
 
-            # Perform the actual computation
+            # Perform the actual computation with timeout
             result = await self._execute_canary_computation(input_data)
 
             self.success_count += 1
@@ -129,17 +181,18 @@ class NodeCanaryCompute(NodeComputeService):
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-            self.logger.exception(
-                "Canary compute operation failed: %s [correlation_id=%s, duration=%sms]",
-                e,
-                correlation_id,
-                execution_time,
+            # Handle error with enhanced security
+            error_info = self.error_handler.handle_error(
+                error=e,
+                context=locals(),
+                correlation_id=correlation_id,
+                operation_name="compute_operation",
             )
 
             output = ModelCanaryComputeOutput(
                 computation_result={},
                 success=False,
-                error_message=str(e),
+                error_message=error_info["message"],
                 execution_time_ms=execution_time,
                 correlation_id=correlation_id,
             )
@@ -150,6 +203,7 @@ class NodeCanaryCompute(NodeComputeService):
                     "node_type": "canary_compute",
                     "execution_time_ms": execution_time,
                     "error": True,
+                    "error_id": error_info["error_id"],
                 },
             )
 
@@ -226,20 +280,35 @@ class NodeCanaryCompute(NodeComputeService):
         logic_type = parameters.get("logic_type", "default")
 
         if logic_type == "customer_scoring":
-            # Simple customer scoring logic
+            # Customer scoring logic using configurable thresholds
+            config = self.config.business_logic
             score = 0
-            if data.get("purchase_history", 0) > 1000:
-                score += 20
-            if data.get("loyalty_years", 0) > 2:
-                score += 15
-            if data.get("support_tickets", 0) < 3:
-                score += 10
+
+            if data.get("purchase_history", 0) > config.customer_purchase_threshold:
+                score += config.customer_purchase_score_points
+            if data.get("loyalty_years", 0) > config.customer_loyalty_years_threshold:
+                score += config.customer_loyalty_score_points
+            if (
+                data.get("support_tickets", 0)
+                < config.customer_support_tickets_threshold
+            ):
+                score += config.customer_support_score_points
 
             return {
                 "logic_type": logic_type,
                 "customer_score": score,
-                "tier": "premium" if score > 30 else "standard",
+                "tier": (
+                    "premium"
+                    if score > config.customer_premium_score_threshold
+                    else "standard"
+                ),
                 "processed_fields": list(data.keys()),
+                "thresholds_used": {
+                    "purchase_threshold": config.customer_purchase_threshold,
+                    "loyalty_years_threshold": config.customer_loyalty_years_threshold,
+                    "support_tickets_threshold": config.customer_support_tickets_threshold,
+                    "premium_score_threshold": config.customer_premium_score_threshold,
+                },
             }
 
         return {
@@ -352,10 +421,11 @@ class NodeCanaryCompute(NodeComputeService):
             "success_rate": self.success_count / max(1, self.operation_count),
         }
 
-        # Mark as degraded if error rate is high
+        # Mark as degraded if error rate is high (using configurable thresholds)
+        config = self.config.performance
         if (
-            self.operation_count > 10
-            and (self.error_count / self.operation_count) > 0.1
+            self.operation_count > config.min_operations_for_health
+            and (self.error_count / self.operation_count) > config.error_rate_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 
