@@ -462,8 +462,8 @@ class NodeCanaryEffect(NodeEffectService):
         parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Simulate external API call for canary testing."""
-        # Simulate API call delay
-        await asyncio.sleep(0.1)
+        # Simulate API call delay using configuration
+        await asyncio.sleep(self.config.business_logic.api_simulation_delay_ms / 1000)
 
         return {
             "api_response": "simulated_response",
