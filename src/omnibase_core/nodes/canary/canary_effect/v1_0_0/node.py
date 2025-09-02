@@ -125,15 +125,19 @@ class NodeCanaryEffect(NodeEffectService):
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
+            # Handle error with secure error handler
+            error_details = self.error_handler.handle_error(
+                e, context, correlation_id, "canary_effect"
+            )
             self.logger.exception(
-                f"Canary effect operation failed: {e!s} "
+                f"Canary effect operation failed: {error_details['message']} "
                 f"[correlation_id={correlation_id}, duration={execution_time}ms]",
             )
 
             output = ModelCanaryEffectOutput(
                 operation_result={},
                 success=False,
-                error_message=str(e),
+                error_message=f"Effect operation failed: {type(e).__name__}",
                 execution_time_ms=execution_time,
                 correlation_id=correlation_id,
             )

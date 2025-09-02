@@ -102,7 +102,7 @@ class NodeCanaryCompute(ModelNodeBase):
             return ModelCanaryComputeOutput(
                 result={},
                 success=False,
-                error_message=str(e),
+                error_message=f"Computation failed: {type(e).__name__}",
                 execution_time_ms=execution_time,
                 correlation_id=input_data.correlation_id,
             )

@@ -155,7 +155,7 @@ class NodeCanaryGateway(ModelNodeBase):
             return ModelGroupGatewayOutput(
                 status="failed",
                 aggregated_response={},
-                error_message=str(e),
+                error_message=f"Gateway routing failed: {type(e).__name__}",
                 cache_hit=False,
                 routing_metrics={"response_time_ms": response_time},
             )

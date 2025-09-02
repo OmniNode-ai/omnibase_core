@@ -99,7 +99,9 @@ class NodeCanaryReducer(ModelNodeBase):
 
         except Exception as e:
             return ModelCanaryReducerOutput(
-                status="failed", aggregated_result={}, error_message=str(e)
+                status="failed",
+                aggregated_result={},
+                error_message=f"Reduction failed: {type(e).__name__}",
             )
 
     async def _aggregate_bootstrap_results(

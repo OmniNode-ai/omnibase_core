@@ -155,6 +155,8 @@ validation_rules:
 
 # === SUBCONTRACTS ===
 subcontracts:
+  - path: "../../mixins/mixin_error_handling.yaml"
+    integration_field: "error_handling_configuration"
   - path: "../../subcontracts/health_check_subcontract.yaml"
     integration_field: "health_check_configuration"
   - path: "../../subcontracts/introspection_subcontract.yaml"

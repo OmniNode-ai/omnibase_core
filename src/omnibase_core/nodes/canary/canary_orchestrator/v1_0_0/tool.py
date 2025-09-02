@@ -139,7 +139,9 @@ class NodeCanaryOrchestrator(ModelNodeBase):
         except Exception as e:
             if workflow_id in self._active_workflows:
                 self._active_workflows[workflow_id].status = WorkflowStatus.FAILED
-                self._active_workflows[workflow_id].errors.append(str(e))
+                self._active_workflows[workflow_id].errors.append(
+                    f"Workflow error: {type(e).__name__}"
+                )
                 self._completed_workflows[workflow_id] = self._active_workflows.pop(
                     workflow_id
                 )
@@ -147,7 +149,7 @@ class NodeCanaryOrchestrator(ModelNodeBase):
             return ModelCanaryOrchestratorOutput(
                 status="failed",
                 workflow_result={},
-                error_message=str(e),
+                error_message=f"Workflow execution failed: {type(e).__name__}",
                 execution_metrics={},
             )
 

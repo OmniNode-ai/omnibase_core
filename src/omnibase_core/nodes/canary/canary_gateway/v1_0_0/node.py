@@ -99,7 +99,11 @@ class ResponseAggregator:
                 fallback=lambda: None,  # Return None if database is down
             )
         except Exception as e:
-            self.logger.exception(f"Cache lookup failed: {e}")
+            # Use secure error handler for cache lookup failures
+            error_details = self.error_handler.handle_error(
+                e, {"cache_key": cache_key}, None, "cache_lookup"
+            )
+            self.logger.exception(f"Cache lookup failed: {error_details['message']}")
             return None
 
     async def _get_cached_response_impl(
@@ -146,7 +150,11 @@ class ResponseAggregator:
                 fallback=lambda: False,  # Return False if database is down
             )
         except Exception as e:
-            self.logger.exception(f"Cache storage failed: {e}")
+            # Use secure error handler for cache storage failures
+            error_details = self.error_handler.handle_error(
+                e, {"cache_key": cache_key}, None, "cache_storage"
+            )
+            self.logger.exception(f"Cache storage failed: {error_details['message']}")
             return False
 
     async def _cache_response_impl(
@@ -264,7 +272,11 @@ class NodeCanaryGateway(NodeEffectService):
             self.logger.info("Group Gateway initialized successfully")
 
         except Exception as e:
-            msg = f"Failed to initialize Group Gateway: {e!s}"
+            # Handle initialization error with secure error handler
+            error_details = self.error_handler.handle_error(
+                e, {"operation": "initialize"}, None, "initialize"
+            )
+            msg = f"Failed to initialize Group Gateway: {error_details['message']}"
             raise OnexError(msg) from e
 
     async def cleanup(self) -> None:
@@ -459,10 +471,14 @@ class NodeCanaryGateway(NodeEffectService):
                 )
 
             except Exception as e:
+                # Use secure error handler for tool routing errors
+                error_details = self.error_handler.handle_error(
+                    e, {"tool": tool}, None, "tool_routing"
+                )
                 error_response = {
                     "tool": tool,
                     "status": "error",
-                    "error": str(e),
+                    "error": f"Tool routing failed: {error_details['message']}",
                     "timestamp": datetime.utcnow().isoformat(),
                 }
                 responses.append(error_response)
@@ -550,7 +566,13 @@ class NodeCanaryGateway(NodeEffectService):
                     )
                     health_status["postgresql"] = "healthy"
                 except Exception as e:
-                    health_status["postgresql"] = f"unhealthy: {e!s}"
+                    # Use secure error handler for health check failures
+                    error_details = self.error_handler.handle_error(
+                        e, {"check": "database"}, None, "health_db_check"
+                    )
+                    health_status["postgresql"] = (
+                        f"unhealthy: {error_details['message']}"
+                    )
 
             # Add circuit breaker stats
             health_status["circuit_breakers"] = {

@@ -788,7 +788,7 @@ class ContractValidator:
 
         except Exception as e:
             # Pydantic v2 wraps validation errors differently
-            error_msg = str(e)
+            error_msg = f"Validation error: {type(e).__name__}"
             validations.append(f"❌ ARCHITECTURAL VIOLATION: {error_msg}")
             validations.append(
                 "    This contract violates node-type-specific constraints",
