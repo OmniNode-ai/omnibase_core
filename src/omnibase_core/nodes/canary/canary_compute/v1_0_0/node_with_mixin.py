@@ -426,7 +426,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         health_score = 100
         for metric, value in metrics.items():
-            if value < 0.5:  # Assume 0.5 is threshold for healthy
+            if (
+                value < self.config.performance.health_score_threshold_good
+            ):  # Use configurable threshold
                 health_score -= 10
 
         return {

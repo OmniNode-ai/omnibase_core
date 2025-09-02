@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Dict, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMessageData(BaseModel):
@@ -19,7 +19,4 @@ class ModelMessageData(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
     metadata: Optional[Dict[str, str]] = Field(default_factory=dict)
 
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)

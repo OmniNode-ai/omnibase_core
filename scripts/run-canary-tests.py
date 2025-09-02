@@ -6,6 +6,7 @@ Runs comprehensive unit tests for all canary nodes to ensure they meet
 ONEX architecture requirements and functional specifications.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path

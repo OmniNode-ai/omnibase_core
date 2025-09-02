@@ -6,7 +6,8 @@
       "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/core/**)",
       "Read(/Volumes/PRO-G40/Code/omnibase-spi/src/omnibase/protocols/types/**)",
       "mcp__serena__find_symbol",
-      "mcp__archon__create_document"
+      "mcp__archon__create_document",
+      "Bash(poetry:*)"
     ],
     "deny": [],
     "ask": []

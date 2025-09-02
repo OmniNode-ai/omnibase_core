@@ -11,17 +11,26 @@ import time
 from pathlib import Path
 from typing import TypeVar
 
-from omnibase_core.cache.memory_mapped_tool_cache import (
-    MemoryMappedToolCache,
-)
+try:
+    from omnibase_core.cache.memory_mapped_tool_cache import (
+        MemoryMappedToolCache,
+    )
+except ImportError:
+    # Cache module not available, use None as fallback
+    MemoryMappedToolCache = None
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.monitoring.performance_monitor import (
-    PerformanceMonitor,
-)
+
+try:
+    from omnibase_core.monitoring.performance_monitor import (
+        PerformanceMonitor,
+    )
+except ImportError:
+    # Performance monitoring not available, use None as fallback
+    PerformanceMonitor = None
 
 T = TypeVar("T")
 
@@ -46,7 +55,7 @@ class ModelONEXContainer(ONEXContainer):
         self.tool_cache: MemoryMappedToolCache | None = None
         self.performance_monitor: PerformanceMonitor | None = None
 
-        if enable_performance_cache:
+        if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
             cache_directory = cache_dir or Path("/tmp/onex_production_cache")
             self.tool_cache = MemoryMappedToolCache(
@@ -55,8 +64,9 @@ class ModelONEXContainer(ONEXContainer):
                 enable_lazy_loading=True,
             )
 
-            # Initialize performance monitoring
-            self.performance_monitor = PerformanceMonitor(cache=self.tool_cache)
+            # Initialize performance monitoring if available
+            if PerformanceMonitor is not None:
+                self.performance_monitor = PerformanceMonitor(cache=self.tool_cache)
 
             emit_log_event(
                 LogLevel.INFO,
