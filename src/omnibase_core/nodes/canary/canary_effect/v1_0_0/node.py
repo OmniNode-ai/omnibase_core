@@ -22,6 +22,10 @@ from omnibase_core.model.core.model_health_details import ModelHealthDetails
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+from omnibase_core.nodes.canary.utils.circuit_breaker import (
+    CircuitBreakerConfig,
+    get_circuit_breaker,
+)
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 
 
@@ -67,6 +71,15 @@ class NodeCanaryEffect(NodeEffectService):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = get_canary_config()
         self.error_handler = get_error_handler(self.logger)
+        
+        # Setup circuit breakers for external operations
+        cb_config = CircuitBreakerConfig(
+            failure_threshold=3,
+            recovery_timeout_seconds=30,
+            timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
+        )
+        self.api_circuit_breaker = get_circuit_breaker("effect_api", cb_config)
+        
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
