@@ -1,43 +1,43 @@
 schema_version: {major: 1, minor: 0, patch: 0}
-name: "tool_infrastructure_consul_adapter_effect"
+name: "node_infrastructure_canary_effect"
 uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 author: "ONEX Framework Team"
 created_at: "2025-08-19T00:00:00Z"
 last_modified_at: "2025-08-19T00:00:00Z"
-description: "Consul Adapter - Message Bus to Consul API Bridge for infrastructure operations"
-state_contract: "state_contract://consul_adapter_schema.json"
+description: "Canary Effect Node - Infrastructure effect operations for canary deployment system"
+state_contract: "state_contract://canary_effect_schema.json"
 lifecycle: "active"
 hash: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 entrypoint:
   type: "python"
   target: "v1_0_0/node.py"
-namespace: "omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect"
-meta_type: "tool"
+namespace: "omnibase_core.nodes.canary.canary_effect"
+meta_type: "node"
 runtime_language_hint: "python>=3.11"
 
-# === INFRASTRUCTURE TOOL METADATA ===
+# === INFRASTRUCTURE NODE METADATA ===
 capabilities:
-  - "consul_kv_operations"
-  - "consul_service_registration"
-  - "consul_health_monitoring"
-  - "message_bus_integration"
+  - "effect_operations"
+  - "health_monitoring"
+  - "metrics_collection"
+  - "event_bus_integration"
 
 protocols_supported:
-  - "ProtocolInfrastructureAdapter"
+  - "ProtocolOnexNode"
   - "ProtocolNodeEffect"
 
 dependencies:
-  - name: "consul_server"
-    type: "external_service"
-    target: "http://localhost:8500"
-    binding: "runtime_lookup"
+  - name: "onex_container"
+    type: "dependency_injection"
+    target: "ONEXContainer"
+    binding: "constructor_injection"
     optional: false
-    description: "HashiCorp Consul server for service discovery and KV operations"
+    description: "ONEX dependency injection container for service resolution"
 
   - name: "onex_event_bus"
     type: "protocol_adherence"
     target: "ProtocolEventBus"
-    binding: "injection"
+    binding: "service_resolution"
     optional: false
     description: "ONEX event bus for message coordination"
 
@@ -68,14 +68,14 @@ x_extensions:
         deprecation_date: "2025-08-15"
         end_of_life: "2025-12-01"
 
-    # Discovery configuration for services loading this tool
+    # Discovery configuration for services loading this node
     discovery:
       auto_load_strategy: "current_stable" # current_stable | current_development | latest
       fallback_versions: [{major: 1, minor: 0, patch: 0}] # Fallback versions if preferred unavailable
       version_directory_pattern: "v{major}_{minor}_{patch}"
       implementation_file: "node.py"
       contract_file: "contract.yaml"
-      main_class_name: "ConsulAdapter"
+      main_class_name: "NodeCanaryEffect"
 
     # Service loading configuration
     service_integration:
@@ -99,9 +99,9 @@ testing:
     - "integration"
   minimum_coverage_percentage: 85.0
   canonical_test_case_ids:
-    - "test_consul_kv_operations"
-    - "test_consul_service_registration"
-    - "test_consul_health_monitoring"
+    - "test_effect_operations"
+    - "test_health_monitoring"
+    - "test_metrics_collection"
 
 # === SECURITY METADATA ===
 data_handling_declaration:
@@ -109,22 +109,22 @@ data_handling_declaration:
   data_classification: "internal"
 
 security_context:
-  requires_network_access: true
-  external_endpoints:
-    - "http://localhost:8500" # Consul API
+  requires_network_access: false
+  external_endpoints: []
 
 # === LOGGING CONFIGURATION ===
 logging_config:
   level: "info"
   format: "json"
   audit_events:
-    - "adapter_initialized"
-    - "consul_operation_completed"
-    - "consul_connection_failure"
+    - "node_initialized"
+    - "effect_operation_completed"
+    - "health_check_performed"
+    - "metrics_collected"
 
 tags:
   - "infrastructure"
-  - "consul"
-  - "adapter"
-  - "service-discovery"
-  - "kv-store"
+  - "canary"
+  - "effect"
+  - "health-monitoring"
+  - "metrics"
