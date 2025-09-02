@@ -282,10 +282,11 @@ class NodeCanaryReducer(NodeReducerService):
         metric_types = parameters.get("metric_types", ["cpu", "memory", "requests"])
         max_retention = self.config.performance.metrics_retention_count
 
-        # Simulate metric aggregation with realistic processing delay
-        await asyncio.sleep(
-            self.config.business_logic.api_simulation_delay_ms / 1000 / 2
-        )
+        # Simulate metric aggregation delay only in debug mode
+        if self.config.security.debug_mode:
+            await asyncio.sleep(
+                self.config.business_logic.api_simulation_delay_ms / 1000 / 2
+            )
 
         aggregated_metrics = {}
         for metric_type in metric_types:

@@ -510,9 +510,13 @@ class NodeCanaryGateway(NodeEffectService):
         """Simulate calling an external tool (placeholder for actual implementation)."""
         # In production, this would make actual HTTP/gRPC calls
         # Add simulation delay from config
-        import asyncio
+        # Simulate delay only in debug mode
+        if self.config.security.debug_mode:
+            import asyncio
 
-        await asyncio.sleep(self.config.business_logic.api_simulation_delay_ms / 1000)
+            await asyncio.sleep(
+                self.config.business_logic.api_simulation_delay_ms / 1000
+            )
 
         return {
             "tool": tool,

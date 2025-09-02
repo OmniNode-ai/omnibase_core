@@ -25,6 +25,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
+import aiohttp
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.contracts.model_contract_gateway import ModelContractGateway
@@ -126,23 +127,190 @@ class ModelGatewayOutput(BaseModel):
         arbitrary_types_allowed = True
 
 
+class CircuitBreakerState(Enum):
+    """Circuit breaker states."""
+
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+
+
+class CircuitBreaker:
+    """Circuit breaker for endpoint fault tolerance."""
+
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        recovery_timeout: int = 60,
+        timeout: int = 30,
+    ):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.timeout = timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = CircuitBreakerState.CLOSED
+
+    def record_success(self):
+        """Record successful operation."""
+        self.failure_count = 0
+        self.state = CircuitBreakerState.CLOSED
+
+    def record_failure(self):
+        """Record failed operation."""
+        self.failure_count += 1
+        self.last_failure_time = datetime.now()
+
+        if self.failure_count >= self.failure_threshold:
+            self.state = CircuitBreakerState.OPEN
+
+    def can_attempt(self) -> bool:
+        """Check if operation can be attempted."""
+        if self.state == CircuitBreakerState.CLOSED:
+            return True
+
+        if self.state == CircuitBreakerState.OPEN:
+            if (
+                self.last_failure_time
+                and (datetime.now() - self.last_failure_time).seconds
+                >= self.recovery_timeout
+            ):
+                self.state = CircuitBreakerState.HALF_OPEN
+                return True
+            return False
+
+        # HALF_OPEN state
+        return True
+
+
 class ConnectionPool:
     """Manages connection pooling for gateway operations."""
 
     def __init__(self, max_connections: int = 100):
         self.max_connections = max_connections
-        self.connections = defaultdict(list)
-        self.connection_states = {}
+        self.connections: Dict[str, List[aiohttp.ClientSession]] = defaultdict(list)
+        self.connection_states: Dict[str, ConnectionState] = {}
+        self.active_connections = 0
 
-    async def get_connection(self, endpoint: str):
+        # Create circuit breakers with configurable defaults
+        def create_circuit_breaker():
+            try:
+                from omnibase_core.nodes.canary.config.canary_config import (
+                    get_canary_config,
+                )
+
+                config = get_canary_config()
+                return CircuitBreaker(
+                    failure_threshold=config.security.circuit_breaker_failure_threshold,
+                    recovery_timeout=config.security.circuit_breaker_recovery_timeout,
+                )
+            except Exception:
+                return CircuitBreaker()  # Use class defaults
+
+        self.circuit_breakers: Dict[str, CircuitBreaker] = defaultdict(
+            create_circuit_breaker
+        )
+
+    async def get_connection(self, endpoint: str) -> Optional[aiohttp.ClientSession]:
         """Get or create connection to endpoint."""
-        # Implementation would go here
-        pass
+        # Check circuit breaker
+        circuit_breaker = self.circuit_breakers[endpoint]
+        if not circuit_breaker.can_attempt():
+            raise OnexError(
+                CoreErrorCode.OPERATION_FAILED,
+                f"Circuit breaker open for endpoint: {endpoint}",
+                {"endpoint": endpoint, "circuit_state": circuit_breaker.state.value},
+            )
 
-    async def release_connection(self, endpoint: str, connection):
+        # Check pool limits
+        if self.active_connections >= self.max_connections:
+            # Find least recently used connection or wait
+            emit_log_event(
+                "connection_pool_exhausted",
+                LogLevel.WARNING,
+                data={
+                    "active_connections": self.active_connections,
+                    "max_connections": self.max_connections,
+                    "endpoint": endpoint,
+                },
+            )
+            return None
+
+        # Get existing connection or create new one
+        if self.connections[endpoint]:
+            session = self.connections[endpoint].pop()
+            if not session.closed:
+                self.connection_states[endpoint] = ConnectionState.ACTIVE
+                return session
+
+        # Create new connection
+        try:
+            timeout = aiohttp.ClientTimeout(total=circuit_breaker.timeout)
+            session = aiohttp.ClientSession(timeout=timeout)
+            self.active_connections += 1
+            self.connection_states[endpoint] = ConnectionState.ACTIVE
+
+            emit_log_event(
+                "connection_created",
+                LogLevel.INFO,
+                data={
+                    "endpoint": endpoint,
+                    "active_connections": self.active_connections,
+                },
+            )
+
+            return session
+
+        except Exception as e:
+            circuit_breaker.record_failure()
+            self.connection_states[endpoint] = ConnectionState.FAILED
+            raise OnexError(
+                CoreErrorCode.OPERATION_FAILED,
+                f"Failed to create connection to {endpoint}: {e}",
+                {"endpoint": endpoint, "error": str(e)},
+            )
+
+    async def release_connection(self, endpoint: str, session: aiohttp.ClientSession):
         """Release connection back to pool."""
-        # Implementation would go here
-        pass
+        if session.closed:
+            self.active_connections = max(0, self.active_connections - 1)
+            return
+
+        # Return to pool if under limit (configurable)
+        try:
+            from omnibase_core.nodes.canary.config.canary_config import (
+                get_canary_config,
+            )
+
+            config = get_canary_config()
+            max_pooled = config.security.max_connections_per_endpoint
+        except Exception:
+            max_pooled = 10  # Fallback default
+
+        if len(self.connections[endpoint]) < max_pooled:
+            self.connections[endpoint].append(session)
+            self.connection_states[endpoint] = ConnectionState.IDLE
+        else:
+            # Close excess connections
+            await session.close()
+            self.active_connections = max(0, self.active_connections - 1)
+
+    async def close_all(self):
+        """Close all connections in pool."""
+        for endpoint_sessions in self.connections.values():
+            for session in endpoint_sessions:
+                if not session.closed:
+                    await session.close()
+        self.connections.clear()
+        self.active_connections = 0
+
+    def record_success(self, endpoint: str):
+        """Record successful operation for circuit breaker."""
+        self.circuit_breakers[endpoint].record_success()
+
+    def record_failure(self, endpoint: str):
+        """Record failed operation for circuit breaker."""
+        self.circuit_breakers[endpoint].record_failure()
 
 
 class LoadBalancer:
@@ -218,18 +386,40 @@ class NodeGateway(NodeCoreBase):
                 gateway_input.destination_endpoints
             )
 
-            # Simulate routing operation (in real implementation, this would
-            # perform actual message routing, protocol translation, etc.)
-            await asyncio.sleep(0.01)  # Simulate network operation
+            # Get connection from pool with circuit breaker protection
+            connection = await self.connection_pool.get_connection(selected_endpoint)
+            if connection is None:
+                raise OnexError(
+                    CoreErrorCode.OPERATION_FAILED,
+                    "Connection pool exhausted, cannot route message",
+                    {"endpoint": selected_endpoint, "operation_id": operation_id},
+                )
 
-            processing_time = (time.time() - start_time) * 1000
+            try:
+                # Perform actual routing operation (simplified for demo)
+                # In real implementation, this would use the connection to forward the message
+                processing_time = (time.time() - start_time) * 1000
 
-            result = {
-                "status": "routed",
-                "endpoint": selected_endpoint,
-                "message_id": operation_id,
-                "processed_at": datetime.now().isoformat(),
-            }
+                result = {
+                    "status": "routed",
+                    "endpoint": selected_endpoint,
+                    "message_id": operation_id,
+                    "processed_at": datetime.now().isoformat(),
+                    "connection_pool_size": self.connection_pool.active_connections,
+                }
+
+                # Record success for circuit breaker
+                self.connection_pool.record_success(selected_endpoint)
+
+            except Exception as routing_error:
+                # Record failure for circuit breaker
+                self.connection_pool.record_failure(selected_endpoint)
+                raise routing_error
+            finally:
+                # Always release connection back to pool
+                await self.connection_pool.release_connection(
+                    selected_endpoint, connection
+                )
 
             output = ModelGatewayOutput(
                 result=result,
@@ -274,20 +464,57 @@ class NodeGateway(NodeCoreBase):
 
     async def get_health_status(self) -> Dict[str, Union[str, int, float, bool]]:
         """Get gateway health status."""
+        # Check circuit breaker states
+        circuit_breaker_status = {}
+        open_breakers = 0
+
+        for endpoint, breaker in self.connection_pool.circuit_breakers.items():
+            circuit_breaker_status[endpoint] = {
+                "state": breaker.state.value,
+                "failure_count": breaker.failure_count,
+                "failure_threshold": breaker.failure_threshold,
+            }
+            if breaker.state == CircuitBreakerState.OPEN:
+                open_breakers += 1
+
+        # Determine overall health
+        status = "healthy"
+        if open_breakers > 0:
+            if open_breakers >= len(circuit_breaker_status):
+                status = "critical"  # All circuit breakers open
+            else:
+                status = "degraded"  # Some circuit breakers open
+
         return {
-            "status": "healthy",
+            "status": status,
             "node_type": "gateway",
-            "active_connections": len(self.connection_pool.connections),
+            "active_connections": self.connection_pool.active_connections,
             "max_connections": self.connection_pool.max_connections,
+            "open_circuit_breakers": open_breakers,
+            "total_endpoints": len(self.connection_pool.circuit_breakers),
+            "circuit_breakers": circuit_breaker_status,
             "timestamp": datetime.now().isoformat(),
         }
 
     async def get_metrics(self) -> Dict[str, Union[str, int, float, bool]]:
         """Get gateway performance metrics."""
+        # Count circuit breaker trips
+        circuit_breaker_trips = sum(
+            1
+            for breaker in self.connection_pool.circuit_breakers.values()
+            if breaker.state == CircuitBreakerState.OPEN
+        )
+
         return {
-            "total_routes": 0,  # Would track actual routing count
+            "total_routes": 0,  # Would track actual routing count in production
             "average_response_time_ms": 0.0,
             "active_endpoints": len(self.load_balancer.endpoint_stats),
-            "circuit_breaker_trips": 0,
+            "circuit_breaker_trips": circuit_breaker_trips,
+            "active_connections": self.connection_pool.active_connections,
+            "max_connections": self.connection_pool.max_connections,
             "timestamp": datetime.now().isoformat(),
         }
+
+    async def cleanup(self):
+        """Cleanup resources when shutting down."""
+        await self.connection_pool.close_all()

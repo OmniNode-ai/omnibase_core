@@ -71,7 +71,7 @@ class NodeCanaryEffect(NodeEffectService):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = get_canary_config()
         self.error_handler = get_error_handler(self.logger)
-        
+
         # Setup circuit breakers for external operations
         cb_config = CircuitBreakerConfig(
             failure_threshold=3,
@@ -79,7 +79,7 @@ class NodeCanaryEffect(NodeEffectService):
             timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
         )
         self.api_circuit_breaker = get_circuit_breaker("effect_api", cb_config)
-        
+
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
@@ -383,7 +383,18 @@ class NodeCanaryEffect(NodeEffectService):
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-            # Publish operation failure event
+            # Handle error with secure error handler first
+            safe_context = {
+                "operation_type": getattr(input_data, "operation_type", "unknown"),
+                "effect_type": effect_type.value,
+                "execution_time_ms": execution_time,
+                "error_type": type(e).__name__,
+            }
+            error_details = self.error_handler.handle_error(
+                e, safe_context, correlation_id, "effect_operation"
+            )
+
+            # Publish operation failure event with sanitized error
             self._publish_canary_event(
                 "operation.failure",
                 {
@@ -391,18 +402,14 @@ class NodeCanaryEffect(NodeEffectService):
                     "effect_type": effect_type.value,
                     "execution_time_ms": execution_time,
                     "error_type": type(e).__name__,
-                    "error_summary": str(e)[:200],  # Truncate for safety
+                    "error_summary": error_details[
+                        "message"
+                    ],  # Use sanitized error message
                 },
                 correlation_id,
             )
 
-            # Handle error with secure error handler
-            error_context = {
-                "operation_type": getattr(input_data, "operation_type", "unknown")
-            }
-            error_details = self.error_handler.handle_error(
-                e, error_context, correlation_id, "canary_effect"
-            )
+            # Log the error with sanitized details
             self.logger.exception(
                 f"Canary effect operation failed: {error_details['message']} "
                 f"[correlation_id={correlation_id}, duration={execution_time}ms]",
@@ -475,8 +482,11 @@ class NodeCanaryEffect(NodeEffectService):
         parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Simulate external API call for canary testing."""
-        # Simulate API call delay using configuration
-        await asyncio.sleep(self.config.business_logic.api_simulation_delay_ms / 1000)
+        # Simulate API call delay only in debug mode
+        if self.config.security.debug_mode:
+            await asyncio.sleep(
+                self.config.business_logic.api_simulation_delay_ms / 1000
+            )
 
         return {
             "api_response": "simulated_response",

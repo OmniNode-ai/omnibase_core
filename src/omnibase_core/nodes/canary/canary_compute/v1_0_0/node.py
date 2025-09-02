@@ -65,8 +65,25 @@ class ModelCanaryComputeInput(BaseModel):
         if v is not None:
             if not isinstance(v, str):
                 raise ValueError("correlation_id must be a string")
-            if len(v) < 8 or len(v) > 128:
-                raise ValueError("correlation_id must be between 8 and 128 characters")
+
+            # Use configurable limits (fallback to defaults if config unavailable)
+            from omnibase_core.nodes.canary.config.canary_config import (
+                get_canary_config,
+            )
+
+            try:
+                config = get_canary_config()
+                min_len = config.security.correlation_id_min_length
+                max_len = config.security.correlation_id_max_length
+            except Exception:
+                # Fallback to conservative defaults if config unavailable
+                min_len = 8
+                max_len = 128
+
+            if len(v) < min_len or len(v) > max_len:
+                raise ValueError(
+                    f"correlation_id must be between {min_len} and {max_len} characters"
+                )
             if not v.replace("-", "").replace("_", "").isalnum():
                 raise ValueError(
                     "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
@@ -104,7 +121,7 @@ class NodeCanaryCompute(NodeComputeService):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = get_canary_config()
         self.error_handler = get_error_handler(self.logger)
-        
+
         # Setup circuit breakers for external operations
         cb_config = CircuitBreakerConfig(
             failure_threshold=3,
@@ -112,7 +129,7 @@ class NodeCanaryCompute(NodeComputeService):
             timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
         )
         self.api_circuit_breaker = get_circuit_breaker("compute_api", cb_config)
-        
+
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
@@ -194,10 +211,18 @@ class NodeCanaryCompute(NodeComputeService):
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-            # Handle error with enhanced security
+            # Handle error with sanitized context - avoid exposing sensitive data
+            safe_context = {
+                "operation_type": (
+                    input_data.operation_type if "input_data" in locals() else "unknown"
+                ),
+                "execution_time_ms": execution_time,
+                "operation_count": self.operation_count,
+                "node_type": "canary_compute",
+            }
             error_info = self.error_handler.handle_error(
                 error=e,
-                context=locals(),
+                context=safe_context,
                 correlation_id=correlation_id,
                 operation_name="compute_operation",
             )
@@ -294,33 +319,41 @@ class NodeCanaryCompute(NodeComputeService):
 
         if logic_type == "customer_scoring":
             # Customer scoring logic using configurable thresholds
+            if (
+                not hasattr(self.config, "business_logic")
+                or self.config.business_logic is None
+            ):
+                raise ValueError("Business logic configuration not available")
+
             config = self.config.business_logic
             score = 0
 
-            if data.get("purchase_history", 0) > config.customer_purchase_threshold:
-                score += config.customer_purchase_score_points
-            if data.get("loyalty_years", 0) > config.customer_loyalty_years_threshold:
-                score += config.customer_loyalty_score_points
-            if (
-                data.get("support_tickets", 0)
-                < config.customer_support_tickets_threshold
-            ):
-                score += config.customer_support_score_points
+            # Add null checks for all configuration properties
+            purchase_threshold = getattr(config, "customer_purchase_threshold", 1000)
+            purchase_points = getattr(config, "customer_purchase_score_points", 10)
+            loyalty_threshold = getattr(config, "customer_loyalty_years_threshold", 2)
+            loyalty_points = getattr(config, "customer_loyalty_score_points", 15)
+            support_threshold = getattr(config, "customer_support_tickets_threshold", 5)
+            support_points = getattr(config, "customer_support_score_points", 5)
+            premium_threshold = getattr(config, "customer_premium_score_threshold", 20)
+
+            if data.get("purchase_history", 0) > purchase_threshold:
+                score += purchase_points
+            if data.get("loyalty_years", 0) > loyalty_threshold:
+                score += loyalty_points
+            if data.get("support_tickets", 0) < support_threshold:
+                score += support_points
 
             return {
                 "logic_type": logic_type,
                 "customer_score": score,
-                "tier": (
-                    "premium"
-                    if score > config.customer_premium_score_threshold
-                    else "standard"
-                ),
+                "tier": ("premium" if score > premium_threshold else "standard"),
                 "processed_fields": list(data.keys()),
                 "thresholds_used": {
-                    "purchase_threshold": config.customer_purchase_threshold,
-                    "loyalty_years_threshold": config.customer_loyalty_years_threshold,
-                    "support_tickets_threshold": config.customer_support_tickets_threshold,
-                    "premium_score_threshold": config.customer_premium_score_threshold,
+                    "purchase_threshold": purchase_threshold,
+                    "loyalty_years_threshold": loyalty_threshold,
+                    "support_tickets_threshold": support_threshold,
+                    "premium_score_threshold": premium_threshold,
                 },
             }
 
@@ -435,12 +468,16 @@ class NodeCanaryCompute(NodeComputeService):
         }
 
         # Mark as degraded if error rate is high (using configurable thresholds)
-        config = self.config.performance
-        if (
-            self.operation_count > config.min_operations_for_health
-            and (self.error_count / self.operation_count) > config.error_rate_threshold
-        ):
-            status = EnumHealthStatus.DEGRADED
+        if hasattr(self.config, "performance") and self.config.performance is not None:
+            config = self.config.performance
+            min_ops = getattr(config, "min_operations_for_health", 10)
+            error_threshold = getattr(config, "error_rate_threshold", 0.1)
+
+            if (
+                self.operation_count > min_ops
+                and (self.error_count / self.operation_count) > error_threshold
+            ):
+                status = EnumHealthStatus.DEGRADED
 
         return ModelHealthStatus(
             status=status,

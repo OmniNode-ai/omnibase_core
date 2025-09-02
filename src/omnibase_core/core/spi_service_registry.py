@@ -73,6 +73,7 @@ class SPIServiceRegistry:
         self._database: Optional[ProtocolDatabaseConnection] = None
         self._initialization_errors: list[str] = []
         self._is_initialized = False
+        self._init_task: Optional[asyncio.Task] = None
 
         # Initialize logger
         self._logger = logging.getLogger(__name__)
@@ -87,10 +88,13 @@ class SPIServiceRegistry:
             self._config = get_config().to_dict()
 
             # Initialize external dependencies asynchronously
-            # This is done in a separate method to avoid blocking the constructor
-            asyncio.create_task(self._initialize_external_dependencies())
+            # Store the initialization task to allow proper waiting
+            self._init_task = asyncio.create_task(
+                self._initialize_external_dependencies()
+            )
 
-            self._is_initialized = True
+            # Only mark as initialized after external dependencies are ready
+            # Note: For immediate use, check is_ready() instead of _is_initialized
             self._logger.info(
                 f"SPI Service Registry initialized successfully: {self._registry_id}"
             )
@@ -140,6 +144,17 @@ class SPIServiceRegistry:
     def get_initialization_errors(self) -> list[str]:
         """Get list of initialization errors."""
         return self._initialization_errors.copy()
+
+    async def is_ready(self) -> bool:
+        """Check if registry is fully ready (async dependencies initialized)."""
+        if self._init_task and not self._init_task.done():
+            try:
+                await self._init_task
+                self._is_initialized = True
+            except Exception as e:
+                self._initialization_errors.append(f"Initialization failed: {e}")
+                return False
+        return self._is_initialized and len(self._initialization_errors) == 0
 
     def is_healthy(self) -> bool:
         """Check if registry is healthy (initialized and no critical errors)."""
@@ -231,6 +246,38 @@ class SPIServiceRegistry:
         if not isinstance(config, dict):
             msg = "Configuration must be a dictionary"
             raise ValueError(msg)
+
+        # Validate configuration keys and values
+        allowed_keys = {
+            "debug",
+            "log_level",
+            "timeout_ms",
+            "retry_count",
+            "health_check_interval",
+            "max_connections",
+            "pool_size",
+        }
+
+        for key, value in config.items():
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"Configuration keys must be strings, got {type(key).__name__}"
+                )
+
+            # Validate common configuration patterns
+            if key.endswith("_ms") and not isinstance(value, (int, float)):
+                raise ValueError(
+                    f"Timeout configurations must be numeric, got {type(value).__name__} for {key}"
+                )
+            if key.endswith("_count") and not isinstance(value, int):
+                raise ValueError(
+                    f"Count configurations must be integers, got {type(value).__name__} for {key}"
+                )
+            if "password" in key.lower() and not isinstance(value, str):
+                raise ValueError(
+                    f"Password configurations must be strings, got {type(value).__name__} for {key}"
+                )
+
         self._config.update(config)
 
     def register_service(self, protocol_name: str, service_instance: Any) -> str:

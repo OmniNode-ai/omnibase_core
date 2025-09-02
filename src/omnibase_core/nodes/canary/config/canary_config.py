@@ -139,6 +139,30 @@ class SecurityConfig(BaseModel):
         default=True, description="Whether to validate correlation IDs"
     )
 
+    # Environment and debugging
+    debug_mode: bool = Field(
+        default=False, description="Enable debug mode with simulation delays"
+    )
+
+    # Correlation ID validation parameters
+    correlation_id_min_length: int = Field(
+        default=8, description="Minimum correlation ID length"
+    )
+    correlation_id_max_length: int = Field(
+        default=128, description="Maximum correlation ID length"
+    )
+
+    # Connection pool limits
+    max_connections_per_endpoint: int = Field(
+        default=10, description="Maximum pooled connections per endpoint"
+    )
+    circuit_breaker_failure_threshold: int = Field(
+        default=5, description="Circuit breaker failure threshold"
+    )
+    circuit_breaker_recovery_timeout: int = Field(
+        default=60, description="Circuit breaker recovery timeout in seconds"
+    )
+
 
 class CanaryNodeConfig(BaseModel):
     """Complete configuration for canary nodes."""
