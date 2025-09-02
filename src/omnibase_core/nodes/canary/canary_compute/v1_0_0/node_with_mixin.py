@@ -9,7 +9,7 @@ circuit breakers, metrics collection, and configuration management.
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -25,6 +25,7 @@ from omnibase_core.model.subcontracts.model_error_handling_subcontract import (
     ModelErrorHandlingSubcontract,
     RecordMetricsInput,
 )
+from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 
 
 class ModelCanaryComputeInput(BaseModel):
@@ -89,10 +90,11 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         """Initialize the Canary Compute node with mixin capabilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.config = get_canary_config()
 
         # Initialize error handling mixin (replaces manual utilities)
         self.error_handling = ModelErrorHandlingSubcontract(
-            initialized=True, initialization_timestamp=datetime.utcnow()
+            initialized=True, initialization_timestamp=datetime.now(timezone.utc)
         )
 
         # Basic counters (metrics will be handled by mixin)
@@ -475,8 +477,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         # Use mixin configuration for health thresholds
         if (
-            self.operation_count > 10
-            and (self.error_count / self.operation_count) > 0.1
+            self.operation_count > self.config.performance.min_operations_for_health
+            and (self.error_count / self.operation_count)
+            > self.config.performance.error_rate_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 

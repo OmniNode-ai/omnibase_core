@@ -251,6 +251,16 @@ class NodeCanaryGateway(NodeEffectService):
         try:
             # Initialize PostgreSQL connection pool with configuration
             db_config = self.config.database
+            # Create safe connection info for logging (without password)
+            safe_connection_info = {
+                "host": db_config.host,
+                "port": db_config.port,
+                "database": db_config.database,
+                "user": db_config.username,
+                "min_size": db_config.min_pool_size,
+                "max_size": db_config.max_pool_size,
+            }
+
             self.db_pool = await asyncpg.create_pool(
                 host=db_config.host,
                 port=db_config.port,
@@ -272,9 +282,12 @@ class NodeCanaryGateway(NodeEffectService):
             self.logger.info("Group Gateway initialized successfully")
 
         except Exception as e:
-            # Handle initialization error with secure error handler
+            # Handle initialization error with secure error handler (using safe connection info)
             error_details = self.error_handler.handle_error(
-                e, {"operation": "initialize"}, None, "initialize"
+                e,
+                {"operation": "initialize", "connection_info": safe_connection_info},
+                None,
+                "initialize",
             )
             msg = f"Failed to initialize Group Gateway: {error_details['message']}"
             raise OnexError(msg) from e

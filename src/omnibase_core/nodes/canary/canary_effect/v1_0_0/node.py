@@ -17,6 +17,7 @@ from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 
 
 class ModelCanaryEffectInput(BaseModel):
@@ -59,6 +60,7 @@ class NodeCanaryEffect(NodeEffectService):
         """Initialize the Canary Effect node."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.config = get_canary_config()
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
@@ -261,8 +263,9 @@ class NodeCanaryEffect(NodeEffectService):
 
         # Mark as degraded if error rate is high
         if (
-            self.operation_count > 10
-            and (self.error_count / self.operation_count) > 0.1
+            self.operation_count > self.config.performance.min_operations_for_health
+            and (self.error_count / self.operation_count)
+            > self.config.performance.error_rate_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 
