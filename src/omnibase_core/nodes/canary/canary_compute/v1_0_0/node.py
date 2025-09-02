@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutput
 from omnibase_core.core.node_compute_service import NodeComputeService
@@ -36,7 +36,7 @@ class ModelCanaryComputeInput(BaseModel):
     )
     correlation_id: str | None = Field(None, description="Request correlation ID")
 
-    @validator("operation_type")
+    @field_validator("operation_type")
     def validate_operation_type(cls, v):
         """Validate operation type against allowed values."""
         allowed_operations = {
@@ -55,7 +55,7 @@ class ModelCanaryComputeInput(BaseModel):
             )
         return v
 
-    @validator("correlation_id")
+    @field_validator("correlation_id")
     def validate_correlation_id(cls, v):
         """Validate correlation ID format if provided."""
         if v is not None:

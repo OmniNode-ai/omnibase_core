@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_base import ModelNodeBase
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
@@ -38,7 +38,7 @@ class ModelCanaryEffectInput(BaseModel):
         default=None, description="Request correlation ID"
     )
 
-    @validator("operation_type")
+    @field_validator("operation_type")
     def validate_operation_type(cls, v):
         """Validate operation type against allowed values."""
         allowed_operations = {
@@ -58,7 +58,7 @@ class ModelCanaryEffectInput(BaseModel):
             )
         return v
 
-    @validator("correlation_id")
+    @field_validator("correlation_id")
     def validate_correlation_id(cls, v):
         """Validate correlation ID format if provided."""
         if v is not None:

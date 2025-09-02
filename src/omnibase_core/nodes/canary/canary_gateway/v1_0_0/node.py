@@ -253,6 +253,9 @@ class NodeCanaryGateway(NodeEffectService):
                 max_size=db_config.max_pool_size,
             )
 
+            # Create required database tables
+            await self._create_database_schema()
+
             # Initialize response aggregator with circuit breaker
             self.response_aggregator = ResponseAggregator(
                 self.db_pool, self.db_circuit_breaker
@@ -587,6 +590,32 @@ class NodeCanaryGateway(NodeEffectService):
         async with self.db_pool.acquire() as conn:
             await conn.fetchval("SELECT 1")
 
+    async def _create_database_schema(self) -> None:
+        """Create required database tables if they don't exist."""
+        async with self.db_pool.acquire() as conn:
+            await conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS response_cache (
+                    cache_key VARCHAR(255) PRIMARY KEY,
+                    response_data JSONB NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                    access_count INTEGER DEFAULT 0,
+                    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """
+            )
+
+            # Create index for efficient cleanup of expired entries
+            await conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_response_cache_expires_at
+                ON response_cache (expires_at)
+            """
+            )
+
+            self.logger.info("Database schema created/verified successfully")
+
     async def clear_cache(
         self,
         cache_pattern: str | None = None,
@@ -675,7 +704,7 @@ class NodeCanaryGateway(NodeEffectService):
 
 def main():
     """Main entry point for Group Gateway - returns node instance with infrastructure container"""
-    from canary.canary_gateway.container import create_infrastructure_container
+    from omnibase_core.nodes.canary.container import create_infrastructure_container
 
     container = create_infrastructure_container()
     return NodeCanaryGateway(container)

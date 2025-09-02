@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_orchestrator import (
     ModelOrchestratorInput,
@@ -51,7 +51,7 @@ class ModelCanaryOrchestratorInput(BaseModel):
         default=5, ge=1, le=10, description="Workflow priority (1-10)"
     )
 
-    @validator("workflow_type")
+    @field_validator("workflow_type")
     def validate_workflow_type(cls, v):
         allowed_types = {
             "deployment_workflow",
@@ -64,7 +64,7 @@ class ModelCanaryOrchestratorInput(BaseModel):
             raise ValueError(f"Invalid workflow_type. Must be one of: {allowed_types}")
         return v
 
-    @validator("correlation_id")
+    @field_validator("correlation_id")
     def validate_correlation_id(cls, v):
         if v is not None and (len(v) < 8 or len(v) > 128):
             raise ValueError("correlation_id must be between 8-128 characters")

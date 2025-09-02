@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_reducer import ModelReducerInput, ModelReducerOutput
 from omnibase_core.core.node_reducer_service import NodeReducerService
@@ -48,7 +48,7 @@ class ModelCanaryReducerInput(BaseModel):
         default=5, ge=1, le=10, description="Reduction priority (1-10)"
     )
 
-    @validator("operation_type")
+    @field_validator("operation_type")
     def validate_operation_type(cls, v):
         allowed_types = {
             "aggregate_metrics",
@@ -61,7 +61,7 @@ class ModelCanaryReducerInput(BaseModel):
             raise ValueError(f"Invalid operation_type. Must be one of: {allowed_types}")
         return v
 
-    @validator("correlation_id")
+    @field_validator("correlation_id")
     def validate_correlation_id(cls, v):
         if v is not None and (len(v) < 8 or len(v) > 128):
             raise ValueError("correlation_id must be between 8-128 characters")
