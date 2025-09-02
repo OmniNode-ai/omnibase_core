@@ -8,7 +8,7 @@ Key Capabilities:
 - Message routing and forwarding with intelligent path selection
 - Response aggregation from multiple sources
 - Protocol translation and bridging
-- Load balancing and failover management  
+- Load balancing and failover management
 - Network discovery and topology awareness
 - Circuit breaker patterns for fault tolerance
 - Connection pooling and resource management
@@ -39,8 +39,9 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 class RoutingStrategy(Enum):
     """Routing strategies for gateway operations."""
+
     ROUND_ROBIN = "round_robin"
-    WEIGHTED = "weighted" 
+    WEIGHTED = "weighted"
     LEAST_CONNECTIONS = "least_connections"
     FASTEST_RESPONSE = "fastest_response"
     RANDOM = "random"
@@ -48,6 +49,7 @@ class RoutingStrategy(Enum):
 
 class ProtocolType(Enum):
     """Supported protocol types for translation."""
+
     HTTP = "http"
     GRPC = "grpc"
     WEBSOCKET = "websocket"
@@ -57,6 +59,7 @@ class ProtocolType(Enum):
 
 class ConnectionState(Enum):
     """Connection state tracking."""
+
     IDLE = "idle"
     ACTIVE = "active"
     OVERLOADED = "overloaded"
@@ -83,11 +86,14 @@ class ModelGatewayInput(BaseModel):
     circuit_breaker_enabled: bool = True
     load_balancing_enabled: bool = True
     response_aggregation_enabled: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 
@@ -109,11 +115,14 @@ class ModelGatewayOutput(BaseModel):
     circuit_breaker_triggered: bool = False
     load_balance_decision: Optional[Dict[str, Union[str, int, float]]] = None
     aggregated_responses: Optional[List[Dict]] = None
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 
@@ -155,6 +164,7 @@ class LoadBalancer:
             return endpoint
         elif self.strategy == RoutingStrategy.RANDOM:
             import random
+
             return random.choice(endpoints)
         else:
             # Default to first endpoint
@@ -164,7 +174,7 @@ class LoadBalancer:
 class NodeGateway(NodeCoreBase):
     """
     Gateway Node implementation for ONEX 4-node architecture.
-    
+
     Handles message routing, protocol translation, and network coordination
     with built-in load balancing and fault tolerance capabilities.
     """
@@ -178,13 +188,13 @@ class NodeGateway(NodeCoreBase):
     async def route(self, gateway_input: ModelGatewayInput) -> ModelGatewayOutput:
         """
         Route message to appropriate endpoints with load balancing.
-        
+
         Args:
             gateway_input: Gateway operation input with routing configuration
-            
+
         Returns:
             Gateway output with routing results and metadata
-            
+
         Raises:
             OnexError: If routing operation fails
         """
@@ -198,8 +208,8 @@ class NodeGateway(NodeCoreBase):
                 data={
                     "operation_id": operation_id,
                     "destinations": len(gateway_input.destination_endpoints),
-                    "strategy": gateway_input.routing_strategy.value
-                }
+                    "strategy": gateway_input.routing_strategy.value,
+                },
             )
 
             # Select endpoint using load balancer
@@ -218,7 +228,7 @@ class NodeGateway(NodeCoreBase):
                 "status": "routed",
                 "endpoint": selected_endpoint,
                 "message_id": operation_id,
-                "processed_at": datetime.now().isoformat()
+                "processed_at": datetime.now().isoformat(),
             }
 
             output = ModelGatewayOutput(
@@ -228,7 +238,7 @@ class NodeGateway(NodeCoreBase):
                 selected_endpoint=selected_endpoint,
                 response_time_ms=processing_time,
                 endpoints_tried=[selected_endpoint],
-                metadata={"node_type": "canary_gateway"}
+                metadata={"node_type": "canary_gateway"},
             )
 
             emit_log_event(
@@ -237,29 +247,29 @@ class NodeGateway(NodeCoreBase):
                 data={
                     "operation_id": operation_id,
                     "processing_time_ms": processing_time,
-                    "selected_endpoint": selected_endpoint
-                }
+                    "selected_endpoint": selected_endpoint,
+                },
             )
 
             return output
 
         except Exception as e:
             processing_time = (time.time() - start_time) * 1000
-            
+
             emit_log_event(
                 "gateway_route_failed",
                 LogLevel.ERROR,
                 data={
                     "operation_id": operation_id,
                     "error": str(e),
-                    "processing_time_ms": processing_time
-                }
+                    "processing_time_ms": processing_time,
+                },
             )
-            
+
             raise OnexError(
                 CoreErrorCode.OPERATION_FAILED,
                 f"Gateway routing failed: {e}",
-                {"operation_id": operation_id, "error": str(e)}
+                {"operation_id": operation_id, "error": str(e)},
             )
 
     async def get_health_status(self) -> Dict[str, Union[str, int, float, bool]]:
@@ -269,7 +279,7 @@ class NodeGateway(NodeCoreBase):
             "node_type": "gateway",
             "active_connections": len(self.connection_pool.connections),
             "max_connections": self.connection_pool.max_connections,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     async def get_metrics(self) -> Dict[str, Union[str, int, float, bool]]:
@@ -279,5 +289,5 @@ class NodeGateway(NodeCoreBase):
             "average_response_time_ms": 0.0,
             "active_endpoints": len(self.load_balancer.endpoint_stats),
             "circuit_breaker_trips": 0,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }

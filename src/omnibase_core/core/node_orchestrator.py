@@ -24,9 +24,9 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
-from uuid import uuid4
 
 # Import contract model for orchestrator nodes
 from omnibase_core.core.contracts.model_contract_orchestrator import (
@@ -147,7 +147,9 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: str
-    steps: List[Dict[str, Union[str, int, float, bool]]]  # Simplified WorkflowStep representation
+    steps: List[
+        Dict[str, Union[str, int, float, bool]]
+    ]  # Simplified WorkflowStep representation
     operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
     execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL
     max_parallel_steps: int = 5
@@ -155,11 +157,14 @@ class ModelOrchestratorInput(BaseModel):
     failure_strategy: str = "fail_fast"
     load_balancing_enabled: bool = False
     dependency_resolution_enabled: bool = True
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 

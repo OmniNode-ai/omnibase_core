@@ -28,12 +28,12 @@ from typing import (
     Any,
     Dict,
     Optional,
-    Union,
     TypeVar,
+    Union,
 )
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from uuid import UUID, uuid4
 
 # Import contract model for effect nodes
 from omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
@@ -97,11 +97,14 @@ class ModelEffectInput(BaseModel):
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 
@@ -121,11 +124,14 @@ class ModelEffectOutput(BaseModel):
     retry_count: int = 0
     side_effects_applied: Optional[list[str]] = Field(default_factory=list)
     rollback_operations: Optional[list[str]] = Field(default_factory=list)
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 

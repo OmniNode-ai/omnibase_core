@@ -24,9 +24,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Generic, Optional, TypeVar, Union
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
-from uuid import uuid4
 
 # Import contract model for compute nodes
 from omnibase_core.core.contracts.model_contract_compute import (
@@ -60,11 +60,14 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 
@@ -82,10 +85,13 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     processing_time_ms: float
     cache_hit: bool = False
     parallel_execution_used: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True
 
 

@@ -6,19 +6,22 @@ Fast, isolated unit tests for all canary node types without external dependencie
 These tests validate core functionality and business logic.
 """
 
-import pytest
 import uuid
 from datetime import datetime
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.core.node_reducer import ModelReducerInput, ReductionType
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
-from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
-from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
 from omnibase_core.nodes.canary.canary_compute.v1_0_0.node import NodeCanaryCompute
-from omnibase_core.nodes.canary.canary_orchestrator.v1_0_0.node import NodeCanaryOrchestrator
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.canary_gateway.v1_0_0.node import NodeCanaryGateway
+from omnibase_core.nodes.canary.canary_orchestrator.v1_0_0.node import (
+    NodeCanaryOrchestrator,
+)
+from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
 
 
 class TestCanaryEffect:
@@ -86,7 +89,9 @@ class TestCanaryEffect:
             },
         )
 
-        result = await effect_node.perform_effect(effect_input, EffectType.FILE_OPERATION)
+        result = await effect_node.perform_effect(
+            effect_input, EffectType.FILE_OPERATION
+        )
 
         assert result is not None
         assert result.result["operation_result"]["result"] == "file_content_simulated"
@@ -127,7 +132,10 @@ class TestCanaryEffect:
 
         health_status = await effect_node.get_health_status()
 
-        assert health_status.status in [EnumHealthStatus.HEALTHY, EnumHealthStatus.DEGRADED]
+        assert health_status.status in [
+            EnumHealthStatus.HEALTHY,
+            EnumHealthStatus.DEGRADED,
+        ]
         assert health_status.details["node_type"] == "canary_effect"
         assert health_status.details["operation_count"] >= 3
 
@@ -170,9 +178,9 @@ class TestCanaryCompute:
                 "parameters": {
                     "rules": [
                         {"field": "name", "type": "string", "required": True},
-                        {"field": "age", "type": "number", "required": True}
+                        {"field": "age", "type": "number", "required": True},
                     ]
-                }
+                },
             }
         )
 
@@ -193,9 +201,9 @@ class TestCanaryCompute:
                 "data_payload": {
                     "purchase_history": 150,
                     "loyalty_years": 3,
-                    "support_tickets": 1
+                    "support_tickets": 1,
                 },
-                "parameters": {"logic_type": "customer_scoring"}
+                "parameters": {"logic_type": "customer_scoring"},
             }
         )
 
@@ -217,7 +225,7 @@ class TestCanaryCompute:
             data={
                 "operation_type": "data_transformation",
                 "data_payload": {"NAME": "  JOHN DOE  ", "Age": "30", "score": 85.5},
-                "parameters": {"transformation": "normalize"}
+                "parameters": {"transformation": "normalize"},
             }
         )
 
@@ -238,7 +246,7 @@ class TestCanaryCompute:
             data={
                 "operation_type": "calculation",
                 "data_payload": {"value1": 10, "value2": 20, "value3": 30},
-                "parameters": {"calculation": "sum"}
+                "parameters": {"calculation": "sum"},
             }
         )
 
@@ -270,12 +278,11 @@ class TestCanaryReducer:
         health_data = [
             {"service_name": "service1", "status": "healthy"},
             {"service_name": "service2", "status": "healthy"},
-            {"service_name": "service3", "status": "degraded"}
+            {"service_name": "service3", "status": "degraded"},
         ]
 
         reducer_input = ModelReducerInput(
-            data=health_data,
-            reduction_type=ReductionType.AGGREGATE
+            data=health_data, reduction_type=ReductionType.AGGREGATE
         )
 
         result = await reducer_node.reduce(reducer_input)
@@ -289,12 +296,11 @@ class TestCanaryReducer:
         metric_data = [
             {"node": "node1", "cpu": 45.2, "memory": 78.1},
             {"node": "node2", "cpu": 52.8, "memory": 65.3},
-            {"node": "node3", "cpu": 38.9, "memory": 82.7}
+            {"node": "node3", "cpu": 38.9, "memory": 82.7},
         ]
 
         reducer_input = ModelReducerInput(
-            data=metric_data,
-            reduction_type=ReductionType.AGGREGATE
+            data=metric_data, reduction_type=ReductionType.AGGREGATE
         )
 
         result = await reducer_node.reduce(reducer_input)
@@ -326,7 +332,11 @@ class TestCanaryOrchestrator:
             workflow_definition={
                 "steps": [
                     {"name": "step1", "type": "effect", "operation": "health_check"},
-                    {"name": "step2", "type": "compute", "operation": "data_validation"}
+                    {
+                        "name": "step2",
+                        "type": "compute",
+                        "operation": "data_validation",
+                    },
                 ]
             }
         )
@@ -361,7 +371,7 @@ class TestCanaryGateway:
             message={
                 "type": "health_check_request",
                 "target": "canary_nodes",
-                "payload": {"service": "canary_effect"}
+                "payload": {"service": "canary_effect"},
             }
         )
 
@@ -415,8 +425,7 @@ class TestCanaryNodeIntegration:
 
         # Aggregate results with reducer
         reducer_input = ModelReducerInput(
-            data=effect_results,
-            reduction_type=ReductionType.AGGREGATE
+            data=effect_results, reduction_type=ReductionType.AGGREGATE
         )
 
         final_result = await reducer_node.reduce(reducer_input)
@@ -440,7 +449,7 @@ class TestCanaryNodeIntegration:
                 data={
                     "operation_type": "calculation",
                     "data_payload": {"value1": i * 10, "value2": (i + 1) * 10},
-                    "parameters": {"calculation": "sum"}
+                    "parameters": {"calculation": "sum"},
                 }
             )
             result = await compute_node.compute(compute_input)
@@ -448,8 +457,7 @@ class TestCanaryNodeIntegration:
 
         # Aggregate computation results
         reducer_input = ModelReducerInput(
-            data=compute_results,
-            reduction_type=ReductionType.AGGREGATE
+            data=compute_results, reduction_type=ReductionType.AGGREGATE
         )
 
         final_result = await reducer_node.reduce(reducer_input)

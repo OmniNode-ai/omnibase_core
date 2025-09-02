@@ -15,7 +15,7 @@ from omnibase_core.model.service.model_service_health import ModelServiceHealth
 class ProtocolDatabaseConnection(Protocol):
     """
     Protocol for database connection management.
-    
+
     Abstracts database operations from specific implementations
     like asyncpg, aiomysql, or in-memory fallbacks.
     """

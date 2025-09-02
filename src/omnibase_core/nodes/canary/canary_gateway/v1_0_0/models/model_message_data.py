@@ -21,4 +21,5 @@ class ModelMessageData(BaseModel):
 
     class Config:
         """Pydantic configuration."""
+
         arbitrary_types_allowed = True

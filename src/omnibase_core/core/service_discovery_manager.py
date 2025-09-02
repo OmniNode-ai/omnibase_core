@@ -66,7 +66,9 @@ class ServiceDiscoveryManager:
         try:
             # Try protocol-based service discovery if service name provided
             if service_name and await self._is_service_discovery_available():
-                service = await self._discover_from_service_discovery(protocol_type, service_name)
+                service = await self._discover_from_service_discovery(
+                    protocol_type, service_name
+                )
                 if service:
                     self.service_cache[cache_key] = service
                     return service
@@ -119,7 +121,7 @@ class ServiceDiscoveryManager:
         try:
             service_discovery = await self._get_service_discovery()
             services = await service_discovery.discover_services(service_name)
-            
+
             if services:
                 # Use first available service
                 service_info = services[0]

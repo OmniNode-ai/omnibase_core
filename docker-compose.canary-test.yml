@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # External Dependencies for Real Canary Testing
+  consul:
+    image: hashicorp/consul:1.17
+    container_name: canary-consul
+    ports:
+      - "8500:8500"
+      - "8502:8502"
+      - "8600:8600/udp"
+    command: >
+      consul agent -server -bootstrap-expect=1 -datacenter=dc1 -data-dir=/consul/data -bind=0.0.0.0 -client=0.0.0.0 -retry-join="127.0.0.1" -ui
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - canary-network
+
+  postgres:
+    image: postgres:15
+    container_name: canary-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: canary_test
+      POSTGRES_USER: canary_user
+      POSTGRES_PASSWORD: canary_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canary_user -d canary_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - canary-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: canary-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - canary-network
+
+  # Canary Test Runner
+  canary-test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.canary-test
+    container_name: canary-test-runner
+    depends_on:
+      consul:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - CONSUL_URL=http://consul:8500
+      - POSTGRES_URL=postgresql://canary_user:canary_pass@postgres:5432/canary_test
+      - REDIS_URL=redis://redis:6379
+      - PYTHONPATH=/app/src
+    volumes:
+      - .:/app
+    working_dir: /app
+    networks:
+      - canary-network
+    command: ["poetry", "run", "pytest", "tests/integration/test_canary_real_services.py", "-v", "--tb=short"]
+
+networks:
+  canary-network:
+    driver: bridge

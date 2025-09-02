@@ -18,7 +18,7 @@ from omnibase_core.core.subcontracts.model_routing_subcontract import (
 class ModelContractGateway(ModelContractBase):
     """
     Contract model for Gateway nodes in ONEX architecture.
-    
+
     Gateway nodes handle:
     - Message routing and forwarding
     - Response aggregation patterns
@@ -29,51 +29,44 @@ class ModelContractGateway(ModelContractBase):
 
     # Gateway-specific configuration
     routing_subcontract: Optional[ModelRoutingSubcontract] = Field(
-        default=None,
-        description="Message routing and forwarding configuration"
+        default=None, description="Message routing and forwarding configuration"
     )
-    
+
     max_concurrent_connections: int = Field(
         default=100,
         ge=1,
         le=10000,
-        description="Maximum concurrent connections to handle"
+        description="Maximum concurrent connections to handle",
     )
-    
+
     timeout_ms: int = Field(
-        default=30000,
-        ge=1000,
-        le=300000,
-        description="Request timeout in milliseconds"
+        default=30000, ge=1000, le=300000, description="Request timeout in milliseconds"
     )
-    
+
     load_balancing_enabled: bool = Field(
-        default=True,
-        description="Whether to enable load balancing across endpoints"
+        default=True, description="Whether to enable load balancing across endpoints"
     )
-    
+
     circuit_breaker_enabled: bool = Field(
-        default=True,
-        description="Whether to enable circuit breaker pattern"
+        default=True, description="Whether to enable circuit breaker pattern"
     )
-    
+
     response_aggregation_enabled: bool = Field(
         default=False,
-        description="Whether to aggregate responses from multiple sources"
+        description="Whether to aggregate responses from multiple sources",
     )
-    
+
     protocol_translation: Optional[Dict[str, str]] = Field(
-        default=None,
-        description="Protocol translation mapping (source -> target)"
+        default=None, description="Protocol translation mapping (source -> target)"
     )
 
     def validate_node_specific_config(self, contract_data: Dict) -> None:
         """
         Validate Gateway-specific configuration requirements.
-        
+
         Args:
             contract_data: Full contract data for validation
-            
+
         Raises:
             ValueError: If Gateway contract violates architectural constraints
         """
@@ -83,17 +76,23 @@ class ModelContractGateway(ModelContractBase):
                 raise ValueError(
                     "Gateway nodes must specify routing_subcontract for message forwarding"
                 )
-        
+
         # Validate timeout configuration
         timeout = contract_data.get("timeout_ms", self.timeout_ms)
         if timeout < 1000:
-            raise ValueError("Gateway timeout must be at least 1000ms for reliable operations")
-        
+            raise ValueError(
+                "Gateway timeout must be at least 1000ms for reliable operations"
+            )
+
         # Validate connection limits
-        max_conn = contract_data.get("max_concurrent_connections", self.max_concurrent_connections)
+        max_conn = contract_data.get(
+            "max_concurrent_connections", self.max_concurrent_connections
+        )
         if max_conn > 10000:
-            raise ValueError("Gateway connection limit cannot exceed 10000 for stability")
-        
+            raise ValueError(
+                "Gateway connection limit cannot exceed 10000 for stability"
+            )
+
         # Protocol translation validation
         protocol_trans = contract_data.get("protocol_translation")
         if protocol_trans and not isinstance(protocol_trans, dict):
@@ -101,5 +100,6 @@ class ModelContractGateway(ModelContractBase):
 
     class Config:
         """Pydantic model configuration."""
+
         arbitrary_types_allowed = True
         validate_assignment = True

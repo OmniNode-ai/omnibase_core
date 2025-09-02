@@ -15,7 +15,7 @@ from omnibase_core.model.service.model_service_health import ModelServiceHealth
 class ProtocolServiceDiscovery(Protocol):
     """
     Protocol for service discovery systems.
-    
+
     Abstracts service registration, discovery, and health checking
     from specific implementations like Consul, etcd, or in-memory fallbacks.
     """
