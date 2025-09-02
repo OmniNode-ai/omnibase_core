@@ -26,8 +26,13 @@ from enum import Enum
 from pathlib import Path
 from typing import (
     Any,
+    Dict,
+    Optional,
+    Union,
     TypeVar,
 )
+
+from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
 
 # Import contract model for effect nodes
@@ -75,7 +80,7 @@ class CircuitBreakerState(Enum):
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
-class ModelEffectInput:
+class ModelEffectInput(BaseModel):
     """
     Input model for NodeEffect operations.
 
@@ -83,33 +88,24 @@ class ModelEffectInput:
     with transaction and retry configuration.
     """
 
-    def __init__(
-        self,
-        effect_type: EffectType,
-        operation_data: dict[str, Any],
-        operation_id: str | None = None,
-        transaction_enabled: bool = True,
-        retry_enabled: bool = True,
-        max_retries: int = 3,
-        retry_delay_ms: int = 1000,
-        circuit_breaker_enabled: bool = False,
-        timeout_ms: int = 30000,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.effect_type = effect_type
-        self.operation_data = operation_data
-        self.operation_id = operation_id or str(uuid4())
-        self.transaction_enabled = transaction_enabled
-        self.retry_enabled = retry_enabled
-        self.max_retries = max_retries
-        self.retry_delay_ms = retry_delay_ms
-        self.circuit_breaker_enabled = circuit_breaker_enabled
-        self.timeout_ms = timeout_ms
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    effect_type: EffectType
+    operation_data: Dict[str, Union[str, int, float, bool]]
+    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    transaction_enabled: bool = True
+    retry_enabled: bool = True
+    max_retries: int = 3
+    retry_delay_ms: int = 1000
+    circuit_breaker_enabled: bool = False
+    timeout_ms: int = 30000
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
 
 
-class ModelEffectOutput:
+class ModelEffectOutput(BaseModel):
     """
     Output model for NodeEffect operations.
 
@@ -117,28 +113,20 @@ class ModelEffectOutput:
     and side effect execution metadata.
     """
 
-    def __init__(
-        self,
-        result: Any,
-        operation_id: str,
-        effect_type: EffectType,
-        transaction_state: TransactionState,
-        processing_time_ms: float,
-        retry_count: int = 0,
-        side_effects_applied: list[str] | None = None,
-        rollback_operations: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.result = result
-        self.operation_id = operation_id
-        self.effect_type = effect_type
-        self.transaction_state = transaction_state
-        self.processing_time_ms = processing_time_ms
-        self.retry_count = retry_count
-        self.side_effects_applied = side_effects_applied or []
-        self.rollback_operations = rollback_operations or []
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    result: Union[str, int, float, bool, Dict, list]
+    operation_id: str
+    effect_type: EffectType
+    transaction_state: TransactionState
+    processing_time_ms: float
+    retry_count: int = 0
+    side_effects_applied: Optional[list[str]] = Field(default_factory=list)
+    rollback_operations: Optional[list[str]] = Field(default_factory=list)
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
 
 
 class Transaction:

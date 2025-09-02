@@ -23,7 +23,9 @@ from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Dict, List, NamedTuple, Optional, Union
+
+from pydantic import BaseModel, Field
 from uuid import uuid4
 
 # Import contract model for orchestrator nodes
@@ -136,7 +138,7 @@ class WorkflowStep:
         self.results: list[Any] = []
 
 
-class ModelOrchestratorInput:
+class ModelOrchestratorInput(BaseModel):
     """
     Input model for NodeOrchestrator operations.
 
@@ -144,30 +146,21 @@ class ModelOrchestratorInput:
     with execution mode and branching configuration.
     """
 
-    def __init__(
-        self,
-        workflow_id: str,
-        steps: list[WorkflowStep],
-        operation_id: str | None = None,
-        execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL,
-        max_parallel_steps: int = 5,
-        global_timeout_ms: int = 300000,  # 5 minutes default
-        failure_strategy: str = "fail_fast",
-        load_balancing_enabled: bool = False,
-        dependency_resolution_enabled: bool = True,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.workflow_id = workflow_id
-        self.steps = steps
-        self.operation_id = operation_id or str(uuid4())
-        self.execution_mode = execution_mode
-        self.max_parallel_steps = max_parallel_steps
-        self.global_timeout_ms = global_timeout_ms
-        self.failure_strategy = failure_strategy
-        self.load_balancing_enabled = load_balancing_enabled
-        self.dependency_resolution_enabled = dependency_resolution_enabled
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    workflow_id: str
+    steps: List[Dict[str, Union[str, int, float, bool]]]  # Simplified WorkflowStep representation
+    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL
+    max_parallel_steps: int = 5
+    global_timeout_ms: int = 300000  # 5 minutes default
+    failure_strategy: str = "fail_fast"
+    load_balancing_enabled: bool = False
+    dependency_resolution_enabled: bool = True
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
 
 
 class ModelOrchestratorOutput:

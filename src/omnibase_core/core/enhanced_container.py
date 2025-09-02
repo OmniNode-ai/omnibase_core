@@ -26,7 +26,7 @@ from omnibase_core.monitoring.performance_monitor import (
 T = TypeVar("T")
 
 
-class EnhancedONEXContainer(ONEXContainer):
+class ModelONEXContainer(ONEXContainer):
     """
     Enhanced ONEX container with Codanna performance optimizations.
 
@@ -186,7 +186,7 @@ class EnhancedONEXContainer(ONEXContainer):
     def get_performance_stats(self) -> dict:
         """Get comprehensive performance statistics."""
         stats = {
-            "container_type": "EnhancedONEXContainer",
+            "container_type": "ModelONEXContainer",
             "cache_enabled": self.enable_performance_cache,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -221,15 +221,15 @@ class EnhancedONEXContainer(ONEXContainer):
 
 
 # Global enhanced container instance
-_enhanced_container: EnhancedONEXContainer | None = None
+_enhanced_container: ModelONEXContainer | None = None
 
 
 async def create_enhanced_container(
     enable_cache: bool = True,
     cache_dir: Path | None = None,
-) -> EnhancedONEXContainer:
+) -> ModelONEXContainer:
     """Create enhanced container with performance optimizations."""
-    container = EnhancedONEXContainer(
+    container = ModelONEXContainer(
         enable_performance_cache=enable_cache,
         cache_dir=cache_dir,
     )
@@ -244,7 +244,7 @@ async def create_enhanced_container(
     return container
 
 
-async def get_enhanced_container() -> EnhancedONEXContainer:
+async def get_enhanced_container() -> ModelONEXContainer:
     """Get global enhanced container instance."""
     global _enhanced_container
 
@@ -254,7 +254,7 @@ async def get_enhanced_container() -> EnhancedONEXContainer:
     return _enhanced_container
 
 
-def get_enhanced_container_sync() -> EnhancedONEXContainer:
+def get_enhanced_container_sync() -> ModelONEXContainer:
     """Get enhanced container synchronously."""
     return asyncio.run(get_enhanced_container())
 

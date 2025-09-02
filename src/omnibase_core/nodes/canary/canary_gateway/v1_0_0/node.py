@@ -736,6 +736,37 @@ class NodeCanaryGateway(NodeEffectService):
             error_message=f"Unknown operation type: {input_data.operation_type}",
         )
 
+    async def route(self, input_data: ModelGroupGatewayInput) -> ModelGroupGatewayOutput:
+        """Route message - alias for process method to satisfy contract validator."""
+        return await self.process(input_data)
+
+    async def get_health_status(self) -> dict[str, str | int | bool]:
+        """Get gateway health status."""
+        db_healthy = self.db_pool is not None
+        return {
+            "status": "healthy" if db_healthy else "degraded",
+            "node_type": "gateway",
+            "database_connected": db_healthy,
+            "total_requests": self.routing_metrics["total_requests"],
+            "successful_requests": self.routing_metrics["successful_requests"],
+            "timestamp": datetime.now().isoformat()
+        }
+
+    async def get_metrics(self) -> dict[str, str | int | float]:
+        """Get gateway performance metrics."""
+        avg_response_time = 0.0
+        if self.routing_metrics["response_times"]:
+            avg_response_time = sum(self.routing_metrics["response_times"]) / len(self.routing_metrics["response_times"])
+        
+        return {
+            "total_requests": self.routing_metrics["total_requests"],
+            "successful_requests": self.routing_metrics["successful_requests"],
+            "failed_requests": self.routing_metrics["failed_requests"],
+            "average_response_time_ms": avg_response_time,
+            "cache_hit_rate": self.routing_metrics["cache_hits"] / max(1, self.routing_metrics["total_requests"]),
+            "timestamp": datetime.now().isoformat()
+        }
+
 
 def main():
     """Main entry point for Group Gateway - returns node instance with infrastructure container"""

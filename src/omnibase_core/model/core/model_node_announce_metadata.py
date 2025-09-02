@@ -83,5 +83,18 @@ class ModelNodeAnnounceMetadata(BaseModel):
     )
 
 
+# Resolve forward references after all models are defined
+try:
+    # Import the models needed for forward references
+    from omnibase_core.model.core.model_io_block import ModelIOBlock
+    from omnibase_core.model.core.model_node_metadata_block import ModelNodeMetadataBlock
+    from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
+    
+    # Rebuild the model to resolve forward references
+    ModelNodeAnnounceMetadata.model_rebuild()
+except ImportError:
+    # If imports fail, continue without rebuilding (fallback mode)
+    pass
+
 # Backward compatibility alias
 NodeAnnounceModelMetadata = ModelNodeAnnounceMetadata

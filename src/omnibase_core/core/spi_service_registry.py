@@ -4,12 +4,16 @@ SPI-Compliant Service Registry Implementation.
 Implements omnibase.protocols.container.ProtocolServiceRegistry to provide
 standardized dependency injection while maintaining backward compatibility
 with existing ONEXContainer usage patterns.
+
+Enhanced with protocol-based external dependencies and proper error handling.
 """
 
+import asyncio
+import logging
 import threading
 import uuid
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
 from omnibase.protocols.container import (
     ProtocolDependencyGraph,
@@ -18,6 +22,10 @@ from omnibase.protocols.container import (
     ProtocolServiceRegistryConfig,
     ProtocolServiceRegistryStatus,
 )
+from omnibase_core.config.unified_config_manager import get_config
+from omnibase_core.protocol.protocol_database_connection import ProtocolDatabaseConnection
+from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+from omnibase_core.services.protocol_service_resolver import get_service_resolver
 
 T = TypeVar("T")
 TInterface = TypeVar("TInterface")
@@ -39,20 +47,140 @@ class SimpleSemVer:
 
 class SPIServiceRegistry:
     """
-    SPI-compliant service registry that wraps ONEXContainer functionality.
+    SPI-compliant service registry with protocol-based external dependencies.
 
     Provides a bridge between simple ONEXContainer service resolution
     and the comprehensive SPI ProtocolServiceRegistry interface.
+    
+    Enhanced with automatic fallback strategies and proper error handling
+    for external dependencies.
     """
 
     def __init__(self) -> None:
-        """Initialize the SPI service registry."""
+        """Initialize the SPI service registry with error handling."""
         self._services: dict[str, Any] = {}
         self._config: dict[str, Any] = {}
         self._registrations: dict[str, ProtocolServiceRegistration] = {}
         self._instances: dict[str, list[ProtocolServiceInstance]] = {}
         self._dependency_graph: dict[str, ProtocolDependencyGraph] = {}
         self._registry_id = str(uuid.uuid4())
+        
+        # Protocol-based external services
+        self._service_discovery: Optional[ProtocolServiceDiscovery] = None
+        self._database: Optional[ProtocolDatabaseConnection] = None
+        self._initialization_errors: list[str] = []
+        self._is_initialized = False
+        
+        # Initialize logger
+        self._logger = logging.getLogger(__name__)
+        
+        # Initialize registry safely
+        self._initialize_registry()
+
+    def _initialize_registry(self) -> None:
+        """Initialize registry with proper error handling."""
+        try:
+            # Load unified configuration
+            self._config = get_config().to_dict()
+            
+            # Initialize external dependencies asynchronously
+            # This is done in a separate method to avoid blocking the constructor
+            asyncio.create_task(self._initialize_external_dependencies())
+            
+            self._is_initialized = True
+            self._logger.info(f"SPI Service Registry initialized successfully: {self._registry_id}")
+            
+        except Exception as e:
+            error_msg = f"Failed to initialize SPI Service Registry: {e}"
+            self._initialization_errors.append(error_msg)
+            self._logger.error(error_msg, exc_info=True)
+            
+            # Registry is still functional for basic services even if external deps fail
+            self._is_initialized = True
+
+    async def _initialize_external_dependencies(self) -> None:
+        """Initialize external dependencies with fallback strategies."""
+        try:
+            service_resolver = get_service_resolver()
+            
+            # Initialize service discovery
+            try:
+                self._service_discovery = await service_resolver.resolve_service(ProtocolServiceDiscovery)
+                self._logger.info("Service discovery initialized successfully")
+            except Exception as e:
+                error_msg = f"Service discovery initialization failed (using fallback): {e}"
+                self._initialization_errors.append(error_msg)
+                self._logger.warning(error_msg)
+            
+            # Initialize database
+            try:
+                self._database = await service_resolver.resolve_service(ProtocolDatabaseConnection)
+                self._logger.info("Database connection initialized successfully")
+            except Exception as e:
+                error_msg = f"Database initialization failed (using fallback): {e}"
+                self._initialization_errors.append(error_msg)
+                self._logger.warning(error_msg)
+                
+        except Exception as e:
+            error_msg = f"External dependencies initialization failed: {e}"
+            self._initialization_errors.append(error_msg)
+            self._logger.error(error_msg, exc_info=True)
+
+    def get_initialization_errors(self) -> list[str]:
+        """Get list of initialization errors."""
+        return self._initialization_errors.copy()
+
+    def is_healthy(self) -> bool:
+        """Check if registry is healthy (initialized and no critical errors)."""
+        return self._is_initialized and len(self._initialization_errors) == 0
+
+    async def get_external_services_health(self) -> Dict[str, Any]:
+        """Get health status of external services."""
+        health_status = {}
+        
+        if self._service_discovery:
+            try:
+                health = await self._service_discovery.get_service_health("self")
+                health_status["service_discovery"] = {
+                    "status": health.status,
+                    "last_check": health.last_check,
+                    "error_message": health.error_message,
+                }
+            except Exception as e:
+                health_status["service_discovery"] = {
+                    "status": "error",
+                    "last_check": None,
+                    "error_message": str(e),
+                }
+        else:
+            health_status["service_discovery"] = {
+                "status": "not_initialized",
+                "last_check": None,
+                "error_message": "Service discovery not available",
+            }
+        
+        if self._database:
+            try:
+                health = await self._database.health_check()
+                health_status["database"] = {
+                    "status": health.status,
+                    "last_check": health.last_check,
+                    "error_message": health.error_message,
+                }
+            except Exception as e:
+                health_status["database"] = {
+                    "status": "error",
+                    "last_check": None,
+                    "error_message": str(e),
+                }
+        else:
+            health_status["database"] = {
+                "status": "not_initialized", 
+                "last_check": None,
+                "error_message": "Database not available",
+            }
+        
+        return health_status
 
     # SPI ProtocolServiceRegistry properties
     @property
@@ -211,44 +339,73 @@ class SPIServiceRegistry:
 
     # Additional SPI methods (simplified implementations)
     def get_status(self) -> ProtocolServiceRegistryStatus:
-        """Get registry status."""
+        """Get registry status with enhanced health information."""
+        # Determine overall status based on initialization and errors
+        if not self._is_initialized:
+            status = "initializing"
+            health_status = "unknown"
+            message = "SPI Service Registry is initializing"
+        elif len(self._initialization_errors) > 0:
+            status = "degraded"
+            health_status = "degraded"
+            message = f"ONEX Service Registry operational with {len(self._initialization_errors)} issues"
+        else:
+            status = "active"
+            health_status = "healthy"
+            message = "ONEX Service Registry is fully operational"
+        
+        # Include initialization errors in metadata
+        metadata = {
+            "initialization_errors": self._initialization_errors,
+            "external_services": {
+                "service_discovery_available": self._service_discovery is not None,
+                "database_available": self._database is not None,
+            },
+            "config_loaded": bool(self._config),
+        }
+        
         return type(
             "RegistryStatus",
             (),
             {
                 "registry_id": self._registry_id,
-                "status": "active",
-                "message": "ONEX Service Registry is operational",
+                "status": status,
+                "message": message,
                 "total_registrations": len(self._registrations),
                 "active_instances": sum(
                     len(instances) for instances in self._instances.values()
                 ),
-                "failed_registrations": 0,
+                "failed_registrations": len(self._initialization_errors),
                 "circular_dependencies": 0,
-                "health_status": "healthy",
+                "health_status": health_status,
                 "last_health_check": datetime.now(),
                 "uptime_seconds": 0,  # Would need to track actual uptime
                 "memory_usage_mb": 0,  # Would need actual memory tracking
-                "metadata": {},
+                "metadata": metadata,
             },
         )()
 
 
 # Factory function for creating SPI-compliant service registry
 def create_spi_service_registry() -> SPIServiceRegistry:
-    """Create and configure SPI-compliant service registry."""
-    registry = SPIServiceRegistry()
-
-    # Load basic configuration from environment
-    import os
-
-    config = {
-        "logging": {"level": os.getenv("LOG_LEVEL", "INFO")},
-        "environment": os.getenv("ENVIRONMENT", "development"),
-    }
-
-    registry.configure(config)
-    return registry
+    """Create and configure SPI-compliant service registry with enhanced error handling."""
+    try:
+        registry = SPIServiceRegistry()
+        
+        # Configuration is now loaded automatically from unified config manager
+        # Additional manual configuration can be applied if needed
+        
+        logging.getLogger(__name__).info("SPI Service Registry created successfully")
+        return registry
+        
+    except Exception as e:
+        error_msg = f"Failed to create SPI Service Registry: {e}"
+        logging.getLogger(__name__).error(error_msg, exc_info=True)
+        
+        # Return a degraded registry that can still function for basic services
+        registry = SPIServiceRegistry()
+        registry._initialization_errors.append(error_msg)
+        return registry
 
 
 # Global registry instance for backward compatibility
@@ -261,12 +418,58 @@ def get_spi_registry() -> SPIServiceRegistry:
     Get or create global SPI registry instance (thread-safe).
 
     Provides the same singleton pattern as ONEXContainer but with
-    SPI compliance.
+    SPI compliance and enhanced error handling.
     """
     global _spi_registry
     if _spi_registry is None:
         with _registry_lock:
             # Double-checked locking pattern
             if _spi_registry is None:
-                _spi_registry = create_spi_service_registry()
+                try:
+                    _spi_registry = create_spi_service_registry()
+                except Exception as e:
+                    # Log error but don't fail completely
+                    logging.getLogger(__name__).error(f"Critical error creating SPI registry: {e}", exc_info=True)
+                    
+                    # Create minimal registry that won't cause further failures
+                    _spi_registry = SPIServiceRegistry()
+                    _spi_registry._initialization_errors.append(f"Critical initialization failure: {e}")
     return _spi_registry
+
+async def get_spi_registry_health() -> Dict[str, Any]:
+    """Get comprehensive health status of the global SPI registry."""
+    try:
+        registry = get_spi_registry()
+        
+        # Basic registry health
+        status = registry.get_status()
+        
+        # External services health (if available)
+        external_health = {}
+        try:
+            external_health = await registry.get_external_services_health()
+        except Exception as e:
+            external_health = {"error": f"Failed to get external services health: {e}"}
+        
+        return {
+            "registry_id": status.registry_id,
+            "status": status.status,
+            "health_status": status.health_status,
+            "message": status.message,
+            "total_registrations": status.total_registrations,
+            "active_instances": status.active_instances,
+            "failed_registrations": status.failed_registrations,
+            "initialization_errors": registry.get_initialization_errors(),
+            "external_services": external_health,
+            "is_healthy": registry.is_healthy(),
+        }
+        
+    except Exception as e:
+        return {
+            "registry_id": "unknown",
+            "status": "critical_error",
+            "health_status": "critical",
+            "message": f"Failed to get registry health: {e}",
+            "error": str(e),
+            "is_healthy": False,
+        }

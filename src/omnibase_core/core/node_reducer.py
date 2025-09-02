@@ -25,9 +25,15 @@ from enum import Enum
 from pathlib import Path
 from typing import (
     Any,
+    Dict,
     Generic,
+    List,
+    Optional,
     TypeVar,
+    Union,
 )
+
+from pydantic import BaseModel, Field
 from uuid import uuid4
 
 # Import contract model for reducer nodes
@@ -79,7 +85,7 @@ class StreamingMode(Enum):
     REAL_TIME = "real_time"  # Process as data arrives
 
 
-class ModelReducerInput(Generic[T_Input]):
+class ModelReducerInput(BaseModel, Generic[T_Input]):
     """
     Input model for NodeReducer operations.
 
@@ -87,36 +93,19 @@ class ModelReducerInput(Generic[T_Input]):
     with streaming and conflict resolution configuration.
     """
 
-    def __init__(
-        self,
-        data: list[T_Input] | Iterator[T_Input] | AsyncIterator[T_Input],
-        reduction_type: ReductionType,
-        operation_id: str | None = None,
-        accumulator_init: T_Accumulator | None = None,
-        reducer_function: Callable[..., Any] | None = None,
-        conflict_resolution: ConflictResolution = ConflictResolution.LAST_WINS,
-        streaming_mode: StreamingMode = StreamingMode.BATCH,
-        batch_size: int = 1000,
-        window_size_ms: int = 5000,
-        sort_key: Callable[..., Any] | None = None,
-        filter_predicate: Callable[..., Any] | None = None,
-        group_key: Callable[..., Any] | None = None,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.data = data
-        self.reduction_type = reduction_type
-        self.operation_id = operation_id or str(uuid4())
-        self.accumulator_init = accumulator_init
-        self.reducer_function = reducer_function
-        self.conflict_resolution = conflict_resolution
-        self.streaming_mode = streaming_mode
-        self.batch_size = batch_size
-        self.window_size_ms = window_size_ms
-        self.sort_key = sort_key
-        self.filter_predicate = filter_predicate
-        self.group_key = group_key
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    data: List[T_Input]  # Strongly typed data list
+    reduction_type: ReductionType
+    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    conflict_resolution: ConflictResolution = ConflictResolution.LAST_WINS
+    streaming_mode: StreamingMode = StreamingMode.BATCH
+    batch_size: int = 1000
+    window_size_ms: int = 5000
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
 
 
 class ModelReducerOutput(Generic[T_Output]):
