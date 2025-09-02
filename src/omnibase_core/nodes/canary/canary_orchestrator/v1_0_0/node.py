@@ -6,12 +6,13 @@ This node orchestrates workflows in a controlled canary environment, providing
 event-driven coordination and workflow management for testing new deployments.
 """
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from omnibase_core.core.node_orchestrator import (
     ModelOrchestratorInput,
@@ -21,10 +22,17 @@ from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+from omnibase_core.nodes.canary.utils.circuit_breaker import (
+    CircuitBreakerConfig,
+    get_circuit_breaker,
+)
+from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
+from omnibase_core.nodes.canary.utils.metrics_collector import get_metrics_collector
 
 
 class ModelCanaryOrchestratorInput(BaseModel):
-    """Input model for canary orchestrator operations."""
+    """Input model for canary orchestrator operations with enhanced validation."""
 
     workflow_type: str = Field(..., description="Type of workflow to orchestrate")
     workflow_payload: dict[str, Any] = Field(
@@ -36,6 +44,31 @@ class ModelCanaryOrchestratorInput(BaseModel):
         description="Orchestration parameters",
     )
     correlation_id: str | None = Field(None, description="Request correlation ID")
+    timeout_ms: int | None = Field(
+        None, description="Operation timeout in milliseconds"
+    )
+    priority: int = Field(
+        default=5, ge=1, le=10, description="Workflow priority (1-10)"
+    )
+
+    @validator("workflow_type")
+    def validate_workflow_type(cls, v):
+        allowed_types = {
+            "deployment_workflow",
+            "testing_workflow",
+            "rollback_workflow",
+            "health_check_workflow",
+            "monitoring_workflow",
+        }
+        if v not in allowed_types:
+            raise ValueError(f"Invalid workflow_type. Must be one of: {allowed_types}")
+        return v
+
+    @validator("correlation_id")
+    def validate_correlation_id(cls, v):
+        if v is not None and (len(v) < 8 or len(v) > 128):
+            raise ValueError("correlation_id must be between 8-128 characters")
+        return v
 
 
 class ModelCanaryOrchestratorOutput(BaseModel):
@@ -63,9 +96,27 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
     """
 
     def __init__(self, container: ONEXContainer):
-        """Initialize the Canary Orchestrator node."""
+        """Initialize the Canary Orchestrator node with production utilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Initialize production utilities
+        self.config = get_canary_config()
+        self.error_handler = get_error_handler(self.logger)
+        self.metrics_collector = get_metrics_collector("canary_orchestrator")
+
+        # Setup circuit breakers for external services
+        cb_config = CircuitBreakerConfig(
+            failure_threshold=3,
+            recovery_timeout_seconds=30,
+            timeout_seconds=self.config.timeouts.workflow_step_timeout_ms / 1000,
+        )
+        self.workflow_circuit_breaker = get_circuit_breaker(
+            "workflow_execution", cb_config
+        )
+        self.health_circuit_breaker = get_circuit_breaker("health_check", cb_config)
+
+        # Metrics tracking (kept for compatibility, enhanced with metrics_collector)
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
@@ -231,7 +282,7 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
                 {
                     "test_type": test_type,
                     "status": "passed",
-                    "duration_ms": 200 + len(test_type) * 10,
+                    "duration_ms": test_duration_ms,
                     "test_id": str(uuid.uuid4()),
                 },
             )
