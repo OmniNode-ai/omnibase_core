@@ -11,7 +11,7 @@ import asyncio
 import logging
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -50,7 +50,7 @@ class ConfigurationSection(str, Enum):
 class HandleErrorInput(BaseModel):
     """Input model for handle_error action."""
 
-    error: Exception = Field(..., description="Exception instance to handle")
+    error: Any = Field(..., description="Exception instance to handle")
     context: Dict[str, Any] = Field(
         ..., description="Operation context (will be sanitized)"
     )
@@ -223,14 +223,15 @@ class ErrorHandlingResult(BaseModel):
     )
     correlation_id: Optional[str] = Field(None, description="Request correlation ID")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Error occurrence timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Error occurrence timestamp",
     )
 
     @field_validator("timestamp")
     @classmethod
     def validate_timestamp(cls, v: datetime) -> datetime:
         """Ensure timestamp is reasonable."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if v > now:
             # Future timestamps not allowed
             return now
@@ -274,7 +275,8 @@ class MetricsSnapshot(BaseModel):
         default_factory=dict, description="Performance percentile calculations"
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metrics update timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Last metrics update timestamp",
     )
 
     @field_validator("success_rate")
@@ -415,7 +417,9 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
         # Set initialization timestamp if not already set
         if self.initialized and self.initialization_timestamp is None:
-            object.__setattr__(self, "initialization_timestamp", datetime.utcnow())
+            object.__setattr__(
+                self, "initialization_timestamp", datetime.now(timezone.utc)
+            )
 
     def get_enabled_capabilities(self) -> List[str]:
         """Get list of enabled capabilities."""
