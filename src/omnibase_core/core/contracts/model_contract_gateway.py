@@ -60,42 +60,33 @@ class ModelContractGateway(ModelContractBase):
         default=None, description="Protocol translation mapping (source -> target)"
     )
 
-    def validate_node_specific_config(self, contract_data: Dict) -> None:
+    def validate_node_specific_config(self) -> None:
         """
         Validate Gateway-specific configuration requirements.
-
-        Args:
-            contract_data: Full contract data for validation
 
         Raises:
             ValueError: If Gateway contract violates architectural constraints
         """
         # Gateway nodes must have routing capabilities
-        if not contract_data.get("routing_subcontract"):
-            if not self.routing_subcontract:
-                raise ValueError(
-                    "Gateway nodes must specify routing_subcontract for message forwarding"
-                )
+        if not self.routing_subcontract:
+            raise ValueError(
+                "Gateway nodes must specify routing_subcontract for message forwarding"
+            )
 
         # Validate timeout configuration
-        timeout = contract_data.get("timeout_ms", self.timeout_ms)
-        if timeout < 1000:
+        if self.timeout_ms < 1000:
             raise ValueError(
                 "Gateway timeout must be at least 1000ms for reliable operations"
             )
 
         # Validate connection limits
-        max_conn = contract_data.get(
-            "max_concurrent_connections", self.max_concurrent_connections
-        )
-        if max_conn > 10000:
+        if self.max_concurrent_connections > 10000:
             raise ValueError(
                 "Gateway connection limit cannot exceed 10000 for stability"
             )
 
         # Protocol translation validation
-        protocol_trans = contract_data.get("protocol_translation")
-        if protocol_trans and not isinstance(protocol_trans, dict):
+        if self.protocol_translation and not isinstance(self.protocol_translation, dict):
             raise ValueError("protocol_translation must be a dictionary mapping")
 
     class Config:
