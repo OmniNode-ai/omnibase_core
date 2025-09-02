@@ -24,25 +24,12 @@ from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLo
 T = TypeVar("T")
 
 
-class TemporaryEventBusClient:
-    """Temporary event bus client implementation for canary nodes."""
-
-    def __init__(self):
-        self._subscribers = {}
-
-    def publish(self, event):
-        """Publish event to subscribers."""
-        # TODO: Implement proper event publishing
-
-    def subscribe(self, event_type, handler):
-        """Subscribe to event type."""
-        if event_type not in self._subscribers:
-            self._subscribers[event_type] = []
-        self._subscribers[event_type].append(handler)
-
-    async def publish_event_async(self, event):
-        """Async event publishing."""
-        # TODO: Implement proper async event publishing
+from omnibase_core.core.services.event_bus_service.v1_0_0.event_bus_service import (
+    EventBusService,
+)
+from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus_config import (
+    ModelEventBusConfig,
+)
 
 
 def create_infrastructure_container() -> ONEXContainer:
@@ -72,15 +59,33 @@ def create_infrastructure_container() -> ONEXContainer:
 def _setup_infrastructure_dependencies(container: ONEXContainer):
     """Set up all dependencies needed by infrastructure canary nodes."""
 
-    # Event Bus - shared across all infrastructure tools (temporary implementation)
-    event_bus_client = TemporaryEventBusClient()
+    # Event Bus - Use in-memory implementation for omnibase-core
+    from omnibase_core.nodes.canary.utils.memory_event_bus import MemoryEventBus
 
-    # Schema Loader - required by MixinEventDrivenNode (using available utility)
-    schema_loader = UtilitySchemaLoader()
+    event_bus = MemoryEventBus()
+
+    # Event Bus Service - simplified for in-memory usage
+    event_bus_config = ModelEventBusConfig(
+        enable_lifecycle_events=True,
+        enable_introspection_publishing=True,
+        auto_resolve_event_bus=False,  # Not needed for in-memory
+        suppress_connection_errors=True,
+        use_broadcast_envelopes=True,
+        enable_event_caching=False,  # Not needed for in-memory
+    )
+    event_bus_service = EventBusService(config=event_bus_config)
+
+    # Minimal Metadata Loader - simplified for Pydantic model usage
+    from omnibase_core.nodes.canary.utils.minimal_metadata_loader import (
+        MinimalMetadataLoader,
+    )
+
+    schema_loader = MinimalMetadataLoader()
 
     # Register services in the container's service registry
-    _register_service(container, "event_bus", event_bus_client)
-    _register_service(container, "ProtocolEventBus", event_bus_client)
+    _register_service(container, "event_bus", event_bus)
+    _register_service(container, "ProtocolEventBus", event_bus)
+    _register_service(container, "event_bus_service", event_bus_service)
     _register_service(container, "schema_loader", schema_loader)
     _register_service(container, "ProtocolSchemaLoader", schema_loader)
 

@@ -12,12 +12,17 @@ from omnibase_core.core.node_effect import (
     EffectType,
     ModelEffectInput,
     ModelEffectOutput,
+    TransactionState,
 )
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.model.core.model_health_details import ModelHealthDetails
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 
 
 class ModelCanaryEffectInput(BaseModel):
@@ -61,9 +66,217 @@ class NodeCanaryEffect(NodeEffectService):
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config = get_canary_config()
+        self.error_handler = get_error_handler(self.logger)
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0
+
+        # Get event bus for publishing events
+        self.event_bus = container.get_service("ProtocolEventBus")
+        self.event_bus_service = container.get_service("event_bus_service")
+
+        # Set up event subscriptions for inter-node communication
+        self._setup_event_subscriptions()
+
+    def _publish_canary_event(
+        self, event_type: str, data: dict[str, Any], correlation_id: str
+    ) -> None:
+        """Publish canary effect event using envelope wrapping."""
+        try:
+            if not self.event_bus:
+                self.logger.warning(
+                    f"No event bus available for publishing {event_type}"
+                )
+                return
+
+            # Create ONEX event
+            event = ModelOnexEvent(
+                event_type=f"canary.effect.{event_type}",
+                node_id=self.node_id,
+                correlation_id=uuid.UUID(correlation_id),
+                data=data,
+            )
+
+            # Create envelope using event bus service
+            envelope = self.event_bus_service.create_event_envelope(
+                event=event,
+                source_node_id=self.node_id,
+                correlation_id=uuid.UUID(correlation_id),
+            )
+
+            # Publish envelope
+            self.event_bus.publish(envelope)
+
+            self.logger.debug(
+                f"Published canary effect event: {event_type} "
+                f"[correlation_id={correlation_id}, envelope_id={envelope.envelope_id}]"
+            )
+
+        except Exception as e:
+            self.logger.error(
+                f"Failed to publish canary effect event {event_type}: {e!s}",
+                exc_info=True,
+            )
+
+    def _setup_event_subscriptions(self) -> None:
+        """Set up event subscriptions for inter-node communication."""
+        try:
+            if not self.event_bus:
+                self.logger.warning("No event bus available for subscriptions")
+                return
+
+            # Subscribe to events that trigger effect operations
+            subscription_patterns = [
+                "canary.orchestrator.execute_effect",  # Commands from orchestrator
+                "canary.compute.effect_request",  # Requests from compute nodes
+                "canary.reducer.effect_needed",  # Notifications from reducer
+                "canary.*.coordination",  # General coordination events
+            ]
+
+            for pattern in subscription_patterns:
+                try:
+                    self.event_bus.subscribe(self._handle_incoming_event, pattern)
+                    self.logger.debug(f"Subscribed to event pattern: {pattern}")
+                except Exception as e:
+                    self.logger.error(f"Failed to subscribe to {pattern}: {e!s}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to setup event subscriptions: {e!s}")
+
+    def _handle_incoming_event(self, envelope: ModelEventEnvelope) -> None:
+        """Handle incoming events from other canary nodes."""
+        try:
+            event = envelope.payload
+            event_type = event.event_type
+            correlation_id = str(envelope.correlation_id)
+
+            self.logger.info(
+                f"Received canary event: {event_type} "
+                f"[correlation_id={correlation_id}, source={envelope.source_node_id}]"
+            )
+
+            # Route event based on type
+            if event_type.endswith("execute_effect"):
+                self._handle_effect_execution_request(event, correlation_id)
+            elif event_type.endswith("effect_request"):
+                self._handle_effect_request(event, correlation_id)
+            elif event_type.endswith("effect_needed"):
+                self._handle_effect_needed_notification(event, correlation_id)
+            elif event_type.endswith("coordination"):
+                self._handle_coordination_event(event, correlation_id)
+            else:
+                self.logger.debug(f"No specific handler for event type: {event_type}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to handle incoming event: {e!s}", exc_info=True)
+
+    def _handle_effect_execution_request(
+        self, event: ModelOnexEvent, correlation_id: str
+    ) -> None:
+        """Handle effect execution request from orchestrator."""
+        try:
+            effect_data = event.data
+            operation_type = effect_data.get("operation_type", "external_api_call")
+
+            # Create effect input for async execution
+            effect_input = ModelEffectInput(
+                effect_type=EffectType.API_CALL,
+                operation_data={
+                    "operation_type": operation_type,
+                    "parameters": effect_data.get("parameters", {}),
+                    "target_system": effect_data.get("target_system"),
+                    "correlation_id": correlation_id,
+                },
+            )
+
+            # Schedule async effect execution (fire-and-forget pattern)
+            import asyncio
+
+            task = asyncio.create_task(
+                self.perform_effect(effect_input, EffectType.API_CALL)
+            )
+
+            # Add callback to publish result when complete
+            task.add_done_callback(
+                lambda t: self._publish_effect_result(t.result(), correlation_id)
+            )
+
+        except Exception as e:
+            self.logger.error(f"Failed to handle effect execution request: {e!s}")
+
+    def _handle_effect_request(
+        self, event: ModelOnexEvent, correlation_id: str
+    ) -> None:
+        """Handle effect request from compute nodes."""
+        # Similar to execution request but may have different priority/handling
+        self._handle_effect_execution_request(event, correlation_id)
+
+    def _handle_effect_needed_notification(
+        self, event: ModelOnexEvent, correlation_id: str
+    ) -> None:
+        """Handle effect needed notification from reducer."""
+        try:
+            # Reducer is notifying that an effect operation is needed
+            # This could trigger proactive effect execution
+            effect_type = event.data.get("effect_type", "health_check")
+
+            self._publish_canary_event(
+                "effect.available",
+                {
+                    "effect_type": effect_type,
+                    "node_status": "ready",
+                    "available_operations": [
+                        "health_check",
+                        "external_api_call",
+                        "file_system_operation",
+                        "database_operation",
+                        "message_queue_operation",
+                    ],
+                },
+                correlation_id,
+            )
+
+        except Exception as e:
+            self.logger.error(f"Failed to handle effect needed notification: {e!s}")
+
+    def _handle_coordination_event(
+        self, event: ModelOnexEvent, correlation_id: str
+    ) -> None:
+        """Handle general coordination events."""
+        try:
+            coordination_type = event.data.get("coordination_type", "ping")
+
+            if coordination_type == "ping":
+                # Respond to ping with pong
+                self._publish_canary_event(
+                    "coordination.pong",
+                    {
+                        "responding_to": event.node_id,
+                        "node_status": "healthy",
+                        "operation_count": self.operation_count,
+                    },
+                    correlation_id,
+                )
+
+        except Exception as e:
+            self.logger.error(f"Failed to handle coordination event: {e!s}")
+
+    def _publish_effect_result(
+        self, result: ModelEffectOutput, correlation_id: str
+    ) -> None:
+        """Publish effect operation result to other nodes."""
+        try:
+            self._publish_canary_event(
+                "effect.result",
+                {
+                    "success": result.metadata.get("error") != True,
+                    "execution_time_ms": result.metadata.get("execution_time_ms", 0),
+                    "result_data": result.data,
+                },
+                correlation_id,
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to publish effect result: {e!s}")
 
     async def perform_effect(
         self,
@@ -87,12 +300,25 @@ class NodeCanaryEffect(NodeEffectService):
             self.operation_count += 1
 
             # Parse input
-            input_data = ModelCanaryEffectInput.model_validate(effect_input.data)
+            input_data = ModelCanaryEffectInput.model_validate(
+                effect_input.operation_data
+            )
             input_data.correlation_id = correlation_id
 
             self.logger.info(
                 f"Starting canary effect operation: {input_data.operation_type} "
                 f"[correlation_id={correlation_id}]",
+            )
+
+            # Publish operation start event
+            self._publish_canary_event(
+                "operation.start",
+                {
+                    "operation_type": input_data.operation_type,
+                    "effect_type": effect_type.value,
+                    "target_system": input_data.target_system,
+                },
+                correlation_id,
             )
 
             # Perform the actual effect operation
@@ -109,17 +335,34 @@ class NodeCanaryEffect(NodeEffectService):
                 correlation_id=correlation_id,
             )
 
+            # Publish operation success event
+            self._publish_canary_event(
+                "operation.success",
+                {
+                    "operation_type": input_data.operation_type,
+                    "effect_type": effect_type.value,
+                    "execution_time_ms": execution_time,
+                    "result_summary": {
+                        "status": "success",
+                        "result_size": len(str(result)),
+                    },
+                },
+                correlation_id,
+            )
+
             self.logger.info(
                 f"Canary effect operation completed successfully "
                 f"[correlation_id={correlation_id}, duration={execution_time}ms]",
             )
 
             return ModelEffectOutput(
-                data=output.model_dump(),
+                result=output.model_dump(),
+                operation_id=correlation_id,
+                effect_type=effect_type,
+                transaction_state=TransactionState.COMMITTED,
+                processing_time_ms=execution_time,
                 metadata={
-                    "effect_type": effect_type.value,
                     "node_type": "canary_effect",
-                    "execution_time_ms": execution_time,
                 },
             )
 
@@ -127,9 +370,25 @@ class NodeCanaryEffect(NodeEffectService):
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
+            # Publish operation failure event
+            self._publish_canary_event(
+                "operation.failure",
+                {
+                    "operation_type": getattr(input_data, "operation_type", "unknown"),
+                    "effect_type": effect_type.value,
+                    "execution_time_ms": execution_time,
+                    "error_type": type(e).__name__,
+                    "error_summary": str(e)[:200],  # Truncate for safety
+                },
+                correlation_id,
+            )
+
             # Handle error with secure error handler
+            error_context = {
+                "operation_type": getattr(input_data, "operation_type", "unknown")
+            }
             error_details = self.error_handler.handle_error(
-                e, context, correlation_id, "canary_effect"
+                e, error_context, correlation_id, "canary_effect"
             )
             self.logger.exception(
                 f"Canary effect operation failed: {error_details['message']} "
@@ -145,11 +404,13 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
             return ModelEffectOutput(
-                data=output.model_dump(),
+                result=output.model_dump(),
+                operation_id=correlation_id,
+                effect_type=effect_type,
+                transaction_state=TransactionState.FAILED,
+                processing_time_ms=execution_time,
                 metadata={
-                    "effect_type": effect_type.value,
                     "node_type": "canary_effect",
-                    "execution_time_ms": execution_time,
                     "error": True,
                 },
             )
@@ -272,7 +533,11 @@ class NodeCanaryEffect(NodeEffectService):
         return ModelHealthStatus(
             status=status,
             timestamp=datetime.now(),
-            details=details,
+            details=ModelHealthDetails(
+                service_name="canary_effect",
+                error_count=self.error_count,
+                active_connections=self.operation_count,
+            ),
         )
 
     def get_metrics(self) -> dict[str, Any]:

@@ -36,3 +36,37 @@ class UUIDService:
             return UUID(uuid_string)
         except (ValueError, TypeError):
             return None
+
+    @staticmethod
+    def generate_correlation_id() -> UUID:
+        """Generate a correlation ID (UUID4)."""
+        return uuid4()
+
+    @staticmethod
+    def ensure_uuid(value) -> UUID:
+        """Ensure value is a UUID, generate if None or invalid."""
+        if value is None:
+            return uuid4()
+        if isinstance(value, UUID):
+            return value
+        if isinstance(value, str):
+            try:
+                return UUID(value)
+            except (ValueError, TypeError):
+                return uuid4()
+        return uuid4()
+
+    @staticmethod
+    def from_string(uuid_string: str) -> UUID:
+        """Parse UUID from string, raise exception if invalid."""
+        return UUID(uuid_string)
+
+    @staticmethod
+    def generate_event_id() -> UUID:
+        """Generate an event ID (UUID4)."""
+        return uuid4()
+
+    @staticmethod
+    def generate_session_id() -> UUID:
+        """Generate a session ID (UUID4)."""
+        return uuid4()

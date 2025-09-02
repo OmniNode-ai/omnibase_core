@@ -3,15 +3,12 @@ OnexEventMetadata model.
 """
 
 # Forward reference to avoid circular imports
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.model.core.model_semver import ModelSemVer
-
-if TYPE_CHECKING:
-    from omnibase_core.model.core.model_log_entry import ModelLogEntry
 
 
 class ModelOnexEventMetadata(BaseModel):
@@ -30,8 +27,6 @@ class ModelOnexEventMetadata(BaseModel):
     registry_id: str | UUID | None = None
     trust_state: str | None = None
     ttl: int | None = None
-    # Structured logging support
-    log_entry: Optional["ModelLogEntry"] = None
     model_config = ConfigDict(extra="allow")
 
     @classmethod

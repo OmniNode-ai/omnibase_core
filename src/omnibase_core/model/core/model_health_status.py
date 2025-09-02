@@ -5,7 +5,10 @@ Structured model for health status, used by health check mixins
 and monitoring systems throughout ONEX.
 """
 
-from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_details import ModelHealthDetails
@@ -21,6 +24,25 @@ class ModelHealthStatus(BaseModel):
     status: EnumHealthStatus = Field(description="Overall health status")
     message: str | None = Field(None, description="Human-readable status message")
     timestamp: str | None = Field(None, description="Timestamp of health check")
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def validate_timestamp(cls, v: Any) -> str | None:
+        """
+        Convert datetime objects to ISO format strings.
+
+        Allows Pydantic to automatically handle datetime-to-string conversion
+        instead of requiring manual validation.
+        """
+        if v is None:
+            return None
+        if isinstance(v, datetime):
+            return v.isoformat()
+        if isinstance(v, str):
+            return v
+        # For any other type, try to convert to string
+        return str(v)
+
     details: ModelHealthDetails = Field(
         default_factory=ModelHealthDetails,
         description="Additional health details",
