@@ -1,0 +1,176 @@
+# Canary Effect - ONEX Contract
+# Effect node for canary deployment testing and external system interactions
+
+# === REQUIRED ROOT FIELDS ===
+contract_version: {major: 1, minor: 0, patch: 0}
+node_name: "canary_effect"
+node_version: {major: 1, minor: 0, patch: 0}
+contract_name: "canary_effect_contract"
+description: "Canary Effect Node - Generic external system interaction capabilities for canary deployments"
+node_type: "EFFECT"
+name: "canary_effect"
+version: {major: 1, minor: 0, patch: 0}
+input_model: "ModelCanaryEffectInput"
+output_model: "ModelCanaryEffectOutput"
+
+# === TOOL SPECIFICATION ===
+tool_specification:
+  tool_name: "canary_effect"
+  version: {major: 1, minor: 0, patch: 0}
+  description: "Canary Effect Node - Generic external system interaction capabilities for canary deployments"
+  main_tool_class: "NodeCanaryEffect"
+  container_injection: "ONEXContainer"
+  business_logic_pattern: "effect"
+
+# === DEPENDENCIES ===
+dependencies:
+  - name: "protocol_event_bus"
+    type: "protocol"
+    class_name: "ProtocolEventBus"
+    module: "omnibase_core.protocol.protocol_event_bus"
+  - name: "protocol_file_system"
+    type: "protocol"
+    class_name: "ProtocolFileSystem"
+    module: "omnibase_core.protocol.protocol_file_system"
+  - name: "protocol_logger"
+    type: "protocol"
+    class_name: "ProtocolLogger"
+    module: "omnibase_core.protocol.protocol_logger"
+
+# === EVENT TYPE CONFIGURATION ===
+event_type:
+  primary_events: ["canary_effect_operation", "canary_health_check", "canary_metrics"]
+  event_categories: ["canary", "effect", "external_systems"]
+  publish_events: true
+  subscribe_events: false
+  event_routing: "canary"
+
+# === INPUT/OUTPUT STATE ===
+input_state:
+  object_type: "object"
+  required:
+    - "operation_type"
+  properties:
+    operation_type:
+      property_type: "string"
+      enum: ["health_check", "external_api_call", "file_system_operation", "database_operation", "message_queue_operation"]
+      description: "Type of canary effect operation to perform"
+    target_system:
+      property_type: "string"
+      description: "Target system for effect operation (optional)"
+    parameters:
+      property_type: "object"
+      description: "Operation-specific parameters"
+    correlation_id:
+      property_type: "string"
+      description: "Request correlation ID (optional)"
+
+output_state:
+  object_type: "object"
+  properties:
+    operation_result:
+      property_type: "object"
+      description: "Result data from the effect operation"
+    success:
+      property_type: "boolean"
+      description: "Whether operation succeeded"
+    error_message:
+      property_type: "string"
+      description: "Error message if operation failed"
+    execution_time_ms:
+      property_type: "integer"
+      description: "Execution time in milliseconds"
+    correlation_id:
+      property_type: "string"
+      description: "Request correlation ID"
+
+# === IO OPERATIONS (Required for EFFECT nodes) ===
+io_operations:
+  - operation_type: "health_check"
+    atomic: false
+    backup_enabled: false
+    permissions: null
+    recursive: false
+    buffer_size: 1024
+    timeout_seconds: 2
+    validation_enabled: true
+  - operation_type: "external_api_call"
+    atomic: true
+    backup_enabled: false
+    permissions: null
+    recursive: false
+    buffer_size: 8192
+    timeout_seconds: 10
+    validation_enabled: true
+  - operation_type: "file_system_operation"
+    atomic: true
+    backup_enabled: true
+    permissions: "read_write"
+    recursive: false
+    buffer_size: 4096
+    timeout_seconds: 5
+    validation_enabled: true
+  - operation_type: "database_operation"
+    atomic: true
+    backup_enabled: true
+    permissions: null
+    recursive: false
+    buffer_size: 8192
+    timeout_seconds: 15
+    validation_enabled: true
+  - operation_type: "message_queue_operation"
+    atomic: false
+    backup_enabled: false
+    permissions: null
+    recursive: false
+    buffer_size: 4096
+    timeout_seconds: 8
+    validation_enabled: true
+
+# === SERVICE CONFIGURATION ===
+service_configuration:
+  is_persistent_service: false
+  default_port: 8087
+
+  # Canary effect HTTP endpoints
+  http_endpoints:
+    - path: "/health"
+      method: "GET"
+      description: "Canary effect node health status"
+    - path: "/metrics"
+      method: "GET"
+      description: "Get canary effect operation metrics"
+    - path: "/operations"
+      method: "GET"
+      description: "List supported canary effect operations"
+
+# === ACTIONS ===
+actions:
+  - name: "perform_effect"
+    description: "Perform canary effect operation with monitoring"
+    inputs: ["operation_type"]
+  - name: "health_check"
+    description: "Check canary effect node health"
+    inputs: []
+  - name: "get_metrics"
+    description: "Get performance and operational metrics"
+    inputs: []
+
+# === SUBCONTRACTS ===
+subcontracts:
+  - path: "../../subcontracts/external_dependencies_subcontract.yaml"
+    integration_field: "external_dependencies_configuration"
+  - path: "../../subcontracts/health_check_subcontract.yaml"
+    integration_field: "health_check_configuration"
+  - path: "../../subcontracts/introspection_subcontract.yaml"
+    integration_field: "introspection_configuration"
+  - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
+    integration_field: "performance_monitoring_configuration"
+  - path: "../../subcontracts/request_response_subcontract.yaml"
+    integration_field: "request_response_configuration"
+
+# === DEFINITIONS (Required by ModelContractContent) ===
+definitions:
+  models: {}
+  schemas: {}
+  responses: {}

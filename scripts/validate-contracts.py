@@ -15,6 +15,7 @@ import importlib
 import inspect
 import os
 import sys
+import yaml
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union, get_args, get_origin, get_type_hints
@@ -51,6 +52,9 @@ class ContractValidator:
 
         # Validate canary nodes
         success &= self._validate_canary_nodes()
+
+        # NEW: Validate YAML contract files
+        success &= self._validate_yaml_contracts()
 
         # Validate core services
         success &= self._validate_core_services()
@@ -98,6 +102,136 @@ class ContractValidator:
                 success = False
 
         return success
+
+    def _validate_yaml_contracts(self) -> bool:
+        """Validate that YAML contracts deserialize to their backing Pydantic models."""
+        print("\n📄 Validating YAML Contract Deserialization...")
+
+        yaml_contracts = [
+            {
+                "name": "canary_compute",
+                "yaml_path": "src/omnibase_core/nodes/canary/canary_compute/v1_0_0/contract.yaml",
+                "model_class": "ModelContractCompute",
+                "model_module": "omnibase_core.core.contracts.model_contract_compute",
+            },
+            {
+                "name": "canary_effect",
+                "yaml_path": "src/omnibase_core/nodes/canary/canary_effect/v1_0_0/contract.yaml",
+                "model_class": "ModelContractEffect",
+                "model_module": "omnibase_core.core.contracts.model_contract_effect",
+            },
+            {
+                "name": "canary_gateway",
+                "yaml_path": "src/omnibase_core/nodes/canary/canary_gateway/v1_0_0/contract.yaml",
+                "model_class": "ModelContractGateway",
+                "model_module": "omnibase_core.core.contracts.model_contract_gateway",
+            },
+            {
+                "name": "canary_orchestrator",
+                "yaml_path": "src/omnibase_core/nodes/canary/canary_orchestrator/v1_0_0/contract.yaml",
+                "model_class": "ModelContractOrchestrator",
+                "model_module": "omnibase_core.core.contracts.model_contract_orchestrator",
+            },
+            {
+                "name": "canary_reducer",
+                "yaml_path": "src/omnibase_core/nodes/canary/canary_reducer/v1_0_0/contract.yaml",
+                "model_class": "ModelContractReducer",
+                "model_module": "omnibase_core.core.contracts.model_contract_reducer",
+            },
+        ]
+
+        success = True
+        for contract in yaml_contracts:
+            result = self._validate_yaml_contract(contract)
+            self.results.append(result)
+            if not result.is_valid:
+                success = False
+
+        return success
+
+    def _validate_yaml_contract(self, contract_info: Dict) -> ContractValidationResult:
+        """Validate a single YAML contract file against its Pydantic model."""
+        self.total_nodes += 1
+        errors = []
+        warnings = []
+        name = contract_info["name"]
+
+        try:
+            # Load YAML file
+            yaml_path = Path(contract_info["yaml_path"])
+            if not yaml_path.exists():
+                errors.append(f"YAML contract file not found: {yaml_path}")
+                print(f"   ❌ {name}: YAML file missing")
+                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+
+            with open(yaml_path, "r", encoding="utf-8") as f:
+                yaml_data = yaml.safe_load(f)
+
+            if not yaml_data:
+                errors.append("YAML file is empty or invalid")
+                print(f"   ❌ {name}: Empty YAML")
+                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+
+            # Import the backing Pydantic model
+            try:
+                module = importlib.import_module(contract_info["model_module"])
+                model_class = getattr(module, contract_info["model_class"])
+            except ImportError as e:
+                errors.append(f"Failed to import backing model: {e}")
+                print(f"   ❌ {name}: Model import failed")
+                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+            except AttributeError as e:
+                errors.append(f"Model class not found: {e}")
+                print(f"   ❌ {name}: Model class missing")
+                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+
+            # Test YAML → Model deserialization
+            try:
+                model_instance = model_class.model_validate(yaml_data)
+                print(f"   ✅ {name}: YAML→Model deserialization successful")
+            except Exception as e:
+                errors.append(f"YAML deserialization failed: {type(e).__name__}: {str(e)}")
+                print(f"   ❌ {name}: Deserialization failed - {type(e).__name__}")
+                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+
+            # Test Model → dict serialization (round-trip)
+            try:
+                serialized = model_instance.model_dump()
+                if not isinstance(serialized, dict):
+                    warnings.append("Model serialization doesn't return dict")
+            except Exception as e:
+                warnings.append(f"Model serialization warning: {str(e)}")
+
+            # Validate essential contract fields are present in YAML
+            essential_fields = ["node_name", "node_type", "version", "contract_version"]
+            missing_fields = []
+            for field in essential_fields:
+                if field not in yaml_data:
+                    missing_fields.append(field)
+
+            if missing_fields:
+                warnings.append(f"Missing essential fields: {', '.join(missing_fields)}")
+
+            # Check for modern ONEX compliance fields
+            modern_fields = ["service_resolution", "validation_rules", "definitions"]
+            missing_modern = []
+            for field in modern_fields:
+                if field not in yaml_data:
+                    missing_modern.append(field)
+
+            if missing_modern:
+                warnings.append(f"Missing modern ONEX fields: {', '.join(missing_modern)}")
+
+            is_valid = len(errors) == 0
+            if is_valid:
+                self.valid_nodes += 1
+
+            return ContractValidationResult(name, "yaml_contract", is_valid, errors, warnings)
+
+        except Exception as e:
+            errors.append(f"Unexpected error during YAML validation: {str(e)}")
+            print(f"   ❌ {name}: Validation error")
+            return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
 
     def _validate_core_services(self) -> bool:
         """Validate core service contracts."""

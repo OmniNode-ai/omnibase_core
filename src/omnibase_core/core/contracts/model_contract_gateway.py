@@ -86,7 +86,9 @@ class ModelContractGateway(ModelContractBase):
             )
 
         # Protocol translation validation
-        if self.protocol_translation and not isinstance(self.protocol_translation, dict):
+        if self.protocol_translation and not isinstance(
+            self.protocol_translation, dict
+        ):
             raise ValueError("protocol_translation must be a dictionary mapping")
 
     class Config:
