@@ -10,7 +10,9 @@
       "Bash(poetry:*)",
       "mcp__serena__think_about_collected_information",
       "mcp__archon__perform_rag_query",
-      "mcp__archon__create_version"
+      "mcp__archon__create_version",
+      "mcp__archon__search_code_examples",
+      "mcp__archon__assess_code_quality"
     ],
     "deny": [],
     "ask": []

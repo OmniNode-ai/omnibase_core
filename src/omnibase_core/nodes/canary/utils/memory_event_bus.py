@@ -29,7 +29,9 @@ class MemoryEventBus:
         self._is_connected = True
 
     def publish(
-        self, event_or_envelope: ModelEventEnvelope | ModelOnexEvent | dict, correlation_id: str | None = None
+        self,
+        event_or_envelope: ModelEventEnvelope | ModelOnexEvent | dict,
+        correlation_id: str | None = None,
     ) -> bool:
         """
         Publish an event to all matching subscribers.
@@ -48,19 +50,23 @@ class MemoryEventBus:
             # Determine event type for routing and extract correlation_id if not provided
             event_type = None
             extracted_correlation_id = correlation_id
-            
+
             if isinstance(event_or_envelope, ModelEventEnvelope):
                 if hasattr(event_or_envelope, "payload") and hasattr(
                     event_or_envelope.payload, "event_type"
                 ):
                     event_type = event_or_envelope.payload.event_type
                 # Try to extract correlation_id from envelope if not provided
-                if not extracted_correlation_id and hasattr(event_or_envelope, "correlation_id"):
+                if not extracted_correlation_id and hasattr(
+                    event_or_envelope, "correlation_id"
+                ):
                     extracted_correlation_id = event_or_envelope.correlation_id
             elif isinstance(event_or_envelope, ModelOnexEvent):
                 event_type = event_or_envelope.event_type
                 # Try to extract correlation_id from event if not provided
-                if not extracted_correlation_id and hasattr(event_or_envelope, "correlation_id"):
+                if not extracted_correlation_id and hasattr(
+                    event_or_envelope, "correlation_id"
+                ):
                     extracted_correlation_id = event_or_envelope.correlation_id
             elif isinstance(event_or_envelope, dict):
                 event_type = event_or_envelope.get("event_type", "unknown")
@@ -76,16 +82,34 @@ class MemoryEventBus:
                             try:
                                 subscriber(event_or_envelope)
                             except Exception as e:
-                                correlation_context = f" [correlation_id={extracted_correlation_id}]" if extracted_correlation_id else ""
-                                self.logger.error(f"Error in subscriber: {e} [event_bus=memory]{correlation_context}")
+                                correlation_context = (
+                                    f" [correlation_id={extracted_correlation_id}]"
+                                    if extracted_correlation_id
+                                    else ""
+                                )
+                                self.logger.error(
+                                    f"Error in subscriber: {e} [event_bus=memory]{correlation_context}"
+                                )
 
-            correlation_context = f" [correlation_id={extracted_correlation_id}]" if extracted_correlation_id else ""
-            self.logger.debug(f"Published event: {event_type} [event_bus=memory]{correlation_context}")
+            correlation_context = (
+                f" [correlation_id={extracted_correlation_id}]"
+                if extracted_correlation_id
+                else ""
+            )
+            self.logger.debug(
+                f"Published event: {event_type} [event_bus=memory]{correlation_context}"
+            )
             return True
 
         except Exception as e:
-            correlation_context = f" [correlation_id={extracted_correlation_id}]" if extracted_correlation_id else ""
-            self.logger.error(f"Failed to publish event: {e} [event_bus=memory]{correlation_context}")
+            correlation_context = (
+                f" [correlation_id={extracted_correlation_id}]"
+                if extracted_correlation_id
+                else ""
+            )
+            self.logger.error(
+                f"Failed to publish event: {e} [event_bus=memory]{correlation_context}"
+            )
             return False
 
     def subscribe(self, callback: Callable, pattern: str = "*") -> bool:
@@ -104,7 +128,9 @@ class MemoryEventBus:
             self.logger.debug(f"Subscribed to pattern: {pattern} [event_bus=memory]")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to subscribe to {pattern}: {e} [event_bus=memory]")
+            self.logger.error(
+                f"Failed to subscribe to {pattern}: {e} [event_bus=memory]"
+            )
             return False
 
     def unsubscribe(self, callback: Callable, pattern: str) -> bool:
@@ -122,11 +148,15 @@ class MemoryEventBus:
             if pattern in self._subscribers:
                 if callback in self._subscribers[pattern]:
                     self._subscribers[pattern].remove(callback)
-                    self.logger.debug(f"Unsubscribed from pattern: {pattern} [event_bus=memory]")
+                    self.logger.debug(
+                        f"Unsubscribed from pattern: {pattern} [event_bus=memory]"
+                    )
                     return True
             return False
         except Exception as e:
-            self.logger.error(f"Failed to unsubscribe from {pattern}: {e} [event_bus=memory]")
+            self.logger.error(
+                f"Failed to unsubscribe from {pattern}: {e} [event_bus=memory]"
+            )
             return False
 
     def is_connected(self) -> bool:
