@@ -19,9 +19,9 @@ isolation_level: "instance_based"
 pattern_config:
   supported_workflows:
     - "DATA_ANALYSIS"
-    - "REPORT_GENERATION" 
+    - "REPORT_GENERATION"
     - "DOCUMENT_REGENERATION"
-  
+
   features:
     instance_isolation: true
     concurrent_processing: true
@@ -29,7 +29,7 @@ pattern_config:
     registry_system: true
     state_management: true
     routing_optimization: true
-  
+
   performance_requirements:
     max_concurrent_workflows: 100
     single_operation_max_ms: 30000
@@ -43,17 +43,17 @@ components:
     class_name: "ReducerPatternEngine"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine"
     description: "Main orchestration engine for multi-workflow processing"
-    
+
   router:
     class_name: "WorkflowRouter"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router"
     description: "Hash-based workflow routing with load balancing"
-    
+
   registry:
     class_name: "ReducerSubreducerRegistry"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry"
     description: "Manual subreducer registration and management"
-    
+
   metrics:
     class_name: "ReducerMetricsCollector"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.metrics"
@@ -70,7 +70,7 @@ subreducers:
       - "correlation_analysis"
       - "trend_analysis"
       - "distribution_analysis"
-      
+
   report_generation:
     class_name: "ReducerReportGenerationSubreducer"
     module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation"
@@ -78,10 +78,10 @@ subreducers:
     capabilities:
       - "json_output"
       - "html_output"
-      - "csv_output" 
+      - "csv_output"
       - "txt_output"
       - "markdown_output"
-      
+
   document_regeneration:
     class_name: "ReducerDocumentRegenerationSubreducer"
     module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration"
@@ -95,43 +95,43 @@ subreducers:
 state_management:
   state_model: "omnibase_core.patterns.reducer_pattern_engine.models.state_transitions.WorkflowStateModel"
   validator: "omnibase_core.patterns.reducer_pattern_engine.models.state_transitions.StateTransitionValidator"
-  
+
   states:
     - name: "PENDING"
       description: "Workflow awaiting processing"
       initial: true
-      
-    - name: "ROUTING" 
+
+    - name: "ROUTING"
       description: "Workflow being routed to appropriate subreducer"
-      
+
     - name: "PROCESSING"
       description: "Workflow being processed by subreducer"
-      
+
     - name: "COMPLETED"
       description: "Workflow processing completed successfully"
       final: true
-      
+
     - name: "FAILED"
       description: "Workflow processing failed"
       final: true
-      
+
   transitions:
     - from: "PENDING"
       to: "ROUTING"
       trigger: "route_workflow"
-      
+
     - from: "ROUTING"
-      to: "PROCESSING" 
+      to: "PROCESSING"
       trigger: "start_processing"
-      
+
     - from: "PROCESSING"
       to: "COMPLETED"
       trigger: "complete_workflow"
-      
+
     - from: "PROCESSING"
       to: "FAILED"
       trigger: "fail_workflow"
-      
+
     - from: ["ROUTING", "PROCESSING"]
       to: "FAILED"
       trigger: "error_occurred"
@@ -142,9 +142,9 @@ dependencies:
     type: "protocol"
     class_name: "ModelONEXContainer"
     module: "omnibase_core.core.model_onex_container"
-    
+
   - name: "logger"
-    type: "protocol" 
+    type: "protocol"
     class_name: "ProtocolLogger"
     module: "omnibase.protocols.logger"
 
@@ -159,7 +159,7 @@ validation_rules:
   input_validation_enabled: true
   output_validation_enabled: true
   performance_validation_enabled: true
-  
+
   constraint_definitions:
     max_workflow_payload_size: "10MB"
     required_workflow_fields: "workflow_type,instance_id"

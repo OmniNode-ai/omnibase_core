@@ -49,11 +49,11 @@ from omnibase_core.model.workflow.model_workflow_execution_state import ModelWor
 
 class WorkflowRouter:
     """Phase 1 workflow router for document regeneration workflows."""
-    
+
     def __init__(self, container: ModelOnexContainer):
         self.container = container
         self._subreducer_registry = {}
-        
+
     def route_workflow(
         self,
         workflow_type: EnumWorkflowType,
@@ -61,13 +61,13 @@ class WorkflowRouter:
         workflow_data: Dict[str, Any]
     ) -> "ReducerDocumentRegenerationSubreducer":
         """Route workflow to appropriate subreducer instance."""
-        
+
         # Phase 1: Simple routing to document regeneration subreducer
         if workflow_type != EnumWorkflowType.DOCUMENT_REGENERATION:
             raise NotImplementedError(f"Phase 1 only supports DOCUMENT_REGENERATION, got {workflow_type}")
-            
+
         route_key = self._calculate_route_key(workflow_type, instance_id)
-        
+
         # For Phase 1, always return the same subreducer instance
         if "document_regeneration" not in self._subreducer_registry:
             from omnibase_core.patterns.subreducers.reducer_document_regeneration_subreducer import (
@@ -76,9 +76,9 @@ class WorkflowRouter:
             self._subreducer_registry["document_regeneration"] = (
                 ReducerDocumentRegenerationSubreducer(self.container)
             )
-            
+
         return self._subreducer_registry["document_regeneration"]
-    
+
     def _calculate_route_key(self, workflow_type: EnumWorkflowType, instance_id: str) -> str:
         """Calculate consistent routing key for workflow instance."""
         combined_key = f"{workflow_type.value}:{instance_id}"
@@ -101,44 +101,44 @@ from omnibase_core.patterns.models.model_workflow_context import ModelWorkflowCo
 
 class ReducerDocumentRegenerationSubreducer:
     """Phase 1 subreducer for document regeneration workflows."""
-    
+
     def __init__(self, container: ModelOnexContainer):
         self.container = container
         self.correlation_id = str(uuid4())
-        
+
     async def process_workflow(
-        self, 
+        self,
         workflow_context: ModelWorkflowContext
     ) -> ModelSubreducerResult:
         """Process document regeneration workflow."""
-        
+
         # Phase 1: Simple document processing logic
         # Extract document data from workflow context
         document_data = workflow_context.data.get("document", {})
-        
+
         if not document_data:
             raise ValueError("No document data provided in workflow context")
-            
+
         # Process document regeneration
         processed_document = await self._regenerate_document(document_data)
-        
+
         return ModelSubreducerResult(
             success=True,
             result_data={"regenerated_document": processed_document},
             execution_time_ms=workflow_context.execution_time_ms,
             correlation_id=self.correlation_id
         )
-    
+
     async def _regenerate_document(self, document_data: Dict[str, Any]) -> Dict[str, Any]:
         """Core document regeneration logic."""
-        
+
         # Phase 1: Placeholder implementation
         # In real implementation, this would integrate with:
         # - Document analysis services
         # - Content generation models  
         # - Template engines
         # - Version control systems
-        
+
         return {
             "original_title": document_data.get("title", "Unknown"),
             "regenerated_content": f"Regenerated: {document_data.get('content', '')}",
@@ -166,26 +166,26 @@ from omnibase_core.patterns.models.model_reducer_pattern_output import ModelRedu
 class ReducerPatternEngine(NodeReducerService):
     """
     Phase 1 Reducer Pattern Engine - Core Demo Implementation.
-    
+
     ONEX four-node compliant engine with minimal viable functionality:
     - WorkflowRouter for consistent routing
     - Single subreducer (ReducerDocumentRegenerationSubreducer)
     - Basic instance isolation
     - ModelOnexContainer integration
     """
-    
+
     def __init__(self, container: ModelOnexContainer):
         super().__init__(container)
-        
+
         # Initialize Phase 1 components
         self.workflow_router = WorkflowRouter(container)
-        
+
         # Load configuration (Phase 1 minimal)
         self._load_phase1_config()
-        
+
     async def reduce(self, reducer_input: ModelReducerPatternInput) -> ModelReducerPatternOutput:
         """Main reduction entry point for workflow processing."""
-        
+
         try:
             # Create workflow context from input
             workflow_context = ModelWorkflowContext(
@@ -194,17 +194,17 @@ class ReducerPatternEngine(NodeReducerService):
                 data=reducer_input.data,
                 execution_time_ms=0  # Will be calculated
             )
-            
+
             # Route to appropriate subreducer
             subreducer = self.workflow_router.route_workflow(
                 workflow_context.workflow_type,
-                workflow_context.instance_id, 
+                workflow_context.instance_id,
                 workflow_context.data
             )
-            
+
             # Process workflow
             result = await subreducer.process_workflow(workflow_context)
-            
+
             return ModelReducerPatternOutput(
                 success=result.success,
                 result_data=result.result_data,
@@ -212,7 +212,7 @@ class ReducerPatternEngine(NodeReducerService):
                 instance_id=workflow_context.instance_id,
                 execution_time_ms=result.execution_time_ms
             )
-            
+
         except Exception as e:
             return ModelReducerPatternOutput(
                 success=False,
@@ -221,7 +221,7 @@ class ReducerPatternEngine(NodeReducerService):
                 instance_id=reducer_input.instance_id,
                 execution_time_ms=0
             )
-    
+
     def _load_phase1_config(self) -> None:
         """Load Phase 1 minimal configuration."""
         # Phase 1: Minimal configuration
@@ -243,7 +243,7 @@ from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 
 class ModelReducerPatternInput(BaseModel):
     """Input model for Reducer Pattern Engine."""
-    
+
     workflow_type: EnumWorkflowType = Field(..., description="Type of workflow to process")
     instance_id: str = Field(..., description="Unique workflow instance identifier")  
     data: Dict[str, Any] = Field(default_factory=dict, description="Workflow data payload")
@@ -258,7 +258,7 @@ from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 
 class ModelReducerPatternOutput(BaseModel):
     """Output model for Reducer Pattern Engine."""
-    
+
     success: bool = Field(..., description="Whether workflow processing succeeded")
     result_data: Optional[Dict[str, Any]] = Field(None, description="Workflow result data")
     error_message: Optional[str] = Field(None, description="Error message if processing failed")
@@ -276,7 +276,7 @@ from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 
 class ModelWorkflowContext(BaseModel):
     """Context data for workflow processing."""
-    
+
     workflow_type: EnumWorkflowType = Field(..., description="Workflow type")
     instance_id: str = Field(..., description="Instance identifier")
     data: Dict[str, Any] = Field(..., description="Workflow data")
@@ -290,7 +290,7 @@ from pydantic import BaseModel, Field
 
 class ModelSubreducerResult(BaseModel):
     """Result model for subreducer processing."""
-    
+
     success: bool = Field(..., description="Whether processing succeeded")
     result_data: Dict[str, Any] = Field(..., description="Processing result data")
     execution_time_ms: int = Field(..., description="Processing time in milliseconds")
@@ -343,7 +343,7 @@ tests/integration/patterns/                  # Integration tests
 # Follow existing patterns from infrastructure_service_bases.py
 def __init__(self, container: ModelOnexContainer):
     super().__init__(container)  # Handles all ONEX boilerplate
-    
+
     # Load services from container  
     self.event_bus = container.get_service("ProtocolEventBus")
     self.metadata_loader = container.get_service("ProtocolSchemaLoader")
@@ -390,7 +390,7 @@ emit_log_event(
 # Match NodeReducer async patterns
 async def reduce(self, reducer_input: ModelReducerPatternInput) -> ModelReducerPatternOutput:
     """Follow existing NodeReducer.reduce() signature patterns."""
-    
+
     # Use existing async patterns from NodeReducer
     async with self.container.get_async_context() as context:
         result = await self._process_with_context(context, reducer_input)
@@ -416,21 +416,21 @@ class TestWorkflowRouter:
         """Test routing document regeneration workflows."""
         container = Mock()
         router = WorkflowRouter(container)
-        
+
         subreducer = router.route_workflow(
             EnumWorkflowType.DOCUMENT_REGENERATION,
-            "test-instance-123", 
+            "test-instance-123",
             {"document": {"title": "Test Doc"}}
         )
-        
+
         assert subreducer is not None
         assert hasattr(subreducer, 'process_workflow')
-    
+
     def test_unsupported_workflow_type_raises_error(self):
         """Test that unsupported workflow types raise NotImplementedError."""
-        container = Mock() 
+        container = Mock()
         router = WorkflowRouter(container)
-        
+
         with pytest.raises(NotImplementedError):
             router.route_workflow(
                 EnumWorkflowType.CODE_ANALYSIS,  # Not supported in Phase 1
@@ -458,7 +458,7 @@ class TestDocumentRegenerationSubreducer:
         """Test successful document workflow processing."""
         container = Mock()
         subreducer = ReducerDocumentRegenerationSubreducer(container)
-        
+
         context = ModelWorkflowContext(
             workflow_type=EnumWorkflowType.DOCUMENT_REGENERATION,
             instance_id="test-123",
@@ -469,25 +469,25 @@ class TestDocumentRegenerationSubreducer:
                 }
             }
         )
-        
+
         result = await subreducer.process_workflow(context)
-        
+
         assert result.success is True
         assert "regenerated_document" in result.result_data
         assert result.correlation_id is not None
-    
-    @pytest.mark.asyncio 
+
+    @pytest.mark.asyncio
     async def test_process_workflow_no_document_data(self):
         """Test workflow processing with missing document data."""
         container = Mock()
         subreducer = ReducerDocumentRegenerationSubreducer(container)
-        
+
         context = ModelWorkflowContext(
             workflow_type=EnumWorkflowType.DOCUMENT_REGENERATION,
-            instance_id="test-123", 
+            instance_id="test-123",
             data={}  # No document data
         )
-        
+
         with pytest.raises(ValueError, match="No document data provided"):
             await subreducer.process_workflow(context)
 ```
@@ -512,22 +512,22 @@ class TestReducerPatternIntegration:
         container = Mock()
         # Configure container mocks for ONEX services
         container.get_service.return_value = Mock()
-        
+
         engine = ReducerPatternEngine(container)
-        
+
         input_data = ModelReducerPatternInput(
             workflow_type=EnumWorkflowType.DOCUMENT_REGENERATION,
             instance_id="integration-test-123",
             data={
                 "document": {
-                    "title": "Integration Test Document", 
+                    "title": "Integration Test Document",
                     "content": "Test content for integration"
                 }
             }
         )
-        
+
         result = await engine.reduce(input_data)
-        
+
         assert result.success is True
         assert result.workflow_type == EnumWorkflowType.DOCUMENT_REGENERATION
         assert result.instance_id == "integration-test-123"
@@ -586,24 +586,24 @@ from pydantic import BaseModel, Field
 
 class ExampleClass:
     """Comprehensive class documentation."""
-    
+
     def __init__(self, container: ModelOnexContainer) -> None:
         """Initialize with proper type hints."""
         self.container = container
-    
+
     async def process_data(
-        self, 
+        self,
         input_data: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """
         Process input data with comprehensive documentation.
-        
+
         Args:
             input_data: Dictionary containing workflow data
-            
+
         Returns:
             Processed data dictionary, or None if processing failed
-            
+
         Raises:
             ValueError: If input_data is invalid
             OnexError: If processing fails
@@ -673,13 +673,13 @@ from omnibase_core.patterns.models.model_workflow_context import ModelWorkflowCo
 # Demo script showing Phase 1 capabilities
 async def demo_phase1_reducer_pattern():
     """Demonstrate Phase 1 Reducer Pattern Engine capabilities."""
-    
+
     # Initialize container (mock for demo)
     container = create_demo_container()
-    
+
     # Create engine
     engine = ReducerPatternEngine(container)
-    
+
     # Demo workflow input
     demo_input = ModelReducerPatternInput(
         workflow_type=EnumWorkflowType.DOCUMENT_REGENERATION,
@@ -693,11 +693,11 @@ async def demo_phase1_reducer_pattern():
             }
         }
     )
-    
+
     # Process workflow
     print("🚀 Processing Phase 1 workflow...")
     result = await engine.reduce(demo_input)
-    
+
     # Display results
     if result.success:
         print("✅ Workflow processed successfully!")

@@ -16,14 +16,16 @@ from datetime import datetime
 from typing import Any, Dict, Optional, TypeVar
 
 from omnibase.protocols.container import (
-    ProtocolServiceRegistry as ProtocolServiceRegistryConfig,
-    ProtocolServiceInstance,
-    ProtocolServiceRegistryStatus,
     ProtocolDependencyGraph,
+    ProtocolServiceInstance,
     ProtocolServiceRegistration,
 )
-
-# Real protocols imported from omnibase.protocols.container
+from omnibase.protocols.container import (
+    ProtocolServiceRegistry as ProtocolServiceRegistryConfig,
+)
+from omnibase.protocols.container import (
+    ProtocolServiceRegistryStatus,
+)
 
 from omnibase_core.config.unified_config_manager import get_config
 from omnibase_core.protocol.protocol_database_connection import (
@@ -31,6 +33,9 @@ from omnibase_core.protocol.protocol_database_connection import (
 )
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
+
+# Real protocols imported from omnibase.protocols.container
+
 
 T = TypeVar("T")
 TInterface = TypeVar("TInterface")

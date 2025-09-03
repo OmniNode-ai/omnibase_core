@@ -11,17 +11,17 @@ Exports:
 """
 
 from .model_contract_reducer_pattern_engine import (
-    ModelContractReducerPatternEngine,
-    ModelPatternConfiguration,
     ModelComponentSpecification,
-    ModelSubreducerSpecification,
-    ModelStateConfiguration,
+    ModelContractReducerPatternEngine,
     ModelDependencySpecification,
+    ModelPatternConfiguration,
+    ModelStateConfiguration,
+    ModelSubreducerSpecification,
 )
 
 __all__ = [
     "ModelContractReducerPatternEngine",
-    "ModelPatternConfiguration", 
+    "ModelPatternConfiguration",
     "ModelComponentSpecification",
     "ModelSubreducerSpecification",
     "ModelStateConfiguration",

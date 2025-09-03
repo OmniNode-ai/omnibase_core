@@ -47,7 +47,7 @@ The system integrates with existing ONEX components:
 ```python
 class WorkflowRouter:
     """Top-level router for workflow instances by type and ID."""
-    
+
     def route_workflow(
         self,
         workflow_type: EnumWorkflowType,
@@ -68,7 +68,7 @@ class WorkflowRouter:
 ```python
 class SubreducerFramework:
     """Framework for FSM logic delegation to specialized reducers."""
-    
+
     async def delegate_to_subreducer(
         self,
         workflow_type: EnumWorkflowType,
@@ -89,7 +89,7 @@ class SubreducerFramework:
 ```python
 class InstanceIsolationManager:
     """Ensures workflow instances don't interfere with each other."""
-    
+
     def create_isolated_context(
         self,
         instance_id: str,
@@ -186,9 +186,9 @@ src/omnibase_core/patterns/contracts/
 ├── reducer_pattern_engine.yaml       # Main contract
 ├── subreducers/
 │   ├── document_regeneration_fsm.yaml    # FSM definitions
-│   ├── code_analysis_fsm.yaml            
-│   ├── pr_creation_fsm.yaml              
-│   └── multi_modal_fsm.yaml              
+│   ├── code_analysis_fsm.yaml  
+│   ├── pr_creation_fsm.yaml  
+│   └── multi_modal_fsm.yaml  
 ```
 
 **Integration Features:**
@@ -247,7 +247,7 @@ async def route_to_subreducer(self, route_key: str) -> SubreducerInstance:
     available_instances = await self.get_available_instances(workflow_type)
     if not available_instances:
         raise NoAvailableSubreducersError()
-    
+
     # Use consistent hashing for routing
     selected_instance = self.consistent_hash_selector.select(
         route_key, available_instances
@@ -262,7 +262,7 @@ Each workflow instance runs in an isolated context:
 ```python
 class IsolationContext:
     """Isolated execution context for workflow instances."""
-    
+
     def __init__(self, instance_id: str, workflow_type: EnumWorkflowType):
         self.instance_id = instance_id
         self.workflow_type = workflow_type
@@ -270,11 +270,11 @@ class IsolationContext:
         self.resource_limits = ResourceLimits.for_workflow_type(workflow_type)
         self.state_store = IsolatedStateStore(instance_id)
         self.metrics_collector = MetricsCollector(instance_id)
-        
+
     async def __aenter__(self):
         await self.acquire_resources()
         return self
-        
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.cleanup_resources()
 ```
@@ -292,22 +292,22 @@ class SubreducerFramework:
         fsm_definition: FSMDefinition
     ) -> WorkflowStepResult:
         """Execute single workflow step using FSM logic."""
-        
+
         # Validate current state transition
         next_state = fsm_definition.get_next_state(
-            current_state.status, 
+            current_state.status,
             input_data
         )
-        
+
         if not next_state:
             raise InvalidStateTransitionError()
-        
+
         # Execute subreducer logic for this transition
         subreducer = self.get_subreducer(current_state.workflow_type)
         result = await subreducer.process_transition(
             current_state, next_state, input_data
         )
-        
+
         return WorkflowStepResult(
             previous_state=current_state.status,
             new_state=next_state,
@@ -323,41 +323,41 @@ The engine integrates with existing ONEX components:
 ```python
 class NodeReducerPatternEngine(NodeReducerService):
     """ONEX node implementation of Reducer Pattern Engine."""
-    
+
     def __init__(self, container: ONEXContainer):
         super().__init__(container)
-        
+
         # Initialize core components
         self.workflow_router = WorkflowRouter(container)
         self.subreducer_framework = SubreducerFramework(container)
         self.instance_manager = InstanceIsolationManager(container)
-        
+
         # Load contract and configuration
         self.contract_model = self._load_contract_model()
-        
+
         # Initialize monitoring (following canary patterns)
         self.metrics_collector = get_metrics_collector("reducer_pattern_engine")
         self.circuit_breaker = get_circuit_breaker("workflow_routing", config)
-        
+
     async def reduce(
-        self, 
+        self,
         reducer_input: ModelReducerInput
     ) -> ModelReducerOutput:
         """Main reduction entry point for workflow processing."""
-        
+
         # Parse workflow routing information
         workflow_data = WorkflowRoutingData.model_validate(reducer_input.data)
-        
+
         # Route to appropriate workflow handler
         with self.instance_manager.create_isolated_context(
-            workflow_data.instance_id, 
+            workflow_data.instance_id,
             workflow_data.workflow_type
         ) as context:
-            
+
             result = await self.subreducer_framework.process_workflow(
                 workflow_data, context
             )
-            
+
             return ModelReducerOutput(
                 data=result.model_dump(),
                 metadata={

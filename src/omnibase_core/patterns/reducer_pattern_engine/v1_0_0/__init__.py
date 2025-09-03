@@ -1,18 +1,18 @@
 """Reducer Pattern Engine v1.0.0 - Phase 1 Core Implementation."""
 
-from .engine import ReducerPatternEngine
-from .router import WorkflowRouter
 from .contracts import (
-    WorkflowRequest,
-    WorkflowResponse,
     RoutingDecision,
     SubreducerResult,
+    WorkflowRequest,
+    WorkflowResponse,
 )
+from .engine import ReducerPatternEngine
+from .router import WorkflowRouter
 
 __all__ = [
     "ReducerPatternEngine",
     "WorkflowRouter",
-    "WorkflowRequest", 
+    "WorkflowRequest",
     "WorkflowResponse",
     "RoutingDecision",
     "SubreducerResult",

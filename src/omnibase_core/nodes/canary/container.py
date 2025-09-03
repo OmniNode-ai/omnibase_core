@@ -90,7 +90,9 @@ def _setup_infrastructure_dependencies(container: ModelONEXContainer):
     _register_service(container, "ProtocolSchemaLoader", schema_loader)
 
 
-def _register_service(container: ModelONEXContainer, service_name: str, service_instance):
+def _register_service(
+    container: ModelONEXContainer, service_name: str, service_instance
+):
     """Register a service in the container for later retrieval."""
     # Store in the container's provider registry
     if not hasattr(container, "_service_registry"):
@@ -128,18 +130,25 @@ def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
         # Input validation
         if protocol_type_or_name is None:
             raise ValueError("protocol_type_or_name cannot be None")
-        
+
         if isinstance(protocol_type_or_name, str):
             if not protocol_type_or_name.strip():
                 raise ValueError("protocol_type_or_name cannot be empty string")
             service_name = protocol_type_or_name.strip()
-        elif not (hasattr(protocol_type_or_name, "__name__") or callable(protocol_type_or_name)):
-            raise ValueError(f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}")
+        elif not (
+            hasattr(protocol_type_or_name, "__name__")
+            or callable(protocol_type_or_name)
+        ):
+            raise ValueError(
+                f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}"
+            )
 
         # Validate service_name if provided
         if service_name is not None:
             if not isinstance(service_name, str):
-                raise ValueError(f"service_name must be string or None, got {type(service_name)}")
+                raise ValueError(
+                    f"service_name must be string or None, got {type(service_name)}"
+                )
             if not service_name.strip():
                 raise ValueError("service_name cannot be empty string")
             service_name = service_name.strip()
@@ -160,17 +169,20 @@ def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
 
         # Generate helpful error message
         available_services = list(self._service_registry.keys())
-        search_term = service_name or getattr(protocol_type_or_name, "__name__", str(protocol_type_or_name))
-        
+        search_term = service_name or getattr(
+            protocol_type_or_name, "__name__", str(protocol_type_or_name)
+        )
+
         # Suggest similar service names if available
         suggestions = []
         if available_services:
             search_lower = search_term.lower()
             suggestions = [
-                svc for svc in available_services 
+                svc
+                for svc in available_services
                 if search_lower in svc.lower() or svc.lower().startswith(search_lower)
             ]
-        
+
         error_msg = f"Service '{search_term}' not found in infrastructure container."
         if available_services:
             error_msg += f" Available services: {available_services}"
@@ -178,7 +190,7 @@ def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
             error_msg += f". Did you mean: {suggestions}?"
         else:
             error_msg += " No services are currently registered."
-            
+
         raise KeyError(error_msg)
 
     # Bind the method to the container instance

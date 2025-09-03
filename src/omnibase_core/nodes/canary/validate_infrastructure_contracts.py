@@ -695,7 +695,9 @@ class ContractValidator:
 
             # Check container injection
             if tool_spec.get("container_injection") == "ModelONEXContainer":
-                spec_validations.append("✅ Correct container_injection: ModelONEXContainer")
+                spec_validations.append(
+                    "✅ Correct container_injection: ModelONEXContainer"
+                )
             else:
                 spec_validations.append(
                     f"❌ Invalid container_injection: {tool_spec.get('container_injection')}",
