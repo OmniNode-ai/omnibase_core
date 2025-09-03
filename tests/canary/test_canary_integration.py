@@ -1601,7 +1601,19 @@ async def test_full_canary_deployment_workflow():
         )
 
         start_time = time.time()
-        response = await registry.send_message(workflow_message)
+        
+        # Add timeout handling for async operation
+        try:
+            response = await asyncio.wait_for(
+                registry.send_message(workflow_message),
+                timeout=60.0  # 60 second timeout for integration test
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Integration test timeout: Workflow execution exceeded 60 seconds. "
+                "This may indicate a deadlock, infinite loop, or performance issue."
+            )
+        
         execution_time = int((time.time() - start_time) * 1000)
 
         # Analyze results
@@ -1667,7 +1679,15 @@ async def test_infrastructure_health_check_workflow():
             correlation_id="integration-test-health-001",
         )
 
-        response = await registry.send_message(health_workflow_message)
+        try:
+            response = await asyncio.wait_for(
+                registry.send_message(health_workflow_message),
+                timeout=30.0  # 30 second timeout for health check
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Health check timeout: Infrastructure health check exceeded 30 seconds"
+            )
 
         if response.success:
             health_result = response.result["result"]
@@ -1725,7 +1745,15 @@ async def test_gateway_message_routing():
             correlation_id="gateway-test-broadcast-001",
         )
 
-        broadcast_response = await registry.send_message(broadcast_message)
+        try:
+            broadcast_response = await asyncio.wait_for(
+                registry.send_message(broadcast_message),
+                timeout=15.0  # 15 second timeout for broadcast
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Broadcast timeout: Gateway broadcast operation exceeded 15 seconds"
+            )
 
         if broadcast_response.success:
             result = broadcast_response.result["result"]
@@ -1760,7 +1788,15 @@ async def test_gateway_message_routing():
             correlation_id="gateway-test-roundrobin-001",
         )
 
-        roundrobin_response = await registry.send_message(roundrobin_message)
+        try:
+            roundrobin_response = await asyncio.wait_for(
+                registry.send_message(roundrobin_message),
+                timeout=15.0  # 15 second timeout for round-robin
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Round-robin timeout: Gateway round-robin operation exceeded 15 seconds"
+            )
 
         if roundrobin_response.success:
             result = roundrobin_response.result["result"]
@@ -1792,7 +1828,15 @@ async def test_gateway_message_routing():
             correlation_id="gateway-test-aggregate-001",
         )
 
-        aggregate_response = await registry.send_message(aggregate_message)
+        try:
+            aggregate_response = await asyncio.wait_for(
+                registry.send_message(aggregate_message),
+                timeout=15.0  # 15 second timeout for aggregation
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Aggregation timeout: Gateway aggregation operation exceeded 15 seconds"
+            )
 
         if aggregate_response.success:
             result = aggregate_response.result["result"]
@@ -1851,7 +1895,16 @@ async def test_performance_analysis_workflow():
             correlation_id="integration-test-perf-001",
         )
 
-        response = await registry.send_message(perf_workflow_message)
+        try:
+            response = await asyncio.wait_for(
+                registry.send_message(perf_workflow_message),
+                timeout=90.0  # 90 second timeout for performance analysis
+            )
+        except asyncio.TimeoutError:
+            raise AssertionError(
+                "Performance analysis timeout: Performance workflow exceeded 90 seconds. "
+                "This may indicate a performance issue or resource contention."
+            )
 
         if response.success:
             perf_result = response.result["result"]

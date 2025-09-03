@@ -107,39 +107,79 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
         service_name: str | None = None,
     ) -> T:
         """
-        Infrastructure-aware get_service method.
+        Infrastructure-aware get_service method with comprehensive input validation.
 
         Handles duck typing for infrastructure protocols:
         - get_service("ProtocolEventBus") -> EventBusClient
         - get_service("ProtocolSchemaLoader") -> SchemaLoader
         - get_service("event_bus") -> EventBusClient
+
+        Args:
+            protocol_type_or_name: Protocol type class or service name string
+            service_name: Optional service name override
+
+        Returns:
+            Requested service instance
+
+        Raises:
+            ValueError: If inputs are invalid (None, empty, wrong type)
+            KeyError: If requested service is not found in registry
         """
-        # Handle string-only calls like get_service("event_bus")
+        # Input validation
+        if protocol_type_or_name is None:
+            raise ValueError("protocol_type_or_name cannot be None")
+        
         if isinstance(protocol_type_or_name, str):
-            service_name = protocol_type_or_name
+            if not protocol_type_or_name.strip():
+                raise ValueError("protocol_type_or_name cannot be empty string")
+            service_name = protocol_type_or_name.strip()
+        elif not (hasattr(protocol_type_or_name, "__name__") or callable(protocol_type_or_name)):
+            raise ValueError(f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}")
+
+        # Validate service_name if provided
+        if service_name is not None:
+            if not isinstance(service_name, str):
+                raise ValueError(f"service_name must be string or None, got {type(service_name)}")
+            if not service_name.strip():
+                raise ValueError("service_name cannot be empty string")
+            service_name = service_name.strip()
+
+        # Ensure service registry exists
+        if not hasattr(self, "_service_registry"):
+            self._service_registry = {}
 
         # Check our infrastructure service registry first
-        if hasattr(self, "_service_registry") and service_name:
-            if service_name in self._service_registry:
-                return self._service_registry[service_name]
+        if service_name and service_name in self._service_registry:
+            return self._service_registry[service_name]
 
         # Handle protocol type resolution by name
         if hasattr(protocol_type_or_name, "__name__"):
             protocol_name = protocol_type_or_name.__name__
-            if (
-                hasattr(self, "_service_registry")
-                and protocol_name in self._service_registry
-            ):
+            if protocol_name in self._service_registry:
                 return self._service_registry[protocol_name]
 
-        # If not found, raise descriptive error
-        msg = (
-            f"Service '{service_name or protocol_type_or_name}' not found in infrastructure container. "
-            f"Available services: {list(getattr(self, '_service_registry', {}).keys())}"
-        )
-        raise KeyError(
-            msg,
-        )
+        # Generate helpful error message
+        available_services = list(self._service_registry.keys())
+        search_term = service_name or getattr(protocol_type_or_name, "__name__", str(protocol_type_or_name))
+        
+        # Suggest similar service names if available
+        suggestions = []
+        if available_services:
+            search_lower = search_term.lower()
+            suggestions = [
+                svc for svc in available_services 
+                if search_lower in svc.lower() or svc.lower().startswith(search_lower)
+            ]
+        
+        error_msg = f"Service '{search_term}' not found in infrastructure container."
+        if available_services:
+            error_msg += f" Available services: {available_services}"
+        if suggestions:
+            error_msg += f". Did you mean: {suggestions}?"
+        else:
+            error_msg += " No services are currently registered."
+            
+        raise KeyError(error_msg)
 
     # Bind the method to the container instance
     container.get_service = types.MethodType(get_service, container)
