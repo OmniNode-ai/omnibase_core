@@ -49,6 +49,33 @@ repos:
         # Exclude test files, examples, and problematic contract files until properly configured
         exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect).*\.py$
 
+      # ONEX Contract Validation
+      - id: validate-contracts
+        name: ONEX Contract Validation
+        entry: python scripts/validate-contracts.py
+        language: system
+        pass_filenames: false
+        files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
+        stages: [commit]
+
+      # Canary Node Unit Tests
+      - id: canary-unit-tests
+        name: Canary Node Unit Tests
+        entry: python scripts/run-canary-tests.py
+        language: system
+        pass_filenames: false
+        files: ^(src/omnibase_core/nodes/canary/|tests/unit/test_canary_nodes\.py).*$
+        stages: [commit]
+
+      # Union Usage Validation
+      - id: validate-union-usage
+        name: ONEX Union Usage Validation
+        entry: python scripts/validate-union-usage.py --max-unions 6700
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
 # Configuration
 ci:
   autofix_commit_msg: |

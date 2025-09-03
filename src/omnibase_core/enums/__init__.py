@@ -58,12 +58,12 @@ __all__ = [
     "EnumOperationStatus",
     "EnumValidationLevel",
     "EnumValidationMode",
-    # Namespace domain
-    "NamespaceStrategyEnum",
+    # File pattern domain
+    "IgnorePatternSourceEnum",
     # Metadata domain
     "Lifecycle",
     "MetaTypeEnum",
-    # File pattern domain
-    "IgnorePatternSourceEnum",
+    # Namespace domain
+    "NamespaceStrategyEnum",
     "TraversalModeEnum",
 ]

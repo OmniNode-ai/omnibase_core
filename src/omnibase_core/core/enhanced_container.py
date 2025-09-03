@@ -11,22 +11,31 @@ import time
 from pathlib import Path
 from typing import TypeVar
 
-from omnibase_core.cache.memory_mapped_tool_cache import (
-    MemoryMappedToolCache,
-)
+try:
+    from omnibase_core.cache.memory_mapped_tool_cache import (
+        MemoryMappedToolCache,
+    )
+except ImportError:
+    # Cache module not available, use None as fallback
+    MemoryMappedToolCache = None
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.onex_container import ONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.monitoring.performance_monitor import (
-    PerformanceMonitor,
-)
+
+try:
+    from omnibase_core.monitoring.performance_monitor import (
+        PerformanceMonitor,
+    )
+except ImportError:
+    # Performance monitoring not available, use None as fallback
+    PerformanceMonitor = None
 
 T = TypeVar("T")
 
 
-class EnhancedONEXContainer(ONEXContainer):
+class ModelONEXContainer(ONEXContainer):
     """
     Enhanced ONEX container with Codanna performance optimizations.
 
@@ -46,7 +55,7 @@ class EnhancedONEXContainer(ONEXContainer):
         self.tool_cache: MemoryMappedToolCache | None = None
         self.performance_monitor: PerformanceMonitor | None = None
 
-        if enable_performance_cache:
+        if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
             cache_directory = cache_dir or Path("/tmp/onex_production_cache")
             self.tool_cache = MemoryMappedToolCache(
@@ -55,8 +64,9 @@ class EnhancedONEXContainer(ONEXContainer):
                 enable_lazy_loading=True,
             )
 
-            # Initialize performance monitoring
-            self.performance_monitor = PerformanceMonitor(cache=self.tool_cache)
+            # Initialize performance monitoring if available
+            if PerformanceMonitor is not None:
+                self.performance_monitor = PerformanceMonitor(cache=self.tool_cache)
 
             emit_log_event(
                 LogLevel.INFO,
@@ -186,7 +196,7 @@ class EnhancedONEXContainer(ONEXContainer):
     def get_performance_stats(self) -> dict:
         """Get comprehensive performance statistics."""
         stats = {
-            "container_type": "EnhancedONEXContainer",
+            "container_type": "ModelONEXContainer",
             "cache_enabled": self.enable_performance_cache,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
@@ -221,15 +231,15 @@ class EnhancedONEXContainer(ONEXContainer):
 
 
 # Global enhanced container instance
-_enhanced_container: EnhancedONEXContainer | None = None
+_enhanced_container: ModelONEXContainer | None = None
 
 
 async def create_enhanced_container(
     enable_cache: bool = True,
     cache_dir: Path | None = None,
-) -> EnhancedONEXContainer:
+) -> ModelONEXContainer:
     """Create enhanced container with performance optimizations."""
-    container = EnhancedONEXContainer(
+    container = ModelONEXContainer(
         enable_performance_cache=enable_cache,
         cache_dir=cache_dir,
     )
@@ -244,7 +254,7 @@ async def create_enhanced_container(
     return container
 
 
-async def get_enhanced_container() -> EnhancedONEXContainer:
+async def get_enhanced_container() -> ModelONEXContainer:
     """Get global enhanced container instance."""
     global _enhanced_container
 
@@ -254,7 +264,7 @@ async def get_enhanced_container() -> EnhancedONEXContainer:
     return _enhanced_container
 
 
-def get_enhanced_container_sync() -> EnhancedONEXContainer:
+def get_enhanced_container_sync() -> ModelONEXContainer:
     """Get enhanced container synchronously."""
     return asyncio.run(get_enhanced_container())
 

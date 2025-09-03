@@ -1,16 +1,195 @@
 """
 Security Utilities for ONEX
 
-Provides security validation and sanitization functions.
+Provides security validation and sanitization functions including
+credential masking, connection string sanitization, and secure logging.
 """
 
+import logging
 import re
 import subprocess
 from pathlib import Path
+from typing import Any, Dict, Union
 
 
 class SecurityError(Exception):
     """Raised when security validation fails."""
+
+
+class CredentialMasker:
+    """Utility class for masking credentials and sensitive data."""
+
+    # Sensitive parameter patterns to mask
+    SENSITIVE_PATTERNS = {
+        # Database credentials
+        "password": r"(password[=:]\s*)([^\s;&]+)",
+        "passwd": r"(passwd[=:]\s*)([^\s;&]+)",
+        "pwd": r"(pwd[=:]\s*)([^\s;&]+)",
+        # API keys and tokens
+        "api_key": r"(api[_-]?key[=:]\s*)([^\s;&]+)",
+        "token": r"(token[=:]\s*)([^\s;&]+)",
+        "secret": r"(secret[=:]\s*)([^\s;&]+)",
+        "auth": r"(auth[=:]\s*)([^\s;&]+)",
+        # URLs with credentials
+        "url_creds": r"(://[^:]*:)[^@]*(@)",
+        # Environment variables
+        "env_password": r"(_PASSWORD[=:]\s*)([^\s;&]+)",
+        "env_secret": r"(_SECRET[=:]\s*)([^\s;&]+)",
+        "env_key": r"(_KEY[=:]\s*)([^\s;&]+)",
+    }
+
+    # HTTP headers that should be masked
+    SENSITIVE_HEADERS = [
+        "authorization",
+        "x-api-key",
+        "x-auth-token",
+        "cookie",
+        "set-cookie",
+        "x-csrf-token",
+        "x-access-token",
+        "bearer",
+    ]
+
+    @staticmethod
+    def mask_credentials(
+        data: Union[str, Dict[str, Any]], mask_char: str = "*"
+    ) -> Union[str, Dict[str, Any]]:
+        """
+        Mask credentials in strings or dictionaries.
+
+        Args:
+            data: String or dictionary containing potential credentials
+            mask_char: Character to use for masking
+
+        Returns:
+            Data with credentials masked
+        """
+        if isinstance(data, dict):
+            return CredentialMasker._mask_dict_credentials(data, mask_char)
+        elif isinstance(data, str):
+            return CredentialMasker._mask_string_credentials(data, mask_char)
+        else:
+            return data
+
+    @staticmethod
+    def _mask_string_credentials(text: str, mask_char: str = "*") -> str:
+        """Mask credentials in a string."""
+        masked_text = text
+
+        for pattern_name, pattern in CredentialMasker.SENSITIVE_PATTERNS.items():
+            if pattern_name == "url_creds":
+                # Special handling for URL credentials
+                masked_text = re.sub(
+                    pattern, rf"\1{mask_char * 3}\2", masked_text, flags=re.IGNORECASE
+                )
+            else:
+                # Generic pattern handling
+                masked_text = re.sub(
+                    pattern, rf"\1{mask_char * 3}", masked_text, flags=re.IGNORECASE
+                )
+
+        return masked_text
+
+    @staticmethod
+    def _mask_dict_credentials(
+        data: Dict[str, Any], mask_char: str = "*"
+    ) -> Dict[str, Any]:
+        """Mask credentials in a dictionary."""
+        masked_dict = {}
+
+        for key, value in data.items():
+            lower_key = key.lower()
+
+            # Check if key indicates sensitive data
+            if any(
+                sensitive in lower_key
+                for sensitive in ["password", "secret", "token", "key", "auth"]
+            ):
+                masked_dict[key] = mask_char * 3
+            elif isinstance(value, dict):
+                masked_dict[key] = CredentialMasker._mask_dict_credentials(
+                    value, mask_char
+                )
+            elif isinstance(value, str):
+                masked_dict[key] = CredentialMasker._mask_string_credentials(
+                    value, mask_char
+                )
+            else:
+                masked_dict[key] = value
+
+        return masked_dict
+
+    @staticmethod
+    def sanitize_connection_string(connection_string: str) -> str:
+        """
+        Sanitize database connection string for logging.
+
+        Args:
+            connection_string: Database connection string
+
+        Returns:
+            Sanitized connection string with credentials masked
+        """
+        try:
+            # Handle URL format: postgresql://user:password@host/db
+            url_pattern = r"(://[^:]*:)[^@]*(@)"
+            sanitized = re.sub(url_pattern, r"\1***\2", connection_string)
+
+            # Handle key=value format: password=secret
+            key_value_patterns = [
+                r"(password=)[^\s;&]*",
+                r"(passwd=)[^\s;&]*",
+                r"(pwd=)[^\s;&]*",
+            ]
+
+            for pattern in key_value_patterns:
+                sanitized = re.sub(pattern, r"\1***", sanitized, flags=re.IGNORECASE)
+
+            return sanitized
+        except Exception:
+            # If sanitization fails, return generic string to avoid exposure
+            return "***://***:***@***/***"
+
+
+class SecureLoggingFilter(logging.Filter):
+    """Logging filter that automatically masks credentials."""
+
+    def filter(self, record):
+        """Filter log records to mask sensitive information."""
+        if hasattr(record, "msg") and isinstance(record.msg, str):
+            record.msg = CredentialMasker.mask_credentials(record.msg)
+
+        # Also mask arguments if they exist
+        if hasattr(record, "args") and record.args:
+            masked_args = []
+            for arg in record.args:
+                if isinstance(arg, (str, dict)):
+                    masked_args.append(CredentialMasker.mask_credentials(arg))
+                else:
+                    masked_args.append(arg)
+            record.args = tuple(masked_args)
+
+        return True
+
+
+def create_secure_logger(name: str, mask_credentials: bool = True) -> logging.Logger:
+    """
+    Create a logger with credential masking capabilities.
+
+    Args:
+        name: Logger name
+        mask_credentials: Whether to enable automatic credential masking
+
+    Returns:
+        Configured logger with security features
+    """
+    logger = logging.getLogger(name)
+
+    if mask_credentials:
+        # Add custom filter to mask credentials
+        logger.addFilter(SecureLoggingFilter())
+
+    return logger
 
 
 def validate_file_path(

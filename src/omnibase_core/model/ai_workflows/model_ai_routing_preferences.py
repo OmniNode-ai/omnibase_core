@@ -308,7 +308,8 @@ class ModelAIRoutingResult(BaseModel):
     )
 
     alternative_options: list[dict[str, str | int | float | bool]] | None = Field(
-        default=None, description="Alternative routing options considered"
+        default=None,
+        description="Alternative routing options considered",
     )
 
     # Capacity and load information

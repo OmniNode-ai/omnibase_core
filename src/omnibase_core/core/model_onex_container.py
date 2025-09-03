@@ -1,7 +1,7 @@
 """
-Enhanced ONEX Dependency Injection Container for Monadic Architecture.
+Model ONEX Dependency Injection Container for Monadic Architecture.
 
-This module provides the next-generation ONEXContainer that integrates with
+This module provides the ModelONEXContainer that integrates with
 the contract-driven monadic architecture, supporting NodeResult composition,
 workflow orchestration, and observable dependency injection.
 
@@ -30,7 +30,12 @@ from omnibase_core.core.monadic.model_node_result import (
     NodeResult,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.protocol.protocol_database_connection import (
+    ProtocolDatabaseConnection,
+)
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
+from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+from omnibase_core.services.protocol_service_resolver import get_service_resolver
 
 if TYPE_CHECKING:
     from omnibase_core.core.node_base import ModelNodeBase
@@ -74,7 +79,7 @@ class MonadicServiceProvider:
 
     def __init__(
         self,
-        container: "EnhancedONEXContainer",
+        container: "ModelONEXContainer",
         correlation_id: str | None = None,
     ):
         self.container = container
@@ -251,26 +256,30 @@ class MonadicServiceProvider:
         Returns:
             T: Resolved service instance
         """
+        # Use protocol service resolver for external dependencies
+        protocol_name = protocol_type.__name__
+
+        # Check if this is a protocol we handle with service resolver
+        if protocol_name in ["ProtocolServiceDiscovery", "ProtocolDatabaseConnection"]:
+            service_resolver = get_service_resolver()
+            return await service_resolver.resolve_service(protocol_type)
+
         # Check if container has get_service method (new enhanced container)
         if hasattr(self.container, "get_service_async"):
             return await self.container.get_service_async(protocol_type, service_name)
         if hasattr(self.container, "get_service"):
             # Fallback to synchronous method
             return self.container.get_service(protocol_type, service_name)
-        # Try to resolve using protocol name
-        protocol_name = protocol_type.__name__
 
         # Map common protocol names to container providers
         provider_map = {
-            "ProtocolLogger": "basic_logger",
-            "Logger": "basic_logger",
-            "ConsulServiceDiscovery": "consul_client",
-            "ServiceDiscovery": "service_discovery",
+            "ProtocolLogger": "enhanced_logger",
+            "Logger": "enhanced_logger",
         }
 
         if protocol_name in provider_map:
             provider_name = provider_map[protocol_name]
-            provider = getattr(self.container, provider_name, None)
+            provider = getattr(self.container._base_container, provider_name, None)
             if provider:
                 return provider()
 
@@ -315,9 +324,9 @@ class _BaseONEXContainer(containers.DeclarativeContainer):
     )
 
 
-class EnhancedONEXContainer:
+class ModelONEXContainer:
     """
-    Enhanced ONEX dependency injection container with monadic architecture.
+    Model ONEX dependency injection container with monadic architecture.
 
     This container wraps the base DI container and adds:
     - Monadic service resolution through NodeResult
@@ -481,6 +490,35 @@ class EnhancedONEXContainer:
             for key, value in self._performance_metrics.items()
         }
 
+    async def get_service_discovery(self) -> ProtocolServiceDiscovery:
+        """Get service discovery implementation with automatic fallback."""
+        return await self.get_service_async(ProtocolServiceDiscovery)
+
+    async def get_database(self) -> ProtocolDatabaseConnection:
+        """Get database connection implementation with automatic fallback."""
+        return await self.get_service_async(ProtocolDatabaseConnection)
+
+    async def get_external_services_health(self) -> dict[str, object]:
+        """Get health status for all external services."""
+        service_resolver = get_service_resolver()
+        return await service_resolver.get_all_service_health()
+
+    async def refresh_external_services(self) -> None:
+        """Force refresh all external service connections."""
+        service_resolver = get_service_resolver()
+
+        # Refresh service discovery if cached
+        try:
+            await service_resolver.refresh_service(ProtocolServiceDiscovery)
+        except Exception:
+            pass  # Service may not be cached yet
+
+        # Refresh database if cached
+        try:
+            await service_resolver.refresh_service(ProtocolDatabaseConnection)
+        except Exception:
+            pass  # Service may not be cached yet
+
 
 # === HELPER FUNCTIONS ===
 
@@ -586,7 +624,9 @@ def _create_workflow_coordinator(factory):
                 )
                 # Execute workflow using the configured type and input data
                 workflow_result = await self._execute_workflow_type(
-                    workflow_type, input_data, config
+                    workflow_type,
+                    input_data,
+                    config,
                 )
 
                 return NodeResult.success(
@@ -628,7 +668,7 @@ def _create_workflow_coordinator(factory):
                 # would depend on the specific workflow framework being used
                 if hasattr(workflow, "run"):
                     result = await workflow.run(input_data)
-                elif hasattr(workflow, "__call__"):
+                elif callable(workflow):
                     result = await workflow(input_data)
                 else:
                     # Fallback: return input data as placeholder
@@ -658,14 +698,14 @@ def _create_workflow_coordinator(factory):
 # === CONTAINER FACTORY ===
 
 
-async def create_enhanced_onex_container() -> EnhancedONEXContainer:
+async def create_model_onex_container() -> ModelONEXContainer:
     """
-    Create and configure enhanced ONEX container.
+    Create and configure model ONEX container.
 
     Returns:
-        EnhancedONEXContainer: Configured container instance
+        ModelONEXContainer: Configured container instance
     """
-    container = EnhancedONEXContainer()
+    container = ModelONEXContainer()
 
     # Load configuration into base container
     container.config.from_dict(
@@ -691,17 +731,17 @@ async def create_enhanced_onex_container() -> EnhancedONEXContainer:
 
 # === GLOBAL ENHANCED CONTAINER ===
 
-_enhanced_container: EnhancedONEXContainer | None = None
+_model_onex_container: ModelONEXContainer | None = None
 
 
-async def get_enhanced_container() -> EnhancedONEXContainer:
+async def get_model_onex_container() -> ModelONEXContainer:
     """Get or create global enhanced container instance."""
-    global _enhanced_container
-    if _enhanced_container is None:
-        _enhanced_container = await create_enhanced_onex_container()
-    return _enhanced_container
+    global _model_onex_container
+    if _model_onex_container is None:
+        _model_onex_container = await create_model_onex_container()
+    return _model_onex_container
 
 
-def get_enhanced_container_sync() -> EnhancedONEXContainer:
+def get_model_onex_container_sync() -> ModelONEXContainer:
     """Get enhanced container synchronously."""
-    return asyncio.run(get_enhanced_container())
+    return asyncio.run(get_model_onex_container())

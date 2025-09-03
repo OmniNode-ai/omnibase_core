@@ -1,0 +1,233 @@
+# ONEX Mixin: Request Response
+# Provides standardized request/response interaction patterns for all node types
+
+mixin_name: "mixin_request_response"
+mixin_version: {major: 1, minor: 0, patch: 0}
+description: "Standard request/response interaction patterns and communication protocols for ONEX nodes"
+applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+
+# === REQUEST RESPONSE ACTIONS ===
+actions:
+  - name: "process_request"
+    description: "Process an incoming request and generate response"
+    inputs: ["request_data", "request_context", "processing_options"]
+    outputs: ["response_data", "processing_metadata"]
+    required: true
+    timeout_ms: 10000
+
+  - name: "validate_request"
+    description: "Validate incoming request structure and data"
+    inputs: ["request_data", "validation_schema"]
+    outputs: ["validation_result", "validation_errors"]
+    required: true
+    timeout_ms: 2000
+
+  - name: "format_response"
+    description: "Format response according to specified format and schema"
+    inputs: ["response_data", "format_config", "schema_version"]
+    outputs: ["formatted_response", "format_metadata"]
+    required: true
+    timeout_ms: 1000
+
+  - name: "handle_error"
+    description: "Handle processing errors and generate error responses"
+    inputs: ["error_details", "request_context", "error_handling_config"]
+    outputs: ["error_response", "error_metadata"]
+    required: true
+    timeout_ms: 2000
+
+  - name: "track_request"
+    description: "Track request lifecycle and generate correlation data"
+    inputs: ["request_id", "tracking_config"]
+    outputs: ["tracking_data", "correlation_info"]
+    required: false
+    timeout_ms: 500
+
+# === REQUEST RESPONSE CONFIGURATION ===
+request_response_config:
+  default_timeout_ms: 30000
+  max_request_size_mb: 10
+  max_response_size_mb: 50
+  compression_enabled: true
+  encryption_required: false
+  correlation_tracking: true
+  request_logging_enabled: true
+  response_caching:
+    enabled: false
+    ttl_ms: 300000  # 5 minutes
+    max_cache_size_mb: 100
+
+# === REQUEST PATTERNS BY NODE TYPE ===
+node_request_patterns:
+  COMPUTE:
+    request_types: ["computation_request", "algorithm_execution"]
+    response_types: ["computation_result", "algorithm_output"]
+    typical_processing_time_ms: 2000
+    supports_streaming: false
+    supports_batching: true
+    
+  EFFECT:
+    request_types: ["effect_execution", "io_operation", "external_call"]
+    response_types: ["effect_result", "io_result", "external_response"]
+    typical_processing_time_ms: 5000
+    supports_streaming: true
+    supports_batching: false
+    
+  REDUCER:
+    request_types: ["aggregation_request", "state_query", "reduction_operation"]
+    response_types: ["aggregation_result", "state_snapshot", "reduction_output"]
+    typical_processing_time_ms: 3000
+    supports_streaming: true
+    supports_batching: true
+    
+  ORCHESTRATOR:
+    request_types: ["workflow_request", "coordination_command", "task_assignment"]
+    response_types: ["workflow_status", "coordination_result", "task_acknowledgment"]
+    typical_processing_time_ms: 1000
+    supports_streaming: true
+    supports_batching: true
+
+# === OUTPUT MODELS ===
+output_models:
+  request_envelope:
+    request_id: "string"
+    correlation_id: "string"
+    timestamp: "datetime"
+    source_node: "string"
+    target_node: "string"
+    request_type: "string"
+    headers:
+      type: "object"
+      additionalProperties: "string"
+    payload: "object"
+    processing_options:
+      timeout_ms: "integer"
+      priority: "enum[LOW,NORMAL,HIGH,CRITICAL]"
+      
+  response_envelope:
+    response_id: "string"
+    request_id: "string"
+    correlation_id: "string"
+    timestamp: "datetime"
+    source_node: "string"
+    processing_time_ms: "integer"
+    status: "enum[SUCCESS,ERROR,TIMEOUT,INVALID]"
+    headers:
+      type: "object"
+      additionalProperties: "string"
+    payload: "object"
+    
+  processing_metadata:
+    processing_node: "string"
+    processing_time_ms: "integer"
+    processing_stage: "string"
+    resource_usage:
+      cpu_time_ms: "integer"
+      memory_used_mb: "float"
+    validation_results:
+      input_valid: "boolean"
+      output_valid: "boolean"
+      
+  error_response:
+    error_code: "string"
+    error_message: "string"
+    error_type: "enum[VALIDATION,PROCESSING,TIMEOUT,RESOURCE,SYSTEM]"
+    error_details:
+      type: "object"
+      properties:
+        stack_trace: "string"
+        context: "object"
+        suggestions: 
+          type: "array"
+          items: "string"
+    recovery_actions:
+      type: "array"
+      items: "string"
+
+# === VALIDATION SCHEMAS ===
+validation_schemas:
+  request_validation:
+    required_fields: ["request_id", "request_type", "payload"]
+    field_types:
+      request_id: "string"
+      correlation_id: "string"
+      request_type: "string"
+      payload: "object"
+    field_constraints:
+      request_id: "^[a-zA-Z0-9-]{36}$"  # UUID format
+      request_type: "^[a-z][a-z_]*[a-z]$"  # snake_case
+      
+  response_validation:
+    required_fields: ["response_id", "request_id", "status", "payload"]
+    field_types:
+      response_id: "string"
+      request_id: "string"
+      status: "string"
+      payload: "object"
+
+# === ERROR HANDLING PATTERNS ===
+error_handling:
+  retry_policies:
+    transient_errors:
+      max_retries: 3
+      retry_delay_ms: 1000
+      exponential_backoff: true
+      backoff_multiplier: 2.0
+    timeout_errors:
+      max_retries: 1
+      retry_delay_ms: 500
+    validation_errors:
+      max_retries: 0  # Don't retry validation errors
+      
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_ms: 60000  # 1 minute
+    recovery_timeout_ms: 30000  # 30 seconds
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "request_processing"
+    type: "capability"
+    description: "Provides request processing and response generation capabilities"
+    
+  - name: "request_validation"
+    type: "capability"
+    description: "Provides request/response validation capabilities"
+
+# === METRICS ===
+metrics:
+  - name: "requests_processed"
+    type: "counter"
+    description: "Total number of requests processed"
+    labels: ["request_type", "status", "node_type"]
+    
+  - name: "request_processing_time"
+    type: "histogram"
+    description: "Time taken to process requests"
+    labels: ["request_type", "node_type"]
+    buckets: [10, 50, 100, 500, 1000, 5000, 10000, 30000]
+    
+  - name: "active_requests"
+    type: "gauge"
+    description: "Number of currently active requests"
+    
+  - name: "request_size"
+    type: "histogram"
+    description: "Size of incoming requests in bytes"
+    labels: ["request_type"]
+    
+  - name: "response_size"
+    type: "histogram"
+    description: "Size of outgoing responses in bytes"
+    labels: ["request_type"]
+    
+  - name: "validation_errors"
+    type: "counter"
+    description: "Number of request validation errors"
+    labels: ["error_type", "field_name"]
+    
+  - name: "processing_errors"
+    type: "counter"
+    description: "Number of request processing errors"
+    labels: ["error_type", "request_type"]

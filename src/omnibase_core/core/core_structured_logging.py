@@ -9,13 +9,35 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from pydantic import BaseModel
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+
+try:
+    from omnibase.protocols.types.core_types import ProtocolLogContext
+except ImportError:
+    # Fallback for when omnibase-spi is not available
+    from typing import Protocol
+
+    class ProtocolLogContext(Protocol):
+        def to_dict(self) -> dict[str, Any]: ...
+
+
+class PydanticJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles Pydantic models and log contexts."""
+
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+        elif hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
+            return obj.to_dict()
+        return super().default(obj)
 
 
 def emit_log_event_sync(
     level: LogLevel,
     message: str,
-    context: dict[str, Any] | None = None,
+    context: dict[str, Any] | ProtocolLogContext | BaseModel | None = None,
 ) -> None:
     """
     Emit a structured log event synchronously.
@@ -23,7 +45,7 @@ def emit_log_event_sync(
     Args:
         level: Log level from SPI LogLevel
         message: Log message
-        context: Optional context dictionary
+        context: Optional context dictionary, log context protocol, or Pydantic model
     """
     logger = logging.getLogger("omnibase")
 
@@ -44,4 +66,4 @@ def emit_log_event_sync(
         LogLevel.CRITICAL: logging.CRITICAL,
     }.get(level, logging.INFO)
 
-    logger.log(python_level, json.dumps(log_entry))
+    logger.log(python_level, json.dumps(log_entry, cls=PydanticJSONEncoder))

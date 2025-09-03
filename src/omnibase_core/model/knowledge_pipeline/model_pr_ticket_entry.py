@@ -42,16 +42,20 @@ class ModelPrTicketEntry(BaseModel):
 
     # File tracking with UUIDs
     modified_files: dict[str, str | int | list[dict[str, str | int]]] = Field(
-        ..., description="Array of file modifications with metadata"
+        ...,
+        description="Array of file modifications with metadata",
     )
     tree_structure_before: dict[str, str | list[str] | dict[str, str]] | None = Field(
-        None, description="Directory tree structure before changes"
+        None,
+        description="Directory tree structure before changes",
     )
     tree_structure_after: dict[str, str | list[str] | dict[str, str]] | None = Field(
-        None, description="Directory tree structure after changes"
+        None,
+        description="Directory tree structure after changes",
     )
     file_relationships: dict[str, list[str] | dict[str, list[str]]] | None = Field(
-        None, description="Dependencies and imports between files"
+        None,
+        description="Dependencies and imports between files",
     )
 
     # Tool call tracking
@@ -93,7 +97,8 @@ class ModelPrTicketEntry(BaseModel):
         regex="^(pending|in_review|approved|changes_requested|merged|closed)$",
     )
     reviewer_feedback: dict[str, str | list[str] | dict[str, str]] | None = Field(
-        None, description="Feedback from reviewers"
+        None,
+        description="Feedback from reviewers",
     )
     merge_conflicts_resolved: int = Field(
         default=0,

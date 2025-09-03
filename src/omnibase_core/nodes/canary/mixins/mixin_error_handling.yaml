@@ -1,0 +1,373 @@
+id: error_handling
+name: Secure Error Handling with Circuit Breakers
+version: "1.0.0"
+description: "Universal mixin providing secure error handling, circuit breaker patterns, \nmetrics collection, and configuration management for production-ready nodes.\n#magic___^_^___line\nThis mixin prevents information disclosure, implements fault tolerance,\nand provides comprehensive observability across all node types.\n#magic___^_^___line\n"
+type: core_mixin
+compatibility:
+  node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+  onex_version: ">=1.0.0"
+
+capabilities:
+  secure_error_handling:
+    description: "Information disclosure prevention with context sanitization"
+    provides:
+      - sensitive_data_filtering
+      - secure_error_messages
+      - correlation_id_validation
+      - operation_context_management
+
+  circuit_breaker_management:
+    description: "Fault tolerance for external service dependencies"
+    provides:
+      - configurable_failure_thresholds
+      - automatic_recovery
+      - graceful_degradation
+      - fallback_mechanisms
+
+  metrics_collection:
+    description: "Real-time performance monitoring and aggregation"
+    provides:
+      - operation_timing
+      - error_rate_tracking
+      - success_metrics
+      - percentile_calculations
+
+  configuration_management:
+    description: "Environment-based configuration with validation"
+    provides:
+      - type_safe_config
+      - environment_variables
+      - default_values
+      - runtime_validation
+
+actions:
+  handle_error:
+    description: "Securely handle exceptions with context sanitization"
+    input_schema:
+      type: object
+      required: [error, context, operation_name]
+      properties:
+        error:
+          type: object
+          description: "Exception instance to handle"
+        context:
+          type: object
+          description: "Operation context (will be sanitized)"
+        correlation_id:
+          type: ["string", "null"]
+          description: "Request correlation ID for tracing"
+        operation_name:
+          type: string
+          description: "Name of the operation that failed"
+    output_schema:
+      type: object
+      required: [message, safe_context, error_id]
+      properties:
+        message:
+          type: string
+          description: "Safe error message without sensitive information"
+        safe_context:
+          type: object
+          description: "Sanitized context safe for logging"
+        error_id:
+          type: string
+          description: "Unique identifier for error tracking"
+        correlation_id:
+          type: ["string", "null"]
+          description: "Request correlation ID"
+
+  create_circuit_breaker:
+    description: "Create circuit breaker for external service protection"
+    input_schema:
+      type: object
+      required: [name, config]
+      properties:
+        name:
+          type: string
+          description: "Unique circuit breaker identifier"
+        config:
+          type: object
+          required: [failure_threshold, recovery_timeout_seconds, timeout_seconds]
+          properties:
+            failure_threshold:
+              type: integer
+              minimum: 1
+              description: "Number of failures before opening circuit"
+            recovery_timeout_seconds:
+              type: number
+              minimum: 0.1
+              description: "Time to wait before attempting recovery"
+            timeout_seconds:
+              type: number
+              minimum: 0.1
+              description: "Operation timeout threshold"
+    output_schema:
+      type: object
+      required: [circuit_breaker_id, state]
+      properties:
+        circuit_breaker_id:
+          type: string
+          description: "Circuit breaker identifier"
+        state:
+          type: string
+          enum: ["CLOSED", "OPEN", "HALF_OPEN"]
+          description: "Initial circuit breaker state"
+
+  record_metrics:
+    description: "Record operation metrics for monitoring"
+    input_schema:
+      type: object
+      required: [operation_name, success, duration_ms]
+      properties:
+        operation_name:
+          type: string
+          description: "Name of the operation being measured"
+        success:
+          type: boolean
+          description: "Whether the operation succeeded"
+        duration_ms:
+          type: number
+          minimum: 0
+          description: "Operation duration in milliseconds"
+        metadata:
+          type: object
+          description: "Additional operation metadata"
+    output_schema:
+      type: object
+      required: [recorded, operation_count, error_rate]
+      properties:
+        recorded:
+          type: boolean
+          description: "Whether metrics were successfully recorded"
+        operation_count:
+          type: integer
+          description: "Total operations recorded for this operation type"
+        error_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Current error rate for this operation type"
+
+  get_configuration:
+    description: "Retrieve typed configuration values"
+    input_schema:
+      type: object
+      required: [config_section]
+      properties:
+        config_section:
+          type: string
+          enum: ["database", "timeouts", "performance", "business_logic", "security"]
+          description: "Configuration section to retrieve"
+    output_schema:
+      type: object
+      required: [config_data, source]
+      properties:
+        config_data:
+          type: object
+          description: "Type-safe configuration data"
+        source:
+          type: string
+          enum: ["environment", "defaults", "mixed"]
+          description: "Configuration data source"
+
+configuration:
+  error_handling:
+    sanitize_production_errors:
+      type: boolean
+      default: true
+      description: "Enable sensitive data sanitization in production"
+
+    max_context_fields:
+      type: integer
+      default: 20
+      minimum: 1
+      description: "Maximum context fields to include in error details"
+
+    correlation_id_required:
+      type: boolean
+      default: false
+      description: "Whether correlation ID is required for all operations"
+
+  circuit_breakers:
+    default_failure_threshold:
+      type: integer
+      default: 5
+      minimum: 1
+      description: "Default failure threshold for circuit breakers"
+
+    default_recovery_timeout:
+      type: number
+      default: 30.0
+      minimum: 0.1
+      description: "Default recovery timeout in seconds"
+
+    default_operation_timeout:
+      type: number
+      default: 10.0
+      minimum: 0.1
+      description: "Default operation timeout in seconds"
+
+  metrics:
+    enable_detailed_metrics:
+      type: boolean
+      default: true
+      description: "Enable detailed performance metrics collection"
+
+    metrics_retention_count:
+      type: integer
+      default: 1000
+      minimum: 100
+      description: "Number of metric entries to retain in memory"
+
+    percentile_calculations:
+      type: array
+      items:
+        type: number
+        minimum: 0
+        maximum: 100
+      default: [50, 95, 99]
+      description: "Percentiles to calculate for performance metrics"
+
+output_models:
+  ErrorHandlingResult:
+    description: "Result of secure error handling operation"
+    schema:
+      type: object
+      required: [message, error_id, timestamp]
+      properties:
+        message:
+          type: string
+          description: "Safe error message"
+        error_id:
+          type: string
+          description: "Unique error identifier"
+        safe_context:
+          type: object
+          description: "Sanitized operation context"
+        correlation_id:
+          type: ["string", "null"]
+          description: "Request correlation ID"
+        timestamp:
+          type: string
+          format: date-time
+          description: "Error occurrence timestamp"
+
+  CircuitBreakerState:
+    description: "Circuit breaker current state information"
+    schema:
+      type: object
+      required: [name, state, failure_count, last_failure_time]
+      properties:
+        name:
+          type: string
+          description: "Circuit breaker identifier"
+        state:
+          type: string
+          enum: ["CLOSED", "OPEN", "HALF_OPEN"]
+          description: "Current circuit breaker state"
+        failure_count:
+          type: integer
+          minimum: 0
+          description: "Current consecutive failure count"
+        last_failure_time:
+          type: ["string", "null"]
+          format: date-time
+          description: "Timestamp of last failure"
+        success_count:
+          type: integer
+          minimum: 0
+          description: "Total successful operations"
+
+  MetricsSnapshot:
+    description: "Performance metrics snapshot"
+    schema:
+      type: object
+      required: [operation_name, total_count, success_count, error_count]
+      properties:
+        operation_name:
+          type: string
+          description: "Operation being measured"
+        total_count:
+          type: integer
+          minimum: 0
+          description: "Total operation count"
+        success_count:
+          type: integer
+          minimum: 0
+          description: "Successful operation count"
+        error_count:
+          type: integer
+          minimum: 0
+          description: "Failed operation count"
+        success_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: "Success rate (0.0 to 1.0)"
+        avg_duration_ms:
+          type: number
+          minimum: 0
+          description: "Average operation duration"
+        percentiles:
+          type: object
+          description: "Performance percentile calculations"
+        last_updated:
+          type: string
+          format: date-time
+          description: "Last metrics update timestamp"
+
+dependencies:
+  python_packages:
+    - pydantic: ">=2.0.0"
+    - asyncio: ">=3.4.0"
+
+  internal_modules:
+    - omnibase_core.core.onex_error
+    - omnibase_core.enums.enum_health_status
+
+metrics:
+  provided:
+    - error_handling.operations_total
+    - error_handling.errors_total
+    - error_handling.success_rate
+    - circuit_breaker.state_changes
+    - circuit_breaker.failures_total
+    - metrics.collection_operations
+
+  labels:
+    - operation_name
+    - node_type
+    - error_type
+    - circuit_breaker_name
+
+integration:
+  initialization_order: 1
+  cleanup_order: 99
+  required_for_health_check: true
+  provides_base_functionality: true
+
+testing:
+  unit_test_coverage:
+    - error_sanitization
+    - circuit_breaker_state_transitions
+    - metrics_calculation_accuracy
+    - configuration_validation
+
+  integration_test_scenarios:
+    - error_handling_with_correlation_ids
+    - circuit_breaker_failure_recovery
+    - metrics_collection_under_load
+    - configuration_environment_overrides
+
+documentation:
+  examples:
+    - basic_error_handling
+    - circuit_breaker_setup
+    - metrics_collection
+    - configuration_usage
+
+  api_reference:
+    - action_schemas
+    - configuration_options
+    - output_models
+    - integration_patterns

@@ -23,8 +23,10 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar, Union
 from uuid import uuid4
+
+from pydantic import BaseModel, Field
 
 # Import contract model for compute nodes
 from omnibase_core.core.contracts.model_contract_compute import (
@@ -45,7 +47,7 @@ T_Input = TypeVar("T_Input")
 T_Output = TypeVar("T_Output")
 
 
-class ModelComputeInput(Generic[T_Input]):
+class ModelComputeInput(BaseModel, Generic[T_Input]):
     """
     Input model for NodeCompute operations.
 
@@ -53,25 +55,23 @@ class ModelComputeInput(Generic[T_Input]):
     and provides metadata for computation tracking.
     """
 
-    def __init__(
-        self,
-        data: T_Input,
-        operation_id: str | None = None,
-        computation_type: str = "default",
-        cache_enabled: bool = True,
-        parallel_enabled: bool = False,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.data = data
-        self.operation_id = operation_id or str(uuid4())
-        self.computation_type = computation_type
-        self.cache_enabled = cache_enabled
-        self.parallel_enabled = parallel_enabled
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    data: T_Input
+    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    computation_type: str = "default"
+    cache_enabled: bool = True
+    parallel_enabled: bool = False
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
 
 
-class ModelComputeOutput(Generic[T_Output]):
+class ModelComputeOutput(BaseModel, Generic[T_Output]):
     """
     Output model for NodeCompute operations.
 
@@ -79,24 +79,20 @@ class ModelComputeOutput(Generic[T_Output]):
     metadata and performance metrics.
     """
 
-    def __init__(
-        self,
-        result: T_Output,
-        operation_id: str,
-        computation_type: str,
-        processing_time_ms: float,
-        cache_hit: bool = False,
-        parallel_execution_used: bool = False,
-        metadata: dict[str, Any] | None = None,
-    ):
-        self.result = result
-        self.operation_id = operation_id
-        self.computation_type = computation_type
-        self.processing_time_ms = processing_time_ms
-        self.cache_hit = cache_hit
-        self.parallel_execution_used = parallel_execution_used
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now()
+    result: T_Output
+    operation_id: str
+    computation_type: str
+    processing_time_ms: float
+    cache_hit: bool = False
+    parallel_execution_used: bool = False
+    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
+        default_factory=dict
+    )
+
+    class Config:
+        """Pydantic configuration."""
+
+        arbitrary_types_allowed = True
 
 
 class ComputationCache:
@@ -107,9 +103,10 @@ class ComputationCache:
     def __init__(self, max_size: int = 1000, default_ttl_minutes: int = 30):
         self.max_size = max_size
         self.default_ttl_minutes = default_ttl_minutes
-        self._cache: dict[str, tuple[Any, datetime, int]] = (
-            {}
-        )  # key -> (value, expiry, access_count)
+        self._cache: dict[
+            str,
+            tuple[Any, datetime, int],
+        ] = {}  # key -> (value, expiry, access_count)
 
     def get(self, cache_key: str) -> Any | None:
         """Get cached value if valid and not expired."""
@@ -745,7 +742,7 @@ class NodeCompute(NodeCoreBase):
         """Check if computation supports parallel execution."""
         # For now, only support parallel for batch operations
         return bool(
-            isinstance(input_data.data, list | tuple) and len(input_data.data) > 1
+            isinstance(input_data.data, list | tuple) and len(input_data.data) > 1,
         )
 
     async def _execute_sequential_computation(

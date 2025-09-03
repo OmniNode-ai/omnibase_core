@@ -1,0 +1,112 @@
+# ONEX Mixin: Introspection
+# Provides standardized node discovery and capability reporting for all node types
+
+mixin_name: "mixin_introspection"
+mixin_version: {major: 1, minor: 0, patch: 0}
+description: "Node discovery, capability reporting, and runtime introspection for ONEX nodes"
+applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+
+# === INTROSPECTION ACTIONS ===
+actions:
+  - name: "get_node_info"
+    description: "Get basic node information including type, version, and status"
+    inputs: []
+    outputs: ["node_info", "capability_summary"]
+    required: true
+    timeout_ms: 2000
+
+  - name: "get_capabilities"
+    description: "Get detailed node capabilities and available actions"
+    inputs: ["include_internal"]
+    outputs: ["capabilities", "action_definitions", "dependency_info"]
+    required: true
+    timeout_ms: 3000
+
+  - name: "get_runtime_stats"
+    description: "Get runtime statistics and performance metrics"
+    inputs: ["include_history"]
+    outputs: ["runtime_stats", "performance_metrics"]
+    required: false
+    timeout_ms: 2000
+
+  - name: "discover_peers"
+    description: "Discover other nodes in the network"
+    inputs: ["node_type_filter", "discovery_scope"]
+    outputs: ["peer_nodes", "network_topology"]
+    required: false
+    timeout_ms: 5000
+
+# === INTROSPECTION CONFIGURATION ===
+introspection_config:
+  auto_registration: true
+  discovery_interval_ms: 60000  # 1 minute
+  capability_refresh_ms: 300000 # 5 minutes
+  include_performance_data: true
+  include_dependency_health: true
+  peer_discovery_enabled: true
+
+# === OUTPUT MODELS ===
+output_models:
+  node_info:
+    node_id: "string"
+    node_type: "enum[COMPUTE,EFFECT,REDUCER,ORCHESTRATOR]"
+    node_name: "string"
+    version: "object"
+    status: "enum[HEALTHY,DEGRADED,UNHEALTHY,CRITICAL]"
+    uptime_ms: "integer"
+    last_updated: "datetime"
+    
+  capabilities:
+    actions:
+      type: "array"
+      items:
+        action_name: "string"
+        description: "string"
+        required: "boolean"
+        timeout_ms: "integer"
+        
+  runtime_stats:
+    requests_processed: "integer"
+    average_response_time_ms: "float"
+    error_count: "integer"
+    memory_usage_mb: "float"
+    cpu_usage_percent: "float"
+    
+  peer_nodes:
+    type: "array"
+    items:
+      node_id: "string"
+      node_type: "string"
+      endpoint: "string"
+      status: "string"
+      last_seen: "datetime"
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "node_discovery"
+    type: "capability"
+    description: "Provides node discovery and registration capabilities"
+    
+  - name: "capability_reporting"
+    type: "capability"
+    description: "Provides capability introspection and reporting"
+
+# === METRICS ===
+metrics:
+  - name: "introspection_requests"
+    type: "counter"
+    description: "Total number of introspection requests"
+    labels: ["request_type"]
+    
+  - name: "discovery_operations"
+    type: "counter"
+    description: "Number of peer discovery operations"
+    
+  - name: "capability_queries"
+    type: "counter" 
+    description: "Number of capability queries processed"
+    
+  - name: "peer_count"
+    type: "gauge"
+    description: "Current number of discovered peer nodes"
+    labels: ["node_type"]

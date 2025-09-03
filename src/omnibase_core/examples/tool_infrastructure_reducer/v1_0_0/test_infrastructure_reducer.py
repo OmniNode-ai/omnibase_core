@@ -87,7 +87,6 @@ class TestInfrastructureReducerInitialization:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
@@ -109,7 +108,6 @@ class TestInfrastructureReducerInitialization:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer.logger = mock_logger
 
@@ -134,7 +132,6 @@ class TestInfrastructureReducerInitialization:
             ),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Should have loaded adapters
@@ -153,7 +150,6 @@ class TestInfrastructureReducerInitialization:
             ),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             # Should not raise exception, but continue with other adapters
             reducer = ToolInfrastructureReducer(mock_container)
 
@@ -178,7 +174,6 @@ class TestInfrastructureReducerInitialization:
                 return_value=mock_component_instance,
             ),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Should have loaded specialized components
@@ -200,7 +195,6 @@ class TestInfrastructureReducerInitialization:
                 side_effect=Exception("Component loading failed"),
             ),
         ):
-
             # Should not raise exception
             reducer = ToolInfrastructureReducer(mock_container)
 
@@ -249,7 +243,6 @@ class TestInfrastructureReducerAdapterLoading:
             patch("getattr", return_value=mock_adapter_class),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
@@ -277,7 +270,6 @@ class TestInfrastructureReducerAdapterLoading:
             patch("getattr", return_value=mock_adapter_class),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             result = reducer._load_adapter_from_metadata(
@@ -303,7 +295,6 @@ class TestInfrastructureReducerAdapterLoading:
             ),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             with pytest.raises(ImportError):
@@ -319,7 +310,6 @@ class TestInfrastructureReducerAdapterLoading:
             patch("builtins.open", side_effect=FileNotFoundError("File not found")),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             with pytest.raises(FileNotFoundError):
@@ -867,7 +857,6 @@ class TestInfrastructureReducerIntrospection:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Add mock loaded adapters
@@ -1006,7 +995,6 @@ class TestInfrastructureReducerIntrospection:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Remove attributes to simulate failure
@@ -1062,7 +1050,6 @@ class TestInfrastructureReducerServiceMode:
             ) as mock_event_loop,
             patch("asyncio.create_task"),
         ):
-
             await reducer.start_service_mode()
 
             assert reducer._service_running is True
@@ -1113,7 +1100,6 @@ class TestInfrastructureReducerServiceMode:
             patch.object(reducer, "_service_event_loop", new_callable=AsyncMock),
             patch("asyncio.create_task"),
         ):
-
             await reducer.start_service_mode()
 
             reducer._log_error.assert_called_once_with(
@@ -1134,7 +1120,6 @@ class TestInfrastructureReducerServiceMode:
             "_subscribe_to_tool_invocations",
             side_effect=Exception("Startup failed"),
         ):
-
             with pytest.raises(OnexError) as exc_info:
                 await reducer.start_service_mode()
 
@@ -1222,7 +1207,6 @@ class TestInfrastructureReducerIntrospectionHandling:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer._node_id = uuid4()
             reducer._event_bus = MagicMock()
@@ -1261,7 +1245,6 @@ class TestInfrastructureReducerIntrospectionHandling:
             patch("builtins.print") as mock_print,
             patch("time.time", return_value=1234567890),
         ):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             # Should publish introspection response
@@ -1320,7 +1303,6 @@ class TestInfrastructureReducerIntrospectionHandling:
             patch("builtins.print") as mock_print,
             patch("traceback.print_exc") as mock_traceback,
         ):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             mock_print.assert_any_call(
@@ -1339,7 +1321,6 @@ class TestInfrastructureReducerIntrospectionHandling:
         mock_event.correlation_id = uuid4()
 
         with patch("builtins.print"), patch("time.time", return_value=1234567890):
-
             reducer._handle_infrastructure_introspection_request(mock_event)
 
             # Check the published response
@@ -1383,7 +1364,6 @@ class TestInfrastructureReducerRegistryDelegation:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer.node_id = uuid4()
             reducer._event_bus_active = False
@@ -1515,7 +1495,6 @@ class TestInfrastructureReducerRegistryDelegation:
                 new_callable=AsyncMock,
             ) as mock_send_event,
         ):
-
             mock_send_event.return_value = {"result": "success"}
 
             result = await reducer.delegate_registry_request(
@@ -1568,7 +1547,6 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Create mock registry with all expected methods
@@ -1714,7 +1692,6 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer.specialized_components = {}  # No registry component
 
@@ -1737,7 +1714,6 @@ class TestInfrastructureReducerFallbackDirectCalls:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Create mock registry without list_registry_tools method
@@ -1807,7 +1783,6 @@ class TestInfrastructureReducerStatusAndListMethods:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Add mock adapters with health check methods
@@ -1892,7 +1867,6 @@ class TestInfrastructureReducerStatusAndListMethods:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Add adapter without health_check method
@@ -1917,7 +1891,6 @@ class TestInfrastructureReducerStatusAndListMethods:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Add adapter with failing health check
@@ -1980,7 +1953,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer.node_id = uuid4()
             reducer.event_bus = MagicMock()
@@ -1999,7 +1971,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.get_event_loop") as mock_event_loop,
             patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
@@ -2032,7 +2003,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.get_event_loop") as mock_event_loop,
             patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
@@ -2062,7 +2032,6 @@ class TestInfrastructureReducerEventBusOperations:
             patch("asyncio.Future") as mock_future_class,
             patch("asyncio.get_event_loop") as mock_event_loop,
         ):
-
             mock_future = MagicMock()
             mock_future_class.return_value = mock_future
             mock_event_loop.return_value.time.return_value = 1234567890
@@ -2163,7 +2132,6 @@ class TestInfrastructureReducerMainFunction:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
@@ -2185,7 +2153,6 @@ class TestInfrastructureReducerMainFunction:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             mock_container = MagicMock()
             mock_create_container.return_value = mock_container
 
@@ -2215,7 +2182,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             assert reducer.domain == "infrastructure"
@@ -2226,7 +2192,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             assert isinstance(reducer._pending_registry_requests, dict)
@@ -2260,7 +2225,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Test with unsupported version strategy - should fallback to current_stable
@@ -2278,7 +2242,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
 
             # Create adapter that returns unknown format
@@ -2303,7 +2266,6 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
         ):
-
             reducer = ToolInfrastructureReducer(mock_container)
             reducer.loaded_adapters = {}
             reducer.specialized_components = {}

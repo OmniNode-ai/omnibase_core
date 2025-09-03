@@ -29,7 +29,6 @@ This module provides structured configuration for node template generation,
 including template metadata, file mappings, and generation options.
 """
 
-
 from pydantic import BaseModel, ConfigDict, Field
 
 

@@ -3,7 +3,6 @@
 Error JSON schema model for ONEX core.
 """
 
-
 from pydantic import BaseModel, Field
 
 

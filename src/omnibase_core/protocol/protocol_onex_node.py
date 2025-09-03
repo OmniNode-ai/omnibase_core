@@ -22,18 +22,19 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 
+@runtime_checkable
 class ProtocolOnexNode(Protocol):
     """
-    Protocol for ONEX node implementations that can be loaded by the tool loader.
+    Protocol for ONEX node implementations that can be loaded by the node loader.
 
     All ONEX nodes must implement these methods to be compatible with the
-    dynamic tool loading system and container orchestration.
+    dynamic node loading system and container orchestration.
 
-    This protocol defines the standard interface that tool_loader.py expects
-    when loading and validating tools.
+    This protocol defines the standard interface that node_loader.py expects
+    when loading and validating nodes.
     """
 
     def run(self, *args: Any, **kwargs: Any) -> Any:

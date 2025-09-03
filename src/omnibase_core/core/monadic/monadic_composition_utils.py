@@ -127,7 +127,9 @@ class MonadicComposer:
                 execution_context.provenance.append(f"step.{i}.completed")
                 execution_context.logs.append(
                     LogEntry(
-                        "INFO", f"Step {i} completed successfully", datetime.now()
+                        "INFO",
+                        f"Step {i} completed successfully",
+                        datetime.now(),
                     ),
                 )
 

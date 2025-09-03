@@ -372,7 +372,8 @@ class ModelTrustPolicy(BaseModel):
         # Apply rules in order (later rules override earlier ones)
         for rule in applicable_rules:
             requirements.minimum_signatures = max(
-                requirements.minimum_signatures, rule.minimum_signatures
+                requirements.minimum_signatures,
+                rule.minimum_signatures,
             )
 
             if rule.required_algorithms:

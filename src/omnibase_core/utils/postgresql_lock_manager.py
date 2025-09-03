@@ -179,7 +179,7 @@ class PostgreSQLLockManager:
         except Exception as e:
             if self.logger:
                 self.logger.exception(
-                    f"Error checking lock status for '{lock_key}': {e}"
+                    f"Error checking lock status for '{lock_key}': {e}",
                 )
             return False
 

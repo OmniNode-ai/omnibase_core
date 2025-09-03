@@ -1,0 +1,239 @@
+# ServiceResolutionSubcontract - Service discovery, dependency injection, and service registry integration for ONEX nodes
+# Generated from service_resolution.yaml using automated conversion
+
+contract_type: service_resolution_subcontract
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+metadata:
+  name: ServiceResolutionSubcontract
+  description: Service discovery, dependency injection, and service registry integration for ONEX nodes
+  author: ONEX Framework Team
+  created: '2025-09-01'
+  purpose: Define comprehensive service resolution patterns
+  applicable_node_types:
+    - COMPUTE
+    - EFFECT
+    - REDUCER
+    - ORCHESTRATOR
+business_logic:
+  pattern: service_resolution
+  ai_agent:
+    capabilities:
+      - service_resolution_management
+    coordination_patterns:
+      - service_resolution_coordination
+    performance_targets:
+      default_timeout: 30s
+actions:
+  resolve_service:
+    description: Resolve a service by name using configured discovery strategy
+    operation_type: service_resolution
+    inputs:
+      service_name:
+        type: object
+        description: Input parameter service_name
+        required: true
+      service_type:
+        type: object
+        description: Input parameter service_type
+        required: true
+      resolution_strategy:
+        type: object
+        description: Input parameter resolution_strategy
+        required: true
+    outputs:
+      service_endpoint:
+        type: ModelServiceEndpoint
+        description: Output data service_endpoint
+      service_metadata:
+        type: ModelServiceMetadata
+        description: Output data service_metadata
+      resolution_method:
+        type: ModelResolutionMethod
+        description: Output data resolution_method
+    required: true
+    timeout_ms: 3000
+  register_service:
+    description: Register this node as a service in the service registry
+    operation_type: service_resolution
+    inputs:
+      service_config:
+        type: object
+        description: Input parameter service_config
+        required: true
+      health_check_endpoint:
+        type: object
+        description: Input parameter health_check_endpoint
+        required: true
+    outputs:
+      registration_id:
+        type: ModelRegistrationId
+        description: Output data registration_id
+      registration_status:
+        type: ModelRegistrationStatus
+        description: Output data registration_status
+    required: false
+    timeout_ms: 2000
+  deregister_service:
+    description: Remove service registration from registry
+    operation_type: service_resolution
+    inputs:
+      registration_id:
+        type: object
+        description: Input parameter registration_id
+        required: true
+    outputs:
+      deregistration_status:
+        type: ModelDeregistrationStatus
+        description: Output data deregistration_status
+    required: false
+    timeout_ms: 1000
+  discover_services:
+    description: Discover available services by type or pattern
+    operation_type: service_resolution
+    inputs:
+      service_pattern:
+        type: object
+        description: Input parameter service_pattern
+        required: true
+      service_type:
+        type: object
+        description: Input parameter service_type
+        required: true
+      include_health:
+        type: object
+        description: Input parameter include_health
+        required: true
+    outputs:
+      discovered_services:
+        type: ModelDiscoveredServices
+        description: Output data discovered_services
+      discovery_metadata:
+        type: ModelDiscoveryMetadata
+        description: Output data discovery_metadata
+    required: false
+    timeout_ms: 5000
+  check_service_health:
+    description: Check health status of resolved services
+    operation_type: service_resolution
+    inputs:
+      service_endpoints:
+        type: object
+        description: Input parameter service_endpoints
+        required: true
+    outputs:
+      health_statuses:
+        type: ModelHealthStatuses
+        description: Output data health_statuses
+      response_times:
+        type: ModelResponseTimes
+        description: Output data response_times
+    required: false
+    timeout_ms: 3000
+output_models:
+  ModelServiceResolutionSubcontract:
+    description: Main model for ServiceResolutionSubcontract
+    fields:
+      subcontract_name:
+        type: str
+        description: Name of the subcontract
+        required: false
+        default: service_resolution_subcontract
+      subcontract_version:
+        type: str
+        description: Version of the subcontract
+        required: false
+        default: 1.0.0
+      applicable_node_types:
+        type: List[str]
+        description: Node types this subcontract applies to
+        required: false
+        default:
+          - COMPUTE
+          - EFFECT
+          - REDUCER
+          - ORCHESTRATOR
+      primary_strategy:
+        type: str
+        description: Primary service resolution strategy
+        required: false
+        default: consul
+      fallback_strategy:
+        type: str
+        description: Fallback service resolution strategy
+        required: false
+        default: environment
+      cache_enabled:
+        type: bool
+        description: Whether service resolution caching is enabled
+        required: false
+        default: true
+      cache_ttl_ms:
+        type: int
+        description: Cache time-to-live in milliseconds
+        required: false
+        default: 300000
+      health_check_interval_ms:
+        type: int
+        description: Health check interval in milliseconds
+        required: false
+        default: 30000
+      max_retries:
+        type: int
+        description: Maximum number of resolution retries
+        required: false
+        default: 3
+      retry_delay_ms:
+        type: int
+        description: Delay between retries in milliseconds
+        required: false
+        default: 500
+      exponential_backoff:
+        type: bool
+        description: Whether to use exponential backoff for retries
+        required: false
+        default: true
+dependencies:
+  - name: service_resolution_capability
+    type: capability
+    description: Provides service resolution capabilities
+requires_dependencies:
+  - name: protocol_service_resolution
+    type: protocol
+    description: Protocol for service resolution operations
+    optional: true
+metrics:
+  - name: service_resolutions
+    type: counter
+    description: Total number of service resolution attempts
+    labels:
+      - service_name
+      - strategy
+      - success
+  - name: service_resolution_time
+    type: histogram
+    description: Time taken to resolve services
+    labels:
+      - service_name
+      - strategy
+  - name: cached_resolutions
+    type: counter
+    description: Number of resolutions served from cache
+    labels:
+      - service_name
+  - name: service_health_checks
+    type: counter
+    description: Number of service health checks performed
+    labels:
+      - service_name
+      - health_status
+  - name: active_service_registrations
+    type: gauge
+    description: Number of active service registrations
+    labels: []
+integration:
+  main_contract_field: service_resolution_configuration
+  mapping_strategy: direct_embedding
+  backward_compatibility: true

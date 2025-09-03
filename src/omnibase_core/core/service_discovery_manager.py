@@ -1,11 +1,11 @@
 """
 Service Discovery Manager
 
-Manages service discovery and resolution with Consul integration.
+Manages service discovery and resolution with protocol-based abstraction.
 Provides fallback strategies and service caching for ONEX container.
 """
 
-from typing import TypeVar
+from typing import Dict, List, Optional, TypeVar
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.decorators import allow_dict_str_any
@@ -13,32 +13,30 @@ from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
 from omnibase_core.protocol.protocol_logger import ProtocolLogger
-from omnibase_core.tools.registry.tool_consul_service_discovery import (
-    ModelServiceInstance,
-    ToolConsulServiceDiscovery,
-)
+from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+from omnibase_core.services.protocol_service_resolver import resolve_service_discovery
 
 T = TypeVar("T")
 
 
 class ServiceDiscoveryManager:
     """
-    Manages service discovery and resolution with Consul integration.
+    Manages service discovery and resolution with protocol-based abstraction.
     """
 
     @allow_dict_str_any("static configuration requires flexible structure")
     def __init__(
         self,
-        consul_client: ToolConsulServiceDiscovery,
         static_config: dict[str, object],
         logger: ProtocolLogger,
     ):
-        self.consul = consul_client
         self.static_config = static_config
         self.logger = logger
-        self.service_cache: dict[str, object] = (
-            {}
-        )  # allow_dict_str_any: service cache needs flexible typing
+        self.service_cache: dict[
+            str,
+            object,
+        ] = {}  # allow_dict_str_any: service cache needs flexible typing
+        self._service_discovery: Optional[ProtocolServiceDiscovery] = None
 
     async def resolve_service(
         self,
@@ -66,16 +64,18 @@ class ServiceDiscoveryManager:
             return cast("T", cached_service)
 
         try:
-            # Try Consul discovery if service name provided
-            if service_name and await self._is_consul_available():
-                service = await self._discover_from_consul(protocol_type, service_name)
+            # Try protocol-based service discovery if service name provided
+            if service_name and await self._is_service_discovery_available():
+                service = await self._discover_from_service_discovery(
+                    protocol_type, service_name
+                )
                 if service:
                     self.service_cache[cache_key] = service
                     return service
         except Exception as e:
             self.logger.emit_log_event_sync(
                 level=LogLevel.WARNING,
-                message=f"Consul service discovery failed for {service_name}: {e}",
+                message=f"Service discovery failed for {service_name}: {e}",
                 event_type="service_discovery_failed",
             )
 
@@ -97,32 +97,52 @@ class ServiceDiscoveryManager:
             error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
         )
 
-    async def _is_consul_available(self) -> bool:
-        """Check if Consul is available for service discovery."""
+    async def _get_service_discovery(self) -> ProtocolServiceDiscovery:
+        """Get service discovery implementation with caching."""
+        if self._service_discovery is None:
+            self._service_discovery = await resolve_service_discovery()
+        return self._service_discovery
+
+    async def _is_service_discovery_available(self) -> bool:
+        """Check if service discovery is available."""
         try:
-            return await self.consul.check_consul_connectivity()
+            service_discovery = await self._get_service_discovery()
+            health = await service_discovery.get_service_health("self")
+            return health.status == "healthy"
         except Exception:
             return False
 
-    async def _discover_from_consul(
+    async def _discover_from_service_discovery(
         self,
         protocol_type: type[T],
         service_name: str,
     ) -> T | None:
-        """Discover service instance from Consul."""
-        instance = await self.consul.resolve_service(service_name)
-        if instance:
-            return self._create_service_client(protocol_type, instance)
-        return None
+        """Discover service instance from protocol-based service discovery."""
+        try:
+            service_discovery = await self._get_service_discovery()
+            services = await service_discovery.discover_services(service_name)
+
+            if services:
+                # Use first available service
+                service_info = services[0]
+                return self._create_service_client(protocol_type, service_info)
+            return None
+        except Exception as e:
+            self.logger.emit_log_event_sync(
+                level=LogLevel.WARNING,
+                message=f"Service discovery lookup failed: {e}",
+                event_type="service_discovery_lookup_failed",
+            )
+            return None
 
     def _create_service_client(
         self,
         protocol_type: type[T],
-        instance: ModelServiceInstance,
+        service_info: Dict[str, object],
     ) -> T:
-        """Create service client from discovered instance."""
-        # Build service URL from discovered instance
-        # base_url = f"http://{instance.address}:{instance.port}"  # Future use
+        """Create service client from discovered service information."""
+        # Build service URL from discovered service
+        # base_url = f"http://{service_info.get('address')}:{service_info.get('port')}"  # Future use
 
         # This would be expanded with actual service client factories
         # based on protocol types discovered in contracts

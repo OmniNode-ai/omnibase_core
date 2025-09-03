@@ -28,6 +28,11 @@ if TYPE_CHECKING:
     from omnibase_core.enums.node import EnumNodeType
 else:
     from omnibase_core.core.contracts.model_contract_base import ModelContractBase
+    from omnibase_core.core.subcontracts import (
+        ModelEventTypeSubcontract,
+        ModelRoutingSubcontract,
+        ModelStateManagementSubcontract,
+    )
     from omnibase_core.enums.node import EnumNodeType
 
 

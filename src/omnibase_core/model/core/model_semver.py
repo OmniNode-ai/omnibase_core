@@ -33,6 +33,15 @@ class ModelSemVer(BaseModel):
         """Convert to semantic version string."""
         return str(self)
 
+    def to_dict(self) -> dict:
+        """Convert to JSON-serializable dictionary."""
+        return {
+            "major": self.major,
+            "minor": self.minor,
+            "patch": self.patch,
+            "version_string": str(self),
+        }
+
     @classmethod
     def from_string(cls, version_str: str) -> "ModelSemVer":
         """Create ModelSemVer from version string."""

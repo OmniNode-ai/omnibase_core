@@ -405,7 +405,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                 except Exception as e:
                     if hasattr(self, "logger") and self.logger:
                         self.logger.exception(
-                            f"   ❌ Failed to load {adapter_name}: {e}"
+                            f"   ❌ Failed to load {adapter_name}: {e}",
                         )
                     else:
                         pass

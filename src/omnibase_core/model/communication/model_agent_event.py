@@ -48,7 +48,8 @@ class ModelAgentEvent(BaseModel):
     )
     message: str = Field(description="Human-readable event message")
     data: dict[str, str | int | float | bool | dict[str, str] | list] | None = Field(
-        default=None, description="Additional event data"
+        default=None,
+        description="Additional event data",
     )
     correlation_id: str | None = Field(
         default=None,

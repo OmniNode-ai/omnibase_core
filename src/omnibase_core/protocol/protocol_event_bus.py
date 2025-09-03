@@ -39,7 +39,30 @@ class ProtocolEventBus(Protocol):
     Implementations may provide either or both, as appropriate.
     Optionally supports clear() for test/lifecycle management.
 
-    # TODO: Future: Add pluggable backends (Kafka, message persistence, authentication, multi-tenant support)
+    # ROADMAP: Future protocol extensions for production scalability
+    #
+    # Phase 1 - Backend Abstraction:
+    # - Pluggable backend interface (Redis, Kafka, RabbitMQ, NATS)
+    # - Backend selection via configuration
+    # - Fallback mechanisms for backend failures
+    #
+    # Phase 2 - Persistence & Reliability:
+    # - Message persistence for durability
+    # - Dead letter queues for failed messages
+    # - Message replay capabilities
+    # - Delivery acknowledgements
+    #
+    # Phase 3 - Security & Multi-tenancy:
+    # - Authentication and authorization
+    # - Multi-tenant isolation
+    # - Message encryption in transit
+    # - Audit logging for compliance
+    #
+    # Phase 4 - Advanced Features:
+    # - Message routing and filtering
+    # - Priority queues
+    # - Rate limiting per tenant
+    # - Monitoring and health checks
     """
 
     def __init__(

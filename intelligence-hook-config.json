@@ -1,0 +1,87 @@
+{
+  "intelligence_enabled": true,
+  "quality_analysis": {
+    "enabled": true,
+    "file_patterns": ["*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.java", "*.cpp", "*.c", "*.h", "*.go", "*.rs", "*.php"],
+    "exclude_patterns": [
+      "node_modules/",
+      "*.test.*",
+      "*.spec.*",
+      "__pycache__/",
+      "*.pyc",
+      ".git/",
+      "dist/",
+      "build/",
+      "coverage/",
+      "*.min.js",
+      "*.bundle.js"
+    ],
+    "min_quality_score": 0.7,
+    "fail_on_quality_drop": false,
+    "track_quality_trends": true
+  },
+  "performance_analysis": {
+    "enabled": true,
+    "file_patterns": ["*.py", "*.js", "*.ts", "*.sql", "*.go", "*.rs"],
+    "critical_paths": [
+      "src/api/",
+      "src/database/",
+      "src/performance/",
+      "api/",
+      "lib/",
+      "core/"
+    ],
+    "min_performance_score": 0.8,
+    "fail_on_performance_regression": false,
+    "track_performance_trends": true
+  },
+  "debug_analysis": {
+    "enabled": true,
+    "error_patterns": ["error", "exception", "bug", "fix", "crash", "issue", "problem"],
+    "commit_message_patterns": ["fix", "bug", "issue", "error", "crash", "problem"],
+    "track_patterns": true,
+    "learn_from_fixes": true
+  },
+  "hook_behavior": {
+    "fail_on_quality_drop": false,
+    "fail_on_performance_issues": false,
+    "fail_on_security_issues": true,
+    "update_knowledge_base": true,
+    "verbose_output": false,
+    "max_analysis_time_seconds": 30,
+    "skip_on_merge_commits": false,
+    "skip_large_changesets": true,
+    "max_files_to_analyze": 50
+  },
+  "intelligence_tools": {
+    "quality_assessment": {
+      "assess_code_quality": true,
+      "check_architectural_compliance": true,
+      "get_quality_patterns": true,
+      "analyze_document_quality": false
+    },
+    "performance_optimization": {
+      "establish_performance_baseline": false,
+      "identify_optimization_opportunities": true,
+      "monitor_performance_trends": false
+    }
+  },
+  "notification_settings": {
+    "success_notifications": false,
+    "warning_notifications": true,
+    "error_notifications": true,
+    "analysis_summary": true
+  },
+  "repository_settings": {
+    "project_type": "auto_detect",
+    "primary_language": "auto_detect",
+    "architecture_type": "onex",
+    "quality_standards": ["onex", "clean_architecture"],
+    "performance_targets": {
+      "response_time_ms": 200,
+      "throughput_rps": 1000,
+      "cpu_usage_percent": 70,
+      "memory_usage_mb": 512
+    }
+  }
+}

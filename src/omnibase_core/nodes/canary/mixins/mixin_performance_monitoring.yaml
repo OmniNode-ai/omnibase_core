@@ -1,0 +1,214 @@
+# ONEX Mixin: Performance Monitoring
+# Provides standardized metrics collection and performance tracking for all node types
+
+mixin_name: "mixin_performance_monitoring"
+mixin_version: {major: 1, minor: 0, patch: 0}
+description: "Metrics collection, performance tracking, and observability for ONEX nodes"
+applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+
+# === PERFORMANCE MONITORING ACTIONS ===
+actions:
+  - name: "collect_metrics"
+    description: "Collect current performance metrics"
+    inputs: ["metric_types", "aggregation_period"]
+    outputs: ["metrics_data", "collection_timestamp"]
+    required: true
+    timeout_ms: 2000
+
+  - name: "start_performance_trace"
+    description: "Start a performance trace for an operation"
+    inputs: ["operation_name", "trace_config"]
+    outputs: ["trace_id", "trace_context"]
+    required: false
+    timeout_ms: 500
+
+  - name: "end_performance_trace"
+    description: "End a performance trace and record metrics"
+    inputs: ["trace_id", "operation_result"]
+    outputs: ["trace_summary", "performance_metrics"]
+    required: false
+    timeout_ms: 1000
+
+  - name: "get_performance_summary"
+    description: "Get performance summary over specified time period"
+    inputs: ["time_range", "metric_filters"]
+    outputs: ["performance_summary", "trend_analysis"]
+    required: false
+    timeout_ms: 3000
+
+  - name: "configure_alerts"
+    description: "Configure performance alerts and thresholds"
+    inputs: ["alert_config", "notification_targets"]
+    outputs: ["alert_configuration", "alert_status"]
+    required: false
+    timeout_ms: 2000
+
+# === PERFORMANCE MONITORING CONFIGURATION ===
+performance_config:
+  collection_interval_ms: 10000  # 10 seconds
+  metric_retention_hours: 168    # 7 days
+  aggregation_intervals: [60000, 300000, 3600000]  # 1min, 5min, 1hour
+  auto_collection_enabled: true
+  trace_sampling_rate: 0.1  # 10% sampling
+  alert_evaluation_interval_ms: 30000  # 30 seconds
+
+# === CORE METRICS DEFINITIONS ===
+core_metrics:
+  - name: "request_count"
+    type: "counter"
+    description: "Total number of requests processed"
+    labels: ["operation", "status"]
+    
+  - name: "request_duration"
+    type: "histogram"
+    description: "Request processing duration in milliseconds"
+    labels: ["operation"]
+    buckets: [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000]
+    
+  - name: "active_requests"
+    type: "gauge"
+    description: "Number of currently active requests"
+    
+  - name: "memory_usage"
+    type: "gauge"
+    description: "Memory usage in megabytes"
+    
+  - name: "cpu_usage"
+    type: "gauge"
+    description: "CPU usage percentage"
+
+# === NODE-SPECIFIC METRICS ===
+node_specific_metrics:
+  COMPUTE:
+    - name: "computation_complexity"
+      type: "histogram"
+      description: "Complexity score of computations"
+      labels: ["algorithm_type"]
+      
+    - name: "cache_hit_rate"
+      type: "gauge"
+      description: "Cache hit rate percentage"
+      
+  EFFECT:
+    - name: "external_call_duration"
+      type: "histogram"
+      description: "Duration of external API calls"
+      labels: ["endpoint", "method"]
+      
+    - name: "io_operations"
+      type: "counter"
+      description: "Number of I/O operations performed"
+      labels: ["operation_type", "success"]
+      
+  REDUCER:
+    - name: "aggregation_size"
+      type: "histogram"
+      description: "Size of data being aggregated"
+      labels: ["aggregation_type"]
+      
+    - name: "state_size"
+      type: "gauge"
+      description: "Current state size in bytes"
+      
+  ORCHESTRATOR:
+    - name: "workflow_duration"
+      type: "histogram"
+      description: "Total workflow execution time"
+      labels: ["workflow_type"]
+      
+    - name: "coordination_overhead"
+      type: "histogram"
+      description: "Time spent on coordination tasks"
+
+# === OUTPUT MODELS ===
+output_models:
+  metrics_data:
+    timestamp: "datetime"
+    node_id: "string"
+    metrics:
+      type: "array"
+      items:
+        metric_name: "string"
+        metric_type: "enum[counter,gauge,histogram]"
+        value: "number"
+        labels:
+          type: "object"
+          additionalProperties: "string"
+        unit: "string"
+        
+  trace_summary:
+    trace_id: "string"
+    operation_name: "string"
+    start_time: "datetime"
+    end_time: "datetime"
+    duration_ms: "integer"
+    success: "boolean"
+    spans:
+      type: "array"
+      items:
+        span_name: "string"
+        duration_ms: "integer"
+        tags:
+          type: "object"
+          additionalProperties: "string"
+          
+  performance_summary:
+    time_range:
+      start: "datetime"
+      end: "datetime"
+    summary_metrics:
+      total_requests: "integer"
+      average_response_time_ms: "float"
+      error_rate_percent: "float"
+      throughput_rps: "float"
+    resource_usage:
+      peak_memory_mb: "float"
+      average_cpu_percent: "float"
+      peak_cpu_percent: "float"
+
+# === ALERT DEFINITIONS ===
+default_alerts:
+  - name: "high_response_time"
+    condition: "average_response_time_ms > 1000"
+    severity: "warning"
+    evaluation_window_ms: 300000  # 5 minutes
+    
+  - name: "high_error_rate"
+    condition: "error_rate_percent > 5"
+    severity: "critical"
+    evaluation_window_ms: 60000   # 1 minute
+    
+  - name: "high_memory_usage"
+    condition: "memory_usage_mb > 1000"
+    severity: "warning"
+    evaluation_window_ms: 300000  # 5 minutes
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "metrics_collection"
+    type: "capability"
+    description: "Provides metrics collection and aggregation capabilities"
+    
+  - name: "performance_monitoring"
+    type: "capability"
+    description: "Provides performance monitoring and alerting capabilities"
+
+# === DEPENDENCIES REQUIRED ===
+requires_dependencies:
+  - name: "protocol_metrics_collector"
+    type: "protocol"
+    description: "Metrics collection protocol for data export"
+    optional: true
+
+# === METRICS EXPORT CONFIGURATION ===
+metrics_export:
+  formats: ["prometheus", "json", "influxdb"]
+  endpoints:
+    prometheus: "/metrics"
+    json: "/metrics/json"
+  push_gateways:
+    enabled: false
+    endpoints: []
+  retention_policies:
+    raw_data: "24h"
+    aggregated_data: "7d"

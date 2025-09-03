@@ -132,6 +132,8 @@ class ModelDiscoveryConfig(BaseModel):
             import warnings
 
             warnings.warn(
-                f"max_depth {v} may cause performance issues", UserWarning, stacklevel=2
+                f"max_depth {v} may cause performance issues",
+                UserWarning,
+                stacklevel=2,
             )
         return v

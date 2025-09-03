@@ -330,7 +330,7 @@ class ModelPermissionConstraints(BaseModel):
             return False
 
         return bool(
-            self.notification_threshold and usage_count >= self.notification_threshold
+            self.notification_threshold and usage_count >= self.notification_threshold,
         )
 
     def get_risk_assessment(self) -> ModelRiskAssessment:

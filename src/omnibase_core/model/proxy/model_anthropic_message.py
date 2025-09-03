@@ -20,7 +20,9 @@ class ModelAnthropicMessage(BaseModel):
     type: Literal["message"] = Field("message", description="Response type")
     role: Literal["assistant"] = Field("assistant", description="Message role")
     content: list[ModelAnthropicTextContent | ModelAnthropicToolUseContent] = Field(
-        ..., description="Message content blocks", min_items=0
+        ...,
+        description="Message content blocks",
+        min_items=0,
     )
     model: str = Field(..., description="Model used", min_length=1)
     stop_reason: Literal["end_turn", "max_tokens", "stop_sequence"] | None = Field(

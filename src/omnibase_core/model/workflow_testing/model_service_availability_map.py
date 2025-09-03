@@ -5,7 +5,6 @@ ONEX Service Availability Map Model
 Model for mapping service names to their availability status in workflow testing.
 """
 
-
 from pydantic import BaseModel
 
 

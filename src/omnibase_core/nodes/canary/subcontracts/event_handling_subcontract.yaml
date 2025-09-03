@@ -1,0 +1,218 @@
+# EventHandlingSubcontract - Event bus integration and message handling patterns for ONEX nodes
+# Generated from event_handling.yaml using automated conversion
+
+contract_type: event_handling_subcontract
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+metadata:
+  name: EventHandlingSubcontract
+  description: Event bus integration and message handling patterns for ONEX nodes
+  author: ONEX Framework Team
+  created: '2025-09-01'
+  purpose: Define comprehensive event handling patterns
+  applicable_node_types:
+    - COMPUTE
+    - EFFECT
+    - REDUCER
+    - ORCHESTRATOR
+business_logic:
+  pattern: event_handling
+  ai_agent:
+    capabilities:
+      - event_handling_management
+    coordination_patterns:
+      - event_handling_coordination
+    performance_targets:
+      default_timeout: 30s
+actions:
+  publish_event:
+    description: Publish an event to the event bus
+    operation_type: event_handling
+    inputs:
+      event_type:
+        type: object
+        description: Input parameter event_type
+        required: true
+      event_data:
+        type: object
+        description: Input parameter event_data
+        required: true
+      routing_key:
+        type: object
+        description: Input parameter routing_key
+        required: true
+    outputs:
+      publish_result:
+        type: ModelPublishResult
+        description: Output data publish_result
+      event_id:
+        type: ModelEventId
+        description: Output data event_id
+    required: true
+    timeout_ms: 3000
+  subscribe_to_events:
+    description: Subscribe to specific event types
+    operation_type: event_handling
+    inputs:
+      event_types:
+        type: object
+        description: Input parameter event_types
+        required: true
+      subscription_config:
+        type: object
+        description: Input parameter subscription_config
+        required: true
+    outputs:
+      subscription_id:
+        type: ModelSubscriptionId
+        description: Output data subscription_id
+      subscription_status:
+        type: ModelSubscriptionStatus
+        description: Output data subscription_status
+    required: false
+    timeout_ms: 2000
+  unsubscribe_from_events:
+    description: Unsubscribe from event types
+    operation_type: event_handling
+    inputs:
+      subscription_id:
+        type: object
+        description: Input parameter subscription_id
+        required: true
+    outputs:
+      unsubscription_status:
+        type: ModelUnsubscriptionStatus
+        description: Output data unsubscription_status
+    required: false
+    timeout_ms: 1000
+  handle_event:
+    description: Process incoming events from subscriptions
+    operation_type: event_handling
+    inputs:
+      event_envelope:
+        type: object
+        description: Input parameter event_envelope
+        required: true
+    outputs:
+      processing_result:
+        type: ModelProcessingResult
+        description: Output data processing_result
+      response_events:
+        type: ModelResponseEvents
+        description: Output data response_events
+    required: true
+    timeout_ms: 5000
+  get_event_history:
+    description: Retrieve event processing history
+    operation_type: event_handling
+    inputs:
+      time_range:
+        type: object
+        description: Input parameter time_range
+        required: true
+      event_type_filter:
+        type: object
+        description: Input parameter event_type_filter
+        required: true
+    outputs:
+      event_history:
+        type: ModelEventHistory
+        description: Output data event_history
+      processing_stats:
+        type: ModelProcessingStats
+        description: Output data processing_stats
+    required: false
+    timeout_ms: 2000
+output_models:
+  ModelEventHandlingSubcontract:
+    description: Main model for EventHandlingSubcontract
+    fields:
+      subcontract_name:
+        type: str
+        description: Name of the subcontract
+        required: false
+        default: external_dependencies_subcontract
+      subcontract_version:
+        type: str
+        description: Version of the subcontract
+        required: false
+        default: 1.0.0
+      applicable_node_types:
+        type: list[str]
+        description: Node types this subcontract applies to
+        required: false
+        default:
+          - EFFECT
+      connection_pool_size:
+        type: int
+        description: Size of connection pool for external services
+        required: false
+        default: 20
+      default_timeout_ms:
+        type: int
+        description: Default timeout for external calls in milliseconds
+        required: false
+        default: 15000
+      max_concurrent_calls:
+        type: int
+        description: Maximum concurrent external calls
+        required: false
+        default: 50
+      circuit_breaker_enabled:
+        type: bool
+        description: Whether circuit breaker is enabled
+        required: false
+        default: true
+      failure_threshold:
+        type: int
+        description: Number of failures before opening circuit breaker
+        required: false
+        default: 10
+      timeout_duration_ms:
+        type: int
+        description: Circuit breaker timeout duration in milliseconds
+        required: false
+        default: 60000
+dependencies:
+  - name: event_handling_capability
+    type: capability
+    description: Provides event handling capabilities
+requires_dependencies:
+  - name: protocol_event_handling
+    type: protocol
+    description: Protocol for event handling operations
+    optional: true
+metrics:
+  - name: events_published
+    type: counter
+    description: Total number of events published
+    labels:
+      - event_type
+      - routing_key
+  - name: events_received
+    type: counter
+    description: Total number of events received
+    labels:
+      - event_type
+      - subscription_id
+  - name: event_processing_time
+    type: histogram
+    description: Time taken to process events
+    labels:
+      - event_type
+  - name: active_subscriptions
+    type: gauge
+    description: Number of active event subscriptions
+    labels: []
+  - name: event_processing_errors
+    type: counter
+    description: Number of event processing errors
+    labels:
+      - event_type
+      - error_type
+integration:
+  main_contract_field: event_handling_configuration
+  mapping_strategy: direct_embedding
+  backward_compatibility: true

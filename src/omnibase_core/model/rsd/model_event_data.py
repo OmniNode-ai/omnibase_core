@@ -6,7 +6,6 @@ Strongly-typed event data model for trigger context, replacing Union types.
 Generated from contract: rsd_metadata_types_contract.yaml
 """
 
-
 from pydantic import BaseModel, Field
 
 

@@ -1,0 +1,233 @@
+# Health Check Subcontract - Universal Health Monitoring
+# Provides standardized health monitoring capabilities for all node types
+
+contract_type: "health_check_subcontract"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+metadata:
+  name: "HealthCheckSubcontract"
+  description: "Standardized health monitoring and status reporting for ONEX nodes"
+  author: "ONEX Framework Team"
+  created: "2025-09-01"
+  purpose: "Define comprehensive health monitoring patterns with status reporting and alerting"
+  applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+
+business_logic:
+  pattern: "health_monitoring"
+  ai_agent:
+    capabilities: ["health_status_reporting", "component_monitoring", "dependency_health_checks", "alert_management"]
+    coordination_patterns: ["health_aggregation", "status_propagation", "failure_detection"]
+    performance_targets:
+      check_interval: "30s"
+      failure_threshold: "3 consecutive failures"
+      recovery_threshold: "2 consecutive successes"
+
+# === HEALTH CHECK ACTIONS ===
+actions:
+  health_check:
+    description: "Check overall health status of the node and its dependencies"
+    operation_type: "health_monitoring"
+    inputs:
+      check_config:
+        type: "object"
+        description: "Health check configuration parameters"
+        properties:
+          include_components: "boolean"
+          include_dependencies: "boolean"
+          timeout_ms: "integer"
+    outputs:
+      health_status:
+        type: "ModelHealthStatus"
+        description: "Overall health status of the node"
+      component_health:
+        type: "array"
+        description: "Health status of individual components"
+        items: "ModelComponentHealth"
+      execution_metadata:
+        type: "ModelExecutionMetadata"
+        description: "Health check execution metadata"
+    required: true
+    timeout_ms: 5000
+
+  component_health_check:
+    description: "Check health of individual node components"
+    operation_type: "component_monitoring"
+    inputs:
+      component_name:
+        type: "string"
+        description: "Name of component to check"
+        required: true
+      check_config:
+        type: "object"
+        description: "Component-specific check configuration"
+    outputs:
+      component_status:
+        type: "ModelComponentHealth"
+        description: "Health status of the specified component"
+      check_details:
+        type: "object"
+        description: "Detailed component health information"
+    required: false
+    timeout_ms: 3000
+
+# === HEALTH STATUS DEFINITIONS ===
+health_status_levels:
+  - HEALTHY: "All systems operational"
+  - DEGRADED: "Some non-critical issues detected"
+  - UNHEALTHY: "Critical issues affecting functionality"
+  - CRITICAL: "Node cannot function properly"
+  - ERROR: "Health check system failure"
+
+# === HEALTH CHECK CONFIGURATION ===
+health_check_config:
+  check_interval_ms: 30000 # 30 seconds
+  failure_threshold: 3
+  recovery_threshold: 2
+  timeout_ms: 5000
+  include_dependency_checks: true
+  include_component_checks: true
+
+# === OUTPUT MODELS ===
+output_models:
+  ModelHealthStatus:
+    description: "Overall health status of a node or system"
+    fields:
+      status:
+        type: "enum[HEALTHY,DEGRADED,UNHEALTHY,CRITICAL,ERROR]"
+        description: "Current health status level"
+        required: true
+      message:
+        type: "string"
+        description: "Human-readable health status message"
+        required: true
+      timestamp:
+        type: "datetime"
+        description: "When the health check was performed"
+        required: true
+      check_duration_ms:
+        type: "integer"
+        description: "Time taken for health check in milliseconds"
+        validation: "ge=0"
+        required: true
+      component_count:
+        type: "integer"
+        description: "Number of components checked"
+        validation: "ge=0"
+        default: 0
+      failed_components:
+        type: "integer"
+        description: "Number of failed components"
+        validation: "ge=0"
+        default: 0
+
+  ModelComponentHealth:
+    description: "Health status of an individual component"
+    fields:
+      component_name:
+        type: "string"
+        description: "Name of the component"
+        required: true
+      status:
+        type: "enum[HEALTHY,DEGRADED,UNHEALTHY,CRITICAL,ERROR]"
+        description: "Current component health status"
+        required: true
+      message:
+        type: "string"
+        description: "Component-specific health message"
+        required: true
+      last_check:
+        type: "datetime"
+        description: "When this component was last checked"
+        required: true
+      check_count:
+        type: "integer"
+        description: "Number of checks performed on this component"
+        validation: "ge=0"
+        default: 0
+      failure_count:
+        type: "integer"
+        description: "Number of consecutive failures"
+        validation: "ge=0"
+        default: 0
+
+  ModelExecutionMetadata:
+    description: "Metadata about health check execution"
+    fields:
+      operation_name:
+        type: "string"
+        description: "Name of the health check operation"
+        required: true
+      start_time:
+        type: "datetime"
+        description: "When the operation started"
+        required: true
+      end_time:
+        type: "datetime"
+        description: "When the operation completed"
+        required: true
+      total_time_ms:
+        type: "integer"
+        description: "Total execution time in milliseconds"
+        validation: "ge=0"
+        required: true
+      checks_performed:
+        type: "integer"
+        description: "Number of individual checks performed"
+        validation: "ge=0"
+        default: 0
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "health_monitoring"
+    type: "capability"
+    description: "Provides health monitoring capabilities"
+  - name: "component_monitoring"
+    type: "capability"
+    description: "Provides individual component health monitoring"
+  - name: "status_reporting"
+    type: "capability"
+    description: "Provides health status reporting and alerting"
+
+# === DEPENDENCIES REQUIRED ===
+requires_dependencies:
+  - name: "protocol_health_checker"
+    type: "protocol"
+    description: "Health checking protocol for component monitoring"
+    optional: true
+  - name: "protocol_metrics_collector"
+    type: "protocol"
+    description: "Metrics collection protocol for health statistics"
+    optional: true
+
+# === METRICS ===
+metrics:
+  - name: "health_check_count"
+    type: "counter"
+    description: "Total number of health checks performed"
+    labels: ["component_name", "status", "check_type"]
+  - name: "health_check_duration"
+    type: "histogram"
+    description: "Time taken for health checks"
+    labels: ["component_name", "check_type"]
+    buckets: [10, 50, 100, 500, 1000, 5000]
+  - name: "health_status_changes"
+    type: "counter"
+    description: "Number of health status changes"
+    labels: ["component_name", "from_status", "to_status"]
+  - name: "component_failure_count"
+    type: "counter"
+    description: "Number of component failures"
+    labels: ["component_name", "failure_type"]
+  - name: "current_health_status"
+    type: "gauge"
+    description: "Current health status (0=unhealthy, 1=healthy)"
+    labels: ["component_name"]
+
+# === INTEGRATION ===
+integration:
+  main_contract_field: "health_check_configuration"
+  mapping_strategy: "direct_embedding"
+  backward_compatibility: true

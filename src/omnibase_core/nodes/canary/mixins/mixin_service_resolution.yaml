@@ -1,0 +1,178 @@
+# ONEX Mixin: Service Resolution
+# Provides standardized service discovery and dependency injection for all node types
+
+mixin_name: "mixin_service_resolution"
+mixin_version: {major: 1, minor: 0, patch: 0}
+description: "Service discovery, dependency injection, and service registry integration for ONEX nodes"
+applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+
+# === SERVICE RESOLUTION ACTIONS ===
+actions:
+  - name: "resolve_service"
+    description: "Resolve a service by name using configured discovery strategy"
+    inputs: ["service_name", "service_type", "resolution_strategy"]
+    outputs: ["service_endpoint", "service_metadata", "resolution_method"]
+    required: true
+    timeout_ms: 3000
+
+  - name: "register_service"
+    description: "Register this node as a service in the service registry"
+    inputs: ["service_config", "health_check_endpoint"]
+    outputs: ["registration_id", "registration_status"]
+    required: false
+    timeout_ms: 2000
+
+  - name: "deregister_service"
+    description: "Remove service registration from registry"
+    inputs: ["registration_id"]
+    outputs: ["deregistration_status"]
+    required: false
+    timeout_ms: 1000
+
+  - name: "discover_services"
+    description: "Discover available services by type or pattern"
+    inputs: ["service_pattern", "service_type", "include_health"]
+    outputs: ["discovered_services", "discovery_metadata"]
+    required: false
+    timeout_ms: 5000
+
+  - name: "check_service_health"
+    description: "Check health status of resolved services"
+    inputs: ["service_endpoints"]
+    outputs: ["health_statuses", "response_times"]
+    required: false
+    timeout_ms: 3000
+
+# === SERVICE RESOLUTION CONFIGURATION ===
+service_resolution_config:
+  primary_strategy: "consul"
+  fallback_strategy: "environment"
+  cache_enabled: true
+  cache_ttl_ms: 300000  # 5 minutes
+  health_check_interval_ms: 30000  # 30 seconds
+  retry_policy:
+    max_retries: 3
+    retry_delay_ms: 500
+    exponential_backoff: true
+  load_balancing:
+    strategy: "round_robin"
+    health_aware: true
+
+# === RESOLUTION STRATEGIES ===
+resolution_strategies:
+  consul:
+    enabled: true
+    consul_endpoint: "${CONSUL_ENDPOINT:-http://localhost:8500}"
+    service_prefix: "onex"
+    health_checks_enabled: true
+    
+  environment:
+    enabled: true
+    prefix: "ONEX_SERVICE_"
+    format: "${prefix}${service_name_upper}_ENDPOINT"
+    
+  hybrid:
+    enabled: true
+    primary: "consul"
+    fallback: "environment"
+    cache_results: true
+
+# === OUTPUT MODELS ===
+output_models:
+  service_endpoint:
+    service_name: "string"
+    endpoint_url: "string"
+    protocol: "enum[HTTP,HTTPS,GRPC,TCP,UDP]"
+    port: "integer"
+    health_status: "enum[HEALTHY,UNHEALTHY,UNKNOWN]"
+    last_checked: "datetime"
+    metadata:
+      type: "object"
+      additionalProperties: "string"
+      
+  service_metadata:
+    service_version: "string"
+    node_type: "string"
+    capabilities:
+      type: "array"
+      items: "string"
+    discovery_method: "enum[CONSUL,ENVIRONMENT,CACHE]"
+    
+  discovered_services:
+    type: "array"
+    items:
+      service_name: "string"
+      service_type: "string"
+      endpoints:
+        type: "array"
+        items:
+          url: "string"
+          health_status: "string"
+          weight: "integer"
+      discovery_time: "datetime"
+
+# === SERVICE TYPES BY NODE TYPE ===
+node_service_patterns:
+  COMPUTE:
+    provides: ["computation", "algorithm"]
+    consumes: ["event_bus", "metrics"]
+    discovery_tags: ["compute", "stateless"]
+    
+  EFFECT:
+    provides: ["side_effect", "external_integration"]
+    consumes: ["event_bus", "external_api", "database"]
+    discovery_tags: ["effect", "io_operations"]
+    
+  REDUCER:
+    provides: ["aggregation", "state_management"]  
+    consumes: ["event_bus", "persistence", "cache"]
+    discovery_tags: ["reducer", "stateful"]
+    
+  ORCHESTRATOR:
+    provides: ["workflow", "coordination"]
+    consumes: ["event_bus", "service_registry", "compute", "effect", "reducer"]
+    discovery_tags: ["orchestrator", "coordinator"]
+
+# === DEPENDENCIES PROVIDED ===
+dependencies:
+  - name: "service_discovery"
+    type: "capability"
+    description: "Provides service discovery and resolution capabilities"
+    
+  - name: "service_registration"
+    type: "capability"
+    description: "Provides service registration capabilities"
+
+# === DEPENDENCIES REQUIRED ===
+requires_dependencies:
+  - name: "protocol_consul_client"
+    type: "protocol"
+    description: "Consul client for service registry operations"
+    optional: true
+    fallback: "environment_resolution"
+
+# === METRICS ===
+metrics:
+  - name: "service_resolutions"
+    type: "counter"
+    description: "Total number of service resolution attempts"
+    labels: ["service_name", "strategy", "success"]
+    
+  - name: "service_resolution_time"
+    type: "histogram"
+    description: "Time taken to resolve services"
+    labels: ["service_name", "strategy"]
+    
+  - name: "cached_resolutions"
+    type: "counter"
+    description: "Number of resolutions served from cache"
+    labels: ["service_name"]
+    
+  - name: "service_health_checks"
+    type: "counter"
+    description: "Number of service health checks performed"
+    labels: ["service_name", "health_status"]
+    
+  - name: "active_service_registrations"
+    type: "gauge"
+    description: "Number of active service registrations"

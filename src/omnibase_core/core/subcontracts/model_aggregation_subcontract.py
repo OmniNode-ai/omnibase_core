@@ -15,7 +15,6 @@ providing clean separation between node logic and aggregation behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-
 from pydantic import BaseModel, Field, field_validator
 
 
