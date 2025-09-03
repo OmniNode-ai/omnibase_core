@@ -220,8 +220,6 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
             # Schedule async effect execution (fire-and-forget pattern)
-            import asyncio
-
             task = asyncio.create_task(
                 self.perform_effect(effect_input, EffectType.API_CALL)
             )
@@ -324,12 +322,86 @@ class NodeCanaryEffect(NodeEffectService):
         """
         Perform a canary effect operation with monitoring and safety controls.
 
+        This method executes canary effects with comprehensive monitoring, error handling,
+        circuit breaker protection, and performance tracking. It supports various operation
+        types including API calls, database operations, file I/O, and queue operations.
+
         Args:
-            effect_input: Input data for the effect operation
-            effect_type: Type of effect to perform
+            effect_input: Input data for the effect operation containing:
+                - operation_data: Dictionary with operation-specific parameters
+                - transaction_id: Optional transaction identifier for tracking
+                - metadata: Additional context and configuration
+            effect_type: Type of effect to perform (API_CALL, DATABASE, FILE_IO, QUEUE)
 
         Returns:
-            ModelEffectOutput: Result of the effect operation
+            ModelEffectOutput: Result containing:
+                - data: Operation result data
+                - metadata: Execution metadata (timing, success status, etc.)
+                - transaction_state: Final transaction state
+
+        Raises:
+            ValueError: If input data is invalid or missing required fields
+            RuntimeError: If circuit breaker is open or operation fails critically
+            TimeoutError: If operation exceeds configured timeout
+
+        Examples:
+            Basic API call effect:
+                >>> effect_input = ModelEffectInput(
+                ...     operation_data={
+                ...         "operation_type": "api_call",
+                ...         "endpoint": "https://api.example.com/users",
+                ...         "method": "GET",
+                ...         "timeout_ms": 5000
+                ...     }
+                ... )
+                >>> result = await node.perform_effect(effect_input, EffectType.API_CALL)
+                >>> print(f"Status: {result.metadata.get('success', False)}")
+
+            Database operation with parameters:
+                >>> effect_input = ModelEffectInput(
+                ...     operation_data={
+                ...         "operation_type": "database_query",
+                ...         "query": "SELECT * FROM customers WHERE score > ?",
+                ...         "parameters": [25],
+                ...         "timeout_ms": 10000
+                ...     }
+                ... )
+                >>> result = await node.perform_effect(effect_input, EffectType.DATABASE)
+                >>> customers = result.data.get("rows", [])
+
+            File operation with error handling:
+                >>> try:
+                ...     effect_input = ModelEffectInput(
+                ...         operation_data={
+                ...             "operation_type": "file_read",
+                ...             "file_path": "/data/large_file.json",
+                ...             "chunk_size": 1024
+                ...         }
+                ...     )
+                ...     result = await node.perform_effect(effect_input, EffectType.FILE_IO)
+                ...     if result.metadata.get("error"):
+                ...         print(f"File operation failed: {result.metadata['error']}")
+                ... except TimeoutError:
+                ...     print("File operation timed out")
+
+            Queue operation with retry logic:
+                >>> effect_input = ModelEffectInput(
+                ...     operation_data={
+                ...         "operation_type": "queue_publish",
+                ...         "queue_name": "events",
+                ...         "message": {"event": "user_signup", "user_id": 123},
+                ...         "retry_count": 3
+                ...     }
+                ... )
+                >>> result = await node.perform_effect(effect_input, EffectType.QUEUE)
+                >>> message_id = result.data.get("message_id")
+
+        Note:
+            - All operations are monitored for performance and memory usage
+            - Circuit breaker protection prevents cascading failures
+            - Correlation IDs are automatically generated for tracing
+            - Metrics are collected for monitoring and alerting
+            - Simulation delays are applied in debug mode for testing
         """
         start_time = datetime.now()
         correlation_id = str(uuid.uuid4())
@@ -523,7 +595,88 @@ class NodeCanaryEffect(NodeEffectService):
         self,
         parameters: dict[str, Any],
     ) -> dict[str, Any]:
-        """Perform safe file system operations for canary testing."""
+        """
+        Perform safe file system operations for canary testing with security validation.
+
+        Executes file system operations with comprehensive security checks, path validation,
+        and size limitations to prevent security vulnerabilities and resource exhaustion.
+
+        Args:
+            parameters: Dictionary containing operation parameters:
+                - operation: Type of file operation ("read", "write", "list", "stat")
+                - file_path: Path to file or directory (validated for security)
+                - content: Content for write operations (optional)
+                - max_size_mb: Maximum file size limit in MB (default: 10)
+                - encoding: Text encoding for read/write operations (default: "utf-8")
+
+        Returns:
+            Dictionary containing operation results:
+                - success: Boolean indicating operation success
+                - operation_type: Echo of requested operation
+                - file_path: Sanitized file path used
+                - data: Operation-specific result data
+                - metadata: Additional operation metadata (size, timestamps, etc.)
+
+        Raises:
+            ValueError: If required parameters are missing or invalid
+            SecurityError: If file path fails security validation
+            PermissionError: If insufficient permissions for operation
+            FileNotFoundError: If target file/directory doesn't exist (for read operations)
+
+        Examples:
+            Read file operation:
+                >>> parameters = {
+                ...     "operation": "read",
+                ...     "file_path": "data/config.json",
+                ...     "max_size_mb": 5
+                ... }
+                >>> result = await node._perform_file_system_operation(parameters)
+                >>> if result["success"]:
+                ...     content = result["data"]["content"]
+                ...     print(f"File size: {result['metadata']['size_bytes']} bytes")
+
+            Write file operation with validation:
+                >>> parameters = {
+                ...     "operation": "write",
+                ...     "file_path": "output/results.txt",
+                ...     "content": "Processing complete",
+                ...     "encoding": "utf-8"
+                ... }
+                >>> result = await node._perform_file_system_operation(parameters)
+                >>> if not result["success"]:
+                ...     print(f"Write failed: {result.get('error')}")
+
+            Directory listing:
+                >>> parameters = {
+                ...     "operation": "list",
+                ...     "file_path": "data/"
+                ... }
+                >>> result = await node._perform_file_system_operation(parameters)
+                >>> files = result["data"]["files"]
+                >>> print(f"Found {len(files)} files")
+
+            File metadata:
+                >>> parameters = {
+                ...     "operation": "stat",
+                ...     "file_path": "logs/application.log"
+                ... }
+                >>> result = await node._perform_file_system_operation(parameters)
+                >>> size_mb = result["data"]["size_bytes"] / (1024 * 1024)
+                >>> print(f"Log file is {size_mb:.1f}MB")
+
+        Security Notes:
+            - All file paths are validated against directory traversal attacks
+            - Operations are restricted to allowed directories only
+            - File size limits prevent resource exhaustion
+            - Sensitive paths and system files are automatically blocked
+            - All operations are logged with correlation IDs for auditing
+
+        Performance Considerations:
+            - Large file operations may trigger memory monitoring alerts
+            - Debug mode applies artificial delays for testing
+            - Binary files are handled safely with size validation
+            - Concurrent file operations are tracked and limited
+        """
         operation = parameters.get("operation", "read")
 
         if operation == "read":

@@ -68,38 +68,38 @@ class TimeoutConfig(BaseModel):
     """Timeout configuration for various operations."""
 
     default_timeout_ms: int = Field(
-        default=30000, description="Default timeout in milliseconds"
+        default=30000, description="Default timeout in milliseconds", ge=1000, le=300000
     )
     gateway_timeout_ms: int = Field(
-        default=10000, description="Gateway routing timeout"
+        default=10000, description="Gateway routing timeout", ge=1000, le=60000
     )
     health_check_timeout_ms: int = Field(
-        default=5000, description="Health check timeout"
+        default=5000, description="Health check timeout", ge=500, le=30000
     )
     api_call_timeout_ms: int = Field(
-        default=10000, description="External API call timeout"
+        default=10000, description="External API call timeout", ge=1000, le=120000
     )
     workflow_step_timeout_ms: int = Field(
-        default=60000, description="Workflow step timeout"
+        default=60000, description="Workflow step timeout", ge=5000, le=600000
     )
 
 
 class PerformanceConfig(BaseModel):
     """Performance and capacity configuration."""
 
-    cache_max_size: int = Field(default=1000, description="Maximum cache entries")
-    cache_ttl_seconds: int = Field(default=300, description="Cache TTL in seconds")
+    cache_max_size: int = Field(default=1000, description="Maximum cache entries", ge=10, le=100000)
+    cache_ttl_seconds: int = Field(default=300, description="Cache TTL in seconds", ge=60, le=86400)
     metrics_retention_count: int = Field(
-        default=1000, description="Number of metrics to retain"
+        default=1000, description="Number of metrics to retain", ge=100, le=50000
     )
     max_concurrent_operations: int = Field(
-        default=100, description="Maximum concurrent operations"
+        default=100, description="Maximum concurrent operations", ge=1, le=10000
     )
     error_rate_threshold: float = Field(
-        default=0.1, description="Error rate threshold for health checks"
+        default=0.1, description="Error rate threshold for health checks", ge=0.01, le=1.0
     )
     min_operations_for_health: int = Field(
-        default=10, description="Minimum operations before health evaluation"
+        default=10, description="Minimum operations before health evaluation", ge=1, le=1000
     )
 
 
