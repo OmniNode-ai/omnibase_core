@@ -104,8 +104,14 @@ class ResponseAggregator:
             error_details = self.error_handler.handle_error(
                 e, {"cache_key": cache_key}, correlation_id, "cache_lookup"
             )
-            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
-            self.logger.exception(f"Cache lookup failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}", self.node_id, cache_key)
+            correlation_context = (
+                f" [correlation_id={correlation_id}]" if correlation_id else ""
+            )
+            self.logger.exception(
+                f"Cache lookup failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}",
+                self.node_id,
+                cache_key,
+            )
             return None
 
     async def _get_cached_response_impl(
@@ -157,8 +163,14 @@ class ResponseAggregator:
             error_details = self.error_handler.handle_error(
                 e, {"cache_key": cache_key}, correlation_id, "cache_storage"
             )
-            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
-            self.logger.exception(f"Cache storage failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}", self.node_id, cache_key)
+            correlation_context = (
+                f" [correlation_id={correlation_id}]" if correlation_id else ""
+            )
+            self.logger.exception(
+                f"Cache storage failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}",
+                self.node_id,
+                cache_key,
+            )
             return False
 
     async def _cache_response_impl(
@@ -265,15 +277,18 @@ class NodeCanaryGateway(NodeEffectService):
                 "max_size": db_config.max_pool_size,
             }
 
-            self.db_pool = await asyncpg.create_pool(
-                host=db_config.host,
-                port=db_config.port,
-                database=db_config.database,
-                user=db_config.username,
-                password=db_config.password,
-                min_size=db_config.min_pool_size,
-                max_size=db_config.max_pool_size,
-            )
+            # Create secure connection parameters with password masking
+            connection_params = {
+                "host": db_config.host,
+                "port": db_config.port,
+                "database": db_config.database,
+                "user": db_config.username,
+                "password": db_config.password,  # Never logged
+                "min_size": db_config.min_pool_size,
+                "max_size": db_config.max_pool_size,
+            }
+
+            self.db_pool = await asyncpg.create_pool(**connection_params)
 
             # Create required database tables
             await self._create_database_schema()
@@ -385,7 +400,8 @@ class NodeCanaryGateway(NodeEffectService):
             cached_response = None
             if cache_strategy == "cache_aside":
                 cached_response = await self.response_aggregator.get_cached_response(
-                    cache_key, correlation_id,
+                    cache_key,
+                    correlation_id,
                 )
 
                 if cached_response:

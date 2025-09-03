@@ -23,6 +23,46 @@ class DatabaseConfig(BaseModel):
     min_pool_size: int = Field(default=5, description="Minimum connection pool size")
     max_pool_size: int = Field(default=20, description="Maximum connection pool size")
 
+    def model_post_init(self, __context) -> None:
+        """Validate database configuration after initialization."""
+        # In production environments, require non-empty passwords
+        is_production = self._is_production_environment()
+
+        if is_production and not self.password:
+            raise ValueError(
+                "Database password is required in production environment. "
+                "Set POSTGRES_PASSWORD environment variable."
+            )
+
+        if is_production and self.password == "password":
+            raise ValueError(
+                "Default password 'password' is not allowed in production. "
+                "Use a strong, unique password."
+            )
+
+        # Validate password strength in production
+        if is_production and len(self.password) < 8:
+            raise ValueError(
+                "Database password must be at least 8 characters long in production."
+            )
+
+    def _is_production_environment(self) -> bool:
+        """Check if we're in a production environment."""
+        import os
+
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        node_env = os.getenv("NODE_ENV", "").lower()
+
+        # Consider production if explicitly set or if no debug flags are present
+        return (
+            environment in ["production", "prod"]
+            or node_env in ["production", "prod"]
+            or (
+                not os.getenv("DEBUG", "").lower() == "true"
+                and not os.getenv("DEV_MODE", "").lower() == "true"
+            )
+        )
+
 
 class TimeoutConfig(BaseModel):
     """Timeout configuration for various operations."""
@@ -162,6 +202,53 @@ class SecurityConfig(BaseModel):
     circuit_breaker_recovery_timeout: int = Field(
         default=60, description="Circuit breaker recovery timeout in seconds"
     )
+
+    # Enhanced security parameters
+    mask_credentials_in_logs: bool = Field(
+        default=True, description="Always mask credentials in log outputs"
+    )
+    mask_sensitive_headers: bool = Field(
+        default=True, description="Mask sensitive HTTP headers in logs"
+    )
+    secure_error_responses: bool = Field(
+        default=True, description="Sanitize error responses in production"
+    )
+    connection_string_logging: bool = Field(
+        default=False, description="Enable connection string logging (dev only)"
+    )
+
+    def model_post_init(self, __context) -> None:
+        """Validate security configuration after initialization."""
+        is_production = self._is_production_environment()
+
+        # Enforce security settings in production
+        if is_production:
+            if self.log_sensitive_data:
+                raise ValueError("log_sensitive_data must be False in production")
+            if self.connection_string_logging:
+                raise ValueError(
+                    "connection_string_logging must be False in production"
+                )
+            if not self.mask_credentials_in_logs:
+                raise ValueError("mask_credentials_in_logs must be True in production")
+            if not self.sanitize_stack_traces:
+                raise ValueError("sanitize_stack_traces must be True in production")
+
+    def _is_production_environment(self) -> bool:
+        """Check if we're in a production environment."""
+        import os
+
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        node_env = os.getenv("NODE_ENV", "").lower()
+
+        return (
+            environment in ["production", "prod"]
+            or node_env in ["production", "prod"]
+            or (
+                not os.getenv("DEBUG", "").lower() == "true"
+                and not os.getenv("DEV_MODE", "").lower() == "true"
+            )
+        )
 
 
 class CanaryNodeConfig(BaseModel):

@@ -31,7 +31,9 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
         pool_max_size: int = 20,
         enable_fallback: bool = True,
     ):
+        # Store original URL but create sanitized version for logging
         self.database_url = database_url
+        self.sanitized_url = self._sanitize_connection_string(database_url)
         self.pool_min_size = pool_min_size
         self.pool_max_size = pool_max_size
         self.enable_fallback = enable_fallback
@@ -41,6 +43,26 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
         self._fallback_database = None
         self._is_using_fallback = False
         self._held_locks: Dict[str, int] = {}  # lock_token -> lock_id mapping
+
+    def _sanitize_connection_string(self, connection_string: str) -> str:
+        """Sanitize database connection string to hide credentials for logging."""
+        try:
+            import re
+
+            # Pattern to match password in connection strings
+            # Matches both URL format and key=value format
+            url_pattern = r"(://[^:]*:)[^@]*(@)"
+            key_value_pattern = r"(password=)[^\s;]*([\s]|$|;)"
+
+            # Sanitize URL format: postgresql://user:password@host/db -> postgresql://user:***@host/db
+            sanitized = re.sub(url_pattern, r"\1***\2", connection_string)
+            # Sanitize key=value format: password=secret -> password=***
+            sanitized = re.sub(key_value_pattern, r"\1***\2", sanitized)
+
+            return sanitized
+        except Exception:
+            # If sanitization fails, return generic string to avoid exposure
+            return "postgresql://***:***@***/***"
 
     async def connect(self) -> bool:
         """Establish connection to PostgreSQL with fallback."""
@@ -56,7 +78,9 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
 
             # Test connection
             await self._test_connection()
-            self.logger.info("Successfully connected to PostgreSQL")
+            self.logger.info(
+                f"Successfully connected to PostgreSQL: {self.sanitized_url}"
+            )
             return True
 
         except ImportError:
@@ -64,7 +88,10 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             await self._initialize_fallback()
             return True
         except Exception as e:
-            self.logger.warning(f"Failed to connect to PostgreSQL: {e}")
+            # Use sanitized URL in error messages - never expose credentials
+            self.logger.warning(
+                f"Failed to connect to PostgreSQL ({self.sanitized_url}): {e}"
+            )
             if self.enable_fallback:
                 await self._initialize_fallback()
                 return True
@@ -112,7 +139,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 return [dict(row) for row in rows]
 
         except Exception as e:
-            self.logger.error(f"Query execution failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(f"Query execution failed on {self.sanitized_url}: {e}")
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
                 return await self.execute_query(query, parameters)
@@ -138,7 +166,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 return int(result.split()[-1]) if result else 0
 
         except Exception as e:
-            self.logger.error(f"Command execution failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(f"Command execution failed on {self.sanitized_url}: {e}")
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
                 return await self.execute_command(command, parameters)
@@ -162,7 +191,10 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 return True
 
         except Exception as e:
-            self.logger.error(f"Transaction execution failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(
+                f"Transaction execution failed on {self.sanitized_url}: {e}"
+            )
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
                 return await self.execute_transaction(commands)
@@ -205,7 +237,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 return None  # Timeout
 
         except Exception as e:
-            self.logger.error(f"Lock acquisition failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(f"Lock acquisition failed on {self.sanitized_url}: {e}")
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
                 return await self.acquire_lock(lock_name, timeout_seconds)
@@ -231,7 +264,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 return bool(result)
 
         except Exception as e:
-            self.logger.error(f"Lock release failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(f"Lock release failed on {self.sanitized_url}: {e}")
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
                 return await self.release_lock(lock_token)
@@ -254,7 +288,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 )
 
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
+            # Never expose connection details in error messages
+            self.logger.error(f"Health check failed on {self.sanitized_url}: {e}")
             return ModelServiceHealth(
                 service_id="postgresql",
                 status="critical",
@@ -270,6 +305,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
 
             return {
                 "database_type": "postgresql",
+                "connection_url": self.sanitized_url,  # Use sanitized URL
                 "pool_size": self._pool.get_size() if self._pool else 0,
                 "pool_min_size": self.pool_min_size,
                 "pool_max_size": self.pool_max_size,
