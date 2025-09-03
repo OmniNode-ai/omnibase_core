@@ -15,7 +15,7 @@ from omnibase_core.core.node_effect import (
     TransactionState,
 )
 from omnibase_core.core.node_effect_service import NodeEffectService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_details import ModelHealthDetails
@@ -65,7 +65,7 @@ class NodeCanaryEffect(NodeEffectService):
     monitoring, logging, and safe failure modes for testing new functionality.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize the Canary Effect node."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)

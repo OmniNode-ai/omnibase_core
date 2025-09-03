@@ -37,7 +37,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 # Import utilities for contract loading
@@ -188,9 +188,9 @@ class NodeCompute(NodeCoreBase):
     - Failure surface analysis calculations
     """
 
-    def __init__(self, container: ONEXContainer) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """
-        Initialize NodeCompute with ONEXContainer dependency injection.
+        Initialize NodeCompute with ModelONEXContainer dependency injection.
 
         Args:
             container: ONEX container for dependency injection

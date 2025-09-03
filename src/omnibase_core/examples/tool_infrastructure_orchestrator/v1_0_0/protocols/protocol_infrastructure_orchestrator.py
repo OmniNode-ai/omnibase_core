@@ -9,7 +9,7 @@ following ONEX protocol patterns.
 from abc import abstractmethod
 from typing import Any, Protocol
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 
 
 class ProtocolInfrastructureOrchestrator(Protocol):
@@ -20,7 +20,7 @@ class ProtocolInfrastructureOrchestrator(Protocol):
     including bootstrap, health monitoring, and failover coordination.
     """
 
-    def __init__(self, container: ONEXContainer) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """Initialize with container injection."""
         ...
 

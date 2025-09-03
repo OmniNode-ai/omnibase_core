@@ -61,7 +61,7 @@ class ModelNodeBase(ProtocolReducer):
 
             registry_reference = ModelRegistryReference(
                 node_id=node_id,
-                registry_class_name="ONEXContainer",
+                registry_class_name="ModelONEXContainer",
                 registry_type="simplified",
             )
 

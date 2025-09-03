@@ -1,0 +1,293 @@
+# ONEX Smart Responder Chain CI/CD Pipeline
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # Code quality and testing
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: onex_test
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.0
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --extras "full"
+
+      - name: Run type checking with mypy
+        run: poetry run mypy src/omnibase_core
+
+      - name: Run linting with ruff
+        run: poetry run ruff check src/
+
+      - name: Run code formatting check with black
+        run: poetry run black --check src/
+
+      - name: Run import sorting check with isort
+        run: poetry run isort --check-only src/
+
+      - name: Run tests with pytest
+        env:
+          ONEX_DATABASE__URL: postgresql://test:test@localhost:5432/onex_test
+          ONEX_ENVIRONMENT: test
+        run: |
+          poetry run pytest tests/ \
+            --cov=src/omnibase_core \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junit-xml=pytest-results.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pytest-results-${{ matrix.python-version }}
+          path: pytest-results.xml
+
+  # Security scanning
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.0
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run safety check for vulnerabilities
+        run: poetry run safety check
+
+      - name: Run bandit security linter
+        run: poetry run bandit -r src/
+
+      - name: Run Semgrep security analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+
+  # Docker build and push
+  docker:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          target: production
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push CLI image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          target: cli
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cli-${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Deploy to staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to staging
+        run: |
+          export KUBECONFIG=kubeconfig
+          # Update image tags in manifests
+          sed -i "s|image: onex/smart-responder:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop-${{ github.sha }}|g" deployment/kubernetes/deployment.yaml
+
+          # Apply manifests
+          kubectl apply -f deployment/kubernetes/ -n onex-staging
+
+          # Wait for rollout
+          kubectl rollout status deployment/onex-api -n onex-staging --timeout=300s
+
+      - name: Run smoke tests
+        run: |
+          export KUBECONFIG=kubeconfig
+          # Get service endpoint
+          ENDPOINT=$(kubectl get service onex-api-lb -n onex-staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+          # Basic health check
+          curl -f http://$ENDPOINT:8000/health || exit 1
+
+          # CLI test
+          kubectl run cli-test --rm -i --image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cli-${{ github.sha }} -n onex-staging -- omni-agent status
+
+  # Deploy to production
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.event_name == 'release'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to production
+        run: |
+          export KUBECONFIG=kubeconfig
+          # Update image tags with release version
+          sed -i "s|image: onex/smart-responder:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}|g" deployment/kubernetes/deployment.yaml
+
+          # Apply manifests
+          kubectl apply -f deployment/kubernetes/ -n onex
+
+          # Wait for rollout
+          kubectl rollout status deployment/onex-api -n onex --timeout=600s
+
+      - name: Run production smoke tests
+        run: |
+          export KUBECONFIG=kubeconfig
+          # Get service endpoint
+          ENDPOINT=$(kubectl get service onex-api-lb -n onex -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+          # Health checks
+          curl -f http://$ENDPOINT:8000/health || exit 1
+          curl -f http://$ENDPOINT:8000/ready || exit 1
+
+          # Performance test
+          kubectl run perf-test --rm -i --image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cli-${{ github.sha }} -n onex -- omni-agent process "test request" --max-tier local-small
+
+  # Notify on deployment
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Notify Slack on success
+        if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: "ONEX deployment successful! \nEnvironment: ${{ github.ref == 'refs/heads/develop' && 'staging' || 'production' }}\nVersion: ${{ github.sha }}\n#magic___^_^___line\n"
+      - name: Notify on failure
+        if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: danger
+          SLACK_MESSAGE: "ONEX deployment failed! \nEnvironment: ${{ github.ref == 'refs/heads/develop' && 'staging' || 'production' }}\nCheck GitHub Actions for details.\n"

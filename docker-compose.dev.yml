@@ -1,0 +1,127 @@
+# Development Docker Compose for ONEX Smart Responder Chain
+version: '3.8'
+
+services:
+  # Development ONEX API service with hot reload
+  onex-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "8000:8000"
+      - "9090:9090" # Prometheus metrics
+    environment:
+      ONEX_ENVIRONMENT: development
+      ONEX_DEBUG: "true"
+      ONEX_OUTPUT__LOG_LEVEL: DEBUG
+      ONEX_DATABASE__URL: postgresql://onex:devpass@postgres:5432/onex_dev
+      ONEX_API__RELOAD: "true"
+      ONEX_MONITORING__PROMETHEUS_ENABLED: "true"
+    volumes:
+      - .:/app # Mount source for hot reload
+      - dev-data:/app/data
+      - dev-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - onex-dev-network
+
+  # PostgreSQL for development
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432" # Expose for external connections
+    environment:
+      POSTGRES_DB: onex_dev
+      POSTGRES_USER: onex
+      POSTGRES_PASSWORD: devpass
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+      - ./deployment/postgres/init-dev.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - onex-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onex -d onex_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for development
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379" # Expose for external connections
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - onex-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Prometheus for development monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./deployment/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - onex-dev-network
+
+  # Development CLI container
+  onex-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    environment:
+      ONEX_ENVIRONMENT: development
+      ONEX_DEBUG: "true"
+      ONEX_DATABASE__URL: postgresql://onex:devpass@postgres:5432/onex_dev
+    volumes:
+      - .:/app
+      - dev-data:/app/data
+      - dev-logs:/app/logs
+    networks:
+      - onex-dev-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sleep", "infinity"]
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@onex.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - onex-dev-network
+    profiles:
+      - tools
+
+volumes:
+  postgres-dev-data:
+  redis-dev-data:
+  pgadmin-data:
+  dev-data:
+  dev-logs:
+
+networks:
+  onex-dev-network:
+    driver: bridge

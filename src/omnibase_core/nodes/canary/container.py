@@ -18,7 +18,7 @@ Per user requirements:
 import types
 from typing import TypeVar
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 T = TypeVar("T")
@@ -32,7 +32,7 @@ from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus
 )
 
 
-def create_infrastructure_container() -> ONEXContainer:
+def create_infrastructure_container() -> ModelONEXContainer:
     """
     Create infrastructure container with all shared dependencies.
 
@@ -42,10 +42,10 @@ def create_infrastructure_container() -> ONEXContainer:
     - "Everything needs to be resolved by duck typing"
 
     Returns:
-        Configured ONEXContainer with infrastructure dependencies
+        Configured ModelONEXContainer with infrastructure dependencies
     """
     # Create base ONEX container
-    container = ONEXContainer()
+    container = ModelONEXContainer()
 
     # Set up all shared dependencies for infrastructure tools
     _setup_infrastructure_dependencies(container)
@@ -56,7 +56,7 @@ def create_infrastructure_container() -> ONEXContainer:
     return container
 
 
-def _setup_infrastructure_dependencies(container: ONEXContainer):
+def _setup_infrastructure_dependencies(container: ModelONEXContainer):
     """Set up all dependencies needed by infrastructure canary nodes."""
 
     # Event Bus - Use in-memory implementation for omnibase-core
@@ -90,7 +90,7 @@ def _setup_infrastructure_dependencies(container: ONEXContainer):
     _register_service(container, "ProtocolSchemaLoader", schema_loader)
 
 
-def _register_service(container: ONEXContainer, service_name: str, service_instance):
+def _register_service(container: ModelONEXContainer, service_name: str, service_instance):
     """Register a service in the container for later retrieval."""
     # Store in the container's provider registry
     if not hasattr(container, "_service_registry"):
@@ -98,7 +98,7 @@ def _register_service(container: ONEXContainer, service_name: str, service_insta
     container._service_registry[service_name] = service_instance
 
 
-def _bind_infrastructure_get_service_method(container: ONEXContainer):
+def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
     """Bind custom get_service method to infrastructure container."""
 
     def get_service(

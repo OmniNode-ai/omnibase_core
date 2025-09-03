@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.generation.model_contract_document import ModelContractDocument
 from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
@@ -38,7 +38,7 @@ class NodeLoader:
     5. Validates node protocol compliance
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """
         Initialize node loader with DI container.
 

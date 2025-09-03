@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import redis.asyncio as redis
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.utils import metrics_registry as metrics
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ class DistributedLockManager:
 
     def __init__(
         self,
-        container: ONEXContainer,
+        container: ModelONEXContainer,
         redis_url: str = "redis://localhost:6379/0",
         key_prefix: str = "onex:lock:",
     ):

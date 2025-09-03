@@ -14,7 +14,7 @@ class ModelContainerConfig(BaseModel):
     """
     Configuration model for container service operations.
 
-    Defines configuration options for ONEXContainer creation, service
+    Defines configuration options for ModelONEXContainer creation, service
     registration, and registry lifecycle management.
     """
 

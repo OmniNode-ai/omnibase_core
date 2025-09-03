@@ -694,8 +694,8 @@ class ContractValidator:
                     spec_validations.append(f"❌ Tool spec field '{field}' missing")
 
             # Check container injection
-            if tool_spec.get("container_injection") == "ONEXContainer":
-                spec_validations.append("✅ Correct container_injection: ONEXContainer")
+            if tool_spec.get("container_injection") == "ModelONEXContainer":
+                spec_validations.append("✅ Correct container_injection: ModelONEXContainer")
             else:
                 spec_validations.append(
                     f"❌ Invalid container_injection: {tool_spec.get('container_injection')}",

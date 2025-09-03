@@ -1,0 +1,206 @@
+# Docker Compose for ONEX Smart Responder Chain Production Stack
+version: '3.8'
+
+services:
+  # Main ONEX API service
+  onex-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      # Core configuration
+      ONEX_ENVIRONMENT: production
+      ONEX_DEBUG: "false"
+
+      # Database configuration
+      ONEX_DATABASE__URL: postgresql://onex:${POSTGRES_PASSWORD:-onexpass}@postgres:5432/onex
+      ONEX_DATABASE__POOL_SIZE: 20
+      ONEX_DATABASE__MAX_OVERFLOW: 30
+
+      # API configuration
+      ONEX_API__HOST: 0.0.0.0
+      ONEX_API__PORT: 8000
+      ONEX_API__WORKERS: 4
+      ONEX_API__MAX_CONCURRENT_REQUESTS: 200
+
+      # Model tiers configuration
+      ONEX_TIERS__LOCAL_SMALL: llama3.2:1b
+      ONEX_TIERS__LOCAL_MEDIUM: llama3.2:3b
+      ONEX_TIERS__LOCAL_LARGE: llama3.2:8b
+      ONEX_TIERS__LOCAL_HUGE: llama3.2:70b
+      ONEX_TIERS__TIMEOUT_SECONDS: 300
+
+      # Monitoring configuration
+      ONEX_MONITORING__PROMETHEUS_ENABLED: "true"
+      ONEX_MONITORING__PROMETHEUS_PORT: 9090
+
+      # Redis configuration
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - onex-data:/app/data
+      - onex-logs:/app/logs
+      - onex-cache:/app/cache
+    networks:
+      - onex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "omni-agent", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: onex
+      POSTGRES_USER: onex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-onexpass}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deployment/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - onex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onex -d onex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - onex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Prometheus monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - onex-network
+    restart: unless-stopped
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deployment/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deployment/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - onex-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Jaeger tracing (optional)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+    networks:
+      - onex-network
+    restart: unless-stopped
+
+  # CLI service (for cron jobs and administrative tasks)
+  onex-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: cli
+    environment:
+      ONEX_DATABASE__URL: postgresql://onex:${POSTGRES_PASSWORD:-onexpass}@postgres:5432/onex
+    volumes:
+      - onex-data:/app/data
+      - onex-logs:/app/logs
+      - onex-cache:/app/cache
+    networks:
+      - onex-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - cli
+    entrypoint: ["sleep", "infinity"] # Keep container running for exec commands
+
+  # Nginx reverse proxy (optional, for production load balancing)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - onex-network
+    depends_on:
+      - onex-api
+    restart: unless-stopped
+    profiles:
+      - proxy
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  onex-data:
+    driver: local
+  onex-logs:
+    driver: local
+  onex-cache:
+    driver: local
+
+networks:
+  onex-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

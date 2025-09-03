@@ -11,7 +11,7 @@ from .infrastructure_service_bases import (
     NodeReducerService,
 )
 from .node_base import ModelNodeBase
-from .onex_container import ONEXContainer
+from .onex_container import ModelONEXContainer
 from .spi_service_registry import SPIServiceRegistry, create_spi_service_registry
 
 __all__ = [
@@ -20,7 +20,7 @@ __all__ = [
     "NodeEffectService",
     "NodeOrchestratorService",
     "NodeReducerService",
-    "ONEXContainer",
+    "ModelONEXContainer",
     "SPIServiceRegistry",
     "create_spi_service_registry",
 ]

@@ -34,7 +34,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
@@ -347,7 +347,7 @@ class NodeGateway(NodeCoreBase):
     with built-in load balancing and fault tolerance capabilities.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.contract_model = ModelContractGateway
         self.connection_pool = ConnectionPool()

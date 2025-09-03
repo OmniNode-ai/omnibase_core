@@ -16,7 +16,7 @@ import asyncpg
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.infrastructure_service_bases import NodeComputeService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.core.onex_error import OnexError
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
@@ -477,7 +477,7 @@ class ToolMessageAggregator(NodeComputeService):
     and PostgreSQL-based state management for distributed message processing.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize Message Aggregator with container injection."""
         super().__init__(container)
         self.domain = "infrastructure"

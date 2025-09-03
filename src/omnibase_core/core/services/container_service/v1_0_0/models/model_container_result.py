@@ -20,7 +20,7 @@ class ModelContainerResult(BaseModel):
     and registry lifecycle operations with comprehensive metadata.
     """
 
-    container: Any = Field(..., description="Created ONEXContainer instance")
+    container: Any = Field(..., description="Created ModelONEXContainer instance")
 
     registry: Any = Field(..., description="Registry wrapper for container access")
 

@@ -21,7 +21,7 @@ except ImportError:
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 try:
@@ -35,7 +35,7 @@ except ImportError:
 T = TypeVar("T")
 
 
-class ModelONEXContainer(ONEXContainer):
+class ModelONEXContainer(ModelONEXContainer):
     """
     Enhanced ONEX container with Codanna performance optimizations.
 

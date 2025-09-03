@@ -6,7 +6,7 @@ NODEBASE-001 Phase 2 deconstruction, providing centralized container
 management, service registration, and registry lifecycle operations.
 
 Key Features:
-- ONEXContainer creation and configuration from contracts
+- ModelONEXContainer creation and configuration from contracts
 - Dynamic service registration from dependency specifications
 - Registry wrapper for backward compatibility
 - Container lifecycle and ModelNodeBase reference management
@@ -38,7 +38,7 @@ class ContainerService:
     Container service for DI container management extracted from ModelNodeBase.
 
     Provides centralized operations for:
-    - Creating ONEXContainer from contract dependencies
+    - Creating ModelONEXContainer from contract dependencies
     - Registering services from dependency specifications
     - Managing registry wrapper for backward compatibility
     - Handling container lifecycle with ModelNodeBase references
@@ -65,7 +65,7 @@ class ContainerService:
         nodebase_ref: Any | None = None,
     ) -> ModelContainerResult:
         """
-        Create and configure ONEXContainer from contract dependencies.
+        Create and configure ModelONEXContainer from contract dependencies.
 
         This method extracts the container creation logic from ModelNodeBase
         initialization, providing centralized DI container management.
@@ -96,10 +96,10 @@ class ContainerService:
                     },
                 )
 
-            # Create ONEXContainer
-            from omnibase_core.core.onex_container import ONEXContainer
+            # Create ModelONEXContainer
+            from omnibase_core.core.onex_container import ModelONEXContainer
 
-            container = ONEXContainer()
+            container = ModelONEXContainer()
             registered_services: list[str] = []
             failed_services: list[str] = []
             service_metadata: dict[str, dict] = {}
@@ -400,7 +400,7 @@ class ContainerService:
         providing a consistent registry interface over the container.
 
         Args:
-            container: ONEXContainer instance
+            container: ModelONEXContainer instance
             nodebase_ref: Reference to ModelNodeBase for version access
 
         Returns:

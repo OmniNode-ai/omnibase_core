@@ -16,7 +16,7 @@ import asyncpg
 
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     CircuitBreakerConfig,
@@ -230,7 +230,7 @@ class NodeCanaryGateway(NodeEffectService):
     for efficient tool communication and response management.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize Group Gateway with container injection."""
         super().__init__(container)
         self.db_pool: asyncpg.Pool | None = None

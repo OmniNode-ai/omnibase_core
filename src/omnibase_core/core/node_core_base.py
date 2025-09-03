@@ -7,7 +7,7 @@ architecture: NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator.
 This base class implements only the core functionality needed by all node types:
 - Contract loading and validation
 - Basic lifecycle management (initialize → process → complete → cleanup)
-- Dependency injection through ONEXContainer
+- Dependency injection through ModelONEXContainer
 - Protocol compliance with duck typing
 - Error handling with OnexError exception chaining
 - Event emission for lifecycle transitions
@@ -27,13 +27,13 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
 class NodeCoreBase(ABC):
     """
-    Abstract foundation for 4-node architecture with ONEXContainer integration.
+    Abstract foundation for 4-node architecture with ModelONEXContainer integration.
 
     Provides minimal essential functionality required by all specialized node types.
     Each node type inherits from this base and adds only the specific capabilities
@@ -53,9 +53,9 @@ class NodeCoreBase(ABC):
     - Version tracking and migration support
     """
 
-    def __init__(self, container: ONEXContainer) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """
-        Initialize NodeCoreBase with ONEXContainer dependency injection.
+        Initialize NodeCoreBase with ModelONEXContainer dependency injection.
 
         Args:
             container: ONEX container for modern dependency injection

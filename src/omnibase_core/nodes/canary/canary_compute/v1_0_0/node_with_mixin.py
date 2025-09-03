@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutput
 from omnibase_core.core.node_compute_service import NodeComputeService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.subcontracts.model_error_handling_subcontract import (
@@ -86,7 +86,7 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
     instead of manually duplicating error handling code across nodes.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize the Canary Compute node with mixin capabilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)

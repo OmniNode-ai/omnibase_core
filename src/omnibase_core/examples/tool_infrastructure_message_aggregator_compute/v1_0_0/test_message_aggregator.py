@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import asyncpg
 import pytest
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.core.onex_error import OnexError
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
@@ -496,7 +496,7 @@ class TestToolMessageAggregator:
     @pytest.fixture
     def mock_container(self):
         """Mock ONEX container."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def aggregator_tool(self, mock_container):
@@ -1438,7 +1438,7 @@ class TestComplexScenarios:
     @pytest.fixture
     def complex_aggregator(self):
         """Setup complex aggregator for scenario testing."""
-        container = MagicMock(spec=ONEXContainer)
+        container = MagicMock(spec=ModelONEXContainer)
         aggregator = ToolMessageAggregator(container)
 
         # Mock database components

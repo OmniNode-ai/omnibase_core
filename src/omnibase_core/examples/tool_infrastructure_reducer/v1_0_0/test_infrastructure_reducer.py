@@ -22,7 +22,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.registry.model_registry_event import (
@@ -40,7 +40,7 @@ class TestInfrastructureReducerInitialization:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        container = MagicMock(spec=ONEXContainer)
+        container = MagicMock(spec=ModelONEXContainer)
         container.get_tool = MagicMock(return_value=None)
         return container
 
@@ -208,7 +208,7 @@ class TestInfrastructureReducerAdapterLoading:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def sample_manifest_content(self):
@@ -326,7 +326,7 @@ class TestInfrastructureReducerHealthCheck:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_mocked_loading(self, mock_container):
@@ -692,7 +692,7 @@ class TestInfrastructureReducerLegacyHealthCheck:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_mocked_loading(self, mock_container):
@@ -848,7 +848,7 @@ class TestInfrastructureReducerIntrospection:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_adapters(self, mock_container):
@@ -1016,7 +1016,7 @@ class TestInfrastructureReducerServiceMode:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_mocked_loading(self, mock_container):
@@ -1198,7 +1198,7 @@ class TestInfrastructureReducerIntrospectionHandling:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_adapters(self, mock_container):
@@ -1355,7 +1355,7 @@ class TestInfrastructureReducerRegistryDelegation:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_registry_component(self, mock_container):
@@ -1538,7 +1538,7 @@ class TestInfrastructureReducerFallbackDirectCalls:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_registry_methods(self, mock_container):
@@ -1774,7 +1774,7 @@ class TestInfrastructureReducerStatusAndListMethods:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_adapters(self, mock_container):
@@ -1944,7 +1944,7 @@ class TestInfrastructureReducerEventBusOperations:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     @pytest.fixture
     def reducer_with_event_bus(self, mock_container):
@@ -2174,7 +2174,7 @@ class TestInfrastructureReducerComprehensiveCoverage:
     @pytest.fixture
     def mock_container(self):
         """Create mock ONEX container for testing."""
-        return MagicMock(spec=ONEXContainer)
+        return MagicMock(spec=ModelONEXContainer)
 
     def test_init_domain_assignment(self, mock_container):
         """Test that domain is correctly assigned during initialization."""

@@ -19,7 +19,7 @@ from omnibase_core.core.node_orchestrator import (
     ModelOrchestratorOutput,
 )
 from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
@@ -95,7 +95,7 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
     providing safe workflow management for testing new deployment patterns.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize the Canary Orchestrator node with production utilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)

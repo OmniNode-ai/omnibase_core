@@ -17,7 +17,7 @@ import yaml
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeReducerService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import OnexEvent
@@ -40,7 +40,7 @@ class ToolInfrastructureReducer(NodeReducerService):
     - Coordinate final responses for infrastructure workflows
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize infrastructure reducer with container injection."""
         super().__init__(container)
 
