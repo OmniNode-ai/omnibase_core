@@ -14,7 +14,7 @@ input_model: "ModelCanaryComputeInput"
 output_model: "ModelCanaryComputeOutput"
 
 # === NODE CLASSIFICATION ===
-node_type: "COMPUTE"
+# (node_type already defined above at line 10)
 
 # === MODEL SPECIFICATIONS ===
 
