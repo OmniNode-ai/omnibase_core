@@ -90,6 +90,7 @@ class ResponseAggregator:
     async def get_cached_response(
         self,
         cache_key: str,
+        correlation_id: str | None = None,
     ) -> ModelAggregatedResponse | None:
         """Retrieve cached response from PostgreSQL with circuit breaker protection."""
         try:
@@ -101,9 +102,10 @@ class ResponseAggregator:
         except Exception as e:
             # Use secure error handler for cache lookup failures
             error_details = self.error_handler.handle_error(
-                e, {"cache_key": cache_key}, None, "cache_lookup"
+                e, {"cache_key": cache_key}, correlation_id, "cache_lookup"
             )
-            self.logger.exception(f"Cache lookup failed: {error_details['message']}")
+            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
+            self.logger.exception(f"Cache lookup failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}", self.node_id, cache_key)
             return None
 
     async def _get_cached_response_impl(
@@ -139,6 +141,7 @@ class ResponseAggregator:
         cache_key: str,
         response_data: ModelAggregatedResponse,
         ttl_seconds: int = None,
+        correlation_id: str | None = None,
     ) -> bool:
         """Store response in PostgreSQL cache with circuit breaker protection."""
         try:
@@ -152,9 +155,10 @@ class ResponseAggregator:
         except Exception as e:
             # Use secure error handler for cache storage failures
             error_details = self.error_handler.handle_error(
-                e, {"cache_key": cache_key}, None, "cache_storage"
+                e, {"cache_key": cache_key}, correlation_id, "cache_storage"
             )
-            self.logger.exception(f"Cache storage failed: {error_details['message']}")
+            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
+            self.logger.exception(f"Cache storage failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}", self.node_id, cache_key)
             return False
 
     async def _cache_response_impl(
@@ -381,7 +385,7 @@ class NodeCanaryGateway(NodeEffectService):
             cached_response = None
             if cache_strategy == "cache_aside":
                 cached_response = await self.response_aggregator.get_cached_response(
-                    cache_key,
+                    cache_key, correlation_id,
                 )
 
                 if cached_response:
@@ -417,6 +421,8 @@ class NodeCanaryGateway(NodeEffectService):
                 await self.response_aggregator.cache_response(
                     cache_key,
                     aggregated_response,
+                    None,  # ttl_seconds - use default
+                    correlation_id,
                 )
 
             # Update metrics

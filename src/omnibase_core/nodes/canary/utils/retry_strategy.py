@@ -294,7 +294,7 @@ class RetryExecutor:
             )
 
     async def execute_with_retry(
-        self, function: RetryableFunction[T], operation_name: str = "unknown_operation"
+        self, function: RetryableFunction[T], operation_name: str = "unknown_operation", correlation_id: str | None = None
     ) -> RetryExecutionResult[T]:
         """
         Execute a function with retry logic.
@@ -302,6 +302,7 @@ class RetryExecutor:
         Args:
             function: Async function to execute with retries
             operation_name: Name for logging and metrics
+            correlation_id: Correlation ID for tracing requests across components
 
         Returns:
             RetryExecutionResult with complete execution details
@@ -322,10 +323,12 @@ class RetryExecutor:
         for attempt in range(1, self.config.max_attempts + 1):
             # Check timeout before attempt
             if timeout_deadline and time.time() >= timeout_deadline:
+                correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
                 self.logger.warning(
-                    "Retry execution timed out before attempt %d for %s",
+                    "Retry execution timed out before attempt %d for %s%s",
                     attempt,
                     operation_name,
+                    correlation_context,
                 )
                 break
 
@@ -351,10 +354,12 @@ class RetryExecutor:
                     if timeout_deadline:
                         delay_end_time = time.time() + (delay_ms / 1000)
                         if delay_end_time >= timeout_deadline:
+                            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
                             self.logger.warning(
-                                "Delay for attempt %d would exceed timeout for %s",
+                                "Delay for attempt %d would exceed timeout for %s%s",
                                 attempt,
                                 operation_name,
+                                correlation_context,
                             )
                             break
 
@@ -377,11 +382,13 @@ class RetryExecutor:
                 result.success = True
                 result.total_attempts = attempt
 
+                correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
                 self.logger.info(
-                    "Operation %s succeeded on attempt %d after %.2fms",
+                    "Operation %s succeeded on attempt %d after %.2fms%s",
                     operation_name,
                     attempt,
                     attempt_result.execution_time_ms,
+                    correlation_context,
                 )
 
                 # Record success metrics
@@ -404,12 +411,14 @@ class RetryExecutor:
                 result.attempts.append(attempt_result)
                 result.final_exception = e
 
+                correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
                 self.logger.warning(
-                    "Attempt %d failed for %s: %s (%.2fms)",
+                    "Attempt %d failed for %s: %s (%.2fms)%s",
                     attempt,
                     operation_name,
                     str(e),
                     attempt_result.execution_time_ms,
+                    correlation_context,
                 )
 
                 # Check if we should retry
@@ -417,11 +426,13 @@ class RetryExecutor:
                 is_last_attempt = attempt >= self.config.max_attempts
 
                 if not should_retry or is_last_attempt:
+                    correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
                     self.logger.error(
-                        "Operation %s failed permanently after %d attempts: %s",
+                        "Operation %s failed permanently after %d attempts: %s%s",
                         operation_name,
                         attempt,
                         str(e),
+                        correlation_context,
                     )
                     result.total_attempts = attempt
 
@@ -443,18 +454,22 @@ class RetryExecutor:
 
         # Log final result
         if result.success:
+            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
             self.logger.info(
-                "Retry execution completed successfully for %s: %d attempts, %.2fms total",
+                "Retry execution completed successfully for %s: %d attempts, %.2fms total%s",
                 operation_name,
                 result.total_attempts,
                 result.total_execution_time_ms,
+                correlation_context,
             )
         else:
+            correlation_context = f" [correlation_id={correlation_id}]" if correlation_id else ""
             self.logger.error(
-                "Retry execution failed for %s: %d attempts, %.2fms total",
+                "Retry execution failed for %s: %d attempts, %.2fms total%s",
                 operation_name,
                 result.total_attempts,
                 result.total_execution_time_ms,
+                correlation_context,
             )
 
         return result

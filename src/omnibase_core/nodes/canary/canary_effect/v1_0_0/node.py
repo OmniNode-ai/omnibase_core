@@ -127,7 +127,7 @@ class NodeCanaryEffect(NodeEffectService):
 
         except Exception as e:
             self.logger.error(
-                f"Failed to publish canary effect event {event_type}: {e!s}",
+                f"Failed to publish canary effect event {event_type}: {e!s} [correlation_id={correlation_id}]",
                 exc_info=True,
             )
 
@@ -135,7 +135,7 @@ class NodeCanaryEffect(NodeEffectService):
         """Set up event subscriptions for inter-node communication."""
         try:
             if not self.event_bus:
-                self.logger.warning("No event bus available for subscriptions")
+                self.logger.warning("No event bus available for subscriptions [node_id=%s]", self.node_id)
                 return
 
             # Subscribe to events that trigger effect operations
@@ -149,12 +149,12 @@ class NodeCanaryEffect(NodeEffectService):
             for pattern in subscription_patterns:
                 try:
                     self.event_bus.subscribe(self._handle_incoming_event, pattern)
-                    self.logger.debug(f"Subscribed to event pattern: {pattern}")
+                    self.logger.debug(f"Subscribed to event pattern: {pattern} [node_id=%s]", self.node_id)
                 except Exception as e:
-                    self.logger.error(f"Failed to subscribe to {pattern}: {e!s}")
+                    self.logger.error(f"Failed to subscribe to {pattern}: {e!s} [node_id=%s]", self.node_id)
 
         except Exception as e:
-            self.logger.error(f"Failed to setup event subscriptions: {e!s}")
+            self.logger.error(f"Failed to setup event subscriptions: {e!s} [node_id=%s]", self.node_id)
 
     def _handle_incoming_event(self, envelope: ModelEventEnvelope) -> None:
         """Handle incoming events from other canary nodes."""
@@ -181,7 +181,8 @@ class NodeCanaryEffect(NodeEffectService):
                 self.logger.debug(f"No specific handler for event type: {event_type}")
 
         except Exception as e:
-            self.logger.error(f"Failed to handle incoming event: {e!s}", exc_info=True)
+            correlation_id_for_log = correlation_id if 'correlation_id' in locals() else 'unknown'
+            self.logger.error(f"Failed to handle incoming event: {e!s} [correlation_id={correlation_id_for_log}]", exc_info=True)
 
     def _handle_effect_execution_request(
         self, event: ModelOnexEvent, correlation_id: str
@@ -215,7 +216,7 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Failed to handle effect execution request: {e!s}")
+            self.logger.error(f"Failed to handle effect execution request: {e!s} [correlation_id={correlation_id}]")
 
     def _handle_effect_request(
         self, event: ModelOnexEvent, correlation_id: str
@@ -250,7 +251,7 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
         except Exception as e:
-            self.logger.error(f"Failed to handle effect needed notification: {e!s}")
+            self.logger.error(f"Failed to handle effect needed notification: {e!s} [correlation_id={correlation_id}]")
 
     def _handle_coordination_event(
         self, event: ModelOnexEvent, correlation_id: str
@@ -272,7 +273,7 @@ class NodeCanaryEffect(NodeEffectService):
                 )
 
         except Exception as e:
-            self.logger.error(f"Failed to handle coordination event: {e!s}")
+            self.logger.error(f"Failed to handle coordination event: {e!s} [correlation_id={correlation_id}]")
 
     def _publish_effect_result(
         self, result: ModelEffectOutput, correlation_id: str
@@ -289,7 +290,7 @@ class NodeCanaryEffect(NodeEffectService):
                 correlation_id,
             )
         except Exception as e:
-            self.logger.error(f"Failed to publish effect result: {e!s}")
+            self.logger.error(f"Failed to publish effect result: {e!s} [correlation_id={correlation_id}]")
 
     async def perform_effect(
         self,
