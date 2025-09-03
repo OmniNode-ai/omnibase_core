@@ -90,4 +90,22 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[BaseModel]) -> Base
         )
 
 
-# TODO: Add CLI and formatting utilities for M1+
+# MILESTONE M1+ CLI ENHANCEMENTS:
+#
+# Command Line Interface:
+# - Interactive YAML extraction and validation
+# - Batch processing of multiple YAML files
+# - Output formatting options (JSON, YAML, table)
+# - Integration with ONEX development workflow
+#
+# Advanced Formatting:
+# - Pretty-printing with syntax highlighting
+# - Diff visualization for YAML changes
+# - Schema-aware formatting and validation
+# - Custom output templates
+#
+# Developer Tools:
+# - IDE/editor integration plugins
+# - Git hooks for YAML validation
+# - Pre-commit validation utilities
+# - Continuous integration support

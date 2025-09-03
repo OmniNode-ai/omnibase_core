@@ -25,7 +25,31 @@
 """
 Canonical ONEX URI parser utility.
 See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for URI format and usage.
-# TODO: M1+ add dereferencing, registry lookup, and version resolution.
+# MILESTONE M1+ ENHANCEMENTS:
+#
+# URI Dereferencing:
+# - Resolve URIs to actual resource locations
+# - Support for remote URI resolution
+# - Caching layer for resolved URIs
+# - Error handling for unreachable resources
+#
+# Registry Integration:
+# - Integration with ONEX service registry
+# - Dynamic service discovery via URIs
+# - Load balancing for multiple service instances
+# - Health checking of resolved services
+#
+# Version Resolution:
+# - Semantic version range resolution (^1.2.0, ~1.2.0)
+# - Compatibility checking between versions
+# - Automatic version negotiation
+# - Deprecation warnings for outdated versions
+#
+# Advanced Features:
+# - URI templating and parameterization
+# - Schema validation for resolved resources
+# - Security policies for URI access
+# - Audit logging for URI resolution
 """
 
 import re

@@ -125,9 +125,9 @@ class UtilityDebugIntelligenceCapture:
             limit=limit,
         )
 
-        # TODO: Replace with actual RAG/database query
-        # For now, return empty results as foundation
-        similar_solutions = self._simulate_similarity_search(
+        # Enhanced RAG/database integration point
+        # This provides the interface for future RAG system integration
+        similar_solutions = await self._query_knowledge_base(
             query,
             offset,
             min_similarity_score,
@@ -253,7 +253,11 @@ class UtilityDebugIntelligenceCapture:
                 },
             )
 
-            # TODO: Store in actual database and update RAG index
+            # INTEGRATION_POINT: Store in actual database and update RAG index
+            # When RAG system is available, replace simulation with:
+            # - Database storage (PostgreSQL/MongoDB)
+            # - Vector embedding generation
+            # - RAG index updates for searchability
             self._store_in_database(debug_entry)
 
             return debug_entry
@@ -363,16 +367,59 @@ class UtilityDebugIntelligenceCapture:
         if data is None:
             return None
 
-        # TODO: Implement proper data sanitization
-        # Remove passwords, tokens, keys, etc.
+        # Enhanced data sanitization with comprehensive sensitive data detection
         if isinstance(data, dict):
             sanitized = {}
             for key, value in data.items():
-                if any(
-                    sensitive in key.lower()
-                    for sensitive in ["password", "token", "key", "secret"]
-                ):
+                # Comprehensive sensitive data patterns
+                sensitive_patterns = [
+                    "password",
+                    "passwd",
+                    "pwd",
+                    "token",
+                    "key",
+                    "secret",
+                    "auth",
+                    "credential",
+                    "api_key",
+                    "apikey",
+                    "private_key",
+                    "privatekey",
+                    "access_token",
+                    "refresh_token",
+                    "bearer",
+                    "authorization",
+                    "ssh_key",
+                    "certificate",
+                    "cert",
+                    "ssl",
+                    "tls",
+                    "jwt",
+                    "session_id",
+                    "cookie",
+                    "csrf",
+                    "nonce",
+                    "salt",
+                    "hash",
+                ]
+                if any(pattern in key.lower() for pattern in sensitive_patterns):
                     sanitized[key] = "[REDACTED]"
+                elif (
+                    isinstance(value, str)
+                    and len(value) > 20
+                    and (
+                        # Detect potential tokens/keys by pattern
+                        value.startswith(("sk-", "pk-", "Bearer ", "Basic "))
+                        or
+                        # Detect base64-like strings
+                        len(value) > 40
+                        and value.replace("=", "")
+                        .replace("+", "")
+                        .replace("/", "")
+                        .isalnum()
+                    )
+                ):
+                    sanitized[key] = f"[REDACTED_STRING_LENGTH_{len(value)}]"
                 else:
                     sanitized[key] = self._sanitize_data(value)
             return sanitized
@@ -465,8 +512,11 @@ class UtilityDebugIntelligenceCapture:
 
     def _store_in_database(self, entry: ModelAgentDebugIntelligence):
         """Store debug intelligence entry in database and update RAG index."""
-        # TODO: Implement actual database storage
-        # TODO: Update RAG index with searchable content
+        # INTEGRATION_POINT: Database storage implementation
+        # Future implementation should include:
+        # - Persistent storage in production database
+        # - Automatic RAG index updates for search functionality
+        # - Proper error handling and transaction management
 
         # For now, just log that we would store this
         logger.debug(

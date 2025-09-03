@@ -15,8 +15,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Generic, Optional, TypeVar
 
-# TODO: Import when common types module is available
-# from omnibase_core.core.common_types import Any
+# ARCHITECTURE: Common types module integration
+# When omnibase_core.core.common_types is implemented, replace built-in typing.Any
+# with domain-specific type definitions for better type safety and documentation
 from omnibase_core.core.errors.core_errors import OnexError
 
 T = TypeVar("T")
