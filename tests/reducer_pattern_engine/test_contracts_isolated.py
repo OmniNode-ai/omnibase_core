@@ -5,39 +5,22 @@ Tests the core contract models and enums without importing
 the full engine infrastructure to avoid dependency issues.
 """
 
-import os
-
-# Import contracts directly from the file
-import sys
 import time
 from uuid import uuid4
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../src"))
-
-# Direct file import to avoid init chain issues
-import importlib.util
-
-contracts_path = os.path.join(
-    os.path.dirname(__file__),
-    "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contracts.py",
+# Clean imports without sys.path manipulation
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+    BaseSubreducer,
+    RoutingDecision,
+    SubreducerResult,
+    WorkflowRequest,
+    WorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
+    WorkflowMetrics as EngineMetrics,  # Alias for backward compatibility
 )
-spec = importlib.util.spec_from_file_location("contracts", contracts_path)
-contracts_module = importlib.util.module_from_spec(spec)
-
-# Execute the module to load all classes
-spec.loader.exec_module(contracts_module)
-
-# Import the classes we need
-BaseSubreducer = contracts_module.BaseSubreducer
-RoutingDecision = contracts_module.RoutingDecision
-SubreducerResult = contracts_module.SubreducerResult
-WorkflowRequest = contracts_module.WorkflowRequest
-WorkflowResponse = contracts_module.WorkflowResponse
-WorkflowStatus = contracts_module.WorkflowStatus
-WorkflowType = contracts_module.WorkflowType
-EngineMetrics = contracts_module.EngineMetrics
 
 
 class TestWorkflowType:

@@ -215,12 +215,12 @@ class WorkflowRouter:
         """
         return self._subreducers.get(name)
 
-    def get_routing_metrics(self) -> Dict[str, any]:
+    def get_routing_metrics(self) -> Dict[str, Any]:
         """
         Get current routing performance metrics.
 
         Returns:
-            Dict[str, any]: Current routing metrics
+            Dict[str, Any]: Current routing metrics
         """
         return self._routing_metrics.copy()
 

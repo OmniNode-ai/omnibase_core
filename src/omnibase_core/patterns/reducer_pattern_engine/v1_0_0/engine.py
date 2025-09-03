@@ -6,6 +6,8 @@ extending the existing NodeReducer architecture with workflow routing capabiliti
 """
 
 import time
+import threading
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from omnibase_core.core.core_structured_logging import (
@@ -71,9 +73,15 @@ class ReducerPatternEngine(NodeReducer):
         self._metrics_collector = ReducerMetricsCollector()
         self._metrics = WorkflowMetrics()
 
-        # State management
+        # State management with thread-safe access
         self._active_workflows: Dict[str, WorkflowRequest] = {}
         self._workflow_states: Dict[str, WorkflowStateModel] = {}
+        self._state_lock = threading.RLock()  # Re-entrant lock for nested operations
+        
+        # Memory cleanup configuration
+        self._max_workflow_states = 1000  # Maximum workflow states to keep in memory
+        self._state_retention_hours = 24  # Hours to retain completed workflow states
+        self._last_cleanup_time = datetime.now()
 
         emit_log_event(
             level=LogLevel.INFO,
@@ -179,9 +187,10 @@ class ReducerPatternEngine(NodeReducer):
                 metadata=request.metadata,
             )
 
-            # Track active workflow and state
-            self._active_workflows[str(request.workflow_id)] = request
-            self._workflow_states[str(request.workflow_id)] = workflow_state
+            # Track active workflow and state (thread-safe)
+            with self._state_lock:
+                self._active_workflows[str(request.workflow_id)] = request
+                self._workflow_states[str(request.workflow_id)] = workflow_state
 
             # Record workflow start in metrics collector
             self._metrics_collector.record_workflow_start(
@@ -229,6 +238,10 @@ class ReducerPatternEngine(NodeReducer):
 
             # Step 5: Process through subreducer
             subreducer_result = await subreducer_instance.process(request)
+
+            # Step 6: Calculate processing time
+            end_time = time.perf_counter()
+            processing_time_ms = (end_time - start_time) * 1000
 
             # Step 7: Update state and metrics based on results
             if subreducer_result.success:
@@ -323,8 +336,9 @@ class ReducerPatternEngine(NodeReducer):
         except Exception as e:
             processing_time_ms = (time.perf_counter() - start_time) * 1000
 
-            # Update workflow state if it exists
-            workflow_state = self._workflow_states.get(str(request.workflow_id))
+            # Update workflow state if it exists (thread-safe)
+            with self._state_lock:
+                workflow_state = self._workflow_states.get(str(request.workflow_id))
             if workflow_state:
                 workflow_state.set_error(
                     error_message=str(e), error_details={"error_type": type(e).__name__}
@@ -372,9 +386,81 @@ class ReducerPatternEngine(NodeReducer):
             return error_response
 
         finally:
-            # Clean up active workflow tracking
-            self._active_workflows.pop(str(request.workflow_id), None)
-            # Keep workflow state for audit trail but mark as inactive if needed
+            # Clean up active workflow tracking (thread-safe)
+            with self._state_lock:
+                self._active_workflows.pop(str(request.workflow_id), None)
+            
+            # Periodic memory cleanup to prevent memory leaks
+            self._cleanup_old_workflow_states()
+
+    def _cleanup_old_workflow_states(self) -> None:
+        """
+        Clean up old workflow states to prevent memory leaks.
+        
+        Removes workflow states that are:
+        1. Older than the retention period AND completed/failed
+        2. Beyond the maximum count limit (keeps most recent)
+        
+        Runs periodically (every hour) to avoid performance impact.
+        """
+        now = datetime.now()
+        
+        # Only run cleanup once per hour to avoid performance impact
+        if (now - self._last_cleanup_time).total_seconds() < 3600:
+            return
+            
+        with self._state_lock:
+            if not self._workflow_states:
+                return
+                
+            states_to_remove = []
+            retention_cutoff = now - timedelta(hours=self._state_retention_hours)
+            
+            # Find states to remove based on age and completion status
+            for workflow_id, state in self._workflow_states.items():
+                # Skip if workflow is still active
+                if workflow_id in self._active_workflows:
+                    continue
+                    
+                # Remove if state is old and completed/failed
+                if (hasattr(state, 'completed_at') and state.completed_at and 
+                    state.completed_at < retention_cutoff and
+                    state.current_state in [WorkflowState.COMPLETED, WorkflowState.FAILED]):
+                    states_to_remove.append(workflow_id)
+            
+            # If still over limit, remove oldest completed states
+            if len(self._workflow_states) - len(states_to_remove) > self._max_workflow_states:
+                completed_states = [
+                    (wf_id, state) for wf_id, state in self._workflow_states.items()
+                    if (wf_id not in self._active_workflows and 
+                        wf_id not in states_to_remove and
+                        state.current_state in [WorkflowState.COMPLETED, WorkflowState.FAILED])
+                ]
+                
+                # Sort by completion time and remove oldest
+                completed_states.sort(key=lambda x: getattr(x[1], 'completed_at', now))
+                excess_count = len(self._workflow_states) - len(states_to_remove) - self._max_workflow_states
+                states_to_remove.extend([wf_id for wf_id, _ in completed_states[:excess_count]])
+            
+            # Remove identified states
+            if states_to_remove:
+                for workflow_id in states_to_remove:
+                    self._workflow_states.pop(workflow_id, None)
+                
+                emit_log_event(
+                    level=LogLevel.INFO,
+                    event="workflow_states_cleaned_up",
+                    message=f"Cleaned up {len(states_to_remove)} old workflow states",
+                    context={
+                        "removed_count": len(states_to_remove),
+                        "remaining_states": len(self._workflow_states),
+                        "active_workflows": len(self._active_workflows),
+                        "retention_hours": self._state_retention_hours,
+                        "max_states": self._max_workflow_states,
+                    },
+                )
+        
+        self._last_cleanup_time = now
 
     def get_metrics(self) -> WorkflowMetrics:
         """
@@ -383,8 +469,9 @@ class ReducerPatternEngine(NodeReducer):
         Returns:
             WorkflowMetrics: Current performance and processing metrics
         """
-        # Update active instances count
-        self._metrics.active_instances = len(self._active_workflows)
+        # Update active instances count (thread-safe)
+        with self._state_lock:
+            self._metrics.active_instances = len(self._active_workflows)
 
         # Include router metrics
         router_metrics = self._router.get_routing_metrics()
@@ -399,7 +486,8 @@ class ReducerPatternEngine(NodeReducer):
         Returns:
             Dict[str, WorkflowRequest]: Active workflows by workflow ID
         """
-        return self._active_workflows.copy()
+        with self._state_lock:
+            return self._active_workflows.copy()
 
     def _update_metrics(self, processing_time_ms: float) -> None:
         """
@@ -441,12 +529,22 @@ class ReducerPatternEngine(NodeReducer):
             "legacy_metrics": self.get_metrics().__dict__,
             "enhanced_metrics": self._metrics_collector.get_metrics_summary(),
             "registry_status": self.get_registry_summary(),
-            "active_workflows_count": len(self._active_workflows),
-            "workflow_states": {
+            "active_workflows_count": self._get_active_workflows_count(),
+            "workflow_states": self._get_workflow_states_summary(),
+        }
+
+    def _get_active_workflows_count(self) -> int:
+        """Get count of active workflows (thread-safe)."""
+        with self._state_lock:
+            return len(self._active_workflows)
+
+    def _get_workflow_states_summary(self) -> Dict[str, Dict]:
+        """Get workflow states summary (thread-safe)."""
+        with self._state_lock:
+            return {
                 wf_id: state.to_summary_dict()
                 for wf_id, state in self._workflow_states.items()
-            },
-        }
+            }
 
     def get_workflow_state(self, workflow_id: str) -> Optional[WorkflowStateModel]:
         """
@@ -458,7 +556,8 @@ class ReducerPatternEngine(NodeReducer):
         Returns:
             WorkflowStateModel if found, None otherwise
         """
-        return self._workflow_states.get(workflow_id)
+        with self._state_lock:
+            return self._workflow_states.get(workflow_id)
 
     def list_supported_workflow_types(self) -> List[str]:
         """

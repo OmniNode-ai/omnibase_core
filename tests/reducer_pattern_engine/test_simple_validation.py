@@ -1,48 +1,37 @@
 """
 Simple validation tests for Reducer Pattern Engine contracts.
 
-Direct validation of core functionality without complex imports
+Direct validation of core functionality using proper imports
 to ensure the Phase 1 implementation works as expected.
 """
 
-import os
-import sys
 from datetime import datetime
 from uuid import UUID
 
 import pytest
 
-# Add src to path for direct imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../src"))
+# Clean imports without sys.path manipulation - import from contracts.py not contracts/ directory
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+    WorkflowRequest,
+    WorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
+)
 
 
 def test_contract_imports_work():
     """Test that we can import and use the contracts directly."""
-    # Direct file import to test contracts work
-    import importlib.util
-
-    contracts_path = os.path.join(
-        os.path.dirname(__file__),
-        "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contracts.py",
-    )
-
-    spec = importlib.util.spec_from_file_location("contracts", contracts_path)
-    contracts_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(contracts_module)
-
+    
     # Test WorkflowType enum
-    WorkflowType = contracts_module.WorkflowType
     assert hasattr(WorkflowType, "DOCUMENT_REGENERATION")
     assert WorkflowType.DOCUMENT_REGENERATION.value == "document_regeneration"
 
     # Test WorkflowStatus enum
-    WorkflowStatus = contracts_module.WorkflowStatus
     assert hasattr(WorkflowStatus, "PENDING")
     assert hasattr(WorkflowStatus, "COMPLETED")
     assert hasattr(WorkflowStatus, "FAILED")
 
     # Test WorkflowRequest model
-    WorkflowRequest = contracts_module.WorkflowRequest
     request = WorkflowRequest(
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="test_instance",
@@ -56,7 +45,6 @@ def test_contract_imports_work():
     assert request.payload["document_id"] == "doc_123"
 
     # Test WorkflowResponse model
-    WorkflowResponse = contracts_module.WorkflowResponse
     response = WorkflowResponse(
         workflow_id=request.workflow_id,
         workflow_type=request.workflow_type,

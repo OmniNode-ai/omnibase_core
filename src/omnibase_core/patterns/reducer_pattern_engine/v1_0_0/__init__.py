@@ -5,6 +5,10 @@ from .contracts import (
     SubreducerResult,
     WorkflowRequest,
     WorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
+    WorkflowMetrics,
+    BaseSubreducer,
 )
 from .engine import ReducerPatternEngine
 from .router import WorkflowRouter
@@ -14,6 +18,10 @@ __all__ = [
     "WorkflowRouter",
     "WorkflowRequest",
     "WorkflowResponse",
+    "WorkflowStatus", 
+    "WorkflowType",
+    "WorkflowMetrics",
     "RoutingDecision",
     "SubreducerResult",
+    "BaseSubreducer",
 ]

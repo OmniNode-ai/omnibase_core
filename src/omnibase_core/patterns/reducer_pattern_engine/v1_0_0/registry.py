@@ -218,7 +218,12 @@ class ReducerSubreducerRegistry:
         try:
             instance = subreducer_class(f"validation_{workflow_type_str}_subreducer")
             return instance.supports_workflow_type(workflow_type)
-        except Exception:
+        except (TypeError, ValueError, AttributeError, NotImplementedError) as e:
+            emit_log_event(
+                logger=self._logger,
+                level="WARNING",
+                message=f"Validation failed for subreducer {subreducer_class.__name__}: {str(e)}",
+            )
             return False
 
     def list_registered_workflows(self) -> List[str]:
@@ -252,7 +257,12 @@ class ReducerSubreducerRegistry:
                     health_status[workflow_type_str] = instance.supports_workflow_type(
                         workflow_type
                     )
-            except Exception:
+            except (AttributeError, TypeError, NotImplementedError) as e:
+                emit_log_event(
+                    logger=self._logger,
+                    level="WARNING", 
+                    message=f"Health check failed for {workflow_type_str}: {str(e)}",
+                )
                 health_status[workflow_type_str] = False
 
         return health_status
