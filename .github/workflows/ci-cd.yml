@@ -63,6 +63,9 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
+      - name: Configure git for private repositories
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Install dependencies
         run: poetry install --extras "full"
 
@@ -119,6 +122,9 @@ jobs:
         uses: snok/install-poetry@v1
         with:
           version: 1.8.0
+
+      - name: Configure git for private repositories
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install dependencies
         run: poetry install
