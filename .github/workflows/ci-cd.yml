@@ -67,10 +67,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure git with token for poetry to access private repos
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          # Configure Poetry for git authentication with private repos
+          poetry config http-basic.github.com x-access-token ${{ secrets.GITHUB_TOKEN }}
           poetry install --extras "full"
 
       - name: Run type checking with mypy
@@ -131,10 +129,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure git with token for poetry to access private repos
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          # Configure Poetry for git authentication with private repos
+          poetry config http-basic.github.com x-access-token ${{ secrets.GITHUB_TOKEN }}
           poetry install
 
       - name: Run safety check for vulnerabilities
