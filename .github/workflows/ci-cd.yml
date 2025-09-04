@@ -67,8 +67,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure Poetry for git authentication with private repos
-          poetry config http-basic.github.com x-access-token ${{ secrets.GITHUB_TOKEN }}
+          # Update pyproject.toml to use authenticated URL
+          sed -i 's|https://github.com/OmniNode-ai/omnibase-spi.git|https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/OmniNode-ai/omnibase-spi.git|g' pyproject.toml
           poetry install --extras "full"
 
       - name: Run type checking with mypy
@@ -129,8 +129,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure Poetry for git authentication with private repos
-          poetry config http-basic.github.com x-access-token ${{ secrets.GITHUB_TOKEN }}
+          # Update pyproject.toml to use authenticated URL
+          sed -i 's|https://github.com/OmniNode-ai/omnibase-spi.git|https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/OmniNode-ai/omnibase-spi.git|g' pyproject.toml
           poetry install
 
       - name: Run safety check for vulnerabilities
