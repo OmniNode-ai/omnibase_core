@@ -229,7 +229,8 @@ class WorkflowRouter:
         Generate consistent hash for routing decisions.
 
         Uses SHA-256 for consistent routing based on workflow type
-        and instance ID combination.
+        and instance ID combination. Returns full hash to minimize
+        collision probability.
 
         Args:
             workflow_type: The workflow type string
@@ -239,7 +240,7 @@ class WorkflowRouter:
             str: Hex digest of routing hash
         """
         routing_key = f"{workflow_type}:{instance_id}"
-        return hashlib.sha256(routing_key.encode()).hexdigest()[:16]
+        return hashlib.sha256(routing_key.encode()).hexdigest()
 
     def _update_routing_metrics(self, routing_time_ms: float) -> None:
         """

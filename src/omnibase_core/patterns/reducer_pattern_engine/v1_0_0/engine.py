@@ -5,8 +5,8 @@ Provides the main engine for the Reducer Pattern Engine Phase 1 implementation,
 extending the existing NodeReducer architecture with workflow routing capabilities.
 """
 
-import time
 import threading
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -54,12 +54,19 @@ class ReducerPatternEngine(NodeReducer):
     - Contract model validation
     """
 
-    def __init__(self, container: ModelONEXContainer) -> None:
+    def __init__(
+        self,
+        container: ModelONEXContainer,
+        max_workflow_states: int = 1000,
+        state_retention_hours: int = 24,
+    ) -> None:
         """
         Initialize ReducerPatternEngine with ModelONEXContainer.
 
         Args:
             container: ONEX container for dependency injection
+            max_workflow_states: Maximum workflow states to keep in memory
+            state_retention_hours: Hours to retain completed workflow states
 
         Raises:
             OnexError: If initialization fails
@@ -77,10 +84,10 @@ class ReducerPatternEngine(NodeReducer):
         self._active_workflows: Dict[str, WorkflowRequest] = {}
         self._workflow_states: Dict[str, WorkflowStateModel] = {}
         self._state_lock = threading.RLock()  # Re-entrant lock for nested operations
-        
-        # Memory cleanup configuration
-        self._max_workflow_states = 1000  # Maximum workflow states to keep in memory
-        self._state_retention_hours = 24  # Hours to retain completed workflow states
+
+        # Memory cleanup configuration (configurable parameters)
+        self._max_workflow_states = max_workflow_states
+        self._state_retention_hours = state_retention_hours
         self._last_cleanup_time = datetime.now()
 
         emit_log_event(
@@ -389,64 +396,81 @@ class ReducerPatternEngine(NodeReducer):
             # Clean up active workflow tracking (thread-safe)
             with self._state_lock:
                 self._active_workflows.pop(str(request.workflow_id), None)
-            
+
             # Periodic memory cleanup to prevent memory leaks
             self._cleanup_old_workflow_states()
 
     def _cleanup_old_workflow_states(self) -> None:
         """
         Clean up old workflow states to prevent memory leaks.
-        
+
         Removes workflow states that are:
         1. Older than the retention period AND completed/failed
         2. Beyond the maximum count limit (keeps most recent)
-        
+
         Runs periodically (every hour) to avoid performance impact.
         """
         now = datetime.now()
-        
+
         # Only run cleanup once per hour to avoid performance impact
         if (now - self._last_cleanup_time).total_seconds() < 3600:
             return
-            
+
         with self._state_lock:
             if not self._workflow_states:
                 return
-                
+
             states_to_remove = []
             retention_cutoff = now - timedelta(hours=self._state_retention_hours)
-            
+
             # Find states to remove based on age and completion status
             for workflow_id, state in self._workflow_states.items():
                 # Skip if workflow is still active
                 if workflow_id in self._active_workflows:
                     continue
-                    
+
                 # Remove if state is old and completed/failed
-                if (hasattr(state, 'completed_at') and state.completed_at and 
-                    state.completed_at < retention_cutoff and
-                    state.current_state in [WorkflowState.COMPLETED, WorkflowState.FAILED]):
+                completed_at = getattr(state, "completed_at", None)
+                if (
+                    completed_at
+                    and completed_at < retention_cutoff
+                    and state.current_state
+                    in [WorkflowState.COMPLETED, WorkflowState.FAILED]
+                ):
                     states_to_remove.append(workflow_id)
-            
+
             # If still over limit, remove oldest completed states
-            if len(self._workflow_states) - len(states_to_remove) > self._max_workflow_states:
+            if (
+                len(self._workflow_states) - len(states_to_remove)
+                > self._max_workflow_states
+            ):
                 completed_states = [
-                    (wf_id, state) for wf_id, state in self._workflow_states.items()
-                    if (wf_id not in self._active_workflows and 
-                        wf_id not in states_to_remove and
-                        state.current_state in [WorkflowState.COMPLETED, WorkflowState.FAILED])
+                    (wf_id, state)
+                    for wf_id, state in self._workflow_states.items()
+                    if (
+                        wf_id not in self._active_workflows
+                        and wf_id not in states_to_remove
+                        and state.current_state
+                        in [WorkflowState.COMPLETED, WorkflowState.FAILED]
+                    )
                 ]
-                
+
                 # Sort by completion time and remove oldest
-                completed_states.sort(key=lambda x: getattr(x[1], 'completed_at', now))
-                excess_count = len(self._workflow_states) - len(states_to_remove) - self._max_workflow_states
-                states_to_remove.extend([wf_id for wf_id, _ in completed_states[:excess_count]])
-            
+                completed_states.sort(key=lambda x: getattr(x[1], "completed_at", now))
+                excess_count = (
+                    len(self._workflow_states)
+                    - len(states_to_remove)
+                    - self._max_workflow_states
+                )
+                states_to_remove.extend(
+                    [wf_id for wf_id, _ in completed_states[:excess_count]]
+                )
+
             # Remove identified states
             if states_to_remove:
                 for workflow_id in states_to_remove:
                     self._workflow_states.pop(workflow_id, None)
-                
+
                 emit_log_event(
                     level=LogLevel.INFO,
                     event="workflow_states_cleaned_up",
@@ -459,7 +483,7 @@ class ReducerPatternEngine(NodeReducer):
                         "max_states": self._max_workflow_states,
                     },
                 )
-        
+
         self._last_cleanup_time = now
 
     def get_metrics(self) -> WorkflowMetrics:

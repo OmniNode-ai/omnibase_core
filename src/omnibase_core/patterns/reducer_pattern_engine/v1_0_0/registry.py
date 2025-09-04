@@ -84,7 +84,7 @@ class ReducerSubreducerRegistry:
                         f"Subreducer {subreducer_class.__name__} does not support workflow type {workflow_type_str}",
                         CoreErrorCode.VALIDATION_FAILED,
                     )
-            except Exception as e:
+            except (TypeError, ValueError, AttributeError, NotImplementedError) as e:
                 raise RegistryError(
                     f"Failed to instantiate subreducer {subreducer_class.__name__}: {str(e)}",
                     CoreErrorCode.VALIDATION_FAILED,
@@ -160,7 +160,7 @@ class ReducerSubreducerRegistry:
                 instance = subreducer_class(f"{workflow_type_str}_subreducer")
                 self._subreducer_instances[workflow_type_str] = instance
                 return instance
-            except Exception as e:
+            except (TypeError, ValueError, AttributeError, NotImplementedError) as e:
                 emit_log_event(
                     logger=self._logger,
                     level="ERROR",
