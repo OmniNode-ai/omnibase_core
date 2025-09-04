@@ -26,7 +26,7 @@ class WorkflowState(str, Enum):
     RETRYING = "retrying"
 
 
-class StateTransition(BaseModel):
+class ModelStateTransition(BaseModel):
     """Model representing a state transition event."""
 
     from_state: WorkflowState
@@ -36,7 +36,7 @@ class StateTransition(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
-class WorkflowStateModel(BaseModel):
+class ModelWorkflowStateModel(BaseModel):
     """Complete workflow state model with transition tracking."""
 
     # Core identification
@@ -66,7 +66,7 @@ class WorkflowStateModel(BaseModel):
 
     # Metadata and context
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    transition_history: List[StateTransition] = Field(default_factory=list)
+    transition_history: List[ModelStateTransition] = Field(default_factory=list)
 
     # Validation
     @validator("workflow_type")
@@ -118,7 +118,7 @@ class WorkflowStateModel(BaseModel):
         new_state: WorkflowState,
         reason: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> "WorkflowStateModel":
+    ) -> "ModelWorkflowStateModel":
         """
         Transition to a new state with validation and history tracking.
 
@@ -140,7 +140,7 @@ class WorkflowStateModel(BaseModel):
             )
 
         # Create transition record
-        transition = StateTransition(
+        transition = ModelStateTransition(
             from_state=self.current_state,
             to_state=new_state,
             reason=reason,

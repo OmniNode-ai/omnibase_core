@@ -78,7 +78,7 @@ class HandleErrorInput(BaseModel):
         return v.strip()
 
 
-class CircuitBreakerConfig(BaseModel):
+class ModelCircuitBreakerConfig(BaseModel):
     """Circuit breaker configuration model."""
 
     failure_threshold: int = Field(
@@ -104,7 +104,7 @@ class CreateCircuitBreakerInput(BaseModel):
     """Input model for create_circuit_breaker action."""
 
     name: str = Field(..., description="Unique circuit breaker identifier")
-    config: CircuitBreakerConfig = Field(
+    config: ModelCircuitBreakerConfig = Field(
         ..., description="Circuit breaker configuration"
     )
 

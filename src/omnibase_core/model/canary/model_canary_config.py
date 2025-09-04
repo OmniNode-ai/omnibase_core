@@ -1,17 +1,167 @@
-#!/usr/bin/env python3
 """
-Configuration management for canary nodes.
+Canary deployment configuration models.
 
-Centralizes all configuration values that were previously hardcoded,
-providing environment-based configuration with sensible defaults.
+Centralizes all configuration models for canary nodes including retry strategies,
+circuit breaker configuration, metrics collection, and node configuration.
 """
 
 import os
-from typing import Any, Dict
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
+# Enums for canary configuration
+class RetryStrategyType(Enum):
+    """Available retry strategy types."""
+
+    LINEAR = "linear"
+    EXPONENTIAL = "exponential"
+    FIBONACCI = "fibonacci"
+    CUSTOM = "custom"
+    JITTERED_EXPONENTIAL = "jittered_exponential"
+
+
+class RetryCondition(Enum):
+    """Conditions that determine when to retry."""
+
+    ANY_EXCEPTION = "any_exception"
+    SPECIFIC_EXCEPTIONS = "specific_exceptions"
+    HTTP_STATUS_CODES = "http_status_codes"
+    CUSTOM_PREDICATE = "custom_predicate"
+
+
+class CircuitBreakerState(str, Enum):
+    """Circuit breaker states."""
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Failures detected, requests fail fast
+    HALF_OPEN = "half_open"  # Testing if service recovered
+
+
+# Configuration Models
+class ModelRetryConfig(BaseModel):
+    """Configuration for retry behavior."""
+
+    strategy_type: RetryStrategyType = Field(
+        default=RetryStrategyType.EXPONENTIAL,
+        description="Type of retry strategy to use",
+    )
+    max_attempts: int = Field(
+        default=3, ge=1, le=10, description="Maximum number of retry attempts"
+    )
+    base_delay_ms: int = Field(
+        default=1000, ge=0, description="Base delay in milliseconds"
+    )
+    max_delay_ms: int = Field(
+        default=30000,
+        ge=1,
+        description="Maximum delay between attempts in milliseconds",
+    )
+    backoff_multiplier: float = Field(
+        default=2.0, ge=1.0, le=10.0, description="Multiplier for exponential backoff"
+    )
+    jitter_enabled: bool = Field(
+        default=True, description="Whether to add random jitter to delays"
+    )
+    jitter_max_ms: int = Field(
+        default=1000, ge=0, description="Maximum jitter to add in milliseconds"
+    )
+    retry_condition: RetryCondition = Field(
+        default=RetryCondition.ANY_EXCEPTION,
+        description="Condition that determines when to retry",
+    )
+    retryable_exceptions: List[str] = Field(
+        default_factory=lambda: [
+            "ConnectionError",
+            "TimeoutError",
+            "asyncio.TimeoutError",
+            "aiohttp.ClientError",
+            "httpx.TimeoutException",
+        ],
+        description="List of exception class names that should trigger retries",
+    )
+
+    @field_validator("retryable_exceptions")
+    def validate_exception_list(cls, v):
+        """Validate that exception list is not empty when using specific exceptions."""
+        if not v:
+            raise ValueError("retryable_exceptions cannot be empty")
+        return v
+
+
+class ModelCircuitBreakerConfig(BaseModel):
+    """Configuration for circuit breaker behavior."""
+
+    failure_threshold: int = Field(
+        default=5, description="Number of failures before opening"
+    )
+    recovery_timeout_seconds: int = Field(
+        default=60, description="Time before trying recovery"
+    )
+    success_threshold: int = Field(
+        default=3, description="Successes needed to close from half-open"
+    )
+    timeout_seconds: float = Field(default=10.0, description="Request timeout")
+
+
+class ModelCircuitBreakerStats(BaseModel):
+    """Circuit breaker statistics."""
+
+    state: CircuitBreakerState
+    failure_count: int = 0
+    success_count: int = 0
+    total_requests: int = 0
+    last_failure_time: Optional[float] = None
+    last_success_time: Optional[float] = None
+
+
+class ModelMetricSummary(BaseModel):
+    """Summary statistics for a metric."""
+
+    count: int
+    sum: float
+    min: float
+    max: float
+    avg: float
+    p50: float
+    p95: float
+    p99: float
+
+
+class ModelNodeMetrics(BaseModel):
+    """Comprehensive metrics for a canary node."""
+
+    # Operation metrics
+    total_operations: int = 0
+    successful_operations: int = 0
+    failed_operations: int = 0
+
+    # Performance metrics
+    avg_response_time_ms: float = 0.0
+    p95_response_time_ms: float = 0.0
+    p99_response_time_ms: float = 0.0
+
+    # Error metrics
+    error_rate: float = 0.0
+    timeout_count: int = 0
+    circuit_breaker_trips: int = 0
+
+    # Resource metrics
+    memory_usage_mb: float = 0.0
+    cpu_usage_percent: float = 0.0
+
+    # Health metrics
+    health_score: float = 1.0
+    last_health_check: Optional[datetime] = None
+
+    # Custom metrics
+    custom_metrics: Dict[str, Any] = Field(default_factory=dict)
+
+
+# Main Configuration Models
 class ModelDatabaseConfig(BaseModel):
     """Database configuration for canary nodes."""
 
@@ -48,12 +198,9 @@ class ModelDatabaseConfig(BaseModel):
 
     def _is_production_environment(self) -> bool:
         """Check if we're in a production environment."""
-        import os
-
         environment = os.getenv("ENVIRONMENT", "").lower()
         node_env = os.getenv("NODE_ENV", "").lower()
 
-        # Consider production if explicitly set or if no debug flags are present
         return (
             environment in ["production", "prod"]
             or node_env in ["production", "prod"]
@@ -355,22 +502,3 @@ class ModelCanaryNodeConfig(BaseModel):
             business_logic=business_logic_config,
             security=security_config,
         )
-
-
-# Global config instance
-_config_instance: ModelCanaryNodeConfig | None = None
-
-
-def get_canary_config() -> ModelCanaryNodeConfig:
-    """Get the global canary node configuration instance."""
-    global _config_instance
-    if _config_instance is None:
-        _config_instance = ModelCanaryNodeConfig.from_environment()
-    return _config_instance
-
-
-def reload_config() -> ModelCanaryNodeConfig:
-    """Reload configuration from environment (useful for tests)."""
-    global _config_instance
-    _config_instance = ModelCanaryNodeConfig.from_environment()
-    return _config_instance

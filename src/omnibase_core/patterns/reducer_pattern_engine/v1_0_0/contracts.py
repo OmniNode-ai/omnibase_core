@@ -31,7 +31,7 @@ class WorkflowStatus(Enum):
     FAILED = "failed"
 
 
-class WorkflowRequest(BaseModel):
+class ModelWorkflowRequest(BaseModel):
     """
     Request model for workflow processing.
 
@@ -59,7 +59,7 @@ class WorkflowRequest(BaseModel):
         }
 
 
-class WorkflowResponse(BaseModel):
+class ModelWorkflowResponse(BaseModel):
     """
     Response model for completed workflow processing.
 
@@ -89,7 +89,7 @@ class WorkflowResponse(BaseModel):
         }
 
 
-class RoutingDecision(BaseModel):
+class ModelRoutingDecision(BaseModel):
     """
     Routing decision for workflow processing.
 
@@ -115,7 +115,7 @@ class RoutingDecision(BaseModel):
         }
 
 
-class SubreducerResult(BaseModel):
+class ModelSubreducerResult(BaseModel):
     """
     Result from subreducer processing.
 
@@ -142,7 +142,7 @@ class SubreducerResult(BaseModel):
         }
 
 
-class WorkflowMetrics(BaseModel):
+class ModelWorkflowMetrics(BaseModel):
     """
     Metrics for workflow processing performance.
 
@@ -178,7 +178,7 @@ class BaseSubreducer:
         """Initialize the subreducer with a name."""
         self.name = name
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
         """
         Process a workflow request.
 

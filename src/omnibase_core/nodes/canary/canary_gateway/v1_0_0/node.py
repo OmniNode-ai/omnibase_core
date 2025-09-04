@@ -19,7 +19,7 @@ from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    CircuitBreakerConfig,
+    ModelCircuitBreakerConfig,
     CircuitBreakerException,
     get_circuit_breaker,
 )
@@ -242,7 +242,7 @@ class NodeCanaryGateway(NodeEffectService):
         self.metrics_collector = get_metrics_collector("canary_gateway")
 
         # Setup circuit breakers for external services
-        cb_config = CircuitBreakerConfig(
+        cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
             timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,

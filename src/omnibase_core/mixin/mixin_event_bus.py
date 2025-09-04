@@ -127,7 +127,7 @@ class ModelLogData(BaseModel):
 # --- Unified Event Bus Mixin ------------------------------------------------
 
 
-class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
+class ModelMixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     """
     Unified mixin for all event bus operations in ONEX nodes.
 

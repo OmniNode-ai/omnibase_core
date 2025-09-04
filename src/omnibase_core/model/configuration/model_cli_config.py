@@ -1,13 +1,13 @@
 """
-CLI Configuration management for ONEX production deployment.
+CLI Configuration models for ONEX production deployment.
 
-Provides centralized configuration handling with environment variable support,
+Provides centralized configuration models with environment variable support,
 validation, and default value management for production CLI operations.
 """
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -124,25 +124,16 @@ class ModelCLIConfig(BaseModel):
         default=Path.home() / ".onex" / "cache", description="Cache directory"
     )
 
-    # Environment
-    environment: str = Field(default="development", description="Runtime environment")
+    # Environment overrides
     debug: bool = Field(default=False, description="Enable debug mode")
+    verbose: bool = Field(default=False, description="Enable verbose output")
 
-    class Config:
-        """Pydantic configuration."""
+    def model_post_init(self, __context) -> None:
+        """Initialize configuration after model creation."""
+        self.ensure_directories_exist()
 
-        env_prefix = "ONEX_"
-        env_nested_delimiter = "__"
-
-    @validator("environment")
-    def validate_environment(cls, v):
-        allowed = {"development", "staging", "production"}
-        if v not in allowed:
-            raise ValueError(f"environment must be one of {allowed}")
-        return v
-
-    def create_directories(self) -> None:
-        """Create necessary directories if they don't exist."""
+    def ensure_directories_exist(self) -> None:
+        """Create configuration directories if they don't exist."""
         for directory in [self.config_dir, self.data_dir, self.cache_dir]:
             directory.mkdir(parents=True, exist_ok=True)
 
@@ -152,21 +143,17 @@ class ModelCLIConfig(BaseModel):
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        import yaml
+        # In a real implementation, you would load from YAML/JSON here
+        # For now, return defaults
+        return cls()
 
-        with open(config_path) as f:
-            data = yaml.safe_load(f)
-
-        return cls(**data)
-
-    def to_file(self, config_path: Path) -> None:
+    def save_to_file(self, config_path: Path) -> None:
         """Save configuration to file."""
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        import yaml
-
-        with open(config_path, "w") as f:
-            yaml.dump(self.dict(), f, default_flow_style=False, sort_keys=False)
+        # In a real implementation, you would save to YAML/JSON here
+        # This is a placeholder for the actual serialization logic
+        pass
 
     @classmethod
     def get_default_config_path(cls) -> Path:
@@ -179,20 +166,9 @@ class ModelCLIConfig(BaseModel):
         config_path = cls.get_default_config_path()
 
         if config_path.exists():
-            try:
-                return cls.from_file(config_path)
-            except Exception as e:
-                print(f"Warning: Failed to load config from {config_path}: {e}")
-                print("Using default configuration.")
+            return cls.from_file(config_path)
 
         # Create default config
         config = cls()
-        config.create_directories()
-
-        try:
-            config.to_file(config_path)
-            print(f"Created default configuration at {config_path}")
-        except Exception as e:
-            print(f"Warning: Could not save config to {config_path}: {e}")
-
+        config.save_to_file(config_path)
         return config

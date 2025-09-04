@@ -21,7 +21,7 @@ from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    CircuitBreakerConfig,
+    ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
@@ -103,7 +103,7 @@ class NodeCanaryReducer(NodeReducerService):
         self.metrics_collector = get_metrics_collector("canary_reducer")
 
         # Setup circuit breakers for external services
-        cb_config = CircuitBreakerConfig(
+        cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
             timeout_seconds=self.config.timeouts.default_timeout_ms / 1000,
