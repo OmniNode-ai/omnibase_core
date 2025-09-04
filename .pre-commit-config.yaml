@@ -52,7 +52,7 @@ repos:
       # ONEX Contract Validation
       - id: validate-contracts
         name: ONEX Contract Validation
-        entry: python scripts/validate-contracts.py
+        entry: poetry run python scripts/validate-contracts.py
         language: system
         pass_filenames: false
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$

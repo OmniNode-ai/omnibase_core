@@ -12,6 +12,7 @@ name: "canary_orchestrator"
 version: {major: 1, minor: 0, patch: 0}
 input_model: "ModelCanaryOrchestratorInput"
 output_model: "ModelCanaryOrchestratorOutput"
+main_tool_class: "NodeCanaryOrchestrator"
 
 # === TOOL SPECIFICATION ===
 tool_specification:
