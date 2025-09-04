@@ -51,6 +51,8 @@ services:
     networks:
       - onex-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "omni-agent", "status"]
       interval: 30s
@@ -72,6 +74,8 @@ services:
     networks:
       - onex-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U onex -d onex"]
       interval: 10s
@@ -87,6 +91,8 @@ services:
     networks:
       - onex-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -111,6 +117,8 @@ services:
     networks:
       - onex-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
 
   # Grafana dashboards
   grafana:
@@ -130,6 +138,8 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+    security_opt:
+      - no-new-privileges:true
 
   # Jaeger tracing (optional)
   jaeger:
@@ -142,6 +152,8 @@ services:
     networks:
       - onex-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
 
   # CLI service (for cron jobs and administrative tasks)
   onex-cli:
@@ -162,6 +174,8 @@ services:
         condition: service_healthy
     profiles:
       - cli
+    security_opt:
+      - no-new-privileges:true
     entrypoint: ["sleep", "infinity"] # Keep container running for exec commands
 
   # Nginx reverse proxy (optional, for production load balancing)
@@ -178,6 +192,8 @@ services:
     depends_on:
       - onex-api
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - proxy
 

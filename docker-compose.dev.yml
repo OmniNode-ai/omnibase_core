@@ -29,6 +29,8 @@ services:
         condition: service_healthy
     networks:
       - onex-dev-network
+    security_opt:
+      - no-new-privileges:true
 
   # PostgreSQL for development
   postgres:
@@ -49,6 +51,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    security_opt:
+      - no-new-privileges:true
 
   # Redis for development
   redis:
@@ -64,6 +68,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+    security_opt:
+      - no-new-privileges:true
 
   # Prometheus for development monitoring
   prometheus:
@@ -78,6 +84,8 @@ services:
       - '--web.enable-lifecycle'
     networks:
       - onex-dev-network
+    security_opt:
+      - no-new-privileges:true
 
   # Development CLI container
   onex-cli:
@@ -98,6 +106,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
     entrypoint: ["sleep", "infinity"]
 
   # pgAdmin for database management
@@ -112,6 +122,8 @@ services:
       - pgadmin-data:/var/lib/pgadmin
     networks:
       - onex-dev-network
+    security_opt:
+      - no-new-privileges:true
     profiles:
       - tools
 

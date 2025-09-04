@@ -6,6 +6,7 @@ using hash-based distribution with correlation ID tracking and error handling.
 """
 
 import hashlib
+import threading
 import time
 from typing import Any, Dict, List, Optional
 
@@ -47,6 +48,7 @@ class WorkflowRouter:
             "routing_errors": 0,
             "average_routing_time_ms": 0.0,
         }
+        self._metrics_lock = threading.RLock()  # Thread-safe metrics updates
 
     def register_subreducer(
         self, subreducer: BaseSubreducer, workflow_types: List[WorkflowType]
@@ -187,7 +189,8 @@ class WorkflowRouter:
             return decision
 
         except Exception as e:
-            self._routing_metrics["routing_errors"] += 1
+            with self._metrics_lock:
+                self._routing_metrics["routing_errors"] += 1
 
             emit_log_event(
                 level=LogLevel.ERROR,
@@ -244,18 +247,19 @@ class WorkflowRouter:
 
     def _update_routing_metrics(self, routing_time_ms: float) -> None:
         """
-        Update routing performance metrics.
+        Update routing performance metrics in a thread-safe manner.
 
         Args:
             routing_time_ms: Time taken for this routing decision
         """
-        self._routing_metrics["total_routed"] += 1
+        with self._metrics_lock:
+            self._routing_metrics["total_routed"] += 1
 
-        # Calculate running average routing time
-        total_routed = self._routing_metrics["total_routed"]
-        current_avg = self._routing_metrics["average_routing_time_ms"]
+            # Calculate running average routing time
+            total_routed = self._routing_metrics["total_routed"]
+            current_avg = self._routing_metrics["average_routing_time_ms"]
 
-        # Running average formula: new_avg = old_avg + (new_value - old_avg) / count
-        self._routing_metrics["average_routing_time_ms"] = (
-            current_avg + (routing_time_ms - current_avg) / total_routed
-        )
+            # Running average formula: new_avg = old_avg + (new_value - old_avg) / count
+            self._routing_metrics["average_routing_time_ms"] = (
+                current_avg + (routing_time_ms - current_avg) / total_routed
+            )

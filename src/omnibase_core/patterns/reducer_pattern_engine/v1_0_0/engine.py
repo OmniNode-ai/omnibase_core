@@ -346,10 +346,11 @@ class ReducerPatternEngine(NodeReducer):
             # Update workflow state if it exists (thread-safe)
             with self._state_lock:
                 workflow_state = self._workflow_states.get(str(request.workflow_id))
-            if workflow_state:
-                workflow_state.set_error(
-                    error_message=str(e), error_details={"error_type": type(e).__name__}
-                )
+                if workflow_state:
+                    workflow_state.set_error(
+                        error_message=str(e),
+                        error_details={"error_type": type(e).__name__},
+                    )
 
             # Record failure in metrics collector
             self._metrics_collector.record_workflow_completion(
