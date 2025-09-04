@@ -15,7 +15,7 @@ services:
       ONEX_ENVIRONMENT: development
       ONEX_DEBUG: "true"
       ONEX_OUTPUT__LOG_LEVEL: DEBUG
-      ONEX_DATABASE__URL: postgresql://onex:devpass@postgres:5432/onex_dev
+      ONEX_DATABASE__URL: postgresql://onex:${POSTGRES_PASSWORD:-secure_dev_password_please_change}@postgres:5432/onex_dev
       ONEX_API__RELOAD: "true"
       ONEX_MONITORING__PROMETHEUS_ENABLED: "true"
     volumes:
@@ -41,7 +41,7 @@ services:
     environment:
       POSTGRES_DB: onex_dev
       POSTGRES_USER: onex
-      POSTGRES_PASSWORD: devpass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_dev_password_please_change}
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
       - ./deployment/postgres/init-dev.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -100,7 +100,7 @@ services:
     environment:
       ONEX_ENVIRONMENT: development
       ONEX_DEBUG: "true"
-      ONEX_DATABASE__URL: postgresql://onex:devpass@postgres:5432/onex_dev
+      ONEX_DATABASE__URL: postgresql://onex:${POSTGRES_PASSWORD:-secure_dev_password_please_change}@postgres:5432/onex_dev
     volumes:
       - .:/app
       - dev-data:/app/data
@@ -122,7 +122,7 @@ services:
       - "5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@onex.dev
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-secure_dev_password_please_change}
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
