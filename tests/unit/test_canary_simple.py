@@ -59,7 +59,7 @@ class TestCanaryBasics:
             "node_type": "canary",
             "max_retries": 3,
             "timeout": 30,
-            "enabled": True
+            "enabled": True,
         }
         assert config["node_type"] == "canary"
         assert config["max_retries"] == 3
@@ -70,12 +70,12 @@ class TestCanaryBasics:
 async def test_async_operation():
     """Test async operation simulation."""
     import asyncio
-    
+
     async def mock_async_operation():
         """Mock async operation."""
         await asyncio.sleep(0.01)  # Very short sleep for testing
         return {"status": "completed", "data": "processed"}
-    
+
     result = await mock_async_operation()
     assert result["status"] == "completed"
     assert result["data"] == "processed"
