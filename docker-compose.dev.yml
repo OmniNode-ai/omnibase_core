@@ -31,6 +31,7 @@ services:
       - onex-dev-network
     security_opt:
       - no-new-privileges=true
+    privileged: false
 
   # PostgreSQL for development
   postgres:
@@ -53,6 +54,7 @@ services:
       retries: 5
     security_opt:
       - no-new-privileges=true
+    privileged: false
 
   # Redis for development
   redis:
@@ -70,6 +72,7 @@ services:
       retries: 3
     security_opt:
       - no-new-privileges=true
+    privileged: false
 
   # Prometheus for development monitoring
   prometheus:
@@ -86,6 +89,7 @@ services:
       - onex-dev-network
     security_opt:
       - no-new-privileges=true
+    privileged: false
 
   # Development CLI container
   onex-cli:
@@ -108,6 +112,7 @@ services:
         condition: service_healthy
     security_opt:
       - no-new-privileges=true
+    privileged: false
     entrypoint: ["sleep", "infinity"]
 
   # pgAdmin for database management
@@ -124,6 +129,7 @@ services:
       - onex-dev-network
     security_opt:
       - no-new-privileges=true
+    privileged: false
     profiles:
       - tools
 
