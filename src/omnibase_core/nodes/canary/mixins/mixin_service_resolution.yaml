@@ -48,8 +48,8 @@ service_resolution_config:
   primary_strategy: "consul"
   fallback_strategy: "environment"
   cache_enabled: true
-  cache_ttl_ms: 300000  # 5 minutes
-  health_check_interval_ms: 30000  # 30 seconds
+  cache_ttl_ms: 300000 # 5 minutes
+  health_check_interval_ms: 30000 # 30 seconds
   retry_policy:
     max_retries: 3
     retry_delay_ms: 500
@@ -65,12 +65,12 @@ resolution_strategies:
     consul_endpoint: "${CONSUL_ENDPOINT:-http://localhost:8500}"
     service_prefix: "onex"
     health_checks_enabled: true
-    
+
   environment:
     enabled: true
     prefix: "ONEX_SERVICE_"
     format: "${prefix}${service_name_upper}_ENDPOINT"
-    
+
   hybrid:
     enabled: true
     primary: "consul"
@@ -89,7 +89,7 @@ output_models:
     metadata:
       type: "object"
       additionalProperties: "string"
-      
+
   service_metadata:
     service_version: "string"
     node_type: "string"
@@ -97,7 +97,7 @@ output_models:
       type: "array"
       items: "string"
     discovery_method: "enum[CONSUL,ENVIRONMENT,CACHE]"
-    
+
   discovered_services:
     type: "array"
     items:
@@ -117,17 +117,17 @@ node_service_patterns:
     provides: ["computation", "algorithm"]
     consumes: ["event_bus", "metrics"]
     discovery_tags: ["compute", "stateless"]
-    
+
   EFFECT:
     provides: ["side_effect", "external_integration"]
     consumes: ["event_bus", "external_api", "database"]
     discovery_tags: ["effect", "io_operations"]
-    
+
   REDUCER:
-    provides: ["aggregation", "state_management"]  
+    provides: ["aggregation", "state_management"]
     consumes: ["event_bus", "persistence", "cache"]
     discovery_tags: ["reducer", "stateful"]
-    
+
   ORCHESTRATOR:
     provides: ["workflow", "coordination"]
     consumes: ["event_bus", "service_registry", "compute", "effect", "reducer"]
@@ -138,7 +138,7 @@ dependencies:
   - name: "service_discovery"
     type: "capability"
     description: "Provides service discovery and resolution capabilities"
-    
+
   - name: "service_registration"
     type: "capability"
     description: "Provides service registration capabilities"
@@ -157,22 +157,22 @@ metrics:
     type: "counter"
     description: "Total number of service resolution attempts"
     labels: ["service_name", "strategy", "success"]
-    
+
   - name: "service_resolution_time"
     type: "histogram"
     description: "Time taken to resolve services"
     labels: ["service_name", "strategy"]
-    
+
   - name: "cached_resolutions"
     type: "counter"
     description: "Number of resolutions served from cache"
     labels: ["service_name"]
-    
+
   - name: "service_health_checks"
     type: "counter"
     description: "Number of service health checks performed"
     labels: ["service_name", "health_status"]
-    
+
   - name: "active_service_registrations"
     type: "gauge"
     description: "Number of active service registrations"

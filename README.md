@@ -219,7 +219,7 @@ from omnibase.exceptions.base_onex_error import OnexError
 async def my_operation(self):
     if error_condition:
         raise OnexError(
-            message="Operation failed", 
+            message="Operation failed",
             error_code=CoreErrorCode.OPERATION_FAILED
         )
 ```
@@ -241,11 +241,11 @@ async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
 class YourTool(NodeTypeService):  # EFFECT/COMPUTE/REDUCER/ORCHESTRATOR
     def __init__(self, container: ONEXContainer):
         super().__init__(container)  # MANDATORY - handles all boilerplate
-        
+
         # Protocol-based dependency resolution
         self.logger = container.get_service("ProtocolLogger")
         self.event_bus = container.get_service("ProtocolEventBus")
-        
+
         # Business-specific initialization only
 ```
 

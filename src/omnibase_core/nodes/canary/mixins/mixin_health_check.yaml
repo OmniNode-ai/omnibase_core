@@ -32,7 +32,7 @@ health_status_levels:
 
 # === HEALTH CHECK CONFIGURATION ===
 health_check_config:
-  check_interval_ms: 30000  # 30 seconds
+  check_interval_ms: 30000 # 30 seconds
   failure_threshold: 3
   recovery_threshold: 2
   timeout_ms: 5000
@@ -46,7 +46,7 @@ output_models:
     message: "string"
     timestamp: "datetime"
     check_duration_ms: "integer"
-    
+
   component_health:
     components:
       type: "array"
@@ -67,11 +67,11 @@ metrics:
   - name: "health_check_count"
     type: "counter"
     description: "Total number of health checks performed"
-    
+
   - name: "health_check_duration"
     type: "histogram"
     description: "Time taken for health checks"
-    
+
   - name: "health_status_changes"
     type: "counter"
     description: "Number of health status changes"

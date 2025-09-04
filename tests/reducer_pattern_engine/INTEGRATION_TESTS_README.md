@@ -9,7 +9,7 @@ This document describes the comprehensive integration tests created for the Redu
 ### 1. `test_integration_workflows.py`
 **Purpose**: Comprehensive integration tests using real engine components  
 **Status**: Created but requires import fixes due to missing dependencies  
-**Coverage**: 
+**Coverage**:
 - End-to-end workflow testing with real subreducers
 - Multi-component integration (engine, router, registry, metrics)
 - Concurrent workflow processing

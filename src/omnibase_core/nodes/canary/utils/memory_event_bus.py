@@ -19,14 +19,14 @@ class MemoryEventBus:
 
     Implements the essential ProtocolEventBus interface methods
     needed by MixinEventDrivenNode and canary system components.
-    
+
     Uses a circular buffer for event history to prevent memory leaks.
     """
 
     def __init__(self, max_history_size: int = 1000):
         """
         Initialize the in-memory event bus.
-        
+
         Args:
             max_history_size: Maximum number of events to keep in history.
                              Older events are automatically removed when limit is exceeded.
@@ -58,7 +58,7 @@ class MemoryEventBus:
             # Store event in history (circular buffer automatically discards old events)
             history_was_full = len(self._event_history) >= self._max_history_size
             self._event_history.append(event_or_envelope)
-            
+
             # Track metrics
             self._events_published += 1
             if history_was_full:
@@ -194,16 +194,18 @@ class MemoryEventBus:
         """Clear the event history and reset metrics."""
         events_cleared = len(self._event_history)
         self._event_history.clear()
-        self.logger.info(f"Cleared {events_cleared} events from history [event_bus=memory]")
+        self.logger.info(
+            f"Cleared {events_cleared} events from history [event_bus=memory]"
+        )
 
     def get_subscriber_count(self) -> int:
         """Get the number of active subscribers."""
         return sum(len(subscribers) for subscribers in self._subscribers.values())
-    
+
     def get_memory_stats(self) -> Dict[str, Any]:
         """
         Get memory usage statistics for the event bus.
-        
+
         Returns:
             Dictionary containing memory and performance metrics
         """
@@ -215,43 +217,43 @@ class MemoryEventBus:
             "active_subscribers": self.get_subscriber_count(),
             "subscriber_patterns": list(self._subscribers.keys()),
             "memory_usage_ratio": len(self._event_history) / self._max_history_size,
-            "is_history_full": len(self._event_history) >= self._max_history_size
+            "is_history_full": len(self._event_history) >= self._max_history_size,
         }
-    
+
     def resize_history(self, new_max_size: int) -> bool:
         """
         Resize the event history buffer.
-        
+
         Args:
             new_max_size: New maximum size for event history
-            
+
         Returns:
             bool: True if resize was successful
-            
+
         Note:
             If new size is smaller than current history, oldest events are discarded.
         """
         if new_max_size <= 0:
             self.logger.error("History size must be positive")
             return False
-            
+
         old_size = self._max_history_size
         old_events = list(self._event_history)
-        
+
         # Create new deque with new size
         self._event_history = deque(old_events, maxlen=new_max_size)
         self._max_history_size = new_max_size
-        
+
         # Update discard counter if events were lost
         events_lost = max(0, len(old_events) - new_max_size)
         self._events_discarded += events_lost
-        
+
         self.logger.info(
             f"Resized event history: {old_size} -> {new_max_size}, "
             f"retained {len(self._event_history)} events, "
             f"discarded {events_lost} events [event_bus=memory]"
         )
-        
+
         return True
 
     def _matches_pattern(self, event_type: str, pattern: str) -> bool:

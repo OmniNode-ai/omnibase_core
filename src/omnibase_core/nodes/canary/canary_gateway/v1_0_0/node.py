@@ -19,8 +19,8 @@ from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    ModelCircuitBreakerConfig,
     CircuitBreakerException,
+    ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler

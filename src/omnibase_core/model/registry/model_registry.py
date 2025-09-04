@@ -3,7 +3,10 @@
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.protocol.protocol_registry import RegistryArtifactType, ModelRegistryArtifactMetadata
+from omnibase_core.protocol.protocol_registry import (
+    ModelRegistryArtifactMetadata,
+    RegistryArtifactType,
+)
 
 
 class ModelRegistryArtifactInfo(BaseModel):

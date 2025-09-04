@@ -24,7 +24,7 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
 
 class MockMinimalEngine:
     """Minimal mock engine for basic integration testing."""
-    
+
     def __init__(self):
         self.processed_workflows = []
         self.metrics = {
@@ -32,23 +32,23 @@ class MockMinimalEngine:
             "successful": 0,
             "failed": 0,
         }
-        
+
     async def process_workflow(self, request: WorkflowRequest) -> WorkflowResponse:
         """Process workflow with minimal simulation."""
         start_time = time.time()
-        
+
         # Simulate processing
         await asyncio.sleep(0.01)  # Minimal delay
-        
+
         processing_time = (time.time() - start_time) * 1000
-        
+
         # Record processing
         self.processed_workflows.append(request)
         self.metrics["total_processed"] += 1
-        
+
         # Determine success (fail 10% of the time for testing)
         success = len(self.processed_workflows) % 10 != 0
-        
+
         if success:
             self.metrics["successful"] += 1
             return WorkflowResponse(
@@ -97,10 +97,10 @@ class TestMinimalIntegrationWorkflows:
             payload={"test_data": [1, 2, 3, 4, 5]},
             metadata={"source": "integration_test"},
         )
-        
+
         # Process workflow
         response = await mock_engine.process_workflow(request)
-        
+
         # Verify response
         assert isinstance(response, WorkflowResponse)
         assert response.workflow_id == request.workflow_id
@@ -110,7 +110,7 @@ class TestMinimalIntegrationWorkflows:
         assert response.status in [WorkflowStatus.COMPLETED, WorkflowStatus.FAILED]
         assert response.processing_time_ms is not None
         assert response.processing_time_ms > 0
-        
+
         # Verify metrics
         assert mock_engine.metrics["total_processed"] == 1
 
@@ -122,7 +122,7 @@ class TestMinimalIntegrationWorkflows:
             WorkflowType.DOCUMENT_REGENERATION,
             WorkflowType.REPORT_GENERATION,
         ]
-        
+
         responses = []
         for i, workflow_type in enumerate(workflow_types):
             request = WorkflowRequest(
@@ -130,14 +130,14 @@ class TestMinimalIntegrationWorkflows:
                 instance_id=f"test_all_types_{i}_{workflow_type.value}",
                 payload={"test": f"payload_{i}"},
             )
-            
+
             response = await mock_engine.process_workflow(request)
             responses.append(response)
-        
+
         # Verify all processed
         assert len(responses) == 3
         assert mock_engine.metrics["total_processed"] == 3
-        
+
         # Verify each workflow type was processed
         processed_types = [r.workflow_type for r in responses]
         for workflow_type in workflow_types:
@@ -147,39 +147,41 @@ class TestMinimalIntegrationWorkflows:
     async def test_concurrent_workflow_processing(self, mock_engine):
         """Test concurrent processing of multiple workflows."""
         num_workflows = 20
-        
+
         # Create concurrent requests
         requests = []
         for i in range(num_workflows):
             workflow_type = [
                 WorkflowType.DATA_ANALYSIS,
-                WorkflowType.DOCUMENT_REGENERATION, 
-                WorkflowType.REPORT_GENERATION
+                WorkflowType.DOCUMENT_REGENERATION,
+                WorkflowType.REPORT_GENERATION,
             ][i % 3]
-            
+
             request = WorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"concurrent_test_{i}",
                 payload={"concurrent_id": i},
             )
             requests.append(request)
-        
+
         # Process all concurrently
         start_time = time.time()
-        responses = await asyncio.gather(*[
-            mock_engine.process_workflow(req) for req in requests
-        ])
+        responses = await asyncio.gather(
+            *[mock_engine.process_workflow(req) for req in requests]
+        )
         end_time = time.time()
-        
+
         # Verify all processed
         assert len(responses) == num_workflows
         assert mock_engine.metrics["total_processed"] == num_workflows
-        
+
         # Verify concurrent processing was efficient
         total_time = end_time - start_time
         # Should be faster than sequential processing
-        assert total_time < (num_workflows * 0.01 * 0.5)  # Less than half sequential time
-        
+        assert total_time < (
+            num_workflows * 0.01 * 0.5
+        )  # Less than half sequential time
+
         # Verify unique workflow IDs
         workflow_ids = [r.workflow_id for r in responses]
         assert len(set(workflow_ids)) == num_workflows
@@ -196,19 +198,19 @@ class TestMinimalIntegrationWorkflows:
                 payload={"error_test": True},
             )
             requests.append(request)
-        
-        responses = await asyncio.gather(*[
-            mock_engine.process_workflow(req) for req in requests
-        ])
-        
+
+        responses = await asyncio.gather(
+            *[mock_engine.process_workflow(req) for req in requests]
+        )
+
         # Verify mixed results
         successful = [r for r in responses if r.status == WorkflowStatus.COMPLETED]
         failed = [r for r in responses if r.status == WorkflowStatus.FAILED]
-        
+
         assert len(successful) > 0
         assert len(failed) > 0
         assert len(successful) + len(failed) == len(responses)
-        
+
         # Verify metrics match
         assert mock_engine.metrics["successful"] == len(successful)
         assert mock_engine.metrics["failed"] == len(failed)
@@ -224,7 +226,7 @@ class TestMinimalIntegrationWorkflows:
             {"mixed_types": {"string": "test", "number": 42, "bool": True}},
             {},  # Empty payload
         ]
-        
+
         responses = []
         for i, payload in enumerate(test_payloads):
             request = WorkflowRequest(
@@ -232,13 +234,13 @@ class TestMinimalIntegrationWorkflows:
                 instance_id=f"payload_test_{i}",
                 payload=payload,
             )
-            
+
             response = await mock_engine.process_workflow(request)
             responses.append(response)
-        
+
         # Verify all processed
         assert len(responses) == len(test_payloads)
-        
+
         # Verify results contain payload information
         for response in responses:
             if response.status == WorkflowStatus.COMPLETED:
@@ -250,11 +252,11 @@ class TestMinimalIntegrationWorkflows:
         """Test instance isolation works correctly."""
         instance_ids = [
             "isolation_test_1",
-            "isolation_test_2", 
+            "isolation_test_2",
             "isolation_test_1",  # Reuse first instance_id
             "isolation_test_3",
         ]
-        
+
         responses = []
         for i, instance_id in enumerate(instance_ids):
             request = WorkflowRequest(
@@ -262,14 +264,14 @@ class TestMinimalIntegrationWorkflows:
                 instance_id=instance_id,
                 payload={"instance_test": i},
             )
-            
+
             response = await mock_engine.process_workflow(request)
             responses.append(response)
-        
+
         # Verify all processed with correct instance IDs
         for i, response in enumerate(responses):
             assert response.instance_id == instance_ids[i]
-        
+
         # Verify workflows with same instance_id have different workflow_ids
         same_instance = [r for r in responses if r.instance_id == "isolation_test_1"]
         assert len(same_instance) == 2
@@ -279,7 +281,7 @@ class TestMinimalIntegrationWorkflows:
     async def test_performance_metrics_integration(self, mock_engine):
         """Test performance metrics are collected correctly."""
         num_workflows = 50
-        
+
         requests = [
             WorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
@@ -288,25 +290,27 @@ class TestMinimalIntegrationWorkflows:
             )
             for i in range(num_workflows)
         ]
-        
+
         # Process with timing
         start_time = time.time()
-        responses = await asyncio.gather(*[
-            mock_engine.process_workflow(req) for req in requests
-        ])
+        responses = await asyncio.gather(
+            *[mock_engine.process_workflow(req) for req in requests]
+        )
         end_time = time.time()
-        
+
         # Verify performance
         total_time = end_time - start_time
         throughput = num_workflows / total_time
-        
+
         # Should achieve reasonable throughput
         assert throughput > 50  # At least 50 workflows/second with minimal processing
-        
+
         # Verify all responses have timing data
-        processing_times = [r.processing_time_ms for r in responses if r.processing_time_ms]
+        processing_times = [
+            r.processing_time_ms for r in responses if r.processing_time_ms
+        ]
         assert len(processing_times) == num_workflows
-        
+
         # Verify timing is reasonable
         avg_processing_time = sum(processing_times) / len(processing_times)
         assert avg_processing_time < 100  # Less than 100ms average
@@ -320,22 +324,22 @@ class TestMinimalIntegrationWorkflows:
             payload={"consistency_test": True},
             metadata={"test_metadata": "value"},
         )
-        
+
         # Store original request data
         original_workflow_id = request.workflow_id
         original_correlation_id = request.correlation_id
         original_instance_id = request.instance_id
         original_workflow_type = request.workflow_type
-        
+
         # Process workflow
         response = await mock_engine.process_workflow(request)
-        
+
         # Verify state consistency
         assert response.workflow_id == original_workflow_id
         assert response.correlation_id == original_correlation_id
         assert response.instance_id == original_instance_id
         assert response.workflow_type == original_workflow_type
-        
+
         # Verify request wasn't modified
         assert request.workflow_id == original_workflow_id
         assert request.correlation_id == original_correlation_id
@@ -384,7 +388,7 @@ class TestMinimalIntegrationWorkflows:
                 "metadata": {},  # Empty metadata
             },
         ]
-        
+
         responses = []
         for scenario in test_scenarios:
             request = WorkflowRequest(
@@ -393,23 +397,25 @@ class TestMinimalIntegrationWorkflows:
                 payload=scenario["payload"],
                 metadata=scenario["metadata"],
             )
-            
+
             response = await mock_engine.process_workflow(request)
             responses.append(response)
-        
+
         # Verify all scenarios processed
         assert len(responses) == len(test_scenarios)
-        
+
         # Verify variety of workflow types
         workflow_types = [r.workflow_type for r in responses]
         assert WorkflowType.DATA_ANALYSIS in workflow_types
         assert WorkflowType.DOCUMENT_REGENERATION in workflow_types
         assert WorkflowType.REPORT_GENERATION in workflow_types
-        
+
         # Verify mix of success/failure
         statuses = [r.status for r in responses]
         assert WorkflowStatus.COMPLETED in statuses or WorkflowStatus.FAILED in statuses
-        
+
         # Verify comprehensive metrics
         assert mock_engine.metrics["total_processed"] == len(test_scenarios)
-        assert mock_engine.metrics["successful"] + mock_engine.metrics["failed"] == len(test_scenarios)
+        assert mock_engine.metrics["successful"] + mock_engine.metrics["failed"] == len(
+            test_scenarios
+        )

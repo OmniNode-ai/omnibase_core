@@ -78,7 +78,7 @@ class IntegrationTestSubreducer(BaseSubreducer):
         """Process workflow with configurable behavior and state tracking."""
         start_time = time.time()
         self._total_calls += 1
-        
+
         # Record processing attempt
         processing_record = {
             "workflow_id": request.workflow_id,
@@ -92,9 +92,8 @@ class IntegrationTestSubreducer(BaseSubreducer):
         await asyncio.sleep(self._processing_delay)
 
         # Determine success based on failure rate
-        should_fail = (
-            not self._success or 
-            (self._failure_rate > 0 and (self._total_calls * self._failure_rate) >= 1)
+        should_fail = not self._success or (
+            self._failure_rate > 0 and (self._total_calls * self._failure_rate) >= 1
         )
 
         processing_time = (time.time() - start_time) * 1000
@@ -162,46 +161,62 @@ class TestIntegrationWorkflows:
     def integration_engine(self, mock_container) -> ReducerPatternEngine:
         """Create engine with real subreducers for integration testing."""
         with (
-            patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"),
-            patch("omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis.emit_log_event"),
-            patch("omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"),
-            patch("omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation.emit_log_event"),
+            patch(
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            ),
+            patch(
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis.emit_log_event"
+            ),
+            patch(
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            ),
+            patch(
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation.emit_log_event"
+            ),
         ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register all real subreducers
             data_analysis = ReducerDataAnalysisSubreducer()
             document_regen = ReducerDocumentRegenerationSubreducer()
             report_gen = ReducerReportGenerationSubreducer()
-            
+
             engine.register_subreducer(data_analysis)
             engine.register_subreducer(document_regen)
             engine.register_subreducer(report_gen)
-            
+
             return engine
 
     @pytest.fixture
     def test_engine(self, mock_container) -> ReducerPatternEngine:
         """Create engine with test subreducers for controlled integration testing."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register test subreducers
             test_subreducers = [
                 IntegrationTestSubreducer("data_test", WorkflowType.DATA_ANALYSIS),
-                IntegrationTestSubreducer("doc_test", WorkflowType.DOCUMENT_REGENERATION),
-                IntegrationTestSubreducer("report_test", WorkflowType.REPORT_GENERATION),
+                IntegrationTestSubreducer(
+                    "doc_test", WorkflowType.DOCUMENT_REGENERATION
+                ),
+                IntegrationTestSubreducer(
+                    "report_test", WorkflowType.REPORT_GENERATION
+                ),
             ]
-            
+
             for subreducer in test_subreducers:
                 engine.register_subreducer(subreducer)
-                
+
             return engine
 
     # ====== End-to-End Workflow Testing ======
 
     @pytest.mark.asyncio
-    async def test_complete_data_analysis_workflow_integration(self, integration_engine):
+    async def test_complete_data_analysis_workflow_integration(
+        self, integration_engine
+    ):
         """Test complete data analysis workflow from request to response."""
         # Create realistic data analysis request
         request = WorkflowRequest(
@@ -255,7 +270,9 @@ class TestIntegrationWorkflows:
         assert workflow_state.workflow_type == WorkflowType.DATA_ANALYSIS
 
     @pytest.mark.asyncio
-    async def test_complete_document_regeneration_workflow_integration(self, integration_engine):
+    async def test_complete_document_regeneration_workflow_integration(
+        self, integration_engine
+    ):
         """Test complete document regeneration workflow from request to response."""
         request = WorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
@@ -290,7 +307,9 @@ class TestIntegrationWorkflows:
         assert workflow_state.current_state == WorkflowState.COMPLETED
 
     @pytest.mark.asyncio
-    async def test_complete_report_generation_workflow_integration(self, integration_engine):
+    async def test_complete_report_generation_workflow_integration(
+        self, integration_engine
+    ):
         """Test complete report generation workflow from request to response."""
         request = WorkflowRequest(
             workflow_type=WorkflowType.REPORT_GENERATION,
@@ -446,7 +465,9 @@ class TestIntegrationWorkflows:
 
         # Verify all responses
         assert len(responses) == len(requests)
-        successful_responses = [r for r in responses if r.status == WorkflowStatus.COMPLETED]
+        successful_responses = [
+            r for r in responses if r.status == WorkflowStatus.COMPLETED
+        ]
         assert len(successful_responses) == len(requests)
 
         # Verify proper isolation - each workflow should have unique IDs
@@ -470,7 +491,7 @@ class TestIntegrationWorkflows:
         """Test concurrent processing of same workflow type with different instances."""
         workflow_type = WorkflowType.DATA_ANALYSIS
         num_concurrent = 15
-        
+
         requests = [
             WorkflowRequest(
                 workflow_type=workflow_type,
@@ -486,10 +507,10 @@ class TestIntegrationWorkflows:
 
         # Verify all completed successfully
         assert all(r.status == WorkflowStatus.COMPLETED for r in responses)
-        
+
         # Verify each got correct subreducer
         assert all(r.subreducer_name == "data_test" for r in responses)
-        
+
         # Verify instance isolation
         instance_ids = {r.instance_id for r in responses}
         assert len(instance_ids) == num_concurrent
@@ -499,13 +520,19 @@ class TestIntegrationWorkflows:
     @pytest.mark.asyncio
     async def test_error_recovery_integration_single_failure(self, mock_container):
         """Test error recovery integration when single subreducer fails."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register subreducers with one that fails
-            successful_subreducer = IntegrationTestSubreducer("success_test", WorkflowType.DATA_ANALYSIS)
-            failing_subreducer = IntegrationTestSubreducer("fail_test", WorkflowType.DOCUMENT_REGENERATION, success=False)
-            
+            successful_subreducer = IntegrationTestSubreducer(
+                "success_test", WorkflowType.DATA_ANALYSIS
+            )
+            failing_subreducer = IntegrationTestSubreducer(
+                "fail_test", WorkflowType.DOCUMENT_REGENERATION, success=False
+            )
+
             engine.register_subreducer(successful_subreducer)
             engine.register_subreducer(failing_subreducer)
 
@@ -514,10 +541,10 @@ class TestIntegrationWorkflows:
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="success_test",
         )
-        
+
         success_response = await engine.process_workflow(success_request)
         assert success_response.status == WorkflowStatus.COMPLETED
-        
+
         # Verify state is correctly managed for successful workflow
         success_state = engine.get_workflow_state(success_request.workflow_id)
         assert success_state.current_state == WorkflowState.COMPLETED
@@ -527,11 +554,11 @@ class TestIntegrationWorkflows:
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="fail_test",
         )
-        
+
         fail_response = await engine.process_workflow(fail_request)
         assert fail_response.status == WorkflowStatus.FAILED
         assert fail_response.error_message is not None
-        
+
         # Verify state is correctly managed for failed workflow
         fail_state = engine.get_workflow_state(fail_request.workflow_id)
         assert fail_state.current_state == WorkflowState.FAILED
@@ -544,14 +571,22 @@ class TestIntegrationWorkflows:
     @pytest.mark.asyncio
     async def test_error_recovery_with_partial_failures(self, mock_container):
         """Test error recovery when some workflows fail in concurrent processing."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register subreducers with different failure rates
-            data_subreducer = IntegrationTestSubreducer("data_test", WorkflowType.DATA_ANALYSIS)
-            doc_subreducer = IntegrationTestSubreducer("doc_test", WorkflowType.DOCUMENT_REGENERATION, failure_rate=0.5)
-            report_subreducer = IntegrationTestSubreducer("report_test", WorkflowType.REPORT_GENERATION, failure_rate=0.3)
-            
+            data_subreducer = IntegrationTestSubreducer(
+                "data_test", WorkflowType.DATA_ANALYSIS
+            )
+            doc_subreducer = IntegrationTestSubreducer(
+                "doc_test", WorkflowType.DOCUMENT_REGENERATION, failure_rate=0.5
+            )
+            report_subreducer = IntegrationTestSubreducer(
+                "report_test", WorkflowType.REPORT_GENERATION, failure_rate=0.3
+            )
+
             engine.register_subreducer(data_subreducer)
             engine.register_subreducer(doc_subreducer)
             engine.register_subreducer(report_subreducer)
@@ -559,7 +594,11 @@ class TestIntegrationWorkflows:
         # Create mixed requests
         requests = []
         for i in range(20):
-            workflow_type = [WorkflowType.DATA_ANALYSIS, WorkflowType.DOCUMENT_REGENERATION, WorkflowType.REPORT_GENERATION][i % 3]
+            workflow_type = [
+                WorkflowType.DATA_ANALYSIS,
+                WorkflowType.DOCUMENT_REGENERATION,
+                WorkflowType.REPORT_GENERATION,
+            ][i % 3]
             requests.append(
                 WorkflowRequest(
                     workflow_type=workflow_type,
@@ -568,12 +607,14 @@ class TestIntegrationWorkflows:
             )
 
         # Process all workflows
-        responses = await asyncio.gather(*[engine.process_workflow(req) for req in requests])
+        responses = await asyncio.gather(
+            *[engine.process_workflow(req) for req in requests]
+        )
 
         # Verify we got both successes and failures
         successful = [r for r in responses if r.status == WorkflowStatus.COMPLETED]
         failed = [r for r in responses if r.status == WorkflowStatus.FAILED]
-        
+
         assert len(successful) > 0
         assert len(failed) > 0
         assert len(successful) + len(failed) == len(responses)
@@ -586,9 +627,11 @@ class TestIntegrationWorkflows:
     @pytest.mark.asyncio
     async def test_routing_failure_recovery(self, mock_container):
         """Test recovery from routing failures (unsupported workflow types)."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register only one subreducer
             engine.register_subreducer(
                 IntegrationTestSubreducer("limited_test", WorkflowType.DATA_ANALYSIS)
@@ -599,7 +642,7 @@ class TestIntegrationWorkflows:
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="supported_test",
         )
-        
+
         supported_response = await engine.process_workflow(supported_request)
         assert supported_response.status == WorkflowStatus.COMPLETED
 
@@ -608,10 +651,13 @@ class TestIntegrationWorkflows:
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="unsupported_test",
         )
-        
+
         unsupported_response = await engine.process_workflow(unsupported_request)
         assert unsupported_response.status == WorkflowStatus.FAILED
-        assert "routing" in unsupported_response.error_message.lower() or "subreducer" in unsupported_response.error_message.lower()
+        assert (
+            "routing" in unsupported_response.error_message.lower()
+            or "subreducer" in unsupported_response.error_message.lower()
+        )
 
     # ====== State Persistence Integration ======
 
@@ -632,7 +678,7 @@ class TestIntegrationWorkflows:
         assert final_state.workflow_id == request.workflow_id
         assert final_state.current_state == WorkflowState.COMPLETED
         assert final_state.correlation_id == request.correlation_id
-        
+
         # Verify timestamps
         assert final_state.started_at is not None
         assert final_state.completed_at is not None
@@ -656,7 +702,9 @@ class TestIntegrationWorkflows:
             requests.append(request)
 
         # Process all workflows
-        responses = await asyncio.gather(*[test_engine.process_workflow(req) for req in requests])
+        responses = await asyncio.gather(
+            *[test_engine.process_workflow(req) for req in requests]
+        )
 
         # Verify all processed successfully
         assert all(r.status == WorkflowStatus.COMPLETED for r in responses)
@@ -667,7 +715,7 @@ class TestIntegrationWorkflows:
             assert state is not None
 
         # Trigger cleanup manually if available
-        if hasattr(test_engine, '_cleanup_old_workflow_states'):
+        if hasattr(test_engine, "_cleanup_old_workflow_states"):
             test_engine._cleanup_old_workflow_states()
 
         # States should still be accessible immediately after processing
@@ -676,7 +724,7 @@ class TestIntegrationWorkflows:
             state = test_engine.get_workflow_state(request.workflow_id)
             if state is not None:
                 active_states += 1
-        
+
         # At least some states should still exist (depends on cleanup policy)
         assert active_states > 0
 
@@ -686,11 +734,15 @@ class TestIntegrationWorkflows:
     async def test_performance_integration_throughput(self, test_engine):
         """Test performance integration under load conditions."""
         num_workflows = 100
-        
+
         # Create diverse workload
         requests = []
         for i in range(num_workflows):
-            workflow_type = [WorkflowType.DATA_ANALYSIS, WorkflowType.DOCUMENT_REGENERATION, WorkflowType.REPORT_GENERATION][i % 3]
+            workflow_type = [
+                WorkflowType.DATA_ANALYSIS,
+                WorkflowType.DOCUMENT_REGENERATION,
+                WorkflowType.REPORT_GENERATION,
+            ][i % 3]
             request = WorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"perf_test_{i}",
@@ -700,7 +752,9 @@ class TestIntegrationWorkflows:
 
         # Process with timing
         start_time = time.time()
-        responses = await asyncio.gather(*[test_engine.process_workflow(req) for req in requests])
+        responses = await asyncio.gather(
+            *[test_engine.process_workflow(req) for req in requests]
+        )
         end_time = time.time()
 
         # Verify all completed
@@ -710,14 +764,14 @@ class TestIntegrationWorkflows:
         # Verify performance metrics
         total_time = end_time - start_time
         throughput = num_workflows / total_time
-        
+
         # Should achieve reasonable throughput (adjust based on requirements)
         assert throughput > 10  # At least 10 workflows/second
 
         # Verify response times are reasonable
         response_times = [r.processing_time_ms for r in responses]
         avg_response_time = sum(response_times) / len(response_times)
-        
+
         # Average response time should be reasonable
         assert avg_response_time < 500  # Less than 500ms average
 
@@ -727,7 +781,7 @@ class TestIntegrationWorkflows:
         # Process workflows and monitor state accumulation
         num_batches = 5
         batch_size = 20
-        
+
         for batch in range(num_batches):
             requests = [
                 WorkflowRequest(
@@ -736,9 +790,11 @@ class TestIntegrationWorkflows:
                 )
                 for i in range(batch_size)
             ]
-            
+
             # Process batch
-            responses = await asyncio.gather(*[test_engine.process_workflow(req) for req in requests])
+            responses = await asyncio.gather(
+                *[test_engine.process_workflow(req) for req in requests]
+            )
             assert all(r.status == WorkflowStatus.COMPLETED for r in responses)
 
         # Verify metrics are being tracked correctly
@@ -778,7 +834,10 @@ class TestIntegrationWorkflows:
                 "payload": {
                     "document_type": "user_manual",
                     "content": "This is a comprehensive user manual content that needs regeneration.",
-                    "regeneration_options": {"enhance_structure": True, "improve_clarity": True},
+                    "regeneration_options": {
+                        "enhance_structure": True,
+                        "improve_clarity": True,
+                    },
                 },
                 "expected_result_keys": ["regenerated_content"],
             },
@@ -794,7 +853,7 @@ class TestIntegrationWorkflows:
         ]
 
         responses = []
-        
+
         # Process each scenario
         for i, scenario in enumerate(test_scenarios):
             request = WorkflowRequest(
@@ -803,25 +862,29 @@ class TestIntegrationWorkflows:
                 payload=scenario["payload"],
                 metadata={"test_scenario": i, "integration_test": True},
             )
-            
+
             response = await integration_engine.process_workflow(request)
             responses.append((scenario, response))
 
         # Verify all scenarios completed successfully
         for scenario, response in responses:
-            assert response.status == WorkflowStatus.COMPLETED, f"Failed scenario: {scenario['type']}"
+            assert (
+                response.status == WorkflowStatus.COMPLETED
+            ), f"Failed scenario: {scenario['type']}"
             assert response.result is not None
-            
+
             # Verify expected result structure
             for expected_key in scenario["expected_result_keys"]:
-                assert expected_key in response.result, f"Missing key {expected_key} in {scenario['type']} response"
+                assert (
+                    expected_key in response.result
+                ), f"Missing key {expected_key} in {scenario['type']} response"
 
         # Verify system-wide metrics
         metrics = integration_engine.get_metrics()
         assert metrics.total_workflows_processed >= len(test_scenarios)
         assert metrics.successful_workflows >= len(test_scenarios)
         assert metrics.failed_workflows == 0
-        
+
         # Verify all workflow types were processed
         for scenario in test_scenarios:
             assert scenario["type"].value in metrics.workflow_types_processed
@@ -832,23 +895,28 @@ class TestIntegrationWorkflows:
             assert state is not None
             assert state.current_state == WorkflowState.COMPLETED
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_comprehensive_error_scenarios_integration(self, mock_container):
         """Test comprehensive error scenarios in integrated environment."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
-            
+
             # Register subreducers with various failure modes
-            success_subreducer = IntegrationTestSubreducer("success", WorkflowType.DATA_ANALYSIS)
+            success_subreducer = IntegrationTestSubreducer(
+                "success", WorkflowType.DATA_ANALYSIS
+            )
             slow_failing_subreducer = IntegrationTestSubreducer(
-                "slow_fail", WorkflowType.DOCUMENT_REGENERATION, 
-                success=False, processing_delay=0.2
+                "slow_fail",
+                WorkflowType.DOCUMENT_REGENERATION,
+                success=False,
+                processing_delay=0.2,
             )
             intermittent_subreducer = IntegrationTestSubreducer(
-                "intermittent", WorkflowType.REPORT_GENERATION,
-                failure_rate=0.5
+                "intermittent", WorkflowType.REPORT_GENERATION, failure_rate=0.5
             )
-            
+
             engine.register_subreducer(success_subreducer)
             engine.register_subreducer(slow_failing_subreducer)
             engine.register_subreducer(intermittent_subreducer)
@@ -856,38 +924,48 @@ class TestIntegrationWorkflows:
         # Test mixed success/failure scenarios concurrently
         requests = []
         expected_outcomes = []
-        
+
         # Always successful requests
         for i in range(5):
-            requests.append(WorkflowRequest(
-                workflow_type=WorkflowType.DATA_ANALYSIS,
-                instance_id=f"success_{i}",
-            ))
+            requests.append(
+                WorkflowRequest(
+                    workflow_type=WorkflowType.DATA_ANALYSIS,
+                    instance_id=f"success_{i}",
+                )
+            )
             expected_outcomes.append("success")
-        
+
         # Always failing requests
         for i in range(5):
-            requests.append(WorkflowRequest(
-                workflow_type=WorkflowType.DOCUMENT_REGENERATION,
-                instance_id=f"fail_{i}",
-            ))
+            requests.append(
+                WorkflowRequest(
+                    workflow_type=WorkflowType.DOCUMENT_REGENERATION,
+                    instance_id=f"fail_{i}",
+                )
+            )
             expected_outcomes.append("failure")
-        
+
         # Intermittent requests (will have mixed outcomes)
         for i in range(10):
-            requests.append(WorkflowRequest(
-                workflow_type=WorkflowType.REPORT_GENERATION,
-                instance_id=f"intermittent_{i}",
-            ))
+            requests.append(
+                WorkflowRequest(
+                    workflow_type=WorkflowType.REPORT_GENERATION,
+                    instance_id=f"intermittent_{i}",
+                )
+            )
             expected_outcomes.append("intermittent")
 
         # Process all concurrently
-        responses = await asyncio.gather(*[engine.process_workflow(req) for req in requests])
+        responses = await asyncio.gather(
+            *[engine.process_workflow(req) for req in requests]
+        )
 
         # Verify expected outcomes
-        success_count = len([r for r in responses if r.status == WorkflowStatus.COMPLETED])
+        success_count = len(
+            [r for r in responses if r.status == WorkflowStatus.COMPLETED]
+        )
         failure_count = len([r for r in responses if r.status == WorkflowStatus.FAILED])
-        
+
         # Should have some successes and some failures
         assert success_count >= 5  # At least the always-successful ones
         assert failure_count >= 5  # At least the always-failing ones
@@ -915,7 +993,9 @@ class TestResourceCleanupIntegration:
     @pytest.fixture
     def cleanup_engine(self, mock_container) -> ReducerPatternEngine:
         """Create engine for cleanup testing."""
-        with patch("omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"):
+        with patch(
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        ):
             engine = ReducerPatternEngine(mock_container)
             engine.register_subreducer(
                 IntegrationTestSubreducer("cleanup_test", WorkflowType.DATA_ANALYSIS)
@@ -938,8 +1018,10 @@ class TestResourceCleanupIntegration:
             for i in range(10)
         ]
 
-        responses = await asyncio.gather(*[cleanup_engine.process_workflow(req) for req in requests])
-        
+        responses = await asyncio.gather(
+            *[cleanup_engine.process_workflow(req) for req in requests]
+        )
+
         # Verify all succeeded
         assert all(r.status == WorkflowStatus.COMPLETED for r in responses)
 
@@ -952,7 +1034,7 @@ class TestResourceCleanupIntegration:
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="post_processing_test",
         )
-        
+
         additional_response = await cleanup_engine.process_workflow(additional_request)
         assert additional_response.status == WorkflowStatus.COMPLETED
 
@@ -960,7 +1042,7 @@ class TestResourceCleanupIntegration:
     async def test_concurrent_resource_usage_integration(self, cleanup_engine):
         """Test resource usage under concurrent load."""
         num_concurrent = 50
-        
+
         requests = [
             WorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
@@ -972,7 +1054,9 @@ class TestResourceCleanupIntegration:
 
         # Process all concurrently
         start_time = time.time()
-        responses = await asyncio.gather(*[cleanup_engine.process_workflow(req) for req in requests])
+        responses = await asyncio.gather(
+            *[cleanup_engine.process_workflow(req) for req in requests]
+        )
         end_time = time.time()
 
         # Verify all completed
@@ -988,12 +1072,13 @@ class TestResourceCleanupIntegration:
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="post_load_stability_test",
         )
-        
+
         post_load_response = await cleanup_engine.process_workflow(post_load_request)
         assert post_load_response.status == WorkflowStatus.COMPLETED
 
 
 # ====== Integration Test Utilities ======
+
 
 def create_realistic_data_analysis_payload() -> Dict[str, Any]:
     """Create realistic payload for data analysis testing."""

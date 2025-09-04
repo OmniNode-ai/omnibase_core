@@ -15,10 +15,11 @@ import importlib
 import inspect
 import os
 import sys
-import yaml
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union, get_args, get_origin, get_type_hints
+
+import yaml
 
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -162,7 +163,9 @@ class ContractValidator:
             if not yaml_path.exists():
                 errors.append(f"YAML contract file not found: {yaml_path}")
                 print(f"   ❌ {name}: YAML file missing")
-                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+                return ContractValidationResult(
+                    name, "yaml_contract", False, errors, warnings
+                )
 
             with open(yaml_path, "r", encoding="utf-8") as f:
                 yaml_data = yaml.safe_load(f)
@@ -170,7 +173,9 @@ class ContractValidator:
             if not yaml_data:
                 errors.append("YAML file is empty or invalid")
                 print(f"   ❌ {name}: Empty YAML")
-                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+                return ContractValidationResult(
+                    name, "yaml_contract", False, errors, warnings
+                )
 
             # Import the backing Pydantic model
             try:
@@ -179,20 +184,28 @@ class ContractValidator:
             except ImportError as e:
                 errors.append(f"Failed to import backing model: {e}")
                 print(f"   ❌ {name}: Model import failed")
-                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+                return ContractValidationResult(
+                    name, "yaml_contract", False, errors, warnings
+                )
             except AttributeError as e:
                 errors.append(f"Model class not found: {e}")
                 print(f"   ❌ {name}: Model class missing")
-                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+                return ContractValidationResult(
+                    name, "yaml_contract", False, errors, warnings
+                )
 
             # Test YAML → Model deserialization
             try:
                 model_instance = model_class.model_validate(yaml_data)
                 print(f"   ✅ {name}: YAML→Model deserialization successful")
             except Exception as e:
-                errors.append(f"YAML deserialization failed: {type(e).__name__}: {str(e)}")
+                errors.append(
+                    f"YAML deserialization failed: {type(e).__name__}: {str(e)}"
+                )
                 print(f"   ❌ {name}: Deserialization failed - {type(e).__name__}")
-                return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+                return ContractValidationResult(
+                    name, "yaml_contract", False, errors, warnings
+                )
 
             # Test Model → dict serialization (round-trip)
             try:
@@ -210,7 +223,9 @@ class ContractValidator:
                     missing_fields.append(field)
 
             if missing_fields:
-                warnings.append(f"Missing essential fields: {', '.join(missing_fields)}")
+                warnings.append(
+                    f"Missing essential fields: {', '.join(missing_fields)}"
+                )
 
             # Check for modern ONEX compliance fields
             modern_fields = ["service_resolution", "validation_rules", "definitions"]
@@ -220,18 +235,24 @@ class ContractValidator:
                     missing_modern.append(field)
 
             if missing_modern:
-                warnings.append(f"Missing modern ONEX fields: {', '.join(missing_modern)}")
+                warnings.append(
+                    f"Missing modern ONEX fields: {', '.join(missing_modern)}"
+                )
 
             is_valid = len(errors) == 0
             if is_valid:
                 self.valid_nodes += 1
 
-            return ContractValidationResult(name, "yaml_contract", is_valid, errors, warnings)
+            return ContractValidationResult(
+                name, "yaml_contract", is_valid, errors, warnings
+            )
 
         except Exception as e:
             errors.append(f"Unexpected error during YAML validation: {str(e)}")
             print(f"   ❌ {name}: Validation error")
-            return ContractValidationResult(name, "yaml_contract", False, errors, warnings)
+            return ContractValidationResult(
+                name, "yaml_contract", False, errors, warnings
+            )
 
     def _validate_core_services(self) -> bool:
         """Validate core service contracts."""

@@ -21,7 +21,7 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
 
 def test_contract_imports_work():
     """Test that we can import and use the contracts directly."""
-    
+
     # Test WorkflowType enum
     assert hasattr(WorkflowType, "DOCUMENT_REGENERATION")
     assert WorkflowType.DOCUMENT_REGENERATION.value == "document_regeneration"

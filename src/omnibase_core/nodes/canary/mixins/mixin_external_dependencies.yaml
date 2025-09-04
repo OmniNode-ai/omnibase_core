@@ -4,7 +4,7 @@
 mixin_name: "mixin_external_dependencies"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "External service integrations, API calls, and I/O operations for EFFECT nodes"
-applicable_node_types: ["EFFECT"]  # EFFECT only - architectural constraint
+applicable_node_types: ["EFFECT"] # EFFECT only - architectural constraint
 
 # === EXTERNAL DEPENDENCY ACTIONS ===
 actions:
@@ -59,7 +59,7 @@ external_dependency_config:
     enabled: true
     requests_per_second: 100
     burst_capacity: 200
-    
+
 # === SERVICE TYPES ===
 supported_service_types:
   rest_api:
@@ -67,24 +67,24 @@ supported_service_types:
     authentication: ["bearer_token", "api_key", "oauth2", "basic_auth"]
     serialization: ["json", "xml", "form_data"]
     compression: ["gzip", "deflate"]
-    
+
   database:
     protocols: ["postgresql", "mysql", "mongodb", "cassandra"]
     connection_pooling: true
     transaction_support: true
     streaming_support: false
-    
+
   message_queue:
     protocols: ["kafka", "rabbitmq", "aws_sqs", "azure_service_bus"]
     delivery_guarantee: ["at_least_once", "at_most_once", "exactly_once"]
     batching_support: true
-    
+
   file_storage:
     protocols: ["s3", "azure_blob", "gcs", "sftp", "local"]
     streaming_support: true
     encryption_support: true
     versioning_support: true
-    
+
   external_apis:
     protocols: ["rest", "graphql", "grpc", "soap"]
     authentication_flows: ["oauth2", "api_key", "jwt", "custom"]
@@ -93,28 +93,28 @@ supported_service_types:
 # === CIRCUIT BREAKER PATTERNS ===
 circuit_breaker_config:
   failure_threshold: 10
-  timeout_duration_ms: 60000  # 1 minute
+  timeout_duration_ms: 60000 # 1 minute
   half_open_max_calls: 3
-  metrics_window_ms: 10000    # 10 seconds
+  metrics_window_ms: 10000 # 10 seconds
   min_calls_for_evaluation: 5
-  
+
 # === FALLBACK STRATEGIES ===
 fallback_strategies:
   cached_response:
     enabled: true
-    cache_ttl_ms: 300000  # 5 minutes
+    cache_ttl_ms: 300000 # 5 minutes
     stale_while_revalidate: true
-    
+
   default_response:
     enabled: true
     response_templates: {}
     static_fallbacks: {}
-    
+
   alternative_service:
     enabled: false
     service_priority_list: []
     automatic_failover: true
-    
+
   graceful_degradation:
     enabled: true
     reduced_functionality_mode: true
@@ -134,7 +134,7 @@ output_models:
     metadata:
       retry_count: "integer"
       circuit_breaker_state: "enum[CLOSED,OPEN,HALF_OPEN]"
-      
+
   execution_metadata:
     service_name: "string"
     operation_name: "string"
@@ -145,7 +145,7 @@ output_models:
     processing_time_ms: "integer"
     bytes_sent: "integer"
     bytes_received: "integer"
-    
+
   health_status:
     service_name: "string"
     status: "enum[HEALTHY,DEGRADED,UNHEALTHY,UNKNOWN]"
@@ -154,7 +154,7 @@ output_models:
     error_rate_percent: "float"
     availability_percent: "float"
     circuit_breaker_state: "string"
-    
+
   fallback_result:
     fallback_strategy_used: "string"
     fallback_success: "boolean"
@@ -168,12 +168,12 @@ authentication_patterns:
     grant_types: ["client_credentials", "authorization_code"]
     token_refresh_enabled: true
     scope_management: true
-    
+
   api_key:
     key_rotation_supported: true
     header_based: true
     query_param_based: false
-    
+
   jwt_bearer:
     token_validation: true
     claim_extraction: true
@@ -185,7 +185,7 @@ data_transformation:
   output_formats: ["json", "xml", "csv", "protobuf", "avro"]
   transformation_types:
     - "field_mapping"
-    - "data_type_conversion" 
+    - "data_type_conversion"
     - "structure_flattening"
     - "data_enrichment"
     - "validation_and_sanitization"
@@ -195,11 +195,11 @@ dependencies:
   - name: "external_integration"
     type: "capability"
     description: "Provides external service integration capabilities"
-    
+
   - name: "api_client"
     type: "capability"
     description: "Provides HTTP/REST API client capabilities"
-    
+
   - name: "data_transformation"
     type: "capability"
     description: "Provides data transformation and mapping capabilities"
@@ -209,12 +209,12 @@ requires_dependencies:
   - name: "protocol_http_client"
     type: "protocol"
     description: "HTTP client protocol for REST API calls"
-    
+
   - name: "protocol_database_client"
     type: "protocol"
     description: "Database client protocol for database operations"
     optional: true
-    
+
   - name: "protocol_message_queue_client"
     type: "protocol"
     description: "Message queue client protocol"
@@ -226,33 +226,33 @@ metrics:
     type: "counter"
     description: "Total number of external service calls"
     labels: ["service_name", "operation", "status"]
-    
+
   - name: "external_call_duration"
     type: "histogram"
     description: "Duration of external service calls"
     labels: ["service_name", "operation"]
     buckets: [50, 100, 500, 1000, 5000, 10000, 30000]
-    
+
   - name: "circuit_breaker_state_changes"
     type: "counter"
     description: "Number of circuit breaker state changes"
     labels: ["service_name", "from_state", "to_state"]
-    
+
   - name: "fallback_activations"
     type: "counter"
     description: "Number of fallback strategy activations"
     labels: ["service_name", "fallback_strategy"]
-    
+
   - name: "external_service_availability"
     type: "gauge"
     description: "External service availability percentage"
     labels: ["service_name"]
-    
+
   - name: "data_transformation_operations"
     type: "counter"
     description: "Number of data transformation operations"
     labels: ["source_format", "target_format", "transformation_type"]
-    
+
   - name: "authentication_operations"
     type: "counter"
     description: "Number of authentication operations"

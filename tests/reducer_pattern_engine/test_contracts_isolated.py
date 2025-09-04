@@ -15,11 +15,15 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
     BaseSubreducer,
     RoutingDecision,
     SubreducerResult,
+)
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+    WorkflowMetrics as EngineMetrics,  # Alias for backward compatibility
+)
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
     WorkflowRequest,
     WorkflowResponse,
     WorkflowStatus,
     WorkflowType,
-    WorkflowMetrics as EngineMetrics,  # Alias for backward compatibility
 )
 
 

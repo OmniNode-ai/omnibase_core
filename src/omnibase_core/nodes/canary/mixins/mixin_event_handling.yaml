@@ -71,13 +71,13 @@ output_models:
       type: "object"
       additionalProperties: "string"
     payload: "object"
-    
+
   publish_result:
     success: "boolean"
     event_id: "string"
     delivery_status: "enum[DELIVERED,PENDING,FAILED]"
     error_message: "string"
-    
+
   subscription_status:
     subscription_id: "string"
     active: "boolean"
@@ -86,7 +86,7 @@ output_models:
       items: "string"
     message_count: "integer"
     last_message: "datetime"
-    
+
   processing_result:
     success: "boolean"
     processing_time_ms: "integer"
@@ -102,15 +102,15 @@ node_specific_events:
   COMPUTE:
     publishes: ["computation_started", "computation_completed", "computation_failed"]
     subscribes: ["computation_request", "resource_update"]
-    
+
   EFFECT:
     publishes: ["effect_executed", "external_call_completed", "side_effect_occurred"]
     subscribes: ["effect_request", "external_event"]
-    
+
   REDUCER:
     publishes: ["state_updated", "aggregation_completed", "state_snapshot"]
     subscribes: ["state_change_request", "aggregation_trigger"]
-    
+
   ORCHESTRATOR:
     publishes: ["workflow_started", "workflow_completed", "coordination_event"]
     subscribes: ["task_completed", "node_status_changed", "workflow_trigger"]
@@ -120,9 +120,9 @@ dependencies:
   - name: "event_publishing"
     type: "capability"
     description: "Provides event publishing capabilities"
-    
+
   - name: "event_subscription"
-    type: "capability" 
+    type: "capability"
     description: "Provides event subscription and handling capabilities"
 
 # === DEPENDENCIES REQUIRED ===
@@ -137,21 +137,21 @@ metrics:
     type: "counter"
     description: "Total number of events published"
     labels: ["event_type", "routing_key"]
-    
+
   - name: "events_received"
     type: "counter"
     description: "Total number of events received"
     labels: ["event_type", "subscription_id"]
-    
+
   - name: "event_processing_time"
     type: "histogram"
     description: "Time taken to process events"
     labels: ["event_type"]
-    
+
   - name: "active_subscriptions"
     type: "gauge"
     description: "Number of active event subscriptions"
-    
+
   - name: "event_processing_errors"
     type: "counter"
     description: "Number of event processing errors"
