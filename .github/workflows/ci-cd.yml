@@ -63,11 +63,13 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Configure git for private repositories
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
       - name: Install dependencies
-        run: poetry install --extras "full"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git with token for poetry to access private repos
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          poetry install --extras "full"
 
       - name: Run type checking with mypy
         run: poetry run mypy src/omnibase_core
@@ -123,11 +125,13 @@ jobs:
         with:
           version: 1.8.0
 
-      - name: Configure git for private repositories
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-
       - name: Install dependencies
-        run: poetry install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git with token for poetry to access private repos
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          poetry install
 
       - name: Run safety check for vulnerabilities
         run: poetry run safety check
