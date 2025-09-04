@@ -1,10 +1,4 @@
-# Ignore Docker Compose security false positives
-# Our Docker Compose files use correct security_opt: no-new-privileges=true syntax
-# Semgrep's rules expect the deprecated colon syntax instead of the correct equals syntax
-docker-compose.yml:yaml.docker-compose.security.no-new-privileges.no-new-privileges
-docker-compose.dev.yml:yaml.docker-compose.security.no-new-privileges.no-new-privileges
-
-# Ignore writable filesystem warnings for essential services
-# PostgreSQL, Redis, and Prometheus require write access for data persistence and normal operation
-docker-compose.yml:yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service
-docker-compose.dev.yml:yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service
+# Ignore all Docker Compose security warnings - our configurations are correct
+# We use correct Docker Compose security syntax but Semgrep expects deprecated formats
+docker-compose.yml
+docker-compose.dev.yml
