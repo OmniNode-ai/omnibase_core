@@ -292,11 +292,6 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             },
         )
 
-        # Simulate processing time (remove in production)
-        import asyncio
-
-        await asyncio.sleep(0.1)  # Simulate 100ms processing time
-
         # Generate result data
         result_data = {
             "document_id": document_params["document_id"],

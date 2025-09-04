@@ -6,6 +6,7 @@ health checks, and runtime lookup capabilities.
 """
 
 import logging
+import threading
 import time
 from typing import Any, Dict, List, Optional, Type
 from uuid import UUID
@@ -33,6 +34,7 @@ class ReducerSubreducerRegistry:
         self._subreducer_instances: Dict[str, BaseSubreducer] = {}
         self._registration_metadata: Dict[str, Dict[str, Any]] = {}
         self._logger = logging.getLogger(__name__)
+        self._lock = threading.RLock()  # Thread-safe registry operations
 
     def register_subreducer(
         self,
@@ -57,42 +59,48 @@ class ReducerSubreducerRegistry:
             else str(workflow_type)
         )
 
-        # Validate subreducer class
-        if not issubclass(subreducer_class, BaseSubreducer):
-            raise RegistryError(
-                f"Subreducer class must inherit from BaseSubreducer",
-                CoreErrorCode.VALIDATION_FAILED,
-            )
-
-        # Check for existing registration
-        if workflow_type_str in self._subreducers:
-            emit_log_event(
-                logger=self._logger,
-                level="WARNING",
-                message=f"Overwriting existing subreducer registration for {workflow_type_str}",
-            )
-
-        # Test instantiation
-        try:
-            test_instance = subreducer_class(f"test_{workflow_type_str}_subreducer")
-            if not test_instance.supports_workflow_type(workflow_type):
+        # Thread-safe registration with validation
+        with self._lock:
+            # Validate subreducer class
+            if not issubclass(subreducer_class, BaseSubreducer):
                 raise RegistryError(
-                    f"Subreducer {subreducer_class.__name__} does not support workflow type {workflow_type_str}",
+                    f"Subreducer class must inherit from BaseSubreducer",
                     CoreErrorCode.VALIDATION_FAILED,
                 )
-        except Exception as e:
-            raise RegistryError(
-                f"Failed to instantiate subreducer {subreducer_class.__name__}: {str(e)}",
-                CoreErrorCode.VALIDATION_FAILED,
-            ) from e
 
-        # Register the subreducer
-        self._subreducers[workflow_type_str] = subreducer_class
-        self._registration_metadata[workflow_type_str] = {
-            "class_name": subreducer_class.__name__,
-            "registered_at": time.time(),
-            "metadata": metadata or {},
-        }
+            # Check for existing registration
+            if workflow_type_str in self._subreducers:
+                emit_log_event(
+                    logger=self._logger,
+                    level="WARNING",
+                    message=f"Overwriting existing subreducer registration for {workflow_type_str}",
+                )
+
+            # Test instantiation
+            try:
+                test_instance = subreducer_class(f"test_{workflow_type_str}_subreducer")
+                if not test_instance.supports_workflow_type(workflow_type):
+                    raise RegistryError(
+                        f"Subreducer {subreducer_class.__name__} does not support workflow type {workflow_type_str}",
+                        CoreErrorCode.VALIDATION_FAILED,
+                    )
+            except Exception as e:
+                raise RegistryError(
+                    f"Failed to instantiate subreducer {subreducer_class.__name__}: {str(e)}",
+                    CoreErrorCode.VALIDATION_FAILED,
+                ) from e
+
+            # Register the subreducer
+            self._subreducers[workflow_type_str] = subreducer_class
+            self._registration_metadata[workflow_type_str] = {
+                "class_name": subreducer_class.__name__,
+                "registered_at": time.time(),
+                "metadata": metadata or {},
+            }
+
+            # Clear any existing instance to force recreation with new class
+            if workflow_type_str in self._subreducer_instances:
+                del self._subreducer_instances[workflow_type_str]
 
         emit_log_event(
             logger=self._logger,
@@ -137,26 +145,28 @@ class ReducerSubreducerRegistry:
             else str(workflow_type)
         )
 
-        # Return existing instance if available
-        if workflow_type_str in self._subreducer_instances:
-            return self._subreducer_instances[workflow_type_str]
+        # Thread-safe instance creation with double-checked locking
+        with self._lock:
+            # Double-check if instance was created by another thread
+            if workflow_type_str in self._subreducer_instances:
+                return self._subreducer_instances[workflow_type_str]
 
-        # Get subreducer class and create instance
-        subreducer_class = self.get_subreducer(workflow_type)
-        if subreducer_class is None:
-            return None
+            # Get subreducer class and create instance
+            subreducer_class = self.get_subreducer(workflow_type)
+            if subreducer_class is None:
+                return None
 
-        try:
-            instance = subreducer_class(f"{workflow_type_str}_subreducer")
-            self._subreducer_instances[workflow_type_str] = instance
-            return instance
-        except Exception as e:
-            emit_log_event(
-                logger=self._logger,
-                level="ERROR",
-                message=f"Failed to create subreducer instance for {workflow_type_str}: {str(e)}",
-            )
-            return None
+            try:
+                instance = subreducer_class(f"{workflow_type_str}_subreducer")
+                self._subreducer_instances[workflow_type_str] = instance
+                return instance
+            except Exception as e:
+                emit_log_event(
+                    logger=self._logger,
+                    level="ERROR",
+                    message=f"Failed to create subreducer instance for {workflow_type_str}: {str(e)}",
+                )
+                return None
 
     def unregister_subreducer(self, workflow_type: WorkflowType) -> bool:
         """
@@ -260,7 +270,7 @@ class ReducerSubreducerRegistry:
             except (AttributeError, TypeError, NotImplementedError) as e:
                 emit_log_event(
                     logger=self._logger,
-                    level="WARNING", 
+                    level="WARNING",
                     message=f"Health check failed for {workflow_type_str}: {str(e)}",
                 )
                 health_status[workflow_type_str] = False

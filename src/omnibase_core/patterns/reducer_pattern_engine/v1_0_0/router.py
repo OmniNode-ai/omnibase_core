@@ -7,7 +7,7 @@ using hash-based distribution with correlation ID tracking and error handling.
 
 import hashlib
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -49,7 +49,7 @@ class WorkflowRouter:
         }
 
     def register_subreducer(
-        self, subreducer: BaseSubreducer, workflow_types: list[WorkflowType]
+        self, subreducer: BaseSubreducer, workflow_types: List[WorkflowType]
     ) -> None:
         """
         Register a subreducer for specific workflow types.
