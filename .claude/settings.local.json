@@ -18,7 +18,8 @@
       "mcp__serena__get_symbols_overview",
       "mcp__serena__find_file",
       "mcp__archon__check_architectural_compliance",
-      "mcp__archon__get_quality_patterns"
+      "mcp__archon__get_quality_patterns",
+      "Bash(yamllint:*)"
     ],
     "deny": [],
     "ask": []
