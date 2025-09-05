@@ -2,7 +2,7 @@
 # Defines subreducer registration and management specifications
 
 name: "subreducer_registry"
-version: "1.0.0"
+version: {major: 1, minor: 0, patch: 0}
 description: "Manual subreducer registration and management contract"
 
 # Registry Configuration

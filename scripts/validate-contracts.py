@@ -147,7 +147,7 @@ class ContractValidator:
             # Phase 3: Reducer Pattern Engine
             {
                 "name": "reducer_pattern_engine",
-                "yaml_path": "src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contracts/contract.yaml",
+                "yaml_path": "src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contract.yaml",
                 "model_class": "ModelContractReducerPatternEngine",
                 "model_module": "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine",
             },

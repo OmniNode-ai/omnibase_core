@@ -1,6 +1,6 @@
 id: error_handling
 name: Secure Error Handling with Circuit Breakers
-version: "1.0.0"
+version: {major: 1, minor: 0, patch: 0}
 description: "Universal mixin providing secure error handling, circuit breaker patterns, \nmetrics collection, and configuration management for production-ready nodes.\n#magic___^_^___line\nThis mixin prevents information disclosure, implements fault tolerance,\nand provides comprehensive observability across all node types.\n#magic___^_^___line\n"
 type: core_mixin
 compatibility:

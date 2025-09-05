@@ -1,268 +1,111 @@
-# Reducer Pattern Engine v1.0.0 Contract Manifest
-# ONEX Phase 3 Protocol Compliance Contract
+# Reducer Pattern Engine - ONEX Contract
+# Multi-workflow execution pattern with instance isolation and enhanced metrics
 
-name: "reducer_pattern_engine"
-version: "1.0.0"
-description: "ONEX-compliant multi-workflow reducer pattern engine with protocol compliance and envelope support"
-node_type: "COMPUTE"
+# === REQUIRED ROOT FIELDS ===
+contract_version: {major: 1, minor: 0, patch: 0}
+node_name: "reducer_pattern_engine"
+node_version: {major: 1, minor: 0, patch: 0}
+contract_name: "reducer_pattern_engine_contract"
+description: "Multi-workflow reducer pattern engine with ONEX compliance"
+node_type: "REDUCER"
+input_model: "ModelReducerPatternEngineInput"
+output_model: "ModelReducerPatternEngineOutput"
 
-# ONEX Protocol Compliance - Phase 3
-onex_compliance_version: "1.0.0"
-protocol_version: "1.0.0"
-
-# Input/Output Models - ONEX Protocol Compliant
-input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelReducerPatternEngineInput"
-output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelReducerPatternEngineOutput"
-
-# Legacy Models (for backward compatibility)
-legacy_input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowRequest"
-legacy_output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowResponse"
-
-# Contract Model
-contract_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine.ModelContractReducerPatternEngine"
-
-# Protocol Implementation
-protocol_implementation:
-  protocol_interface: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.ProtocolReducerPatternEngine"
-  base_implementation: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.BaseReducerPatternEngine"
-  node_implementation: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.node_reducer_pattern_engine.NodeReducerPatternEngine"
-
-# Envelope Support
-envelope_support:
-  enabled: true
-  envelope_model: "omnibase_core.model.core.model_event_envelope.ModelEventEnvelope"
-  event_model: "omnibase_core.model.core.model_onex_event.ModelOnexEvent"
-  routing_support: true
-  correlation_tracking: true
-
-# Pattern Metadata
+# === PATTERN CONFIGURATION ===
 pattern_type: "execution_pattern"
-architecture: "multi_workflow"
+supported_workflows: ["DATA_ANALYSIS", "DOCUMENT_REGENERATION", "REPORT_GENERATION"]
+
+features:
+  instance_isolation: true
+  concurrent_processing: true
+  enhanced_metrics: true
+  registry_system: true
+  state_management: true
+  routing_optimization: true
+
+max_concurrent_workflows: 100
 isolation_level: "instance_based"
+architecture: "multi_workflow"
 
-# Pattern Configuration
-pattern_config:
-  supported_workflows:
-    - "DATA_ANALYSIS"
-    - "REPORT_GENERATION"
-    - "DOCUMENT_REGENERATION"
-
-  features:
-    instance_isolation: true
-    concurrent_processing: true
-    enhanced_metrics: true
-    registry_system: true
-    state_management: true
-    routing_optimization: true
-
-  performance_requirements:
-    max_concurrent_workflows: 25
-    single_operation_max_ms: 15000
-    batch_operation_max_s: 120
-    memory_limit_mb: 256
-    throughput_min_ops_per_second: 5.0
-
-# Component Specifications
+# === COMPONENT SPECIFICATIONS ===
 components:
   engine:
     class_name: "ReducerPatternEngine"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine"
-    description: "Main orchestration engine for multi-workflow processing"
+    description: "Main pattern engine for workflow processing"
 
   router:
     class_name: "WorkflowRouter"
-    module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router"
-    description: "Hash-based workflow routing with load balancing"
+    module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine"
+    description: "Workflow routing and dispatch component"
 
   registry:
     class_name: "ReducerSubreducerRegistry"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry"
-    description: "Manual subreducer registration and management"
+    description: "Subreducer registration and management"
 
   metrics:
     class_name: "ReducerMetricsCollector"
     module: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.metrics"
-    description: "Enhanced metrics collection and aggregation"
+    description: "Performance metrics collection and monitoring"
 
-# Subreducer Specifications
+# === SUBREDUCER SPECIFICATIONS ===
 subreducers:
   data_analysis:
     class_name: "ReducerDataAnalysisSubreducer"
     module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis"
     supported_workflows: ["DATA_ANALYSIS"]
-    capabilities:
-      - "descriptive_statistics"
-      - "correlation_analysis"
-      - "trend_analysis"
-      - "distribution_analysis"
-
-  report_generation:
-    class_name: "ReducerReportGenerationSubreducer"
-    module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation"
-    supported_workflows: ["REPORT_GENERATION"]
-    capabilities:
-      - "json_output"
-      - "html_output"
-      - "csv_output"
-      - "txt_output"
-      - "markdown_output"
+    capabilities: ["data_processing", "statistical_analysis", "visualization"]
 
   document_regeneration:
     class_name: "ReducerDocumentRegenerationSubreducer"
     module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration"
     supported_workflows: ["DOCUMENT_REGENERATION"]
-    capabilities:
-      - "template_processing"
-      - "content_transformation"
-      - "format_conversion"
+    capabilities: ["content_generation", "template_processing", "format_conversion"]
 
-# State Management Configuration
-state_management:
-  state_model: "omnibase_core.patterns.reducer_pattern_engine.models.state_transitions.WorkflowStateModel"
-  validator: "omnibase_core.patterns.reducer_pattern_engine.models.state_transitions.StateTransitionValidator"
+  report_generation:
+    class_name: "ReducerReportGenerationSubreducer"
+    module: "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation"
+    supported_workflows: ["REPORT_GENERATION"]
+    capabilities: ["report_formatting", "data_aggregation", "chart_generation"]
 
-  states:
-    - name: "PENDING"
-      description: "Workflow awaiting processing"
-      initial: true
+# === FSM STATE MANAGEMENT (Reference to existing contract) ===
+state_transitions:
+  $ref: "state_management_contract.yaml"
 
-    - name: "ROUTING"
-      description: "Workflow being routed to appropriate subreducer"
+# === ACTIONS ===
+actions:
+  - name: "process_workflow"
+    description: "Process workflow through appropriate subreducer"
+    inputs: ["workflow_request"]
+    outputs: ["workflow_response"]
 
-    - name: "PROCESSING"
-      description: "Workflow being processed by subreducer"
+  - name: "health_check"
+    description: "Check engine health and subreducer availability"
+    inputs: []
+    outputs: ["health_status"]
 
-    - name: "COMPLETED"
-      description: "Workflow processing completed successfully"
-      final: true
+  - name: "get_metrics"
+    description: "Get comprehensive processing metrics"
+    inputs: []
+    outputs: ["metrics_data"]
 
-    - name: "FAILED"
-      description: "Workflow processing failed"
-      final: true
-
-  transitions:
-    - from: "PENDING"
-      to: "ROUTING"
-      trigger: "route_workflow"
-
-    - from: "ROUTING"
-      to: "PROCESSING"
-      trigger: "start_processing"
-
-    - from: "PROCESSING"
-      to: "COMPLETED"
-      trigger: "complete_workflow"
-
-    - from: "PROCESSING"
-      to: "FAILED"
-      trigger: "fail_workflow"
-
-    - from: ["ROUTING", "PROCESSING"]
-      to: "FAILED"
-      trigger: "error_occurred"
-
-# ONEX Container Integration - Phase 3
-container_integration:
-  container_class: "ModelONEXContainer"
-  container_module: "omnibase_core.core.model_onex_container"
-  service_resolution: true
-  dependency_injection: true
-  lifecycle_management: true
-
-# Dependencies - Enhanced for Phase 3
+# === DEPENDENCIES ===
 dependencies:
-  structured_dependencies:
-    - name: "container"
-      dependency_type: "CONTAINER"
-      class_name: "ModelONEXContainer"
-      module: "omnibase_core.core.model_onex_container"
+  - name: "container"
+    type: "protocol"
+    class_name: "ProtocolContainer"
+    module: "omnibase.protocol.protocol_container"
+  - name: "event_bus"
+    type: "protocol"
+    class_name: "ProtocolEventBus"
+    module: "omnibase.protocol.protocol_event_bus"
+  - name: "schema_loader"
+    type: "protocol"
+    class_name: "ProtocolSchemaLoader"
+    module: "omnibase.protocol.protocol_schema_loader"
 
-    - name: "event_envelope"
-      dependency_type: "PROTOCOL"
-      class_name: "ModelEventEnvelope"
-      module: "omnibase_core.model.core.model_event_envelope"
-
-    - name: "onex_event"
-      dependency_type: "PROTOCOL"
-      class_name: "ModelOnexEvent"
-      module: "omnibase_core.model.core.model_onex_event"
-
-  simple_dependencies:
-    - "logger"
-    - "metrics_collector"
-    - "health_checker"
-
-  dict_dependencies:
-    - name: "canary_service"
-      type: "service"
-      description: "Canary deployment service (Phase 4)"
-
-# Protocol Interfaces - Phase 3 Enhanced
-protocol_interfaces:
-  - interface: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.ProtocolReducerPatternEngine"
-    description: "Core Reducer Pattern Engine protocol"
-    required: true
-
-  - interface: "omnibase.protocols.pattern.ProtocolExecutionPattern"
-    description: "Execution pattern interface"
-    required: false
-
-  - interface: "omnibase.protocols.workflow.ProtocolWorkflowEngine"
-    description: "Workflow engine interface"
-    required: false
-
-# ONEX 4-Node Architecture Compliance
-node_architecture:
-  node_type: "COMPUTE"
-  role: "data_processing"
-  inter_node_communication: true
-  envelope_routing: true
-
-  supported_operations:
-    - "workflow_processing"
-    - "envelope_handling"
-    - "protocol_validation"
-    - "state_management"
-    - "metrics_collection"
-
-  communication_patterns:
-    - "request_response"
-    - "envelope_routing"
-    - "event_driven"
-
-# Validation Rules - Phase 3 Enhanced
-validation_rules:
-  strict_typing_enabled: true
-  input_validation_enabled: true
-  output_validation_enabled: true
-  performance_validation_enabled: true
-  protocol_validation_enabled: true
-  envelope_validation_enabled: true
-
-  constraint_definitions:
-    max_workflow_payload_size: "10MB"
-    required_workflow_fields: "workflow_type,instance_id"
-    supported_workflow_types: "DATA_ANALYSIS,REPORT_GENERATION,DOCUMENT_REGENERATION"
-    required_envelope_fields: "envelope_id,correlation_id,source_node_id"
-    max_envelope_hops: 10
-    protocol_version_constraints: "1.0.0"
-
-  protocol_compliance_checks:
-    - "envelope_structure_validation"
-    - "correlation_id_propagation"
-    - "node_routing_validation"
-    - "message_format_compliance"
-    - "error_handling_compliance"
-
-# Lifecycle Configuration
-lifecycle:
-  initialization_timeout_s: 60
-  cleanup_timeout_s: 30
-  error_recovery_enabled: true
-  state_persistence_enabled: true
-  health_check_interval_s: 30
-
-# Performance Requirements
+# === PERFORMANCE ===
 performance:
   single_operation_max_ms: 30000
   batch_operation_max_s: 300
@@ -270,44 +113,31 @@ performance:
   cpu_limit_percent: 80
   throughput_min_ops_per_second: 10.0
 
-# Documentation - Phase 3 Updated
-author: "ONEX Reducer Pattern Engine Team"
-documentation_url: "https://docs.onex.ai/patterns/reducer-pattern-engine/phase3"
-implementation_phase: "Phase 3 - ONEX Protocol Compliance"
+# === LIFECYCLE CONFIGURATION ===
+lifecycle:
+  initialization_timeout_s: 60
+  cleanup_timeout_s: 30
+  error_recovery_enabled: true
+  state_persistence_enabled: true
+  health_check_interval_s: 30
 
-tags:
-  - "pattern"
-  - "execution"
-  - "multi_workflow"
-  - "phase3"
-  - "onex_compliance"
-  - "protocol"
-  - "envelope_support"
-  - "reducer"
-  - "orchestration"
-  - "container_integration"
+# === DEFINITIONS (Required by ModelContractContent) ===
+definitions:
+  models: {}
+  schemas: {}
+  responses: {}
 
-# Phase 3 Implementation Notes
-phase3_features:
-  - "ONEX protocol compliance with envelope support"
-  - "ModelOnexContainer dependency injection integration"
-  - "Protocol-based validation and error handling"
-  - "Event envelope wrapping and unwrapping"
-  - "Inter-node communication support"
-  - "Contract-driven configuration validation"
-  - "Backward compatibility with Phase 2 implementations"
-
-# Quality Assurance
-testing:
-  unit_tests: "tests/unit/patterns/reducer_pattern_engine/"
-  integration_tests: "tests/integration/patterns/reducer_pattern_engine/"
-  protocol_compliance_tests: "tests/unit/patterns/reducer_pattern_engine/test_onex_compliance.py"
-  contract_validation_tests: "tests/unit/patterns/reducer_pattern_engine/test_contract_validation.py"
-  container_integration_tests: "tests/unit/patterns/reducer_pattern_engine/test_container_integration.py"
-
-# Schema References
+# === SUBCONTRACTS ===
 subcontracts:
-  - path: "contracts/workflow_contract.yaml"
-  - path: "contracts/metrics_contract.yaml"
-  - path: "contracts/registry_contract.yaml"
   - path: "contracts/state_management_contract.yaml"
+    integration_field: "state_management_configuration"
+
+# === VALIDATION RULES ===
+validation_rules:
+  - field: "workflow_type"
+    type: "string"
+    required: true
+    allowed_values: ["DATA_ANALYSIS", "DOCUMENT_REGENERATION", "REPORT_GENERATION"]
+  - field: "instance_id"
+    type: "string"
+    required: true

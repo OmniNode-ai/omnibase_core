@@ -3,7 +3,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: tool_contract_driven_generator
-node_version: 1.0.0
+node_version: {major: 1, minor: 0, patch: 0}
 description: Generates strongly-typed Pydantic models from YAML contract specifications with AST-based code generation and ONEX standards compliance
 
 input_state:

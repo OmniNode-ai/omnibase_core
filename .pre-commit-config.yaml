@@ -76,6 +76,15 @@ repos:
         files: ^src/.*\.py$
         stages: [commit]
 
+      # String Version Validation
+      - id: validate-string-versions
+        name: ONEX String Version Validation
+        entry: poetry run python scripts/validate-string-versions.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.(yaml|yml)$
+        stages: [commit]
+
 # Configuration
 ci:
   autofix_commit_msg: |

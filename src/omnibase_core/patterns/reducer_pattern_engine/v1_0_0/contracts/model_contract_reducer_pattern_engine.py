@@ -17,6 +17,7 @@ from typing import Any
 from pydantic import Field, field_validator
 
 from omnibase_core.core.contracts.model_contract_reducer import ModelContractReducer
+from omnibase_core.model.core.model_semver import ModelSemVer
 
 
 class ModelContractReducerPatternEngine(ModelContractReducer):
@@ -38,8 +39,8 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
         description="Contract name",
     )
 
-    version: str = Field(
-        default="1.0.0",
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Contract version",
     )
 
