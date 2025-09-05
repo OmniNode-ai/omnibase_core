@@ -2,7 +2,7 @@
 # Defines workflow processing behavior and specifications
 
 name: "workflow_processing"
-version: "1.0.0"
+version: {major: 1, minor: 0, patch: 0}
 description: "Workflow processing contract for multi-workflow execution"
 
 # Workflow Types

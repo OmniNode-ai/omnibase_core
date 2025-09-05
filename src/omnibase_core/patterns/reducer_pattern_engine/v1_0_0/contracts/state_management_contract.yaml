@@ -2,7 +2,7 @@
 # Defines state machine behavior and transition specifications
 
 name: "state_management"
-version: "1.0.0"
+version: {major: 1, minor: 0, patch: 0}
 description: "State management contract for workflow lifecycle tracking"
 
 # State Machine Configuration

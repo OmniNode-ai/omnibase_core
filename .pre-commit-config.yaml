@@ -76,6 +76,25 @@ repos:
         files: ^src/.*\.py$
         stages: [commit]
 
+      # String Version Validation
+      - id: validate-string-versions
+        name: ONEX String Version Validation
+        entry: poetry run python scripts/validate-string-versions.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.(yaml|yml)$
+        stages: [commit]
+
+      # Prevent Manual YAML Validation
+      - id: validate-no-manual-yaml
+        name: ONEX Prevent Manual YAML Validation
+        entry: poetry run python scripts/validate-no-manual-yaml.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.py$
+        exclude: ^scripts/validate-contracts\.py$ # Deprecated script, contains legacy YAML validation
+        stages: [commit]
+
 # Configuration
 ci:
   autofix_commit_msg: |

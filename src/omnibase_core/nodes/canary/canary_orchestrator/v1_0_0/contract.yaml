@@ -128,6 +128,31 @@ actions:
     description: "Stop running workflow"
     inputs: ["workflow_id"]
 
+# === SERVICE RESOLUTION ===
+service_resolution:
+  event_bus:
+    protocol: "ProtocolEventBus"
+    strategy: "hybrid"
+    primary: "kafka"
+    fallback: "event_bus_client"
+    discovery: "consul"
+
+# === ONEX COMPLIANCE ===
+contract_driven: true
+strong_typing: true
+zero_any_types: true
+protocol_based: true
+
+# === VALIDATION ===
+validation_rules:
+  strict_typing_enabled: true
+  input_validation_enabled: true
+  output_validation_enabled: true
+  performance_validation_enabled: true
+  constraint_definitions:
+    operation_type: "string type with values [coordinate, orchestrate, sequence, parallel]"
+    workflow_strategy: "string type specifying orchestration strategy"
+
 # === SUBCONTRACTS ===
 subcontracts:
   - path: "../../subcontracts/workflow_coordination_subcontract.yaml"

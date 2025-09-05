@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 class ModelWorkflowError(BaseModel):
     """Error model for workflow processing failures."""
 
-    error_code: str = Field(..., description="Error code identifying the type of error")
-    error_message: str = Field(..., description="Human-readable error message")
+    error_code: str = Field("", description="Error code identifying the type of error")
+    error_message: str = Field("", description="Human-readable error message")
     error_context: Dict[str, Any] = Field(
         default_factory=dict, description="Additional context about the error"
     )

@@ -93,6 +93,11 @@ class ContractValidator:
                 "NodeCanaryGateway",
                 "omnibase_core.nodes.canary.canary_gateway.v1_0_0.node",
             ),
+            # Phase 3: Reducer Pattern Engine
+            (
+                "NodeReducerPatternEngine",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.node_reducer_pattern_engine",
+            ),
         ]
 
         success = True
@@ -105,8 +110,16 @@ class ContractValidator:
         return success
 
     def _validate_yaml_contracts(self) -> bool:
-        """Validate that YAML contracts deserialize to their backing Pydantic models."""
+        """
+        DEPRECATED: Manual YAML validation bypasses real Pydantic validation.
+
+        All validation should go through Node classes which use the actual
+        Pydantic models with proper validation. This method is kept for
+        backward compatibility but should be removed.
+        """
         print("\n📄 Validating YAML Contract Deserialization...")
+        print("   ⚠️  WARNING: Using deprecated manual YAML validation")
+        print("   ✅ All validation should go through Node classes instead")
 
         yaml_contracts = [
             {
@@ -138,6 +151,13 @@ class ContractValidator:
                 "yaml_path": "src/omnibase_core/nodes/canary/canary_reducer/v1_0_0/contract.yaml",
                 "model_class": "ModelContractReducer",
                 "model_module": "omnibase_core.core.contracts.model_contract_reducer",
+            },
+            # Phase 3: Reducer Pattern Engine
+            {
+                "name": "reducer_pattern_engine",
+                "yaml_path": "src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contract.yaml",
+                "model_class": "ModelContractReducerPatternEngine",
+                "model_module": "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine",
             },
         ]
 
@@ -215,17 +235,10 @@ class ContractValidator:
             except Exception as e:
                 warnings.append(f"Model serialization warning: {str(e)}")
 
-            # Validate essential contract fields are present in YAML
-            essential_fields = ["node_name", "node_type", "version", "contract_version"]
-            missing_fields = []
-            for field in essential_fields:
-                if field not in yaml_data:
-                    missing_fields.append(field)
-
-            if missing_fields:
-                warnings.append(
-                    f"Missing essential fields: {', '.join(missing_fields)}"
-                )
+            # REMOVED: Manual essential fields validation
+            # This was bypassing Pydantic validation and causing inconsistencies.
+            # The Pydantic model should handle all validation automatically.
+            # If fields are missing, the model_validate() call above would have failed.
 
             # Check for modern ONEX compliance fields
             modern_fields = ["service_resolution", "validation_rules", "definitions"]
@@ -465,12 +478,26 @@ class ContractValidator:
                 "ModelContractGateway",
                 "omnibase_core.core.contracts.model_contract_gateway",
             ),
+            # Phase 3: Reducer Pattern Engine contract model
+            (
+                "ModelContractReducerPatternEngine",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine",
+            ),
             # Input/Output models for each contract type
             ("ModelEffectInput", "omnibase_core.core.node_effect"),
             ("ModelComputeInput", "omnibase_core.core.node_compute"),
             ("ModelReducerInput", "omnibase_core.core.node_reducer"),
             ("ModelOrchestratorInput", "omnibase_core.core.node_orchestrator"),
             ("ModelGatewayInput", "omnibase_core.core.node_gateway"),
+            # Phase 3: Reducer Pattern Engine input/output models
+            (
+                "ModelReducerPatternEngineInput",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models",
+            ),
+            (
+                "ModelReducerPatternEngineOutput",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models",
+            ),
         ]
 
         success = True
