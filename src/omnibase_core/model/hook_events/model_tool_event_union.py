@@ -27,7 +27,7 @@ ToolEventUnion = Annotated[
     | ModelEditToolEvent
     | ModelBashToolEvent
     | ModelGrepToolEvent,
-    Discriminator(get_tool_discriminator)
+    Discriminator(get_tool_discriminator),
 ]
 
 
@@ -35,10 +35,7 @@ class ModelToolPreExecutionEvent(BaseModel):
     """Event fired before tool execution with discriminated tool-specific data."""
 
     event_type: str = Field("pre-execution", description="Event type")
-    tool_event: ToolEventUnion = Field(
-        ...,
-        discriminator=Discriminator(get_tool_discriminator),
-    )
+    tool_event: ToolEventUnion = Field(..., description="Tool-specific event data")
 
 
 class ModelToolPostExecutionEvent(BaseModel):

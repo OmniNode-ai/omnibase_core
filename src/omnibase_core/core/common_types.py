@@ -6,7 +6,7 @@ Strong typing patterns for ONEX architecture compliance.
 
 from typing import Any, Dict, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 # Type aliases to reduce union usage
 ScalarPrimitive = Union[str, int, float, bool]
@@ -62,30 +62,23 @@ class ModelStateValue(BaseModel):
     dict_value: Optional[Dict[str, Any]] = Field(None, description="Dictionary value")
     is_null: bool = Field(False, description="Whether this represents a null value")
 
-    @field_validator("scalar_value", "dict_value", "is_null")
-    @classmethod
-    def validate_only_one_value_type(cls, v, info):
+    @model_validator(mode="after")
+    def validate_only_one_value_type(self) -> "ModelStateValue":
         """Ensure only one value type is set at a time."""
-        if info.context is None:
-            return v
+        # Count non-null values
+        scalar_set = self.scalar_value is not None
+        dict_set = self.dict_value is not None
+        null_set = self.is_null
 
-        # During validation, check that only one value is provided
-        values = info.data or {}
-        value_count = sum(
-            [
-                values.get("scalar_value") is not None,
-                values.get("dict_value") is not None,
-                values.get("is_null", False),
-            ]
-        )
+        value_count = sum([scalar_set, dict_set, null_set])
 
-        # Allow exactly one value type to be set
+        # Allow exactly one value type to be set, or none (empty state)
         if value_count > 1:
             raise ValueError(
                 "ModelStateValue can only have one of: scalar_value, dict_value, or is_null=True"
             )
 
-        return v
+        return self
 
     @classmethod
     def create_scalar(cls, value: ScalarPrimitive) -> "ModelStateValue":

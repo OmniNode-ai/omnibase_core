@@ -7,6 +7,8 @@ import time
 from datetime import datetime
 from typing import Any
 
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
+
 from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.model.core.model_onex_event import (
@@ -15,7 +17,6 @@ from omnibase_core.model.core.model_onex_event import (
     OnexEvent,
 )
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
-from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
 
 class DiscoveryResponderMixin:

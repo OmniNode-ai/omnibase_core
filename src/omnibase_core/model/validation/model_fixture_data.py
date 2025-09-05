@@ -4,18 +4,18 @@ Decoupled from fixture/protocol modules to avoid circular imports.
 """
 
 from typing import Any, Dict, List, Union
-from pydantic import BaseModel, Field, ConfigDict
 
+from pydantic import BaseModel, ConfigDict, Field
 
 # Strongly typed union for fixture data types
 FixtureDataType = Union[
     Dict[str, Any],  # Dictionary fixtures (most common)
-    List[Any],       # List fixtures
-    str,            # String fixtures
-    int,            # Integer fixtures
-    float,          # Float fixtures
-    bool,           # Boolean fixtures
-    None            # Null fixtures
+    List[Any],  # List fixtures
+    str,  # String fixtures
+    int,  # Integer fixtures
+    float,  # Float fixtures
+    bool,  # Boolean fixtures
+    None,  # Null fixtures
 ]
 
 
@@ -46,5 +46,3 @@ class ModelFixtureData(BaseModel):
     def is_primitive_fixture(self) -> bool:
         """Check if this fixture contains primitive data."""
         return isinstance(self.data, (str, int, float, bool, type(None)))
-
-

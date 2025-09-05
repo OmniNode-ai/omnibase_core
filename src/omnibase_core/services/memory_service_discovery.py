@@ -11,9 +11,9 @@ import time
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
-from omnibase_core.core.common_types import ModelScalarValue
 
 
 class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
