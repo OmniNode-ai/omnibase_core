@@ -96,3 +96,30 @@ class ModelContractGateway(ModelContractBase):
 
         arbitrary_types_allowed = True
         validate_assignment = True
+
+    def to_yaml(self) -> str:
+        """
+        Export contract model to YAML format.
+
+        Returns:
+            str: YAML representation of the contract
+        """
+        import yaml
+
+        return yaml.dump(self.model_dump(), default_flow_style=False, sort_keys=False)
+
+    @classmethod
+    def from_yaml(cls, yaml_content: str) -> "ModelContractGateway":
+        """
+        Create contract model from YAML content.
+
+        Args:
+            yaml_content: YAML string representation
+
+        Returns:
+            ModelContractGateway: Validated contract model instance
+        """
+        import yaml
+
+        data = yaml.safe_load(yaml_content)
+        return cls.model_validate(data)

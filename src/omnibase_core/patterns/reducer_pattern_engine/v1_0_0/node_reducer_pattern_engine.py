@@ -1,5 +1,6 @@
 """ONEX-compliant NodeReducerPatternEngine with ModelOnexContainer integration."""
 
+import asyncio
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -576,7 +577,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
 
     # Required ONEX Node Methods
 
-    def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> Dict[str, Any]:
         """
         Get comprehensive health status for ONEX contract compliance.
 
@@ -593,14 +594,20 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                 "onex_compliance_version": self._onex_compliance_version,
             }
 
-            # Check pattern engine health
+            # Check pattern engine health (async if available)
             if hasattr(self._pattern_engine, "get_health_status"):
-                pattern_health = self._pattern_engine.get_health_status()
+                if asyncio.iscoroutinefunction(self._pattern_engine.get_health_status):
+                    pattern_health = await self._pattern_engine.get_health_status()
+                else:
+                    pattern_health = self._pattern_engine.get_health_status()
                 health_status["pattern_engine"] = pattern_health
 
-            # Check container health
+            # Check container health (async if available)
             if hasattr(self._container, "get_health_status"):
-                container_health = self._container.get_health_status()
+                if asyncio.iscoroutinefunction(self._container.get_health_status):
+                    container_health = await self._container.get_health_status()
+                else:
+                    container_health = self._container.get_health_status()
                 health_status["container"] = container_health
 
             # Basic health checks

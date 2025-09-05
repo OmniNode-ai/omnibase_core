@@ -32,9 +32,9 @@ class ManualYamlValidationDetector:
             self.checked_files += 1
             file_errors = []
 
-            # Check for manual YAML validation patterns
-            for node in ast.walk(tree):
-                self._check_yaml_validation_patterns(node, py_path, file_errors)
+            # Check for manual YAML validation patterns with context tracking
+            self._current_function = None
+            self._check_node_with_context(tree, py_path, file_errors)
 
             if file_errors:
                 self.errors.extend([f"{py_path}: {error}" for error in file_errors])
@@ -46,6 +46,29 @@ class ManualYamlValidationDetector:
             self.errors.append(f"{py_path}: Failed to parse Python file - {str(e)}")
             return False
 
+    def _check_node_with_context(
+        self, node: ast.AST, file_path: Path, errors: List[str]
+    ) -> None:
+        """Check AST node with function context tracking."""
+        # Track function context
+        if isinstance(node, ast.FunctionDef):
+            old_function = getattr(self, "_current_function", None)
+            self._current_function = node.name
+
+            # Check children
+            for child in ast.iter_child_nodes(node):
+                self._check_node_with_context(child, file_path, errors)
+
+            # Restore previous context
+            self._current_function = old_function
+        else:
+            # Check this node for validation patterns
+            self._check_yaml_validation_patterns(node, file_path, errors)
+
+            # Check children
+            for child in ast.iter_child_nodes(node):
+                self._check_node_with_context(child, file_path, errors)
+
     def _check_yaml_validation_patterns(
         self, node: ast.AST, file_path: Path, errors: List[str]
     ) -> None:
@@ -53,7 +76,7 @@ class ManualYamlValidationDetector:
 
         # Pattern 1: yaml.safe_load() followed by model validation
         if isinstance(node, ast.Call):
-            if self._is_yaml_safe_load(node):
+            if self._is_yaml_safe_load(node) and not self._is_in_from_yaml_method(node):
                 errors.append(
                     f"Line {node.lineno}: Found yaml.safe_load() - "
                     f"use Pydantic model.model_validate() instead"
@@ -90,6 +113,10 @@ class ManualYamlValidationDetector:
             ):
                 return True
         return False
+
+    def _is_in_from_yaml_method(self, node: ast.AST) -> bool:
+        """Check if the node is inside a from_yaml classmethod."""
+        return getattr(self, "_current_function", None) == "from_yaml"
 
     def _is_yaml_field_access(self, node: ast.Subscript) -> bool:
         """Check if this looks like direct YAML field access."""

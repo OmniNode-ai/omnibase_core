@@ -231,6 +231,20 @@ infrastructure_services:
     partial: "Some external services failed, some ready"
     unavailable: "All external services failed"
 
+# === SERVICE RESOLUTION ===
+service_resolution:
+  event_bus:
+    protocol: "ProtocolEventBus"
+    strategy: "hybrid"
+    primary: "kafka"
+    fallback: "event_bus_client"
+    discovery: "consul"
+
+# === ONEX COMPLIANCE ===
+contract_driven: true
+strong_typing: true
+zero_any_types: true
+protocol_based: true
 
 # === DEFINITIONS (Required by ModelContractContent) ===
 definitions:

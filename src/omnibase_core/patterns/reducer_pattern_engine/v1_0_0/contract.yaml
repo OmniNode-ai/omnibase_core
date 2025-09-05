@@ -123,6 +123,21 @@ lifecycle:
   state_persistence_enabled: true
   health_check_interval_s: 30
 
+# === SERVICE RESOLUTION ===
+service_resolution:
+  event_bus:
+    protocol: "ProtocolEventBus"
+    strategy: "hybrid"
+    primary: "kafka"
+    fallback: "event_bus_client"
+    discovery: "consul"
+
+# === ONEX COMPLIANCE ===
+contract_driven: true
+strong_typing: true
+zero_any_types: true
+protocol_based: true
+
 # === DEFINITIONS (Required by ModelContractContent) ===
 definitions:
   models: {}
