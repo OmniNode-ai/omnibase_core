@@ -37,22 +37,22 @@ caching:
     ttl_seconds: 300
     max_idle_seconds: 600
     invalidation_triggers:
-    - data_change
-    - configuration_update
+      - data_change
+      - configuration_update
     batch_invalidation: true
     lazy_expiration: true
-routing:
+routing_subcontract:
   routing_enabled: true
   routing_strategy: path_based
   routes:
-  - route_name: message_route
-    route_pattern: /gateway/route
-    method: POST
-    targets:
-    - target_tools
-    weight: 100
-    priority: 1
-    timeout_ms: 10000
+    - route_name: message_route
+      route_pattern: /gateway/route
+      method: POST
+      targets:
+        - target_tools
+      weight: 100
+      priority: 1
+      timeout_ms: 10000
   load_balancing:
     strategy: round_robin
     health_check_enabled: true
@@ -81,69 +81,69 @@ service_configuration:
   is_persistent_service: false
   requires_external_dependencies: true
   external_services:
-  - name: postgresql
-    endpoint: postgresql://localhost:5432
-    health_check: SELECT 1
-    required: true
+    - name: postgresql
+      endpoint: postgresql://localhost:5432
+      health_check: SELECT 1
+      required: true
 input_state:
   object_type: object
   required:
-  - operation_type
-  - target_tools
-  - message_data
+    - operation_type
+    - target_tools
+    - message_data
   optional:
-  - correlation_id
-  - timeout_ms
-  - cache_strategy
+    - correlation_id
+    - timeout_ms
+    - cache_strategy
 output_state:
   object_type: object
   required:
-  - status
-  - aggregated_response
+    - status
+    - aggregated_response
   optional:
-  - error_message
-  - cache_hit
-  - routing_metrics
+    - error_message
+    - cache_hit
+    - routing_metrics
 actions:
-- name: route_message
-  description: Route message to target tools and aggregate responses
-  inputs:
-  - target_tools
-  - message_data
-  - correlation_id
-  outputs:
-  - aggregated_response
-  - routing_metrics
-- name: health_check
-  description: Check health of group gateway and dependencies
-  inputs: []
-  outputs:
-  - status
-  - dependency_health
-- name: clear_cache
-  description: Clear response cache entries
-  inputs:
-  - cache_pattern
-  outputs:
-  - cleared_entries
-- name: get_routing_metrics
-  description: Get current routing performance metrics
-  inputs: []
-  outputs:
-  - routing_metrics
+  - name: route_message
+    description: Route message to target tools and aggregate responses
+    inputs:
+      - target_tools
+      - message_data
+      - correlation_id
+    outputs:
+      - aggregated_response
+      - routing_metrics
+  - name: health_check
+    description: Check health of group gateway and dependencies
+    inputs: []
+    outputs:
+      - status
+      - dependency_health
+  - name: clear_cache
+    description: Clear response cache entries
+    inputs:
+      - cache_pattern
+    outputs:
+      - cleared_entries
+  - name: get_routing_metrics
+    description: Get current routing performance metrics
+    inputs: []
+    outputs:
+      - routing_metrics
 dependencies:
-- omnibase.protocol.protocol_event_bus
-- omnibase.protocol.protocol_postgresql
-- omnibase.protocol.protocol_file_system
+  - omnibase.protocol.protocol_event_bus
+  - omnibase.protocol.protocol_postgresql
+  - omnibase.protocol.protocol_file_system
 event_type:
   primary_events:
-  - message_routing
-  - response_aggregation
-  - group_coordination
+    - message_routing
+    - response_aggregation
+    - group_coordination
   event_categories:
-  - infrastructure
-  - messaging
-  - workflow_coordination
+    - infrastructure
+    - messaging
+    - workflow_coordination
   publish_events: true
   subscribe_events: true
   event_routing: infrastructure
@@ -173,30 +173,30 @@ strong_typing: true
 zero_any_types: true
 protocol_based: true
 io_operations:
-- operation_type: route_message
-  atomic: true
-  backup_enabled: false
-  permissions: null
-  recursive: false
-  buffer_size: 8192
-  timeout_seconds: 10
-  validation_enabled: true
-- operation_type: cache_lookup
-  atomic: false
-  backup_enabled: true
-  permissions: null
-  recursive: false
-  buffer_size: 4096
-  timeout_seconds: 5
-  validation_enabled: true
-- operation_type: health_check
-  atomic: false
-  backup_enabled: false
-  permissions: null
-  recursive: false
-  buffer_size: 2048
-  timeout_seconds: 3
-  validation_enabled: true
+  - operation_type: route_message
+    atomic: true
+    backup_enabled: false
+    permissions: null
+    recursive: false
+    buffer_size: 8192
+    timeout_seconds: 10
+    validation_enabled: true
+  - operation_type: cache_lookup
+    atomic: false
+    backup_enabled: true
+    permissions: null
+    recursive: false
+    buffer_size: 4096
+    timeout_seconds: 5
+    validation_enabled: true
+  - operation_type: health_check
+    atomic: false
+    backup_enabled: false
+    permissions: null
+    recursive: false
+    buffer_size: 2048
+    timeout_seconds: 3
+    validation_enabled: true
 validation_rules:
   target_tools:
     type: list
@@ -210,25 +210,25 @@ validation_rules:
     type: string
     required: true
     allowed_values:
-    - route
-    - broadcast
-    - aggregate
+      - route
+      - broadcast
+      - aggregate
     description: Type of gateway operation to perform
   strict_typing_enabled: true
   input_validation_enabled: true
   output_validation_enabled: true
   performance_validation_enabled: true
 subcontracts:
-- path: ../../subcontracts/service_resolution_subcontract.yaml
-  integration_field: service_resolution_configuration
-- path: ../../subcontracts/health_check_subcontract.yaml
-  integration_field: health_check_configuration
-- path: ../../subcontracts/introspection_subcontract.yaml
-  integration_field: introspection_configuration
-- path: ../../subcontracts/performance_monitoring_subcontract.yaml
-  integration_field: performance_monitoring_configuration
-- path: ../../subcontracts/request_response_subcontract.yaml
-  integration_field: request_response_configuration
+  - path: ../../subcontracts/service_resolution_subcontract.yaml
+    integration_field: service_resolution_configuration
+  - path: ../../subcontracts/health_check_subcontract.yaml
+    integration_field: health_check_configuration
+  - path: ../../subcontracts/introspection_subcontract.yaml
+    integration_field: introspection_configuration
+  - path: ../../subcontracts/performance_monitoring_subcontract.yaml
+    integration_field: performance_monitoring_configuration
+  - path: ../../subcontracts/request_response_subcontract.yaml
+    integration_field: request_response_configuration
 definitions:
   models: {}
   schemas: {}

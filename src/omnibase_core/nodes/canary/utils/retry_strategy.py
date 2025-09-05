@@ -77,7 +77,7 @@ class RetryExecutionResult(Generic[T]):
     final_exception: Exception | None = None
 
 
-class RetryConfig(BaseModel):
+class ModelRetryConfig(BaseModel):
     """Configuration for retry behavior."""
 
     strategy_type: RetryStrategyType = Field(
@@ -142,7 +142,7 @@ class RetryConfig(BaseModel):
 class RetryStrategy(ABC):
     """Abstract base class for retry strategies."""
 
-    def __init__(self, config: RetryConfig):
+    def __init__(self, config: ModelRetryConfig):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.metrics = get_metrics_collector(
@@ -223,7 +223,7 @@ class JitteredExponentialRetryStrategy(RetryStrategy):
 class FibonacciRetryStrategy(RetryStrategy):
     """Fibonacci sequence based retry strategy."""
 
-    def __init__(self, config: RetryConfig):
+    def __init__(self, config: ModelRetryConfig):
         super().__init__(config)
         self._fib_cache = {1: 1, 2: 1}
 
@@ -246,7 +246,9 @@ class FibonacciRetryStrategy(RetryStrategy):
 class CustomRetryStrategy(RetryStrategy):
     """Custom retry strategy with user-defined delay function."""
 
-    def __init__(self, config: RetryConfig, delay_function: Callable[[int], float]):
+    def __init__(
+        self, config: ModelRetryConfig, delay_function: Callable[[int], float]
+    ):
         super().__init__(config)
         self.delay_function = delay_function
 
@@ -261,7 +263,9 @@ class RetryExecutor:
     """Main retry executor that orchestrates retry attempts."""
 
     def __init__(
-        self, config: RetryConfig, custom_delay_fn: Callable[[int], float] | None = None
+        self,
+        config: ModelRetryConfig,
+        custom_delay_fn: Callable[[int], float] | None = None,
     ):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -495,9 +499,9 @@ class RetryExecutor:
 
 
 # Factory functions for common retry configurations
-def create_api_retry_config() -> RetryConfig:
+def create_api_retry_config() -> ModelRetryConfig:
     """Create retry configuration optimized for API calls."""
-    return RetryConfig(
+    return ModelRetryConfig(
         strategy_type=RetryStrategyType.JITTERED_EXPONENTIAL,
         max_attempts=3,
         base_delay_ms=1000,
@@ -514,9 +518,9 @@ def create_api_retry_config() -> RetryConfig:
     )
 
 
-def create_database_retry_config() -> RetryConfig:
+def create_database_retry_config() -> ModelRetryConfig:
     """Create retry configuration optimized for database operations."""
-    return RetryConfig(
+    return ModelRetryConfig(
         strategy_type=RetryStrategyType.LINEAR,
         max_attempts=2,
         base_delay_ms=500,
@@ -529,9 +533,9 @@ def create_database_retry_config() -> RetryConfig:
     )
 
 
-def create_filesystem_retry_config() -> RetryConfig:
+def create_filesystem_retry_config() -> ModelRetryConfig:
     """Create retry configuration optimized for filesystem operations."""
-    return RetryConfig(
+    return ModelRetryConfig(
         strategy_type=RetryStrategyType.LINEAR,
         max_attempts=2,
         base_delay_ms=100,

@@ -29,7 +29,7 @@ services:
     environment:
       POSTGRES_DB: canary_test
       POSTGRES_USER: canary_user
-      POSTGRES_PASSWORD: canary_pass
+      POSTGRES_PASSWORD: ${CANARY_POSTGRES_PASSWORD:-canary_test_password}
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U canary_user -d canary_test"]
@@ -68,7 +68,7 @@ services:
         condition: service_healthy
     environment:
       - CONSUL_URL=http://consul:8500
-      - POSTGRES_URL=postgresql://canary_user:canary_pass@postgres:5432/canary_test
+      - POSTGRES_URL=postgresql://canary_user:${CANARY_POSTGRES_PASSWORD:-canary_test_password}@postgres:5432/canary_test
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app/src
     volumes:

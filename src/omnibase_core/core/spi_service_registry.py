@@ -3,7 +3,7 @@ SPI-Compliant Service Registry Implementation.
 
 Implements omnibase.protocols.container.ProtocolServiceRegistry to provide
 standardized dependency injection while maintaining backward compatibility
-with existing ONEXContainer usage patterns.
+with existing ModelONEXContainer usage patterns.
 
 Enhanced with protocol-based external dependencies and proper error handling.
 """
@@ -19,7 +19,11 @@ from omnibase.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolServiceInstance,
     ProtocolServiceRegistration,
-    ProtocolServiceRegistryConfig,
+)
+from omnibase.protocols.container import (
+    ProtocolServiceRegistry as ProtocolServiceRegistryConfig,
+)
+from omnibase.protocols.container import (
     ProtocolServiceRegistryStatus,
 )
 
@@ -29,6 +33,9 @@ from omnibase_core.protocol.protocol_database_connection import (
 )
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
+
+# Real protocols imported from omnibase.protocols.container
+
 
 T = TypeVar("T")
 TInterface = TypeVar("TInterface")
@@ -52,7 +59,7 @@ class SPIServiceRegistry:
     """
     SPI-compliant service registry with protocol-based external dependencies.
 
-    Provides a bridge between simple ONEXContainer service resolution
+    Provides a bridge between simple ModelONEXContainer service resolution
     and the comprehensive SPI ProtocolServiceRegistry interface.
 
     Enhanced with automatic fallback strategies and proper error handling
@@ -240,7 +247,7 @@ class SPIServiceRegistry:
         """Get dependency graph."""
         return self._dependency_graph.copy()
 
-    # Backward compatibility methods (ONEXContainer interface)
+    # Backward compatibility methods (ModelONEXContainer interface)
     def configure(self, config: dict[str, Any]) -> None:
         """Configure the container with settings."""
         if not isinstance(config, dict):
@@ -282,12 +289,12 @@ class SPIServiceRegistry:
 
     def register_service(self, protocol_name: str, service_instance: Any) -> str:
         """
-        Register a service instance for a protocol (ONEXContainer compatibility).
+        Register a service instance for a protocol (ModelONEXContainer compatibility).
 
-        This maintains backward compatibility with existing ONEXContainer usage
+        This maintains backward compatibility with existing ModelONEXContainer usage
         while also creating the necessary SPI registration metadata.
         """
-        # Store service for ONEXContainer compatibility
+        # Store service for ModelONEXContainer compatibility
         self._services[protocol_name] = service_instance
 
         # Create SPI-compliant registration metadata
@@ -357,9 +364,9 @@ class SPIServiceRegistry:
 
     def get_service(self, protocol_name: str) -> Any:
         """
-        Get service by protocol name (ONEXContainer compatibility).
+        Get service by protocol name (ModelONEXContainer compatibility).
 
-        Maintains existing ONEXContainer behavior for backward compatibility.
+        Maintains existing ModelONEXContainer behavior for backward compatibility.
         """
         # Handle direct protocol name resolution
         if protocol_name in self._services:
@@ -475,7 +482,7 @@ def get_spi_registry() -> SPIServiceRegistry:
     """
     Get or create global SPI registry instance (thread-safe).
 
-    Provides the same singleton pattern as ONEXContainer but with
+    Provides the same singleton pattern as ModelONEXContainer but with
     SPI compliance and enhanced error handling.
     """
     global _spi_registry

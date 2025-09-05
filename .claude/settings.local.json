@@ -12,7 +12,14 @@
       "mcp__archon__perform_rag_query",
       "mcp__archon__create_version",
       "mcp__archon__search_code_examples",
-      "mcp__archon__assess_code_quality"
+      "mcp__archon__assess_code_quality",
+      "mcp__archon__list_tasks",
+      "mcp__archon__get_task",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_file",
+      "mcp__archon__check_architectural_compliance",
+      "mcp__archon__get_quality_patterns",
+      "Bash(yamllint:*)"
     ],
     "deny": [],
     "ask": []

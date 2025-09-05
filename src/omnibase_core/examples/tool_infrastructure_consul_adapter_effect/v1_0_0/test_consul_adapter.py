@@ -14,7 +14,7 @@ from uuid import uuid4
 import consul as python_consul
 import pytest
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
     ModelConsulHealthResponse,
@@ -48,7 +48,7 @@ class TestConsulAdapterEffect:
     @pytest.fixture
     def container(self):
         """Mock ONEX container for testing."""
-        return ONEXContainer()
+        return ModelONEXContainer()
 
     @pytest.fixture
     def consul_env_vars(self, consul_config):

@@ -39,7 +39,7 @@ actions:
 # === INTROSPECTION CONFIGURATION ===
 introspection_config:
   auto_registration: true
-  discovery_interval_ms: 60000  # 1 minute
+  discovery_interval_ms: 60000 # 1 minute
   capability_refresh_ms: 300000 # 5 minutes
   include_performance_data: true
   include_dependency_health: true
@@ -55,7 +55,7 @@ output_models:
     status: "enum[HEALTHY,DEGRADED,UNHEALTHY,CRITICAL]"
     uptime_ms: "integer"
     last_updated: "datetime"
-    
+
   capabilities:
     actions:
       type: "array"
@@ -64,14 +64,14 @@ output_models:
         description: "string"
         required: "boolean"
         timeout_ms: "integer"
-        
+
   runtime_stats:
     requests_processed: "integer"
     average_response_time_ms: "float"
     error_count: "integer"
     memory_usage_mb: "float"
     cpu_usage_percent: "float"
-    
+
   peer_nodes:
     type: "array"
     items:
@@ -86,7 +86,7 @@ dependencies:
   - name: "node_discovery"
     type: "capability"
     description: "Provides node discovery and registration capabilities"
-    
+
   - name: "capability_reporting"
     type: "capability"
     description: "Provides capability introspection and reporting"
@@ -97,15 +97,15 @@ metrics:
     type: "counter"
     description: "Total number of introspection requests"
     labels: ["request_type"]
-    
+
   - name: "discovery_operations"
     type: "counter"
     description: "Number of peer discovery operations"
-    
+
   - name: "capability_queries"
-    type: "counter" 
+    type: "counter"
     description: "Number of capability queries processed"
-    
+
   - name: "peer_count"
     type: "gauge"
     description: "Current number of discovered peer nodes"

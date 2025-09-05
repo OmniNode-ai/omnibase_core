@@ -1,0 +1,273 @@
+# State Management Contract - Reducer Pattern Engine
+# Defines state machine behavior and transition specifications
+
+name: "state_management"
+version: "1.0.0"
+description: "State management contract for workflow lifecycle tracking"
+
+# State Machine Configuration
+state_machine:
+  name: "workflow_state_machine"
+  type: "finite_state_machine"
+  persistence_enabled: true
+  transition_logging: true
+
+  configuration:
+    strict_transitions: true
+    allow_self_transitions: false
+    validate_triggers: true
+    audit_trail: true
+
+# State Definitions
+states:
+  pending:
+    name: "PENDING"
+    description: "Workflow awaiting processing"
+    type: "initial"
+    properties:
+      timeout_s: null
+      retry_enabled: false
+      persistence_required: true
+
+  routing:
+    name: "ROUTING"
+    description: "Workflow being routed to appropriate subreducer"
+    type: "transient"
+    properties:
+      timeout_s: 30
+      retry_enabled: true
+      persistence_required: true
+
+  processing:
+    name: "PROCESSING"
+    description: "Workflow being processed by subreducer"
+    type: "active"
+    properties:
+      timeout_s: 30000
+      retry_enabled: false
+      persistence_required: true
+      heartbeat_interval_s: 10
+
+  completed:
+    name: "COMPLETED"
+    description: "Workflow processing completed successfully"
+    type: "final"
+    properties:
+      timeout_s: null
+      retry_enabled: false
+      persistence_required: true
+      cleanup_delay_s: 300
+
+  failed:
+    name: "FAILED"
+    description: "Workflow processing failed"
+    type: "final"
+    properties:
+      timeout_s: null
+      retry_enabled: false
+      persistence_required: true
+      cleanup_delay_s: 3600
+
+# Transition Definitions
+transitions:
+  start_routing:
+    name: "route_workflow"
+    from_state: "PENDING"
+    to_state: "ROUTING"
+    trigger: "route_workflow"
+    conditions: []
+    side_effects:
+      - "log_transition"
+      - "update_metrics"
+
+  start_processing:
+    name: "start_processing"
+    from_state: "ROUTING"
+    to_state: "PROCESSING"
+    trigger: "start_processing"
+    conditions:
+      - "subreducer_available"
+      - "valid_workflow_payload"
+    side_effects:
+      - "log_transition"
+      - "start_processing_timer"
+      - "update_metrics"
+
+  complete_workflow:
+    name: "complete_workflow"
+    from_state: "PROCESSING"
+    to_state: "COMPLETED"
+    trigger: "complete_workflow"
+    conditions:
+      - "processing_successful"
+      - "valid_result"
+    side_effects:
+      - "log_transition"
+      - "stop_processing_timer"
+      - "record_success_metrics"
+      - "schedule_cleanup"
+
+  fail_workflow:
+    name: "fail_workflow"
+    from_state: "PROCESSING"
+    to_state: "FAILED"
+    trigger: "fail_workflow"
+    conditions: []
+    side_effects:
+      - "log_transition"
+      - "log_error_details"
+      - "stop_processing_timer"
+      - "record_failure_metrics"
+      - "schedule_cleanup"
+
+  error_during_routing:
+    name: "routing_error"
+    from_state: "ROUTING"
+    to_state: "FAILED"
+    trigger: "error_occurred"
+    conditions: []
+    side_effects:
+      - "log_transition"
+      - "log_error_details"
+      - "record_failure_metrics"
+
+  error_during_processing:
+    name: "processing_error"
+    from_state: "PROCESSING"
+    to_state: "FAILED"
+    trigger: "error_occurred"
+    conditions: []
+    side_effects:
+      - "log_transition"
+      - "log_error_details"
+      - "stop_processing_timer"
+      - "record_failure_metrics"
+
+# Trigger Definitions
+triggers:
+  route_workflow:
+    description: "Initiate workflow routing to subreducer"
+    parameters:
+      - name: "workflow_request"
+        type: "WorkflowRequest"
+        required: true
+
+  start_processing:
+    description: "Begin workflow processing by subreducer"
+    parameters:
+      - name: "subreducer_instance"
+        type: "BaseSubreducer"
+        required: true
+
+      - name: "routing_decision"
+        type: "RoutingDecision"
+        required: true
+
+  complete_workflow:
+    description: "Mark workflow as completed successfully"
+    parameters:
+      - name: "result"
+        type: "SubreducerResult"
+        required: true
+
+  fail_workflow:
+    description: "Mark workflow as failed"
+    parameters:
+      - name: "error_message"
+        type: "str"
+        required: true
+
+      - name: "error_details"
+        type: "Dict[str, Any]"
+        required: false
+
+  error_occurred:
+    description: "Handle error during workflow processing"
+    parameters:
+      - name: "error"
+        type: "Exception"
+        required: true
+
+# Condition Definitions
+conditions:
+  subreducer_available:
+    description: "Check if subreducer is available for processing"
+    implementation: "registry.has_healthy_subreducer"
+
+  valid_workflow_payload:
+    description: "Validate workflow payload structure"
+    implementation: "validator.validate_payload"
+
+  processing_successful:
+    description: "Check if processing completed without errors"
+    implementation: "result.success == True"
+
+  valid_result:
+    description: "Validate processing result structure"
+    implementation: "validator.validate_result"
+
+# Side Effect Definitions
+side_effects:
+  log_transition:
+    description: "Log state transition for audit trail"
+    implementation: "logger.log_state_transition"
+
+  update_metrics:
+    description: "Update state transition metrics"
+    implementation: "metrics.record_state_change"
+
+  start_processing_timer:
+    description: "Start processing duration timer"
+    implementation: "metrics.start_timer"
+
+  stop_processing_timer:
+    description: "Stop processing duration timer"
+    implementation: "metrics.stop_timer"
+
+  record_success_metrics:
+    description: "Record successful completion metrics"
+    implementation: "metrics.record_success"
+
+  record_failure_metrics:
+    description: "Record failure metrics"
+    implementation: "metrics.record_failure"
+
+  log_error_details:
+    description: "Log detailed error information"
+    implementation: "logger.log_error"
+
+  schedule_cleanup:
+    description: "Schedule state cleanup after delay"
+    implementation: "scheduler.schedule_cleanup"
+
+# Validation Rules
+validation:
+  state_invariants:
+    - "Only one workflow can be in PROCESSING state per instance_id"
+    - "COMPLETED and FAILED states cannot transition to other states"
+    - "All workflows must eventually reach a final state"
+
+  transition_guards:
+    - "Transitions must have valid triggers"
+    - "All required conditions must be met"
+    - "State machine must remain consistent"
+
+  data_constraints:
+    - "workflow_id must be unique and valid UUID"
+    - "instance_id must be non-empty string"
+    - "transition timestamps must be monotonic"
+
+# Persistence Configuration
+persistence:
+  enabled: true
+  backend: "memory"
+
+  storage_config:
+    retention_period_hours: 24
+    cleanup_interval_s: 3600
+    max_states_per_workflow: 100
+
+  recovery:
+    enabled: true
+    recovery_timeout_s: 60
+    incomplete_state_handling: "mark_failed"

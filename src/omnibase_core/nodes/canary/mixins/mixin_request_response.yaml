@@ -54,7 +54,7 @@ request_response_config:
   request_logging_enabled: true
   response_caching:
     enabled: false
-    ttl_ms: 300000  # 5 minutes
+    ttl_ms: 300000 # 5 minutes
     max_cache_size_mb: 100
 
 # === REQUEST PATTERNS BY NODE TYPE ===
@@ -65,21 +65,21 @@ node_request_patterns:
     typical_processing_time_ms: 2000
     supports_streaming: false
     supports_batching: true
-    
+
   EFFECT:
     request_types: ["effect_execution", "io_operation", "external_call"]
     response_types: ["effect_result", "io_result", "external_response"]
     typical_processing_time_ms: 5000
     supports_streaming: true
     supports_batching: false
-    
+
   REDUCER:
     request_types: ["aggregation_request", "state_query", "reduction_operation"]
     response_types: ["aggregation_result", "state_snapshot", "reduction_output"]
     typical_processing_time_ms: 3000
     supports_streaming: true
     supports_batching: true
-    
+
   ORCHESTRATOR:
     request_types: ["workflow_request", "coordination_command", "task_assignment"]
     response_types: ["workflow_status", "coordination_result", "task_acknowledgment"]
@@ -103,7 +103,7 @@ output_models:
     processing_options:
       timeout_ms: "integer"
       priority: "enum[LOW,NORMAL,HIGH,CRITICAL]"
-      
+
   response_envelope:
     response_id: "string"
     request_id: "string"
@@ -116,7 +116,7 @@ output_models:
       type: "object"
       additionalProperties: "string"
     payload: "object"
-    
+
   processing_metadata:
     processing_node: "string"
     processing_time_ms: "integer"
@@ -127,7 +127,7 @@ output_models:
     validation_results:
       input_valid: "boolean"
       output_valid: "boolean"
-      
+
   error_response:
     error_code: "string"
     error_message: "string"
@@ -137,7 +137,7 @@ output_models:
       properties:
         stack_trace: "string"
         context: "object"
-        suggestions: 
+        suggestions:
           type: "array"
           items: "string"
     recovery_actions:
@@ -154,9 +154,9 @@ validation_schemas:
       request_type: "string"
       payload: "object"
     field_constraints:
-      request_id: "^[a-zA-Z0-9-]{36}$"  # UUID format
-      request_type: "^[a-z][a-z_]*[a-z]$"  # snake_case
-      
+      request_id: "^[a-zA-Z0-9-]{36}$" # UUID format
+      request_type: "^[a-z][a-z_]*[a-z]$" # snake_case
+
   response_validation:
     required_fields: ["response_id", "request_id", "status", "payload"]
     field_types:
@@ -177,20 +177,20 @@ error_handling:
       max_retries: 1
       retry_delay_ms: 500
     validation_errors:
-      max_retries: 0  # Don't retry validation errors
-      
+      max_retries: 0 # Don't retry validation errors
+
   circuit_breaker:
     enabled: true
     failure_threshold: 5
-    timeout_ms: 60000  # 1 minute
-    recovery_timeout_ms: 30000  # 30 seconds
+    timeout_ms: 60000 # 1 minute
+    recovery_timeout_ms: 30000 # 30 seconds
 
 # === DEPENDENCIES PROVIDED ===
 dependencies:
   - name: "request_processing"
     type: "capability"
     description: "Provides request processing and response generation capabilities"
-    
+
   - name: "request_validation"
     type: "capability"
     description: "Provides request/response validation capabilities"
@@ -201,32 +201,32 @@ metrics:
     type: "counter"
     description: "Total number of requests processed"
     labels: ["request_type", "status", "node_type"]
-    
+
   - name: "request_processing_time"
     type: "histogram"
     description: "Time taken to process requests"
     labels: ["request_type", "node_type"]
     buckets: [10, 50, 100, 500, 1000, 5000, 10000, 30000]
-    
+
   - name: "active_requests"
     type: "gauge"
     description: "Number of currently active requests"
-    
+
   - name: "request_size"
     type: "histogram"
     description: "Size of incoming requests in bytes"
     labels: ["request_type"]
-    
+
   - name: "response_size"
     type: "histogram"
     description: "Size of outgoing responses in bytes"
     labels: ["request_type"]
-    
+
   - name: "validation_errors"
     type: "counter"
     description: "Number of request validation errors"
     labels: ["error_type", "field_name"]
-    
+
   - name: "processing_errors"
     type: "counter"
     description: "Number of request processing errors"

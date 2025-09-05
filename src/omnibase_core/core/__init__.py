@@ -4,23 +4,15 @@ ONEX Core Architecture
 The foundational layer for all ONEX tools and nodes.
 """
 
-from .infrastructure_service_bases import (
-    NodeComputeService,
-    NodeEffectService,
-    NodeOrchestratorService,
-    NodeReducerService,
-)
+# Note: Infrastructure service bases are not exported from core to avoid circular imports
+# Import them directly from infrastructure_service_bases module instead
 from .node_base import ModelNodeBase
-from .onex_container import ONEXContainer
+from .onex_container import ModelONEXContainer
 from .spi_service_registry import SPIServiceRegistry, create_spi_service_registry
 
 __all__ = [
     "ModelNodeBase",
-    "NodeComputeService",
-    "NodeEffectService",
-    "NodeOrchestratorService",
-    "NodeReducerService",
-    "ONEXContainer",
+    "ModelONEXContainer",
     "SPIServiceRegistry",
     "create_spi_service_registry",
 ]

@@ -1,0 +1,162 @@
+# Registry Contract - Reducer Pattern Engine
+# Defines subreducer registration and management specifications
+
+name: "subreducer_registry"
+version: "1.0.0"
+description: "Manual subreducer registration and management contract"
+
+# Registry Configuration
+registry_config:
+  registration_type: "manual"
+  auto_discovery: false
+  validation_enabled: true
+  health_monitoring: true
+
+  capacity:
+    max_subreducers: 50
+    max_workflows_per_subreducer: 10
+
+  timeouts:
+    registration_timeout_s: 30
+    health_check_timeout_s: 10
+    cleanup_timeout_s: 15
+
+# Subreducer Registration Specification
+subreducer_specification:
+  required_fields:
+    - "workflow_type"
+    - "subreducer_class"
+    - "module_path"
+    - "capabilities"
+
+  optional_fields:
+    - "metadata"
+    - "configuration"
+    - "health_check_url"
+    - "dependencies"
+
+  validation_rules:
+    class_name_pattern: "^[A-Z][a-zA-Z0-9_]*Subreducer$"
+    module_path_pattern: "^omnibase_core\\."
+    workflow_type_values: ["DATA_ANALYSIS", "REPORT_GENERATION", "DOCUMENT_REGENERATION"]
+
+# Health Check Configuration
+health_checks:
+  enabled: true
+  interval_s: 60
+  timeout_s: 10
+  retry_count: 3
+  retry_interval_s: 5
+
+  checks:
+    - name: "instance_health"
+      description: "Check if subreducer instance is healthy"
+      method: "ping"
+
+    - name: "processing_capacity"
+      description: "Check if subreducer can accept new work"
+      method: "capacity_check"
+
+    - name: "dependency_health"
+      description: "Check subreducer dependencies are available"
+      method: "dependency_check"
+
+# Lifecycle Management
+lifecycle:
+  registration:
+    auto_instantiate: true
+    validation_on_register: true
+    duplicate_handling: "reject"
+
+  deregistration:
+    graceful_shutdown: true
+    drain_timeout_s: 60
+    force_shutdown_timeout_s: 30
+
+  updates:
+    hot_updates_supported: false
+    requires_restart: true
+    validation_required: true
+
+# Registry Operations
+operations:
+  register_subreducer:
+    description: "Register a new subreducer for workflow processing"
+    parameters:
+      - name: "workflow_type"
+        type: "WorkflowType"
+        required: true
+
+      - name: "subreducer_class"
+        type: "Type[BaseSubreducer]"
+        required: true
+
+      - name: "metadata"
+        type: "Dict[str, Any]"
+        required: false
+
+  get_subreducer_instance:
+    description: "Get subreducer instance for workflow type"
+    parameters:
+      - name: "workflow_type"
+        type: "WorkflowType"
+        required: true
+    returns: "Optional[BaseSubreducer]"
+
+  health_check_subreducers:
+    description: "Perform health check on all registered subreducers"
+    returns: "Dict[str, bool]"
+
+  list_registered_subreducers:
+    description: "List all registered subreducers with metadata"
+    returns: "Dict[str, Dict[str, Any]]"
+
+# Error Handling
+error_handling:
+  registration_failures:
+    - error_type: "ClassNotFound"
+      action: "reject_registration"
+      message: "Subreducer class not found or not importable"
+
+    - error_type: "InvalidWorkflowType"
+      action: "reject_registration"
+      message: "Workflow type not supported"
+
+    - error_type: "DuplicateRegistration"
+      action: "reject_registration"
+      message: "Subreducer already registered for workflow type"
+
+  runtime_failures:
+    - error_type: "HealthCheckFailure"
+      action: "mark_unhealthy"
+      retry_policy: "exponential_backoff"
+
+    - error_type: "ProcessingFailure"
+      action: "log_and_continue"
+      monitoring: "increase_error_counter"
+
+# Monitoring and Observability
+monitoring:
+  metrics:
+    - name: "registered_subreducers_count"
+      type: "gauge"
+      description: "Number of registered subreducers"
+
+    - name: "healthy_subreducers_count"
+      type: "gauge"
+      description: "Number of healthy subreducers"
+
+    - name: "registration_attempts"
+      type: "counter"
+      description: "Total registration attempts"
+      labels: ["status"]
+
+    - name: "health_check_duration_ms"
+      type: "histogram"
+      description: "Health check duration in milliseconds"
+
+  logging:
+    level: "INFO"
+    include_metadata: true
+    log_health_checks: false
+    log_registrations: true

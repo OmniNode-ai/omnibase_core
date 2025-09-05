@@ -50,7 +50,7 @@ class RegistryArtifactType(str, Enum):
     PACKAGES = "packages"
 
 
-class RegistryArtifactModelMetadata(BaseModel):
+class ModelRegistryArtifactMetadata(BaseModel):
     # Canonical fields for artifact metadata; extend as needed
     description: str | None = None
     author: str | None = None
@@ -87,16 +87,16 @@ class RegistryArtifactModelMetadata(BaseModel):
             object.__setattr__(self, "description", "No description")
 
 
-class RegistryArtifactInfo(BaseModel):
+class ModelRegistryArtifactInfo(BaseModel):
     name: str
     version: str
     artifact_type: RegistryArtifactType
     path: str
-    metadata: RegistryArtifactModelMetadata
+    metadata: ModelRegistryArtifactMetadata
     is_wip: bool = False
 
 
-class RegistryStatus(BaseModel):
+class ModelRegistryStatus(BaseModel):
     status: EnumOnexStatus
     message: str
     artifact_count: int
@@ -115,18 +115,18 @@ class ProtocolRegistry(Protocol):
     without exposing implementation-specific details.
     """
 
-    def get_status(self) -> RegistryStatus:
+    def get_status(self) -> ModelRegistryStatus:
         """Get registry loading status and statistics."""
         ...
 
-    def get_artifacts(self) -> list[RegistryArtifactInfo]:
+    def get_artifacts(self) -> list[ModelRegistryArtifactInfo]:
         """Get all artifacts in the registry."""
         ...
 
     def get_artifacts_by_type(
         self,
         artifact_type: RegistryArtifactType,
-    ) -> list[RegistryArtifactInfo]:
+    ) -> list[ModelRegistryArtifactInfo]:
         """Get artifacts filtered by type."""
         ...
 
@@ -134,7 +134,7 @@ class ProtocolRegistry(Protocol):
         self,
         name: str,
         artifact_type: RegistryArtifactType | None = None,
-    ) -> RegistryArtifactInfo:
+    ) -> ModelRegistryArtifactInfo:
         """
         Get a specific artifact by name.
 
@@ -143,7 +143,7 @@ class ProtocolRegistry(Protocol):
             artifact_type: Optional type filter
 
         Returns:
-            RegistryArtifactInfo: The found artifact
+            ModelRegistryArtifactInfo: The found artifact
 
         Raises:
             OnexError: If artifact is not found
@@ -159,6 +159,6 @@ class ProtocolRegistry(Protocol):
         ...
 
 
-RegistryArtifactModelMetadata.model_rebuild()
-RegistryArtifactInfo.model_rebuild()
-RegistryStatus.model_rebuild()
+ModelRegistryArtifactMetadata.model_rebuild()
+ModelRegistryArtifactInfo.model_rebuild()
+ModelRegistryStatus.model_rebuild()

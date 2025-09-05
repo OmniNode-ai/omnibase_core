@@ -32,7 +32,7 @@ from omnibase_core.core.node_orchestrator import (
 from omnibase_core.core.node_reducer import (
     NodeReducer,
 )
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
@@ -146,7 +146,7 @@ class NodeArchitectureValidator:
                 "message": f"Essential methods validation {'passed' if len(missing_methods) == 0 else 'failed'}",
             }
 
-            # Test 3: ONEXContainer integration
+            # Test 3: ModelONEXContainer integration
             class TestNode(NodeCoreBase):
                 async def process(self, input_data):
                     return {"test": "success"}
@@ -162,7 +162,7 @@ class NodeArchitectureValidator:
             self.validation_results["foundation"]["container_integration"] = {
                 "passed": all(container_validation.values()),
                 "details": container_validation,
-                "message": "ONEXContainer integration validation",
+                "message": "ModelONEXContainer integration validation",
             }
 
         except Exception as e:
@@ -404,7 +404,7 @@ class NodeArchitectureValidator:
         """Validate ONEX standards compliance."""
         try:
             standards_checks = {
-                "uses_onex_container": True,  # All nodes use ONEXContainer
+                "uses_onex_container": True,  # All nodes use ModelONEXContainer
                 "proper_error_handling": True,  # Uses OnexError with chaining
                 "protocol_based_duck_typing": True,  # Uses container.get_service()
                 "structured_logging": True,  # Uses emit_log_event
@@ -469,8 +469,8 @@ class NodeArchitectureValidator:
             "success_rate": passed / total if total > 0 else 0.0,
         }
 
-    def _create_mock_container(self) -> ONEXContainer:
-        """Create mock ONEXContainer for testing."""
+    def _create_mock_container(self) -> ModelONEXContainer:
+        """Create mock ModelONEXContainer for testing."""
 
         class MockContainer:
             def get_service(self, service_name: str):

@@ -6,7 +6,7 @@ This eliminates the need for every single node to manually wire up mixin initial
 """
 
 from omnibase_core.core.node_effect import NodeEffect
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.mixin.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixin.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixin.mixin_node_service import MixinNodeService
@@ -41,7 +41,7 @@ class NodeEffectService(
         """Allow setting node_id (compatibility with NodeCoreBase)."""
         self._node_id = value
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize with proper mixin coordination."""
         # Initialize contract loading first
         MixinNodeIdFromContract.__init__(self)

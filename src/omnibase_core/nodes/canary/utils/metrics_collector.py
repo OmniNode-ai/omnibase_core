@@ -26,7 +26,7 @@ class MetricPoint:
     labels: Dict[str, str]
 
 
-class MetricSummary(BaseModel):
+class ModelMetricSummary(BaseModel):
     """Summary statistics for a metric."""
 
     count: int
@@ -39,7 +39,7 @@ class MetricSummary(BaseModel):
     p99: float
 
 
-class NodeMetrics(BaseModel):
+class ModelNodeMetrics(BaseModel):
     """Comprehensive metrics for a canary node."""
 
     # Operation metrics
@@ -195,7 +195,7 @@ class MetricsCollector:
                 self.record_histogram(metric_name, float(value), labels)
             )
 
-    def get_node_metrics(self) -> NodeMetrics:
+    def get_node_metrics(self) -> ModelNodeMetrics:
         """Get comprehensive metrics summary for the node."""
 
         # Calculate operation metrics
@@ -259,7 +259,7 @@ class MetricsCollector:
             if key.startswith("custom.")
         }
 
-        return NodeMetrics(
+        return ModelNodeMetrics(
             total_operations=total_ops,
             successful_operations=success_ops,
             failed_operations=failed_ops,
@@ -283,7 +283,7 @@ class MetricsCollector:
             custom_metrics=custom_metrics,
         )
 
-    def get_metric_summary(self, metric_name: str) -> Optional[MetricSummary]:
+    def get_metric_summary(self, metric_name: str) -> Optional[ModelMetricSummary]:
         """Get summary statistics for a specific metric."""
         values = []
 
@@ -302,7 +302,7 @@ class MetricsCollector:
 
         sorted_values = sorted(values)
 
-        return MetricSummary(
+        return ModelMetricSummary(
             count=len(values),
             sum=sum(values),
             min=min(values),

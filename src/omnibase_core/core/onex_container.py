@@ -30,7 +30,7 @@ from omnibase_core.exceptions.base_onex_error import OnexError
 T = TypeVar("T")
 
 
-class ONEXContainer:
+class ModelONEXContainer:
     """
     Protocol-driven ONEX dependency injection container.
 
@@ -125,7 +125,7 @@ class ONEXContainer:
 # === CONTAINER FACTORY ===
 
 
-def create_onex_container() -> ONEXContainer:
+def create_onex_container() -> ModelONEXContainer:
     """
     Create and configure ONEX container.
 
@@ -134,7 +134,7 @@ def create_onex_container() -> ONEXContainer:
     Note: For SPI compliance, consider using create_spi_service_registry()
     from omnibase_core.core.spi_service_registry instead.
     """
-    container = ONEXContainer()
+    container = ModelONEXContainer()
 
     # Load basic configuration from environment
     config = {
@@ -148,11 +148,11 @@ def create_onex_container() -> ONEXContainer:
 
 
 # === GLOBAL CONTAINER INSTANCE ===
-_container: ONEXContainer | None = None
+_container: ModelONEXContainer | None = None
 _container_lock = threading.Lock()
 
 
-def get_container() -> ONEXContainer:
+def get_container() -> ModelONEXContainer:
     """
     Get or create global container instance (thread-safe).
 
@@ -160,7 +160,7 @@ def get_container() -> ONEXContainer:
     instance is created even in concurrent environments.
 
     Returns:
-        Global ONEXContainer instance
+        Global ModelONEXContainer instance
 
     Example:
         # Safe to call from multiple threads

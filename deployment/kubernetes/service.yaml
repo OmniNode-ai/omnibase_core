@@ -1,0 +1,53 @@
+# ONEX API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: onex-api-service
+  namespace: onex
+  labels:
+    app.kubernetes.io/name: onex
+    app.kubernetes.io/component: service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: onex
+    app.kubernetes.io/component: api
+
+---
+# ONEX API LoadBalancer Service (for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: onex-api-lb
+  namespace: onex
+  labels:
+    app.kubernetes.io/name: onex
+    app.kubernetes.io/component: loadbalancer
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: onex
+    app.kubernetes.io/component: api
+  sessionAffinity: ClientIP

@@ -28,7 +28,7 @@ from omnibase_core.core.monadic.model_node_result import (
     LogEntry,
     NodeResult,
 )
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.mixin.mixin_event_listener import MixinEventListener
 from omnibase_core.mixin.mixin_introspection_publisher import (
@@ -63,7 +63,7 @@ class ModelNodeBase(
     - Monadic NodeResult composition with bind operations
     - LlamaIndex workflow integration for complex orchestration
     - Observable state transitions with event emission
-    - Contract-driven initialization with ONEXContainer
+    - Contract-driven initialization with ModelONEXContainer
     - Universal hub pattern support with signal orchestration
     - Comprehensive error handling and recovery mechanisms
 
@@ -80,7 +80,7 @@ class ModelNodeBase(
     - Observable workflow execution with monitoring support
 
     **CONTRACT-DRIVEN ARCHITECTURE**:
-    - ONEXContainer dependency injection from contracts
+    - ModelONEXContainer dependency injection from contracts
     - Automatic tool resolution and configuration
     - Declarative behavior specification via YAML contracts
     - Type-safe contract validation and generation
@@ -97,7 +97,7 @@ class ModelNodeBase(
         contract_path: Path,
         node_id: str | None = None,
         event_bus: object | None = None,
-        container: ONEXContainer | None = None,
+        container: ModelONEXContainer | None = None,
         workflow_id: str | None = None,
         session_id: str | None = None,
         **kwargs,
@@ -109,7 +109,7 @@ class ModelNodeBase(
             contract_path: Path to the contract file
             node_id: Optional node identifier (derived from contract if not provided)
             event_bus: Optional event bus for event emission and subscriptions
-            container: Optional pre-created ONEXContainer (created from contract if not provided)
+            container: Optional pre-created ModelONEXContainer (created from contract if not provided)
             workflow_id: Optional workflow identifier for orchestration tracking
             session_id: Optional session identifier for correlation
             **kwargs: Additional initialization parameters
@@ -124,7 +124,7 @@ class ModelNodeBase(
 
         # Store initialization parameters
         self._contract_path = contract_path
-        self._container: ONEXContainer | None = None
+        self._container: ModelONEXContainer | None = None
         self._main_tool = None
         self._reducer_state: ModelState | None = None
         self._workflow_instance = None
@@ -165,7 +165,7 @@ class ModelNodeBase(
         contract_path: Path,
         node_id: str | None,
         event_bus: object | None,
-        container: ONEXContainer | None,
+        container: ModelONEXContainer | None,
     ):
         """Load contract and initialize core components."""
         # Load contract service
@@ -720,8 +720,8 @@ class ModelNodeBase(
     # ===== PROPERTIES =====
 
     @property
-    def container(self) -> ONEXContainer:
-        """Get the ONEXContainer instance for dependency injection."""
+    def container(self) -> ModelONEXContainer:
+        """Get the ModelONEXContainer instance for dependency injection."""
         return self._container
 
     @property

@@ -44,29 +44,25 @@ This __init__.py maintains backward compatibility by re-exporting
 all models at the package level.
 """
 
-# Cross-domain interface
-from . import __exposed__
-from .configuration import *
+# Cross-domain interface - import submodules only, no star imports
+from . import (
+    __exposed__,
+    configuration,
+    core,
+    detection,
+    discovery,
+    endpoints,
+    execution,
+    health,
+    registry,
+    security,
+    service,
+    validation,
+    workflow,
+)
 
-# Import all domain models to maintain backward compatibility
-from .core import *
-
-# Import specific backward compatibility models
-from .core.model_result_cli import *
-from .detection import *
-from .discovery import *
-from .endpoints import *
-from .execution import *
-from .health import *
-from .registry import *
-
-# Scenario models removed - migrated to workflows
-from .security import *
-from .service import *
-from .validation import *
-
-# New domains for Workflow orchestration and execution
-from .workflow import *
+# Only import specific models that are actually needed at package level
+# Remove the massive star imports that cause circular dependencies
 
 # Re-export domains for direct access
 __all__ = [
@@ -90,27 +86,11 @@ __all__ = [
     # through star imports above, maintaining full backward compatibility
 ]
 
-from omnibase_core.model.core.model_environment import ModelEnvironment
-from omnibase_core.model.registry.model_registry_health_report import (
-    ModelRegistryHealthReport,
-)
-from omnibase_core.model.registry.model_registry_validation_result import (
-    ModelRegistryValidationResult,
-)
+# Remove specific imports to avoid circular dependencies
+# These should be imported directly when needed
 
 # Phase 2 imports for generic dict replacement
 
-# Rebuild models with forward references after all imports
-# Scenario models removed - migrated to workflows
-
-
-# Rebuild models now that their forward references are available
-# ScenarioConfigModel.model_rebuild()  # Removed - migrated to workflows
-ModelRegistryValidationResult.model_rebuild()
-ModelRegistryHealthReport.model_rebuild()
-ModelEnvironment.model_rebuild()
-
-# Rebuild models with forward references after TYPE_CHECKING imports
-from omnibase_core.model.core.model_fallback_strategy import ModelFallbackStrategy
-
-ModelFallbackStrategy.model_rebuild()
+# Remove problematic model rebuilds that depend on star imports
+# Models should handle their own forward references or be imported individually
+# TODO: Move model rebuilds to their respective domain modules if needed

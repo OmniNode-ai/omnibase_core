@@ -1,0 +1,117 @@
+# ONEX Alerting Rules
+groups:
+  - name: onex-api-alerts
+    rules:
+      - alert: ONEXAPIDown
+        expr: up{job="onex-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ONEX API instance is down"
+          description: "ONEX API instance {{ $labels.instance }} has been down for more than 5 minutes."
+
+      - alert: ONEXAPIHighErrorRate
+        expr: rate(http_requests_total{job="onex-api",status=~"5.."}[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on ONEX API"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: ONEXAPIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="onex-api"}[5m])) > 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on ONEX API"
+          description: "95th percentile latency is {{ $value }}s on {{ $labels.instance }}"
+
+      - alert: ONEXAPIHighMemoryUsage
+        expr: process_resident_memory_bytes{job="onex-api"} > 2147483648 # 2GB
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on ONEX API"
+          description: "Memory usage is {{ $value | humanizeBytes }} on {{ $labels.instance }}"
+
+  - name: onex-processing-alerts
+    rules:
+      - alert: ONEXProcessingQueueFull
+        expr: onex_processing_queue_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ONEX processing queue is full"
+          description: "Processing queue has {{ $value }} items pending"
+
+      - alert: ONEXProcessingHighFailureRate
+        expr: rate(onex_processing_requests_failed_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High processing failure rate"
+          description: "Processing failure rate is {{ $value | humanizePercentage }}"
+
+  - name: onex-database-alerts
+    rules:
+      - alert: ONEXDatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ONEX database is down"
+          description: "PostgreSQL database has been down for more than 5 minutes."
+
+      - alert: ONEXDatabaseHighConnections
+        expr: pg_stat_database_numbackends{datname="onex"} > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections"
+          description: "Database has {{ $value }} active connections"
+
+      - alert: ONEXDatabaseSlowQueries
+        expr: pg_stat_database_tup_returned{datname="onex"} / pg_stat_database_tup_fetched{datname="onex"} < 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Query efficiency is low: {{ $value | humanizePercentage }}"
+
+  - name: onex-system-alerts
+    rules:
+      - alert: ONEXHighCPUUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: ONEXHighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: ONEXLowDiskSpace
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"}) > 85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }}"

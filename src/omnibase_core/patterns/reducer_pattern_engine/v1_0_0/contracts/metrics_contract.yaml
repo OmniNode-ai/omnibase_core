@@ -1,0 +1,127 @@
+# Metrics Contract - Reducer Pattern Engine
+# Defines metrics collection and performance monitoring specifications
+
+name: "metrics_collection"
+version: "1.0.0"
+description: "Enhanced metrics collection contract for performance monitoring"
+
+# Metrics Categories
+metrics_categories:
+  workflow_metrics:
+    description: "Per-workflow execution metrics"
+    metrics:
+      - name: "workflow_duration_ms"
+        type: "histogram"
+        description: "Workflow processing duration in milliseconds"
+        buckets: [100, 500, 1000, 5000, 10000, 30000]
+
+      - name: "workflow_success_rate"
+        type: "gauge"
+        description: "Success rate percentage for workflows"
+
+      - name: "workflow_throughput"
+        type: "counter"
+        description: "Number of workflows processed"
+        labels: ["workflow_type", "status"]
+
+      - name: "workflow_queue_size"
+        type: "gauge"
+        description: "Current workflow queue size"
+        labels: ["workflow_type"]
+
+  performance_metrics:
+    description: "System performance and resource utilization"
+    metrics:
+      - name: "memory_usage_mb"
+        type: "gauge"
+        description: "Current memory usage in megabytes"
+
+      - name: "cpu_utilization_percent"
+        type: "gauge"
+        description: "CPU utilization percentage"
+
+      - name: "active_instances"
+        type: "gauge"
+        description: "Number of active workflow instances"
+
+      - name: "routing_latency_ms"
+        type: "histogram"
+        description: "Workflow routing latency in milliseconds"
+        buckets: [1, 5, 10, 25, 50, 100]
+
+  error_metrics:
+    description: "Error tracking and failure analysis"
+    metrics:
+      - name: "error_count"
+        type: "counter"
+        description: "Total error count"
+        labels: ["error_type", "workflow_type"]
+
+      - name: "retry_count"
+        type: "counter"
+        description: "Number of retries attempted"
+        labels: ["workflow_type"]
+
+      - name: "timeout_count"
+        type: "counter"
+        description: "Number of workflow timeouts"
+        labels: ["workflow_type"]
+
+# Collection Configuration
+collection_config:
+  enabled: true
+  collection_interval_s: 30
+  retention_period_days: 7
+  aggregation_window_s: 300
+
+  storage:
+    backend: "memory"
+    max_metrics_count: 10000
+    cleanup_threshold: 0.8
+
+  export:
+    enabled: false
+    format: "prometheus"
+    endpoint: "/metrics"
+
+# Alerting Rules
+alerting:
+  enabled: true
+
+  rules:
+    high_error_rate:
+      condition: "error_rate > 5.0"
+      severity: "warning"
+      description: "Error rate exceeds threshold"
+
+    high_latency:
+      condition: "p95_latency_ms > 10000"
+      severity: "warning"
+      description: "95th percentile latency too high"
+
+    low_throughput:
+      condition: "throughput_ops_per_second < 5"
+      severity: "critical"
+      description: "Throughput below minimum threshold"
+
+    memory_usage:
+      condition: "memory_usage_mb > 1600"
+      severity: "warning"
+      description: "Memory usage approaching limit"
+
+# Monitoring Integration
+monitoring:
+  health_checks:
+    enabled: true
+    interval_s: 60
+    timeout_s: 10
+
+  dashboards:
+    - name: "workflow_overview"
+      description: "High-level workflow processing overview"
+
+    - name: "performance_details"
+      description: "Detailed performance metrics and trends"
+
+    - name: "error_analysis"
+      description: "Error tracking and failure analysis"

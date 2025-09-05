@@ -16,12 +16,12 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.node_reducer import ModelReducerInput, ModelReducerOutput
 from omnibase_core.core.node_reducer_service import NodeReducerService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    CircuitBreakerConfig,
+    ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
@@ -92,7 +92,7 @@ class NodeCanaryReducer(NodeReducerService):
     for external monitoring and control of the canary system.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize the Canary Reducer node with production utilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -103,7 +103,7 @@ class NodeCanaryReducer(NodeReducerService):
         self.metrics_collector = get_metrics_collector("canary_reducer")
 
         # Setup circuit breakers for external services
-        cb_config = CircuitBreakerConfig(
+        cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
             timeout_seconds=self.config.timeouts.default_timeout_ms / 1000,

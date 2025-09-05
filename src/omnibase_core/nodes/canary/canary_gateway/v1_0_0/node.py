@@ -16,11 +16,11 @@ import asyncpg
 
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    CircuitBreakerConfig,
     CircuitBreakerException,
+    ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
@@ -230,7 +230,7 @@ class NodeCanaryGateway(NodeEffectService):
     for efficient tool communication and response management.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize Group Gateway with container injection."""
         super().__init__(container)
         self.db_pool: asyncpg.Pool | None = None
@@ -242,7 +242,7 @@ class NodeCanaryGateway(NodeEffectService):
         self.metrics_collector = get_metrics_collector("canary_gateway")
 
         # Setup circuit breakers for external services
-        cb_config = CircuitBreakerConfig(
+        cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
             timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,

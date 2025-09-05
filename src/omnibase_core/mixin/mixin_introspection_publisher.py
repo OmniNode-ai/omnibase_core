@@ -49,7 +49,7 @@ _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
 
 
-class NodeIntrospectionData(BaseModel):
+class ModelNodeIntrospectionData(BaseModel):
     """
     Strongly typed container for node introspection data.
 
@@ -155,12 +155,12 @@ class MixinIntrospectionPublisher:
             )
             raise  # Re-raise to crash the service
 
-    def _gather_introspection_data(self) -> NodeIntrospectionData:
+    def _gather_introspection_data(self) -> ModelNodeIntrospectionData:
         """
         Gather introspection data for this node from various sources.
 
         Returns:
-            NodeIntrospectionData: Strongly typed introspection data
+            ModelNodeIntrospectionData: Strongly typed introspection data
         """
         try:
             # Extract node information
@@ -170,7 +170,7 @@ class MixinIntrospectionPublisher:
             tags = self._generate_discovery_tags()
             health_endpoint = self._detect_health_endpoint()
 
-            return NodeIntrospectionData(
+            return ModelNodeIntrospectionData(
                 node_name=node_name,
                 version=version,
                 capabilities=capabilities,
@@ -194,7 +194,7 @@ class MixinIntrospectionPublisher:
                 context=context,
             )
 
-            return NodeIntrospectionData(
+            return ModelNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 capabilities=ModelNodeCapabilities(

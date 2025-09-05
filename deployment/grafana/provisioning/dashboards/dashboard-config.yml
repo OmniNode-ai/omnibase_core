@@ -1,0 +1,13 @@
+# Grafana Dashboard Configuration
+apiVersion: 1
+
+providers:
+  - name: 'ONEX Dashboards'
+    orgId: 1
+    folder: 'ONEX'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

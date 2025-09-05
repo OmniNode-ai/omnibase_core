@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import asyncpg
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.core.onex_error import OnexError
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ class PostgreSQLLockManager:
 
     def __init__(
         self,
-        container: ONEXContainer,
+        container: ModelONEXContainer,
         database_url: str = "postgresql://localhost:5432/onex",
         key_prefix: str = "onex_lock_",
     ):

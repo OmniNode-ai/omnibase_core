@@ -26,7 +26,7 @@ class CircuitBreakerState(str, Enum):
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
-class CircuitBreakerConfig(BaseModel):
+class ModelCircuitBreakerConfig(BaseModel):
     """Configuration for circuit breaker behavior."""
 
     failure_threshold: int = Field(
@@ -41,7 +41,7 @@ class CircuitBreakerConfig(BaseModel):
     timeout_seconds: float = Field(default=10.0, description="Request timeout")
 
 
-class CircuitBreakerStats(BaseModel):
+class ModelCircuitBreakerStats(BaseModel):
     """Circuit breaker statistics."""
 
     state: CircuitBreakerState
@@ -72,11 +72,11 @@ class CircuitBreaker:
     """
 
     def __init__(
-        self, service_name: str, config: Optional[CircuitBreakerConfig] = None
+        self, service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
     ):
         self.service_name = service_name
-        self.config = config or CircuitBreakerConfig()
-        self.stats = CircuitBreakerStats(state=CircuitBreakerState.CLOSED)
+        self.config = config or ModelCircuitBreakerConfig()
+        self.stats = ModelCircuitBreakerStats(state=CircuitBreakerState.CLOSED)
         self._lock = asyncio.Lock()
 
     async def call(
@@ -195,7 +195,7 @@ class CircuitBreaker:
 
     def reset(self) -> None:
         """Reset circuit breaker to closed state."""
-        self.stats = CircuitBreakerStats(state=CircuitBreakerState.CLOSED)
+        self.stats = ModelCircuitBreakerStats(state=CircuitBreakerState.CLOSED)
 
 
 class CircuitBreakerManager:
@@ -203,10 +203,10 @@ class CircuitBreakerManager:
 
     def __init__(self):
         self._breakers: Dict[str, CircuitBreaker] = {}
-        self._default_config = CircuitBreakerConfig()
+        self._default_config = ModelCircuitBreakerConfig()
 
     def get_breaker(
-        self, service_name: str, config: Optional[CircuitBreakerConfig] = None
+        self, service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
     ) -> CircuitBreaker:
         """Get or create a circuit breaker for a service."""
         if service_name not in self._breakers:
@@ -245,7 +245,7 @@ def get_circuit_breaker_manager() -> CircuitBreakerManager:
 
 
 def get_circuit_breaker(
-    service_name: str, config: Optional[CircuitBreakerConfig] = None
+    service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
 ) -> CircuitBreaker:
     """Get a circuit breaker for a specific service."""
     return get_circuit_breaker_manager().get_breaker(service_name, config)

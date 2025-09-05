@@ -298,7 +298,7 @@ class MonadicServiceProvider:
 # === CORE CONTAINER DEFINITION ===
 
 
-class _BaseONEXContainer(containers.DeclarativeContainer):
+class _BaseModelONEXContainer(containers.DeclarativeContainer):
     """Base dependency injection container."""
 
     # === CONFIGURATION ===
@@ -339,7 +339,7 @@ class ModelONEXContainer:
 
     def __init__(self):
         """Initialize enhanced container with custom methods."""
-        self._base_container = _BaseONEXContainer()
+        self._base_container = _BaseModelONEXContainer()
 
         # Initialize performance tracking
         self._performance_metrics = {
@@ -355,7 +355,7 @@ class ModelONEXContainer:
 
     @property
     def base_container(self):
-        """Access to base ONEXContainer for compatibility."""
+        """Access to base ModelONEXContainer for compatibility."""
         return self._base_container
 
     @property

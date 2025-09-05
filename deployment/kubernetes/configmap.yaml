@@ -1,0 +1,47 @@
+# ONEX Configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: onex-config
+  namespace: onex
+  labels:
+    app.kubernetes.io/name: onex
+    app.kubernetes.io/component: config
+data:
+  # ONEX Configuration
+  ONEX_ENVIRONMENT: "production"
+  ONEX_DEBUG: "false"
+
+  # API Configuration
+  ONEX_API__HOST: "0.0.0.0"
+  ONEX_API__PORT: "8000"
+  ONEX_API__WORKERS: "4"
+  ONEX_API__MAX_CONCURRENT_REQUESTS: "200"
+  ONEX_API__REQUEST_TIMEOUT: "300"
+
+  # Database Configuration
+  ONEX_DATABASE__POOL_SIZE: "20"
+  ONEX_DATABASE__MAX_OVERFLOW: "30"
+  ONEX_DATABASE__POOL_TIMEOUT: "30"
+
+  # Model Tiers Configuration
+  ONEX_TIERS__LOCAL_SMALL: "llama3.2:1b"
+  ONEX_TIERS__LOCAL_MEDIUM: "llama3.2:3b"
+  ONEX_TIERS__LOCAL_LARGE: "llama3.2:8b"
+  ONEX_TIERS__LOCAL_HUGE: "llama3.2:70b"
+  ONEX_TIERS__CLOUD_GPT: "gpt-4o"
+  ONEX_TIERS__CLOUD_CLAUDE: "claude-3-5-sonnet-20241022"
+  ONEX_TIERS__TIMEOUT_SECONDS: "300"
+  ONEX_TIERS__RETRY_ATTEMPTS: "3"
+
+  # Output Configuration
+  ONEX_OUTPUT__FORMAT: "json"
+  ONEX_OUTPUT__COLORED: "false"
+  ONEX_OUTPUT__PROGRESS_BARS: "false"
+  ONEX_OUTPUT__LOG_LEVEL: "INFO"
+
+  # Monitoring Configuration
+  ONEX_MONITORING__PROMETHEUS_ENABLED: "true"
+  ONEX_MONITORING__PROMETHEUS_PORT: "9090"
+  ONEX_MONITORING__JAEGER_ENABLED: "true"
+  ONEX_MONITORING__SENTRY_ENABLED: "true"

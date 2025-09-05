@@ -33,7 +33,7 @@ from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.node_base import ModelNodeBase
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.decorators import standard_error_handling
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
@@ -61,12 +61,12 @@ class NodeHubBase(ModelNodeBase, MixinServiceRegistry, MixinDebugDiscoveryLoggin
     Subclasses only need to provide the contract path.
     """
 
-    def __init__(self, container: ONEXContainer, contract_path: Path):
+    def __init__(self, container: ModelONEXContainer, contract_path: Path):
         """
         Initialize hub with contract-driven configuration.
 
         Args:
-            container: ONEXContainer from ModelNodeBase
+            container: ModelONEXContainer from ModelNodeBase
             contract_path: Path to the hub contract file
         """
         # Load hub configuration from contract

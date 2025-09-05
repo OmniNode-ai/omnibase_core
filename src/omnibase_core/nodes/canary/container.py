@@ -18,7 +18,7 @@ Per user requirements:
 import types
 from typing import TypeVar
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 T = TypeVar("T")
@@ -32,7 +32,7 @@ from omnibase_core.core.services.event_bus_service.v1_0_0.models.model_event_bus
 )
 
 
-def create_infrastructure_container() -> ONEXContainer:
+def create_infrastructure_container() -> ModelONEXContainer:
     """
     Create infrastructure container with all shared dependencies.
 
@@ -42,10 +42,10 @@ def create_infrastructure_container() -> ONEXContainer:
     - "Everything needs to be resolved by duck typing"
 
     Returns:
-        Configured ONEXContainer with infrastructure dependencies
+        Configured ModelONEXContainer with infrastructure dependencies
     """
     # Create base ONEX container
-    container = ONEXContainer()
+    container = ModelONEXContainer()
 
     # Set up all shared dependencies for infrastructure tools
     _setup_infrastructure_dependencies(container)
@@ -56,7 +56,7 @@ def create_infrastructure_container() -> ONEXContainer:
     return container
 
 
-def _setup_infrastructure_dependencies(container: ONEXContainer):
+def _setup_infrastructure_dependencies(container: ModelONEXContainer):
     """Set up all dependencies needed by infrastructure canary nodes."""
 
     # Event Bus - Use in-memory implementation for omnibase-core
@@ -90,7 +90,9 @@ def _setup_infrastructure_dependencies(container: ONEXContainer):
     _register_service(container, "ProtocolSchemaLoader", schema_loader)
 
 
-def _register_service(container: ONEXContainer, service_name: str, service_instance):
+def _register_service(
+    container: ModelONEXContainer, service_name: str, service_instance
+):
     """Register a service in the container for later retrieval."""
     # Store in the container's provider registry
     if not hasattr(container, "_service_registry"):
@@ -98,7 +100,7 @@ def _register_service(container: ONEXContainer, service_name: str, service_insta
     container._service_registry[service_name] = service_instance
 
 
-def _bind_infrastructure_get_service_method(container: ONEXContainer):
+def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
     """Bind custom get_service method to infrastructure container."""
 
     def get_service(
@@ -128,18 +130,25 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
         # Input validation
         if protocol_type_or_name is None:
             raise ValueError("protocol_type_or_name cannot be None")
-        
+
         if isinstance(protocol_type_or_name, str):
             if not protocol_type_or_name.strip():
                 raise ValueError("protocol_type_or_name cannot be empty string")
             service_name = protocol_type_or_name.strip()
-        elif not (hasattr(protocol_type_or_name, "__name__") or callable(protocol_type_or_name)):
-            raise ValueError(f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}")
+        elif not (
+            hasattr(protocol_type_or_name, "__name__")
+            or callable(protocol_type_or_name)
+        ):
+            raise ValueError(
+                f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}"
+            )
 
         # Validate service_name if provided
         if service_name is not None:
             if not isinstance(service_name, str):
-                raise ValueError(f"service_name must be string or None, got {type(service_name)}")
+                raise ValueError(
+                    f"service_name must be string or None, got {type(service_name)}"
+                )
             if not service_name.strip():
                 raise ValueError("service_name cannot be empty string")
             service_name = service_name.strip()
@@ -160,17 +169,20 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
 
         # Generate helpful error message
         available_services = list(self._service_registry.keys())
-        search_term = service_name or getattr(protocol_type_or_name, "__name__", str(protocol_type_or_name))
-        
+        search_term = service_name or getattr(
+            protocol_type_or_name, "__name__", str(protocol_type_or_name)
+        )
+
         # Suggest similar service names if available
         suggestions = []
         if available_services:
             search_lower = search_term.lower()
             suggestions = [
-                svc for svc in available_services 
+                svc
+                for svc in available_services
                 if search_lower in svc.lower() or svc.lower().startswith(search_lower)
             ]
-        
+
         error_msg = f"Service '{search_term}' not found in infrastructure container."
         if available_services:
             error_msg += f" Available services: {available_services}"
@@ -178,7 +190,7 @@ def _bind_infrastructure_get_service_method(container: ONEXContainer):
             error_msg += f". Did you mean: {suggestions}?"
         else:
             error_msg += " No services are currently registered."
-            
+
         raise KeyError(error_msg)
 
     # Bind the method to the container instance

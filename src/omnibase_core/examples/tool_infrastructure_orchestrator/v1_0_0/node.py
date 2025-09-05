@@ -12,7 +12,7 @@ from uuid import uuid4
 from omnibase_core.constants.event_types import CoreEventTypes
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
@@ -33,7 +33,7 @@ class ToolInfrastructureOrchestrator(NodeOrchestratorService):
     Coordinates consul, vault, and kafka adapters through event delegation.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         """Initialize infrastructure orchestrator with container injection."""
         super().__init__(container)
         self.domain = "infrastructure"

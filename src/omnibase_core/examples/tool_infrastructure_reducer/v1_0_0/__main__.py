@@ -14,7 +14,7 @@ from pathlib import Path
 src_path = Path(__file__).parents[5] / "src"
 sys.path.insert(0, str(src_path))
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.tools.infrastructure.tool_infrastructure_reducer.v1_0_0.node import (
     ToolInfrastructureReducer,
 )
@@ -24,7 +24,7 @@ async def main():
     """Start the infrastructure reducer service."""
 
     # Create container (lightweight for now)
-    container = ONEXContainer()
+    container = ModelONEXContainer()
 
     try:
         # Initialize the infrastructure reducer

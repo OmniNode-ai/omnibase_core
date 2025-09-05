@@ -31,7 +31,7 @@ class ProtocolContainerService(Protocol):
         nodebase_ref: Any | None = None,
     ) -> Any:
         """
-        Create and configure ONEXContainer from contract dependencies.
+        Create and configure ModelONEXContainer from contract dependencies.
 
         Args:
             contract_content: Loaded contract with dependencies section
@@ -82,7 +82,7 @@ class ProtocolContainerService(Protocol):
         Create registry wrapper around container for backward compatibility.
 
         Args:
-            container: ONEXContainer instance
+            container: ModelONEXContainer instance
             nodebase_ref: Reference to ModelNodeBase for version access
 
         Returns:

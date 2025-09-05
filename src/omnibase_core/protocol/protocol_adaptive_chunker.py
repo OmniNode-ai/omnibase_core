@@ -6,7 +6,7 @@ Defines the contract for LangExtract-enhanced adaptive chunking tools.
 
 from typing import Protocol
 
-from omnibase_core.core.onex_container import ONEXContainer
+from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.intelligence.services.langextract_intelligence_service import (
     ModelIntelligenceResult,
 )
@@ -22,7 +22,7 @@ from omnibase_core.tools.discovery.advanced.tool_multi_vector_indexer.v1_0_0.mod
 class ProtocolAdaptiveChunker(Protocol):
     """Protocol for adaptive chunking tools."""
 
-    def __init__(self, container: ONEXContainer) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """Initialize adaptive chunker with container injection."""
         ...
 

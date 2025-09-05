@@ -12,7 +12,7 @@ from typing import Any, Dict
 from pydantic import BaseModel, Field
 
 
-class DatabaseConfig(BaseModel):
+class ModelDatabaseConfig(BaseModel):
     """Database configuration for canary nodes."""
 
     host: str = Field(default="localhost", description="Database host")
@@ -64,7 +64,7 @@ class DatabaseConfig(BaseModel):
         )
 
 
-class TimeoutConfig(BaseModel):
+class ModelTimeoutConfig(BaseModel):
     """Timeout configuration for various operations."""
 
     default_timeout_ms: int = Field(
@@ -84,11 +84,15 @@ class TimeoutConfig(BaseModel):
     )
 
 
-class PerformanceConfig(BaseModel):
+class ModelPerformanceConfig(BaseModel):
     """Performance and capacity configuration."""
 
-    cache_max_size: int = Field(default=1000, description="Maximum cache entries", ge=10, le=100000)
-    cache_ttl_seconds: int = Field(default=300, description="Cache TTL in seconds", ge=60, le=86400)
+    cache_max_size: int = Field(
+        default=1000, description="Maximum cache entries", ge=10, le=100000
+    )
+    cache_ttl_seconds: int = Field(
+        default=300, description="Cache TTL in seconds", ge=60, le=86400
+    )
     metrics_retention_count: int = Field(
         default=1000, description="Number of metrics to retain", ge=100, le=50000
     )
@@ -96,14 +100,20 @@ class PerformanceConfig(BaseModel):
         default=100, description="Maximum concurrent operations", ge=1, le=10000
     )
     error_rate_threshold: float = Field(
-        default=0.1, description="Error rate threshold for health checks", ge=0.01, le=1.0
+        default=0.1,
+        description="Error rate threshold for health checks",
+        ge=0.01,
+        le=1.0,
     )
     min_operations_for_health: int = Field(
-        default=10, description="Minimum operations before health evaluation", ge=1, le=1000
+        default=10,
+        description="Minimum operations before health evaluation",
+        ge=1,
+        le=1000,
     )
 
 
-class BusinessLogicConfig(BaseModel):
+class ModelBusinessLogicConfig(BaseModel):
     """Business logic thresholds and parameters."""
 
     # Customer scoring
@@ -163,7 +173,7 @@ class BusinessLogicConfig(BaseModel):
     )
 
 
-class SecurityConfig(BaseModel):
+class ModelSecurityConfig(BaseModel):
     """Security configuration for canary nodes."""
 
     log_sensitive_data: bool = Field(
@@ -251,21 +261,23 @@ class SecurityConfig(BaseModel):
         )
 
 
-class CanaryNodeConfig(BaseModel):
+class ModelCanaryNodeConfig(BaseModel):
     """Complete configuration for canary nodes."""
 
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    timeouts: TimeoutConfig = Field(default_factory=TimeoutConfig)
-    performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
-    business_logic: BusinessLogicConfig = Field(default_factory=BusinessLogicConfig)
-    security: SecurityConfig = Field(default_factory=SecurityConfig)
+    database: ModelDatabaseConfig = Field(default_factory=ModelDatabaseConfig)
+    timeouts: ModelTimeoutConfig = Field(default_factory=ModelTimeoutConfig)
+    performance: ModelPerformanceConfig = Field(default_factory=ModelPerformanceConfig)
+    business_logic: ModelBusinessLogicConfig = Field(
+        default_factory=ModelBusinessLogicConfig
+    )
+    security: ModelSecurityConfig = Field(default_factory=ModelSecurityConfig)
 
     @classmethod
-    def from_environment(cls) -> "CanaryNodeConfig":
+    def from_environment(cls) -> "ModelCanaryNodeConfig":
         """Create configuration from environment variables with fallback to defaults."""
 
         # Database config from environment
-        database_config = DatabaseConfig(
+        database_config = ModelDatabaseConfig(
             host=os.getenv("POSTGRES_HOST", "localhost"),
             port=int(os.getenv("POSTGRES_PORT", "5432")),
             database=os.getenv("POSTGRES_DB", "omnibase"),
@@ -276,7 +288,7 @@ class CanaryNodeConfig(BaseModel):
         )
 
         # Timeout config from environment
-        timeout_config = TimeoutConfig(
+        timeout_config = ModelTimeoutConfig(
             default_timeout_ms=int(os.getenv("DEFAULT_TIMEOUT_MS", "30000")),
             gateway_timeout_ms=int(os.getenv("GATEWAY_TIMEOUT_MS", "10000")),
             health_check_timeout_ms=int(os.getenv("HEALTH_CHECK_TIMEOUT_MS", "5000")),
@@ -287,7 +299,7 @@ class CanaryNodeConfig(BaseModel):
         )
 
         # Performance config from environment
-        performance_config = PerformanceConfig(
+        performance_config = ModelPerformanceConfig(
             cache_max_size=int(os.getenv("CACHE_MAX_SIZE", "1000")),
             cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "300")),
             metrics_retention_count=int(os.getenv("METRICS_RETENTION_COUNT", "1000")),
@@ -299,7 +311,7 @@ class CanaryNodeConfig(BaseModel):
         )
 
         # Business logic config from environment
-        business_logic_config = BusinessLogicConfig(
+        business_logic_config = ModelBusinessLogicConfig(
             customer_purchase_threshold=float(
                 os.getenv("CUSTOMER_PURCHASE_THRESHOLD", "1000.0")
             ),
@@ -324,7 +336,7 @@ class CanaryNodeConfig(BaseModel):
         )
 
         # Security config from environment
-        security_config = SecurityConfig(
+        security_config = ModelSecurityConfig(
             log_sensitive_data=os.getenv("LOG_SENSITIVE_DATA", "false").lower()
             == "true",
             max_error_detail_length=int(os.getenv("MAX_ERROR_DETAIL_LENGTH", "1000")),
@@ -346,19 +358,19 @@ class CanaryNodeConfig(BaseModel):
 
 
 # Global config instance
-_config_instance: CanaryNodeConfig | None = None
+_config_instance: ModelCanaryNodeConfig | None = None
 
 
-def get_canary_config() -> CanaryNodeConfig:
+def get_canary_config() -> ModelCanaryNodeConfig:
     """Get the global canary node configuration instance."""
     global _config_instance
     if _config_instance is None:
-        _config_instance = CanaryNodeConfig.from_environment()
+        _config_instance = ModelCanaryNodeConfig.from_environment()
     return _config_instance
 
 
-def reload_config() -> CanaryNodeConfig:
+def reload_config() -> ModelCanaryNodeConfig:
     """Reload configuration from environment (useful for tests)."""
     global _config_instance
-    _config_instance = CanaryNodeConfig.from_environment()
+    _config_instance = ModelCanaryNodeConfig.from_environment()
     return _config_instance
