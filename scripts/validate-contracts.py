@@ -93,6 +93,11 @@ class ContractValidator:
                 "NodeCanaryGateway",
                 "omnibase_core.nodes.canary.canary_gateway.v1_0_0.node",
             ),
+            # Phase 3: Reducer Pattern Engine
+            (
+                "NodeReducerPatternEngine",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.node_reducer_pattern_engine",
+            ),
         ]
 
         success = True
@@ -138,6 +143,13 @@ class ContractValidator:
                 "yaml_path": "src/omnibase_core/nodes/canary/canary_reducer/v1_0_0/contract.yaml",
                 "model_class": "ModelContractReducer",
                 "model_module": "omnibase_core.core.contracts.model_contract_reducer",
+            },
+            # Phase 3: Reducer Pattern Engine
+            {
+                "name": "reducer_pattern_engine",
+                "yaml_path": "src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contracts/contract.yaml",
+                "model_class": "ModelContractReducerPatternEngine",
+                "model_module": "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine",
             },
         ]
 
@@ -465,12 +477,26 @@ class ContractValidator:
                 "ModelContractGateway",
                 "omnibase_core.core.contracts.model_contract_gateway",
             ),
+            # Phase 3: Reducer Pattern Engine contract model
+            (
+                "ModelContractReducerPatternEngine",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine",
+            ),
             # Input/Output models for each contract type
             ("ModelEffectInput", "omnibase_core.core.node_effect"),
             ("ModelComputeInput", "omnibase_core.core.node_compute"),
             ("ModelReducerInput", "omnibase_core.core.node_reducer"),
             ("ModelOrchestratorInput", "omnibase_core.core.node_orchestrator"),
             ("ModelGatewayInput", "omnibase_core.core.node_gateway"),
+            # Phase 3: Reducer Pattern Engine input/output models
+            (
+                "ModelReducerPatternEngineInput",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models",
+            ),
+            (
+                "ModelReducerPatternEngineOutput",
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models",
+            ),
         ]
 
         success = True

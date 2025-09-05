@@ -1,14 +1,39 @@
 # Reducer Pattern Engine v1.0.0 Contract Manifest
-# ONEX Standards Compliant Pattern Contract
+# ONEX Phase 3 Protocol Compliance Contract
 
 name: "reducer_pattern_engine"
 version: "1.0.0"
-description: "Multi-workflow reducer pattern engine with instance isolation and enhanced metrics collection"
+description: "ONEX-compliant multi-workflow reducer pattern engine with protocol compliance and envelope support"
 node_type: "COMPUTE"
 
-# Input/Output Models
-input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowRequest"
-output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowResponse"
+# ONEX Protocol Compliance - Phase 3
+onex_compliance_version: "1.0.0"
+protocol_version: "1.0.0"
+
+# Input/Output Models - ONEX Protocol Compliant
+input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelReducerPatternEngineInput"
+output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelReducerPatternEngineOutput"
+
+# Legacy Models (for backward compatibility)
+legacy_input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowRequest"
+legacy_output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowResponse"
+
+# Contract Model
+contract_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.model_contract_reducer_pattern_engine.ModelContractReducerPatternEngine"
+
+# Protocol Implementation
+protocol_implementation:
+  protocol_interface: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.ProtocolReducerPatternEngine"
+  base_implementation: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.BaseReducerPatternEngine"
+  node_implementation: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.node_reducer_pattern_engine.NodeReducerPatternEngine"
+
+# Envelope Support
+envelope_support:
+  enabled: true
+  envelope_model: "omnibase_core.model.core.model_event_envelope.ModelEventEnvelope"
+  event_model: "omnibase_core.model.core.model_onex_event.ModelOnexEvent"
+  routing_support: true
+  correlation_tracking: true
 
 # Pattern Metadata
 pattern_type: "execution_pattern"
@@ -136,34 +161,98 @@ state_management:
       to: "FAILED"
       trigger: "error_occurred"
 
-# Dependencies
+# ONEX Container Integration - Phase 3
+container_integration:
+  container_class: "ModelONEXContainer"
+  container_module: "omnibase_core.core.model_onex_container"
+  service_resolution: true
+  dependency_injection: true
+  lifecycle_management: true
+
+# Dependencies - Enhanced for Phase 3
 dependencies:
-  - name: "container"
-    type: "protocol"
-    class_name: "ModelONEXContainer"
-    module: "omnibase_core.core.model_onex_container"
+  structured_dependencies:
+    - name: "container"
+      dependency_type: "CONTAINER"
+      class_name: "ModelONEXContainer"
+      module: "omnibase_core.core.model_onex_container"
 
-  - name: "logger"
-    type: "protocol"
-    class_name: "ProtocolLogger"
-    module: "omnibase.protocols.logger"
+    - name: "event_envelope"
+      dependency_type: "PROTOCOL"
+      class_name: "ModelEventEnvelope"
+      module: "omnibase_core.model.core.model_event_envelope"
 
-# Protocol Interfaces
+    - name: "onex_event"
+      dependency_type: "PROTOCOL"
+      class_name: "ModelOnexEvent"
+      module: "omnibase_core.model.core.model_onex_event"
+
+  simple_dependencies:
+    - "logger"
+    - "metrics_collector"
+    - "health_checker"
+
+  dict_dependencies:
+    - name: "canary_service"
+      type: "service"
+      description: "Canary deployment service (Phase 4)"
+
+# Protocol Interfaces - Phase 3 Enhanced
 protocol_interfaces:
-  - "omnibase.protocols.pattern.ProtocolExecutionPattern"
-  - "omnibase.protocols.workflow.ProtocolWorkflowEngine"
+  - interface: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.protocols.protocol_reducer_pattern_engine.ProtocolReducerPatternEngine"
+    description: "Core Reducer Pattern Engine protocol"
+    required: true
 
-# Validation Rules
+  - interface: "omnibase.protocols.pattern.ProtocolExecutionPattern"
+    description: "Execution pattern interface"
+    required: false
+
+  - interface: "omnibase.protocols.workflow.ProtocolWorkflowEngine"
+    description: "Workflow engine interface"
+    required: false
+
+# ONEX 4-Node Architecture Compliance
+node_architecture:
+  node_type: "COMPUTE"
+  role: "data_processing"
+  inter_node_communication: true
+  envelope_routing: true
+
+  supported_operations:
+    - "workflow_processing"
+    - "envelope_handling"
+    - "protocol_validation"
+    - "state_management"
+    - "metrics_collection"
+
+  communication_patterns:
+    - "request_response"
+    - "envelope_routing"
+    - "event_driven"
+
+# Validation Rules - Phase 3 Enhanced
 validation_rules:
   strict_typing_enabled: true
   input_validation_enabled: true
   output_validation_enabled: true
   performance_validation_enabled: true
+  protocol_validation_enabled: true
+  envelope_validation_enabled: true
 
   constraint_definitions:
     max_workflow_payload_size: "10MB"
     required_workflow_fields: "workflow_type,instance_id"
     supported_workflow_types: "DATA_ANALYSIS,REPORT_GENERATION,DOCUMENT_REGENERATION"
+    required_envelope_fields: "envelope_id,correlation_id,source_node_id"
+    max_envelope_hops: 10
+    protocol_version_constraints: "1.0.0"
+
+  protocol_compliance_checks:
+    - "envelope_structure_validation"
+    - "correlation_id_propagation"
+    - "node_routing_validation"
+    - "message_format_compliance"
+    - "error_handling_compliance"
 
 # Lifecycle Configuration
 lifecycle:
@@ -181,16 +270,40 @@ performance:
   cpu_limit_percent: 80
   throughput_min_ops_per_second: 10.0
 
-# Documentation
+# Documentation - Phase 3 Updated
 author: "ONEX Reducer Pattern Engine Team"
-documentation_url: "https://docs.onex.ai/patterns/reducer-pattern-engine"
+documentation_url: "https://docs.onex.ai/patterns/reducer-pattern-engine/phase3"
+implementation_phase: "Phase 3 - ONEX Protocol Compliance"
+
 tags:
   - "pattern"
   - "execution"
   - "multi_workflow"
-  - "phase2"
+  - "phase3"
+  - "onex_compliance"
+  - "protocol"
+  - "envelope_support"
   - "reducer"
   - "orchestration"
+  - "container_integration"
+
+# Phase 3 Implementation Notes
+phase3_features:
+  - "ONEX protocol compliance with envelope support"
+  - "ModelOnexContainer dependency injection integration"
+  - "Protocol-based validation and error handling"
+  - "Event envelope wrapping and unwrapping"
+  - "Inter-node communication support"
+  - "Contract-driven configuration validation"
+  - "Backward compatibility with Phase 2 implementations"
+
+# Quality Assurance
+testing:
+  unit_tests: "tests/unit/patterns/reducer_pattern_engine/"
+  integration_tests: "tests/integration/patterns/reducer_pattern_engine/"
+  protocol_compliance_tests: "tests/unit/patterns/reducer_pattern_engine/test_onex_compliance.py"
+  contract_validation_tests: "tests/unit/patterns/reducer_pattern_engine/test_contract_validation.py"
+  container_integration_tests: "tests/unit/patterns/reducer_pattern_engine/test_container_integration.py"
 
 # Schema References
 subcontracts:
