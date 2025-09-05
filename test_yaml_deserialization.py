@@ -72,26 +72,57 @@ def test_canary_contract_deserialization():
 
             print(f"   ✅ YAML loaded successfully")
 
-            # Import the model class using whitelist approach for security
+            # Import the model class using static imports for security
             try:
-                # Whitelist of allowed modules for security
-                allowed_modules = {
-                    "omnibase_core.core.contracts.model_contract_compute": "omnibase_core.core.contracts.model_contract_compute",
-                    "omnibase_core.core.contracts.model_contract_effect": "omnibase_core.core.contracts.model_contract_effect",
-                    "omnibase_core.core.contracts.model_contract_gateway": "omnibase_core.core.contracts.model_contract_gateway",
-                    "omnibase_core.core.contracts.model_contract_orchestrator": "omnibase_core.core.contracts.model_contract_orchestrator",
-                    "omnibase_core.core.contracts.model_contract_reducer": "omnibase_core.core.contracts.model_contract_reducer",
+                # Use static imports to avoid dynamic import security issues
+                from omnibase_core.core.contracts.model_contract_compute import (
+                    ModelContractCompute,
+                )
+                from omnibase_core.core.contracts.model_contract_effect import (
+                    ModelContractEffect,
+                )
+                from omnibase_core.core.contracts.model_contract_gateway import (
+                    ModelContractGateway,
+                )
+                from omnibase_core.core.contracts.model_contract_orchestrator import (
+                    ModelContractOrchestrator,
+                )
+                from omnibase_core.core.contracts.model_contract_reducer import (
+                    ModelContractReducer,
+                )
+
+                # Mapping of module names to actual model classes
+                allowed_models = {
+                    "omnibase_core.core.contracts.model_contract_compute": {
+                        "ModelContractCompute": ModelContractCompute
+                    },
+                    "omnibase_core.core.contracts.model_contract_effect": {
+                        "ModelContractEffect": ModelContractEffect
+                    },
+                    "omnibase_core.core.contracts.model_contract_gateway": {
+                        "ModelContractGateway": ModelContractGateway
+                    },
+                    "omnibase_core.core.contracts.model_contract_orchestrator": {
+                        "ModelContractOrchestrator": ModelContractOrchestrator
+                    },
+                    "omnibase_core.core.contracts.model_contract_reducer": {
+                        "ModelContractReducer": ModelContractReducer
+                    },
                 }
 
                 module_name = contract["model_module"]
-                if module_name not in allowed_modules:
-                    raise ValueError(f"Module {module_name} not in allowed whitelist")
+                model_class_name = contract["model_class"]
 
-                import importlib
+                if module_name not in allowed_models:
+                    raise ValueError(f"Module {module_name} not in allowed list")
 
-                module = importlib.import_module(allowed_modules[module_name])
-                model_class = getattr(module, contract["model_class"])
-                print(f"   ✅ Model class imported: {contract['model_class']}")
+                if model_class_name not in allowed_models[module_name]:
+                    raise ValueError(
+                        f"Model class {model_class_name} not found in {module_name}"
+                    )
+
+                model_class = allowed_models[module_name][model_class_name]
+                print(f"   ✅ Model class imported: {model_class_name}")
             except Exception as e:
                 print(f"   ❌ Failed to import model class: {e}")
                 results.append((contract["name"], False, f"Model import failed: {e}"))
