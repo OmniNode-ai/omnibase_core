@@ -92,18 +92,77 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
     @field_validator("dependencies", mode="before")
     @classmethod
     def normalize_dependencies(cls, v: Any) -> list[str]:
-        """Convert complex dependency objects to simple string list."""
+        """
+        Convert complex dependency objects to simple string list.
+
+        Validates structured dependencies format and extracts class names
+        for protocol dependencies. Ensures all required dependency fields
+        are present and valid.
+
+        Args:
+            v: Raw dependency data from YAML contract
+
+        Returns:
+            list[str]: List of validated dependency class names
+
+        Raises:
+            ValueError: If dependency format is invalid
+        """
         if isinstance(v, list):
             result = []
-            for dep in v:
+            for i, dep in enumerate(v):
                 if isinstance(dep, dict):
-                    # Extract class_name from dependency object
-                    class_name = dep.get("class_name", dep.get("name", str(dep)))
+                    # Validate required fields for structured dependencies
+                    required_fields = ["class_name", "type"]
+                    missing_fields = [
+                        field for field in required_fields if field not in dep
+                    ]
+
+                    if missing_fields:
+                        raise ValueError(
+                            f"Dependency {i} missing required fields: {missing_fields}. "
+                            f"Required: {required_fields}"
+                        )
+
+                    # Validate dependency type
+                    valid_types = ["protocol", "service", "component"]
+                    dep_type = dep.get("type")
+                    if dep_type not in valid_types:
+                        raise ValueError(
+                            f"Dependency {i} has invalid type '{dep_type}'. "
+                            f"Valid types: {valid_types}"
+                        )
+
+                    # Extract class_name with validation
+                    class_name = dep.get("class_name")
+                    if not class_name or not isinstance(class_name, str):
+                        raise ValueError(
+                            f"Dependency {i} has invalid class_name: {class_name}"
+                        )
+
+                    # Validate protocol dependency naming convention
+                    if dep_type == "protocol" and not class_name.startswith("Protocol"):
+                        raise ValueError(
+                            f"Protocol dependency {i} class_name must start with 'Protocol', "
+                            f"got: {class_name}"
+                        )
+
                     result.append(class_name)
+
                 elif isinstance(dep, str):
+                    # Simple string dependencies must follow naming conventions
+                    if not dep:
+                        raise ValueError(f"Dependency {i} is empty string")
                     result.append(dep)
                 else:
-                    result.append(str(dep))
+                    # Convert other types to string with validation
+                    str_dep = str(dep).strip()
+                    if not str_dep:
+                        raise ValueError(
+                            f"Dependency {i} converts to empty string: {dep}"
+                        )
+                    result.append(str_dep)
+
             return result
         return v
 

@@ -1,5 +1,6 @@
 """ONEX-compliant NodeReducerPatternEngine with ModelOnexContainer integration."""
 
+import threading
 import time
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -74,6 +75,10 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         self._protocol_version = "1.0.0"
         self._onex_compliance_version = "1.0.0"
 
+        # Service caching for performance optimization
+        self._service_cache: Dict[str, Any] = {}
+        self._service_cache_lock = threading.RLock()
+
         # Service resolution through container
         self._initialize_services()
 
@@ -144,6 +149,76 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                 level=LogLevel.WARNING,
                 message=f"Some services could not be initialized: {str(e)}",
                 context={"event": "service_initialization_partial", "error": str(e)},
+            )
+
+    def _get_cached_service(self, service_name: str) -> Any:
+        """
+        Get service from container with caching for performance optimization.
+
+        Implements thread-safe caching to avoid repeated service resolution
+        calls which can be expensive in high-throughput scenarios.
+
+        Args:
+            service_name: Name of the service to resolve
+
+        Returns:
+            Any: The resolved service instance
+
+        Raises:
+            OnexError: If service resolution fails
+        """
+        with self._service_cache_lock:
+            # Check cache first
+            if service_name in self._service_cache:
+                return self._service_cache[service_name]
+
+            try:
+                # Resolve service through container
+                if hasattr(self.container, "get_service"):
+                    service = self.container.get_service(service_name)
+                else:
+                    # Fallback for Phase 3 - mock service resolution
+                    service = f"MockService_{service_name}"
+
+                # Cache the resolved service
+                self._service_cache[service_name] = service
+
+                emit_log_event(
+                    level=LogLevel.DEBUG,
+                    message=f"Service '{service_name}' resolved and cached",
+                    context={
+                        "event": "service_cached",
+                        "service_name": service_name,
+                        "cache_size": len(self._service_cache),
+                    },
+                )
+
+                return service
+
+            except Exception as e:
+                raise OnexError(
+                    error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+                    message=f"Failed to resolve service '{service_name}': {str(e)}",
+                    context={
+                        "service_name": service_name,
+                        "error_type": type(e).__name__,
+                        "container_available": self.container is not None,
+                    },
+                )
+
+    def _clear_service_cache(self) -> None:
+        """Clear service cache and log cache statistics."""
+        with self._service_cache_lock:
+            cache_size = len(self._service_cache)
+            self._service_cache.clear()
+
+            emit_log_event(
+                level=LogLevel.DEBUG,
+                message="Service cache cleared",
+                context={
+                    "event": "service_cache_cleared",
+                    "previous_cache_size": cache_size,
+                },
             )
 
     def _register_contract_subreducers(self) -> None:

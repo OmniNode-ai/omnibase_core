@@ -2,6 +2,8 @@
 # Multi-workflow execution pattern with instance isolation and enhanced metrics
 
 # === REQUIRED ROOT FIELDS ===
+name: "reducer_pattern_engine"
+version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 node_name: "reducer_pattern_engine"
 node_version: {major: 1, minor: 0, patch: 0}

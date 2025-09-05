@@ -110,8 +110,16 @@ class ContractValidator:
         return success
 
     def _validate_yaml_contracts(self) -> bool:
-        """Validate that YAML contracts deserialize to their backing Pydantic models."""
+        """
+        DEPRECATED: Manual YAML validation bypasses real Pydantic validation.
+
+        All validation should go through Node classes which use the actual
+        Pydantic models with proper validation. This method is kept for
+        backward compatibility but should be removed.
+        """
         print("\n📄 Validating YAML Contract Deserialization...")
+        print("   ⚠️  WARNING: Using deprecated manual YAML validation")
+        print("   ✅ All validation should go through Node classes instead")
 
         yaml_contracts = [
             {
@@ -227,17 +235,10 @@ class ContractValidator:
             except Exception as e:
                 warnings.append(f"Model serialization warning: {str(e)}")
 
-            # Validate essential contract fields are present in YAML
-            essential_fields = ["node_name", "node_type", "version", "contract_version"]
-            missing_fields = []
-            for field in essential_fields:
-                if field not in yaml_data:
-                    missing_fields.append(field)
-
-            if missing_fields:
-                warnings.append(
-                    f"Missing essential fields: {', '.join(missing_fields)}"
-                )
+            # REMOVED: Manual essential fields validation
+            # This was bypassing Pydantic validation and causing inconsistencies.
+            # The Pydantic model should handle all validation automatically.
+            # If fields are missing, the model_validate() call above would have failed.
 
             # Check for modern ONEX compliance fields
             modern_fields = ["service_resolution", "validation_rules", "definitions"]

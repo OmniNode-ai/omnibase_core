@@ -22,6 +22,9 @@ full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+# ONEX SPI dependency - SSH format required for development environment
+# CI/CD systems should configure SSH keys or use deploy keys for access
+# Alternative for CI/CD without SSH: Use HTTPS with token authentication
 omnibase-spi = {git = "ssh://git@github.com/OmniNode-ai/omnibase-spi.git", branch = "main"}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"
