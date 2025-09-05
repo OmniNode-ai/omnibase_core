@@ -48,5 +48,3 @@ class ModelFixtureData(BaseModel):
         return isinstance(self.data, (str, int, float, bool, type(None)))
 
 
-# Backward compatibility alias
-FixtureDataModel = ModelFixtureData

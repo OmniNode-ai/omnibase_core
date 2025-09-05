@@ -68,5 +68,3 @@ class ModelStateValue(BaseModel):
         return None
 
 
-# Legacy aliases for backward compatibility - will be deprecated
-ScalarValue = ModelScalarValue

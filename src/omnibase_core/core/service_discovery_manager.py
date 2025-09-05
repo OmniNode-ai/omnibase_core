@@ -12,7 +12,7 @@ from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import resolve_service_discovery
 

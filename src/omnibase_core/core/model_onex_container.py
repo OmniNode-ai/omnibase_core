@@ -33,7 +33,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
 

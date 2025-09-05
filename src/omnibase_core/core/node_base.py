@@ -41,7 +41,7 @@ from omnibase_core.mixin.mixin_request_response_introspection import (
 from omnibase_core.mixin.mixin_tool_execution import MixinToolExecution
 from omnibase_core.model.core.model_node_base import ModelNodeBase
 from omnibase_core.model.core.model_reducer import ActionModel, ModelState
-from omnibase_core.protocol.protocol_workflow_reducer import ProtocolWorkflowReducer
+from omnibase.protocols.core.protocol_workflow_reducer import ProtocolWorkflowReducer
 
 T = TypeVar("T")
 U = TypeVar("U")

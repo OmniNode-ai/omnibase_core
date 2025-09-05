@@ -14,7 +14,7 @@ from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.core.onex_error import OnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.protocol.protocol_logger import ProtocolLogger
+    from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
 
 class PostgreSQLLockManager:

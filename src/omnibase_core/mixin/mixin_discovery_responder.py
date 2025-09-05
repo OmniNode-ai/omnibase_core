@@ -15,7 +15,7 @@ from omnibase_core.model.core.model_onex_event import (
     OnexEvent,
 )
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
 
 class DiscoveryResponderMixin:
