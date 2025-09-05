@@ -72,11 +72,24 @@ def test_canary_contract_deserialization():
 
             print(f"   ✅ YAML loaded successfully")
 
-            # Import the model class
+            # Import the model class using whitelist approach for security
             try:
+                # Whitelist of allowed modules for security
+                allowed_modules = {
+                    "omnibase_core.core.contracts.model_contract_compute": "omnibase_core.core.contracts.model_contract_compute",
+                    "omnibase_core.core.contracts.model_contract_effect": "omnibase_core.core.contracts.model_contract_effect",
+                    "omnibase_core.core.contracts.model_contract_gateway": "omnibase_core.core.contracts.model_contract_gateway",
+                    "omnibase_core.core.contracts.model_contract_orchestrator": "omnibase_core.core.contracts.model_contract_orchestrator",
+                    "omnibase_core.core.contracts.model_contract_reducer": "omnibase_core.core.contracts.model_contract_reducer",
+                }
+
+                module_name = contract["model_module"]
+                if module_name not in allowed_modules:
+                    raise ValueError(f"Module {module_name} not in allowed whitelist")
+
                 import importlib
 
-                module = importlib.import_module(contract["model_module"])
+                module = importlib.import_module(allowed_modules[module_name])
                 model_class = getattr(module, contract["model_class"])
                 print(f"   ✅ Model class imported: {contract['model_class']}")
             except Exception as e:
