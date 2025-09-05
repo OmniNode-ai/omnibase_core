@@ -1,6 +1,6 @@
-"""Discriminated union for different tool events."""
+"""Strongly typed discriminated union for different tool events."""
 
-from typing import Union
+from typing import Annotated
 
 from pydantic import BaseModel, Discriminator, Field
 
@@ -20,13 +20,14 @@ def get_tool_discriminator(v) -> str:
     return getattr(v, "tool_name", "unknown").lower()
 
 
-# Discriminated union of all tool events
-ToolEventUnion = Union[
-    ModelReadToolEvent,
-    ModelWriteToolEvent,
-    ModelEditToolEvent,
-    ModelBashToolEvent,
-    ModelGrepToolEvent,
+# Strongly typed discriminated union using Annotated instead of Union
+ToolEventUnion = Annotated[
+    ModelReadToolEvent
+    | ModelWriteToolEvent
+    | ModelEditToolEvent
+    | ModelBashToolEvent
+    | ModelGrepToolEvent,
+    Discriminator(get_tool_discriminator)
 ]
 
 

@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+from omnibase_core.core.common_types import ModelScalarValue
 
 
 class ConsulServiceDiscovery(ProtocolServiceDiscovery):
@@ -94,7 +95,7 @@ class ConsulServiceDiscovery(ProtocolServiceDiscovery):
         port: int,
         health_check_url: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, ModelScalarValue]] = None,
     ) -> bool:
         """Register service with Consul or fallback."""
         try:

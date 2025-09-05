@@ -6,9 +6,10 @@ Provides a clean interface for service discovery systems (Consul, etcd, etc.)
 with proper fallback strategies and error handling.
 """
 
-from typing import Dict, List, Optional, Protocol, Union, runtime_checkable
+from typing import Dict, List, Optional, Protocol, runtime_checkable
 
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.core.common_types import ModelScalarValue
 
 
 @runtime_checkable
@@ -28,7 +29,7 @@ class ProtocolServiceDiscovery(Protocol):
         port: int,
         health_check_url: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        metadata: Optional[Dict[str, ModelScalarValue]] = None,
     ) -> bool:
         """
         Register a service with the discovery system.
@@ -61,7 +62,7 @@ class ProtocolServiceDiscovery(Protocol):
 
     async def discover_services(
         self, service_name: str, healthy_only: bool = True
-    ) -> List[Dict[str, Union[str, int, float, bool]]]:
+    ) -> List[Dict[str, ModelScalarValue]]:
         """
         Discover instances of a service.
 
