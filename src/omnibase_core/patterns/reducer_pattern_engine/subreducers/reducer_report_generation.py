@@ -7,8 +7,10 @@ data aggregation, formatting, and output generation.
 
 import json
 import time
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from enum import Enum
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from omnibase_core.core.core_structured_logging import (
@@ -17,12 +19,210 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from ..v1_0_0.contracts import (
+from ..v1_0_0.models import (
     BaseSubreducer,
-    SubreducerResult,
-    WorkflowRequest,
+)
+from ..v1_0_0.models import ModelSubreducerResult as SubreducerResult
+from ..v1_0_0.models import ModelWorkflowRequest as WorkflowRequest
+from ..v1_0_0.models import (
     WorkflowType,
 )
+
+
+class EnumTemplateType(str, Enum):
+    """Enumeration of supported template types."""
+
+    SUMMARY = "summary"
+    DETAILED = "detailed"
+    DASHBOARD = "dashboard"
+    CUSTOM = "custom"
+
+
+class EnumOutputFormat(str, Enum):
+    """Enumeration of supported output formats."""
+
+    JSON = "json"
+    HTML = "html"
+    CSV = "csv"
+    TXT = "txt"
+    MARKDOWN = "markdown"
+
+
+class EnumSectionType(str, Enum):
+    """Enumeration of report section types."""
+
+    SUMMARY = "summary"
+    METRICS = "metrics"
+    OVERVIEW = "overview"
+    INTRODUCTION = "introduction"
+    ANALYSIS = "analysis"
+    CONCLUSIONS = "conclusions"
+    KPI = "kpi"
+    CHARTS = "charts"
+    INSIGHTS = "insights"
+    DATA = "data"
+    CUSTOM = "custom"
+
+
+@dataclass
+class ModelReportConfig:
+    """Strongly typed report configuration model."""
+
+    template_type: EnumTemplateType
+    output_format: EnumOutputFormat
+    report_title: str = "Generated Report"
+    report_description: str = ""
+    include_timestamp: bool = True
+    include_metadata: bool = True
+
+
+@dataclass
+class ModelTemplateConfig:
+    """Strongly typed template configuration model."""
+
+    include_aggregations: bool = False
+    sections: List[Dict[str, str]] = None
+
+    def __post_init__(self):
+        if self.sections is None:
+            self.sections = []
+
+
+@dataclass
+class ModelFormattingOptions:
+    """Strongly typed formatting options model."""
+
+    decimal_places: int = 2
+    thousand_separator: str = ","
+    date_format: str = "%Y-%m-%d %H:%M:%S"
+    show_percentages: bool = True
+
+
+@dataclass
+class ModelValidationRules:
+    """Strongly typed validation rules model."""
+
+    min_sections: int = 1
+    max_sections: int = 50
+    validate_json: bool = True
+    require_content: bool = True
+
+
+@dataclass
+class ModelListDataSummary:
+    """Strongly typed summary for list data processing."""
+
+    values: List[Any]
+    count: int
+    first_item: Any = None
+    last_item: Any = None
+    unique_count: int = 0
+
+
+@dataclass
+class ModelDictDataSummary:
+    """Strongly typed summary for dictionary data processing."""
+
+    data: Dict[str, Any]
+    keys: List[str]
+    key_count: int
+    has_nested: bool
+
+
+@dataclass
+class ModelNumericDataSummary:
+    """Strongly typed summary for numeric data processing."""
+
+    value: float
+    formatted: str
+    data_type: str
+
+
+@dataclass
+class ModelDataAggregations:
+    """Strongly typed data aggregations model."""
+
+    total_data_keys: int
+    data_types_present: List[str]
+    has_lists: bool
+    has_dicts: bool
+    total_list_items: int
+
+
+@dataclass
+class ModelReportSection:
+    """Strongly typed report section model."""
+
+    title: str
+    content: Any
+    section_type: EnumSectionType
+    data_key: str = ""
+    visualization: str = ""
+
+
+@dataclass
+class ModelReportContent:
+    """Strongly typed report content model."""
+
+    title: str
+    description: str
+    template_type: EnumTemplateType
+    sections: List[ModelReportSection]
+    generation_timestamp: str
+
+
+@dataclass
+class ModelReportMetadata:
+    """Strongly typed report metadata model."""
+
+    report_id: str
+    template_type: EnumTemplateType
+    output_format: EnumOutputFormat
+    generated_at: str
+    generator: str
+    data_points_processed: int
+    sections_generated: int
+    content_size_estimate: int
+
+
+@dataclass
+class ModelValidationResults:
+    """Strongly typed validation results model."""
+
+    is_valid: bool
+    validation_checks: List[str]
+    warnings: List[str]
+    errors: List[str]
+
+
+@dataclass
+class ModelGenerationStatistics:
+    """Strongly typed generation statistics model."""
+
+    template_type: EnumTemplateType
+    output_format: EnumOutputFormat
+    sections_generated: int
+    data_points_processed: int
+    content_size_bytes: int
+
+
+@dataclass
+class ModelProcessingMetrics:
+    """Strongly typed processing metrics model."""
+
+    total_processed: int = 0
+    successful_reports: int = 0
+    failed_reports: int = 0
+    average_processing_time_ms: float = 0.0
+    total_sections_generated: int = 0
+    output_formats_used: Dict[str, int] = None
+    template_types_used: Dict[str, int] = None
+
+    def __post_init__(self):
+        if self.output_formats_used is None:
+            self.output_formats_used = {}
+        if self.template_types_used is None:
+            self.template_types_used = {}
 
 
 class ReducerReportGenerationSubreducer(BaseSubreducer):
@@ -320,9 +520,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             "has_nested": any(isinstance(v, (dict, list)) for v in data.values()),
         }
 
-    def _process_numeric_data(
-        self, data: Union[int, float], key: str
-    ) -> Dict[str, Any]:
+    def _process_numeric_data(self, data: float, key: str) -> Dict[str, Any]:
         """Process numeric data with formatting options."""
         return {
             "value": data,

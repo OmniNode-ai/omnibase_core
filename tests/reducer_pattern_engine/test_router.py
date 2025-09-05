@@ -12,11 +12,11 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
-    RoutingDecision,
-    SubreducerResult,
-    WorkflowRequest,
+    ModelRoutingDecision,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
     WorkflowType,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router import WorkflowRouter
@@ -31,8 +31,8 @@ class MockSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type == WorkflowType.DOCUMENT_REGENERATION
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
-        return SubreducerResult(
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
+        return ModelSubreducerResult(
             workflow_id=request.workflow_id,
             subreducer_name=self.name,
             success=True,
@@ -60,7 +60,7 @@ def router():
 @pytest.fixture
 def sample_workflow_request():
     """Create a sample workflow request for testing."""
-    return WorkflowRequest(
+    return ModelWorkflowRequest(
         workflow_id=uuid4(),
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="test_instance_1",
@@ -197,7 +197,7 @@ class TestWorkflowRouting:
             decision = await router.route(sample_workflow_request)
 
         # Verify routing decision
-        assert isinstance(decision, RoutingDecision)
+        assert isinstance(decision, ModelRoutingDecision)
         assert decision.workflow_id == sample_workflow_request.workflow_id
         assert decision.workflow_type == sample_workflow_request.workflow_type
         assert decision.instance_id == sample_workflow_request.instance_id
@@ -258,13 +258,13 @@ class TestWorkflowRouting:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         # Create requests with different instance IDs
-        request1 = WorkflowRequest(
+        request1 = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="instance_1",
             payload={"document_id": "doc_123"},
         )
 
-        request2 = WorkflowRequest(
+        request2 = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="instance_2",
             payload={"document_id": "doc_123"},
@@ -350,7 +350,7 @@ class TestRoutingMetrics:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         requests = [
-            WorkflowRequest(
+            ModelWorkflowRequest(
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"instance_{i}",
                 payload={"document_id": f"doc_{i}"},
@@ -495,7 +495,7 @@ class TestEdgeCases:
         subreducer = MockSubreducer("doc_regeneration_subreducer")
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="",  # Empty instance ID
             payload={"document_id": "doc_123"},

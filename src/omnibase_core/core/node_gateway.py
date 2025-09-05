@@ -28,6 +28,7 @@ from uuid import UUID, uuid4
 import aiohttp
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.common_types import ScalarValue
 from omnibase_core.core.contracts.model_contract_gateway import ModelContractGateway
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -75,7 +76,7 @@ class ModelGatewayInput(BaseModel):
     with protocol translation and load balancing configuration.
     """
 
-    message_data: Dict[str, Union[str, int, float, bool]]
+    message_data: Dict[str, ScalarValue]
     destination_endpoints: List[str]
     operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
     routing_strategy: RoutingStrategy = RoutingStrategy.ROUND_ROBIN
@@ -87,9 +88,7 @@ class ModelGatewayInput(BaseModel):
     circuit_breaker_enabled: bool = True
     load_balancing_enabled: bool = True
     response_aggregation_enabled: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -106,7 +105,7 @@ class ModelGatewayOutput(BaseModel):
     and network coordination metadata.
     """
 
-    result: Dict[str, Union[str, int, float, bool]]
+    result: Dict[str, ScalarValue]
     operation_id: str
     routing_strategy: RoutingStrategy
     selected_endpoint: str
@@ -114,11 +113,9 @@ class ModelGatewayOutput(BaseModel):
     retry_count: int = 0
     endpoints_tried: List[str] = Field(default_factory=list)
     circuit_breaker_triggered: bool = False
-    load_balance_decision: Optional[Dict[str, Union[str, int, float]]] = None
+    load_balance_decision: Optional[Dict[str, ScalarValue]] = None
     aggregated_responses: Optional[List[Dict]] = None
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -462,7 +459,7 @@ class NodeGateway(NodeCoreBase):
                 {"operation_id": operation_id, "error": str(e)},
             )
 
-    async def get_health_status(self) -> Dict[str, Union[str, int, float, bool]]:
+    async def get_health_status(self) -> Dict[str, ScalarValue]:
         """Get gateway health status."""
         # Check circuit breaker states
         circuit_breaker_status = {}
@@ -496,7 +493,7 @@ class NodeGateway(NodeCoreBase):
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def get_metrics(self) -> Dict[str, Union[str, int, float, bool]]:
+    async def get_metrics(self) -> Dict[str, ScalarValue]:
         """Get gateway performance metrics."""
         # Count circuit breaker trips
         circuit_breaker_trips = sum(

@@ -16,9 +16,9 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    SubreducerResult,
-    WorkflowRequest,
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
     WorkflowType,
 )
 
@@ -62,7 +62,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_successful_descriptive_analysis(self, subreducer):
         """Test successful descriptive statistical analysis."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-descriptive-001",
@@ -109,7 +109,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_multiple_analysis_types(self, subreducer):
         """Test processing with multiple analysis types."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-multi-001",
@@ -158,7 +158,7 @@ class TestReducerDataAnalysisSubreducer:
         # Create data with some autocorrelation
         data = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-correlation-001",
@@ -187,7 +187,7 @@ class TestReducerDataAnalysisSubreducer:
         # Data with mixed types, None values, and outliers
         messy_data = [1, 2, None, "invalid", 3, 4, 5, 100, 6, 7, 8]
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-cleaning-001",
@@ -222,7 +222,7 @@ class TestReducerDataAnalysisSubreducer:
     async def test_process_insufficient_data_for_analysis(self, subreducer):
         """Test handling of insufficient data scenarios."""
         # Single data point
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-insufficient-001",
@@ -251,7 +251,7 @@ class TestReducerDataAnalysisSubreducer:
     async def test_process_invalid_request_payload(self, subreducer):
         """Test handling of invalid request payloads."""
         # Missing data field
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-invalid-001",
@@ -270,7 +270,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_empty_data_list(self, subreducer):
         """Test handling of empty data list."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-empty-001",
@@ -288,7 +288,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_no_valid_numeric_data(self, subreducer):
         """Test handling of data with no valid numeric values."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-no-numeric-001",
@@ -310,7 +310,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_unsupported_analysis_types(self, subreducer):
         """Test handling of unsupported analysis types."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-unsupported-001",
@@ -343,7 +343,7 @@ class TestReducerDataAnalysisSubreducer:
     @pytest.mark.asyncio
     async def test_process_edge_case_single_value_repeated(self, subreducer):
         """Test analysis of data with single repeated value."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-repeated-001",
@@ -382,7 +382,7 @@ class TestReducerDataAnalysisSubreducer:
         random.seed(42)  # For reproducible results
         large_data = [random.gauss(50, 10) for _ in range(1000)]
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-large-001",
@@ -416,7 +416,7 @@ class TestReducerDataAnalysisSubreducer:
         assert initial_metrics["total_processed"] == 0
 
         # Process successful request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-metrics-001",
@@ -438,7 +438,7 @@ class TestReducerDataAnalysisSubreducer:
         assert success_metrics["analysis_types_used"]["descriptive"] == 1
 
         # Process failing request
-        failing_request = WorkflowRequest(
+        failing_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test-metrics-002",
@@ -587,7 +587,7 @@ class TestReducerDataAnalysisSubreducer:
             "statistics.stdev",
             side_effect=statistics.StatisticsError("Mock statistics error"),
         ):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="test-stats-error-001",
@@ -611,7 +611,7 @@ class TestReducerDataAnalysisSubreducer:
         # Create multiple requests to process concurrently
         requests = []
         for i in range(10):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"concurrent-{i}",

@@ -17,9 +17,9 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration import (
     ReducerDocumentRegenerationSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    SubreducerResult,
-    WorkflowRequest,
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
     WorkflowType,
 )
 
@@ -36,7 +36,7 @@ def subreducer():
 @pytest.fixture
 def valid_workflow_request():
     """Create a valid workflow request for document regeneration."""
-    return WorkflowRequest(
+    return ModelWorkflowRequest(
         workflow_id=uuid4(),
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="test_instance_1",
@@ -55,7 +55,7 @@ def valid_workflow_request():
 @pytest.fixture
 def minimal_workflow_request():
     """Create a minimal valid workflow request."""
-    return WorkflowRequest(
+    return ModelWorkflowRequest(
         workflow_id=uuid4(),
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="minimal_instance",
@@ -93,7 +93,7 @@ class TestReducerDocumentRegenerationSubreducerInitialization:
 
     def test_subreducer_inherits_from_base(self, subreducer):
         """Test that subreducer properly inherits from BaseSubreducer."""
-        from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+        from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
             BaseSubreducer,
         )
 
@@ -150,7 +150,7 @@ class TestSuccessfulWorkflowProcessing:
             result = await subreducer.process(valid_workflow_request)
 
         # Verify result structure
-        assert isinstance(result, SubreducerResult)
+        assert isinstance(result, ModelSubreducerResult)
         assert result.workflow_id == valid_workflow_request.workflow_id
         assert result.subreducer_name == "reducer_document_regeneration"
         assert result.success is True
@@ -268,7 +268,7 @@ class TestFailedWorkflowProcessing:
         class MockWorkflowType(Enum):
             UNSUPPORTED_TYPE = "unsupported_type"
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=MockWorkflowType.UNSUPPORTED_TYPE,
             instance_id="test_instance",
@@ -299,7 +299,7 @@ class TestFailedWorkflowProcessing:
     async def test_missing_required_parameters(self, subreducer):
         """Test handling of missing required parameters."""
         # Create request missing document_id
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -332,7 +332,7 @@ class TestFailedWorkflowProcessing:
     async def test_missing_multiple_required_parameters(self, subreducer):
         """Test handling of multiple missing required parameters."""
         # Create request missing both required parameters
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -422,7 +422,7 @@ class TestParameterExtraction:
 
     def test_extract_parameters_missing_required(self, subreducer):
         """Test parameter extraction with missing required parameters."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -472,7 +472,7 @@ class TestMetrics:
     async def test_failure_metrics_update(self, subreducer):
         """Test that failure metrics are properly updated."""
         # Create invalid request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -500,7 +500,7 @@ class TestMetrics:
     ):
         """Test metrics with both successful and failed workflows."""
         # Create invalid request
-        invalid_request = WorkflowRequest(
+        invalid_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -554,7 +554,7 @@ class TestMetrics:
 
         # Create multiple requests
         for i in range(3):
-            req = WorkflowRequest(
+            req = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"test_instance_{i}",
@@ -584,7 +584,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_empty_payload(self, subreducer):
         """Test handling of completely empty payload."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -602,7 +602,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_none_payload_values(self, subreducer):
         """Test handling of None values in payload."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -645,7 +645,7 @@ class TestEdgeCases:
         # Create request with large payload
         large_metadata = {f"key_{i}": f"value_{i}" * 100 for i in range(100)}
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -696,7 +696,7 @@ class TestLoggingCompliance:
     async def test_error_logging_events(self, subreducer):
         """Test that error events are properly logged."""
         # Create invalid request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",

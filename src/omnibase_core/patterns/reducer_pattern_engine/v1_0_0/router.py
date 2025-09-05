@@ -8,7 +8,7 @@ using hash-based distribution with correlation ID tracking and error handling.
 import hashlib
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -16,10 +16,12 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from .contracts import (
+from .models import (
     BaseSubreducer,
-    RoutingDecision,
-    WorkflowRequest,
+)
+from .models import ModelRoutingDecision as RoutingDecision
+from .models import ModelWorkflowRequest as WorkflowRequest
+from .models import (
     WorkflowType,
 )
 
@@ -48,7 +50,7 @@ class WorkflowRouter:
             "routing_errors": 0,
             "average_routing_time_ms": 0.0,
         }
-        self._metrics_lock = threading.RLock()  # Thread-safe metrics updates
+        self._lock = threading.RLock()  # Thread-safe operations
 
     def register_subreducer(
         self, subreducer: BaseSubreducer, workflow_types: List[WorkflowType]
@@ -189,7 +191,7 @@ class WorkflowRouter:
             return decision
 
         except Exception as e:
-            with self._metrics_lock:
+            with self._lock:
                 self._routing_metrics["routing_errors"] += 1
 
             emit_log_event(
@@ -206,7 +208,7 @@ class WorkflowRouter:
             )
             raise
 
-    def get_subreducer(self, name: str) -> Optional[BaseSubreducer]:
+    def get_subreducer(self, name: str) -> BaseSubreducer:
         """
         Get a registered subreducer by name.
 
@@ -214,9 +216,9 @@ class WorkflowRouter:
             name: The subreducer name
 
         Returns:
-            Optional[BaseSubreducer]: The subreducer if found, None otherwise
+            BaseSubreducer: The subreducer if found, otherwise a NotFoundSubreducer
         """
-        return self._subreducers.get(name)
+        return self._subreducers.get(name, self._create_not_found_subreducer(name))
 
     def get_routing_metrics(self) -> Dict[str, Any]:
         """
@@ -225,7 +227,8 @@ class WorkflowRouter:
         Returns:
             Dict[str, Any]: Current routing metrics
         """
-        return self._routing_metrics.copy()
+        with self._lock:
+            return self._routing_metrics.copy()
 
     def _generate_routing_hash(self, workflow_type: str, instance_id: str) -> str:
         """
@@ -252,7 +255,7 @@ class WorkflowRouter:
         Args:
             routing_time_ms: Time taken for this routing decision
         """
-        with self._metrics_lock:
+        with self._lock:
             self._routing_metrics["total_routed"] += 1
 
             # Calculate running average routing time
@@ -263,3 +266,57 @@ class WorkflowRouter:
             self._routing_metrics["average_routing_time_ms"] = (
                 current_avg + (routing_time_ms - current_avg) / total_routed
             )
+
+    def _create_not_found_subreducer(self, name: str) -> BaseSubreducer:
+        """
+        Create a NotFoundSubreducer fallback instance.
+
+        Args:
+            name: The subreducer name that was not found
+
+        Returns:
+            BaseSubreducer: A NotFoundSubreducer instance
+        """
+        return NotFoundSubreducer(name)
+
+
+class NotFoundSubreducer(BaseSubreducer):
+    """
+    Fallback subreducer for handling requests to non-existent subreducers.
+
+    Provides a strongly typed alternative to returning None, ensuring
+    type safety while providing clear error handling.
+    """
+
+    def __init__(self, requested_name: str):
+        """
+        Initialize with the name that was requested but not found.
+
+        Args:
+            requested_name: The subreducer name that was not found
+        """
+        self.name = f"not_found_{requested_name}"
+        self.requested_name = requested_name
+
+    async def process(self, request: WorkflowRequest) -> "SubreducerResult":
+        """
+        Process workflow request by returning an error result.
+
+        Args:
+            request: The workflow request
+
+        Returns:
+            SubreducerResult: Error result indicating subreducer not found
+
+        Raises:
+            OnexError: Always raises error for non-existent subreducer
+        """
+        raise OnexError(
+            error_code=CoreErrorCode.VALIDATION_ERROR,
+            message=f"Subreducer '{self.requested_name}' not found",
+            context={
+                "requested_name": self.requested_name,
+                "workflow_id": str(request.workflow_id),
+                "workflow_type": request.workflow_type.value,
+            },
+        )

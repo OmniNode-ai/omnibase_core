@@ -17,9 +17,9 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
     ReducerReportGenerationSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    SubreducerResult,
-    WorkflowRequest,
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
     WorkflowType,
 )
 
@@ -64,7 +64,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_successful_summary_report_json(self, subreducer):
         """Test successful summary report generation in JSON format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-summary-001",
@@ -121,7 +121,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_detailed_report_html(self, subreducer):
         """Test detailed report generation in HTML format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-detailed-001",
@@ -158,7 +158,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_dashboard_report_markdown(self, subreducer):
         """Test dashboard report generation in Markdown format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-dashboard-001",
@@ -192,7 +192,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_custom_template_csv(self, subreducer):
         """Test custom template report generation in CSV format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-custom-001",
@@ -230,7 +230,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_text_output_format(self, subreducer):
         """Test plain text output format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-text-001",
@@ -259,7 +259,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_invalid_request_missing_template_type(self, subreducer):
         """Test handling of request missing template_type."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-invalid-001",
@@ -282,7 +282,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_invalid_request_missing_output_format(self, subreducer):
         """Test handling of request missing output_format."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-invalid-002",
@@ -304,7 +304,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_empty_payload(self, subreducer):
         """Test handling of empty payload."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-empty-001",
@@ -322,7 +322,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_unsupported_template_type(self, subreducer):
         """Test handling of unsupported template type (should use custom fallback)."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-unsupported-template-001",
@@ -348,7 +348,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_process_unsupported_output_format(self, subreducer):
         """Test handling of unsupported output format (should default to JSON)."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-unsupported-format-001",
@@ -394,7 +394,7 @@ class TestReducerReportGenerationSubreducer:
             "text_data": "Sample text content",
         }
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-complex-001",
@@ -478,7 +478,7 @@ class TestReducerReportGenerationSubreducer:
         assert initial_metrics["total_processed"] == 0
 
         # Process successful request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-metrics-001",
@@ -506,7 +506,7 @@ class TestReducerReportGenerationSubreducer:
         assert success_metrics["template_types_used"]["summary"] == 1
 
         # Process failing request
-        failing_request = WorkflowRequest(
+        failing_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-metrics-002",
@@ -552,7 +552,7 @@ class TestReducerReportGenerationSubreducer:
     async def test_template_configuration_options(self, subreducer):
         """Test various template configuration options."""
         # Test with include_aggregations enabled
-        request_with_agg = WorkflowRequest(
+        request_with_agg = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-config-001",
@@ -574,7 +574,7 @@ class TestReducerReportGenerationSubreducer:
         assert len(report["sections"]) >= 2
 
         # Test with custom metadata and formatting options
-        request_with_options = WorkflowRequest(
+        request_with_options = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-config-002",
@@ -602,7 +602,7 @@ class TestReducerReportGenerationSubreducer:
     @pytest.mark.asyncio
     async def test_report_metadata_generation(self, subreducer):
         """Test comprehensive report metadata generation."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-metadata-001",
@@ -638,7 +638,7 @@ class TestReducerReportGenerationSubreducer:
             "_process_report_data",
             side_effect=ValueError("Mock processing error"),
         ):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id="test-error-001",
@@ -668,7 +668,7 @@ class TestReducerReportGenerationSubreducer:
         # Create multiple requests to process concurrently
         requests = []
         for i in range(10):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id=f"concurrent-{i}",
@@ -742,7 +742,7 @@ class TestReducerReportGenerationSubreducer:
             for i in range(50)  # 50 datasets with 100 values each
         }
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="test-large-001",
@@ -781,7 +781,7 @@ class TestReducerReportGenerationSubreducer:
         results = {}
 
         for output_format in formats_to_test:
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id=f"test-format-{output_format}",

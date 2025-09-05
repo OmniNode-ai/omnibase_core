@@ -7,7 +7,7 @@ and state machine models with audit trails and recovery mechanisms.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Set
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, root_validator, validator
@@ -26,54 +26,92 @@ class WorkflowState(str, Enum):
     RETRYING = "retrying"
 
 
+class ModelTransitionReason(BaseModel):
+    """Strongly typed transition reason model."""
+
+    description: str = Field(..., description="Human-readable transition reason")
+    category: str = Field(default="manual", description="Reason category")
+    automated: bool = Field(
+        default=False, description="Whether transition was automated"
+    )
+
+
 class ModelStateTransition(BaseModel):
     """Model representing a state transition event."""
 
     from_state: WorkflowState
     to_state: WorkflowState
     transition_time: datetime = Field(default_factory=datetime.now)
-    reason: Optional[str] = None
+    reason: ModelTransitionReason = Field(
+        default_factory=lambda: ModelTransitionReason(description="State transition")
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ModelWorkflowIdentity(BaseModel):
+    """Strongly typed workflow identity model."""
+
+    workflow_id: UUID
+    workflow_type: str
+    instance_id: str = Field(
+        default="default", description="Workflow instance identifier"
+    )
+    correlation_id: UUID
+
+
+class ModelWorkflowTiming(BaseModel):
+    """Strongly typed workflow timing model."""
+
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    started_at: datetime = Field(default_factory=datetime.now)
+    completed_at: datetime = Field(default_factory=datetime.now)
+    processing_time_ms: float = Field(
+        default=0.0, description="Processing time in milliseconds"
+    )
+
+
+class ModelWorkflowError(BaseModel):
+    """Strongly typed workflow error model."""
+
+    error_message: str = Field(default="", description="Error message if any")
+    error_details: Dict[str, Any] = Field(default_factory=dict)
+    has_error: bool = Field(default=False, description="Whether workflow has error")
 
 
 class ModelWorkflowStateModel(BaseModel):
     """Complete workflow state model with transition tracking."""
 
     # Core identification
-    workflow_id: UUID
-    workflow_type: str
-    instance_id: Optional[str] = None
-    correlation_id: UUID
+    identity: ModelWorkflowIdentity
 
     # State management
     current_state: WorkflowState = WorkflowState.PENDING
-    previous_state: Optional[WorkflowState] = None
+    previous_state: WorkflowState = WorkflowState.PENDING
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    timing: ModelWorkflowTiming = Field(default_factory=ModelWorkflowTiming)
 
     # Processing information
-    processing_time_ms: Optional[float] = None
     retry_count: int = 0
     max_retries: int = 3
 
     # Error handling
-    error_message: Optional[str] = None
-    error_details: Dict[str, Any] = Field(default_factory=dict)
+    error_info: ModelWorkflowError = Field(default_factory=ModelWorkflowError)
 
     # Metadata and context
     metadata: Dict[str, Any] = Field(default_factory=dict)
     transition_history: List[ModelStateTransition] = Field(default_factory=list)
 
     # Validation
-    @validator("workflow_type")
-    def validate_workflow_type(cls, v):
-        if not v or not isinstance(v, str):
-            raise ValueError("Workflow type must be a non-empty string")
-        return v.lower()
+    @validator("identity", pre=True, always=True)
+    def validate_identity(cls, v):
+        if isinstance(v, dict):
+            if "workflow_type" in v and v["workflow_type"]:
+                v["workflow_type"] = v["workflow_type"].lower()
+        elif hasattr(v, "workflow_type") and v.workflow_type:
+            v.workflow_type = v.workflow_type.lower()
+        return v
 
     @validator("retry_count")
     def validate_retry_count(cls, v):
@@ -87,37 +125,37 @@ class ModelWorkflowStateModel(BaseModel):
             raise ValueError("Max retries cannot be negative")
         return v
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def validate_state_consistency(cls, values):
         current_state = values.get("current_state")
-        started_at = values.get("started_at")
-        completed_at = values.get("completed_at")
+        timing = values.get("timing")
 
-        # If processing or completed, should have started_at
+        # Initialize timing if not present
+        if not timing:
+            values["timing"] = ModelWorkflowTiming()
+            timing = values["timing"]
+
+        # Update timing based on current state
         if current_state in [
             WorkflowState.PROCESSING,
             WorkflowState.COMPLETED,
             WorkflowState.FAILED,
         ]:
-            if not started_at:
-                values["started_at"] = values.get("created_at") or datetime.now()
-
-        # If completed or failed, should have completed_at
-        if current_state in [
-            WorkflowState.COMPLETED,
-            WorkflowState.FAILED,
-            WorkflowState.CANCELLED,
-        ]:
-            if not completed_at:
-                values["completed_at"] = datetime.now()
+            # Ensure timing is properly set for active states
+            if isinstance(timing, dict):
+                if not timing.get("started_at"):
+                    timing["started_at"] = timing.get("created_at", datetime.now())
+            elif hasattr(timing, "started_at"):
+                if timing.started_at == timing.created_at:
+                    timing.started_at = datetime.now()
 
         return values
 
     def transition_to(
         self,
         new_state: WorkflowState,
-        reason: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        reason: ModelTransitionReason = None,
+        metadata: Dict[str, Any] = None,
     ) -> "ModelWorkflowStateModel":
         """
         Transition to a new state with validation and history tracking.
@@ -139,6 +177,14 @@ class ModelWorkflowStateModel(BaseModel):
                 f"Invalid state transition from {self.current_state} to {new_state}"
             )
 
+        # Create default reason if not provided
+        if reason is None:
+            reason = ModelTransitionReason(
+                description=f"Transition from {self.current_state} to {new_state}",
+                category="automated" if metadata else "manual",
+                automated=metadata is not None,
+            )
+
         # Create transition record
         transition = ModelStateTransition(
             from_state=self.current_state,
@@ -150,26 +196,24 @@ class ModelWorkflowStateModel(BaseModel):
         # Update state
         self.previous_state = self.current_state
         self.current_state = new_state
-        self.updated_at = datetime.now()
+        self.timing.updated_at = datetime.now()
 
         # Update timestamps based on new state
-        if new_state == WorkflowState.PROCESSING and not self.started_at:
-            self.started_at = self.updated_at
+        if new_state == WorkflowState.PROCESSING:
+            self.timing.started_at = self.timing.updated_at
 
         if new_state in [
             WorkflowState.COMPLETED,
             WorkflowState.FAILED,
             WorkflowState.CANCELLED,
         ]:
-            if not self.completed_at:
-                self.completed_at = self.updated_at
+            self.timing.completed_at = self.timing.updated_at
 
-            # Calculate processing time if we have start time
-            if self.started_at:
-                processing_duration = (
-                    self.completed_at - self.started_at
-                ).total_seconds() * 1000
-                self.processing_time_ms = processing_duration
+            # Calculate processing time
+            processing_duration = (
+                self.timing.completed_at - self.timing.started_at
+            ).total_seconds() * 1000
+            self.timing.processing_time_ms = processing_duration
 
         # Handle retry logic
         if new_state == WorkflowState.RETRYING:
@@ -229,7 +273,7 @@ class ModelWorkflowStateModel(BaseModel):
         )
 
     def set_error(
-        self, error_message: str, error_details: Optional[Dict[str, Any]] = None
+        self, error_message: str, error_details: Dict[str, Any] = None
     ) -> None:
         """
         Set error information and transition to failed state.
@@ -238,35 +282,41 @@ class ModelWorkflowStateModel(BaseModel):
             error_message: Human-readable error message
             error_details: Additional error details
         """
-        self.error_message = error_message
-        self.error_details = error_details or {}
+        self.error_info.error_message = error_message
+        self.error_info.error_details = error_details or {}
+        self.error_info.has_error = True
 
         if self.current_state != WorkflowState.FAILED:
+            reason = ModelTransitionReason(
+                description=f"Error: {error_message}", category="error", automated=True
+            )
             self.transition_to(
                 WorkflowState.FAILED,
-                reason=f"Error: {error_message}",
-                metadata={"error_details": self.error_details},
+                reason=reason,
+                metadata={"error_details": self.error_info.error_details},
             )
 
     def clear_error(self) -> None:
         """Clear error information."""
-        self.error_message = None
-        self.error_details = {}
+        self.error_info.error_message = ""
+        self.error_info.error_details = {}
+        self.error_info.has_error = False
 
-    def get_duration_ms(self) -> Optional[float]:
+    def get_duration_ms(self) -> float:
         """
         Get total workflow duration in milliseconds.
 
         Returns:
-            Duration in milliseconds if completed, None otherwise
+            Duration in milliseconds (0.0 if not completed)
         """
-        if self.processing_time_ms is not None:
-            return self.processing_time_ms
+        if self.timing.processing_time_ms > 0:
+            return self.timing.processing_time_ms
 
-        if self.started_at and self.completed_at:
-            return (self.completed_at - self.started_at).total_seconds() * 1000
-
-        return None
+        # Calculate duration between completed and started times
+        duration = (
+            self.timing.completed_at - self.timing.started_at
+        ).total_seconds() * 1000
+        return max(0.0, duration)
 
     def get_current_duration_ms(self) -> float:
         """
@@ -275,7 +325,7 @@ class ModelWorkflowStateModel(BaseModel):
         Returns:
             Current duration in milliseconds
         """
-        start_time = self.started_at or self.created_at
+        start_time = self.timing.started_at
         current_time = datetime.now()
         return (current_time - start_time).total_seconds() * 1000
 
@@ -287,27 +337,24 @@ class ModelWorkflowStateModel(BaseModel):
             Summary dictionary with key workflow information
         """
         return {
-            "workflow_id": str(self.workflow_id),
-            "workflow_type": self.workflow_type,
+            "workflow_id": str(self.identity.workflow_id),
+            "workflow_type": self.identity.workflow_type,
             "current_state": self.current_state.value,
-            "previous_state": (
-                self.previous_state.value if self.previous_state else None
-            ),
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
-            "processing_time_ms": self.processing_time_ms,
+            "previous_state": self.previous_state.value,
+            "created_at": self.timing.created_at.isoformat(),
+            "updated_at": self.timing.updated_at.isoformat(),
+            "started_at": self.timing.started_at.isoformat(),
+            "completed_at": self.timing.completed_at.isoformat(),
+            "processing_time_ms": self.timing.processing_time_ms,
             "retry_count": self.retry_count,
             "max_retries": self.max_retries,
             "is_terminal": self.is_terminal_state(),
             "is_active": self.is_active_state(),
             "can_retry": self.can_retry(),
-            "error_message": self.error_message,
-            "correlation_id": str(self.correlation_id),
-            "instance_id": self.instance_id,
+            "error_message": self.error_info.error_message,
+            "has_error": self.error_info.has_error,
+            "correlation_id": str(self.identity.correlation_id),
+            "instance_id": self.identity.instance_id,
             "transition_count": len(self.transition_history),
         }
 

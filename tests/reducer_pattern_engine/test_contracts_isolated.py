@@ -10,18 +10,12 @@ from uuid import uuid4
 
 import pytest
 
-# Clean imports without sys.path manipulation
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
-    RoutingDecision,
-    SubreducerResult,
-)
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    WorkflowMetrics as EngineMetrics,  # Alias for backward compatibility
-)
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    WorkflowRequest,
-    WorkflowResponse,
+    ModelRoutingDecision,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
     WorkflowStatus,
     WorkflowType,
 )
@@ -62,15 +56,15 @@ class TestWorkflowStatus:
             assert isinstance(status, WorkflowStatus)
 
 
-class TestWorkflowRequest:
-    """Test WorkflowRequest model."""
+class TestModelWorkflowRequest:
+    """Test ModelWorkflowRequest model."""
 
     def test_workflow_request_creation(self):
-        """Test WorkflowRequest model creation."""
+        """Test ModelWorkflowRequest model creation."""
         workflow_id = uuid4()
         correlation_id = uuid4()
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=workflow_id,
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -88,8 +82,8 @@ class TestWorkflowRequest:
         assert isinstance(request.timestamp, float)
 
     def test_workflow_request_minimal(self):
-        """Test WorkflowRequest with minimal required fields."""
-        request = WorkflowRequest(
+        """Test ModelWorkflowRequest with minimal required fields."""
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="minimal_instance",
             payload={"document_id": "doc_123"},
@@ -102,8 +96,8 @@ class TestWorkflowRequest:
         assert request.metadata is None  # Optional field
 
     def test_workflow_request_immutability(self):
-        """Test that WorkflowRequest fields are properly typed."""
-        request = WorkflowRequest(
+        """Test that ModelWorkflowRequest fields are properly typed."""
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
             payload={"test": "payload"},
@@ -119,14 +113,14 @@ class TestWorkflowRequest:
         assert hasattr(request, "timestamp")
 
 
-class TestWorkflowResponse:
-    """Test WorkflowResponse model."""
+class TestModelWorkflowResponse:
+    """Test ModelWorkflowResponse model."""
 
     def test_successful_workflow_response(self):
-        """Test WorkflowResponse for successful workflow."""
+        """Test ModelWorkflowResponse for successful workflow."""
         workflow_id = uuid4()
 
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=workflow_id,
             status=WorkflowStatus.COMPLETED,
             subreducer_name="test_subreducer",
@@ -144,10 +138,10 @@ class TestWorkflowResponse:
         assert isinstance(response.timestamp, float)
 
     def test_failed_workflow_response(self):
-        """Test WorkflowResponse for failed workflow."""
+        """Test ModelWorkflowResponse for failed workflow."""
         workflow_id = uuid4()
 
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=workflow_id,
             status=WorkflowStatus.FAILED,
             subreducer_name="test_subreducer",
@@ -168,10 +162,10 @@ class TestWorkflowResponse:
         assert response.result is None
 
     def test_workflow_response_minimal(self):
-        """Test WorkflowResponse with minimal required fields."""
+        """Test ModelWorkflowResponse with minimal required fields."""
         workflow_id = uuid4()
 
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=workflow_id,
             status=WorkflowStatus.PROCESSING,
             processing_time_ms=0.0,
@@ -188,14 +182,14 @@ class TestWorkflowResponse:
         assert isinstance(response.timestamp, float)
 
 
-class TestSubreducerResult:
-    """Test SubreducerResult model."""
+class TestModelSubreducerResult:
+    """Test ModelSubreducerResult model."""
 
     def test_successful_subreducer_result(self):
-        """Test SubreducerResult for successful processing."""
+        """Test ModelSubreducerResult for successful processing."""
         workflow_id = uuid4()
 
-        result = SubreducerResult(
+        result = ModelSubreducerResult(
             workflow_id=workflow_id,
             subreducer_name="document_processor",
             success=True,
@@ -213,10 +207,10 @@ class TestSubreducerResult:
         assert isinstance(result.timestamp, float)
 
     def test_failed_subreducer_result(self):
-        """Test SubreducerResult for failed processing."""
+        """Test ModelSubreducerResult for failed processing."""
         workflow_id = uuid4()
 
-        result = SubreducerResult(
+        result = ModelSubreducerResult(
             workflow_id=workflow_id,
             subreducer_name="document_processor",
             success=False,
@@ -234,14 +228,14 @@ class TestSubreducerResult:
         assert result.result is None
 
 
-class TestRoutingDecision:
-    """Test RoutingDecision model."""
+class TestModelRoutingDecision:
+    """Test ModelRoutingDecision model."""
 
     def test_routing_decision_creation(self):
-        """Test RoutingDecision model creation."""
+        """Test ModelRoutingDecision model creation."""
         workflow_id = uuid4()
 
-        decision = RoutingDecision(
+        decision = ModelRoutingDecision(
             workflow_id=workflow_id,
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
@@ -264,10 +258,10 @@ class TestRoutingDecision:
         assert isinstance(decision.timestamp, float)
 
     def test_routing_decision_minimal(self):
-        """Test RoutingDecision with minimal fields."""
+        """Test ModelRoutingDecision with minimal fields."""
         workflow_id = uuid4()
 
-        decision = RoutingDecision(
+        decision = ModelRoutingDecision(
             workflow_id=workflow_id,
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="minimal_instance",
@@ -279,70 +273,6 @@ class TestRoutingDecision:
         assert decision.subreducer_name == "processor"
         assert decision.routing_hash == "hash123"
         assert decision.routing_metadata is None
-
-
-class TestEngineMetrics:
-    """Test EngineMetrics model."""
-
-    def test_engine_metrics_creation(self):
-        """Test EngineMetrics model creation."""
-        metrics = EngineMetrics(
-            total_workflows_processed=100,
-            successful_workflows=85,
-            failed_workflows=15,
-            average_processing_time_ms=250.5,
-            subreducer_metrics={
-                "document_processor": {"processed": 60, "success_rate": 90.0},
-                "router": {"total_routed": 100, "routing_errors": 2},
-            },
-        )
-
-        assert metrics.total_workflows_processed == 100
-        assert metrics.successful_workflows == 85
-        assert metrics.failed_workflows == 15
-        assert metrics.average_processing_time_ms == 250.5
-        assert "document_processor" in metrics.subreducer_metrics
-        assert "router" in metrics.subreducer_metrics
-        assert isinstance(metrics.timestamp, float)
-
-    def test_engine_metrics_minimal(self):
-        """Test EngineMetrics with minimal fields."""
-        metrics = EngineMetrics(
-            total_workflows_processed=0,
-            successful_workflows=0,
-            failed_workflows=0,
-            average_processing_time_ms=0.0,
-        )
-
-        assert metrics.total_workflows_processed == 0
-        assert metrics.successful_workflows == 0
-        assert metrics.failed_workflows == 0
-        assert metrics.average_processing_time_ms == 0.0
-        assert metrics.subreducer_metrics is None
-
-    def test_engine_metrics_success_rate_calculation(self):
-        """Test success rate calculation method."""
-        metrics = EngineMetrics(
-            total_workflows_processed=100,
-            successful_workflows=75,
-            failed_workflows=25,
-            average_processing_time_ms=200.0,
-        )
-
-        success_rate = metrics.calculate_success_rate()
-        assert success_rate == 75.0
-
-    def test_engine_metrics_success_rate_zero_division(self):
-        """Test success rate calculation with zero total."""
-        metrics = EngineMetrics(
-            total_workflows_processed=0,
-            successful_workflows=0,
-            failed_workflows=0,
-            average_processing_time_ms=0.0,
-        )
-
-        success_rate = metrics.calculate_success_rate()
-        assert success_rate == 0.0
 
 
 class TestBaseSubreducer:
@@ -360,8 +290,10 @@ class TestBaseSubreducer:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return workflow_type == WorkflowType.DOCUMENT_REGENERATION
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(
                     workflow_id=request.workflow_id,
                     subreducer_name=self.name,
                     success=True,
@@ -383,8 +315,10 @@ class TestBaseSubreducer:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return True
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(
                     workflow_id=request.workflow_id,
                     subreducer_name=self.name,
                     success=True,
@@ -393,7 +327,7 @@ class TestBaseSubreducer:
                 )
 
         subreducer = TestSubreducer()
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="async_test",
             payload={"test": "data"},
@@ -401,7 +335,7 @@ class TestBaseSubreducer:
 
         result = await subreducer.process(request)
 
-        assert isinstance(result, SubreducerResult)
+        assert isinstance(result, ModelSubreducerResult)
         assert result.success is True
         assert result.subreducer_name == "async_test"
         assert result.result == {"test": "async_result"}
@@ -411,9 +345,9 @@ class TestModelValidation:
     """Test Pydantic model validation and serialization."""
 
     def test_workflow_request_validation(self):
-        """Test WorkflowRequest validation."""
+        """Test ModelWorkflowRequest validation."""
         # Valid request should work
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="valid_instance",
             payload={"document_id": "doc_123"},
@@ -421,9 +355,9 @@ class TestModelValidation:
         assert request.instance_id == "valid_instance"
 
     def test_workflow_response_serialization(self):
-        """Test WorkflowResponse JSON serialization."""
+        """Test ModelWorkflowResponse JSON serialization."""
         workflow_id = uuid4()
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=workflow_id,
             status=WorkflowStatus.COMPLETED,
             processing_time_ms=100.0,
@@ -440,7 +374,7 @@ class TestModelValidation:
 
     def test_enum_serialization(self):
         """Test that enums serialize correctly."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="enum_test",
             payload={"test": "data"},
@@ -449,7 +383,7 @@ class TestModelValidation:
         request_dict = request.model_dump()
         assert request_dict["workflow_type"] == "document_regeneration"
 
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=request.workflow_id,
             status=WorkflowStatus.FAILED,
             processing_time_ms=50.0,
@@ -467,7 +401,7 @@ class TestTimestampBehavior:
         """Test that timestamps are automatically generated."""
         before_time = time.time()
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="timestamp_test",
             payload={"test": "data"},
@@ -482,20 +416,20 @@ class TestTimestampBehavior:
         workflow_id = uuid4()
 
         # Create models at roughly the same time
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=workflow_id,
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="consistency_test",
             payload={"test": "data"},
         )
 
-        response = WorkflowResponse(
+        response = ModelWorkflowResponse(
             workflow_id=workflow_id,
             status=WorkflowStatus.COMPLETED,
             processing_time_ms=100.0,
         )
 
-        result = SubreducerResult(
+        result = ModelSubreducerResult(
             workflow_id=workflow_id,
             subreducer_name="test",
             success=True,

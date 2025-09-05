@@ -16,8 +16,8 @@ import pytest
 
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
+    ModelWorkflowStateModel,
     WorkflowState,
-    WorkflowStateModel,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
@@ -28,16 +28,16 @@ from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
     ReducerReportGenerationSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    BaseSubreducer,
-    SubreducerResult,
-    WorkflowRequest,
-    WorkflowResponse,
-    WorkflowStatus,
-    WorkflowType,
-)
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine import (
     ReducerPatternEngine,
+)
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    BaseSubreducer,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
 )
 
 
@@ -61,7 +61,7 @@ class TestEnhancedSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type in self._supported_types
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
         """Enhanced processing with configurable behavior."""
         self._call_count += 1
         self._processed_requests.append(request)
@@ -75,7 +75,7 @@ class TestEnhancedSubreducer(BaseSubreducer):
         should_succeed = random.random() <= self._success_rate
 
         if should_succeed:
-            return SubreducerResult(
+            return ModelSubreducerResult(
                 workflow_id=request.workflow_id,
                 subreducer_name=self.name,
                 success=True,
@@ -90,7 +90,7 @@ class TestEnhancedSubreducer(BaseSubreducer):
                 processing_time_ms=self._processing_time * 1000,
             )
         else:
-            return SubreducerResult(
+            return ModelSubreducerResult(
                 workflow_id=request.workflow_id,
                 subreducer_name=self.name,
                 success=False,
@@ -107,7 +107,7 @@ class TestEnhancedSubreducer(BaseSubreducer):
         return self._call_count
 
     @property
-    def processed_requests(self) -> List[WorkflowRequest]:
+    def processed_requests(self) -> List[ModelWorkflowRequest]:
         return self._processed_requests.copy()
 
 
@@ -126,12 +126,12 @@ class TestReducerPatternEngineEnhanced:
         return ReducerPatternEngine(mock_container)
 
     @pytest.fixture
-    def sample_requests(self) -> Dict[str, WorkflowRequest]:
+    def sample_requests(self) -> Dict[str, ModelWorkflowRequest]:
         """Create comprehensive sample workflow requests."""
         base_correlation_id = uuid4()
 
         return {
-            "data_analysis": WorkflowRequest(
+            "data_analysis": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="enhanced-data-001",
@@ -144,7 +144,7 @@ class TestReducerPatternEngineEnhanced:
                 },
                 metadata={"priority": "high", "enhanced_test": True},
             ),
-            "report_generation": WorkflowRequest(
+            "report_generation": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id="enhanced-report-001",
@@ -158,7 +158,7 @@ class TestReducerPatternEngineEnhanced:
                 },
                 metadata={"department": "testing", "enhanced_test": True},
             ),
-            "document_regeneration": WorkflowRequest(
+            "document_regeneration": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="enhanced-doc-001",
@@ -277,7 +277,7 @@ class TestReducerPatternEngineEnhanced:
             round_tasks = []
             for workflow_name, request in sample_requests.items():
                 # Create unique request for this round
-                round_request = WorkflowRequest(
+                round_request = ModelWorkflowRequest(
                     workflow_id=uuid4(),
                     workflow_type=request.workflow_type,
                     instance_id=f"{request.instance_id}-round-{round_num}",
@@ -425,7 +425,7 @@ class TestReducerPatternEngineEnhanced:
         # Test processing with intermittent subreducer (multiple attempts)
         intermittent_results = []
         for i in range(10):  # Multiple attempts to hit both success and failure
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id=f"intermittent-{i}",
@@ -473,7 +473,7 @@ class TestReducerPatternEngineEnhanced:
         for batch in range(5):  # 5 batches
             for workflow_name, base_request in sample_requests.items():
                 for instance in range(3):  # 3 instances per type per batch
-                    request = WorkflowRequest(
+                    request = ModelWorkflowRequest(
                         workflow_id=uuid4(),
                         workflow_type=base_request.workflow_type,
                         instance_id=f"concurrent-{workflow_name}-b{batch}-i{instance}",
@@ -498,7 +498,8 @@ class TestReducerPatternEngineEnhanced:
         successful_results = [
             r
             for r in results
-            if isinstance(r, WorkflowResponse) and r.status == WorkflowStatus.COMPLETED
+            if isinstance(r, ModelWorkflowResponse)
+            and r.status == WorkflowStatus.COMPLETED
         ]
         assert len(successful_results) == len(concurrent_tasks)  # All should succeed
 
@@ -533,7 +534,7 @@ class TestReducerPatternEngineEnhanced:
         )
         engine.register_subreducer(lifecycle_subreducer, [WorkflowType.DATA_ANALYSIS])
 
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="lifecycle-test-001",
@@ -599,7 +600,7 @@ class TestReducerPatternEngineEnhanced:
         engine.register_subreducer(report_generation, [WorkflowType.REPORT_GENERATION])
 
         # Test real data analysis workflow
-        analysis_request = WorkflowRequest(
+        analysis_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="real-analysis-001",
@@ -623,7 +624,7 @@ class TestReducerPatternEngineEnhanced:
         assert "trend" in results["analysis_results"]
 
         # Test real report generation workflow
-        report_request = WorkflowRequest(
+        report_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="real-report-001",
@@ -676,7 +677,7 @@ class TestReducerPatternEngineEnhanced:
 
         # Process several workflows
         for i in range(3):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"reset-test-{i}",
@@ -701,7 +702,7 @@ class TestReducerPatternEngineEnhanced:
         assert metrics_after["legacy_metrics"]["failed_workflows"] == 0
 
         # Process another workflow to ensure system still works
-        post_reset_request = WorkflowRequest(
+        post_reset_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="post-reset-001",
@@ -722,7 +723,7 @@ class TestReducerPatternEngineEnhanced:
         """Test various edge cases and boundary conditions."""
 
         # Test processing workflow with no registered subreducer
-        unregistered_request = WorkflowRequest(
+        unregistered_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="unregistered-001",
@@ -744,7 +745,7 @@ class TestReducerPatternEngineEnhanced:
         engine.register_subreducer(edge_case_subreducer, [WorkflowType.DATA_ANALYSIS])
 
         # Test with empty payload
-        empty_payload_request = WorkflowRequest(
+        empty_payload_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="empty-payload-001",
@@ -759,7 +760,7 @@ class TestReducerPatternEngineEnhanced:
 
         # Test with very large payload
         large_payload = {"data": list(range(10000)), "metadata": {"size": "large"}}
-        large_payload_request = WorkflowRequest(
+        large_payload_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="large-payload-001",

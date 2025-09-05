@@ -37,7 +37,7 @@ class WorkflowStatus(Enum):
     FAILED = "failed"
 
 
-class WorkflowRequest(BaseModel):
+class ModelWorkflowRequest(BaseModel):
     """Request model for workflow processing."""
 
     workflow_id: UUID = Field(default_factory=uuid4)
@@ -60,7 +60,7 @@ class WorkflowRequest(BaseModel):
         }
 
 
-class WorkflowResponse(BaseModel):
+class ModelWorkflowResponse(BaseModel):
     """Response model for completed workflow processing."""
 
     workflow_id: UUID
@@ -95,7 +95,7 @@ class WorkflowState(Enum):
     FAILED = "failed"
 
 
-class WorkflowStateModel(BaseModel):
+class ModelWorkflowStateModel(BaseModel):
     """Workflow state tracking model."""
 
     workflow_id: UUID
@@ -136,7 +136,7 @@ class MockSubreducer:
         )
         return actual_type == expected_type
 
-    async def process(self, request: WorkflowRequest) -> Dict[str, Any]:
+    async def process(self, request: ModelWorkflowRequest) -> Dict[str, Any]:
         """Process workflow request."""
         self.processed_count += 1
         processing_start = time.time()
@@ -189,7 +189,7 @@ class MockRouter:
         self.routing_decisions = []
 
     def route_workflow(
-        self, request: WorkflowRequest, subreducers: List[MockSubreducer]
+        self, request: ModelWorkflowRequest, subreducers: List[MockSubreducer]
     ) -> Optional[MockSubreducer]:
         """Route workflow to appropriate subreducer."""
         for subreducer in subreducers:
@@ -230,7 +230,7 @@ class MockMetricsCollector:
             "processing_times": [],
         }
 
-    def record_workflow_start(self, request: WorkflowRequest):
+    def record_workflow_start(self, request: ModelWorkflowRequest):
         """Record workflow start."""
         self.metrics["total_workflows"] += 1
         # Handle both enum and string values due to Pydantic config
@@ -243,7 +243,7 @@ class MockMetricsCollector:
             self.metrics["workflow_types"][workflow_type] = 0
         self.metrics["workflow_types"][workflow_type] += 1
 
-    def record_workflow_completion(self, response: WorkflowResponse):
+    def record_workflow_completion(self, response: ModelWorkflowResponse):
         """Record workflow completion."""
         if response.status == WorkflowStatus.COMPLETED:
             self.metrics["successful_workflows"] += 1
@@ -281,14 +281,16 @@ class MockIntegrationEngine:
         self.active_workflows = {}
         self.completed_workflows = []
 
-    async def process_workflow(self, request: WorkflowRequest) -> WorkflowResponse:
+    async def process_workflow(
+        self, request: ModelWorkflowRequest
+    ) -> ModelWorkflowResponse:
         """Process workflow through complete integration pipeline."""
         # Record workflow start
         self.metrics.record_workflow_start(request)
         self.active_workflows[request.workflow_id] = request
 
         # Create initial state
-        state = WorkflowStateModel(
+        state = ModelWorkflowStateModel(
             workflow_id=request.workflow_id,
             current_state=WorkflowState.PENDING,
             workflow_type=request.workflow_type,
@@ -309,7 +311,7 @@ class MockIntegrationEngine:
                 state.current_state = WorkflowState.FAILED
                 state.completed_at = datetime.utcnow()
 
-                response = WorkflowResponse(
+                response = ModelWorkflowResponse(
                     workflow_id=request.workflow_id,
                     workflow_type=request.workflow_type,
                     instance_id=request.instance_id,
@@ -342,7 +344,7 @@ class MockIntegrationEngine:
                 state.state_history.append(WorkflowState.COMPLETED)
                 state.completed_at = datetime.utcnow()
 
-                response = WorkflowResponse(
+                response = ModelWorkflowResponse(
                     workflow_id=request.workflow_id,
                     workflow_type=request.workflow_type,
                     instance_id=request.instance_id,
@@ -357,7 +359,7 @@ class MockIntegrationEngine:
                 state.state_history.append(WorkflowState.FAILED)
                 state.completed_at = datetime.utcnow()
 
-                response = WorkflowResponse(
+                response = ModelWorkflowResponse(
                     workflow_id=request.workflow_id,
                     workflow_type=request.workflow_type,
                     instance_id=request.instance_id,
@@ -381,7 +383,7 @@ class MockIntegrationEngine:
             state.current_state = WorkflowState.FAILED
             state.completed_at = datetime.utcnow()
 
-            response = WorkflowResponse(
+            response = ModelWorkflowResponse(
                 workflow_id=request.workflow_id,
                 workflow_type=request.workflow_type,
                 instance_id=request.instance_id,
@@ -399,7 +401,9 @@ class MockIntegrationEngine:
 
             return response
 
-    def get_workflow_state(self, workflow_id: UUID) -> Optional[WorkflowStateModel]:
+    def get_workflow_state(
+        self, workflow_id: UUID
+    ) -> Optional[ModelWorkflowStateModel]:
         """Get workflow state."""
         return self.workflow_states.get(workflow_id)
 
@@ -424,7 +428,7 @@ class TestStandaloneIntegrationWorkflows:
     @pytest.mark.asyncio
     async def test_complete_data_analysis_workflow_end_to_end(self, integration_engine):
         """Test complete data analysis workflow from request to response."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="data_e2e_test",
             payload={
@@ -442,7 +446,7 @@ class TestStandaloneIntegrationWorkflows:
         response = await integration_engine.process_workflow(request)
 
         # Verify response
-        assert isinstance(response, WorkflowResponse)
+        assert isinstance(response, ModelWorkflowResponse)
         assert response.workflow_id == request.workflow_id
         # Handle both enum and string values due to Pydantic config
         expected_type = (
@@ -498,7 +502,7 @@ class TestStandaloneIntegrationWorkflows:
         self, integration_engine
     ):
         """Test complete document regeneration workflow."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="doc_e2e_test",
             payload={
@@ -522,7 +526,7 @@ class TestStandaloneIntegrationWorkflows:
         self, integration_engine
     ):
         """Test complete report generation workflow."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="report_e2e_test",
             payload={
@@ -548,7 +552,7 @@ class TestStandaloneIntegrationWorkflows:
         """Test integration between router, subreducers, and metrics."""
         requests = []
         for workflow_type in WorkflowType:
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"integration_test_{workflow_type.value}",
                 payload={"integration_test": True},
@@ -601,7 +605,7 @@ class TestStandaloneIntegrationWorkflows:
                 WorkflowType.DOCUMENT_REGENERATION,
                 WorkflowType.REPORT_GENERATION,
             ][i % 3]
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"concurrent_{i}_{workflow_type.value}",
                 payload={"concurrent_id": i, "batch_size": num_concurrent},
@@ -649,7 +653,7 @@ class TestStandaloneIntegrationWorkflows:
                 WorkflowType.DOCUMENT_REGENERATION,
                 WorkflowType.REPORT_GENERATION,
             ][i % 3]
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"error_test_{i}",
                 payload={"error_test": True, "test_id": i},
@@ -731,7 +735,7 @@ class TestStandaloneIntegrationWorkflows:
         integration_engine.subreducers.clear()
 
         try:
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="unsupported_test",
                 payload={"test": "unsupported"},
@@ -761,7 +765,7 @@ class TestStandaloneIntegrationWorkflows:
         self, integration_engine
     ):
         """Test state management across complete workflow lifecycle."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="state_lifecycle_test",
             payload={"lifecycle_test": True},
@@ -811,7 +815,7 @@ class TestStandaloneIntegrationWorkflows:
                 WorkflowType.DOCUMENT_REGENERATION,
                 WorkflowType.REPORT_GENERATION,
             ][i % 3]
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"perf_test_{i}",
                 payload={"performance_test": True, "size": i % 10},
@@ -904,7 +908,7 @@ class TestStandaloneIntegrationWorkflows:
 
         responses = []
         for scenario in test_scenarios:
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=scenario["type"],
                 instance_id=scenario["instance"],
                 payload=scenario["payload"],
@@ -969,7 +973,7 @@ class TestStandaloneIntegrationWorkflows:
                     WorkflowType.REPORT_GENERATION,
                 ][workflow_idx % 3]
 
-                request = WorkflowRequest(
+                request = ModelWorkflowRequest(
                     workflow_type=workflow_type,
                     instance_id=f"stress_test_{workflow_idx}",
                     payload={

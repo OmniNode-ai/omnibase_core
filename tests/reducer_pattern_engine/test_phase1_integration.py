@@ -19,14 +19,14 @@ from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration import (
     ReducerDocumentRegenerationSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    WorkflowRequest,
-    WorkflowResponse,
-    WorkflowStatus,
-    WorkflowType,
-)
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine import (
     ReducerPatternEngine,
+)
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
 )
 
 
@@ -61,7 +61,7 @@ def engine_with_subreducer(mock_container):
 @pytest.fixture
 def sample_workflow_request():
     """Create a sample workflow request for integration testing."""
-    return WorkflowRequest(
+    return ModelWorkflowRequest(
         workflow_id=uuid4(),
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="integration_test_instance",
@@ -103,7 +103,7 @@ class TestPhase1EndToEndIntegration:
             response = await engine.process_workflow(sample_workflow_request)
 
         # Verify response structure and content
-        assert isinstance(response, WorkflowResponse)
+        assert isinstance(response, ModelWorkflowResponse)
         assert response.workflow_id == sample_workflow_request.workflow_id
         assert response.status == WorkflowStatus.COMPLETED
         assert response.subreducer_name == "reducer_document_regeneration"
@@ -196,7 +196,7 @@ class TestPhase1EndToEndIntegration:
         # Create multiple workflow requests with different instance IDs
         requests = []
         for i in range(3):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"instance_{i}",
@@ -258,7 +258,7 @@ class TestPhase1EndToEndIntegration:
         # Create multiple concurrent workflow requests
         requests = []
         for i in range(5):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"concurrent_instance_{i}",
@@ -322,7 +322,7 @@ class TestPhase1ErrorPropagation:
             engine.register_subreducer(subreducer, [WorkflowType.DOCUMENT_REGENERATION])
 
             # Create request with missing required parameters (will cause subreducer error)
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="error_test_instance",
@@ -356,7 +356,7 @@ class TestPhase1ErrorPropagation:
             engine = ReducerPatternEngine(mock_container)
             # Don't register any subreducers to cause router error
 
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="router_error_test",
@@ -470,7 +470,7 @@ class TestPhase1PerformanceMetrics:
         requests = []
 
         for i in range(num_workflows):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"metrics_test_{i}",
@@ -584,7 +584,7 @@ class TestPhase1ONEXCompliance:
             engine.register_subreducer(subreducer, [WorkflowType.DOCUMENT_REGENERATION])
 
             # Create request that will cause OnexError
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="onex_error_test",
@@ -725,7 +725,7 @@ class TestPhase1ActiveWorkflowTracking:
         # Create multiple workflow requests
         requests = []
         for i in range(3):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id=f"concurrent_active_{i}",
@@ -872,15 +872,15 @@ class TestPhase1AcceptanceCriteria:
         # Container is mocked but type should be preserved in real usage
 
         # ✅ Acceptance Criteria: Proper contract usage throughout
-        from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-            WorkflowRequest,
-            WorkflowResponse,
+        from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+            ModelWorkflowRequest,
+            ModelWorkflowResponse,
             WorkflowStatus,
             WorkflowType,
         )
 
         # All contract models should be importable and usable
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test",
             payload={"document_id": "test", "content_type": "test"},
@@ -902,7 +902,7 @@ class TestPhase1AcceptanceCriteria:
         engine, subreducer = engine_with_subreducer
 
         # Create request for performance testing
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="performance_test",

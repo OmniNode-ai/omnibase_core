@@ -15,8 +15,8 @@ import pytest
 
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
+    ModelWorkflowStateModel,
     WorkflowState,
-    WorkflowStateModel,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
@@ -27,16 +27,16 @@ from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
     ReducerReportGenerationSubreducer,
 )
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    BaseSubreducer,
-    SubreducerResult,
-    WorkflowRequest,
-    WorkflowResponse,
-    WorkflowStatus,
-    WorkflowType,
-)
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine import (
     ReducerPatternEngine,
+)
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    BaseSubreducer,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
+    WorkflowStatus,
+    WorkflowType,
 )
 
 
@@ -59,7 +59,7 @@ class MockSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type == self._supported_type
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
         """Mock processing with configurable behavior."""
         self._call_count += 1
 
@@ -67,7 +67,7 @@ class MockSubreducer(BaseSubreducer):
         await asyncio.sleep(self._processing_delay)
 
         if self._success:
-            return SubreducerResult(
+            return ModelSubreducerResult(
                 workflow_id=request.workflow_id,
                 subreducer_name=self.name,
                 success=True,
@@ -79,7 +79,7 @@ class MockSubreducer(BaseSubreducer):
                 processing_time_ms=self._processing_delay * 1000,
             )
         else:
-            return SubreducerResult(
+            return ModelSubreducerResult(
                 workflow_id=request.workflow_id,
                 subreducer_name=self.name,
                 success=False,
@@ -107,12 +107,12 @@ class TestMultiWorkflowProcessing:
         return ReducerPatternEngine(mock_container)
 
     @pytest.fixture
-    def sample_workflows(self) -> Dict[str, WorkflowRequest]:
+    def sample_workflows(self) -> Dict[str, ModelWorkflowRequest]:
         """Create sample workflow requests for all supported types."""
         base_correlation_id = uuid4()
 
         workflows = {
-            "document_regeneration": WorkflowRequest(
+            "document_regeneration": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="doc-001",
@@ -124,7 +124,7 @@ class TestMultiWorkflowProcessing:
                 },
                 metadata={"priority": "high", "user_id": "test-user"},
             ),
-            "data_analysis": WorkflowRequest(
+            "data_analysis": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="analysis-001",
@@ -136,7 +136,7 @@ class TestMultiWorkflowProcessing:
                 },
                 metadata={"dataset": "test-data", "source": "unit-test"},
             ),
-            "report_generation": WorkflowRequest(
+            "report_generation": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id="report-001",
@@ -249,7 +249,7 @@ class TestMultiWorkflowProcessing:
         requests = []
 
         for i in range(3):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"isolation-test-{i}",
@@ -349,7 +349,7 @@ class TestMultiWorkflowProcessing:
         """Test workflow state transitions are properly tracked."""
 
         # Create workflow request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="state-test-001",
@@ -420,7 +420,7 @@ class TestMultiWorkflowProcessing:
             round_responses = []
             for workflow_name, base_request in sample_workflows.items():
                 # Create new request for this round
-                request = WorkflowRequest(
+                request = ModelWorkflowRequest(
                     workflow_id=uuid4(),
                     workflow_type=base_request.workflow_type,
                     instance_id=f"{base_request.instance_id}-round-{round_num}",
@@ -487,7 +487,7 @@ class TestMultiWorkflowProcessing:
         engine.register_subreducer(failing_subreducer, [WorkflowType.DATA_ANALYSIS])
 
         # Create workflow request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="error-test-001",
@@ -527,7 +527,7 @@ class TestMultiWorkflowProcessing:
         )
 
         # Create realistic data analysis request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="real-analysis-001",
@@ -579,7 +579,7 @@ class TestMultiWorkflowProcessing:
         engine.register_subreducer(doc_subreducer, [WorkflowType.DOCUMENT_REGENERATION])
 
         # Try to process workflow of unregistered type
-        unsupported_request = WorkflowRequest(
+        unsupported_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,  # Not registered
             instance_id="validation-test-001",
@@ -595,7 +595,7 @@ class TestMultiWorkflowProcessing:
         assert response.result is None
 
         # Verify successful processing of supported type
-        supported_request = WorkflowRequest(
+        supported_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,  # Registered
             instance_id="validation-test-002",

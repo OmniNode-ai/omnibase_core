@@ -15,6 +15,7 @@ import pytest
 
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.metrics import (
     AggregateMetrics,
+    ModelWorkflowError,
     ReducerMetricsCollector,
     WorkflowMetrics,
 )
@@ -40,9 +41,9 @@ class TestWorkflowMetrics:
         assert metrics.processing_time_ms == 150.5
         assert metrics.memory_usage_mb == 25.6
         assert metrics.success is True
-        assert metrics.error_type is None
-        assert metrics.started_at is not None
-        assert metrics.completed_at is None
+        assert metrics.error_info.error_type == ""
+        assert metrics.timing.started_at is not None
+        assert metrics.timing.completed_at == 0.0
 
     def test_workflow_metrics_with_error(self):
         """Test WorkflowMetrics with error information."""
@@ -54,11 +55,11 @@ class TestWorkflowMetrics:
             processing_time_ms=75.0,
             memory_usage_mb=15.2,
             success=False,
-            error_type="ValidationError",
+            error_info=ModelWorkflowError(error_type="ValidationError", has_error=True),
         )
 
         assert metrics.success is False
-        assert metrics.error_type == "ValidationError"
+        assert metrics.error_info.error_type == "ValidationError"
 
 
 class TestAggregateMetrics:

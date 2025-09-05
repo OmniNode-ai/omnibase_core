@@ -7,8 +7,8 @@ description: "Multi-workflow reducer pattern engine with instance isolation and 
 node_type: "COMPUTE"
 
 # Input/Output Models
-input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.WorkflowRequest"
-output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts.WorkflowResponse"
+input_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowRequest"
+output_model: "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.ModelWorkflowResponse"
 
 # Pattern Metadata
 pattern_type: "execution_pattern"

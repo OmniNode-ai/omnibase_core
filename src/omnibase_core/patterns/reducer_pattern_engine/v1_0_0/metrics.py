@@ -10,12 +10,38 @@ import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from uuid import UUID
 
-import psutil
+try:
+    import psutil
 
-from omnibase_core.utils.log_utils import emit_log_event
+    HAS_PSUTIL = True
+except ImportError:
+    psutil = None
+    HAS_PSUTIL = False
+
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
+
+
+@dataclass
+class ModelWorkflowError:
+    """Strongly typed workflow error information."""
+
+    error_type: str = ""
+    has_error: bool = False
+    error_message: str = ""
+
+
+@dataclass
+class ModelWorkflowTiming:
+    """Strongly typed workflow timing information."""
+
+    started_at: float = field(default_factory=time.time)
+    completed_at: float = 0.0
+    is_completed: bool = False
 
 
 @dataclass
@@ -27,9 +53,8 @@ class WorkflowMetrics:
     processing_time_ms: float
     memory_usage_mb: float
     success: bool
-    error_type: Optional[str] = None
-    started_at: float = field(default_factory=time.time)
-    completed_at: Optional[float] = None
+    error_info: ModelWorkflowError = field(default_factory=ModelWorkflowError)
+    timing: ModelWorkflowTiming = field(default_factory=ModelWorkflowTiming)
 
 
 @dataclass
@@ -131,7 +156,7 @@ class ReducerMetricsCollector:
         workflow_type: str,
         success: bool,
         processing_time_ms: float,
-        error_type: Optional[str] = None,
+        error_type: str = "",
     ) -> None:
         """
         Record workflow processing completion.
@@ -146,6 +171,16 @@ class ReducerMetricsCollector:
         with self._lock:
             current_memory = self._get_memory_usage_mb()
 
+            # Create error info
+            error_info = ModelWorkflowError(
+                error_type=error_type,
+                has_error=bool(error_type),
+                error_message=error_type if error_type else "",
+            )
+
+            # Create timing info
+            timing = ModelWorkflowTiming(completed_at=time.time(), is_completed=True)
+
             # Create workflow metrics record
             workflow_metrics = WorkflowMetrics(
                 workflow_id=workflow_id,
@@ -153,8 +188,8 @@ class ReducerMetricsCollector:
                 processing_time_ms=processing_time_ms,
                 memory_usage_mb=current_memory,
                 success=success,
-                error_type=error_type,
-                completed_at=time.time(),
+                error_info=error_info,
+                timing=timing,
             )
 
             # Store individual metrics
@@ -279,7 +314,7 @@ class ReducerMetricsCollector:
 
             return summary
 
-    def get_workflow_type_metrics(self, workflow_type: str) -> Optional[Dict[str, Any]]:
+    def get_workflow_type_metrics(self, workflow_type: str) -> Dict[str, Any]:
         """
         Get metrics for a specific workflow type.
 
@@ -287,11 +322,23 @@ class ReducerMetricsCollector:
             workflow_type: Type of workflow to get metrics for
 
         Returns:
-            Metrics dictionary for the workflow type, None if not found
+            Metrics dictionary for the workflow type (empty if not found)
         """
         with self._lock:
             if workflow_type not in self._aggregate_metrics:
-                return None
+                return {
+                    "workflow_type": workflow_type,
+                    "total_processed": 0,
+                    "successful_count": 0,
+                    "failed_count": 0,
+                    "success_rate_percent": 0.0,
+                    "average_processing_time_ms": 0.0,
+                    "recent_average_processing_time_ms": 0.0,
+                    "min_processing_time_ms": 0.0,
+                    "max_processing_time_ms": 0.0,
+                    "average_memory_usage_mb": 0.0,
+                    "recent_processing_times": [],
+                }
 
             aggregate = self._aggregate_metrics[workflow_type]
             return {
@@ -331,9 +378,12 @@ class ReducerMetricsCollector:
                     "processing_time_ms": wm.processing_time_ms,
                     "memory_usage_mb": wm.memory_usage_mb,
                     "success": wm.success,
-                    "error_type": wm.error_type,
-                    "started_at": wm.started_at,
-                    "completed_at": wm.completed_at,
+                    "error_type": wm.error_info.error_type,
+                    "has_error": wm.error_info.has_error,
+                    "error_message": wm.error_info.error_message,
+                    "started_at": wm.timing.started_at,
+                    "completed_at": wm.timing.completed_at,
+                    "is_completed": wm.timing.is_completed,
                 }
                 for wm in recent
             ]
@@ -377,6 +427,20 @@ class ReducerMetricsCollector:
     def _update_system_metrics(self) -> None:
         """Update system-level metrics."""
         try:
+            if not HAS_PSUTIL:
+                self._system_metrics.update(
+                    {
+                        "cpu_percent": 0.0,
+                        "memory_usage_mb": 0.0,
+                        "memory_percent": 0.0,
+                        "num_threads": 0,
+                        "num_fds": 0,
+                        "create_time": 0.0,
+                        "status": "unknown",
+                    }
+                )
+                return
+
             process = psutil.Process()
             self._system_metrics.update(
                 {
@@ -399,6 +463,8 @@ class ReducerMetricsCollector:
     def _get_memory_usage_mb(self) -> float:
         """Get current memory usage in MB."""
         try:
+            if not HAS_PSUTIL:
+                return 0.0
             process = psutil.Process()
             return process.memory_info().rss / (1024 * 1024)  # Convert bytes to MB
         except Exception:

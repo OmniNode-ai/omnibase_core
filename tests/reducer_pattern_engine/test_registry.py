@@ -13,11 +13,11 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
-    SubreducerResult,
-    WorkflowRequest,
-    WorkflowResponse,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
     WorkflowType,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry import (
@@ -36,8 +36,8 @@ class MockValidSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type in self._supported_types
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
-        return SubreducerResult(
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
+        return ModelSubreducerResult(
             workflow_id=request.workflow_id,
             subreducer_name=self.name,
             success=True,
@@ -58,8 +58,8 @@ class MockMultiTypeSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type in self._supported_types
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
-        return SubreducerResult(
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
+        return ModelSubreducerResult(
             workflow_id=request.workflow_id,
             subreducer_name=self.name,
             success=True,
@@ -76,8 +76,8 @@ class MockFailingSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type == WorkflowType.DOCUMENT_REGENERATION
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
-        return SubreducerResult(
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
+        return ModelSubreducerResult(
             workflow_id=request.workflow_id,
             subreducer_name=self.name,
             success=False,
@@ -103,8 +103,8 @@ class MockUninstantiableSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type == WorkflowType.DATA_ANALYSIS
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
-        return SubreducerResult(
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
+        return ModelSubreducerResult(
             workflow_id=uuid4(), subreducer_name=self.name, success=True, result={}
         )
 
@@ -280,8 +280,10 @@ class TestReducerSubreducerRegistry:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(uuid4(), self.name, True, {})
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(uuid4(), self.name, True, {})
 
         workflow_type = WorkflowType.DATA_ANALYSIS
         registry.register_subreducer(workflow_type, FailingInstanceSubreducer)
@@ -348,8 +350,10 @@ class TestReducerSubreducerRegistry:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(uuid4(), self.name, True, {})
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(uuid4(), self.name, True, {})
 
         # This should succeed during registration (uses "test_" prefix)
         workflow_type = WorkflowType.DATA_ANALYSIS
@@ -409,8 +413,10 @@ class TestReducerSubreducerRegistry:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(uuid4(), self.name, True, {})
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(uuid4(), self.name, True, {})
 
         workflow_type = WorkflowType.DATA_ANALYSIS
         registry.register_subreducer(workflow_type, HealthCheckFailingSubreducer)
@@ -614,8 +620,10 @@ class TestReducerSubreducerRegistry:
             def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
-            async def process(self, request: WorkflowRequest) -> SubreducerResult:
-                return SubreducerResult(uuid4(), self.name, True, {})
+            async def process(
+                self, request: ModelWorkflowRequest
+            ) -> ModelSubreducerResult:
+                return ModelSubreducerResult(uuid4(), self.name, True, {})
 
         # Should be able to register subreducer with empty name
         workflow_type = WorkflowType.DATA_ANALYSIS

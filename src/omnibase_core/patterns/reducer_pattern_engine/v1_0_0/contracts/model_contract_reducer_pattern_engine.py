@@ -12,7 +12,8 @@ Specialized contract model for multi-workflow reducer pattern engine providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, Literal
+from enum import Enum
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -23,6 +24,22 @@ from omnibase_core.core.contracts.model_contract_base import (
     ModelValidationRules,
 )
 from omnibase_core.enums.node import EnumNodeType
+
+
+class EnumDependencyType(str, Enum):
+    """Enumeration of dependency types."""
+
+    PROTOCOL = "protocol"
+    SERVICE = "service"
+    UTILITY = "utility"
+    CONTAINER = "container"
+
+
+class EnumStateAvailability(str, Enum):
+    """Enumeration of state availability."""
+
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
 
 
 class ModelPatternConfiguration(BaseModel):
@@ -173,10 +190,9 @@ class ModelDependencySpecification(BaseModel):
         min_length=1,
     )
 
-    type: str = Field(
-        ...,
-        description="Dependency type (protocol, service, utility)",
-        min_length=1,
+    dependency_type: EnumDependencyType = Field(
+        default=EnumDependencyType.SERVICE,
+        description="Dependency type enumeration",
     )
 
     class_name: str = Field(
@@ -189,6 +205,22 @@ class ModelDependencySpecification(BaseModel):
         ...,
         description="Full module path for the implementation",
         min_length=1,
+    )
+
+
+class ModelDependencyCollection(BaseModel):
+    """Strongly typed collection of all dependency types."""
+
+    structured_dependencies: list[ModelDependencySpecification] = Field(
+        default_factory=list, description="Fully structured dependency specifications"
+    )
+
+    simple_dependencies: list[str] = Field(
+        default_factory=list, description="Simple string-based dependency names"
+    )
+
+    dict_dependencies: list[dict[str, str]] = Field(
+        default_factory=list, description="Dictionary-based dependency specifications"
     )
 
 
@@ -232,15 +264,20 @@ class ModelContractReducerPatternEngine(ModelContractBase):
     )
 
     # State management configuration
-    state_management: ModelStateConfiguration | None = Field(
-        default=None,
+    state_management: ModelStateConfiguration = Field(
+        default_factory=lambda: ModelStateConfiguration(
+            state_model="ModelWorkflowStateModel",
+            validator="StateTransitionValidator",
+            states=[{"name": "pending", "initial": True}],
+            transitions=[{"from": "pending", "to": "processing"}],
+        ),
         description="State management configuration",
     )
 
     # Enhanced dependencies with structured format
-    dependencies: list[str | dict[str, str] | ModelDependencySpecification] = Field(
-        default_factory=list,
-        description="Dependencies supporting multiple formats",
+    dependencies: ModelDependencyCollection = Field(
+        default_factory=ModelDependencyCollection,
+        description="Strongly typed dependency collection",
     )
 
     # Performance requirements override for pattern-specific needs
@@ -351,10 +388,7 @@ class ModelContractReducerPatternEngine(ModelContractBase):
 
     def _validate_state_management_configuration(self) -> None:
         """Validate state management configuration."""
-        if not self.state_management:
-            msg = "State management configuration is required"
-            raise ValueError(msg)
-
+        # State management is always available now with default
         if not self.state_management.states:
             msg = "State management must define at least one state"
             raise ValueError(msg)
@@ -375,20 +409,21 @@ class ModelContractReducerPatternEngine(ModelContractBase):
         required_deps = {"container"}
         found_deps = set()
 
-        for dep in self.dependencies:
-            if isinstance(dep, str):
-                # Simple string dependency
-                if "container" in dep.lower():
-                    found_deps.add("container")
-            elif isinstance(dep, dict):
-                # Dict dependency
-                dep_name = dep.get("name", "").lower()
-                if "container" in dep_name:
-                    found_deps.add("container")
-            elif hasattr(dep, "name"):
-                # Structured dependency
-                if "container" in dep.name.lower():
-                    found_deps.add("container")
+        # Check simple dependencies
+        for dep in self.dependencies.simple_dependencies:
+            if "container" in dep.lower():
+                found_deps.add("container")
+
+        # Check dict dependencies
+        for dep in self.dependencies.dict_dependencies:
+            dep_name = dep.get("name", "").lower()
+            if "container" in dep_name:
+                found_deps.add("container")
+
+        # Check structured dependencies
+        for dep in self.dependencies.structured_dependencies:
+            if "container" in dep.name.lower():
+                found_deps.add("container")
 
         missing_deps = required_deps - found_deps
         if missing_deps:
@@ -399,25 +434,40 @@ class ModelContractReducerPatternEngine(ModelContractBase):
     @classmethod
     def parse_flexible_dependencies(
         cls,
-        v: list[str | dict[str, str] | ModelDependencySpecification],
-    ) -> list[str | dict[str, str] | ModelDependencySpecification]:
-        """Parse dependencies in flexible formats."""
-        if not v:
+        v: Any,
+    ) -> ModelDependencyCollection:
+        """Parse dependencies into strongly typed collection."""
+        if isinstance(v, ModelDependencyCollection):
             return v
 
-        parsed_deps = []
-        for dep in v:
-            if isinstance(dep, str):
-                parsed_deps.append(dep)
-            elif isinstance(dep, dict):
-                if all(key in dep for key in ["name", "type", "class_name", "module"]):
-                    parsed_deps.append(ModelDependencySpecification(**dep))
-                else:
-                    parsed_deps.append(dep)
-            else:
-                parsed_deps.append(dep)
+        if not v:
+            return ModelDependencyCollection()
 
-        return parsed_deps
+        simple_deps = []
+        dict_deps = []
+        structured_deps = []
+
+        # Handle list input (legacy format)
+        if isinstance(v, list):
+            for dep in v:
+                if isinstance(dep, str):
+                    simple_deps.append(dep)
+                elif isinstance(dep, dict):
+                    if all(
+                        key in dep
+                        for key in ["name", "dependency_type", "class_name", "module"]
+                    ):
+                        structured_deps.append(ModelDependencySpecification(**dep))
+                    else:
+                        dict_deps.append(dep)
+                elif isinstance(dep, ModelDependencySpecification):
+                    structured_deps.append(dep)
+
+        return ModelDependencyCollection(
+            simple_dependencies=simple_deps,
+            dict_dependencies=dict_deps,
+            structured_dependencies=structured_deps,
+        )
 
     class Config:
         """Pydantic model configuration for ONEX compliance."""

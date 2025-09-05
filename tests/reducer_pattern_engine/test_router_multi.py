@@ -15,11 +15,11 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
-    RoutingDecision,
-    SubreducerResult,
-    WorkflowRequest,
+    ModelRoutingDecision,
+    ModelSubreducerResult,
+    ModelWorkflowRequest,
     WorkflowType,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router import WorkflowRouter
@@ -37,7 +37,7 @@ class MockRouterSubreducer(BaseSubreducer):
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         return workflow_type in self._supported_types
 
-    async def process(self, request: WorkflowRequest) -> SubreducerResult:
+    async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
         """Mock processing that records routing information."""
         self._process_call_count += 1
         self._routing_calls.append(
@@ -49,7 +49,7 @@ class MockRouterSubreducer(BaseSubreducer):
             }
         )
 
-        return SubreducerResult(
+        return ModelSubreducerResult(
             workflow_id=request.workflow_id,
             subreducer_name=self.name,
             success=True,
@@ -96,26 +96,26 @@ class TestWorkflowRouterEnhanced:
         }
 
     @pytest.fixture
-    def sample_requests(self) -> Dict[str, WorkflowRequest]:
+    def sample_requests(self) -> Dict[str, ModelWorkflowRequest]:
         """Create sample workflow requests for different types."""
         base_correlation_id = uuid4()
 
         return {
-            "data_analysis": WorkflowRequest(
+            "data_analysis": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="router-test-data-001",
                 correlation_id=base_correlation_id,
                 payload={"data": [1, 2, 3, 4, 5]},
             ),
-            "report_generation": WorkflowRequest(
+            "report_generation": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,
                 instance_id="router-test-report-001",
                 correlation_id=base_correlation_id,
                 payload={"template_type": "summary", "output_format": "json"},
             ),
-            "document_regeneration": WorkflowRequest(
+            "document_regeneration": ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                 instance_id="router-test-doc-001",
@@ -260,7 +260,7 @@ class TestWorkflowRouterEnhanced:
         decision = await router.route(request)
 
         # Verify routing decision
-        assert isinstance(decision, RoutingDecision)
+        assert isinstance(decision, ModelRoutingDecision)
         assert decision.workflow_id == request.workflow_id
         assert decision.workflow_type == request.workflow_type
         assert decision.instance_id == request.instance_id
@@ -335,7 +335,7 @@ class TestWorkflowRouterEnhanced:
         )
 
         # Try to route unsupported workflow type
-        unsupported_request = WorkflowRequest(
+        unsupported_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.REPORT_GENERATION,  # Not registered
             instance_id="unsupported-001",
@@ -362,7 +362,7 @@ class TestWorkflowRouterEnhanced:
         )
 
         # Create multiple requests with same workflow type and instance ID
-        base_request = WorkflowRequest(
+        base_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="consistency-test-001",
@@ -374,7 +374,7 @@ class TestWorkflowRouterEnhanced:
         decisions = []
         for i in range(5):
             # New workflow ID but same type and instance ID
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),  # Different workflow ID
                 workflow_type=base_request.workflow_type,
                 instance_id=base_request.instance_id,  # Same instance ID
@@ -403,7 +403,7 @@ class TestWorkflowRouterEnhanced:
         # Create requests with different instance IDs
         requests = []
         for i in range(10):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"hash-variation-{i:03d}",  # Different instance IDs
@@ -473,7 +473,7 @@ class TestWorkflowRouterEnhanced:
             successful_requests += 1
 
         # Try to route unsupported workflow (will increment error count)
-        unsupported_request = WorkflowRequest(
+        unsupported_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,  # Registered type
             instance_id="unsupported-instance",
@@ -523,7 +523,7 @@ class TestWorkflowRouterEnhanced:
                 WorkflowType.REPORT_GENERATION,
                 WorkflowType.DOCUMENT_REGENERATION,
             ][i % 3]
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=workflow_type,
                 instance_id=f"concurrent-{i:03d}",
@@ -615,7 +615,7 @@ class TestWorkflowRouterEnhanced:
             "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
         ) as mock_log:
             # Successful routing
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id="logging-test-001",
@@ -634,7 +634,7 @@ class TestWorkflowRouterEnhanced:
             assert len(success_calls) > 0
 
             # Test error routing
-            error_request = WorkflowRequest(
+            error_request = ModelWorkflowRequest(
                 workflow_id=uuid4(),
                 workflow_type=WorkflowType.REPORT_GENERATION,  # Not registered
                 instance_id="error-test-001",
@@ -676,7 +676,7 @@ class TestWorkflowRouterEnhanced:
             "unicode_text": "测试数据 🚀 émojis and unicode",
         }
 
-        complex_request = WorkflowRequest(
+        complex_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="complex-payload-001",
@@ -692,7 +692,7 @@ class TestWorkflowRouterEnhanced:
         assert decision.routing_hash is not None
 
         # Routing hash should be consistent for same instance ID regardless of payload
-        simple_request = WorkflowRequest(
+        simple_request = ModelWorkflowRequest(
             workflow_id=uuid4(),
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="complex-payload-001",  # Same instance ID

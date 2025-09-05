@@ -11,9 +11,9 @@ from uuid import UUID
 import pytest
 
 # Clean imports without sys.path manipulation - import from contracts.py not contracts/ directory
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    WorkflowRequest,
-    WorkflowResponse,
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
     WorkflowStatus,
     WorkflowType,
 )
@@ -31,8 +31,8 @@ def test_contract_imports_work():
     assert hasattr(WorkflowStatus, "COMPLETED")
     assert hasattr(WorkflowStatus, "FAILED")
 
-    # Test WorkflowRequest model
-    request = WorkflowRequest(
+    # Test ModelWorkflowRequest model
+    request = ModelWorkflowRequest(
         workflow_type=WorkflowType.DOCUMENT_REGENERATION,
         instance_id="test_instance",
         payload={"document_id": "doc_123", "content_type": "markdown"},
@@ -44,8 +44,8 @@ def test_contract_imports_work():
     assert isinstance(request.created_at, datetime)
     assert request.payload["document_id"] == "doc_123"
 
-    # Test WorkflowResponse model
-    response = WorkflowResponse(
+    # Test ModelWorkflowResponse model
+    response = ModelWorkflowResponse(
         workflow_id=request.workflow_id,
         workflow_type=request.workflow_type,
         instance_id=request.instance_id,
@@ -193,10 +193,10 @@ def test_implementation_completeness():
     required_contracts = [
         "class WorkflowType",
         "class WorkflowStatus",
-        "class WorkflowRequest",
-        "class WorkflowResponse",
-        "class SubreducerResult",
-        "class RoutingDecision",
+        "class ModelWorkflowRequest",
+        "class ModelWorkflowResponse",
+        "class ModelSubreducerResult",
+        "class ModelRoutingDecision",
         "class BaseSubreducer",
         "DOCUMENT_REGENERATION",
     ]
@@ -317,8 +317,10 @@ def test_phase1_acceptance_criteria():
     assert (
         "async def process_workflow" in engine_content
     ), "AC1: Missing basic workflow processing"
-    assert "WorkflowRequest" in engine_content, "AC1: Missing workflow request handling"
-    assert "WorkflowResponse" in engine_content, "AC1: Missing workflow response"
+    assert (
+        "ModelWorkflowRequest" in engine_content
+    ), "AC1: Missing workflow request handling"
+    assert "ModelWorkflowResponse" in engine_content, "AC1: Missing workflow response"
 
     # ✅ AC2: Hash-based routing implemented
     router_path = os.path.join(

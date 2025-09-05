@@ -5,10 +5,11 @@ Provides the main engine for the Reducer Pattern Engine Phase 1 implementation,
 extending the existing NodeReducer architecture with workflow routing capabilities.
 """
 
+import atexit
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Dict, List
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -18,16 +19,21 @@ from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.core.node_reducer import NodeReducer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from ..models.state_transitions import WorkflowState, WorkflowStateModel
-from .contracts import (
+from ..models.state_transitions import ModelWorkflowStateModel as WorkflowStateModel
+from ..models.state_transitions import (
+    WorkflowState,
+)
+from .metrics import ReducerMetricsCollector
+from .models import (
     BaseSubreducer,
-    WorkflowMetrics,
-    WorkflowRequest,
-    WorkflowResponse,
+)
+from .models import ModelWorkflowMetrics as WorkflowMetrics
+from .models import ModelWorkflowRequest as WorkflowRequest
+from .models import ModelWorkflowResponse as WorkflowResponse
+from .models import (
     WorkflowStatus,
     WorkflowType,
 )
-from .metrics import ReducerMetricsCollector
 from .registry import ReducerSubreducerRegistry
 from .router import WorkflowRouter
 
@@ -89,6 +95,18 @@ class ReducerPatternEngine(NodeReducer):
         self._max_workflow_states = max_workflow_states
         self._state_retention_hours = state_retention_hours
         self._last_cleanup_time = datetime.now()
+
+        # Background cleanup thread
+        self._cleanup_thread_stop_event = threading.Event()
+        self._cleanup_thread = threading.Thread(
+            target=self._background_cleanup_worker,
+            daemon=True,
+            name=f"ReducerEngine-Cleanup-{id(self)}",
+        )
+        self._cleanup_thread.start()
+
+        # Register shutdown handler
+        atexit.register(self._shutdown_cleanup_thread)
 
         emit_log_event(
             level=LogLevel.INFO,
@@ -282,8 +300,9 @@ class ReducerPatternEngine(NodeReducer):
                     subreducer_name=subreducer_result.subreducer_name,
                 )
 
-                # Update legacy metrics
-                self._metrics.successful_workflows += 1
+                # Update legacy metrics (thread-safe)
+                with self._state_lock:
+                    self._metrics.successful_workflows += 1
 
             else:
                 # Set error and transition to failed state
@@ -317,7 +336,8 @@ class ReducerPatternEngine(NodeReducer):
                     subreducer_name=subreducer_result.subreducer_name,
                 )
 
-                self._metrics.failed_workflows += 1
+                with self._state_lock:
+                    self._metrics.failed_workflows += 1
 
             # Update overall metrics
             self._update_metrics(processing_time_ms)
@@ -361,8 +381,9 @@ class ReducerPatternEngine(NodeReducer):
                 error_type=type(e).__name__,
             )
 
-            # Update legacy metrics
-            self._metrics.failed_workflows += 1
+            # Update legacy metrics (thread-safe)
+            with self._state_lock:
+                self._metrics.failed_workflows += 1
             self._update_metrics(processing_time_ms)
 
             error_response = WorkflowResponse(
@@ -409,13 +430,9 @@ class ReducerPatternEngine(NodeReducer):
         1. Older than the retention period AND completed/failed
         2. Beyond the maximum count limit (keeps most recent)
 
-        Runs periodically (every hour) to avoid performance impact.
+        Note: Throttling removed since cleanup is now managed by background thread.
         """
         now = datetime.now()
-
-        # Only run cleanup once per hour to avoid performance impact
-        if (now - self._last_cleanup_time).total_seconds() < 3600:
-            return
 
         with self._state_lock:
             if not self._workflow_states:
@@ -487,6 +504,111 @@ class ReducerPatternEngine(NodeReducer):
 
         self._last_cleanup_time = now
 
+    def _background_cleanup_worker(self) -> None:
+        """
+        Background thread worker for periodic workflow state cleanup.
+
+        Runs every 30 minutes to clean up old workflow states independently
+        of workflow processing activity. This ensures cleanup happens even
+        when the engine is idle.
+        """
+        emit_log_event(
+            level=LogLevel.INFO,
+            event="background_cleanup_started",
+            message="Background cleanup thread started",
+            context={
+                "cleanup_interval_minutes": 30,
+                "retention_hours": self._state_retention_hours,
+                "max_states": self._max_workflow_states,
+            },
+        )
+
+        while not self._cleanup_thread_stop_event.is_set():
+            try:
+                # Wait for 30 minutes or until stop event is set
+                if self._cleanup_thread_stop_event.wait(timeout=1800):  # 30 minutes
+                    break
+
+                # Run cleanup
+                self._cleanup_old_workflow_states()
+
+            except Exception as e:
+                emit_log_event(
+                    level=LogLevel.ERROR,
+                    event="background_cleanup_error",
+                    message=f"Background cleanup encountered an error: {str(e)}",
+                    context={"error": str(e), "error_type": type(e).__name__},
+                )
+                # Continue running despite errors
+
+        emit_log_event(
+            level=LogLevel.INFO,
+            event="background_cleanup_stopped",
+            message="Background cleanup thread stopped",
+        )
+
+    def _shutdown_cleanup_thread(self) -> None:
+        """
+        Shutdown the background cleanup thread gracefully.
+
+        Called automatically at process exit via atexit handler.
+        """
+        if hasattr(self, "_cleanup_thread_stop_event"):
+            emit_log_event(
+                level=LogLevel.INFO,
+                event="cleanup_thread_shutdown_initiated",
+                message="Initiating background cleanup thread shutdown",
+            )
+
+            self._cleanup_thread_stop_event.set()
+
+            if hasattr(self, "_cleanup_thread") and self._cleanup_thread.is_alive():
+                # Give the thread up to 5 seconds to finish
+                self._cleanup_thread.join(timeout=5.0)
+
+                if self._cleanup_thread.is_alive():
+                    emit_log_event(
+                        level=LogLevel.WARNING,
+                        event="cleanup_thread_shutdown_timeout",
+                        message="Background cleanup thread did not shutdown within timeout",
+                    )
+                else:
+                    emit_log_event(
+                        level=LogLevel.INFO,
+                        event="cleanup_thread_shutdown_completed",
+                        message="Background cleanup thread shutdown successfully",
+                    )
+
+    def shutdown(self) -> None:
+        """
+        Gracefully shutdown the ReducerPatternEngine.
+
+        Stops background threads and cleans up resources.
+        Can be called explicitly for controlled shutdown.
+        """
+        emit_log_event(
+            level=LogLevel.INFO,
+            event="reducer_engine_shutdown_initiated",
+            message="Initiating ReducerPatternEngine shutdown",
+            context={
+                "active_workflows": len(self._active_workflows),
+                "workflow_states": len(self._workflow_states),
+            },
+        )
+
+        self._shutdown_cleanup_thread()
+
+        # Final cleanup run
+        try:
+            self._cleanup_old_workflow_states()
+        except Exception as e:
+            emit_log_event(
+                level=LogLevel.ERROR,
+                event="final_cleanup_error",
+                message=f"Error during final cleanup: {str(e)}",
+                context={"error": str(e)},
+            )
+
     def get_metrics(self) -> WorkflowMetrics:
         """
         Get current workflow processing metrics.
@@ -494,15 +616,24 @@ class ReducerPatternEngine(NodeReducer):
         Returns:
             WorkflowMetrics: Current performance and processing metrics
         """
-        # Update active instances count (thread-safe)
+        # Update active instances count and return metrics (thread-safe)
         with self._state_lock:
             self._metrics.active_instances = len(self._active_workflows)
 
-        # Include router metrics
-        router_metrics = self._router.get_routing_metrics()
-        self._metrics.subreducer_metrics["router"] = router_metrics
+            # Include router metrics
+            router_metrics = self._router.get_routing_metrics()
+            self._metrics.subreducer_metrics["router"] = router_metrics
 
-        return self._metrics
+            # Return a copy to prevent external modification
+            return WorkflowMetrics(
+                total_workflows_processed=self._metrics.total_workflows_processed,
+                successful_workflows=self._metrics.successful_workflows,
+                failed_workflows=self._metrics.failed_workflows,
+                average_processing_time_ms=self._metrics.average_processing_time_ms,
+                average_routing_time_ms=self._metrics.average_routing_time_ms,
+                active_instances=self._metrics.active_instances,
+                subreducer_metrics=self._metrics.subreducer_metrics.copy(),
+            )
 
     def get_active_workflows(self) -> Dict[str, WorkflowRequest]:
         """
@@ -516,21 +647,22 @@ class ReducerPatternEngine(NodeReducer):
 
     def _update_metrics(self, processing_time_ms: float) -> None:
         """
-        Update processing metrics.
+        Update processing metrics (thread-safe).
 
         Args:
             processing_time_ms: Time taken for this workflow processing
         """
-        self._metrics.total_workflows_processed += 1
+        with self._state_lock:
+            self._metrics.total_workflows_processed += 1
 
-        # Calculate running average processing time
-        total_processed = self._metrics.total_workflows_processed
-        current_avg = self._metrics.average_processing_time_ms
+            # Calculate running average processing time
+            total_processed = self._metrics.total_workflows_processed
+            current_avg = self._metrics.average_processing_time_ms
 
-        # Running average formula: new_avg = old_avg + (new_value - old_avg) / count
-        self._metrics.average_processing_time_ms = (
-            current_avg + (processing_time_ms - current_avg) / total_processed
-        )
+            # Running average formula: new_avg = old_avg + (new_value - old_avg) / count
+            self._metrics.average_processing_time_ms = (
+                current_avg + (processing_time_ms - current_avg) / total_processed
+            )
 
     # Phase 2 Enhanced Methods
 
@@ -571,7 +703,7 @@ class ReducerPatternEngine(NodeReducer):
                 for wf_id, state in self._workflow_states.items()
             }
 
-    def get_workflow_state(self, workflow_id: str) -> Optional[WorkflowStateModel]:
+    def get_workflow_state(self, workflow_id: str) -> WorkflowStateModel:
         """
         Get the state model for a specific workflow.
 
@@ -579,10 +711,12 @@ class ReducerPatternEngine(NodeReducer):
             workflow_id: The workflow ID to get state for
 
         Returns:
-            WorkflowStateModel if found, None otherwise
+            WorkflowStateModel: The state if found, otherwise a NotFoundWorkflowState
         """
         with self._state_lock:
-            return self._workflow_states.get(workflow_id)
+            return self._workflow_states.get(
+                workflow_id, self._create_not_found_workflow_state(workflow_id)
+            )
 
     def list_supported_workflow_types(self) -> List[str]:
         """
@@ -593,7 +727,7 @@ class ReducerPatternEngine(NodeReducer):
         """
         return self._registry.list_registered_workflows()
 
-    def get_workflow_type_metrics(self, workflow_type: str) -> Optional[Dict[str, Any]]:
+    def get_workflow_type_metrics(self, workflow_type: str) -> Dict[str, Any]:
         """
         Get metrics for a specific workflow type.
 
@@ -601,9 +735,9 @@ class ReducerPatternEngine(NodeReducer):
             workflow_type: The workflow type to get metrics for
 
         Returns:
-            Metrics dictionary for the workflow type, None if not found
+            Dict[str, Any]: Metrics dictionary for the workflow type, empty dict if not found
         """
-        return self._metrics_collector.get_workflow_type_metrics(workflow_type)
+        return self._metrics_collector.get_workflow_type_metrics(workflow_type) or {}
 
     def health_check_subreducers(self) -> Dict[str, bool]:
         """
@@ -654,4 +788,28 @@ class ReducerPatternEngine(NodeReducer):
             level=LogLevel.INFO,
             event="metrics_reset",
             message="All metrics have been reset",
+        )
+
+    def _create_not_found_workflow_state(self, workflow_id: str) -> WorkflowStateModel:
+        """
+        Create a NotFoundWorkflowState instance for non-existent workflows.
+
+        Args:
+            workflow_id: The workflow ID that was not found
+
+        Returns:
+            WorkflowStateModel: A WorkflowStateModel indicating the workflow was not found
+        """
+        from uuid import uuid4
+
+        return WorkflowStateModel(
+            workflow_id=uuid4(),
+            workflow_type="not_found",
+            instance_id=f"not_found_{workflow_id}",
+            correlation_id=uuid4(),
+            metadata={
+                "error": "workflow_not_found",
+                "requested_workflow_id": workflow_id,
+                "reason": "Workflow state not found in engine",
+            },
         )

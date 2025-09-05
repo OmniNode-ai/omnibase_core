@@ -8,21 +8,53 @@ health checks, and runtime lookup capabilities.
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Type
 from uuid import UUID
 
+from omnibase_core.core.core_structured_logging import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
     WorkflowType,
 )
-from omnibase_core.utils.log_utils import emit_log_event
 
 
 class RegistryError(OnexError):
     """Registry-specific errors."""
 
     pass
+
+
+class DefaultSubreducer(BaseSubreducer):
+    """Default fallback subreducer for unregistered workflow types."""
+
+    def __init__(self, name: str = "default_subreducer"):
+        super().__init__(name)
+
+    def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
+        """Default subreducer supports all workflow types as fallback."""
+        return True
+
+    async def process(self, request):
+        """Default processing that returns empty success result."""
+        from ..models import ModelSubreducerResult as SubreducerResult
+
+        return SubreducerResult(
+            workflow_id=getattr(request, "workflow_id", "unknown"),
+            subreducer_name=self.name,
+            success=True,
+            result={
+                "message": "Default processing completed",
+                "workflow_type": (
+                    str(request.workflow_type)
+                    if hasattr(request, "workflow_type")
+                    else "unknown"
+                ),
+            },
+            processing_time_ms=0.0,
+        )
 
 
 class ReducerSubreducerRegistry:
@@ -40,7 +72,7 @@ class ReducerSubreducerRegistry:
         self,
         workflow_type: WorkflowType,
         subreducer_class: Type[BaseSubreducer],
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Dict[str, Any] = None,
     ) -> None:
         """
         Register a subreducer for a specific workflow type.
@@ -108,9 +140,7 @@ class ReducerSubreducerRegistry:
             message=f"Registered subreducer {subreducer_class.__name__} for workflow type {workflow_type_str}",
         )
 
-    def get_subreducer(
-        self, workflow_type: WorkflowType
-    ) -> Optional[Type[BaseSubreducer]]:
+    def get_subreducer(self, workflow_type: WorkflowType) -> Type[BaseSubreducer]:
         """
         Get the registered subreducer class for a workflow type.
 
@@ -118,18 +148,16 @@ class ReducerSubreducerRegistry:
             workflow_type: The workflow type to look up
 
         Returns:
-            The subreducer class if registered, None otherwise
+            The subreducer class if registered, DefaultSubreducer otherwise
         """
         workflow_type_str = (
             workflow_type.value
             if isinstance(workflow_type, WorkflowType)
             else str(workflow_type)
         )
-        return self._subreducers.get(workflow_type_str)
+        return self._subreducers.get(workflow_type_str, DefaultSubreducer)
 
-    def get_subreducer_instance(
-        self, workflow_type: WorkflowType
-    ) -> Optional[BaseSubreducer]:
+    def get_subreducer_instance(self, workflow_type: WorkflowType) -> BaseSubreducer:
         """
         Get or create a subreducer instance for a workflow type.
 
@@ -137,7 +165,7 @@ class ReducerSubreducerRegistry:
             workflow_type: The workflow type to get instance for
 
         Returns:
-            Subreducer instance if registered, None otherwise
+            Subreducer instance (registered or default fallback)
         """
         workflow_type_str = (
             workflow_type.value
@@ -153,8 +181,6 @@ class ReducerSubreducerRegistry:
 
             # Get subreducer class and create instance
             subreducer_class = self.get_subreducer(workflow_type)
-            if subreducer_class is None:
-                return None
 
             try:
                 instance = subreducer_class(f"{workflow_type_str}_subreducer")
@@ -166,7 +192,12 @@ class ReducerSubreducerRegistry:
                     level="ERROR",
                     message=f"Failed to create subreducer instance for {workflow_type_str}: {str(e)}",
                 )
-                return None
+                # Return default fallback instance
+                default_instance = DefaultSubreducer(
+                    f"default_{workflow_type_str}_subreducer"
+                )
+                self._subreducer_instances[workflow_type_str] = default_instance
+                return default_instance
 
     def unregister_subreducer(self, workflow_type: WorkflowType) -> bool:
         """
@@ -277,9 +308,7 @@ class ReducerSubreducerRegistry:
 
         return health_status
 
-    def get_registration_metadata(
-        self, workflow_type: WorkflowType
-    ) -> Optional[Dict[str, Any]]:
+    def get_registration_metadata(self, workflow_type: WorkflowType) -> Dict[str, Any]:
         """
         Get registration metadata for a workflow type.
 
@@ -287,14 +316,22 @@ class ReducerSubreducerRegistry:
             workflow_type: The workflow type to get metadata for
 
         Returns:
-            Registration metadata if found, None otherwise
+            Registration metadata (empty dict if not found)
         """
         workflow_type_str = (
             workflow_type.value
             if isinstance(workflow_type, WorkflowType)
             else str(workflow_type)
         )
-        return self._registration_metadata.get(workflow_type_str)
+        return self._registration_metadata.get(
+            workflow_type_str,
+            {
+                "class_name": "DefaultSubreducer",
+                "registered_at": 0.0,
+                "metadata": {},
+                "is_default": True,
+            },
+        )
 
     def get_registry_summary(self) -> Dict[str, Any]:
         """

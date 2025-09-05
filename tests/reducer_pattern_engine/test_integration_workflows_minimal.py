@@ -14,9 +14,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.contracts import (
-    WorkflowRequest,
-    WorkflowResponse,
+from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
+    ModelWorkflowRequest,
+    ModelWorkflowResponse,
     WorkflowStatus,
     WorkflowType,
 )
@@ -33,7 +33,9 @@ class MockMinimalEngine:
             "failed": 0,
         }
 
-    async def process_workflow(self, request: WorkflowRequest) -> WorkflowResponse:
+    async def process_workflow(
+        self, request: ModelWorkflowRequest
+    ) -> ModelWorkflowResponse:
         """Process workflow with minimal simulation."""
         start_time = time.time()
 
@@ -51,7 +53,7 @@ class MockMinimalEngine:
 
         if success:
             self.metrics["successful"] += 1
-            return WorkflowResponse(
+            return ModelWorkflowResponse(
                 workflow_id=request.workflow_id,
                 workflow_type=request.workflow_type,
                 instance_id=request.instance_id,
@@ -67,7 +69,7 @@ class MockMinimalEngine:
             )
         else:
             self.metrics["failed"] += 1
-            return WorkflowResponse(
+            return ModelWorkflowResponse(
                 workflow_id=request.workflow_id,
                 workflow_type=request.workflow_type,
                 instance_id=request.instance_id,
@@ -91,7 +93,7 @@ class TestMinimalIntegrationWorkflows:
     async def test_single_workflow_integration(self, mock_engine):
         """Test single workflow processing end-to-end."""
         # Create request
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.DATA_ANALYSIS,
             instance_id="test_single_workflow",
             payload={"test_data": [1, 2, 3, 4, 5]},
@@ -102,7 +104,7 @@ class TestMinimalIntegrationWorkflows:
         response = await mock_engine.process_workflow(request)
 
         # Verify response
-        assert isinstance(response, WorkflowResponse)
+        assert isinstance(response, ModelWorkflowResponse)
         assert response.workflow_id == request.workflow_id
         assert response.workflow_type == WorkflowType.DATA_ANALYSIS
         assert response.instance_id == request.instance_id
@@ -125,7 +127,7 @@ class TestMinimalIntegrationWorkflows:
 
         responses = []
         for i, workflow_type in enumerate(workflow_types):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"test_all_types_{i}_{workflow_type.value}",
                 payload={"test": f"payload_{i}"},
@@ -157,7 +159,7 @@ class TestMinimalIntegrationWorkflows:
                 WorkflowType.REPORT_GENERATION,
             ][i % 3]
 
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=workflow_type,
                 instance_id=f"concurrent_test_{i}",
                 payload={"concurrent_id": i},
@@ -192,7 +194,7 @@ class TestMinimalIntegrationWorkflows:
         # Process enough workflows to trigger some failures
         requests = []
         for i in range(15):  # Should trigger at least one failure
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"error_test_{i}",
                 payload={"error_test": True},
@@ -229,7 +231,7 @@ class TestMinimalIntegrationWorkflows:
 
         responses = []
         for i, payload in enumerate(test_payloads):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"payload_test_{i}",
                 payload=payload,
@@ -259,7 +261,7 @@ class TestMinimalIntegrationWorkflows:
 
         responses = []
         for i, instance_id in enumerate(instance_ids):
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=instance_id,
                 payload={"instance_test": i},
@@ -283,7 +285,7 @@ class TestMinimalIntegrationWorkflows:
         num_workflows = 50
 
         requests = [
-            WorkflowRequest(
+            ModelWorkflowRequest(
                 workflow_type=WorkflowType.DATA_ANALYSIS,
                 instance_id=f"perf_test_{i}",
                 payload={"performance_test": True},
@@ -318,7 +320,7 @@ class TestMinimalIntegrationWorkflows:
     @pytest.mark.asyncio
     async def test_workflow_state_consistency_integration(self, mock_engine):
         """Test workflow state remains consistent throughout processing."""
-        request = WorkflowRequest(
+        request = ModelWorkflowRequest(
             workflow_type=WorkflowType.REPORT_GENERATION,
             instance_id="state_consistency_test",
             payload={"consistency_test": True},
@@ -391,7 +393,7 @@ class TestMinimalIntegrationWorkflows:
 
         responses = []
         for scenario in test_scenarios:
-            request = WorkflowRequest(
+            request = ModelWorkflowRequest(
                 workflow_type=scenario["type"],
                 instance_id=scenario["instance"],
                 payload=scenario["payload"],
