@@ -2,11 +2,12 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from .model_workflow_metadata import ModelWorkflowMetadata
+from .model_workflow_payload import ModelWorkflowPayload
 from .model_workflow_types import WorkflowType
 
 
@@ -32,11 +33,13 @@ class ModelWorkflowRequest(BaseModel):
     correlation_id: UUID = Field(
         default_factory=uuid4, description="Correlation ID for tracking"
     )
-    payload: Dict[str, Any] = Field(
-        default_factory=dict, description="Workflow data payload"
+    payload: ModelWorkflowPayload = Field(
+        default_factory=ModelWorkflowPayload,
+        description="Strongly typed workflow data payload",
     )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Workflow metadata"
+    metadata: ModelWorkflowMetadata = Field(
+        default_factory=ModelWorkflowMetadata,
+        description="Strongly typed workflow metadata",
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow, description="Request creation timestamp"

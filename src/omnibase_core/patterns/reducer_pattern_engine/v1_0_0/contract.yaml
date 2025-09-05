@@ -31,11 +31,11 @@ pattern_config:
     routing_optimization: true
 
   performance_requirements:
-    max_concurrent_workflows: 100
-    single_operation_max_ms: 30000
-    batch_operation_max_s: 300
-    memory_limit_mb: 2048
-    throughput_min_ops_per_second: 10.0
+    max_concurrent_workflows: 25
+    single_operation_max_ms: 15000
+    batch_operation_max_s: 120
+    memory_limit_mb: 256
+    throughput_min_ops_per_second: 5.0
 
 # Component Specifications
 components:

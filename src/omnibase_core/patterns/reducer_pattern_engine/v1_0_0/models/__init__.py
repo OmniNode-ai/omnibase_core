@@ -12,6 +12,7 @@ from .model_workflow_payload import ModelWorkflowPayload
 from .model_workflow_request import ModelWorkflowRequest
 from .model_workflow_response import ModelWorkflowResponse
 from .model_workflow_result import ModelWorkflowResult
+from .model_workflow_result_data import ModelWorkflowResultData
 from .model_workflow_types import WorkflowStatus, WorkflowType
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "ModelWorkflowPayload",
     "ModelWorkflowMetadata",
     "ModelWorkflowResult",
+    "ModelWorkflowResultData",
     "ModelWorkflowError",
     "WorkflowType",
     "WorkflowStatus",

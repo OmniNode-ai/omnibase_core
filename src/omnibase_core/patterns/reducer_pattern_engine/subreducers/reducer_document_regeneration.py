@@ -7,8 +7,9 @@ contract and processing patterns.
 """
 
 import time
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
+from omnibase_core.core.common_types import ScalarValue
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
@@ -20,6 +21,7 @@ from ..v1_0_0.models import (
 )
 from ..v1_0_0.models import ModelSubreducerResult as SubreducerResult
 from ..v1_0_0.models import ModelWorkflowRequest as WorkflowRequest
+from ..v1_0_0.models import ModelWorkflowResultData as WorkflowResultData
 from ..v1_0_0.models import (
     WorkflowType,
 )
@@ -189,12 +191,12 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
 
             return result
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> Dict[str, ScalarValue]:
         """
         Get processing metrics for this subreducer.
 
         Returns:
-            Dict[str, Any]: Current processing metrics
+            Dict[str, ScalarValue]: Current processing metrics
         """
         success_rate = 0.0
         if self._processing_metrics["total_processed"] > 0:
@@ -210,7 +212,9 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             "subreducer_name": self.name,
         }
 
-    def _extract_document_params(self, request: WorkflowRequest) -> Dict[str, Any]:
+    def _extract_document_params(
+        self, request: WorkflowRequest
+    ) -> Dict[str, ScalarValue]:
         """
         Extract and validate document regeneration parameters.
 
@@ -218,7 +222,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             request: The workflow request
 
         Returns:
-            Dict[str, Any]: Validated document parameters
+            Dict[str, ScalarValue]: Validated document parameters
 
         Raises:
             OnexError: If required parameters are missing or invalid
@@ -264,8 +268,8 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
         return document_params
 
     async def _process_document_regeneration(
-        self, document_params: Dict[str, Any], request: WorkflowRequest
-    ) -> Dict[str, Any]:
+        self, document_params: Dict[str, ScalarValue], request: WorkflowRequest
+    ) -> WorkflowResultData:
         """
         Perform the actual document regeneration processing.
 
@@ -278,10 +282,11 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             request: The original workflow request
 
         Returns:
-            Dict[str, Any]: The regenerated document result
+            WorkflowResultData: The regenerated document result
         """
         # Phase 1: Simulate document regeneration processing
         # In a real implementation, this would integrate with document services
+        start_time = time.time()
 
         emit_log_event(
             level=LogLevel.INFO,
@@ -294,28 +299,16 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             },
         )
 
-        # Generate result data
-        result_data = {
-            "document_id": document_params["document_id"],
-            "regenerated_content": {
-                "content_type": document_params["content_type"],
-                "template_id": document_params["template_id"],
-                "generated_at": time.time(),
-                "content_length": 1024,  # Simulated content length
-                "version": "1.0.0",
-            },
-            "processing_info": {
-                "instance_id": request.instance_id,
-                "workflow_id": str(request.workflow_id),
-                "correlation_id": str(request.correlation_id),
-                "subreducer": self.name,
-            },
-            "metadata": {
-                **document_params.get("metadata", {}),
-                "processed_by": "ReducerDocumentRegenerationSubreducer",
-                "phase": "1",
-            },
-        }
+        # Generate strongly typed result data
+        result_data = WorkflowResultData(
+            processed_content=f"Regenerated document content for ID: {document_params.get('document_id', 'unknown')}",
+            document_url=f"/documents/{document_params.get('document_id', 'unknown')}/regenerated",
+            document_size_bytes=1024,
+            quality_score=0.95,
+            validation_passed=True,
+            processing_duration_ms=int((time.time() - start_time) * 1000),
+            memory_used_mb=2.5,
+        )
 
         return result_data
 
