@@ -6,8 +6,8 @@ Tests the protocol-driven dependency injection container functionality.
 
 import pytest
 
+from omnibase_core.core.onex_container import ModelONEXContainer as ONEXContainer
 from omnibase_core.core.onex_container import (
-    ONEXContainer,
     create_onex_container,
     get_container,
 )

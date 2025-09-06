@@ -19,8 +19,8 @@ from omnibase_core.nodes.canary.utils.retry_strategy import (
     FibonacciRetryStrategy,
     JitteredExponentialRetryStrategy,
     LinearRetryStrategy,
+    ModelRetryConfig,
     RetryCondition,
-    RetryConfig,
     RetryExecutor,
     RetryStrategyType,
     create_api_retry_config,
@@ -37,7 +37,7 @@ class TestRetryStrategies:
 
     def test_linear_retry_strategy_delay_calculation(self):
         """Test linear strategy delay calculation."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.LINEAR,
             base_delay_ms=1000,
             max_delay_ms=5000,
@@ -52,7 +52,7 @@ class TestRetryStrategies:
 
     def test_exponential_retry_strategy_delay_calculation(self):
         """Test exponential strategy delay calculation."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.EXPONENTIAL,
             base_delay_ms=1000,
             max_delay_ms=10000,
@@ -69,7 +69,7 @@ class TestRetryStrategies:
 
     def test_fibonacci_retry_strategy_delay_calculation(self):
         """Test Fibonacci strategy delay calculation."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.FIBONACCI,
             base_delay_ms=1000,
             max_delay_ms=20000,
@@ -85,7 +85,7 @@ class TestRetryStrategies:
 
     def test_jittered_exponential_adds_randomness(self):
         """Test that jittered exponential adds appropriate randomness."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.JITTERED_EXPONENTIAL,
             base_delay_ms=1000,
             max_delay_ms=10000,
@@ -106,7 +106,7 @@ class TestRetryStrategies:
         def custom_delay_fn(attempt: int) -> float:
             return 500 * attempt  # Linear with different base
 
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.CUSTOM,
             base_delay_ms=1000,  # Ignored for custom
             max_delay_ms=3000,
@@ -121,7 +121,7 @@ class TestRetryStrategies:
 
     def test_retry_condition_evaluation(self):
         """Test retry condition evaluation logic."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             retry_condition=RetryCondition.SPECIFIC_EXCEPTIONS,
             retryable_exceptions=["ConnectionError", "TimeoutError"],
             non_retryable_exceptions=["ValueError"],
@@ -145,7 +145,7 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_successful_execution_no_retries_needed(self):
         """Test successful execution on first attempt."""
-        config = RetryConfig(max_attempts=3, base_delay_ms=100)
+        config = ModelRetryConfig(max_attempts=3, base_delay_ms=100)
         executor = RetryExecutor(config)
 
         async def always_succeed():
@@ -163,7 +163,7 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_retry_until_success(self):
         """Test retrying until operation succeeds."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             max_attempts=3,
             base_delay_ms=10,  # Small delay for test speed
             jitter_enabled=False,
@@ -192,7 +192,9 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_max_attempts_reached_failure(self):
         """Test failure when max attempts are reached."""
-        config = RetryConfig(max_attempts=2, base_delay_ms=10, jitter_enabled=False)
+        config = ModelRetryConfig(
+            max_attempts=2, base_delay_ms=10, jitter_enabled=False
+        )
         executor = RetryExecutor(config)
 
         async def always_fail():
@@ -210,7 +212,7 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_non_retryable_exception_stops_immediately(self):
         """Test that non-retryable exceptions stop retry immediately."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             max_attempts=3,
             retry_condition=RetryCondition.SPECIFIC_EXCEPTIONS,
             retryable_exceptions=["ConnectionError"],
@@ -231,7 +233,7 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_timeout_functionality(self):
         """Test overall timeout functionality."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             max_attempts=5,
             base_delay_ms=20,  # Small delays
             timeout_ms=50,  # Very short timeout - smaller than operation time
@@ -265,7 +267,7 @@ class TestRetryExecutor:
     @pytest.mark.asyncio
     async def test_delay_calculation_integration(self):
         """Test that delays are actually applied during retries."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             strategy_type=RetryStrategyType.LINEAR,
             max_attempts=3,
             base_delay_ms=50,
@@ -396,7 +398,7 @@ class TestRetryStrategyMetrics:
     @pytest.mark.asyncio
     async def test_metrics_collection_on_success(self):
         """Test that success metrics are recorded properly."""
-        config = RetryConfig(max_attempts=2, base_delay_ms=10)
+        config = ModelRetryConfig(max_attempts=2, base_delay_ms=10)
 
         with patch(
             "omnibase_core.nodes.canary.utils.retry_strategy.get_metrics_collector"
@@ -429,7 +431,7 @@ class TestRetryStrategyMetrics:
     @pytest.mark.asyncio
     async def test_metrics_collection_on_failure(self):
         """Test that failure metrics are recorded properly."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             max_attempts=2,
             base_delay_ms=10,
             retry_condition=RetryCondition.ANY_EXCEPTION,
@@ -470,19 +472,19 @@ class TestRetryStrategyEdgeCases:
         """Test validation of retry configuration."""
         # Test max_delay_ms < base_delay_ms
         with pytest.raises(ValueError, match="max_delay_ms must be >= base_delay_ms"):
-            RetryConfig(base_delay_ms=1000, max_delay_ms=500)
+            ModelRetryConfig(base_delay_ms=1000, max_delay_ms=500)
 
         # Test invalid max_attempts
         with pytest.raises(ValueError):
-            RetryConfig(max_attempts=0)
+            ModelRetryConfig(max_attempts=0)
 
         # Test invalid backoff_multiplier
         with pytest.raises(ValueError):
-            RetryConfig(backoff_multiplier=0.5)
+            ModelRetryConfig(backoff_multiplier=0.5)
 
     def test_custom_strategy_without_delay_function(self):
         """Test custom strategy requires delay function."""
-        config = RetryConfig(strategy_type=RetryStrategyType.CUSTOM)
+        config = ModelRetryConfig(strategy_type=RetryStrategyType.CUSTOM)
 
         with pytest.raises(ValueError, match="Custom delay function required"):
             RetryExecutor(config)
@@ -490,7 +492,7 @@ class TestRetryStrategyEdgeCases:
     @pytest.mark.asyncio
     async def test_zero_delay_configuration(self):
         """Test retry with zero base delay."""
-        config = RetryConfig(max_attempts=3, base_delay_ms=0, jitter_enabled=False)
+        config = ModelRetryConfig(max_attempts=3, base_delay_ms=0, jitter_enabled=False)
         executor = RetryExecutor(config)
 
         call_count = 0
@@ -514,7 +516,7 @@ class TestRetryStrategyEdgeCases:
     @pytest.mark.asyncio
     async def test_very_short_timeout(self):
         """Test behavior with extremely short timeout."""
-        config = RetryConfig(
+        config = ModelRetryConfig(
             max_attempts=10,
             base_delay_ms=50,
             timeout_ms=20,  # 20ms timeout - very short but allows first attempt

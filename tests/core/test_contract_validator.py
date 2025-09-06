@@ -12,8 +12,8 @@ import pytest
 
 from omnibase_core.core.contracts.enhanced_contract_validator import (
     EnhancedContractValidator,
+    TypeGenerationSpec,
 )
-from omnibase_core.core.models.model_type_generation_spec import TypeGenerationSpec
 
 
 class TestEnhancedContractValidator:
