@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Protocol for Service Discovery abstraction.
 
@@ -6,7 +5,7 @@ Provides a clean interface for service discovery systems (Consul, etcd, etc.)
 with proper fallback strategies and error handling.
 """
 
-from typing import Dict, List, Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
@@ -27,9 +26,9 @@ class ProtocolServiceDiscovery(Protocol):
         service_id: str,
         host: str,
         port: int,
-        health_check_url: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, ModelScalarValue]] = None,
+        metadata: dict[str, ModelScalarValue],
+        health_check_url: str | None = None,
+        tags: list[str] | None = None,
     ) -> bool:
         """
         Register a service with the discovery system.
@@ -41,7 +40,7 @@ class ProtocolServiceDiscovery(Protocol):
             port: Port where service is listening
             health_check_url: Optional URL for health checks
             tags: Optional list of service tags
-            metadata: Optional service metadata
+            metadata: Required service metadata as ModelScalarValue objects
 
         Returns:
             True if registration successful, False otherwise
@@ -61,8 +60,10 @@ class ProtocolServiceDiscovery(Protocol):
         ...
 
     async def discover_services(
-        self, service_name: str, healthy_only: bool = True
-    ) -> List[Dict[str, ModelScalarValue]]:
+        self,
+        service_name: str,
+        healthy_only: bool = True,
+    ) -> list[dict[str, ModelScalarValue]]:
         """
         Discover instances of a service.
 
@@ -100,7 +101,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
-    async def get_key_value(self, key: str) -> Optional[str]:
+    async def get_key_value(self, key: str) -> str | None:
         """
         Get value for a key from the service discovery store.
 
@@ -124,7 +125,7 @@ class ProtocolServiceDiscovery(Protocol):
         """
         ...
 
-    async def list_keys(self, prefix: str = "") -> List[str]:
+    async def list_keys(self, prefix: str = "") -> list[str]:
         """
         List keys with optional prefix filter.
 
