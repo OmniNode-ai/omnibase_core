@@ -12,9 +12,7 @@ from pathlib import Path
 from typing import TypeVar
 
 try:
-    from omnibase_core.cache.memory_mapped_tool_cache import (
-        MemoryMappedToolCache,
-    )
+    from omnibase_core.cache.memory_mapped_tool_cache import MemoryMappedToolCache
 except ImportError:
     # Cache module not available, use None as fallback
     MemoryMappedToolCache = None
@@ -25,9 +23,7 @@ from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 try:
-    from omnibase_core.monitoring.performance_monitor import (
-        PerformanceMonitor,
-    )
+    from omnibase_core.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
     # Performance monitoring not available, use None as fallback
     PerformanceMonitor = None

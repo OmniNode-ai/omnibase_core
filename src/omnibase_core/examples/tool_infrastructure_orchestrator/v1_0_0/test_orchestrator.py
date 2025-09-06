@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError

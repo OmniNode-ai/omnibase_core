@@ -247,7 +247,3 @@ class ModelStateValue(BaseModel):
     def is_null_value(self) -> bool:
         """Check if this represents a null value."""
         return self.is_null
-
-
-# Legacy alias for backward compatibility
-ScalarValue = ModelScalarValue

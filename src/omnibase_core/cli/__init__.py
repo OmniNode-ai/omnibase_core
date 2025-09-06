@@ -7,12 +7,7 @@ including type quality analysis, processing operations, system status, and confi
 
 from .commands import cli
 from .config import CLIConfig
-from .handlers import (
-    ConfigHandler,
-    ProcessHandler,
-    StatusHandler,
-    TypeQualityHandler,
-)
+from .handlers import ConfigHandler, ProcessHandler, StatusHandler, TypeQualityHandler
 
 __all__ = [
     "cli",

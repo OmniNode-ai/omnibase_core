@@ -21,7 +21,7 @@ import pytest
 
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.core.node_loader import NodeLoader
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
 

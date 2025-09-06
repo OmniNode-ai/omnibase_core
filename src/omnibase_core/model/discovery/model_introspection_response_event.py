@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.discovery.model_node_introspection_event import (

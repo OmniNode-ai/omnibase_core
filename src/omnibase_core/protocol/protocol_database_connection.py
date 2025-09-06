@@ -8,6 +8,7 @@ strategies and connection management.
 
 from typing import Dict, List, Optional, Protocol, Union, runtime_checkable
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
 
 
@@ -115,7 +116,7 @@ class ProtocolDatabaseConnection(Protocol):
         """
         ...
 
-    async def get_connection_info(self) -> Dict[str, Union[str, int, float, bool]]:
+    async def get_connection_info(self) -> Dict[str, ModelScalarValue]:
         """
         Get connection information and statistics.
 

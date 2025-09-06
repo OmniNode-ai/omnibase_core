@@ -14,11 +14,7 @@ import aiohttp
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.base_error import OnexError
-from omnibase_core.messaging import (
-    CommandRequest,
-    HeartbeatEvent,
-    ToolMetadata,
-)
+from omnibase_core.messaging import CommandRequest, HeartbeatEvent, ToolMetadata
 
 
 class ModelInfrastructureMetadata(BaseModel):

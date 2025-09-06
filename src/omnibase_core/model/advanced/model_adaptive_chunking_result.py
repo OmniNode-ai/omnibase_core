@@ -8,9 +8,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from .model_adaptive_chunk import (
-    ModelModelAdaptiveChunk,
-)
+from .model_adaptive_chunk import ModelModelAdaptiveChunk
 from .model_chunking_quality_metrics import ModelModelChunkingQualityMetrics
 from .model_semantic_boundary import ModelModelSemanticBoundary
 

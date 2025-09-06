@@ -30,9 +30,7 @@ from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import (
 from omnibase_core.nodes.canary.canary_gateway.v1_0_0.models import (
     ModelGroupGatewayInput,
 )
-from omnibase_core.nodes.canary.canary_gateway.v1_0_0.node import (
-    NodeCanaryGateway,
-)
+from omnibase_core.nodes.canary.canary_gateway.v1_0_0.node import NodeCanaryGateway
 from omnibase_core.nodes.canary.canary_orchestrator.v1_0_0.node import (
     ModelCanaryOrchestratorInput,
     NodeCanaryOrchestrator,

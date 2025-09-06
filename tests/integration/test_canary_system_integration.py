@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 

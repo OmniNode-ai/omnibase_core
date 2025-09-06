@@ -12,9 +12,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.node import EnumNodeType
-from omnibase_core.model.core.model_contract_definitions import (
-    ModelContractDefinitions,
-)
+from omnibase_core.model.core.model_contract_definitions import ModelContractDefinitions
 from omnibase_core.model.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.core.model_subcontract_reference import (

@@ -19,14 +19,10 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from ..v1_0_0.models import (
-    BaseSubreducer,
-)
+from ..v1_0_0.models import BaseSubreducer
 from ..v1_0_0.models import ModelSubreducerResult as SubreducerResult
 from ..v1_0_0.models import ModelWorkflowRequest as WorkflowRequest
-from ..v1_0_0.models import (
-    WorkflowType,
-)
+from ..v1_0_0.models import WorkflowType
 
 
 class EnumTemplateType(str, Enum):

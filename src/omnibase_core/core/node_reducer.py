@@ -23,18 +23,12 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.common_types import ModelScalarValue
 
 # Import contract model for reducer nodes
 from omnibase_core.core.contracts.model_contract_reducer import ModelContractReducer
@@ -100,9 +94,7 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
     streaming_mode: StreamingMode = StreamingMode.BATCH
     batch_size: int = 1000
     window_size_ms: int = 5000
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:

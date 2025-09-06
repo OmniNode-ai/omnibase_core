@@ -28,10 +28,10 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.common_types import ModelScalarValue
+
 # Import contract model for compute nodes
-from omnibase_core.core.contracts.model_contract_compute import (
-    ModelContractCompute,
-)
+from omnibase_core.core.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
@@ -60,9 +60,7 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -85,9 +83,7 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     processing_time_ms: float
     cache_hit: bool = False
     parallel_execution_used: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
 
     class Config:
         """Pydantic configuration."""

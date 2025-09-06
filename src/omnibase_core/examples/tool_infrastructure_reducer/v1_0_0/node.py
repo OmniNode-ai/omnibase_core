@@ -257,7 +257,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         This manually implements what MixinRequestResponseIntrospection does,
         but without the 'bool' callable error on is_connected.
         """
-        from omnibase_core.constants.event_types import CoreEventTypes
+        from omnibase_core.core.constants.event_types import CoreEventTypes
 
         if not hasattr(self, "_event_bus") or self._event_bus is None:
             return

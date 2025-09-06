@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 
 
 class TestMockedCanaryEffect:

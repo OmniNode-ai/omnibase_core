@@ -35,7 +35,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import for event type validation and backwards compatibility
-from omnibase_core.constants.event_types import normalize_legacy_event_type
+from omnibase_core.core.constants.event_types import normalize_legacy_event_type
 
 from .model_event_type import ModelEventType
 from .model_telemetry_operation_error_metadata import (

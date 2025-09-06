@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.core.node_reducer import ModelReducerInput, ModelReducerOutput
 from omnibase_core.core.node_reducer_service import NodeReducerService
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,

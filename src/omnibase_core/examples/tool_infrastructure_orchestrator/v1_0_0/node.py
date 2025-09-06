@@ -9,7 +9,7 @@ Service hosting is handled by the infrastructure reducer.
 import asyncio
 from uuid import uuid4
 
-from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
 from omnibase_core.core.onex_container import ModelONEXContainer

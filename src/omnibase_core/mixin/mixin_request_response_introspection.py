@@ -8,7 +8,7 @@ Provides the "request-response" half of the hybrid discovery system.
 import contextlib
 import time
 
-from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.model.core.model_semver import ModelSemVer

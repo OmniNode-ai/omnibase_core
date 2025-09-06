@@ -21,9 +21,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.model.core.model_contract_cache import ModelContractCache
 from omnibase_core.model.core.model_contract_content import ModelContractContent
-from omnibase_core.model.core.model_contract_definitions import (
-    ModelContractDefinitions,
-)
+from omnibase_core.model.core.model_contract_definitions import ModelContractDefinitions
 from omnibase_core.model.core.model_contract_loader import ModelContractLoader
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.core.model_tool_specification import ModelToolSpecification

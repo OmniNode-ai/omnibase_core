@@ -107,9 +107,9 @@ class ConsulServiceDiscovery(ProtocolServiceDiscovery):
                     service_id,
                     host,
                     port,
+                    metadata,
                     health_check_url,
                     tags,
-                    metadata,
                 )
 
             consul_client = await self._get_consul_client()

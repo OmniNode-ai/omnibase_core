@@ -24,16 +24,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Optional, TypeVar, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.core.common_types import ModelScalarValue
 
 # Import contract model for effect nodes
 from omnibase_core.core.contracts.model_contract_effect import ModelContractEffect
@@ -89,7 +85,7 @@ class ModelEffectInput(BaseModel):
     """
 
     effect_type: EffectType
-    operation_data: Dict[str, Union[str, int, float, bool]]
+    operation_data: Dict[str, ModelScalarValue]
     operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
     transaction_enabled: bool = True
     retry_enabled: bool = True
@@ -97,9 +93,7 @@ class ModelEffectInput(BaseModel):
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -124,9 +118,7 @@ class ModelEffectOutput(BaseModel):
     retry_count: int = 0
     side_effects_applied: Optional[list[str]] = Field(default_factory=list)
     rollback_operations: Optional[list[str]] = Field(default_factory=list)
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
