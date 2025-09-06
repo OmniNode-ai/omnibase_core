@@ -143,11 +143,12 @@ output_schema:
             loader = ContractLoader(temp_path.parent)
 
             # This should load successfully with security validation
-            contract_dict = loader.load_contract(temp_path)
+            contract_content = loader.load_contract(temp_path)
 
-            assert contract_dict is not None
-            assert contract_dict.get("contract_name") == "secure_contract"
-            assert contract_dict.get("node_name") == "test_node"
+            assert contract_content is not None
+            assert contract_content.node_name == "test_node"
+            # Contract name is not directly stored in ModelContractContent
+            # but node_name should match what was provided
         finally:
             temp_path.unlink()
 
@@ -161,12 +162,12 @@ output_schema:
         try:
             loader = ContractLoader(temp_path.parent)
 
-            # Empty content should be validated successfully
+            # Empty content should be validated successfully for security
             loader._validate_yaml_content_security("", temp_path)
 
-            # Loading should return empty dict
-            contract_dict = loader.load_contract(temp_path)
-            assert contract_dict == {}
+            # Loading an empty YAML file should now fail validation (more secure)
+            with pytest.raises(OnexError):
+                loader.load_contract(temp_path)
         finally:
             temp_path.unlink()
 

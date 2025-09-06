@@ -191,7 +191,7 @@ class TestEnhancedContractValidator:
         spec = TypeGenerationSpec(
             source_path=Path("/test/contract.yaml"),
             target_path=Path("/test/output.py"),
-            type_name="ModelTestNodeInputState",
+            generation_mode="pydantic",
             naming_convention="PascalCase",
         )
 

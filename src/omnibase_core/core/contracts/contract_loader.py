@@ -18,6 +18,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.model.core.model_contract_cache import ModelContractCache
 from omnibase_core.model.core.model_contract_content import ModelContractContent
 from omnibase_core.model.core.model_contract_definitions import (
@@ -197,7 +198,9 @@ class ContractLoader:
             # Parse tool specification
             tool_spec_data = raw_content.get("tool_specification", {})
             tool_specification = ModelToolSpecification(
-                main_tool_class=str(tool_spec_data.get("main_tool_class", "")),
+                main_tool_class=str(
+                    tool_spec_data.get("main_tool_class", "DefaultToolNode")
+                ),
                 business_logic_pattern=str(
                     tool_spec_data.get("business_logic_pattern", "stateful"),
                 ),
@@ -231,10 +234,18 @@ class ContractLoader:
                         if isinstance(dep_item, dict):
                             dependencies.append(ModelContractDependency(**dep_item))
 
+            # Parse node type (default to COMPUTE if not specified)
+            node_type_str = raw_content.get("node_type", "COMPUTE")
+            if isinstance(node_type_str, str):
+                node_type = EnumNodeType(node_type_str.upper())
+            else:
+                node_type = EnumNodeType.COMPUTE
+
             # Create contract content
             return ModelContractContent(
                 contract_version=contract_version,
                 node_name=str(raw_content.get("node_name", "")),
+                node_type=node_type,
                 tool_specification=tool_specification,
                 input_state=input_state,
                 output_state=output_state,
@@ -386,8 +397,8 @@ class ContractLoader:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Suspicious YAML pattern detected in {file_path}: {pattern}",
-                    source="contract_loader",
-                    metadata={
+                    {
+                        "source": "contract_loader",
                         "pattern": pattern,
                         "file_path": str(file_path),
                     },
