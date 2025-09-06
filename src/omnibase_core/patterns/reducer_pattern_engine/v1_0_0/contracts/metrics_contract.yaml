@@ -2,7 +2,7 @@
 # Defines metrics collection and performance monitoring specifications
 
 name: "metrics_collection"
-version: "1.0.0"
+version: {major: 1, minor: 0, patch: 0}
 description: "Enhanced metrics collection contract for performance monitoring"
 
 # Metrics Categories

@@ -3,6 +3,8 @@
 from .base_subreducer import BaseSubreducer
 from .model_processing_error import ModelProcessingError
 from .model_processing_result import ModelProcessingResult
+from .model_reducer_pattern_engine_input import ModelReducerPatternEngineInput
+from .model_reducer_pattern_engine_output import ModelReducerPatternEngineOutput
 from .model_routing_decision import ModelRoutingDecision
 from .model_subreducer_result import ModelSubreducerResult
 from .model_workflow_error import ModelWorkflowError
@@ -31,4 +33,6 @@ __all__ = [
     "WorkflowType",
     "WorkflowStatus",
     "BaseSubreducer",
+    "ModelReducerPatternEngineInput",
+    "ModelReducerPatternEngineOutput",
 ]

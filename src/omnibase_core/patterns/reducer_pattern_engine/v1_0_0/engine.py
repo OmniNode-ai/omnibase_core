@@ -103,9 +103,9 @@ class ReducerPatternEngine(NodeReducer):
 
         emit_log_event(
             level=LogLevel.INFO,
-            event="reducer_pattern_engine_initialized",
             message="ReducerPatternEngine Phase 2 initialized successfully",
             context={
+                "event": "reducer_pattern_engine_initialized",
                 "engine_type": self.__class__.__name__,
                 "container_type": type(container).__name__,
                 "phase": "2",
@@ -151,9 +151,9 @@ class ReducerPatternEngine(NodeReducer):
 
             emit_log_event(
                 level=LogLevel.INFO,
-                event="subreducer_registered_in_engine",
                 message=f"Subreducer {subreducer.name} registered in engine (Phase 2)",
                 context={
+                    "event": "subreducer_registered_in_engine",
                     "subreducer_name": subreducer.name,
                     "workflow_types": [wt.value for wt in workflow_types],
                     "registry_status": "registered",
@@ -164,9 +164,9 @@ class ReducerPatternEngine(NodeReducer):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                event="subreducer_registration_failed_in_engine",
                 message=f"Failed to register subreducer in engine: {str(e)}",
                 context={
+                    "event": "subreducer_registration_failed_in_engine",
                     "subreducer_name": getattr(subreducer, "name", "unknown"),
                     "error": str(e),
                 },
@@ -218,9 +218,9 @@ class ReducerPatternEngine(NodeReducer):
 
             emit_log_event(
                 level=LogLevel.INFO,
-                event="workflow_processing_started",
                 message=f"Started processing workflow {request.workflow_id} (Phase 2)",
                 context={
+                    "event": "workflow_processing_started",
                     "workflow_id": str(request.workflow_id),
                     "workflow_type": request.workflow_type.value,
                     "instance_id": request.instance_id,
@@ -337,9 +337,9 @@ class ReducerPatternEngine(NodeReducer):
 
             emit_log_event(
                 level=LogLevel.INFO,
-                event="workflow_processing_completed",
                 message=f"Completed processing workflow {request.workflow_id}",
                 context={
+                    "event": "workflow_processing_completed",
                     "workflow_id": str(request.workflow_id),
                     "workflow_type": request.workflow_type.value,
                     "instance_id": request.instance_id,
@@ -392,9 +392,9 @@ class ReducerPatternEngine(NodeReducer):
 
             emit_log_event(
                 level=LogLevel.ERROR,
-                event="workflow_processing_failed",
                 message=f"Failed to process workflow {request.workflow_id}: {str(e)}",
                 context={
+                    "event": "workflow_processing_failed",
                     "workflow_id": str(request.workflow_id),
                     "workflow_type": request.workflow_type.value,
                     "instance_id": request.instance_id,
@@ -484,9 +484,9 @@ class ReducerPatternEngine(NodeReducer):
 
                 emit_log_event(
                     level=LogLevel.INFO,
-                    event="workflow_states_cleaned_up",
                     message=f"Cleaned up {len(states_to_remove)} old workflow states",
                     context={
+                        "event": "workflow_states_cleaned_up",
                         "removed_count": len(states_to_remove),
                         "remaining_states": len(self._workflow_states),
                         "active_workflows": len(self._active_workflows),
@@ -507,9 +507,9 @@ class ReducerPatternEngine(NodeReducer):
         """
         emit_log_event(
             level=LogLevel.INFO,
-            event="background_cleanup_started",
             message="Background cleanup thread started",
             context={
+                "event": "background_cleanup_started",
                 "cleanup_interval_minutes": 30,
                 "retention_hours": self._state_retention_hours,
                 "max_states": self._max_workflow_states,
@@ -528,16 +528,19 @@ class ReducerPatternEngine(NodeReducer):
             except Exception as e:
                 emit_log_event(
                     level=LogLevel.ERROR,
-                    event="background_cleanup_error",
                     message=f"Background cleanup encountered an error: {str(e)}",
-                    context={"error": str(e), "error_type": type(e).__name__},
+                    context={
+                        "event": "background_cleanup_error",
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
                 )
                 # Continue running despite errors
 
         emit_log_event(
             level=LogLevel.INFO,
-            event="background_cleanup_stopped",
             message="Background cleanup thread stopped",
+            context={"event": "background_cleanup_stopped"},
         )
 
     def _shutdown_cleanup_thread(self) -> None:
@@ -549,8 +552,8 @@ class ReducerPatternEngine(NodeReducer):
         if hasattr(self, "_cleanup_thread_stop_event"):
             emit_log_event(
                 level=LogLevel.INFO,
-                event="cleanup_thread_shutdown_initiated",
                 message="Initiating background cleanup thread shutdown",
+                context={"event": "cleanup_thread_shutdown_initiated"},
             )
 
             self._cleanup_thread_stop_event.set()
@@ -562,14 +565,14 @@ class ReducerPatternEngine(NodeReducer):
                 if self._cleanup_thread.is_alive():
                     emit_log_event(
                         level=LogLevel.WARNING,
-                        event="cleanup_thread_shutdown_timeout",
                         message="Background cleanup thread did not shutdown within timeout",
+                        context={"event": "cleanup_thread_shutdown_timeout"},
                     )
                 else:
                     emit_log_event(
                         level=LogLevel.INFO,
-                        event="cleanup_thread_shutdown_completed",
                         message="Background cleanup thread shutdown successfully",
+                        context={"event": "cleanup_thread_shutdown_completed"},
                     )
 
     def shutdown(self) -> None:
@@ -581,9 +584,9 @@ class ReducerPatternEngine(NodeReducer):
         """
         emit_log_event(
             level=LogLevel.INFO,
-            event="reducer_engine_shutdown_initiated",
             message="Initiating ReducerPatternEngine shutdown",
             context={
+                "event": "reducer_engine_shutdown_initiated",
                 "active_workflows": len(self._active_workflows),
                 "workflow_states": len(self._workflow_states),
             },
@@ -597,9 +600,8 @@ class ReducerPatternEngine(NodeReducer):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                event="final_cleanup_error",
                 message=f"Error during final cleanup: {str(e)}",
-                context={"error": str(e)},
+                context={"event": "final_cleanup_error", "error": str(e)},
             )
 
     def get_metrics(self) -> WorkflowMetrics:
@@ -766,8 +768,12 @@ class ReducerPatternEngine(NodeReducer):
                 results[subreducer_name] = False
                 emit_log_event(
                     level=LogLevel.ERROR,
-                    event="bulk_subreducer_registration_failed",
                     message=f"Failed to register subreducer {subreducer_name}: {str(e)}",
+                    context={
+                        "event": "bulk_subreducer_registration_failed",
+                        "subreducer_name": subreducer_name,
+                        "error": str(e),
+                    },
                 )
 
         return results
@@ -779,8 +785,8 @@ class ReducerPatternEngine(NodeReducer):
 
         emit_log_event(
             level=LogLevel.INFO,
-            event="metrics_reset",
             message="All metrics have been reset",
+            context={"event": "metrics_reset"},
         )
 
     def _create_not_found_workflow_state(self, workflow_id: str) -> WorkflowStateModel:
