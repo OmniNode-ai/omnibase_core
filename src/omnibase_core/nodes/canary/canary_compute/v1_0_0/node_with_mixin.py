@@ -427,7 +427,7 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         health_score = 100
         for metric, value in metrics.items():
             threshold_good = float(
-                self.config_utils.get_performance_setting(
+                self.config_utils.get_performance_config(
                     "health_score_threshold_good", 0.6
                 )
             )
@@ -482,10 +482,10 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         # Use mixin configuration for health thresholds
         min_ops = int(
-            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
         )
         error_threshold = float(
-            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
         )
 
         if (

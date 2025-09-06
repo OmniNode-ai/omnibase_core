@@ -76,12 +76,12 @@ class NodeCanaryEffect(NodeEffectService):
 
         # Setup circuit breakers using configuration utils
         failure_threshold = int(
-            self.config_utils.get_security_setting(
+            self.config_utils.get_security_config(
                 "circuit_breaker_failure_threshold", 3
             )
         )
         recovery_timeout = int(
-            self.config_utils.get_security_setting(
+            self.config_utils.get_security_config(
                 "circuit_breaker_recovery_timeout", 30
             )
         )
@@ -594,10 +594,10 @@ class NodeCanaryEffect(NodeEffectService):
     ) -> dict[str, Any]:
         """Simulate external API call for canary testing."""
         # Simulate API call delay only in debug mode
-        debug_mode = bool(self.config_utils.get_security_setting("debug_mode", False))
+        debug_mode = bool(self.config_utils.get_security_config("debug_mode", False))
         if debug_mode:
             delay_ms = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "api_simulation_delay_ms", 100
                 )
             )
@@ -743,10 +743,10 @@ class NodeCanaryEffect(NodeEffectService):
 
         # Mark as degraded if error rate is high
         min_ops = int(
-            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
         )
         error_threshold = float(
-            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
         )
 
         if (

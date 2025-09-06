@@ -403,10 +403,10 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
 
         # Mark as degraded if error rate is high (using configurable thresholds)
         min_operations = int(
-            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
         )
         error_rate_threshold = float(
-            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
         )
         if (
             self.operation_count > min_operations

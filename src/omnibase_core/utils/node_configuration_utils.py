@@ -45,21 +45,21 @@ class UtilsNodeConfiguration(ProtocolUtilsNodeConfiguration):
         config = self.get_configuration()
         return config.get_timeout_ms(timeout_type, default_ms)
 
-    def get_security_setting(
+    def get_security_config(
         self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get security configuration value."""
         config = self.get_configuration()
         return config.get_security_config(key, default)
 
-    def get_performance_setting(
+    def get_performance_config(
         self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get performance configuration value."""
         config = self.get_configuration()
         return config.get_performance_config(key, default)
 
-    def get_business_logic_setting(
+    def get_business_logic_config(
         self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get business logic configuration value."""

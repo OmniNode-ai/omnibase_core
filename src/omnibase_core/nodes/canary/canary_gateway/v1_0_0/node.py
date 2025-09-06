@@ -131,7 +131,7 @@ class ResponseAggregator:
             # Use configurable cache TTL
             if ttl_seconds is None:
                 ttl_seconds = int(
-                    self.config_utils.get_performance_setting("cache_ttl_seconds", 300)
+                    self.config_utils.get_performance_config("cache_ttl_seconds", 300)
                 )
 
             # Convert ModelAggregatedResponse to dictionary for caching
@@ -249,7 +249,7 @@ class NodeCanaryGateway(NodeEffectService):
         current_time = time.time()
         window_size = 60  # 1 minute window
         max_requests = int(
-            self.config_utils.get_performance_setting("max_concurrent_operations", 100)
+            self.config_utils.get_performance_config("max_concurrent_operations", 100)
         )
 
         # Clean old entries
@@ -463,12 +463,12 @@ class NodeCanaryGateway(NodeEffectService):
         # In production, this would make actual HTTP/gRPC calls
         # Add simulation delay from config
         # Simulate delay only in debug mode
-        debug_mode = bool(self.config_utils.get_security_setting("debug_mode", False))
+        debug_mode = bool(self.config_utils.get_security_config("debug_mode", False))
         if debug_mode:
             import asyncio
 
             delay_ms = float(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "api_simulation_delay_ms", 100
                 )
             )

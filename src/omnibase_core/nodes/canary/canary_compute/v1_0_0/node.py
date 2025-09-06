@@ -116,12 +116,12 @@ class NodeCanaryCompute(NodeComputeService):
         api_timeout_ms = self.config_utils.get_timeout_ms("api_call", 10000)
         cb_config = ModelCircuitBreakerConfig(
             failure_threshold=int(
-                self.config_utils.get_security_setting(
+                self.config_utils.get_security_config(
                     "circuit_breaker_failure_threshold", 3
                 )
             ),
             recovery_timeout_seconds=int(
-                self.config_utils.get_security_setting(
+                self.config_utils.get_security_config(
                     "circuit_breaker_recovery_timeout", 30
                 )
             ),
@@ -322,37 +322,37 @@ class NodeCanaryCompute(NodeComputeService):
 
             # Get configuration values using config utils
             purchase_threshold = float(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_purchase_threshold", 1000
                 )
             )
             purchase_points = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_purchase_score_points", 10
                 )
             )
             loyalty_threshold = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_loyalty_years_threshold", 2
                 )
             )
             loyalty_points = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_loyalty_score_points", 15
                 )
             )
             support_threshold = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_support_tickets_threshold", 5
                 )
             )
             support_points = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_support_score_points", 5
                 )
             )
             premium_threshold = int(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "customer_premium_score_threshold", 20
                 )
             )
@@ -489,10 +489,10 @@ class NodeCanaryCompute(NodeComputeService):
 
         # Mark as degraded if error rate is high (using configurable thresholds)
         min_ops = int(
-            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
         )
         error_threshold = float(
-            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
         )
 
         if (

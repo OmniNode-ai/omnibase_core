@@ -341,15 +341,15 @@ class NodeGateway(NodeCoreBase):
 
         # Get configuration for connection pool
         max_connections = int(
-            self.config_utils.get_performance_setting("max_concurrent_operations", 100)
+            self.config_utils.get_performance_config("max_concurrent_operations", 100)
         )
         failure_threshold = int(
-            self.config_utils.get_security_setting(
+            self.config_utils.get_security_config(
                 "circuit_breaker_failure_threshold", 5
             )
         )
         recovery_timeout = int(
-            self.config_utils.get_security_setting(
+            self.config_utils.get_security_config(
                 "circuit_breaker_recovery_timeout", 60
             )
         )

@@ -283,14 +283,14 @@ class NodeCanaryReducer(NodeReducerService):
         """Aggregate performance metrics from canary nodes with configuration-driven behavior."""
         metric_types = parameters.get("metric_types", ["cpu", "memory", "requests"])
         max_retention = int(
-            self.config_utils.get_performance_setting("metrics_retention_count", 1000)
+            self.config_utils.get_performance_config("metrics_retention_count", 1000)
         )
 
         # Simulate metric aggregation delay only in debug mode
-        debug_mode = bool(self.config_utils.get_security_setting("debug_mode", False))
+        debug_mode = bool(self.config_utils.get_security_config("debug_mode", False))
         if debug_mode:
             delay_ms = float(
-                self.config_utils.get_business_logic_setting(
+                self.config_utils.get_business_logic_config(
                     "api_simulation_delay_ms", 100
                 )
             )
@@ -451,7 +451,7 @@ class NodeCanaryReducer(NodeReducerService):
         log_level = parameters.get("level", "info")
         max_entries = parameters.get(
             "max_entries",
-            int(self.config_utils.get_performance_setting("cache_max_size", 1000)),
+            int(self.config_utils.get_performance_config("cache_max_size", 1000)),
         )
 
         log_entries = state_data.get("logs", [])
@@ -511,10 +511,10 @@ class NodeCanaryReducer(NodeReducerService):
         """Get the health status of the canary reducer node with comprehensive metrics."""
         # Use configuration for health thresholds
         error_rate_threshold = float(
-            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
         )
         min_operations = int(
-            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
         )
 
         status = EnumHealthStatus.HEALTHY

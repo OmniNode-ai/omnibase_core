@@ -8,10 +8,11 @@ without external dependencies. Suitable for development and testing environments
 import asyncio
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from omnibase.protocols.core import ProtocolCacheService, ProtocolCacheServiceProvider
-from omnibase.protocols.types.core_types import ContextValue
+from omnibase.protocols.types.core_types import ContextValue, ProtocolCacheStatistics
 
 
 @dataclass
@@ -25,7 +26,7 @@ class CacheEntry:
     last_accessed: float = 0
 
 
-class InMemoryCacheService(ProtocolCacheService):
+class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
     """
     Thread-safe in-memory cache service with TTL support.
 
@@ -140,7 +141,7 @@ class InMemoryCacheService(ProtocolCacheService):
         result = await self.get(key)
         return result is not None
 
-    def get_stats(self) -> Dict[str, ContextValue]:
+    def get_stats(self) -> ProtocolCacheStatistics:
         """Get cache statistics."""
         current_time = time.time()
 
@@ -154,20 +155,42 @@ class InMemoryCacheService(ProtocolCacheService):
             else:
                 valid_entries += 1
 
-        return {
-            "hits": self._stats["hits"],
-            "misses": self._stats["misses"],
-            "evictions": self._stats["evictions"],
-            "sets": self._stats["sets"],
-            "deletes": self._stats["deletes"],
-            "current_entries": len(self._cache),
-            "valid_entries": valid_entries,
-            "expired_entries": expired_entries,
-            "max_entries": self.max_entries,
-            "hit_rate": self._stats["hits"]
+        # Create a simple implementation of ProtocolCacheStatistics
+        from dataclasses import dataclass
+
+        @dataclass
+        class CacheStats:
+            hit_count: int
+            miss_count: int
+            total_requests: int
+            hit_ratio: float
+            memory_usage_bytes: int
+            entry_count: int
+            eviction_count: int
+            last_accessed: Optional[datetime]
+            cache_size_limit: Optional[int]
+
+        return CacheStats(
+            hit_count=self._stats["hits"],
+            miss_count=self._stats["misses"],
+            total_requests=self._stats["hits"] + self._stats["misses"],
+            hit_ratio=self._stats["hits"]
             / max(1, self._stats["hits"] + self._stats["misses"]),
-            "default_ttl_seconds": self.default_ttl_seconds,
-        }
+            memory_usage_bytes=0,  # Would need actual memory measurement
+            entry_count=len(self._cache),
+            eviction_count=self._stats["evictions"],
+            last_accessed=(
+                datetime.fromtimestamp(
+                    max(
+                        (entry.last_accessed for entry in self._cache.values()),
+                        default=0,
+                    )
+                )
+                if self._cache
+                else None
+            ),
+            cache_size_limit=self.max_entries,
+        )
 
     async def _evict_entries(self, evict_count: int = None) -> None:
         """Evict entries using LRU policy."""
@@ -188,7 +211,7 @@ class InMemoryCacheService(ProtocolCacheService):
         self._stats["evictions"] += evicted
 
 
-class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider):
+class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider[Dict[str, Any]]):
     """Provider for in-memory cache service."""
 
     def __init__(self, default_ttl_seconds: int = 300, max_entries: int = 10000):
@@ -197,7 +220,7 @@ class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider):
         self.max_entries = max_entries
         self._cache_service: Optional[InMemoryCacheService] = None
 
-    def create_cache_service(self) -> ProtocolCacheService:
+    def create_cache_service(self) -> ProtocolCacheService[Dict[str, Any]]:
         """Create or return existing cache service instance."""
         if self._cache_service is None:
             self._cache_service = InMemoryCacheService(
@@ -206,7 +229,7 @@ class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider):
             )
         return self._cache_service
 
-    def get_cache_configuration(self) -> Dict[str, ContextValue]:
+    def get_cache_configuration(self) -> dict[str, ContextValue]:
         """Get cache configuration parameters."""
         return {
             "type": "in_memory",

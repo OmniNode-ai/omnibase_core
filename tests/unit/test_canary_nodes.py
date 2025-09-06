@@ -116,7 +116,7 @@ class TestMockedCanaryEffect:
             patch.object(UtilsNodeConfiguration, "get_timeout_ms", return_value=5000),
             patch.object(
                 UtilsNodeConfiguration,
-                "get_performance_setting",
+                "get_performance_config",
                 return_value="test_value",
             ),
         ):
@@ -128,7 +128,7 @@ class TestMockedCanaryEffect:
             assert timeout == 5000
 
             # Test performance setting
-            setting = config_utils.get_performance_setting("test_setting", "default")
+            setting = config_utils.get_performance_config("test_setting", "default")
             assert setting == "test_value"
 
     @pytest.mark.asyncio
