@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+# Remove canary config dependency - use defaults for configuration
 
 
 @dataclass
@@ -79,8 +79,9 @@ class MetricsCollector:
 
     def __init__(self, node_name: str, max_points: int = 10000):
         self.node_name = node_name
-        self.config = get_canary_config()
         self.max_points = max_points
+        # Use default configuration values
+        self.metrics_retention_count = 1000
 
         # Metric storage
         self._metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=max_points))
@@ -161,12 +162,9 @@ class MetricsCollector:
 
         async with self._lock:
             # Add to histogram
-            if (
-                len(self._histograms[key])
-                >= self.config.performance.metrics_retention_count
-            ):
+            if len(self._histograms[key]) >= self.metrics_retention_count:
                 self._histograms[key] = self._histograms[key][
-                    -self.config.performance.metrics_retention_count // 2 :
+                    -self.metrics_retention_count // 2 :
                 ]
             self._histograms[key].append(value)
 

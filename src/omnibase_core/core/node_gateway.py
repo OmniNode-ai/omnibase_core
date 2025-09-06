@@ -37,6 +37,7 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class RoutingStrategy(Enum):
@@ -183,26 +184,23 @@ class CircuitBreaker:
 class ConnectionPool:
     """Manages connection pooling for gateway operations."""
 
-    def __init__(self, max_connections: int = 100):
+    def __init__(
+        self,
+        max_connections: int = 100,
+        circuit_breaker_failure_threshold: int = 5,
+        circuit_breaker_recovery_timeout: int = 60,
+    ):
         self.max_connections = max_connections
         self.connections: Dict[str, List[aiohttp.ClientSession]] = defaultdict(list)
         self.connection_states: Dict[str, ConnectionState] = {}
         self.active_connections = 0
 
-        # Create circuit breakers with configurable defaults
+        # Create circuit breakers with provided configuration
         def create_circuit_breaker():
-            try:
-                from omnibase_core.nodes.canary.config.canary_config import (
-                    get_canary_config,
-                )
-
-                config = get_canary_config()
-                return CircuitBreaker(
-                    failure_threshold=config.security.circuit_breaker_failure_threshold,
-                    recovery_timeout=config.security.circuit_breaker_recovery_timeout,
-                )
-            except Exception:
-                return CircuitBreaker()  # Use class defaults
+            return CircuitBreaker(
+                failure_threshold=circuit_breaker_failure_threshold,
+                recovery_timeout=circuit_breaker_recovery_timeout,
+            )
 
         self.circuit_breakers: Dict[str, CircuitBreaker] = defaultdict(
             create_circuit_breaker
@@ -273,16 +271,8 @@ class ConnectionPool:
             self.active_connections = max(0, self.active_connections - 1)
             return
 
-        # Return to pool if under limit (configurable)
-        try:
-            from omnibase_core.nodes.canary.config.canary_config import (
-                get_canary_config,
-            )
-
-            config = get_canary_config()
-            max_pooled = config.security.max_connections_per_endpoint
-        except Exception:
-            max_pooled = 10  # Fallback default
+        # Return to pool if under limit (using default)
+        max_pooled = 10  # Default pooled connections per endpoint
 
         if len(self.connections[endpoint]) < max_pooled:
             self.connections[endpoint].append(session)
@@ -347,7 +337,28 @@ class NodeGateway(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.contract_model = ModelContractGateway
-        self.connection_pool = ConnectionPool()
+        self.config_utils = UtilsNodeConfiguration(container)
+
+        # Get configuration for connection pool
+        max_connections = int(
+            self.config_utils.get_performance_setting("max_concurrent_operations", 100)
+        )
+        failure_threshold = int(
+            self.config_utils.get_security_setting(
+                "circuit_breaker_failure_threshold", 5
+            )
+        )
+        recovery_timeout = int(
+            self.config_utils.get_security_setting(
+                "circuit_breaker_recovery_timeout", 60
+            )
+        )
+
+        self.connection_pool = ConnectionPool(
+            max_connections=max_connections,
+            circuit_breaker_failure_threshold=failure_threshold,
+            circuit_breaker_recovery_timeout=recovery_timeout,
+        )
         self.load_balancer = LoadBalancer()
 
     async def route(self, gateway_input: ModelGatewayInput) -> ModelGatewayOutput:

@@ -19,13 +19,13 @@ from omnibase_core.core.node_reducer_service import NodeReducerService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 from omnibase_core.nodes.canary.utils.metrics_collector import get_metrics_collector
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class ModelCanaryReducerInput(BaseModel):
@@ -97,16 +97,18 @@ class NodeCanaryReducer(NodeReducerService):
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # Initialize production utilities
-        self.config = get_canary_config()
+        # Initialize production utilities with container-based DI
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
         self.metrics_collector = get_metrics_collector("canary_reducer")
 
         # Setup circuit breakers for external services
+        # Use timeout from config_utils with fallback
+        timeout_ms = self.config_utils.get_timeout_ms("circuit_breaker", 10000)
         cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
-            timeout_seconds=self.config.timeouts.default_timeout_ms / 1000,
+            timeout_seconds=timeout_ms / 1000,
         )
         self.aggregation_circuit_breaker = get_circuit_breaker(
             "state_aggregation", cb_config
@@ -280,13 +282,19 @@ class NodeCanaryReducer(NodeReducerService):
     ) -> dict[str, Any]:
         """Aggregate performance metrics from canary nodes with configuration-driven behavior."""
         metric_types = parameters.get("metric_types", ["cpu", "memory", "requests"])
-        max_retention = self.config.performance.metrics_retention_count
+        max_retention = int(
+            self.config_utils.get_performance_setting("metrics_retention_count", 1000)
+        )
 
         # Simulate metric aggregation delay only in debug mode
-        if self.config.security.debug_mode:
-            await asyncio.sleep(
-                self.config.business_logic.api_simulation_delay_ms / 1000 / 2
+        debug_mode = bool(self.config_utils.get_security_setting("debug_mode", False))
+        if debug_mode:
+            delay_ms = float(
+                self.config_utils.get_business_logic_setting(
+                    "api_simulation_delay_ms", 100
+                )
             )
+            await asyncio.sleep(delay_ms / 1000 / 2)
 
         aggregated_metrics = {}
         for metric_type in metric_types:
@@ -442,7 +450,8 @@ class NodeCanaryReducer(NodeReducerService):
         """Consolidate log entries from canary nodes."""
         log_level = parameters.get("level", "info")
         max_entries = parameters.get(
-            "max_entries", self.config.performance.cache_max_size
+            "max_entries",
+            int(self.config_utils.get_performance_setting("cache_max_size", 1000)),
         )
 
         log_entries = state_data.get("logs", [])
@@ -501,8 +510,12 @@ class NodeCanaryReducer(NodeReducerService):
     async def get_health_status(self) -> ModelHealthStatus:
         """Get the health status of the canary reducer node with comprehensive metrics."""
         # Use configuration for health thresholds
-        error_rate_threshold = self.config.performance.error_rate_threshold
-        min_operations = self.config.performance.min_operations_for_health
+        error_rate_threshold = float(
+            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+        )
+        min_operations = int(
+            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+        )
 
         status = EnumHealthStatus.HEALTHY
 

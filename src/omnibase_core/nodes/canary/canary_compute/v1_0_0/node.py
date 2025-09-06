@@ -18,12 +18,12 @@ from omnibase_core.core.node_compute_service import NodeComputeService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class ModelCanaryComputeInput(BaseModel):
@@ -66,19 +66,9 @@ class ModelCanaryComputeInput(BaseModel):
             if not isinstance(v, str):
                 raise ValueError("correlation_id must be a string")
 
-            # Use configurable limits (fallback to defaults if config unavailable)
-            from omnibase_core.nodes.canary.config.canary_config import (
-                get_canary_config,
-            )
-
-            try:
-                config = get_canary_config()
-                min_len = config.security.correlation_id_min_length
-                max_len = config.security.correlation_id_max_length
-            except Exception:
-                # Fallback to conservative defaults if config unavailable
-                min_len = 8
-                max_len = 128
+            # Use safe defaults for validation (actual validation will use config utils in runtime)
+            min_len = 8
+            max_len = 128
 
             if len(v) < min_len or len(v) > max_len:
                 raise ValueError(
@@ -119,14 +109,23 @@ class NodeCanaryCompute(NodeComputeService):
         """Initialize the Canary Compute node."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.config = get_canary_config()
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
 
         # Setup circuit breakers for external operations
+        api_timeout_ms = self.config_utils.get_timeout_ms("api_call", 10000)
         cb_config = ModelCircuitBreakerConfig(
-            failure_threshold=3,
-            recovery_timeout_seconds=30,
-            timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
+            failure_threshold=int(
+                self.config_utils.get_security_setting(
+                    "circuit_breaker_failure_threshold", 3
+                )
+            ),
+            recovery_timeout_seconds=int(
+                self.config_utils.get_security_setting(
+                    "circuit_breaker_recovery_timeout", 30
+                )
+            ),
+            timeout_seconds=api_timeout_ms / 1000,
         )
         self.api_circuit_breaker = get_circuit_breaker("compute_api", cb_config)
 
@@ -159,8 +158,8 @@ class NodeCanaryCompute(NodeComputeService):
             # Use provided correlation_id or generate new one
             if input_data.correlation_id:
                 correlation_id = input_data.correlation_id
-                # Validate the provided correlation_id
-                if not self.error_handler.validate_correlation_id(correlation_id):
+                # Validate the provided correlation_id using config utils
+                if not self.config_utils.validate_correlation_id(correlation_id):
                     raise ValueError("Invalid correlation_id format")
             else:
                 input_data.correlation_id = correlation_id
@@ -319,23 +318,44 @@ class NodeCanaryCompute(NodeComputeService):
 
         if logic_type == "customer_scoring":
             # Customer scoring logic using configurable thresholds
-            if (
-                not hasattr(self.config, "business_logic")
-                or self.config.business_logic is None
-            ):
-                raise ValueError("Business logic configuration not available")
-
-            config = self.config.business_logic
             score = 0
 
-            # Add null checks for all configuration properties
-            purchase_threshold = getattr(config, "customer_purchase_threshold", 1000)
-            purchase_points = getattr(config, "customer_purchase_score_points", 10)
-            loyalty_threshold = getattr(config, "customer_loyalty_years_threshold", 2)
-            loyalty_points = getattr(config, "customer_loyalty_score_points", 15)
-            support_threshold = getattr(config, "customer_support_tickets_threshold", 5)
-            support_points = getattr(config, "customer_support_score_points", 5)
-            premium_threshold = getattr(config, "customer_premium_score_threshold", 20)
+            # Get configuration values using config utils
+            purchase_threshold = float(
+                self.config_utils.get_business_logic_setting(
+                    "customer_purchase_threshold", 1000
+                )
+            )
+            purchase_points = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_purchase_score_points", 10
+                )
+            )
+            loyalty_threshold = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_loyalty_years_threshold", 2
+                )
+            )
+            loyalty_points = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_loyalty_score_points", 15
+                )
+            )
+            support_threshold = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_support_tickets_threshold", 5
+                )
+            )
+            support_points = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_support_score_points", 5
+                )
+            )
+            premium_threshold = int(
+                self.config_utils.get_business_logic_setting(
+                    "customer_premium_score_threshold", 20
+                )
+            )
 
             if data.get("purchase_history", 0) > purchase_threshold:
                 score += purchase_points
@@ -468,16 +488,18 @@ class NodeCanaryCompute(NodeComputeService):
         }
 
         # Mark as degraded if error rate is high (using configurable thresholds)
-        if hasattr(self.config, "performance") and self.config.performance is not None:
-            config = self.config.performance
-            min_ops = getattr(config, "min_operations_for_health", 10)
-            error_threshold = getattr(config, "error_rate_threshold", 0.1)
+        min_ops = int(
+            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+        )
+        error_threshold = float(
+            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+        )
 
-            if (
-                self.operation_count > min_ops
-                and (self.error_count / self.operation_count) > error_threshold
-            ):
-                status = EnumHealthStatus.DEGRADED
+        if (
+            self.operation_count > min_ops
+            and (self.error_count / self.operation_count) > error_threshold
+        ):
+            status = EnumHealthStatus.DEGRADED
 
         return ModelHealthStatus(
             status=status,

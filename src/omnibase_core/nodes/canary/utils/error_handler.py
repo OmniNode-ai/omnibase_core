@@ -11,15 +11,19 @@ import traceback
 import uuid
 from typing import Any, Dict, Optional
 
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+# Remove canary config dependency - use secure defaults
 
 
 class SecureErrorHandler:
     """Secure error handling with information disclosure protection."""
 
     def __init__(self, logger: Optional[logging.Logger] = None):
-        self.config = get_canary_config()
         self.logger = logger or logging.getLogger(__name__)
+        # Use secure defaults instead of config
+        self.sanitize_stack_traces = True
+        self.max_error_detail_length = 1000
+        self.log_sensitive_data = False
+        self.correlation_id_validation = True
 
     def handle_error(
         self,
@@ -55,7 +59,7 @@ class SecureErrorHandler:
         }
 
         # Add stack trace if not in production or configured to sanitize
-        if not self.config.security.sanitize_stack_traces:
+        if not self.sanitize_stack_traces:
             detailed_error["stack_trace"] = traceback.format_exc()
         else:
             # Only log stack trace, don't include in response
@@ -109,13 +113,9 @@ class SecureErrorHandler:
             if any(sensitive_key in key_lower for sensitive_key in sensitive_keys):
                 sanitized[key] = "[REDACTED]"
             # Truncate very long values
-            elif (
-                isinstance(value, str)
-                and len(value) > self.config.security.max_error_detail_length
-            ):
+            elif isinstance(value, str) and len(value) > self.max_error_detail_length:
                 sanitized[key] = (
-                    value[: self.config.security.max_error_detail_length]
-                    + "...[TRUNCATED]"
+                    value[: self.max_error_detail_length] + "...[TRUNCATED]"
                 )
             else:
                 sanitized[key] = value
@@ -143,15 +143,11 @@ class SecureErrorHandler:
         safe_message = safe_messages.get(error_type, "Operation failed")
 
         # In non-production or when configured, include original message
-        if (
-            not self.config.security.sanitize_stack_traces
-            or self.config.security.log_sensitive_data
-        ):
+        if not self.sanitize_stack_traces or self.log_sensitive_data:
             original_message = str(error)
             if (
                 original_message
-                and len(original_message)
-                <= self.config.security.max_error_detail_length
+                and len(original_message) <= self.max_error_detail_length
             ):
                 return f"{safe_message}: {original_message}"
 
@@ -160,7 +156,7 @@ class SecureErrorHandler:
     def validate_correlation_id(self, correlation_id: Optional[str]) -> bool:
         """Validate correlation ID format if validation is enabled."""
 
-        if not self.config.security.correlation_id_validation:
+        if not self.correlation_id_validation:
             return True
 
         if not correlation_id:
@@ -196,7 +192,7 @@ class SecureErrorHandler:
             context["correlation_id"] = correlation_id
 
         # Add non-sensitive input data for debugging
-        if self.config.security.log_sensitive_data:
+        if self.log_sensitive_data:
             context["input_data"] = input_data
         else:
             # Only log data types and sizes, not actual values

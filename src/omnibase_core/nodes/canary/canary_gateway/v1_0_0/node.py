@@ -5,19 +5,20 @@ This tool implements the Group Gateway component of ONEX Messaging Architecture 
 providing intelligent message routing, response aggregation, and PostgreSQL-based caching.
 """
 
+import asyncio
 import hashlib
 import json
 import logging
 import time
 import uuid
 from datetime import datetime, timedelta
+from typing import Dict, Optional
 
-import asyncpg
+from omnibase.protocols.core import ProtocolCacheService
 
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     CircuitBreakerException,
     ModelCircuitBreakerConfig,
@@ -25,6 +26,8 @@ from omnibase_core.nodes.canary.utils.circuit_breaker import (
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 from omnibase_core.nodes.canary.utils.metrics_collector import get_metrics_collector
+from omnibase_core.services.cache_service import InMemoryCacheServiceProvider
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 from .models import (
     ModelAggregatedResponse,
@@ -36,14 +39,16 @@ from .models import (
 
 
 class ResponseAggregator:
-    """Handles response aggregation with PostgreSQL caching."""
+    """Handles response aggregation with protocol-based cache service."""
 
-    def __init__(self, db_pool: asyncpg.Pool, db_circuit_breaker):
-        """Initialize with database connection pool and circuit breaker."""
-        self.db_pool = db_pool
-        self.db_circuit_breaker = db_circuit_breaker
+    def __init__(
+        self, container: ModelONEXContainer, cache_service: ProtocolCacheService
+    ):
+        """Initialize with container dependency injection and cache service."""
+        self.container = container
+        self.cache_service = cache_service
         self.logger = logging.getLogger(__name__)
-        self.config = get_canary_config()
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
 
     async def aggregate_responses(
@@ -92,13 +97,15 @@ class ResponseAggregator:
         cache_key: str,
         correlation_id: str | None = None,
     ) -> ModelAggregatedResponse | None:
-        """Retrieve cached response from PostgreSQL with circuit breaker protection."""
+        """Retrieve cached response using protocol-based cache service."""
         try:
-            # Use circuit breaker for database operations
-            return await self.db_circuit_breaker.call(
-                lambda: self._get_cached_response_impl(cache_key),
-                fallback=lambda: None,  # Return None if database is down
-            )
+            # Use protocol-based cache service
+            cached_data = await self.cache_service.get(cache_key)
+            if cached_data is None:
+                return None
+
+            # Convert cached data back to ModelAggregatedResponse
+            return ModelAggregatedResponse(**cached_data)
         except Exception as e:
             # Use secure error handler for cache lookup failures
             error_details = self.error_handler.handle_error(
@@ -108,38 +115,8 @@ class ResponseAggregator:
                 f" [correlation_id={correlation_id}]" if correlation_id else ""
             )
             self.logger.exception(
-                f"Cache lookup failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}",
-                self.node_id,
-                cache_key,
+                f"Cache lookup failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}"
             )
-            return None
-
-    async def _get_cached_response_impl(
-        self, cache_key: str
-    ) -> ModelAggregatedResponse | None:
-        """Internal implementation for cached response retrieval."""
-        async with self.db_pool.acquire() as conn:
-            query = """
-                SELECT response_data, expires_at
-                FROM response_cache
-                WHERE cache_key = $1 AND expires_at > NOW()
-            """
-            row = await conn.fetchrow(query, cache_key)
-
-            if row:
-                # Update access metrics
-                await conn.execute(
-                    "UPDATE response_cache SET access_count = access_count + 1, last_accessed = NOW() WHERE cache_key = $1",
-                    cache_key,
-                )
-                # Parse JSON data back to model
-                response_data = row["response_data"]
-                if isinstance(response_data, str):
-                    import json
-
-                    response_data = json.loads(response_data)
-                return ModelAggregatedResponse(**response_data)
-
             return None
 
     async def cache_response(
@@ -149,15 +126,19 @@ class ResponseAggregator:
         ttl_seconds: int = None,
         correlation_id: str | None = None,
     ) -> bool:
-        """Store response in PostgreSQL cache with circuit breaker protection."""
+        """Store response using protocol-based cache service."""
         try:
-            # Use circuit breaker for database operations
-            return await self.db_circuit_breaker.call(
-                lambda: self._cache_response_impl(
-                    cache_key, response_data, ttl_seconds
-                ),
-                fallback=lambda: False,  # Return False if database is down
-            )
+            # Use configurable cache TTL
+            if ttl_seconds is None:
+                ttl_seconds = int(
+                    self.config_utils.get_performance_setting("cache_ttl_seconds", 300)
+                )
+
+            # Convert ModelAggregatedResponse to dictionary for caching
+            cache_data = response_data.model_dump()
+
+            # Use protocol-based cache service
+            return await self.cache_service.set(cache_key, cache_data, ttl_seconds)
         except Exception as e:
             # Use secure error handler for cache storage failures
             error_details = self.error_handler.handle_error(
@@ -167,40 +148,9 @@ class ResponseAggregator:
                 f" [correlation_id={correlation_id}]" if correlation_id else ""
             )
             self.logger.exception(
-                f"Cache storage failed: {error_details['message']} [node_id=%s, cache_key=%s]{correlation_context}",
-                self.node_id,
-                cache_key,
+                f"Cache storage failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}"
             )
             return False
-
-    async def _cache_response_impl(
-        self,
-        cache_key: str,
-        response_data: ModelAggregatedResponse,
-        ttl_seconds: int = None,
-    ) -> bool:
-        """Internal implementation for cache response storage."""
-        # Use configurable cache TTL
-        if ttl_seconds is None:
-            ttl_seconds = self.config.performance.cache_ttl_seconds
-        expires_at = datetime.utcnow() + timedelta(seconds=ttl_seconds)
-
-        async with self.db_pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO response_cache (cache_key, response_data, created_at, expires_at, access_count, last_accessed)
-                VALUES ($1, $2, NOW(), $3, 0, NOW())
-                ON CONFLICT (cache_key) DO UPDATE SET
-                    response_data = EXCLUDED.response_data,
-                    expires_at = EXCLUDED.expires_at,
-                    last_accessed = NOW()
-                """,
-                cache_key,
-                json.dumps(response_data.dict()),
-                expires_at,
-            )
-
-        return True
 
     def generate_cache_key(
         self,
@@ -233,22 +183,21 @@ class NodeCanaryGateway(NodeEffectService):
     def __init__(self, container: ModelONEXContainer):
         """Initialize Group Gateway with container injection."""
         super().__init__(container)
-        self.db_pool: asyncpg.Pool | None = None
         self.response_aggregator: ResponseAggregator | None = None
 
-        # Initialize configuration and utilities
-        self.config = get_canary_config()
+        # Initialize configuration and utilities with container-based DI
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
         self.metrics_collector = get_metrics_collector("canary_gateway")
 
-        # Setup circuit breakers for external services
+        # Setup circuit breakers for external services with default timeouts
+        api_timeout_ms = self.config_utils.get_timeout_ms("api_call", 10000)
         cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
-            timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
+            timeout_seconds=api_timeout_ms / 1000,
         )
         self.api_circuit_breaker = get_circuit_breaker("external_api", cb_config)
-        self.db_circuit_breaker = get_circuit_breaker("database", cb_config)
 
         # Rate limiting state
         self.rate_limit_requests = {}
@@ -263,48 +212,24 @@ class NodeCanaryGateway(NodeEffectService):
         }
 
     async def initialize(self) -> None:
-        """Initialize database connections and components."""
+        """Initialize components with protocol-based cache service."""
         try:
-            # Initialize PostgreSQL connection pool with configuration
-            db_config = self.config.database
-            # Create safe connection info for logging (without password)
-            safe_connection_info = {
-                "host": db_config.host,
-                "port": db_config.port,
-                "database": db_config.database,
-                "user": db_config.username,
-                "min_size": db_config.min_pool_size,
-                "max_size": db_config.max_pool_size,
-            }
+            # Create cache service provider and get cache service
+            cache_provider = InMemoryCacheServiceProvider()
+            cache_service = cache_provider.create_cache_service()
 
-            # Create secure connection parameters with password masking
-            connection_params = {
-                "host": db_config.host,
-                "port": db_config.port,
-                "database": db_config.database,
-                "user": db_config.username,
-                "password": db_config.password,  # Never logged
-                "min_size": db_config.min_pool_size,
-                "max_size": db_config.max_pool_size,
-            }
+            # Initialize response aggregator with protocol-based cache service
+            self.response_aggregator = ResponseAggregator(self.container, cache_service)
 
-            self.db_pool = await asyncpg.create_pool(**connection_params)
-
-            # Create required database tables
-            await self._create_database_schema()
-
-            # Initialize response aggregator with circuit breaker
-            self.response_aggregator = ResponseAggregator(
-                self.db_pool, self.db_circuit_breaker
+            self.logger.info(
+                "Group Gateway initialized successfully with protocol-based cache service"
             )
 
-            self.logger.info("Group Gateway initialized successfully")
-
         except Exception as e:
-            # Handle initialization error with secure error handler (using safe connection info)
+            # Handle initialization error with secure error handler
             error_details = self.error_handler.handle_error(
                 e,
-                {"operation": "initialize", "connection_info": safe_connection_info},
+                {"operation": "initialize"},
                 None,
                 "initialize",
             )
@@ -312,15 +237,20 @@ class NodeCanaryGateway(NodeEffectService):
             raise OnexError(msg) from e
 
     async def cleanup(self) -> None:
-        """Clean up database connections."""
-        if self.db_pool:
-            await self.db_pool.close()
+        """Clean up resources."""
+        # Clean up cache service resources if needed
+        if hasattr(self.response_aggregator, "cache_service"):
+            # Clear all cache entries on shutdown
+            await self.response_aggregator.cache_service.clear()
+        self.logger.info("Gateway cleanup completed")
 
     def _check_rate_limit(self, client_id: str = "default") -> bool:
         """Check if client is within rate limits using configuration."""
         current_time = time.time()
         window_size = 60  # 1 minute window
-        max_requests = self.config.performance.max_concurrent_operations
+        max_requests = int(
+            self.config_utils.get_performance_setting("max_concurrent_operations", 100)
+        )
 
         # Clean old entries
         if client_id in self.rate_limit_requests:
@@ -489,7 +419,7 @@ class NodeCanaryGateway(NodeEffectService):
 
         # Use configured timeout if not provided
         if timeout_ms is None:
-            timeout_ms = self.config.timeouts.gateway_timeout_ms
+            timeout_ms = self.config_utils.get_timeout_ms("gateway", 10000)
 
         for tool in target_tools:
             try:
@@ -533,12 +463,16 @@ class NodeCanaryGateway(NodeEffectService):
         # In production, this would make actual HTTP/gRPC calls
         # Add simulation delay from config
         # Simulate delay only in debug mode
-        if self.config.security.debug_mode:
+        debug_mode = bool(self.config_utils.get_security_setting("debug_mode", False))
+        if debug_mode:
             import asyncio
 
-            await asyncio.sleep(
-                self.config.business_logic.api_simulation_delay_ms / 1000
+            delay_ms = float(
+                self.config_utils.get_business_logic_setting(
+                    "api_simulation_delay_ms", 100
+                )
             )
+            await asyncio.sleep(delay_ms / 1000)
 
         return {
             "tool": tool,
@@ -591,37 +525,30 @@ class NodeCanaryGateway(NodeEffectService):
         try:
             health_status = {
                 "group_gateway": "healthy",
-                "postgresql": "unknown",
+                "cache_service": "active",
                 "circuit_breakers": {},
                 "metrics": self.metrics_collector.get_node_metrics().model_dump(),
                 "config_status": "loaded",
             }
 
-            # Check PostgreSQL connection with circuit breaker
-            if self.db_pool:
-                try:
-                    await self.db_circuit_breaker.call(
-                        lambda: self._check_db_health(), fallback=lambda: None
-                    )
-                    health_status["postgresql"] = "healthy"
-                except Exception as e:
-                    # Use secure error handler for health check failures
-                    error_details = self.error_handler.handle_error(
-                        e, {"check": "database"}, None, "health_db_check"
-                    )
-                    health_status["postgresql"] = (
-                        f"unhealthy: {error_details['message']}"
-                    )
+            # Check cache service health
+            cache_healthy = self.response_aggregator is not None and hasattr(
+                self.response_aggregator, "cache_service"
+            )
+            if cache_healthy:
+                # Get cache statistics
+                cache_stats = self.response_aggregator.cache_service.get_stats()
+                health_status["cache_service"] = "healthy"
+                health_status["cache_stats"] = cache_stats
+            else:
+                health_status["cache_service"] = "unavailable"
 
             # Add circuit breaker stats
             health_status["circuit_breakers"] = {
                 "api": self.api_circuit_breaker.get_stats(),
-                "database": self.db_circuit_breaker.get_stats(),
             }
 
-            overall_status = (
-                "healthy" if health_status["postgresql"] == "healthy" else "degraded"
-            )
+            overall_status = "healthy" if cache_healthy else "degraded"
 
             await self.metrics_collector.record_operation_end(
                 operation_id, "health_check", True
@@ -646,37 +573,6 @@ class NodeCanaryGateway(NodeEffectService):
                 error_message=error_details["message"],
             )
 
-    async def _check_db_health(self) -> None:
-        """Internal database health check."""
-        async with self.db_pool.acquire() as conn:
-            await conn.fetchval("SELECT 1")
-
-    async def _create_database_schema(self) -> None:
-        """Create required database tables if they don't exist."""
-        async with self.db_pool.acquire() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS response_cache (
-                    cache_key VARCHAR(255) PRIMARY KEY,
-                    response_data JSONB NOT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                    access_count INTEGER DEFAULT 0,
-                    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                )
-            """
-            )
-
-            # Create index for efficient cleanup of expired entries
-            await conn.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_response_cache_expires_at
-                ON response_cache (expires_at)
-            """
-            )
-
-            self.logger.info("Database schema created/verified successfully")
-
     async def clear_cache(
         self,
         cache_pattern: str | None = None,
@@ -690,13 +586,9 @@ class NodeCanaryGateway(NodeEffectService):
         )
 
         try:
-            if not self.db_pool:
-                msg = "Database pool not initialized"
-                raise OnexError(msg)
-
-            # Use circuit breaker for database operations
-            deleted_count = await self.db_circuit_breaker.call(
-                lambda: self._clear_cache_impl(cache_pattern)
+            # Use protocol-based cache service for clearing
+            deleted_count = await self.response_aggregator.cache_service.clear(
+                cache_pattern
             )
 
             await self.metrics_collector.record_operation_end(
@@ -725,20 +617,6 @@ class NodeCanaryGateway(NodeEffectService):
                 error_message=error_details["message"],
             )
 
-    async def _clear_cache_impl(self, cache_pattern: str | None = None) -> int:
-        """Internal cache clearing implementation."""
-        async with self.db_pool.acquire() as conn:
-            if cache_pattern:
-                result = await conn.execute(
-                    "DELETE FROM response_cache WHERE cache_key LIKE $1",
-                    f"%{cache_pattern}%",
-                )
-            else:
-                result = await conn.execute("DELETE FROM response_cache")
-
-            # Extract number of deleted rows
-            return int(result.split()[-1]) if result else 0
-
     # Main processing method for NodeBase
     async def process(
         self,
@@ -752,7 +630,7 @@ class NodeCanaryGateway(NodeEffectService):
                 operation_type=input_data.operation_type,
                 correlation_id=input_data.correlation_id,
                 timeout_ms=input_data.timeout_ms
-                or self.config.timeouts.gateway_timeout_ms,
+                or self.config_utils.get_timeout_ms("gateway", 10000),
                 cache_strategy=input_data.cache_strategy or "cache_aside",
                 client_id=getattr(input_data, "client_id", "default"),
             )
@@ -770,11 +648,13 @@ class NodeCanaryGateway(NodeEffectService):
 
     async def get_health_status(self) -> dict[str, str | int | bool]:
         """Get gateway health status."""
-        db_healthy = self.db_pool is not None
+        cache_healthy = self.response_aggregator is not None and hasattr(
+            self.response_aggregator, "cache_service"
+        )
         return {
-            "status": "healthy" if db_healthy else "degraded",
+            "status": "healthy" if cache_healthy else "degraded",
             "node_type": "gateway",
-            "database_connected": db_healthy,
+            "cache_service_connected": cache_healthy,
             "total_requests": self.routing_metrics["total_requests"],
             "successful_requests": self.routing_metrics["successful_requests"],
             "timestamp": datetime.now().isoformat(),

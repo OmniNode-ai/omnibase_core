@@ -25,7 +25,7 @@ from omnibase_core.model.subcontracts.model_error_handling_subcontract import (
     ModelErrorHandlingSubcontract,
     RecordMetricsInput,
 )
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class ModelCanaryComputeInput(BaseModel):
@@ -90,7 +90,7 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         """Initialize the Canary Compute node with mixin capabilities."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.config = get_canary_config()
+        self.config_utils = UtilsNodeConfiguration(container)
 
         # Initialize error handling mixin (replaces manual utilities)
         self.error_handling = ModelErrorHandlingSubcontract(
@@ -426,9 +426,12 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         health_score = 100
         for metric, value in metrics.items():
-            if (
-                value < self.config.performance.health_score_threshold_good
-            ):  # Use configurable threshold
+            threshold_good = float(
+                self.config_utils.get_performance_setting(
+                    "health_score_threshold_good", 0.6
+                )
+            )
+            if value < threshold_good:  # Use configurable threshold
                 health_score -= 10
 
         return {
@@ -478,10 +481,16 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
         # Use mixin configuration for health thresholds
+        min_ops = int(
+            self.config_utils.get_performance_setting("min_operations_for_health", 10)
+        )
+        error_threshold = float(
+            self.config_utils.get_performance_setting("error_rate_threshold", 0.1)
+        )
+
         if (
-            self.operation_count > self.config.performance.min_operations_for_health
-            and (self.error_count / self.operation_count)
-            > self.config.performance.error_rate_threshold
+            self.operation_count > min_ops
+            and (self.error_count / self.operation_count) > error_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 
