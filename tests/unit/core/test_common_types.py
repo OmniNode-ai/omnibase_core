@@ -81,6 +81,26 @@ class TestModelScalarValue:
         with pytest.raises(ValidationError):
             ModelScalarValue(string_value="test", int_value=42)
 
+    def test_validation_constraints_security(self):
+        """Test that validation constraints prevent security issues."""
+        # Test string length constraint
+        with pytest.raises(ValidationError):
+            ModelScalarValue.create_string("x" * 65537)  # Exceeds max_length
+
+        # Test integer range constraints
+        with pytest.raises(ValidationError):
+            ModelScalarValue.create_int(2**63)  # Exceeds max value
+
+        with pytest.raises(ValidationError):
+            ModelScalarValue.create_int(-(2**63) - 1)  # Below min value
+
+        # Valid values should work
+        valid_string = ModelScalarValue.create_string("x" * 65536)  # At limit
+        assert valid_string.string_value == "x" * 65536
+
+        valid_int = ModelScalarValue.create_int(2**63 - 1)  # At max
+        assert valid_int.int_value == 2**63 - 1
+
 
 class TestModelStateValue:
     """Test cases for ModelStateValue."""

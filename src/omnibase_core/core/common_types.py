@@ -58,9 +58,15 @@ class ModelNullValue(BaseModel):
 class ModelScalarValue(BaseModel):
     """Strongly typed scalar value container using discriminated approach."""
 
-    string_value: Optional[str] = Field(None, description="String scalar value")
-    int_value: Optional[int] = Field(None, description="Integer scalar value")
-    float_value: Optional[float] = Field(None, description="Float scalar value")
+    string_value: Optional[str] = Field(
+        None, description="String scalar value", max_length=65536
+    )
+    int_value: Optional[int] = Field(
+        None, description="Integer scalar value", ge=-(2**63), le=2**63 - 1
+    )
+    float_value: Optional[float] = Field(
+        None, description="Float scalar value", ge=-1e308, le=1e308
+    )
     bool_value: Optional[bool] = Field(None, description="Boolean scalar value")
 
     @model_validator(mode="after")
