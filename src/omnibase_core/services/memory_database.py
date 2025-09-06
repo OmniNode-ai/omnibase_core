@@ -15,6 +15,12 @@ from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )
+from omnibase_core.protocols.types.model_database_types import (
+    ModelDatabaseQuery,
+    ModelDatabaseRecord,
+    ModelDatabaseResult,
+    ModelTableSchema,
+)
 
 
 class InMemoryDatabase(ProtocolDatabaseConnection):
@@ -27,7 +33,8 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
     """
 
     def __init__(self):
-        self._tables: Dict[str, List[Dict[str, Any]]] = {}
+        self._tables: Dict[str, List[ModelDatabaseRecord]] = {}
+        self._schemas: Dict[str, ModelTableSchema] = {}
         self._locks: Dict[str, Dict[str, Any]] = {}  # lock_token -> lock_info
         self._lock = asyncio.Lock()
         self._connected = False
@@ -42,6 +49,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
         """Close in-memory connection and clean up."""
         async with self._lock:
             self._tables.clear()
+            self._schemas.clear()
             self._locks.clear()
             self._connected = False
 

@@ -15,6 +15,11 @@ from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+from omnibase_core.protocols.types.model_service_health import (
+    ModelServiceHealth,
+    ModelServiceHealthCollection,
+)
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.services.consul_service_discovery import ConsulServiceDiscovery
 from omnibase_core.services.memory_database import InMemoryDatabase
 from omnibase_core.services.memory_service_discovery import InMemoryServiceDiscovery
@@ -36,6 +41,7 @@ class ProtocolServiceResolver:
     def __init__(self):
         self._service_cache: Dict[str, Any] = {}
         self._fallback_cache: Dict[str, Any] = {}
+        self._service_health: Dict[str, ModelServiceHealth] = {}
         self._config = get_config()
         self._initialized_services: Dict[str, bool] = {}
 
@@ -209,58 +215,67 @@ class ProtocolServiceResolver:
         protocol_name = protocol_type.__name__
         return protocol_name in self._fallback_cache
 
-    async def get_service_health(self, protocol_type: type[T]) -> Dict[str, Any]:
+    async def get_service_health(self, protocol_type: type[T]) -> ModelServiceHealth:
         """Get health status for service."""
+        from datetime import datetime
+        
+        protocol_name = protocol_type.__name__
+        
         try:
             service = await self.resolve_service(protocol_type)
             if hasattr(service, "health_check"):
                 health = await service.health_check()
-                return {
-                    "service_id": health.service_id,
-                    "status": health.status,
-                    "last_check": health.last_check,
-                    "error_message": health.error_message,
-                    "using_fallback": self.is_using_fallback(protocol_type),
-                }
+                return ModelServiceHealth(
+                    service_id=health.service_id,
+                    service_name=protocol_name,
+                    status=EnumHealthStatus(health.status),
+                    message=health.error_message,
+                    last_check=health.last_check or datetime.utcnow(),
+                    metadata={"using_fallback": self.is_using_fallback(protocol_type)}
+                )
             else:
-                return {
-                    "service_id": protocol_type.__name__,
-                    "status": "unknown",
-                    "last_check": None,
-                    "error_message": "Health check not available",
-                    "using_fallback": self.is_using_fallback(protocol_type),
-                }
+                return ModelServiceHealth(
+                    service_id=protocol_name,
+                    service_name=protocol_name,
+                    status=EnumHealthStatus.UNKNOWN,
+                    message="Health check not available",
+                    metadata={"using_fallback": self.is_using_fallback(protocol_type)}
+                )
         except Exception as e:
-            return {
-                "service_id": protocol_type.__name__,
-                "status": "error",
-                "last_check": None,
-                "error_message": str(e),
-                "using_fallback": False,
-            }
+            return ModelServiceHealth(
+                service_id=protocol_name,
+                service_name=protocol_name,
+                status=EnumHealthStatus.ERROR,
+                message=str(e),
+                metadata={"using_fallback": False}
+            )
 
-    async def get_all_service_health(self) -> Dict[str, Any]:
+    async def get_all_service_health(self) -> ModelServiceHealthCollection:
         """Get health status for all resolved services."""
-        health_status = {}
+        services = []
 
         # Check service discovery
         if "ProtocolServiceDiscovery" in self._service_cache:
-            health_status["service_discovery"] = await self.get_service_health(
-                ProtocolServiceDiscovery
-            )
+            health = await self.get_service_health(ProtocolServiceDiscovery)
+            services.append(health)
 
         # Check database
         if "ProtocolDatabaseConnection" in self._service_cache:
-            health_status["database"] = await self.get_service_health(
-                ProtocolDatabaseConnection
-            )
+            health = await self.get_service_health(ProtocolDatabaseConnection)
+            services.append(health)
 
-        return {
-            "services": health_status,
-            "total_services": len(self._service_cache),
-            "fallback_services": len(self._fallback_cache),
-            "config_valid": self._config is not None,
-        }
+        collection = ModelServiceHealthCollection(
+            services=services,
+            overall_status=EnumHealthStatus.UNKNOWN,
+            total_services=len(self._service_cache),
+            healthy_services=0,
+            unhealthy_services=0
+        )
+        
+        # Calculate overall status
+        collection.calculate_overall_status()
+        
+        return collection
 
     async def refresh_service(self, protocol_type: type[T]) -> T:
         """Force refresh service resolution (bypass cache)."""
