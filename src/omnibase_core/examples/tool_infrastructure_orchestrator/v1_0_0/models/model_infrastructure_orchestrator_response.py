@@ -2,26 +2,54 @@
 """
 Infrastructure Orchestrator Response Models.
 
-Strongly typed response models for infrastructure orchestrator operations.
+Strongly typed response models for infrastructure orchestrator operations with enhanced validation.
 """
 
-from pydantic import BaseModel, Field
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelInfrastructureNodeResult(BaseModel):
-    """Result from individual infrastructure node operation."""
+    """Result from individual infrastructure node operation with enhanced tracking."""
 
     status: str = Field(
         description="Operation status (success/error/healthy/unhealthy)",
     )
     node_name: str | None = Field(default=None, description="Node name")
     error: str | None = Field(default=None, description="Error message if failed")
+    execution_time_ms: int = Field(
+        ...,
+        description="Node operation execution time in milliseconds",
+    )
+    correlation_id: UUID = Field(
+        ...,
+        description="Request correlation ID for tracing",
+    )
     # Additional node-specific data can be included as Union types or generic Dict
     # Using Dict[str, str] for additional metadata is acceptable
     metadata: dict[str, str] = Field(
         default_factory=dict,
         description="Additional node metadata",
     )
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        """Validate status against allowed values."""
+        allowed_statuses = {
+            "success",
+            "error",
+            "healthy",
+            "unhealthy",
+            "degraded",
+            "timeout",
+            "in_progress",
+            "cancelled",
+        }
+        if v not in allowed_statuses:
+            raise ValueError(f"Invalid status. Must be one of: {allowed_statuses}")
+        return v
 
 
 class ModelInfrastructureBootstrapResults(BaseModel):
@@ -39,13 +67,21 @@ class ModelInfrastructureBootstrapResults(BaseModel):
 
 
 class ModelInfrastructureBootstrapResponse(BaseModel):
-    """Infrastructure bootstrap coordination response."""
+    """Infrastructure bootstrap coordination response with enhanced tracking."""
 
-    status: str = Field(description="Overall bootstrap status (success/error)")
+    success: bool = Field(..., description="Whether bootstrap operation succeeded")
     bootstrap_results: ModelInfrastructureBootstrapResults = Field(
         description="Individual adapter bootstrap results",
     )
     error: str | None = Field(default=None, description="Error message if failed")
+    execution_time_ms: int = Field(
+        ...,
+        description="Total bootstrap execution time in milliseconds",
+    )
+    correlation_id: UUID = Field(
+        ...,
+        description="Request correlation ID for tracing",
+    )
 
 
 class ModelInfrastructureAdapterHealth(BaseModel):
@@ -75,21 +111,37 @@ class ModelInfrastructureHealthCheckResults(BaseModel):
 
 
 class ModelInfrastructureHealthCheckResponse(BaseModel):
-    """Infrastructure health check coordination response."""
+    """Infrastructure health check coordination response with enhanced tracking."""
 
-    status: str = Field(description="Overall health status (healthy/degraded/error)")
+    success: bool = Field(..., description="Whether health check operation succeeded")
     adapter_health: ModelInfrastructureHealthCheckResults = Field(
         description="Individual adapter health results",
     )
     error: str | None = Field(default=None, description="Error message if failed")
+    execution_time_ms: int = Field(
+        ...,
+        description="Health check execution time in milliseconds",
+    )
+    correlation_id: UUID = Field(
+        ...,
+        description="Request correlation ID for tracing",
+    )
 
 
 class ModelInfrastructureFailoverResponse(BaseModel):
-    """Infrastructure failover coordination response."""
+    """Infrastructure failover coordination response with enhanced tracking."""
 
-    status: str = Field(description="Failover status (failover_coordinated/error)")
+    success: bool = Field(..., description="Whether failover operation succeeded")
     failed_adapter: str = Field(description="Name of failed adapter")
     failover_result: ModelInfrastructureNodeResult = Field(
         description="Failover operation result",
     )
     error: str | None = Field(default=None, description="Error message if failed")
+    execution_time_ms: int = Field(
+        ...,
+        description="Failover execution time in milliseconds",
+    )
+    correlation_id: UUID = Field(
+        ...,
+        description="Request correlation ID for tracing",
+    )

@@ -128,4 +128,4 @@ class ModelFSMTransition(BaseModel):
 # Import forward references after model definition
 
 # Update forward references
-ModelFSMTransition.model_rebuild()
+# Removed model_rebuild() call that was causing circular import issues

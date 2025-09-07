@@ -8,7 +8,7 @@ Provides comprehensive state machine structure with states, transitions, and ope
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 if TYPE_CHECKING:
     from .model_fsm_operation import ModelFSMOperation
@@ -154,11 +154,12 @@ class ModelFSMDefinition(BaseModel):
         description="Whether to log all FSM events",
     )
 
-    @validator("states")
-    def validate_states_contain_initial(self, v, values):
+    @field_validator("states")
+    @classmethod
+    def validate_states_contain_initial(cls, v, info: ValidationInfo):
         """Validate that states list contains the initial state."""
-        if "initial_state" in values:
-            initial_state = values["initial_state"]
+        if "initial_state" in info.data:
+            initial_state = info.data["initial_state"]
             state_names = [state.state_name for state in v]
             if initial_state not in state_names:
                 msg = f"Initial state '{initial_state}' not found in states list"
@@ -167,22 +168,24 @@ class ModelFSMDefinition(BaseModel):
                 )
         return v
 
-    @validator("terminal_states", "error_states")
-    def validate_special_states_exist(self, v, values):
+    @field_validator("terminal_states", "error_states")
+    @classmethod
+    def validate_special_states_exist(cls, v, info: ValidationInfo):
         """Validate that terminal and error states exist in the states list."""
-        if "states" in values and v:
-            state_names = [state.state_name for state in values["states"]]
+        if "states" in info.data and v:
+            state_names = [state.state_name for state in info.data["states"]]
             for state_name in v:
                 if state_name not in state_names:
                     msg = f"State '{state_name}' not found in states list"
                     raise ValueError(msg)
         return v
 
-    @validator("transitions")
-    def validate_transition_states_exist(self, v, values):
+    @field_validator("transitions")
+    @classmethod
+    def validate_transition_states_exist(cls, v, info: ValidationInfo):
         """Validate that all transition from/to states exist."""
-        if "states" in values:
-            state_names = {state.state_name for state in values["states"]}
+        if "states" in info.data:
+            state_names = {state.state_name for state in info.data["states"]}
             for transition in v:
                 # Handle wildcard 'from_state'
                 if (
@@ -216,7 +219,5 @@ class ModelFSMDefinition(BaseModel):
         }
 
 
-# Import forward references after model definition to avoid circular imports
-
-# Update forward references
-ModelFSMDefinition.model_rebuild()
+# Forward references will be resolved automatically by Pydantic v2 when models are used
+# Removed model_rebuild() call that was causing circular import issues
