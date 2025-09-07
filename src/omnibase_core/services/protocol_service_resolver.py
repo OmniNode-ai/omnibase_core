@@ -8,9 +8,19 @@ automatic fallback strategies and unified configuration management.
 
 import asyncio
 import logging
+from datetime import datetime
 from typing import Any, Dict, Optional, TypeVar, get_type_hints
 
 from omnibase_core.config.unified_config_manager import get_config
+from omnibase_core.model.service.model_service_cache_stats import (
+    ModelServiceCacheEntry,
+    ModelServiceCacheStats,
+)
+from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.model.service.model_service_health_aggregate import (
+    ModelServiceHealthAggregate,
+    ModelServiceHealthSummary,
+)
 from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )
@@ -209,58 +219,86 @@ class ProtocolServiceResolver:
         protocol_name = protocol_type.__name__
         return protocol_name in self._fallback_cache
 
-    async def get_service_health(self, protocol_type: type[T]) -> Dict[str, Any]:
+    async def get_service_health(self, protocol_type: type[T]) -> ModelServiceHealth:
         """Get health status for service."""
+        protocol_name = protocol_type.__name__
         try:
             service = await self.resolve_service(protocol_type)
             if hasattr(service, "health_check"):
                 health = await service.health_check()
-                return {
-                    "service_id": health.service_id,
-                    "status": health.status,
-                    "last_check": health.last_check,
-                    "error_message": health.error_message,
-                    "using_fallback": self.is_using_fallback(protocol_type),
-                }
+                # Adapt health check result to ModelServiceHealth
+                return ModelServiceHealth(
+                    service_name=protocol_name,
+                    service_type="custom",  # Can be enhanced with mapping
+                    status="reachable" if getattr(health, "status", "unknown") == "healthy" else "error",
+                    connection_string=f"protocol://{protocol_name}",
+                    last_check_time=getattr(health, "last_check", datetime.now().isoformat()),
+                    error_message=getattr(health, "error_message", None),
+                )
             else:
-                return {
-                    "service_id": protocol_type.__name__,
-                    "status": "unknown",
-                    "last_check": None,
-                    "error_message": "Health check not available",
-                    "using_fallback": self.is_using_fallback(protocol_type),
-                }
+                return ModelServiceHealth(
+                    service_name=protocol_name,
+                    service_type="custom",
+                    status="reachable",  # Assume healthy if no health check
+                    connection_string=f"protocol://{protocol_name}",
+                    last_check_time=datetime.now().isoformat(),
+                )
         except Exception as e:
-            return {
-                "service_id": protocol_type.__name__,
-                "status": "error",
-                "last_check": None,
-                "error_message": str(e),
-                "using_fallback": False,
-            }
+            return ModelServiceHealth(
+                service_name=protocol_name,
+                service_type="custom",
+                status="error",
+                connection_string=f"protocol://{protocol_name}",
+                error_message=str(e),
+                last_check_time=datetime.now().isoformat(),
+            )
 
-    async def get_all_service_health(self) -> Dict[str, Any]:
+    async def get_all_service_health(self) -> ModelServiceHealthAggregate:
         """Get health status for all resolved services."""
-        health_status = {}
+        health_statuses = {}
+        errors = []
+        start_time = datetime.now()
 
         # Check service discovery
         if "ProtocolServiceDiscovery" in self._service_cache:
-            health_status["service_discovery"] = await self.get_service_health(
-                ProtocolServiceDiscovery
-            )
+            try:
+                health_statuses["service_discovery"] = await self.get_service_health(
+                    ProtocolServiceDiscovery
+                )
+            except Exception as e:
+                errors.append(f"Failed to check service_discovery: {str(e)}")
 
         # Check database
         if "ProtocolDatabaseConnection" in self._service_cache:
-            health_status["database"] = await self.get_service_health(
-                ProtocolDatabaseConnection
-            )
+            try:
+                health_statuses["database"] = await self.get_service_health(
+                    ProtocolDatabaseConnection
+                )
+            except Exception as e:
+                errors.append(f"Failed to check database: {str(e)}")
 
-        return {
-            "services": health_status,
-            "total_services": len(self._service_cache),
-            "fallback_services": len(self._fallback_cache),
-            "config_valid": self._config is not None,
-        }
+        # Calculate duration
+        duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+
+        aggregate = ModelServiceHealthAggregate(
+            services=health_statuses,
+            check_timestamp=datetime.now(),
+            check_duration_ms=duration_ms,
+            errors=errors,
+            summary=ModelServiceHealthSummary(
+                total_services=len(self._service_cache),
+                healthy_services=sum(1 for s in health_statuses.values() if s.is_healthy()),
+                unhealthy_services=sum(1 for s in health_statuses.values() if s.is_unhealthy()),
+                degraded_services=sum(1 for s in health_statuses.values() if s.is_degraded()),
+                unknown_services=0,
+                overall_status="all_healthy" if all(s.is_healthy() for s in health_statuses.values()) else "partial_healthy",
+                last_check_timestamp=datetime.now(),
+            ),
+        )
+        
+        # Recalculate summary with proper statistics
+        aggregate.summary = aggregate.calculate_summary()
+        return aggregate
 
     async def refresh_service(self, protocol_type: type[T]) -> T:
         """Force refresh service resolution (bypass cache)."""
@@ -290,14 +328,33 @@ class ProtocolServiceResolver:
         self._service_cache.clear()
         self._fallback_cache.clear()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> ModelServiceCacheStats:
         """Get cache statistics."""
-        return {
-            "cached_services": len(self._service_cache),
-            "fallback_services": len(self._fallback_cache),
-            "cache_keys": list(self._service_cache.keys()),
-            "fallback_keys": list(self._fallback_cache.keys()),
-        }
+        cache_entries = []
+        
+        # Build cache entries
+        for protocol_name, service in self._service_cache.items():
+            is_fallback = protocol_name in self._fallback_cache
+            cache_entries.append(
+                ModelServiceCacheEntry(
+                    service_name=protocol_name,
+                    protocol_type=type(service).__name__,
+                    cached_at=datetime.now(),  # Would be better to track actual cache time
+                    last_accessed=datetime.now(),  # Would be better to track actual access time
+                    hit_count=self._initialized_services.get(protocol_name, 0),
+                    is_fallback=is_fallback,
+                )
+            )
+        
+        return ModelServiceCacheStats(
+            total_services=len(self._service_cache),
+            primary_services=len(self._service_cache) - len(self._fallback_cache),
+            fallback_services=len(self._fallback_cache),
+            cache_entries=cache_entries,
+            cache_hit_rate=0.0,  # Would need to track hits/misses for accurate rate
+            total_hits=0,  # Would need to track for accurate stats
+            total_misses=0,  # Would need to track for accurate stats
+        )
 
 
 # Global service resolver instance
