@@ -72,17 +72,31 @@ class ModelScalarValue(BaseModel):
     @model_validator(mode="after")
     def validate_exactly_one_value(self) -> "ModelScalarValue":
         """Ensure exactly one value type is set."""
-        values = [
-            self.string_value is not None,
-            self.int_value is not None,
-            self.float_value is not None,
-            self.bool_value is not None,
-        ]
+        values = {
+            "string": self.string_value is not None,
+            "int": self.int_value is not None,
+            "float": self.float_value is not None,
+            "bool": self.bool_value is not None,
+        }
 
-        if sum(values) != 1:
-            raise ValueError("ModelScalarValue must have exactly one value set")
+        active_values = [k for k, v in values.items() if v]
+
+        if len(active_values) != 1:
+            raise ValueError(
+                f"ModelScalarValue must have exactly one value set. "
+                f"Active values: {active_values}, Expected: exactly 1"
+            )
 
         return self
+
+    def _get_available_values(self) -> dict:
+        """Get current available values for debugging."""
+        return {
+            "string_value": self.string_value,
+            "int_value": self.int_value,
+            "float_value": self.float_value,
+            "bool_value": self.bool_value,
+        }
 
     @property
     def type_hint(self) -> str:
@@ -141,25 +155,37 @@ class ModelScalarValue(BaseModel):
         """Extract string value."""
         if self.string_value is not None:
             return self.string_value
-        raise ValueError("No string value set in ModelScalarValue")
+        raise ValueError(
+            f"No string value set in ModelScalarValue. "
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+        )
 
     def to_int_primitive(self) -> int:
         """Extract int value."""
         if self.int_value is not None:
             return self.int_value
-        raise ValueError("No int value set in ModelScalarValue")
+        raise ValueError(
+            f"No int value set in ModelScalarValue. "
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+        )
 
     def to_float_primitive(self) -> float:
         """Extract float value."""
         if self.float_value is not None:
             return self.float_value
-        raise ValueError("No float value set in ModelScalarValue")
+        raise ValueError(
+            f"No float value set in ModelScalarValue. "
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+        )
 
     def to_bool_primitive(self) -> bool:
         """Extract bool value."""
         if self.bool_value is not None:
             return self.bool_value
-        raise ValueError("No bool value set in ModelScalarValue")
+        raise ValueError(
+            f"No bool value set in ModelScalarValue. "
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+        )
 
 
 class ModelStateValue(BaseModel):
@@ -187,8 +213,19 @@ class ModelStateValue(BaseModel):
         value_count = sum([scalar_set, metadata_set, config_set, null_set])
 
         if value_count > 1:
+            active_fields = []
+            if scalar_set:
+                active_fields.append("scalar_value")
+            if metadata_set:
+                active_fields.append("metadata_value")
+            if config_set:
+                active_fields.append("config_value")
+            if null_set:
+                active_fields.append("is_null=True")
+
             raise ValueError(
-                "ModelStateValue can only have one of: scalar_value, metadata_value, config_value, or is_null=True"
+                f"ModelStateValue can only have one of: scalar_value, metadata_value, config_value, or is_null=True. "
+                f"Currently active: {active_fields}, Count: {value_count}"
             )
 
         if value_count == 0:
