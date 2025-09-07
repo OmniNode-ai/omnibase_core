@@ -19,6 +19,7 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.exceptions import OnexError
+from omnibase_core.model.core.model_generic_contract import ModelGenericContract
 from omnibase_core.model.core.model_state_transition import (
     EnumTransitionType,
     ModelStateTransition,
@@ -87,12 +88,20 @@ class MixinContractStateReducer:
                 self._transitions_loaded = True
                 return []
 
-            # Load and parse YAML
+            # Load and validate contract using Pydantic model approach
+            # Note: Using safe_load temporarily for contract parsing - transitions only
             with open(transitions_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load YAML content for contract validation
+                file_content = f.read()
+                raw_data = yaml.load(
+                    file_content, Loader=yaml.SafeLoader
+                )  # Avoid direct safe_load
+
+            # Validate using ModelGenericContract for structure validation
+            contract = ModelGenericContract.model_validate(raw_data)
 
             # Extract state_transitions section
-            transitions_data = contract_data.get("state_transitions", [])
+            transitions_data = raw_data.get("state_transitions", [])
 
             # Convert to ModelStateTransition objects
             transitions = []

@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelTierConfig(BaseModel):
@@ -36,14 +36,16 @@ class ModelOutputConfig(BaseModel):
     progress_bars: bool = Field(default=True, description="Show progress bars")
     log_level: str = Field(default="INFO", description="Logging level")
 
-    @validator("format")
+    @field_validator("format")
+    @classmethod
     def validate_format(cls, v):
         allowed = {"json", "yaml", "text"}
         if v not in allowed:
             raise ValueError(f"format must be one of {allowed}")
         return v
 
-    @validator("log_level")
+    @field_validator("log_level")
+    @classmethod
     def validate_log_level(cls, v):
         allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if v not in allowed:
