@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Any, Dict, List, Set
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
@@ -104,7 +104,8 @@ class ModelWorkflowStateModel(BaseModel):
     transition_history: List[ModelStateTransition] = Field(default_factory=list)
 
     # Validation
-    @validator("identity", pre=True, always=True)
+    @field_validator("identity", mode="before")
+    @classmethod
     def validate_identity(cls, v):
         if isinstance(v, dict):
             if "workflow_type" in v and v["workflow_type"]:
@@ -113,27 +114,29 @@ class ModelWorkflowStateModel(BaseModel):
             v.workflow_type = v.workflow_type.lower()
         return v
 
-    @validator("retry_count")
+    @field_validator("retry_count")
+    @classmethod
     def validate_retry_count(cls, v):
         if v < 0:
             raise ValueError("Retry count cannot be negative")
         return v
 
-    @validator("max_retries")
+    @field_validator("max_retries")
+    @classmethod
     def validate_max_retries(cls, v):
         if v < 0:
             raise ValueError("Max retries cannot be negative")
         return v
 
-    @root_validator(skip_on_failure=True)
-    def validate_state_consistency(cls, values):
-        current_state = values.get("current_state")
-        timing = values.get("timing")
+    @model_validator(mode="after")
+    def validate_state_consistency(self):
+        current_state = self.current_state
+        timing = self.timing
 
         # Initialize timing if not present
         if not timing:
-            values["timing"] = ModelWorkflowTiming()
-            timing = values["timing"]
+            self.timing = ModelWorkflowTiming()
+            timing = self.timing
 
         # Update timing based on current state
         if current_state in [
@@ -149,7 +152,7 @@ class ModelWorkflowStateModel(BaseModel):
                 if timing.started_at == timing.created_at:
                     timing.started_at = datetime.now()
 
-        return values
+        return self
 
     def transition_to(
         self,
