@@ -180,7 +180,7 @@ class EventBusService(ProtocolEventBusService):
 
         try:
             # Import proper event types
-            from omnibase_core.constants.event_types import CoreEventTypes
+            from omnibase_core.core.constants.event_types import CoreEventTypes
 
             # Create NODE_START event
             start_event = ModelOnexEvent(
@@ -262,7 +262,7 @@ class EventBusService(ProtocolEventBusService):
 
         try:
             # Import proper event types
-            from omnibase_core.constants.event_types import CoreEventTypes
+            from omnibase_core.core.constants.event_types import CoreEventTypes
 
             # Create NODE_SUCCESS event
             success_event = ModelOnexEvent(
@@ -349,7 +349,7 @@ class EventBusService(ProtocolEventBusService):
 
         try:
             # Import proper event types
-            from omnibase_core.constants.event_types import CoreEventTypes
+            from omnibase_core.core.constants.event_types import CoreEventTypes
 
             # Create NODE_FAILURE event
             failure_event = ModelOnexEvent(

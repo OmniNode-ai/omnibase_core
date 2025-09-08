@@ -16,14 +16,10 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from .models import (
-    BaseSubreducer,
-)
+from .models import BaseSubreducer
 from .models import ModelRoutingDecision as RoutingDecision
 from .models import ModelWorkflowRequest as WorkflowRequest
-from .models import (
-    WorkflowType,
-)
+from .models import WorkflowType
 
 
 class WorkflowRouter:

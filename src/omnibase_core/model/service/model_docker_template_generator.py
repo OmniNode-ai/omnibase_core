@@ -214,7 +214,11 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         if self._needs_volumes():
             compose_config["volumes"] = self._get_volume_definitions()
 
-        return yaml.dump(compose_config, default_flow_style=False, sort_keys=False)
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        return serialize_data_to_yaml(
+            compose_config, default_flow_style=False, sort_keys=False
+        )
 
     def _get_dependency_services(self) -> dict[str, Any]:
         """Get common ONEX dependency services."""
@@ -466,7 +470,8 @@ class KubernetesTemplateGenerator:
         ]
 
         return "---\n".join(
-            yaml.dump(manifest, default_flow_style=False) for manifest in manifests
+            serialize_data_to_yaml(manifest, default_flow_style=False)
+            for manifest in manifests
         )
 
 

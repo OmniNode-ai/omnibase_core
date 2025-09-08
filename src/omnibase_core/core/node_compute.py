@@ -28,10 +28,10 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.common_types import ModelScalarValue
+
 # Import contract model for compute nodes
-from omnibase_core.core.contracts.model_contract_compute import (
-    ModelContractCompute,
-)
+from omnibase_core.core.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
@@ -60,9 +60,7 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -85,9 +83,7 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     processing_time_ms: float
     cache_hit: bool = False
     parallel_execution_used: bool = False
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
-    )
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
 
     class Config:
         """Pydantic configuration."""
@@ -244,24 +240,23 @@ class NodeCompute(NodeCoreBase):
         try:
             # Load actual contract from file with subcontract resolution
 
-            import yaml
-
+            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
             from omnibase_core.utils.generation.utility_reference_resolver import (
                 UtilityReferenceResolver,
             )
-            from omnibase_core.utils.io.utility_filesystem_reader import (
-                UtilityFileSystemReader,
+            from omnibase_core.utils.safe_yaml_loader import (
+                load_and_validate_yaml_model,
             )
 
             # Get contract path - find the node.py file and look for contract.yaml
             contract_path = self._find_contract_path()
 
             # Load and resolve contract with subcontract support
-            file_reader = UtilityFileSystemReader()
             reference_resolver = UtilityReferenceResolver()
 
-            contract_content = file_reader.read_text(contract_path)
-            contract_data = yaml.safe_load(contract_content)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
+            contract_data = yaml_model.model_dump()
 
             # Resolve any $ref references in the contract
             resolved_contract = self._resolve_contract_references(

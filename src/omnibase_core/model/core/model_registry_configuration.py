@@ -7,11 +7,21 @@ strongly typed registry configuration.
 Author: ONEX Framework Team
 """
 
+from enum import Enum
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.enums.enum_registry_type import EnumRegistryType
+
+class EnumRegistryType(str, Enum):
+    """Registry type classifications for ONEX node registry systems."""
+
+    TOOL_REGISTRY = "tool_registry"
+    SERVICE_REGISTRY = "service_registry"
+    WORKFLOW_REGISTRY = "workflow_registry"
+    PROTOCOL_REGISTRY = "protocol_registry"
+    CONTRACT_REGISTRY = "contract_registry"
+    METADATA_REGISTRY = "metadata_registry"
 
 
 class ModelRegistryConfiguration(BaseModel):

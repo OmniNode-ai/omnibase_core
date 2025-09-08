@@ -16,9 +16,7 @@ sys.path.insert(0, str(src_path))
 
 from omnibase_core.core.onex_container import ModelONEXContainer
 
-from .node import (
-    NodeCanaryReducer,
-)
+from .node import NodeCanaryReducer
 
 
 async def main():

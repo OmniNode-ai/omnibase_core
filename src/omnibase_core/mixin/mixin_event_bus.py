@@ -14,12 +14,7 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 import inspect
 import threading
 from collections.abc import Callable
-from typing import (
-    Generic,
-    Protocol,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 

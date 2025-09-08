@@ -217,7 +217,11 @@ class DockerComposeGenerator:
                 for name, vol in self.volumes.items()
             }
 
-        return yaml.dump(compose_config, default_flow_style=False, sort_keys=False)
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        return serialize_data_to_yaml(
+            compose_config, default_flow_style=False, sort_keys=False
+        )
 
     def _validate_configuration(self) -> None:
         """
@@ -645,7 +649,9 @@ class DockerComposeGenerator:
                 prometheus_config["scrape_configs"].append(scrape_config)
 
         return {
-            "prometheus.yml": yaml.dump(prometheus_config, default_flow_style=False),
+            "prometheus.yml": serialize_data_to_yaml(
+                prometheus_config, default_flow_style=False
+            ),
         }
 
     def validate_compose_file(self) -> list[str]:

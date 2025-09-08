@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, TypeVar
 from uuid import uuid4
 
 from dependency_injector import containers, providers
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
 from omnibase_core.core.common_types import ModelStateValue
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
@@ -33,7 +34,6 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
 

@@ -8,16 +8,19 @@ Provides consistent contract processing across all ONEX tools.
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_schema import ModelSchema
 from omnibase_core.model.generation.model_contract_document import ModelContractDocument
 from omnibase_core.utils.generation.utility_schema_composer import UtilitySchemaComposer
 from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 @dataclass
@@ -122,7 +125,11 @@ class UtilityContractAnalyzer:
 
             # Load raw contract data first
             with open(contract_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract_data = yaml_model.model_dump()
 
             # Compose schemas before creating ModelContractDocument
             emit_log_event(
@@ -172,7 +179,11 @@ class UtilityContractAnalyzer:
             contract = ModelContractDocument(**contract_data)
         else:
             with open(contract_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract_data = yaml_model.model_dump()
 
             # CRITICAL: Compose schemas before creating ModelContractDocument
             emit_log_event(

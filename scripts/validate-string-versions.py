@@ -14,7 +14,11 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-import yaml
+# Add src to Python path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
 
 class StringVersionValidator:
@@ -30,8 +34,11 @@ class StringVersionValidator:
             with open(yaml_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Parse YAML using AST approach
-            yaml_data = yaml.safe_load(content)
+            # Parse YAML using safe loader
+            yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
+
+            # Use model dump for validation purposes - this is acceptable since it's post-validation
+            yaml_data = yaml_model.model_dump()
 
             if not yaml_data:
                 return True  # Empty files are not our concern

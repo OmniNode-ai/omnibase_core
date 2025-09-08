@@ -31,6 +31,8 @@ from omnibase_core.model.memory.model_statistics import ModelStatistics
 
 from typing import Union
 
+from omnibase_core.core.common_types import ModelScalarValue
+
 # Type aliases for CLI configuration
 CliConfigType = dict[str, str | int | bool]
 """CLI configuration structure for user preferences and settings.
@@ -48,7 +50,7 @@ Example:
     }
 """
 
-ExportFormatType = Union[str, int, float, bool]
+ExportFormatType = ModelScalarValue
 """Flexible value type for export format configuration.
 
 Allows various data types in export configurations to support

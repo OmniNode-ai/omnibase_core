@@ -20,15 +20,15 @@ from omnibase_core.core.node_orchestrator import (
 )
 from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 from omnibase_core.nodes.canary.utils.metrics_collector import get_metrics_collector
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class ModelCanaryOrchestratorInput(BaseModel):
@@ -100,16 +100,18 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # Initialize production utilities
-        self.config = get_canary_config()
+        # Initialize production utilities with container-based DI
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
         self.metrics_collector = get_metrics_collector("canary_orchestrator")
 
         # Setup circuit breakers for external services
+        # Use timeout from config_utils with fallback
+        timeout_ms = self.config_utils.get_timeout_ms("workflow_step", 30000)
         cb_config = ModelCircuitBreakerConfig(
             failure_threshold=3,
             recovery_timeout_seconds=30,
-            timeout_seconds=self.config.timeouts.workflow_step_timeout_ms / 1000,
+            timeout_seconds=timeout_ms / 1000,
         )
         self.workflow_circuit_breaker = get_circuit_breaker(
             "workflow_execution", cb_config
@@ -400,10 +402,15 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
         }
 
         # Mark as degraded if error rate is high (using configurable thresholds)
-        config = self.config.performance
+        min_operations = int(
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
+        )
+        error_rate_threshold = float(
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+        )
         if (
-            self.operation_count > config.min_operations_for_health
-            and (self.error_count / self.operation_count) > config.error_rate_threshold
+            self.operation_count > min_operations
+            and (self.error_count / self.operation_count) > error_rate_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 In-memory Service Discovery implementation.
 
@@ -8,11 +7,55 @@ using in-memory storage when external service discovery is unavailable.
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from typing import Any
 
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
+
+# Import ModelServiceHealth but handle the complex model gracefully
+try:
+    from omnibase_core.model.service.model_service_health import ModelServiceHealth
+
+    USE_COMPLEX_MODEL = True
+except Exception:
+    USE_COMPLEX_MODEL = False
+    ModelServiceHealth = None
+
+
+class SimpleServiceHealth:
+    """Simple internal service health tracking for in-memory service discovery."""
+
+    def __init__(
+        self,
+        service_id: str,
+        status: str,
+        last_check: float | None = None,
+        error_message: str | None = None,
+    ):
+        self.service_id = service_id
+        self.status = status
+        self.last_check = last_check
+        self.error_message = error_message
+
+
+class MinimalServiceHealth:
+    """Minimal ModelServiceHealth-compatible class for service discovery tests."""
+
+    def __init__(
+        self,
+        service_id: str,
+        status: str,
+        last_check: float | None = None,
+        error_message: str | None = None,
+    ):
+        self.service_id = service_id
+        self.status = status
+        self.last_check = last_check
+        self.error_message = error_message
+
+
+# Type alias for return type compatibility
+ServiceHealthReturn = ModelServiceHealth if USE_COMPLEX_MODEL else MinimalServiceHealth
 
 
 class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
@@ -25,9 +68,9 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
     """
 
     def __init__(self):
-        self._services: Dict[str, Dict[str, Any]] = {}
-        self._kv_store: Dict[str, str] = {}
-        self._service_health: Dict[str, ModelServiceHealth] = {}
+        self._services: dict[str, dict[str, Any]] = {}
+        self._kv_store: dict[str, str] = {}
+        self._service_health: dict[str, SimpleServiceHealth] = {}
         self._lock = asyncio.Lock()
 
     async def register_service(
@@ -36,9 +79,9 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
         service_id: str,
         host: str,
         port: int,
-        health_check_url: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, ModelScalarValue],
+        health_check_url: str | None = None,
+        tags: list[str] | None = None,
     ) -> bool:
         """Register a service in memory."""
         async with self._lock:
@@ -49,12 +92,12 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
                 "port": port,
                 "health_check_url": health_check_url,
                 "tags": tags or [],
-                "metadata": metadata or {},
+                "metadata": metadata,
                 "registered_at": time.time(),
             }
 
             # Initialize health as healthy
-            self._service_health[service_id] = ModelServiceHealth(
+            self._service_health[service_id] = SimpleServiceHealth(
                 service_id=service_id,
                 status="healthy",
                 last_check=time.time(),
@@ -75,8 +118,10 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
         return True
 
     async def discover_services(
-        self, service_name: str, healthy_only: bool = True
-    ) -> List[Dict[str, Any]]:
+        self,
+        service_name: str,
+        healthy_only: bool = True,
+    ) -> list[dict[str, ModelScalarValue]]:
         """Discover services from memory."""
         async with self._lock:
             matching_services = []
@@ -89,31 +134,67 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
                         if not health or health.status != "healthy":
                             continue
 
-                    service_data = service_info.copy()
-                    service_data["health_status"] = self._service_health.get(
-                        service_id, {}
-                    ).get("status", "unknown")
+                    # Build service data with required ModelScalarValue objects
+                    service_data: dict[str, ModelScalarValue] = {
+                        "service_name": ModelScalarValue.create_string(
+                            service_info["service_name"],
+                        ),
+                        "service_id": ModelScalarValue.create_string(
+                            service_info["service_id"],
+                        ),
+                        "host": ModelScalarValue.create_string(service_info["host"]),
+                        "port": ModelScalarValue.create_int(service_info["port"]),
+                        "registered_at": ModelScalarValue.create_float(
+                            service_info["registered_at"],
+                        ),
+                    }
+
+                    # Add optional fields
+                    if service_info["health_check_url"]:
+                        service_data["health_check_url"] = (
+                            ModelScalarValue.create_string(
+                                service_info["health_check_url"],
+                            )
+                        )
+
+                    # Add health status
+                    health_obj = self._service_health.get(service_id)
+                    health_status = health_obj.status if health_obj else "unknown"
+                    service_data["health_status"] = ModelScalarValue.create_string(
+                        health_status,
+                    )
+
+                    # Add metadata (already ModelScalarValue format)
+                    service_data.update(service_info["metadata"])
+
                     matching_services.append(service_data)
 
             return matching_services
 
-    async def get_service_health(self, service_id: str) -> ModelServiceHealth:
+    async def get_service_health(self, service_id: str) -> ServiceHealthReturn:
         """Get service health from memory."""
         async with self._lock:
             if service_id not in self._services:
-                return ModelServiceHealth(
+                return MinimalServiceHealth(
                     service_id=service_id,
                     status="critical",
                     error_message="Service not registered",
                 )
 
-            return self._service_health.get(
-                service_id,
-                ModelServiceHealth(
+            internal_health = self._service_health.get(service_id)
+            if not internal_health:
+                return MinimalServiceHealth(
                     service_id=service_id,
                     status="unknown",
                     error_message="Health status not available",
-                ),
+                )
+
+            # Convert internal health to MinimalServiceHealth
+            return MinimalServiceHealth(
+                service_id=service_id,
+                status=internal_health.status,
+                last_check=internal_health.last_check,
+                error_message=internal_health.error_message,
             )
 
     async def set_key_value(self, key: str, value: str) -> bool:
@@ -122,7 +203,7 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
             self._kv_store[key] = value
         return True
 
-    async def get_key_value(self, key: str) -> Optional[str]:
+    async def get_key_value(self, key: str) -> str | None:
         """Get key-value from memory."""
         async with self._lock:
             return self._kv_store.get(key)
@@ -135,13 +216,13 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
                 return True
             return False
 
-    async def list_keys(self, prefix: str = "") -> List[str]:
+    async def list_keys(self, prefix: str = "") -> list[str]:
         """List keys from memory with optional prefix."""
         async with self._lock:
             if not prefix:
                 return list(self._kv_store.keys())
 
-            return [key for key in self._kv_store.keys() if key.startswith(prefix)]
+            return [key for key in self._kv_store if key.startswith(prefix)]
 
     async def health_check(self) -> bool:
         """Check health of in-memory service discovery (always healthy)."""
@@ -157,33 +238,36 @@ class InMemoryServiceDiscovery(ProtocolServiceDiscovery):
     # Additional methods for testing and management
 
     async def update_service_health(
-        self, service_id: str, status: str, error_message: Optional[str] = None
+        self,
+        service_id: str,
+        status: str,
+        error_message: str | None = None,
     ) -> None:
         """Update service health status (for testing/simulation)."""
         async with self._lock:
             if service_id in self._services:
-                self._service_health[service_id] = ModelServiceHealth(
+                self._service_health[service_id] = SimpleServiceHealth(
                     service_id=service_id,
                     status=status,
                     last_check=time.time(),
                     error_message=error_message,
                 )
 
-    async def get_all_services(self) -> Dict[str, Dict[str, Any]]:
+    async def get_all_services(self) -> dict[str, dict[str, Any]]:
         """Get all registered services (for debugging/monitoring)."""
         async with self._lock:
             return self._services.copy()
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Get service discovery statistics."""
         async with self._lock:
             return {
                 "total_services": len(self._services),
                 "total_kv_pairs": len(self._kv_store),
                 "healthy_services": len(
-                    [s for s in self._service_health.values() if s.status == "healthy"]
+                    [s for s in self._service_health.values() if s.status == "healthy"],
                 ),
                 "service_names": list(
-                    set(s["service_name"] for s in self._services.values())
+                    {s["service_name"] for s in self._services.values()},
                 ),
             }

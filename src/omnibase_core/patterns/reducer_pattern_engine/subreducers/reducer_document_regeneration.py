@@ -9,22 +9,18 @@ contract and processing patterns.
 import time
 from typing import Dict, Optional
 
-from omnibase_core.core.common_types import ScalarValue
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from ..v1_0_0.models import (
-    BaseSubreducer,
-)
+from ..v1_0_0.models import BaseSubreducer
 from ..v1_0_0.models import ModelSubreducerResult as SubreducerResult
 from ..v1_0_0.models import ModelWorkflowRequest as WorkflowRequest
 from ..v1_0_0.models import ModelWorkflowResultData as WorkflowResultData
-from ..v1_0_0.models import (
-    WorkflowType,
-)
+from ..v1_0_0.models import WorkflowType
 
 
 class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
@@ -191,12 +187,12 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
 
             return result
 
-    def get_metrics(self) -> Dict[str, ScalarValue]:
+    def get_metrics(self) -> Dict[str, ModelScalarValue]:
         """
         Get processing metrics for this subreducer.
 
         Returns:
-            Dict[str, ScalarValue]: Current processing metrics
+            Dict[str, ModelScalarValue]: Current processing metrics
         """
         success_rate = 0.0
         if self._processing_metrics["total_processed"] > 0:
@@ -214,7 +210,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
 
     def _extract_document_params(
         self, request: WorkflowRequest
-    ) -> Dict[str, ScalarValue]:
+    ) -> Dict[str, ModelScalarValue]:
         """
         Extract and validate document regeneration parameters.
 
@@ -222,7 +218,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             request: The workflow request
 
         Returns:
-            Dict[str, ScalarValue]: Validated document parameters
+            Dict[str, ModelScalarValue]: Validated document parameters
 
         Raises:
             OnexError: If required parameters are missing or invalid
@@ -268,7 +264,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
         return document_params
 
     async def _process_document_regeneration(
-        self, document_params: Dict[str, ScalarValue], request: WorkflowRequest
+        self, document_params: Dict[str, ModelScalarValue], request: WorkflowRequest
     ) -> WorkflowResultData:
         """
         Perform the actual document regeneration processing.

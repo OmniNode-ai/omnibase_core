@@ -26,12 +26,8 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.node_compute import ModelComputeInput, NodeCompute
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.node_effect import NodeEffect
-from omnibase_core.core.node_orchestrator import (
-    NodeOrchestrator,
-)
-from omnibase_core.core.node_reducer import (
-    NodeReducer,
-)
+from omnibase_core.core.node_orchestrator import NodeOrchestrator
+from omnibase_core.core.node_reducer import NodeReducer
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 

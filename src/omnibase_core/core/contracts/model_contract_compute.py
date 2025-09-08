@@ -505,9 +505,13 @@ class ModelContractCompute(ModelContractBase):
         Returns:
             str: YAML representation of the contract
         """
-        import yaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            serialize_pydantic_model_to_yaml,
+        )
 
-        return yaml.dump(self.model_dump(), default_flow_style=False, sort_keys=False)
+        return serialize_pydantic_model_to_yaml(
+            self, default_flow_style=False, sort_keys=False
+        )
 
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractCompute":
@@ -520,7 +524,10 @@ class ModelContractCompute(ModelContractBase):
         Returns:
             ModelContractCompute: Validated contract model instance
         """
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
-        data = yaml.safe_load(yaml_content)
+        # Load and validate YAML using Pydantic model
+        yaml_model = load_yaml_content_as_model(yaml_content, ModelGenericYaml)
+        data = yaml_model.model_dump()
         return cls.model_validate(data)

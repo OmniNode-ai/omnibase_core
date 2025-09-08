@@ -180,10 +180,12 @@ class ModelOnextreeRoot(BaseModel):
         Returns:
             OnextreeRoot instance
         """
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
-        with open(file_path) as f:
-            data = yaml.safe_load(f)
+        # Load and validate YAML using Pydantic model
+        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+        data = yaml_model.model_dump()
 
         return cls.from_dict(data)
 

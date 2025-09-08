@@ -24,8 +24,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-import yaml
-
 if TYPE_CHECKING:
     from typing import Protocol
 
@@ -45,32 +43,24 @@ class YAMLSerializationMixin:
         """
         Serialize the model as YAML, prefixing each line with comment_prefix.
         Ensures all Enums are serialized as their .value (mode='json').
+        Uses the centralized YAML serialization to maintain security standards.
+
         Args:
             comment_prefix: String to prefix each line of YAML output.
         Returns:
             YAML string with each line prefixed by comment_prefix.
         """
-        # Use to_serializable_dict if available (for compact entrypoint format)
-        if hasattr(self, "to_serializable_dict"):
-            data = self.to_serializable_dict()
-        else:
-            data = self.model_dump(mode="json")
+        from omnibase_core.utils.safe_yaml_loader import (
+            serialize_pydantic_model_to_yaml,
+        )
 
-        yaml_str = yaml.dump(
-            data,
+        # Delegate to centralized serialization function
+        return serialize_pydantic_model_to_yaml(
+            self,  # type: ignore[arg-type] # Protocol matches Pydantic BaseModel
+            comment_prefix=comment_prefix,
             sort_keys=False,
             default_flow_style=False,
             allow_unicode=True,
             indent=2,
             width=120,
         )
-        yaml_str = yaml_str.replace("\xa0", " ")
-        yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
-        assert "\r" not in yaml_str, "Carriage return found in YAML string"
-        yaml_str.encode("utf-8")
-        if comment_prefix:
-            yaml_str = "\n".join(
-                f"{comment_prefix}{line}" if line.strip() else ""
-                for line in yaml_str.splitlines()
-            )
-        return yaml_str

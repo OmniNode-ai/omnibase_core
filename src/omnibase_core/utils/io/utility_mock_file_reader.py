@@ -39,17 +39,24 @@ class UtilityMockFileReader:
 
     def _setup_default_test_models(self):
         """Set up default test models for common test scenarios."""
-        import yaml
-
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.model.generation.model_contract_document import (
             ModelContractDocument,
+        )
+        from omnibase_core.utils.safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            load_yaml_content_as_model,
         )
 
         # Load the test contract data and create a proper model
         test_data_path = Path(__file__).parent / "test_contract_data.yaml"
         if test_data_path.exists():
             with open(test_data_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract_data = yaml_model.model_dump()
 
             contract_model = ModelContractDocument.model_validate(contract_data)
 
@@ -92,9 +99,14 @@ class UtilityMockFileReader:
         model = self._models[path_str]
 
         # Convert model to YAML string for text reading
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            load_yaml_content_as_model,
+            serialize_pydantic_model_to_yaml,
+        )
 
-        return yaml.dump(model.model_dump(), default_flow_style=False)
+        return serialize_pydantic_model_to_yaml(model, default_flow_style=False)
 
     def read_yaml(self, path: str | Path, model_class: type[T]) -> T:
         """

@@ -32,7 +32,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.event_types import CoreEventTypes
+from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
 from omnibase_core.model.discovery.model_output_metadata import ModelOutputMetadata
 from omnibase_core.model.discovery.model_resource_usage import ModelResourceUsage

@@ -19,11 +19,8 @@ import pytest
 # Import production implementation directly - no code duplication
 import omnibase_core.core.onex_container as onex_container_module
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.onex_container import (
-    ONEXContainer,
-    create_onex_container,
-    get_container,
-)
+from omnibase_core.core.onex_container import ModelONEXContainer as ONEXContainer
+from omnibase_core.core.onex_container import create_onex_container, get_container
 from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")

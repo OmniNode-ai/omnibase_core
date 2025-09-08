@@ -26,9 +26,9 @@ import uuid
 from collections.abc import Callable
 from typing import Protocol, TypedDict
 
-import yaml
-
 from omnibase_core.model.core.model_entrypoint import ModelEntrypointBlock
+
+# yaml import removed - using centralized YAML operations from safe_yaml_loader
 
 
 class NodeMetadataDict(TypedDict, total=False):
@@ -155,31 +155,18 @@ def to_yaml_block(model: HasModelDump, comment_prefix: str = "") -> str:
     Returns:
         YAML string with each line prefixed by comment_prefix
     """
-    # Use to_serializable_dict if available (for compact entrypoint format)
-    if hasattr(model, "to_serializable_dict"):
-        data = model.to_serializable_dict()
-    else:
-        data = model.model_dump(mode="json")
+    # Use centralized YAML serialization
+    from omnibase_core.utils.safe_yaml_loader import serialize_pydantic_model_to_yaml
 
-    yaml_str = yaml.dump(
-        data,
+    return serialize_pydantic_model_to_yaml(
+        model,
+        comment_prefix=comment_prefix,
         sort_keys=False,
         default_flow_style=False,
         allow_unicode=True,
         indent=2,
         width=120,
     )
-    yaml_str = yaml_str.replace("\xa0", " ")
-    yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
-    assert "\r" not in yaml_str, "Carriage return found in YAML string"
-    yaml_str.encode("utf-8")
-
-    if comment_prefix:
-        yaml_str = "\n".join(
-            f"{comment_prefix}{line}" if line.strip() else ""
-            for line in yaml_str.splitlines()
-        )
-    return yaml_str
 
 
 def compute_metadata_hash(

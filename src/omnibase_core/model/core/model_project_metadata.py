@@ -30,8 +30,6 @@ and compliance with one-model-per-file naming conventions.
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.metadata.metadata_constants import (
     METADATA_VERSION_KEY,
     NAMESPACE_KEY,
@@ -39,7 +37,12 @@ from omnibase_core.metadata.metadata_constants import (
     PROTOCOL_VERSION_KEY,
     SCHEMA_VERSION_KEY,
 )
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_onex_version import ModelOnexVersionInfo
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 # Import separated models
 from .model_artifact_type_config import ModelArtifactTypeConfig
@@ -85,7 +88,11 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     Raises FileNotFoundError or KeyError if missing.
     """
     with open(PROJECT_ONEX_YAML_PATH) as f:
-        data = yaml.safe_load(f)
+        # Load and validate YAML using Pydantic model
+
+        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+        data = yaml_model.model_dump()
     return ModelOnexVersionInfo(
         metadata_version=data[METADATA_VERSION_KEY],
         protocol_version=data[PROTOCOL_VERSION_KEY],
@@ -100,5 +107,9 @@ def get_canonical_namespace_prefix() -> str:
     Raises FileNotFoundError or KeyError if missing.
     """
     with open(PROJECT_ONEX_YAML_PATH) as f:
-        data = yaml.safe_load(f)
+        # Load and validate YAML using Pydantic model
+
+        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+        data = yaml_model.model_dump()
     return data[NAMESPACE_KEY]

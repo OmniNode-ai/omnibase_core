@@ -7,6 +7,8 @@ import json
 import time
 from typing import TYPE_CHECKING, Any
 
+from omnibase.protocols.core.protocol_logger import ProtocolLogger
+
 from omnibase_core.model.configuration.model_event_bus_config import (
     ModelModelEventBusConfig,
 )
@@ -15,7 +17,6 @@ from omnibase_core.model.core.model_onex_event import OnexEvent
 from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.registry.registry_bootstrap import (
     BootstrapRegistry,
 )
-from omnibase_core.protocol.protocol_logger import ProtocolLogger
 
 if TYPE_CHECKING:
     from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus

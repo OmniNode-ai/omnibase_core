@@ -25,70 +25,13 @@
 from pathlib import Path
 from typing import Any
 
-import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-
-
-def extract_example_from_schema(
-    schema_path: Path,
-    example_index: int = 0,
-) -> dict[str, Any]:
-    """
-    Extract a node metadata example from a YAML schema file's 'examples' section.
-    Returns the example at the given index as a dict.
-    Raises OmniBaseError if the schema or example is missing or malformed.
-    """
-    try:
-        with schema_path.open("r") as f:
-            data = yaml.safe_load(f)
-        examples = data.get("examples")
-        if not examples or not isinstance(examples, list):
-            raise OnexError(
-                CoreErrorCode.MISSING_REQUIRED_PARAMETER,
-                f"No 'examples' section found in schema: {schema_path}",
-            )
-        if example_index >= len(examples):
-            raise OnexError(
-                CoreErrorCode.MISSING_REQUIRED_PARAMETER,
-                f"Example index {example_index} out of range for schema: {schema_path}",
-            )
-        example = examples[example_index]
-        if not isinstance(example, dict):
-            raise OnexError(
-                CoreErrorCode.SCHEMA_VALIDATION_FAILED,
-                f"Example at index {example_index} is not a dict in schema: {schema_path}",
-            )
-        return example
-    except Exception as e:
-        raise OnexError(
-            CoreErrorCode.SCHEMA_VALIDATION_FAILED,
-            f"Failed to extract example from schema: {schema_path}: {e}",
-        )
-
-
-def load_and_validate_yaml_model(path: Path, model_cls: type[BaseModel]) -> BaseModel:
-    """
-    Load a YAML file and validate it against the provided Pydantic model class.
-    Returns the validated model instance.
-    Raises OmniBaseError if loading or validation fails.
-    """
-    try:
-        with path.open("r") as f:
-            data = yaml.safe_load(f)
-        return model_cls(**data)
-    except ValidationError as ve:
-        raise OnexError(
-            CoreErrorCode.SCHEMA_VALIDATION_FAILED,
-            f"YAML validation error for {path}: {ve}",
-        )
-    except Exception as e:
-        raise OnexError(
-            CoreErrorCode.SCHEMA_VALIDATION_FAILED,
-            f"Failed to load or validate YAML: {path}: {e}",
-        )
-
+# Import safe YAML loading utilities
+from omnibase_core.utils.safe_yaml_loader import (
+    extract_example_from_schema,
+    load_and_validate_yaml_model,
+)
 
 # MILESTONE M1+ CLI ENHANCEMENTS:
 #

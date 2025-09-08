@@ -28,7 +28,7 @@ from uuid import UUID, uuid4
 import aiohttp
 from pydantic import BaseModel, Field
 
-from omnibase_core.core.common_types import ScalarValue
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.contracts.model_contract_gateway import ModelContractGateway
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -37,6 +37,7 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
 
 class RoutingStrategy(Enum):
@@ -76,7 +77,7 @@ class ModelGatewayInput(BaseModel):
     with protocol translation and load balancing configuration.
     """
 
-    message_data: Dict[str, ScalarValue]
+    message_data: Dict[str, ModelScalarValue]
     destination_endpoints: List[str]
     operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
     routing_strategy: RoutingStrategy = RoutingStrategy.ROUND_ROBIN
@@ -88,7 +89,7 @@ class ModelGatewayInput(BaseModel):
     circuit_breaker_enabled: bool = True
     load_balancing_enabled: bool = True
     response_aggregation_enabled: bool = False
-    metadata: Optional[Dict[str, ScalarValue]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -105,7 +106,7 @@ class ModelGatewayOutput(BaseModel):
     and network coordination metadata.
     """
 
-    result: Dict[str, ScalarValue]
+    result: Dict[str, ModelScalarValue]
     operation_id: str
     routing_strategy: RoutingStrategy
     selected_endpoint: str
@@ -113,9 +114,9 @@ class ModelGatewayOutput(BaseModel):
     retry_count: int = 0
     endpoints_tried: List[str] = Field(default_factory=list)
     circuit_breaker_triggered: bool = False
-    load_balance_decision: Optional[Dict[str, ScalarValue]] = None
+    load_balance_decision: Optional[Dict[str, ModelScalarValue]] = None
     aggregated_responses: Optional[List[Dict]] = None
-    metadata: Optional[Dict[str, ScalarValue]] = Field(default_factory=dict)
+    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -183,26 +184,23 @@ class CircuitBreaker:
 class ConnectionPool:
     """Manages connection pooling for gateway operations."""
 
-    def __init__(self, max_connections: int = 100):
+    def __init__(
+        self,
+        max_connections: int = 100,
+        circuit_breaker_failure_threshold: int = 5,
+        circuit_breaker_recovery_timeout: int = 60,
+    ):
         self.max_connections = max_connections
         self.connections: Dict[str, List[aiohttp.ClientSession]] = defaultdict(list)
         self.connection_states: Dict[str, ConnectionState] = {}
         self.active_connections = 0
 
-        # Create circuit breakers with configurable defaults
+        # Create circuit breakers with provided configuration
         def create_circuit_breaker():
-            try:
-                from omnibase_core.nodes.canary.config.canary_config import (
-                    get_canary_config,
-                )
-
-                config = get_canary_config()
-                return CircuitBreaker(
-                    failure_threshold=config.security.circuit_breaker_failure_threshold,
-                    recovery_timeout=config.security.circuit_breaker_recovery_timeout,
-                )
-            except Exception:
-                return CircuitBreaker()  # Use class defaults
+            return CircuitBreaker(
+                failure_threshold=circuit_breaker_failure_threshold,
+                recovery_timeout=circuit_breaker_recovery_timeout,
+            )
 
         self.circuit_breakers: Dict[str, CircuitBreaker] = defaultdict(
             create_circuit_breaker
@@ -273,16 +271,8 @@ class ConnectionPool:
             self.active_connections = max(0, self.active_connections - 1)
             return
 
-        # Return to pool if under limit (configurable)
-        try:
-            from omnibase_core.nodes.canary.config.canary_config import (
-                get_canary_config,
-            )
-
-            config = get_canary_config()
-            max_pooled = config.security.max_connections_per_endpoint
-        except Exception:
-            max_pooled = 10  # Fallback default
+        # Return to pool if under limit (using default)
+        max_pooled = 10  # Default pooled connections per endpoint
 
         if len(self.connections[endpoint]) < max_pooled:
             self.connections[endpoint].append(session)
@@ -347,7 +337,28 @@ class NodeGateway(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.contract_model = ModelContractGateway
-        self.connection_pool = ConnectionPool()
+        self.config_utils = UtilsNodeConfiguration(container)
+
+        # Get configuration for connection pool
+        max_connections = int(
+            self.config_utils.get_performance_config("max_concurrent_operations", 100)
+        )
+        failure_threshold = int(
+            self.config_utils.get_security_config(
+                "circuit_breaker_failure_threshold", 5
+            )
+        )
+        recovery_timeout = int(
+            self.config_utils.get_security_config(
+                "circuit_breaker_recovery_timeout", 60
+            )
+        )
+
+        self.connection_pool = ConnectionPool(
+            max_connections=max_connections,
+            circuit_breaker_failure_threshold=failure_threshold,
+            circuit_breaker_recovery_timeout=recovery_timeout,
+        )
         self.load_balancer = LoadBalancer()
 
     async def route(self, gateway_input: ModelGatewayInput) -> ModelGatewayOutput:
@@ -459,7 +470,7 @@ class NodeGateway(NodeCoreBase):
                 {"operation_id": operation_id, "error": str(e)},
             )
 
-    async def get_health_status(self) -> Dict[str, ScalarValue]:
+    async def get_health_status(self) -> Dict[str, ModelScalarValue]:
         """Get gateway health status."""
         # Check circuit breaker states
         circuit_breaker_status = {}
@@ -493,7 +504,7 @@ class NodeGateway(NodeCoreBase):
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def get_metrics(self) -> Dict[str, ScalarValue]:
+    async def get_metrics(self) -> Dict[str, ModelScalarValue]:
         """Get gateway performance metrics."""
         # Count circuit breaker trips
         circuit_breaker_trips = sum(

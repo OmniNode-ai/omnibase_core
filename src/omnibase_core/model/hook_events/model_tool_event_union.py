@@ -1,8 +1,8 @@
-"""Discriminated union for different tool events."""
+"""Strongly typed discriminated union for different tool events."""
 
-from typing import Union
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Discriminator, Field
+from pydantic import BaseModel, Discriminator, Field, model_validator
 
 from omnibase_core.model.hook_events.model_read_tool_event import (
     ModelBashToolEvent,
@@ -20,23 +20,73 @@ def get_tool_discriminator(v) -> str:
     return getattr(v, "tool_name", "unknown").lower()
 
 
-# Discriminated union of all tool events
-ToolEventUnion = Union[
-    ModelReadToolEvent,
-    ModelWriteToolEvent,
-    ModelEditToolEvent,
-    ModelBashToolEvent,
-    ModelGrepToolEvent,
-]
+# Strongly typed discriminated union using proper Pydantic pattern
+class ModelToolEventContainer(BaseModel):
+    """Container for different tool event types with proper discrimination."""
+
+    read_event: Optional[ModelReadToolEvent] = Field(
+        None, description="Read tool event"
+    )
+    write_event: Optional[ModelWriteToolEvent] = Field(
+        None, description="Write tool event"
+    )
+    edit_event: Optional[ModelEditToolEvent] = Field(
+        None, description="Edit tool event"
+    )
+    bash_event: Optional[ModelBashToolEvent] = Field(
+        None, description="Bash tool event"
+    )
+    grep_event: Optional[ModelGrepToolEvent] = Field(
+        None, description="Grep tool event"
+    )
+
+    @model_validator(mode="after")
+    def validate_exactly_one_event(self) -> "ModelToolEventContainer":
+        """Ensure exactly one event type is set."""
+        events = [
+            self.read_event is not None,
+            self.write_event is not None,
+            self.edit_event is not None,
+            self.bash_event is not None,
+            self.grep_event is not None,
+        ]
+
+        if sum(events) != 1:
+            raise ValueError("ModelToolEventContainer must have exactly one event set")
+
+        return self
+
+    def get_read_event(self) -> Optional[ModelReadToolEvent]:
+        """Get read tool event if set."""
+        return self.read_event
+
+    def get_write_event(self) -> Optional[ModelWriteToolEvent]:
+        """Get write tool event if set."""
+        return self.write_event
+
+    def get_edit_event(self) -> Optional[ModelEditToolEvent]:
+        """Get edit tool event if set."""
+        return self.edit_event
+
+    def get_bash_event(self) -> Optional[ModelBashToolEvent]:
+        """Get bash tool event if set."""
+        return self.bash_event
+
+    def get_grep_event(self) -> Optional[ModelGrepToolEvent]:
+        """Get grep tool event if set."""
+        return self.grep_event
+
+
+# Legacy alias for transition - use ModelToolEventContainer instead
+ToolEventUnion = ModelToolEventContainer
 
 
 class ModelToolPreExecutionEvent(BaseModel):
     """Event fired before tool execution with discriminated tool-specific data."""
 
     event_type: str = Field("pre-execution", description="Event type")
-    tool_event: ToolEventUnion = Field(
-        ...,
-        discriminator=Discriminator(get_tool_discriminator),
+    tool_event: ModelToolEventContainer = Field(
+        ..., description="Tool-specific event data"
     )
 
 
@@ -48,8 +98,10 @@ class ModelToolPostExecutionEvent(BaseModel):
     result: str = Field(..., description="Tool execution result")
     success: bool = Field(..., description="Whether execution succeeded")
     duration_ms: int = Field(..., description="Execution duration in milliseconds")
-    error_message: str = Field(None, description="Error message if failed")
+    error_message: Optional[str] = Field(None, description="Error message if failed")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: str = Field(None, description="Correlated conversation ID")
+    conversation_id: Optional[str] = Field(
+        None, description="Correlated conversation ID"
+    )
     timestamp: str = Field(..., description="Execution completion timestamp")
     hook_version: str = Field("1.0.0", description="Hook system version")

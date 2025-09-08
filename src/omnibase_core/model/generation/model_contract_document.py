@@ -8,11 +8,12 @@ Replaces raw dict usage throughout the contract-to-model pipeline.
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_schema import ModelSchema
 from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
 from .model_cli_interface import ModelCliInterface
 from .model_contract_dependencies import ModelContractDependencies
@@ -110,8 +111,13 @@ class ModelContractDocument(BaseModel):
 
     def to_yaml(self) -> str:
         """Serialize to YAML format."""
-        data = self.model_dump(exclude_none=True)
-        return yaml.dump(data, default_flow_style=False, sort_keys=False)
+        from omnibase_core.utils.safe_yaml_loader import (
+            serialize_pydantic_model_to_yaml,
+        )
+
+        return serialize_pydantic_model_to_yaml(
+            self, exclude_none=True, default_flow_style=False, sort_keys=False
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
@@ -120,7 +126,9 @@ class ModelContractDocument(BaseModel):
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractDocument":
         """Create from YAML content."""
-        data = yaml.safe_load(yaml_content)
+        # Load YAML content using safe loader
+        yaml_model = load_yaml_content_as_model(yaml_content, ModelGenericYaml)
+        data = yaml_model.model_dump()
         return cls.from_dict(data)
 
     @classmethod
@@ -159,7 +167,7 @@ class ModelContractDocument(BaseModel):
 
         return cls(
             contract_version=contract_version,  # Validator will convert to ModelSemVer
-            node_name=data["node_name"],
+            node_name=data.get("node_name", ""),
             node_version=node_version,  # Validator will convert to ModelSemVer
             input_state=input_state,
             output_state=output_state,

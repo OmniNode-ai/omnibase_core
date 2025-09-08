@@ -7,10 +7,7 @@ and data validation within the reducer pattern engine.
 
 from .state_transitions import ModelStateTransition as StateTransition
 from .state_transitions import ModelWorkflowStateModel as WorkflowStateModel
-from .state_transitions import (
-    StateTransitionValidator,
-    WorkflowState,
-)
+from .state_transitions import StateTransitionValidator, WorkflowState
 
 __all__ = [
     "WorkflowState",

@@ -15,6 +15,16 @@ COPYRIGHT_KEY = "copyright"
 ENTRYPOINT_KEY = "entrypoint"
 TOOLS_KEY = "tools"
 
+# State contract keys
+CONTRACT_VERSION_KEY = "contract_version"
+CONTRACT_SCHEMA_VERSION_KEY = "contract_schema_version"
+NODE_VERSION_KEY = "node_version"
+
+# CLI service keys
+VERSION_KEY = "version"
+TOOL_METADATA_KEY = "tool_metadata"
+METADATA_ERROR_KEY = "metadata_error"
+
 # Configuration file names
 PROJECT_ONEX_YAML_FILENAME = "project.onex.yaml"
 

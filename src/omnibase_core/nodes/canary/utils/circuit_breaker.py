@@ -13,7 +13,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
+# Remove canary config dependency - circuit breaker is self-contained
 
 T = TypeVar("T")
 

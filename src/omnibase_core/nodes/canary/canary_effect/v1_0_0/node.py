@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import (
     EffectType,
     ModelEffectInput,
@@ -16,17 +17,39 @@ from omnibase_core.core.node_effect import (
 )
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_health_details import ModelHealthDetails
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.nodes.canary.config.canary_config import get_canary_config
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
+from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
+
+
+def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
+    """Convert a dictionary of primitive values to ModelScalarValue objects."""
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif isinstance(value, dict):
+            # For nested dictionaries, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+        elif value is None:
+            converted[key] = ModelScalarValue.create_string("null")
+        else:
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class ModelCanaryEffectInput(BaseModel):
@@ -69,14 +92,28 @@ class NodeCanaryEffect(NodeEffectService):
         """Initialize the Canary Effect node."""
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.config = get_canary_config()
+
+        # Get dependencies from container (no direct config access)
+        self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
 
-        # Setup circuit breakers for external operations
+        # Setup circuit breakers using configuration utils
+        failure_threshold = int(
+            self.config_utils.get_security_config(
+                "circuit_breaker_failure_threshold", 3
+            )
+        )
+        recovery_timeout = int(
+            self.config_utils.get_security_config(
+                "circuit_breaker_recovery_timeout", 30
+            )
+        )
+        api_timeout_ms = self.config_utils.get_timeout_ms("api_call", 5000)
+
         cb_config = ModelCircuitBreakerConfig(
-            failure_threshold=3,
-            recovery_timeout_seconds=30,
-            timeout_seconds=self.config.timeouts.api_call_timeout_ms / 1000,
+            failure_threshold=failure_threshold,
+            recovery_timeout_seconds=recovery_timeout,
+            timeout_seconds=api_timeout_ms / 1000,
         )
         self.api_circuit_breaker = get_circuit_breaker("effect_api", cb_config)
 
@@ -211,12 +248,14 @@ class NodeCanaryEffect(NodeEffectService):
             # Create effect input for async execution
             effect_input = ModelEffectInput(
                 effect_type=EffectType.API_CALL,
-                operation_data={
-                    "operation_type": operation_type,
-                    "parameters": effect_data.get("parameters", {}),
-                    "target_system": effect_data.get("target_system"),
-                    "correlation_id": correlation_id,
-                },
+                operation_data=_convert_to_scalar_dict(
+                    {
+                        "operation_type": operation_type,
+                        "parameters": effect_data.get("parameters", {}),
+                        "target_system": effect_data.get("target_system"),
+                        "correlation_id": correlation_id,
+                    }
+                ),
             )
 
             # Schedule async effect execution (fire-and-forget pattern)
@@ -580,10 +619,14 @@ class NodeCanaryEffect(NodeEffectService):
     ) -> dict[str, Any]:
         """Simulate external API call for canary testing."""
         # Simulate API call delay only in debug mode
-        if self.config.security.debug_mode:
-            await asyncio.sleep(
-                self.config.business_logic.api_simulation_delay_ms / 1000
+        debug_mode = bool(self.config_utils.get_security_config("debug_mode", False))
+        if debug_mode:
+            delay_ms = int(
+                self.config_utils.get_business_logic_config(
+                    "api_simulation_delay_ms", 100
+                )
             )
+            await asyncio.sleep(delay_ms / 1000)
 
         return {
             "api_response": "simulated_response",
@@ -724,10 +767,16 @@ class NodeCanaryEffect(NodeEffectService):
         }
 
         # Mark as degraded if error rate is high
+        min_ops = int(
+            self.config_utils.get_performance_config("min_operations_for_health", 10)
+        )
+        error_threshold = float(
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+        )
+
         if (
-            self.operation_count > self.config.performance.min_operations_for_health
-            and (self.error_count / self.operation_count)
-            > self.config.performance.error_rate_threshold
+            self.operation_count > min_ops
+            and (self.error_count / self.operation_count) > error_threshold
         ):
             status = EnumHealthStatus.DEGRADED
 

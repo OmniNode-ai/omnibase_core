@@ -11,22 +11,21 @@ Author: ONEX Framework Team
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.model.core.model_contract_cache import ModelContractCache
 from omnibase_core.model.core.model_contract_content import ModelContractContent
-from omnibase_core.model.core.model_contract_definitions import (
-    ModelContractDefinitions,
-)
+from omnibase_core.model.core.model_contract_definitions import ModelContractDefinitions
 from omnibase_core.model.core.model_contract_loader import ModelContractLoader
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.model.core.model_yaml_schema_object import ModelYamlSchemaObject
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class ContractLoader:
@@ -133,15 +132,14 @@ class ContractLoader:
 
         # Load from file with security validation
         try:
+            # Validate YAML content for security
             with open(file_path, encoding="utf-8") as f:
-                # Read file content first for security validation
                 raw_content = f.read()
+            self._validate_yaml_content_security(raw_content, file_path)
 
-                # Validate YAML content for security
-                self._validate_yaml_content_security(raw_content, file_path)
-
-                # Parse with safe_load
-                content = yaml.safe_load(raw_content)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+            content = yaml_model.model_dump()
 
             if content is None:
                 content = {}
@@ -197,7 +195,9 @@ class ContractLoader:
             # Parse tool specification
             tool_spec_data = raw_content.get("tool_specification", {})
             tool_specification = ModelToolSpecification(
-                main_tool_class=str(tool_spec_data.get("main_tool_class", "")),
+                main_tool_class=str(
+                    tool_spec_data.get("main_tool_class", "DefaultToolNode")
+                ),
                 business_logic_pattern=str(
                     tool_spec_data.get("business_logic_pattern", "stateful"),
                 ),
@@ -231,10 +231,18 @@ class ContractLoader:
                         if isinstance(dep_item, dict):
                             dependencies.append(ModelContractDependency(**dep_item))
 
+            # Parse node type (default to COMPUTE if not specified)
+            node_type_str = raw_content.get("node_type", "COMPUTE")
+            if isinstance(node_type_str, str):
+                node_type = EnumNodeType(node_type_str.upper())
+            else:
+                node_type = EnumNodeType.COMPUTE
+
             # Create contract content
             return ModelContractContent(
                 contract_version=contract_version,
                 node_name=str(raw_content.get("node_name", "")),
+                node_type=node_type,
                 tool_specification=tool_specification,
                 input_state=input_state,
                 output_state=output_state,
@@ -386,8 +394,8 @@ class ContractLoader:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Suspicious YAML pattern detected in {file_path}: {pattern}",
-                    source="contract_loader",
-                    metadata={
+                    {
+                        "source": "contract_loader",
                         "pattern": pattern,
                         "file_path": str(file_path),
                     },

@@ -39,9 +39,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.mixin.mixin_debug_discovery_logging import MixinDebugDiscoveryLogging
 from omnibase_core.mixin.mixin_service_registry import MixinServiceRegistry
-from omnibase_core.model.core.model_hub_contract_config import (
-    ModelUnifiedHubContract,
-)
+from omnibase_core.model.core.model_hub_contract_config import ModelUnifiedHubContract
 
 logger = logging.getLogger(__name__)
 

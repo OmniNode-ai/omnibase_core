@@ -12,11 +12,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from .model_graph_edge import GraphEdge
-from .model_graph_node import (
-    GraphNode,
-    ModelFileNode,
-    ModelSymbolNode,
-)
+from .model_graph_node import GraphNode, ModelFileNode, ModelSymbolNode
 
 
 class ModelChangeMetadata(BaseModel):

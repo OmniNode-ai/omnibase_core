@@ -7,7 +7,11 @@ enabling third-party plugins to register their own event types dynamically.
 
 from pathlib import Path
 
-import yaml
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 from .model_event_type import ModelEventType
 
@@ -97,7 +101,11 @@ class EventTypeRegistry:
 
         try:
             with open(contract_file) as f:
-                contract = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract = yaml_model.model_dump()
 
             if not contract:
                 return 0

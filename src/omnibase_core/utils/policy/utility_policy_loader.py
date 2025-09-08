@@ -9,11 +9,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, TypeVar
 
-import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.policy.model_coding_standards_policy import (
     ModelCodingStandardsPolicyWrapper,
 )
@@ -21,6 +21,10 @@ from omnibase_core.model.policy.model_debug_logging_policy import (
     ModelDebugLoggingPolicyWrapper,
 )
 from omnibase_core.model.policy.model_logging_policy import ModelLoggingPolicyWrapper
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -115,7 +119,11 @@ class UtilityPolicyLoader:
             )
 
             with open(policy_path, encoding="utf-8") as f:
-                policy_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                policy_data = yaml_model.model_dump()
 
             if not policy_data:
                 raise OnexError(

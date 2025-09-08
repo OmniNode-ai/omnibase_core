@@ -12,8 +12,8 @@ import pytest
 
 from omnibase_core.core.contracts.enhanced_contract_validator import (
     EnhancedContractValidator,
+    TypeGenerationSpec,
 )
-from omnibase_core.core.models.model_type_generation_spec import TypeGenerationSpec
 
 
 class TestEnhancedContractValidator:
@@ -191,7 +191,7 @@ class TestEnhancedContractValidator:
         spec = TypeGenerationSpec(
             source_path=Path("/test/contract.yaml"),
             target_path=Path("/test/output.py"),
-            type_name="ModelTestNodeInputState",
+            generation_mode="pydantic",
             naming_convention="PascalCase",
         )
 
