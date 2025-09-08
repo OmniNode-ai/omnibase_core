@@ -4,10 +4,13 @@ Common types for ONEX core modules.
 Strong typing patterns for ONEX architecture compliance.
 """
 
-from typing import Any, Dict, Union
+from omnibase_core.model.core.model_scalar_value import ModelScalarValue
+from omnibase_core.model.core.model_state_value import (
+    ModelStateValue as ModelStateValueType,
+)
 
-# Scalar types for message data and metadata
-ScalarValue = Union[str, int, float, bool]
+# Scalar types for message data and metadata - now using Pydantic model
+ScalarValue = ModelScalarValue
 
-# Placeholder for ModelStateValue - adjust based on actual requirements
-ModelStateValue = Union[str, int, float, bool, Dict[str, Any], None]
+# State value type - now using Pydantic model
+ModelStateValue = ModelStateValueType

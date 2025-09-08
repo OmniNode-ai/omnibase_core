@@ -25,6 +25,7 @@ from omnibase_core.core.tool_manifest_discovery import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
+from omnibase_core.protocol.protocol_manifest_runner import ProtocolManifestRunner
 
 # Configuration constants
 DEFAULT_EVENT_BUS_URL = os.getenv("EVENT_BUS_URL", "http://localhost:8083")
@@ -33,7 +34,7 @@ SERVICE_ERROR_EXIT_CODE = 1
 SIGINT_EXIT_CODE = 130
 
 
-class ManifestServiceRunner:
+class ManifestServiceRunner(ProtocolManifestRunner):
     """Service runner that uses tool manifests for discovery and startup."""
 
     def __init__(self, domain: str | None = None, base_path: Path | None = None):

@@ -4,11 +4,13 @@ UUID Service - Centralized UUID generation and validation.
 Provides consistent UUID generation across the ONEX system.
 """
 
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
+from omnibase_core.protocol.protocol_uuid_service import ProtocolUUIDService
 
-class UUIDService:
+
+class UUIDService(ProtocolUUIDService):
     """Centralized UUID generation and validation service."""
 
     @staticmethod
