@@ -293,7 +293,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
         with path.open("r", encoding="utf-8") as f:
             # Load and validate YAML using Pydantic model
 
-            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+            yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
 
             data = yaml_model.model_dump()
 

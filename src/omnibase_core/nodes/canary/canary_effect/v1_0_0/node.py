@@ -448,10 +448,50 @@ class NodeCanaryEffect(NodeEffectService):
         try:
             self.operation_count += 1
 
-            # Parse input
-            input_data = ModelCanaryEffectInput.model_validate(
-                effect_input.operation_data
-            )
+            # Parse input - convert ModelScalarValue objects to primitive types
+            operation_data = {}
+            for key, value in effect_input.operation_data.items():
+                if hasattr(value, "type_hint") and hasattr(
+                    value, "to_string_primitive"
+                ):
+                    # Extract primitive value from ModelScalarValue based on type
+                    type_hint = value.type_hint
+                    if type_hint == "str":
+                        string_value = value.to_string_primitive()
+                        # Special handling for dictionary fields that were stringified
+                        if (
+                            key in ["parameters"]
+                            and string_value.startswith("{")
+                            and string_value.endswith("}")
+                        ):
+                            try:
+                                import json
+
+                                # Try to parse as JSON dict
+                                operation_data[key] = (
+                                    json.loads(string_value.replace("'", '"'))
+                                    if string_value != "{}"
+                                    else {}
+                                )
+                            except (json.JSONDecodeError, ValueError):
+                                # If parsing fails, keep as string
+                                operation_data[key] = string_value
+                        else:
+                            operation_data[key] = string_value
+                    elif type_hint == "int":
+                        operation_data[key] = value.to_int_primitive()
+                    elif type_hint == "float":
+                        operation_data[key] = value.to_float_primitive()
+                    elif type_hint == "bool":
+                        operation_data[key] = value.to_bool_primitive()
+                    else:
+                        # Fallback for unknown type
+                        operation_data[key] = str(value)
+                else:
+                    # Keep as-is if already primitive
+                    operation_data[key] = value
+
+            input_data = ModelCanaryEffectInput.model_validate(operation_data)
             input_data.correlation_id = correlation_id
 
             self.logger.info(
@@ -511,7 +551,7 @@ class NodeCanaryEffect(NodeEffectService):
                 transaction_state=TransactionState.COMMITTED,
                 processing_time_ms=execution_time,
                 metadata={
-                    "node_type": "canary_effect",
+                    "node_type": ModelScalarValue.create_string("canary_effect"),
                 },
             )
 
@@ -521,7 +561,9 @@ class NodeCanaryEffect(NodeEffectService):
 
             # Handle error with secure error handler first
             safe_context = {
-                "operation_type": getattr(input_data, "operation_type", "unknown"),
+                "operation_type": (
+                    input_data.operation_type if "input_data" in locals() else "unknown"
+                ),
                 "effect_type": effect_type.value,
                 "execution_time_ms": execution_time,
                 "error_type": type(e).__name__,
@@ -534,7 +576,11 @@ class NodeCanaryEffect(NodeEffectService):
             self._publish_canary_event(
                 "operation.failure",
                 {
-                    "operation_type": getattr(input_data, "operation_type", "unknown"),
+                    "operation_type": (
+                        input_data.operation_type
+                        if "input_data" in locals()
+                        else "unknown"
+                    ),
                     "effect_type": effect_type.value,
                     "execution_time_ms": execution_time,
                     "error_type": type(e).__name__,
@@ -566,8 +612,8 @@ class NodeCanaryEffect(NodeEffectService):
                 transaction_state=TransactionState.FAILED,
                 processing_time_ms=execution_time,
                 metadata={
-                    "node_type": "canary_effect",
-                    "error": True,
+                    "node_type": ModelScalarValue.create_string("canary_effect"),
+                    "error": ModelScalarValue.create_bool(True),
                 },
             )
 

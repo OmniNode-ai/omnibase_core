@@ -121,7 +121,7 @@ class UtilityPolicyLoader:
             with open(policy_path, encoding="utf-8") as f:
                 # Load and validate YAML using Pydantic model
 
-                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+                yaml_model = load_and_validate_yaml_model(policy_path, ModelGenericYaml)
 
                 policy_data = yaml_model.model_dump()
 

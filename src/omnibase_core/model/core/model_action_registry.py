@@ -103,7 +103,9 @@ class ActionRegistry:
             with open(contract_file) as f:
                 # Load and validate YAML using Pydantic model
 
-                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+                yaml_model = load_and_validate_yaml_model(
+                    contract_file, ModelGenericYaml
+                )
 
                 contract = yaml_model.model_dump()
 

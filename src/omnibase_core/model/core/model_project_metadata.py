@@ -90,7 +90,9 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     with open(PROJECT_ONEX_YAML_PATH) as f:
         # Load and validate YAML using Pydantic model
 
-        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+        yaml_model = load_and_validate_yaml_model(
+            PROJECT_ONEX_YAML_PATH, ModelGenericYaml
+        )
 
         data = yaml_model.model_dump()
     return ModelOnexVersionInfo(
@@ -109,7 +111,9 @@ def get_canonical_namespace_prefix() -> str:
     with open(PROJECT_ONEX_YAML_PATH) as f:
         # Load and validate YAML using Pydantic model
 
-        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+        yaml_model = load_and_validate_yaml_model(
+            PROJECT_ONEX_YAML_PATH, ModelGenericYaml
+        )
 
         data = yaml_model.model_dump()
     return data[NAMESPACE_KEY]

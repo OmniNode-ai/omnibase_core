@@ -89,7 +89,7 @@ class TestCanarySystemIntegration:
         """Test that canary effect node initializes properly."""
         assert effect_node is not None
         assert hasattr(effect_node, "node_id")
-        assert hasattr(effect_node, "config")
+        assert hasattr(effect_node, "config_utils")
         assert effect_node.operation_count == 0
         assert effect_node.success_count == 0
         assert effect_node.error_count == 0
@@ -149,7 +149,7 @@ class TestCanarySystemIntegration:
         assert hasattr(result, "result")
         assert "operation_result" in result.result
         assert hasattr(result, "metadata")
-        assert result.metadata["node_type"] == "canary_effect"
+        assert result.metadata["node_type"].to_string_primitive() == "canary_effect"
 
         # Verify metrics were updated
         assert effect_node.operation_count > 0
@@ -227,7 +227,7 @@ class TestCanarySystemIntegration:
         # Should have error information
         assert result_data["success"] is False
         assert "error_message" in result_data
-        assert result.metadata.get("error") is True
+        assert result.metadata.get("error").to_bool_primitive() is True
 
         # Verify error metrics were updated
         assert effect_node.error_count > 0
@@ -274,19 +274,29 @@ class TestCanarySystemIntegration:
 
     def test_node_configuration_loading(self, effect_node):
         """Test that node configuration is loaded properly."""
-        assert hasattr(effect_node, "config")
-        config = effect_node.config
+        assert hasattr(effect_node, "config_utils")
+        config_utils = effect_node.config_utils
 
-        # Verify config has expected structure
-        assert hasattr(config, "performance")
-        assert hasattr(config.performance, "min_operations_for_health")
-        assert hasattr(config.performance, "error_rate_threshold")
+        # Verify config utils has expected methods
+        assert hasattr(config_utils, "get_performance_config")
+
+        # These should be actual config values, not defaults
+        # If this fails, it means configuration loading is broken
+        min_ops = config_utils.get_performance_config("min_operations_for_health")
+        error_threshold = config_utils.get_performance_config("error_rate_threshold")
+
+        # Verify actual config values are loaded
+        assert min_ops is not None, "min_operations_for_health config not loaded"
+        assert error_threshold is not None, "error_rate_threshold config not loaded"
 
     @pytest.mark.asyncio
     async def test_health_status_degradation(self, effect_node):
         """Test that health status degrades with high error rates."""
         # Force enough operations to trigger health evaluation
-        min_ops = effect_node.config.performance.min_operations_for_health + 1
+        min_ops = (
+            effect_node.config_utils.get_performance_config("min_operations_for_health")
+            + 1
+        )
 
         # Perform mostly error operations
         for i in range(min_ops):
@@ -306,7 +316,9 @@ class TestCanarySystemIntegration:
 
         # With high error rate, should be degraded
         error_rate = effect_node.error_count / effect_node.operation_count
-        threshold = effect_node.config.performance.error_rate_threshold
+        threshold = effect_node.config_utils.get_performance_config(
+            "error_rate_threshold"
+        )
 
         if error_rate > threshold:
             assert health_status.status == EnumHealthStatus.DEGRADED
