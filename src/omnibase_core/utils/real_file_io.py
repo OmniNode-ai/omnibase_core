@@ -26,23 +26,33 @@ import builtins
 import json
 from pathlib import Path
 
-import yaml
-
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.protocol.protocol_file_io import ProtocolFileIO
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 class RealFileIO(ProtocolFileIO):
     def read_yaml(self, path: str | Path) -> object:
         with builtins.open(path) as f:
-            return yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+            return yaml_model.model_dump()
 
     def read_json(self, path: str | Path) -> object:
         with builtins.open(path) as f:
             return json.load(f)
 
     def write_yaml(self, path: str | Path, data: object) -> None:
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        yaml_content = serialize_data_to_yaml(data)
         with builtins.open(path, "w") as f:
-            yaml.safe_dump(data, f)
+            f.write(yaml_content)
 
     def write_json(self, path: str | Path, data: object) -> None:
         with builtins.open(path, "w") as f:

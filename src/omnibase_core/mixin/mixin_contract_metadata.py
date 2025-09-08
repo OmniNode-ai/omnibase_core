@@ -7,14 +7,17 @@ Eliminates boilerplate code for reading node.onex.yaml and tool contracts.
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.constants import constants_contract_fields as cf
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_node_metadata import ModelNodeMetadata
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 class MixinContractMetadata:
@@ -127,7 +130,11 @@ class MixinContractMetadata:
         """Load node.onex.yaml metadata."""
         try:
             with open(path) as f:
-                data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                data = yaml_model.model_dump()
 
             # Create ModelNodeMetadata instance
             self._node_metadata = ModelNodeMetadata(**data)
@@ -155,7 +162,11 @@ class MixinContractMetadata:
         """Load tool contract YAML."""
         try:
             with open(path) as f:
-                self._contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                self._contract_data = yaml_model.model_dump()
 
             # Extract key fields
             if self._contract_data:

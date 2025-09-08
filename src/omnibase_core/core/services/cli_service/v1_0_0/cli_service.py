@@ -40,6 +40,11 @@ from omnibase_core.core.services.cli_service.v1_0_0.models.model_cli_result impo
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.metadata.metadata_constants import (
+    METADATA_ERROR_KEY,
+    TOOL_METADATA_KEY,
+    VERSION_KEY,
+)
 
 
 class ProtocolTool(Protocol):
@@ -611,10 +616,22 @@ class CliService:
             # Try to read contract for additional CLI info
             if contract_path and contract_path.exists():
                 try:
-                    import yaml
+                    from omnibase_core.model.core.model_generic_yaml import (
+                        ModelGenericYaml,
+                    )
+                    from omnibase_core.utils.safe_yaml_loader import (
+                        load_and_validate_yaml_model,
+                        load_yaml_content_as_model,
+                    )
 
                     with open(contract_path) as f:
-                        contract_data = yaml.safe_load(f)
+                        # Load and validate YAML using Pydantic model
+
+                        yaml_model = load_and_validate_yaml_model(
+                            file_path, ModelGenericYaml
+                        )
+
+                        contract_data = yaml_model.model_dump()
 
                     if "cli_interface" in contract_data:
                         cli_interface = contract_data["cli_interface"]
@@ -838,18 +855,20 @@ class CliService:
 
         # Try to get version information
         if hasattr(tool_instance, "version"):
-            introspection_data["version"] = str(tool_instance.version)
+            introspection_data[VERSION_KEY] = str(tool_instance.version)
         elif hasattr(tool_instance, "get_version"):
             try:
-                introspection_data["version"] = str(tool_instance.get_version())
+                introspection_data[VERSION_KEY] = str(tool_instance.get_version())
             except Exception:
-                introspection_data["version"] = "unknown"
+                introspection_data[VERSION_KEY] = "unknown"
 
         # Try to get additional tool metadata
         if hasattr(tool_instance, "get_tool_metadata"):
             try:
-                introspection_data["tool_metadata"] = tool_instance.get_tool_metadata()
+                introspection_data[TOOL_METADATA_KEY] = (
+                    tool_instance.get_tool_metadata()
+                )
             except Exception as e:
-                introspection_data["metadata_error"] = str(e)
+                introspection_data[METADATA_ERROR_KEY] = str(e)
 
         return introspection_data

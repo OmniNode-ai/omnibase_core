@@ -11,8 +11,6 @@ Author: ONEX Framework Team
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
@@ -23,9 +21,11 @@ from omnibase_core.model.core.model_contract_cache import ModelContractCache
 from omnibase_core.model.core.model_contract_content import ModelContractContent
 from omnibase_core.model.core.model_contract_definitions import ModelContractDefinitions
 from omnibase_core.model.core.model_contract_loader import ModelContractLoader
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_semver import ModelSemVer
 from omnibase_core.model.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.model.core.model_yaml_schema_object import ModelYamlSchemaObject
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class ContractLoader:
@@ -132,15 +132,14 @@ class ContractLoader:
 
         # Load from file with security validation
         try:
+            # Validate YAML content for security
             with open(file_path, encoding="utf-8") as f:
-                # Read file content first for security validation
                 raw_content = f.read()
+            self._validate_yaml_content_security(raw_content, file_path)
 
-                # Validate YAML content for security
-                self._validate_yaml_content_security(raw_content, file_path)
-
-                # Parse with safe_load
-                content = yaml.safe_load(raw_content)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+            content = yaml_model.model_dump()
 
             if content is None:
                 content = {}

@@ -13,7 +13,6 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel
 
 from omnibase_core.core.model_contract_base import ModelContractBase
@@ -26,6 +25,11 @@ from omnibase_core.core.model_contract_reducer import ModelContractReducer
 
 # Import for node type validation
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 class ContractValidator:
@@ -283,7 +287,11 @@ class ContractValidator:
         try:
             # Load the contract YAML
             with open(contract_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract_data = yaml_model.model_dump()
 
             if not contract_data:
                 return {
@@ -993,10 +1001,18 @@ def main():
             return
 
         # Load the contract YAML
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            load_yaml_content_as_model,
+        )
 
         with open(aggregator_path) as f:
-            contract_data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+            contract_data = yaml_model.model_dump()
 
         # Try to create the model
         try:

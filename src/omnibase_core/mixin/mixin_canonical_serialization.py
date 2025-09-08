@@ -24,8 +24,6 @@
 
 from typing import TYPE_CHECKING, Union
 
-import yaml
-
 from omnibase_core.enums import NodeMetadataField
 from omnibase_core.model.core.model_project_metadata import get_canonical_versions
 from omnibase_core.protocol.protocol_canonical_serializer import (
@@ -250,7 +248,11 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             filtered_dict[k] = v
         # PATCH: Remove all None values before YAML dump
         filtered_dict = {k: v for k, v in filtered_dict.items() if v is not None}
-        yaml_str = yaml.dump(
+
+        # Use centralized YAML dumping for security and consistency
+        from omnibase_core.utils.safe_yaml_loader import _dump_yaml_content
+
+        yaml_str = _dump_yaml_content(
             filtered_dict,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
@@ -261,10 +263,6 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             width=120,
         )
         # --- PATCH END ---
-        yaml_str = yaml_str.replace("\xa0", " ")
-        yaml_str = yaml_str.replace("\r\n", "\n").replace("\r", "\n")
-        assert "\r" not in yaml_str, "Carriage return found in canonical YAML string"
-        yaml_str.encode("utf-8")  # Explicitly check UTF-8 encoding
         if comment_prefix:
             yaml_str = "\n".join(
                 f"{comment_prefix}{line}" if line.strip() else ""

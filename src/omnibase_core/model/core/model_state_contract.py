@@ -38,6 +38,11 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
+from omnibase_core.metadata.metadata_constants import (
+    CONTRACT_SCHEMA_VERSION_KEY,
+    CONTRACT_VERSION_KEY,
+    NODE_VERSION_KEY,
+)
 from omnibase_core.model.core.model_examples import ModelExamples
 
 from .model_error_state import ModelErrorState
@@ -236,15 +241,15 @@ class ModelStateContract(BaseModel):
         """
         try:
             # Handle legacy field names
-            if "contract_schema_version" in data:
-                data["contract_version"] = data.pop("contract_schema_version")
+            if CONTRACT_SCHEMA_VERSION_KEY in data:
+                data[CONTRACT_VERSION_KEY] = data.pop(CONTRACT_SCHEMA_VERSION_KEY)
 
             # Ensure required fields have defaults if missing
-            if "contract_version" not in data:
-                data["contract_version"] = STATE_CONTRACT_SCHEMA_VERSION
+            if CONTRACT_VERSION_KEY not in data:
+                data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
 
-            if "node_version" not in data:
-                data["node_version"] = "1.0.0"
+            if NODE_VERSION_KEY not in data:
+                data[NODE_VERSION_KEY] = "1.0.0"
 
             return cls(**data)
 
@@ -271,7 +276,11 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
     """
     from pathlib import Path
 
-    import yaml
+    from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+    from omnibase_core.utils.safe_yaml_loader import (
+        load_and_validate_yaml_model,
+        load_yaml_content_as_model,
+    )
 
     try:
         path = Path(file_path)
@@ -282,7 +291,11 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
             )
 
         with path.open("r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+            data = yaml_model.model_dump()
 
         if not data:
             raise OnexError(

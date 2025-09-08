@@ -197,9 +197,17 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         content = path.read_text()
 
         if path.suffix in [".yaml", ".yml"]:
-            import yaml
+            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.utils.safe_yaml_loader import (
+                load_and_validate_yaml_model,
+                load_yaml_content_as_model,
+            )
 
-            data = yaml.safe_load(content)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
+
+            data = yaml_model.model_dump()
         else:
             data = json.loads(content)
 
@@ -225,9 +233,14 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         # Format as requested
         if format == "yaml":
-            import yaml
+            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.utils.safe_yaml_loader import (
+                load_and_validate_yaml_model,
+                load_yaml_content_as_model,
+                serialize_data_to_yaml,
+            )
 
-            return yaml.dump(output_dict, default_flow_style=False)
+            return serialize_data_to_yaml(output_dict, default_flow_style=False)
         return json.dumps(output_dict, indent=2)
 
     def main(self, argv: list[str] | None = None) -> int:

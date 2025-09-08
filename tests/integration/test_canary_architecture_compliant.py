@@ -19,11 +19,32 @@ from typing import Any
 
 import pytest
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.core.node_loader import NodeLoader
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
+
+
+def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
+    """Convert a dictionary of primitive values to ModelScalarValue objects."""
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif isinstance(value, dict):
+            # For nested dictionaries, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+        else:
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class TestCanaryArchitectureCompliant:
@@ -168,11 +189,13 @@ class TestCanaryArchitectureCompliant:
             # Test health check operation
             effect_input = ModelEffectInput(
                 effect_type=EffectType.API_CALL,
-                operation_data={
-                    "operation_type": "health_check",
-                    "parameters": {},
-                    "correlation_id": str(uuid.uuid4()),
-                },
+                operation_data=_convert_to_scalar_dict(
+                    {
+                        "operation_type": "health_check",
+                        "parameters": {},
+                        "correlation_id": str(uuid.uuid4()),
+                    }
+                ),
             )
 
             result = await effect_node.perform_effect(effect_input, EffectType.API_CALL)

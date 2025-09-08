@@ -7,14 +7,18 @@ This replaces hardcoded command enums with flexible, contract-driven command dis
 
 from pathlib import Path
 
-import yaml
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
 from omnibase_core.model.core.model_event_type import ModelEventType
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_node_reference import ModelNodeReference
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 class ModelCliCommandRegistry(BaseModel):
@@ -144,7 +148,11 @@ class ModelCliCommandRegistry(BaseModel):
         """Discover commands from a single contract file."""
         try:
             with open(contract_path) as f:
-                contract_data = yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                contract_data = yaml_model.model_dump()
 
             commands_discovered = 0
 

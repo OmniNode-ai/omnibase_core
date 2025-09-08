@@ -8,12 +8,32 @@ Provides proper file resolution and YAML parsing.
 from pathlib import Path
 from typing import Any
 
-import yaml
+from pydantic import BaseModel, Field
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+
+
+class ModelJsonSchema(BaseModel):
+    """Pydantic model for JSON Schema validation."""
+
+    type: str = Field(
+        default="object", description="Schema type (object, string, etc.)"
+    )
+    properties: dict[str, Any] = Field(
+        default_factory=dict, description="Schema properties"
+    )
+    required: list[str] = Field(default_factory=list, description="Required fields")
+    definitions: dict[str, Any] = Field(
+        default_factory=dict, description="Schema definitions"
+    )
+    description: str = Field(default="", description="Schema description")
+    title: str = Field(default="", description="Schema title")
+    # Allow additional fields for full JSON Schema compatibility
+    model_config = {"extra": "allow"}
 
 
 class UtilitySchemaLoader:
@@ -89,13 +109,9 @@ class UtilitySchemaLoader:
                 msg = f"Schema file not found: {full_path}"
                 raise FileNotFoundError(msg)
 
-            # Load and parse YAML
-            with open(full_path, encoding="utf-8") as f:
-                schema_data = yaml.safe_load(f)
-
-            if not isinstance(schema_data, dict):
-                msg = f"Schema file must contain a YAML object: {full_path}"
-                raise ValueError(msg)
+            # Load and validate YAML using Pydantic model
+            validated_schema = load_and_validate_yaml_model(full_path, ModelJsonSchema)
+            schema_data = validated_schema.model_dump()
 
             # Cache the loaded schema
             self._schema_cache[cache_key] = schema_data
@@ -121,7 +137,7 @@ class UtilitySchemaLoader:
             )
             raise
 
-        except yaml.YAMLError as e:
+        except ValueError as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Invalid YAML in schema file: {schema_path}",

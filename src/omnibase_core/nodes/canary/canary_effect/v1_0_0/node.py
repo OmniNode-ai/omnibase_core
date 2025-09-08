@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import (
     EffectType,
     ModelEffectInput,
@@ -27,6 +28,28 @@ from omnibase_core.nodes.canary.utils.circuit_breaker import (
 )
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
+
+
+def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
+    """Convert a dictionary of primitive values to ModelScalarValue objects."""
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif isinstance(value, dict):
+            # For nested dictionaries, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+        elif value is None:
+            converted[key] = ModelScalarValue.create_string("null")
+        else:
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class ModelCanaryEffectInput(BaseModel):
@@ -225,12 +248,14 @@ class NodeCanaryEffect(NodeEffectService):
             # Create effect input for async execution
             effect_input = ModelEffectInput(
                 effect_type=EffectType.API_CALL,
-                operation_data={
-                    "operation_type": operation_type,
-                    "parameters": effect_data.get("parameters", {}),
-                    "target_system": effect_data.get("target_system"),
-                    "correlation_id": correlation_id,
-                },
+                operation_data=_convert_to_scalar_dict(
+                    {
+                        "operation_type": operation_type,
+                        "parameters": effect_data.get("parameters", {}),
+                        "target_system": effect_data.get("target_system"),
+                        "correlation_id": correlation_id,
+                    }
+                ),
             )
 
             # Schedule async effect execution (fire-and-forget pattern)

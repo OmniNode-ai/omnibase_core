@@ -317,13 +317,21 @@ class ModelUnifiedHubContract(BaseModel):
         Returns:
             ModelUnifiedHubContract instance
         """
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            load_yaml_content_as_model,
+        )
 
         if not contract_path.exists():
             msg = f"Contract file not found: {contract_path}"
             raise FileNotFoundError(msg)
 
         with open(contract_path) as f:
-            contract_data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+            contract_data = yaml_model.model_dump()
 
         return cls.from_dict(contract_data)

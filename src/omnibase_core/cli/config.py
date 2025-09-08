@@ -152,10 +152,15 @@ class ModelCLIConfig(BaseModel):
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            load_yaml_content_as_model,
+        )
 
-        with open(config_path) as f:
-            data = yaml.safe_load(f)
+        # Load and validate YAML using Pydantic model
+        yaml_model = load_and_validate_yaml_model(config_path, ModelGenericYaml)
+        data = yaml_model.model_dump()
 
         return cls(**data)
 
@@ -163,10 +168,22 @@ class ModelCLIConfig(BaseModel):
         """Save configuration to file."""
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        import yaml
+        from omnibase_core.utils.safe_yaml_loader import (
+            serialize_pydantic_model_to_yaml,
+        )
 
-        with open(config_path, "w") as f:
-            yaml.dump(self.dict(), f, default_flow_style=False, sort_keys=False)
+        try:
+            yaml_output = serialize_pydantic_model_to_yaml(
+                self, default_flow_style=False, sort_keys=False
+            )
+            with open(config_path, "w") as f:
+                f.write(yaml_output)
+        except Exception as e:
+            # Fallback to JSON if YAML fails
+            import json
+
+            with open(config_path.with_suffix(".json"), "w") as f:
+                json.dump(self.model_dump(), f, indent=2, default=str)
 
     @classmethod
     def get_default_config_path(cls) -> Path:

@@ -13,20 +13,33 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 import yaml
+from pydantic import BaseModel, Field
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+from omnibase_core.core.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeReducerService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.model.core.model_tool_manifest import ModelToolManifest
 from omnibase_core.model.registry.model_registry_event import (
     ModelRegistryRequestEvent,
     ModelRegistryResponseEvent,
     RegistryOperations,
     get_operation_for_endpoint,
 )
+from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+
+
+class ModelComponentMetadata(BaseModel):
+    """Metadata for specialized infrastructure components."""
+
+    instance: object = Field(..., description="Component instance")
+    component_type: str = Field(..., description="Component type identifier")
+    readiness_check: str = Field(..., description="Readiness check method name")
+    description: str = Field("", description="Component description")
 
 
 class ToolInfrastructureReducer(NodeReducerService):
@@ -48,7 +61,7 @@ class ToolInfrastructureReducer(NodeReducerService):
 
         # Infrastructure-specific attributes
         self.loaded_adapters = {}
-        self.specialized_components = {}
+        self.specialized_components: dict[str, ModelComponentMetadata] = {}
         self._pending_registry_requests: dict[str, asyncio.Future] = {}
         self._event_bus_active = False
 
@@ -376,8 +389,11 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             # Get adapter configuration from contract
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
-            with open(contract_path) as f:
-                contract = yaml.safe_load(f)
+            # Load and validate contract using utility function
+            validated_contract = load_and_validate_yaml_model(
+                contract_path, ModelContractReducer
+            )
+            contract = validated_contract.model_dump()
 
             loaded_adapters_config = contract.get("infrastructure_services", {}).get(
                 "loaded_adapters",
@@ -450,9 +466,11 @@ class ToolInfrastructureReducer(NodeReducerService):
             infrastructure_root / adapter_name_part / "tool.manifest.yaml"
         )
 
-        # Load metadata
-        with open(metadata_file_path) as f:
-            metadata = yaml.safe_load(f)
+        # Load and validate metadata using utility function
+        validated_metadata = load_and_validate_yaml_model(
+            metadata_file_path, ModelToolManifest
+        )
+        metadata = validated_metadata.model_dump()
 
         # Resolve version using strategy
         version_info = metadata["x_extensions"]["version_management"]
@@ -492,8 +510,11 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             # Get specialized components configuration from contract
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
-            with open(contract_path) as f:
-                contract = yaml.safe_load(f)
+            # Load and validate contract using utility function
+            validated_contract = load_and_validate_yaml_model(
+                contract_path, ModelContractReducer
+            )
+            contract = validated_contract.model_dump()
 
             specialized_components_config = contract.get(
                 "infrastructure_services",
@@ -521,13 +542,15 @@ class ToolInfrastructureReducer(NodeReducerService):
                         version_strategy,
                     )
 
-                    # Store component with metadata
-                    self.specialized_components[component_name] = {
-                        "instance": component_instance,
-                        "component_type": component_type,
-                        "readiness_check": readiness_check,
-                        "description": component_config.get("description", ""),
-                    }
+                    # Store component with metadata using Pydantic model
+                    self.specialized_components[component_name] = (
+                        ModelComponentMetadata(
+                            instance=component_instance,
+                            component_type=component_type,
+                            readiness_check=readiness_check,
+                            description=component_config.get("description", ""),
+                        )
+                    )
 
                     if hasattr(self, "logger") and self.logger:
                         self.logger.info(
@@ -749,9 +772,9 @@ class ToolInfrastructureReducer(NodeReducerService):
             },
             "specialized_components": {
                 name: {
-                    "component_type": comp["component_type"],
-                    "readiness_check": comp["readiness_check"],
-                    "description": comp["description"],
+                    "component_type": comp.component_type,
+                    "readiness_check": comp.readiness_check,
+                    "description": comp.description,
                 }
                 for name, comp in self.specialized_components.items()
             },
@@ -775,11 +798,11 @@ class ToolInfrastructureReducer(NodeReducerService):
             },
             "specialized_components": {
                 name: {
-                    "type": comp["component_type"],
-                    "readiness_check": comp["readiness_check"],
-                    "description": comp["description"],
-                    "class_name": comp["instance"].__class__.__name__,
-                    "module": comp["instance"].__class__.__module__,
+                    "type": comp.component_type,
+                    "readiness_check": comp.readiness_check,
+                    "description": comp.description,
+                    "class_name": comp.instance.__class__.__name__,
+                    "module": comp.instance.__class__.__module__,
                 }
                 for name, comp in self.specialized_components.items()
             },

@@ -6,7 +6,6 @@ import enum
 from pathlib import Path
 from typing import Annotated, ClassVar, Optional
 
-import yaml
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import Lifecycle, MetaTypeEnum
@@ -20,11 +19,16 @@ from omnibase_core.model.core.model_canonicalization_policy import (
 from omnibase_core.model.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.model.core.model_entrypoint import EntrypointBlock
 from omnibase_core.model.core.model_function_tool import ModelFunctionTool
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_io_block import ModelIOBlock
 from omnibase_core.model.core.model_project_metadata import get_canonical_versions
 from omnibase_core.model.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.model.core.model_tool_collection import ModelToolCollection
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
@@ -184,7 +188,11 @@ class ModelNodeMetadataBlock(BaseModel):
         event_bus=None,
     ) -> "ModelNodeMetadataBlock":
         block_yaml = already_extracted_block or content
-        data = yaml.safe_load(block_yaml)
+        # Load and validate YAML using Pydantic model
+
+        yaml_model = load_yaml_content_as_model(block_yaml, ModelGenericYaml)
+
+        data = yaml_model.model_dump()
         return cls(**data)
 
     @classmethod
@@ -475,9 +483,5 @@ def strip_volatile_fields_from_dict(d: dict) -> dict:
 
 
 # --- EntrypointBlock YAML representer registration ---
-def _entrypointblock_yaml_representer(dumper, data):
-    # Always serialize EntrypointBlock as a URI string
-    return dumper.represent_scalar("tag:yaml.org,2002:str", data.to_uri())
-
-
-yaml.add_representer(EntrypointBlock, _entrypointblock_yaml_representer)
+# Note: YAML serialization now handled by Pydantic models and safe_yaml_loader
+# Direct yaml.add_representer usage violates ONEX security patterns

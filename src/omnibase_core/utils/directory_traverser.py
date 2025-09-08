@@ -425,7 +425,8 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         Returns:
             List of ignore patterns as strings, with child directory patterns taking precedence.
         """
-        import yaml
+        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
         patterns = []
         if ignore_file is None:
@@ -438,8 +439,11 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             onexignore = d / ".onexignore"
             if onexignore.exists():
                 try:
-                    with onexignore.open("r", encoding="utf-8") as f:
-                        data = yaml.safe_load(f)
+                    # Load and validate YAML using Pydantic model
+                    yaml_model = load_and_validate_yaml_model(
+                        onexignore, ModelGenericYaml
+                    )
+                    data = yaml_model.model_dump()
                     if data:
                         if "all" in data and data["all"] and "patterns" in data["all"]:
                             patterns.extend(data["all"]["patterns"])

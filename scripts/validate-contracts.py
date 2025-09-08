@@ -19,10 +19,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union, get_args, get_origin, get_type_hints
 
-import yaml
-
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 @dataclass
@@ -187,8 +188,9 @@ class ContractValidator:
                     name, "yaml_contract", False, errors, warnings
                 )
 
-            with open(yaml_path, "r", encoding="utf-8") as f:
-                yaml_data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(yaml_path, ModelGenericYaml)
+            yaml_data = yaml_model.model_dump()
 
             if not yaml_data:
                 errors.append("YAML file is empty or invalid")

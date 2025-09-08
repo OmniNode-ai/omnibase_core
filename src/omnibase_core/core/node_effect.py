@@ -40,10 +40,46 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
 
 # Import utilities for contract loading
 
 T = TypeVar("T")
+
+
+def _convert_to_scalar_dict(data: Dict[str, Any]) -> Dict[str, ModelScalarValue]:
+    """
+    Convert a dictionary of primitive values to ModelScalarValue objects.
+
+    This utility function ensures type safety by converting primitive Python values
+    to strongly-typed ModelScalarValue objects as required by the ONEX architecture.
+
+    Args:
+        data: Dictionary containing primitive values (str, int, float, bool)
+
+    Returns:
+        Dict[str, ModelScalarValue]: Dictionary with ModelScalarValue objects
+
+    Raises:
+        ValueError: If a value cannot be converted to ModelScalarValue
+    """
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif value is None:
+            # Handle None by creating a string representation
+            converted[key] = ModelScalarValue.create_string("null")
+        else:
+            # For complex types, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class EffectType(Enum):
@@ -342,8 +378,11 @@ class NodeEffect(NodeCoreBase):
             file_reader = UtilityFileSystemReader()
             reference_resolver = UtilityReferenceResolver()
 
-            contract_content = file_reader.read_text(contract_path)
-            contract_data = yaml.safe_load(contract_content)
+            # Load and validate contract using utility function
+            validated_contract = load_and_validate_yaml_model(
+                contract_path, ModelContractEffect
+            )
+            contract_data = validated_contract.model_dump()
 
             # Resolve any $ref references in the contract
             resolved_contract = self._resolve_contract_references(
@@ -711,12 +750,14 @@ class NodeEffect(NodeCoreBase):
         """
         effect_input = ModelEffectInput(
             effect_type=EffectType.FILE_OPERATION,
-            operation_data={
-                "operation_type": operation_type,
-                "file_path": str(file_path),
-                "data": data,
-                "atomic": atomic,
-            },
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "operation_type": operation_type,
+                    "file_path": str(file_path),
+                    "data": data,
+                    "atomic": atomic,
+                }
+            ),
             transaction_enabled=atomic,
             retry_enabled=True,
             max_retries=3,
@@ -747,11 +788,13 @@ class NodeEffect(NodeCoreBase):
         """
         effect_input = ModelEffectInput(
             effect_type=EffectType.EVENT_EMISSION,
-            operation_data={
-                "event_type": event_type,
-                "payload": payload,
-                "correlation_id": str(correlation_id) if correlation_id else None,
-            },
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "event_type": event_type,
+                    "payload": payload,
+                    "correlation_id": str(correlation_id) if correlation_id else None,
+                }
+            ),
             transaction_enabled=False,  # Events don't need transactions
             retry_enabled=True,
             max_retries=2,
@@ -1337,7 +1380,7 @@ class NodeEffect(NodeCoreBase):
             # Check if basic effect handling works
             test_input = ModelEffectInput(
                 effect_type=EffectType.METRICS_COLLECTION,
-                operation_data={"test": True},
+                operation_data=_convert_to_scalar_dict({"test": True}),
                 transaction_enabled=False,
                 retry_enabled=False,
             )

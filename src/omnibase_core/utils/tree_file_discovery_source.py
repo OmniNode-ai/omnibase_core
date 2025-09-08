@@ -29,9 +29,8 @@ Implements ProtocolFileDiscoverySource.
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_onex_message_result import ModelOnexMessage
 from omnibase_core.model.core.model_tree_sync_result import (
     ModelTreeSyncResult,
@@ -39,6 +38,10 @@ from omnibase_core.model.core.model_tree_sync_result import (
 )
 from omnibase_core.protocol.protocol_file_discovery_source import (
     ProtocolFileDiscoverySource,
+)
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
 )
 
 
@@ -122,7 +125,11 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
         if not tree_file.exists():
             return set()
         with open(tree_file) as f:
-            data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+
+            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+            data = yaml_model.model_dump()
         return set(self._extract_files_from_tree_data(tree_file.parent, data))
 
     def _extract_files_from_tree_data(self, base_dir: Path, data: object) -> list[Path]:

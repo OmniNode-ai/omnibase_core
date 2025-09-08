@@ -90,9 +90,11 @@ class TreeBasicCase:
                 {"type": "file", "name": "b.json"},
             ],
         }
-        import yaml
+        # yaml import removed - using centralized YAML operations
 
-        (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        (tmp_path / ".tree").write_text(serialize_data_to_yaml(tree_data))
         return tmp_path
 
     def expected(self, tmp_path: Path) -> set[Path]:
@@ -123,9 +125,11 @@ class HybridWarnDriftCase:
                 {"type": "file", "name": "b.json"},
             ],
         }
-        import yaml
+        # yaml import removed - using centralized YAML operations
 
-        (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        (tmp_path / ".tree").write_text(serialize_data_to_yaml(tree_data))
         return tmp_path
 
     def expected(self, tmp_path: Path) -> set[Path]:
@@ -157,9 +161,11 @@ class HybridStrictDriftCase:
                 {"type": "file", "name": "b.json"},
             ],
         }
-        import yaml
+        # yaml import removed - using centralized YAML operations
 
-        (tmp_path / ".tree").write_text(yaml.safe_dump(tree_data))
+        from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
+
+        (tmp_path / ".tree").write_text(serialize_data_to_yaml(tree_data))
         return tmp_path
 
     def expected(self, tmp_path: Path) -> set[Path]:

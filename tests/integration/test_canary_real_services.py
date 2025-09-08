@@ -17,11 +17,32 @@ from datetime import datetime
 
 import pytest
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
 from omnibase_core.nodes.canary.container import create_infrastructure_container
+
+
+def _convert_to_scalar_dict(data: dict[str, any]) -> dict[str, ModelScalarValue]:
+    """Convert a dictionary of primitive values to ModelScalarValue objects."""
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif isinstance(value, dict):
+            # For nested dictionaries, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+        else:
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class TestCanaryRealServices:
@@ -174,14 +195,16 @@ class TestCanaryRealServices:
         # Test operation that uses real services
         effect_input = ModelEffectInput(
             effect_type=EffectType.API_CALL,
-            operation_data={
-                "operation_type": "service_registration_test",
-                "parameters": {
-                    "service_name": f"canary_effect_{uuid.uuid4().hex[:8]}",
-                    "use_real_services": True,
-                },
-                "correlation_id": str(uuid.uuid4()),
-            },
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "operation_type": "service_registration_test",
+                    "parameters": {
+                        "service_name": f"canary_effect_{uuid.uuid4().hex[:8]}",
+                        "use_real_services": True,
+                    },
+                    "correlation_id": str(uuid.uuid4()),
+                }
+            ),
         )
 
         # This should register with real Consul and log to real PostgreSQL
@@ -261,15 +284,17 @@ class TestCanaryRealServices:
         # Step 1: Register canary service in real Consul
         registration_input = ModelEffectInput(
             effect_type=EffectType.API_CALL,
-            operation_data={
-                "operation_type": "service_registration",
-                "parameters": {
-                    "service_name": f"canary_workflow_{workflow_id[:8]}",
-                    "port": 8080,
-                    "health_endpoint": "/health",
-                },
-                "correlation_id": workflow_id,
-            },
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "operation_type": "service_registration",
+                    "parameters": {
+                        "service_name": f"canary_workflow_{workflow_id[:8]}",
+                        "port": 8080,
+                        "health_endpoint": "/health",
+                    },
+                    "correlation_id": workflow_id,
+                }
+            ),
         )
 
         registration_result = await effect_node.perform_effect(
@@ -280,15 +305,15 @@ class TestCanaryRealServices:
         # Step 2: Log workflow start in real PostgreSQL
         logging_input = ModelEffectInput(
             effect_type=EffectType.DATABASE_OPERATION,
-            operation_data={
-                "operation_type": "workflow_logging",
-                "parameters": {
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "operation_type": "workflow_logging",
                     "workflow_id": workflow_id,
                     "phase": "start",
                     "status": "initiated",
-                },
-                "correlation_id": workflow_id,
-            },
+                    "correlation_id": workflow_id,
+                }
+            ),
         )
 
         logging_result = await effect_node.perform_effect(

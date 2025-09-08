@@ -68,9 +68,9 @@ def test_canary_contract_deserialization():
                 continue
 
             with open(yaml_path, "r") as f:
-                yaml_data = yaml.safe_load(f)
+                yaml_content = f.read()
 
-            print(f"   ✅ YAML loaded successfully")
+            print(f"   ✅ YAML file read successfully")
 
             # Import the model class using static imports for security
             try:
@@ -128,9 +128,19 @@ def test_canary_contract_deserialization():
                 results.append((contract["name"], False, f"Model import failed: {e}"))
                 continue
 
-            # Try to deserialize YAML to Pydantic model
+            # Try to deserialize YAML to Pydantic model using from_yaml method
             try:
-                model_instance = model_class.model_validate(yaml_data)
+                if hasattr(model_class, "from_yaml"):
+                    model_instance = model_class.from_yaml(yaml_content)
+                else:
+                    # Fallback: use ModelGenericYaml first, then model_validate
+                    from omnibase_core.model.core.model_generic_yaml import (
+                        ModelGenericYaml,
+                    )
+
+                    generic_model = ModelGenericYaml.from_yaml(yaml_content)
+                    yaml_data = generic_model.model_dump()
+                    model_instance = model_class.model_validate(yaml_data)
                 print(f"   ✅ YAML → Model deserialization SUCCESS!")
 
                 # Test serialization back

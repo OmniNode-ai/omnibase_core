@@ -10,8 +10,6 @@ state transition capability directly to nodes.
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -24,6 +22,7 @@ from omnibase_core.model.core.model_state_transition import (
     EnumTransitionType,
     ModelStateTransition,
 )
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class MixinContractStateReducer:
@@ -88,20 +87,14 @@ class MixinContractStateReducer:
                 self._transitions_loaded = True
                 return []
 
-            # Load and validate contract using Pydantic model approach
-            # Note: Using safe_load temporarily for contract parsing - transitions only
-            with open(transitions_path) as f:
-                # Load YAML content for contract validation
-                file_content = f.read()
-                raw_data = yaml.load(
-                    file_content, Loader=yaml.SafeLoader
-                )  # Avoid direct safe_load
-
-            # Validate using ModelGenericContract for structure validation
-            contract = ModelGenericContract.model_validate(raw_data)
+            # Load and validate contract using safe YAML loader
+            contract = load_and_validate_yaml_model(
+                transitions_path, ModelGenericContract
+            )
 
             # Extract state_transitions section
-            transitions_data = raw_data.get("state_transitions", [])
+            contract_dict = contract.model_dump()
+            transitions_data = contract_dict.get("state_transitions", [])
 
             # Convert to ModelStateTransition objects
             transitions = []

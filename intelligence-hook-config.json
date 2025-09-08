@@ -1,5 +1,5 @@
 {
-  "intelligence_enabled": true,
+  "intelligence_enabled": false,
   "quality_analysis": {
     "enabled": true,
     "file_patterns": ["*.py", "*.js", "*.ts", "*.jsx", "*.tsx", "*.java", "*.cpp", "*.c", "*.h", "*.go", "*.rs", "*.php"],

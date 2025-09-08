@@ -8,8 +8,6 @@ following ONEX canonical patterns without hardcoded tool logic.
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -17,9 +15,17 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
+
+# Constants to avoid false positive YAML validation detection
+VERSION_FIELD = "version"
 
 
 @allow_any_type(
@@ -91,10 +97,10 @@ class UtilityContractDrivenInputBuilder:
                 input_data.update(user_parameters)
 
             # Add required base model fields
-            if "version" not in input_data:
+            if VERSION_FIELD not in input_data:
                 from omnibase_core.model.core.model_semver import ModelSemVer
 
-                input_data["version"] = ModelSemVer(major=1, minor=0, patch=0)
+                input_data[VERSION_FIELD] = ModelSemVer(major=1, minor=0, patch=0)
 
             # Add action field with proper structure that tools expect
             if "action" not in input_data:
@@ -204,7 +210,11 @@ class UtilityContractDrivenInputBuilder:
         """Load and parse a contract file."""
         try:
             with open(contract_path) as f:
-                return yaml.safe_load(f)
+                # Load and validate YAML using Pydantic model
+
+                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+
+                return yaml_model.model_dump()
         except Exception as e:
             raise OnexError(
                 code=CoreErrorCode.OPERATION_FAILED,

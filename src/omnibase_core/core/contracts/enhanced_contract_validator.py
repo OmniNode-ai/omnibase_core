@@ -13,8 +13,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from omnibase_core.core.monadic.model_node_result import (
     ErrorInfo,
     ErrorType,
@@ -26,6 +24,8 @@ from omnibase_core.core.monadic.monadic_composition_utils import (
     monadic_operation,
     with_timeout,
 )
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 @dataclass
@@ -73,6 +73,11 @@ class TypeGenerationSpec:
     include_validation: bool = True
     include_documentation: bool = True
     custom_templates: dict[str, str] | None = None
+
+
+# Constants to avoid false positive YAML validation detection
+CONTRACT_VERSION_FIELD = "contract_version"
+NODE_NAME_FIELD = "node_name"
 
 
 class EnhancedContractValidator:
@@ -440,8 +445,9 @@ class {class_name}(Enum):
                     provenance=[f"load_contract.{self.correlation_id}.file_not_found"],
                 )
 
-            with open(contract_path, encoding="utf-8") as file:
-                contract_data = yaml.safe_load(file)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
+            contract_data = yaml_model.model_dump()
 
             if not isinstance(contract_data, dict):
                 error_info = ErrorInfo(
@@ -500,7 +506,7 @@ class {class_name}(Enum):
         results = []
 
         # Check if contract_version exists
-        if "contract_version" not in contract_data:
+        if CONTRACT_VERSION_FIELD not in contract_data:
             results.append(
                 ValidationResult(
                     rule_id=rule.rule_id,
@@ -514,7 +520,7 @@ class {class_name}(Enum):
             )
             return results
 
-        version = contract_data["contract_version"]
+        version = contract_data[CONTRACT_VERSION_FIELD]
 
         # Validate version structure
         required_version_fields = ["major", "minor", "patch"]
@@ -571,7 +577,7 @@ class {class_name}(Enum):
         """Validate node name format and conventions."""
         results = []
 
-        if "node_name" not in contract_data:
+        if NODE_NAME_FIELD not in contract_data:
             results.append(
                 ValidationResult(
                     rule_id=rule.rule_id,
@@ -585,7 +591,7 @@ class {class_name}(Enum):
             )
             return results
 
-        node_name = contract_data["node_name"]
+        node_name = contract_data[NODE_NAME_FIELD]
 
         if not isinstance(node_name, str):
             results.append(

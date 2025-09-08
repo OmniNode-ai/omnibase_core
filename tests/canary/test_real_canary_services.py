@@ -15,10 +15,31 @@ from datetime import datetime
 import consul
 import psycopg2
 
+from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
 from omnibase_core.nodes.canary.container import create_infrastructure_container
+
+
+def _convert_to_scalar_dict(data: dict) -> dict[str, ModelScalarValue]:
+    """Convert a dictionary of primitive values to ModelScalarValue objects."""
+    converted = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            converted[key] = ModelScalarValue.create_string(value)
+        elif isinstance(value, int):
+            converted[key] = ModelScalarValue.create_int(value)
+        elif isinstance(value, float):
+            converted[key] = ModelScalarValue.create_float(value)
+        elif isinstance(value, bool):
+            converted[key] = ModelScalarValue.create_bool(value)
+        elif isinstance(value, dict):
+            # For nested dictionaries, convert to string representation
+            converted[key] = ModelScalarValue.create_string(str(value))
+        else:
+            converted[key] = ModelScalarValue.create_string(str(value))
+    return converted
 
 
 class RealServiceCanaryDemo:
@@ -185,16 +206,18 @@ class RealServiceCanaryDemo:
         # Create effect input using supported operation type
         effect_input = ModelEffectInput(
             effect_type=EffectType.API_CALL,
-            operation_data={
-                "operation_type": "health_check",  # Use supported operation type
-                "parameters": {
-                    "consul_host": "localhost:8500",
-                    "postgres_host": "localhost:5433",
-                    "test_timestamp": datetime.now().isoformat(),
+            operation_data=_convert_to_scalar_dict(
+                {
+                    "operation_type": "health_check",  # Use supported operation type
+                    "parameters": {
+                        "consul_host": "localhost:8500",
+                        "postgres_host": "localhost:5433",
+                        "test_timestamp": datetime.now().isoformat(),
+                        "correlation_id": str(uuid.uuid4()),
+                    },
                     "correlation_id": str(uuid.uuid4()),
-                },
-                "correlation_id": str(uuid.uuid4()),
-            },
+                }
+            ),
         )
 
         # Execute through canary effect node

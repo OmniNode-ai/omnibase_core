@@ -8,14 +8,17 @@ Discovers and manages tool manifests for automatic service startup and managemen
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
+from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.utils.safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_content_as_model,
+)
 
 
 @dataclass
@@ -205,15 +208,15 @@ class ToolManifestDiscovery:
             Parsed ToolManifest object
         """
         try:
-            with open(manifest_path) as f:
-                data = yaml.safe_load(f)
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(manifest_path, ModelGenericYaml)
 
-            # Parse tool metadata
-            tool_meta = data["tool_metadata"]
+            # Access fields through the model to avoid direct dictionary access
+            tool_meta = yaml_model.tool_metadata
 
             # Parse versions
             versions = {}
-            for version_name, version_data in data["versions"].items():
+            for version_name, version_data in yaml_model.versions.items():
                 versions[version_name] = ToolVersionInfo(
                     status=version_data["status"],
                     node_module=version_data["node_module"],
@@ -225,14 +228,14 @@ class ToolManifestDiscovery:
 
             # Create manifest object
             return ToolManifest(
-                name=tool_meta["name"],
-                domain=tool_meta["domain"],
-                description=tool_meta["description"],
-                current_version=tool_meta["current_version"],
-                tier=tool_meta.get("tier", 1),
-                classification=tool_meta.get("classification", "general"),
+                name=tool_meta.name,
+                domain=tool_meta.domain,
+                description=tool_meta.description,
+                current_version=tool_meta.current_version,
+                tier=getattr(tool_meta, "tier", 1),
+                classification=getattr(tool_meta, "classification", "general"),
                 versions=versions,
-                service_config=data.get("service_config", {}),
+                service_config=getattr(yaml_model, "service_config", {}),
                 manifest_path=manifest_path,
             )
 

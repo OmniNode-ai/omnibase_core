@@ -39,14 +39,19 @@ class BaseHandler:
             }
             click.echo(json.dumps(output, indent=2, default=str))
         elif self.config.output.format == "yaml":
-            import yaml
+            from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
             output = {
                 "success": success,
                 "data": data,
                 "timestamp": self._get_timestamp(),
             }
-            click.echo(yaml.dump(output, default_flow_style=False))
+            try:
+                yaml_output = serialize_data_to_yaml(output, default_flow_style=False)
+                click.echo(yaml_output)
+            except Exception as e:
+                # Fallback to JSON if YAML serialization fails
+                click.echo(json.dumps(output, indent=2, default=str))
         else:
             # Text format
             if success:
@@ -375,10 +380,16 @@ class TypeQualityHandler(BaseHandler):
             with open(output_path, "w") as f:
                 json.dump(report, f, indent=2, default=str)
         elif output_path.suffix in [".yaml", ".yml"]:
-            import yaml
+            from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
-            with open(output_path, "w") as f:
-                yaml.dump(report, f, default_flow_style=False)
+            try:
+                yaml_output = serialize_data_to_yaml(report, default_flow_style=False)
+                with open(output_path, "w") as f:
+                    f.write(yaml_output)
+            except Exception as e:
+                # Fallback to JSON if YAML serialization fails
+                with open(output_path.with_suffix(".json"), "w") as f:
+                    json.dump(report, f, indent=2, default=str)
         else:
             # Text format
             with open(output_path, "w") as f:
