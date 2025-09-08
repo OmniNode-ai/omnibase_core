@@ -42,8 +42,13 @@ def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]
         elif isinstance(value, bool):
             converted[key] = ModelScalarValue.create_bool(value)
         elif isinstance(value, dict):
-            # For nested dictionaries, convert to string representation
-            converted[key] = ModelScalarValue.create_string(str(value))
+            # For the parameters dict, pass it directly without ModelScalarValue wrapping
+            # since ModelCanaryEffectInput expects parameters: dict[str, Any]
+            if key == "parameters":
+                converted[key] = value
+            else:
+                # For other dictionaries, convert to string
+                converted[key] = ModelScalarValue.create_string(str(value))
         else:
             converted[key] = ModelScalarValue.create_string(str(value))
     return converted
@@ -157,25 +162,30 @@ class TestCanarySystemIntegration:
     @pytest.mark.asyncio
     async def test_effect_operation_external_api_call(self, effect_node):
         """Test performing an external API call effect operation."""
-        effect_input = ModelEffectInput(
-            effect_type=EffectType.API_CALL,
-            operation_data=_convert_to_scalar_dict(
-                {
-                    "operation_type": "external_api_call",
-                    "parameters": {"test_param": "test_value"},
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
+        # Use contract-driven models instead of ModelScalarValue conversions
+        from omnibase_core.nodes.canary.canary_effect.v1_0_0.models import (
+            ModelCanaryEffectInput,
+        )
+        from omnibase_core.nodes.canary.canary_effect.v1_0_0.models.model_canary_effect_input import (
+            EnumCanaryOperationType,
         )
 
-        result = await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+        canary_input = ModelCanaryEffectInput(
+            operation_type=EnumCanaryOperationType.EXTERNAL_API_CALL,
+            parameters={"test_param": "test_value"},
+            correlation_id=str(uuid.uuid4()),
+        )
+
+        result = await effect_node.perform_canary_effect(
+            canary_input, EffectType.API_CALL
+        )
 
         assert result is not None
-        result_data = result.result
+        assert result.success is True
 
         # Verify the simulation worked
-        assert "operation_result" in result_data
-        operation_result = result_data["operation_result"]
+        operation_result = result.operation_result
+        assert "api_response" in operation_result
         assert operation_result["api_response"] == "simulated_response"
         assert operation_result["status_code"] == 200
 

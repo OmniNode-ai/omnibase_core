@@ -1,37 +1,27 @@
 #!/usr/bin/env python3
 """
-Consul Adapter Models Package.
+Canary Effect Models Package - Contract-Driven Implementation.
 
-Strongly typed Pydantic models for consul adapter responses.
-Tool-specific models following canonical ONEX pattern.
+Strongly typed Pydantic models generated from ONEX contract specifications.
+Replaces previous architecture violations with proper contract-driven models.
+
+Contract Reference:
+    - Source: canary_effect_contract.yaml
+    - Node Type: EFFECT
+    - Strong Typing: Zero Any types, full Pydantic validation
+    - ONEX Compliance: Contract-driven model generation
 """
 
-from .model_consul_adapter_input import ModelConsulAdapterInput
-from .model_consul_adapter_output import ModelConsulAdapterOutput
-from .model_consul_response import (
-    ModelConsulAdapterHealth,
-    ModelConsulHealthCheck,
-    ModelConsulHealthCheckNode,
-    ModelConsulHealthResponse,
-    ModelConsulHealthStatus,
-    ModelConsulKVResponse,
-    ModelConsulServiceInfo,
-    ModelConsulServiceListResponse,
-    ModelConsulServiceRegistration,
-    ModelConsulServiceResponse,
+from .model_canary_effect_input import (
+    EnumCanaryOperationType,
+    ModelCanaryEffectInput,
 )
+from .model_canary_effect_output import ModelCanaryEffectOutput
 
 __all__ = [
-    "ModelConsulAdapterHealth",
-    "ModelConsulAdapterInput",
-    "ModelConsulAdapterOutput",
-    "ModelConsulHealthCheck",
-    "ModelConsulHealthCheckNode",
-    "ModelConsulHealthResponse",
-    "ModelConsulHealthStatus",
-    "ModelConsulKVResponse",
-    "ModelConsulServiceInfo",
-    "ModelConsulServiceListResponse",
-    "ModelConsulServiceRegistration",
-    "ModelConsulServiceResponse",
+    # Input models - contract-driven from input_state schema
+    "ModelCanaryEffectInput",
+    "EnumCanaryOperationType",
+    # Output models - contract-driven from output_state schema
+    "ModelCanaryEffectOutput",
 ]

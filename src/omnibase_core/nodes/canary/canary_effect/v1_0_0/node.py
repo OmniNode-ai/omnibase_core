@@ -52,32 +52,8 @@ def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]
     return converted
 
 
-class ModelCanaryEffectInput(BaseModel):
-    """Input model for canary effect operations."""
-
-    operation_type: str = Field(..., description="Type of canary effect operation")
-    target_system: str | None = Field(None, description="Target system for effect")
-    parameters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Operation parameters",
-    )
-    correlation_id: str | None = Field(None, description="Request correlation ID")
-
-
-class ModelCanaryEffectOutput(BaseModel):
-    """Output model for canary effect operations."""
-
-    operation_result: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Operation result data",
-    )
-    success: bool = Field(True, description="Whether operation succeeded")
-    error_message: str | None = Field(None, description="Error message if failed")
-    execution_time_ms: int | None = Field(
-        None,
-        description="Execution time in milliseconds",
-    )
-    correlation_id: str | None = Field(None, description="Request correlation ID")
+# Import contract-driven models to replace manual definitions
+from .models import ModelCanaryEffectInput, ModelCanaryEffectOutput
 
 
 class NodeCanaryEffect(NodeEffectService):
@@ -353,6 +329,65 @@ class NodeCanaryEffect(NodeEffectService):
                 f"Failed to publish effect result: {e!s} [correlation_id={correlation_id}]"
             )
 
+    async def perform_canary_effect(
+        self,
+        canary_input: ModelCanaryEffectInput,
+        effect_type: EffectType = EffectType.API_CALL,
+    ) -> ModelCanaryEffectOutput:
+        """
+        Contract-driven canary effect operation using proper Pydantic models.
+
+        This is the preferred method that uses contract-driven models directly,
+        eliminating the need for ModelScalarValue conversions and JSON/YAML parsing.
+
+        Args:
+            canary_input: Contract-driven input model from YAML schema
+            effect_type: Type of effect operation
+
+        Returns:
+            ModelCanaryEffectOutput: Contract-driven output model
+        """
+        start_time = datetime.now()
+
+        try:
+            self.operation_count += 1
+
+            self.logger.info(
+                f"Starting canary effect operation: {canary_input.operation_type} "
+                f"[correlation_id={canary_input.correlation_id}]",
+            )
+
+            # Perform the actual effect operation using contract models directly
+            result = await self._execute_canary_operation(canary_input, effect_type)
+
+            self.success_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+
+            # Create contract-driven output
+            return ModelCanaryEffectOutput(
+                operation_result=result,
+                success=True,
+                execution_time_ms=execution_time,
+                correlation_id=canary_input.correlation_id,
+            )
+
+        except Exception as e:
+            self.error_count += 1
+            execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
+
+            self.logger.error(
+                f"Canary effect operation failed: {str(e)} "
+                f"[correlation_id={canary_input.correlation_id}]"
+            )
+
+            return ModelCanaryEffectOutput(
+                operation_result={},
+                success=False,
+                error_message=str(e),
+                execution_time_ms=execution_time,
+                correlation_id=canary_input.correlation_id,
+            )
+
     async def perform_effect(
         self,
         effect_input: ModelEffectInput,
@@ -457,27 +492,7 @@ class NodeCanaryEffect(NodeEffectService):
                     # Extract primitive value from ModelScalarValue based on type
                     type_hint = value.type_hint
                     if type_hint == "str":
-                        string_value = value.to_string_primitive()
-                        # Special handling for dictionary fields that were stringified
-                        if (
-                            key in ["parameters"]
-                            and string_value.startswith("{")
-                            and string_value.endswith("}")
-                        ):
-                            try:
-                                import json
-
-                                # Try to parse as JSON dict
-                                operation_data[key] = (
-                                    json.loads(string_value.replace("'", '"'))
-                                    if string_value != "{}"
-                                    else {}
-                                )
-                            except (json.JSONDecodeError, ValueError):
-                                # If parsing fails, keep as string
-                                operation_data[key] = string_value
-                        else:
-                            operation_data[key] = string_value
+                        operation_data[key] = value.to_string_primitive()
                     elif type_hint == "int":
                         operation_data[key] = value.to_int_primitive()
                     elif type_hint == "float":
@@ -488,7 +503,7 @@ class NodeCanaryEffect(NodeEffectService):
                         # Fallback for unknown type
                         operation_data[key] = str(value)
                 else:
-                    # Keep as-is if already primitive
+                    # Keep as-is if already primitive (dict, list, etc.)
                     operation_data[key] = value
 
             input_data = ModelCanaryEffectInput.model_validate(operation_data)
