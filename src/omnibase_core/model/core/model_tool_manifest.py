@@ -8,7 +8,7 @@ Represents individual tools within a group with version management and capabilit
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.model.core.model_semver import ModelSemVer, SemVerField
 
@@ -312,9 +312,10 @@ class ModelToolManifest(BaseModel):
         frozen = True
         use_enum_values = True
 
-    @validator("versions")
+    @field_validator("versions")
+    @classmethod
     def validate_versions_list(
-        self,
+        cls,
         v: list[ModelToolVersion],
     ) -> list[ModelToolVersion]:
         """Validate versions list consistency."""
@@ -330,16 +331,18 @@ class ModelToolManifest(BaseModel):
 
         return v
 
-    @validator("max_memory_mb", "max_cpu_percent", "timeout_seconds")
-    def validate_positive_values(self, v: int) -> int:
+    @field_validator("max_memory_mb", "max_cpu_percent", "timeout_seconds")
+    @classmethod
+    def validate_positive_values(cls, v: int) -> int:
         """Validate positive integer values."""
         if v <= 0:
             msg = "Value must be positive"
             raise ValueError(msg)
         return v
 
-    @validator("testing")
-    def validate_testing_config(self, v: ModelToolTesting) -> ModelToolTesting:
+    @field_validator("testing")
+    @classmethod
+    def validate_testing_config(cls, v: ModelToolTesting) -> ModelToolTesting:
         """Validate testing configuration."""
         if v.minimum_coverage_percentage < 0 or v.minimum_coverage_percentage > 100:
             msg = "Coverage percentage must be between 0 and 100"

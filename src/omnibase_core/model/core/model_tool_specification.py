@@ -9,10 +9,7 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# TODO: Import when enum is available
-# from omnibase_core.core.enums.enum_business_logic_pattern import (
-#     EnumBusinessLogicPattern,
-# )
+from omnibase_core.model.core.model_tool_manifest import EnumBusinessLogicPattern
 
 
 class ModelToolSpecification(BaseModel):
