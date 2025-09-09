@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Protocol
 
-from omnibase_core.model.validation.model_validation_result import ModelValidationResult
+from omnibase_core.model.common.model_validation_result import ModelValidationResult
 
 
 class ProtocolTrustedSchemaLoader(Protocol):

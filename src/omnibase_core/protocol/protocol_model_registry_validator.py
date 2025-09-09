@@ -4,7 +4,7 @@ from typing import Any, Protocol
 from omnibase_core.model.registry.model_registry_health_report import (
     ModelRegistryHealthReport,
 )
-from omnibase_core.model.validation.model_validation_result import ModelValidationResult
+from omnibase_core.model.common.model_validation_result import ModelValidationResult
 
 
 class ProtocolModelRegistryValidator(Protocol):
