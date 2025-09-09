@@ -19,8 +19,56 @@ class ImportValidator:
     def __init__(self):
         self.results: List[Tuple[str, bool, str]] = []
 
+        # Whitelist of allowed import paths to prevent code injection
+        self.allowed_imports = {
+            # Core package imports
+            "omnibase_core",
+            # Core infrastructure imports
+            "omnibase_core.core.model_onex_container",
+            "omnibase_core.core.infrastructure_service_bases",
+            # Model imports
+            "omnibase_core.model.common.model_typed_value",
+            # Enum imports
+            "omnibase_core.enums.enum_log_level",
+            # Error handling imports
+            "omnibase_core.core.errors.core_errors",
+            # Event system imports
+            "omnibase_core.model.core.model_event_envelope",
+            # CLI imports
+            "omnibase_core.cli.config",
+            # SPI integration imports
+            "omnibase_spi.protocols.core",
+            "omnibase_spi.protocols.types",
+        }
+
+        # Whitelist of allowed import items
+        self.allowed_import_items = {
+            "ModelONEXContainer",
+            "NodeReducerService",
+            "NodeComputeService",
+            "NodeEffectService",
+            "NodeOrchestratorService",
+            "ModelValueContainer",
+            "StringContainer",
+            "EnumLogLevel",
+            "OnexError",
+            "CoreErrorCode",
+            "ModelEventEnvelope",
+            "ModelCLIConfig",
+            "ProtocolCacheService",
+            "ProtocolNodeRegistry",
+            "core_types",
+        }
+
     def test_import(self, import_path: str, description: str) -> bool:
         """Test a single import and record result."""
+        # Security: Validate import path against whitelist
+        if import_path not in self.allowed_imports:
+            self.results.append(
+                (description, False, f"Import path '{import_path}' not in whitelist")
+            )
+            return False
+
         try:
             importlib.import_module(import_path)
             self.results.append((description, True, "OK"))
@@ -33,12 +81,27 @@ class ImportValidator:
         self, from_path: str, import_items: str, description: str
     ) -> bool:
         """Test a from...import statement and record result."""
+        # Security: Validate import path against whitelist
+        if from_path not in self.allowed_imports:
+            self.results.append(
+                (description, False, f"Import path '{from_path}' not in whitelist")
+            )
+            return False
+
+        # Security: Validate import items against whitelist
+        items = [item.strip() for item in import_items.split(",")]
+        for item in items:
+            if item not in self.allowed_import_items:
+                self.results.append(
+                    (description, False, f"Import item '{item}' not in whitelist")
+                )
+                return False
+
         try:
             # Import the module first
             module = importlib.import_module(from_path)
 
             # Test that each requested item exists in the module
-            items = [item.strip() for item in import_items.split(",")]
             for item in items:
                 if not hasattr(module, item):
                     raise ImportError(f"cannot import name '{item}' from '{from_path}'")
