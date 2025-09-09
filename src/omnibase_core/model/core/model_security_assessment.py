@@ -15,6 +15,7 @@ from omnibase_core.model.core.model_security_vulnerability import (
 # Backward compatibility alias
 SecurityVulnerability = ModelSecurityVulnerability
 
+
 class ModelSecurityAssessment(BaseModel):
     """
     Security assessment with typed fields.
@@ -151,6 +152,7 @@ class ModelSecurityAssessment(BaseModel):
     )
 
     model_config = ConfigDict()
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelSecurityAssessment":
         """Create from dictionary for easy migration."""

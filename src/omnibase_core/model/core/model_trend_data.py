@@ -71,8 +71,6 @@ class ModelTrendData(BaseModel):
 
     model_config = ConfigDict()
 
-
-
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelTrendData"]:
         """Create from dictionary for easy migration."""

@@ -7,6 +7,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+
 class ImpactSeverity(str, Enum):
     """Business impact severity levels."""
 
@@ -15,6 +16,7 @@ class ImpactSeverity(str, Enum):
     MEDIUM = "medium"
     LOW = "low"
     MINIMAL = "minimal"
+
 
 class ModelBusinessImpact(BaseModel):
     """
@@ -123,7 +125,6 @@ class ModelBusinessImpact(BaseModel):
     )
 
     model_config = ConfigDict()
-
 
     @classmethod
     def from_dict(cls, data: dict) -> "ModelBusinessImpact":

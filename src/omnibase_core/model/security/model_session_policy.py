@@ -7,6 +7,7 @@ replacing Dict[str, Any] with structured fields.
 
 from pydantic import BaseModel, Field
 
+
 class ModelSessionPolicy(BaseModel):
     """
     Structured session management policy configuration.
@@ -175,7 +176,6 @@ class ModelSessionPolicy(BaseModel):
         default=True,
         description="Alert on suspicious session activity",
     )
-
 
     @classmethod
     def create_minimal(cls) -> "ModelSessionPolicy":

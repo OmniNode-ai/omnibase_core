@@ -18,11 +18,12 @@ Usage:
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Dict, NamedTuple
+from typing import Dict, List, NamedTuple, Tuple
 
 
 class LegacyPattern(NamedTuple):
     """Represents a legacy Pydantic pattern."""
+
     pattern: str
     description: str
     replacement: str
@@ -37,104 +38,103 @@ class PydanticPatternValidator:
         self.legacy_patterns = [
             # Core .dict() patterns (HIGH PRIORITY - these are the main regression risk)
             LegacyPattern(
-                pattern=r'\.dict\(\s*\)',
+                pattern=r"\.dict\(\s*\)",
                 description="Legacy .dict() call",
                 replacement=".model_dump()",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.dict\(\s*exclude_none\s*=\s*True\s*\)',
+                pattern=r"\.dict\(\s*exclude_none\s*=\s*True\s*\)",
                 description="Legacy .dict(exclude_none=True) call",
                 replacement=".model_dump(exclude_none=True)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.dict\(\s*exclude_unset\s*=\s*True\s*\)',
-                description="Legacy .dict(exclude_unset=True) call", 
+                pattern=r"\.dict\(\s*exclude_unset\s*=\s*True\s*\)",
+                description="Legacy .dict(exclude_unset=True) call",
                 replacement=".model_dump(exclude_unset=True)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.dict\(\s*by_alias\s*=\s*True\s*\)',
+                pattern=r"\.dict\(\s*by_alias\s*=\s*True\s*\)",
                 description="Legacy .dict(by_alias=True) call",
                 replacement=".model_dump(by_alias=True)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.dict\(\s*exclude\s*=',
+                pattern=r"\.dict\(\s*exclude\s*=",
                 description="Legacy .dict(exclude=...) call",
                 replacement=".model_dump(exclude=...)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.dict\(\s*include\s*=',
-                description="Legacy .dict(include=...) call", 
+                pattern=r"\.dict\(\s*include\s*=",
+                description="Legacy .dict(include=...) call",
                 replacement=".model_dump(include=...)",
-                severity="error"
+                severity="error",
             ),
-            
             # Other legacy v1 patterns
             LegacyPattern(
-                pattern=r'\.json\(\s*exclude_none\s*=\s*True\s*\)',
+                pattern=r"\.json\(\s*exclude_none\s*=\s*True\s*\)",
                 description="Legacy .json(exclude_none=True) call",
                 replacement=".model_dump_json(exclude_none=True)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.json\(\s*by_alias\s*=\s*True\s*\)',
+                pattern=r"\.json\(\s*by_alias\s*=\s*True\s*\)",
                 description="Legacy .json(by_alias=True) call",
                 replacement=".model_dump_json(by_alias=True)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.copy\(\s*update\s*=',
+                pattern=r"\.copy\(\s*update\s*=",
                 description="Legacy .copy(update=...) call",
                 replacement=".model_copy(update=...)",
-                severity="error"
+                severity="error",
             ),
             LegacyPattern(
-                pattern=r'\.copy\(\s*deep\s*=\s*True\s*\)',
+                pattern=r"\.copy\(\s*deep\s*=\s*True\s*\)",
                 description="Legacy .copy(deep=True) call",
                 replacement=".model_copy(deep=True)",
-                severity="error"
+                severity="error",
             ),
-            
             # Schema and config patterns (warnings - less critical)
             LegacyPattern(
-                pattern=r'\.schema\(\s*\)',
+                pattern=r"\.schema\(\s*\)",
                 description="Legacy .schema() call",
                 replacement=".model_json_schema()",
-                severity="warning"
+                severity="warning",
             ),
             LegacyPattern(
-                pattern=r'\.schema_json\(\s*\)',
+                pattern=r"\.schema_json\(\s*\)",
                 description="Legacy .schema_json() call",
                 replacement=".model_json_schema()",
-                severity="warning"
+                severity="warning",
             ),
             LegacyPattern(
-                pattern=r'class\s+Config\s*:',
+                pattern=r"class\s+Config\s*:",
                 description="Legacy Config class (consider model_config)",
                 replacement="model_config = ConfigDict(...)",
-                severity="warning"
+                severity="warning",
             ),
-            
             # Validator patterns (warnings - need manual review)
             LegacyPattern(
-                pattern=r'@validator\s*\(',
+                pattern=r"@validator\s*\(",
                 description="Legacy @validator decorator",
                 replacement="@field_validator or @model_validator",
-                severity="warning"
+                severity="warning",
             ),
             LegacyPattern(
-                pattern=r'@root_validator\s*\(',
+                pattern=r"@root_validator\s*\(",
                 description="Legacy @root_validator decorator",
                 replacement="@model_validator",
-                severity="warning"
+                severity="warning",
             ),
         ]
 
-    def find_legacy_patterns_in_file(self, file_path: Path) -> List[Tuple[LegacyPattern, int, str]]:
+    def find_legacy_patterns_in_file(
+        self, file_path: Path
+    ) -> List[Tuple[LegacyPattern, int, str]]:
         """
         Find all legacy Pydantic patterns in a Python file.
 
@@ -159,18 +159,22 @@ class PydanticPatternValidator:
                         or "'''" in stripped
                     ):
                         continue
-                    
+
                     # Skip test files that might legitimately test legacy patterns
-                    if "test_" in str(file_path) and ("legacy" in stripped.lower() or "v1" in stripped.lower()):
+                    if "test_" in str(file_path) and (
+                        "legacy" in stripped.lower() or "v1" in stripped.lower()
+                    ):
                         continue
-                    
+
                     # Check each pattern
                     for legacy_pattern in self.legacy_patterns:
                         if re.search(legacy_pattern.pattern, line, re.IGNORECASE):
                             # Additional context checks to avoid false positives
                             if self._is_likely_pydantic_usage(line, file_path):
-                                findings.append((legacy_pattern, line_num, line.strip()))
-                            
+                                findings.append(
+                                    (legacy_pattern, line_num, line.strip())
+                                )
+
         except (UnicodeDecodeError, PermissionError) as e:
             print(f"⚠️  Could not read {file_path}: {e}")
 
@@ -179,11 +183,11 @@ class PydanticPatternValidator:
     def _is_likely_pydantic_usage(self, line: str, file_path: Path) -> bool:
         """
         Determine if a line is likely using Pydantic patterns vs other libraries.
-        
+
         Args:
             line: The code line to analyze
             file_path: Path to the file being analyzed
-            
+
         Returns:
             True if likely Pydantic usage, False otherwise
         """
@@ -198,32 +202,32 @@ class PydanticPatternValidator:
             "@root_validator",
             "ConfigDict",
         ]
-        
+
         # Read a few lines around this line for context
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                
+
             # Look at surrounding lines for context (±5 lines)
             start_idx = max(0, len(lines) - 5)
             end_idx = min(len(lines), len(lines) + 5)
             context_lines = lines[start_idx:end_idx]
-            
+
             context = " ".join(line.strip() for line in context_lines)
-            
+
             # Check if any Pydantic indicators are in the context
             for indicator in pydantic_indicators:
                 if indicator in context:
                     return True
-                    
+
             # Check file-level indicators (imports, etc.)
             file_content = " ".join(lines[:50])  # Check first 50 lines for imports
             if "pydantic" in file_content.lower() or "BaseModel" in file_content:
                 return True
-                
+
         except Exception:
             pass  # If we can't read context, err on the side of reporting
-            
+
         # If we can't determine context, assume it's Pydantic (safer for preventing regression)
         return True
 
@@ -255,7 +259,7 @@ class PydanticPatternValidator:
             if findings:
                 relative_path = py_file.relative_to(src_dir.parent)
                 files_with_issues[str(relative_path)] = findings
-                
+
                 # Count errors vs warnings
                 for pattern, _, _ in findings:
                     if pattern.severity == "error":
@@ -263,17 +267,21 @@ class PydanticPatternValidator:
                     else:
                         total_warnings += 1
 
-        print(f"📊 Found {total_errors} errors and {total_warnings} warnings across {len(files_with_issues)} files")
+        print(
+            f"📊 Found {total_errors} errors and {total_warnings} warnings across {len(files_with_issues)} files"
+        )
 
         # Report findings
         if files_with_issues:
             print(f"\n🚨 FILES WITH LEGACY PYDANTIC PATTERNS:")
             for file_path, findings in files_with_issues.items():
                 print(f"\n   📄 {file_path} ({len(findings)} issues):")
-                
+
                 for pattern, line_num, line in findings:
                     severity_icon = "❌" if pattern.severity == "error" else "⚠️"
-                    print(f"      {severity_icon} Line {line_num}: {pattern.description}")
+                    print(
+                        f"      {severity_icon} Line {line_num}: {pattern.description}"
+                    )
                     print(f"         Code: {line}")
                     print(f"         Fix:  Use {pattern.replacement}")
 
@@ -281,11 +289,17 @@ class PydanticPatternValidator:
         success = True
 
         if total_errors > allowed_errors:
-            print(f"\n❌ CRITICAL: Found {total_errors} legacy Pydantic patterns (allowed: {allowed_errors})")
-            print("   🚫 REGRESSION DETECTED! These patterns were already migrated to Pydantic v2.")
+            print(
+                f"\n❌ CRITICAL: Found {total_errors} legacy Pydantic patterns (allowed: {allowed_errors})"
+            )
+            print(
+                "   🚫 REGRESSION DETECTED! These patterns were already migrated to Pydantic v2."
+            )
             print("   🔧 Quick fixes:")
             print("      • Replace .dict() with .model_dump()")
-            print("      • Replace .dict(exclude_none=True) with .model_dump(exclude_none=True)")
+            print(
+                "      • Replace .dict(exclude_none=True) with .model_dump(exclude_none=True)"
+            )
             print("      • Replace .json(...) with .model_dump_json(...)")
             print("      • Replace .copy(...) with .model_copy(...)")
             success = False
@@ -334,25 +348,23 @@ Examples:
     python scripts/validate-pydantic-patterns.py              # Check for errors only
     python scripts/validate-pydantic-patterns.py --strict     # Check errors and warnings
     python scripts/validate-pydantic-patterns.py --allow-errors 3  # Allow up to 3 errors
-        """
+        """,
     )
     parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Strict mode - treat warnings as errors"
+        "--strict", action="store_true", help="Strict mode - treat warnings as errors"
     )
     parser.add_argument(
         "--allow-errors",
         type=int,
         default=0,
-        help="Number of allowed errors before failing (default: 0)"
+        help="Number of allowed errors before failing (default: 0)",
     )
     parser.add_argument(
         "--src-dir",
         "-s",
         type=Path,
         default=Path("src"),
-        help="Source directory to scan (default: src)"
+        help="Source directory to scan (default: src)",
     )
 
     args = parser.parse_args()

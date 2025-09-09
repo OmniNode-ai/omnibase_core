@@ -7,6 +7,7 @@ replacing Dict[str, Any] with structured fields.
 
 from pydantic import BaseModel, Field
 
+
 class ModelNetworkRestrictions(BaseModel):
     """
     Structured network access restrictions configuration.
@@ -172,7 +173,6 @@ class ModelNetworkRestrictions(BaseModel):
         default_factory=list,
         description="Access tokens that bypass restrictions",
     )
-
 
     def is_ip_allowed(self, ip: str) -> bool:
         """Check if an IP address is allowed (simplified logic)."""

@@ -11,6 +11,7 @@ from omnibase_core.model.core.model_resource_limit import ModelResourceLimit
 # Backward compatibility alias
 ResourceLimit = ModelResourceLimit
 
+
 class ModelResourceAllocation(BaseModel):
     """
     Resource allocation specification with typed fields.
@@ -95,6 +96,7 @@ class ModelResourceAllocation(BaseModel):
     model_config = ConfigDict(
         extra="allow",
     )  # Allow additional fields for extensibility
+
     @classmethod
     def from_dict(
         cls,

@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelMaskedConnectionProperties(BaseModel):
     """
     Masked connection properties with typed fields.

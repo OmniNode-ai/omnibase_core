@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from .model_cli_option import ModelCliOption
 
+
 class ModelCliCommand(BaseModel):
     """Strongly typed CLI command definition."""
 

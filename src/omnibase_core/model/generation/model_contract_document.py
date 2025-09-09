@@ -18,6 +18,7 @@ from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 from .model_cli_interface import ModelCliInterface
 from .model_contract_dependencies import ModelContractDependencies
 
+
 class ModelContractDocument(BaseModel):
     """
     Top-level contract document representation.
@@ -117,6 +118,7 @@ class ModelContractDocument(BaseModel):
         return serialize_pydantic_model_to_yaml(
             self, exclude_none=True, default_flow_style=False, sort_keys=False
         )
+
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractDocument":
         """Create from YAML content."""

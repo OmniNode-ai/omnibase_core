@@ -437,12 +437,16 @@ class ModelOnexReply(BaseModel):
         """Convert reply to dictionary representation."""
         # Use model_dump() as the base for consistency
         result = self.model_dump()
-        
+
         # Apply custom string formatting and transformations
         return {
             "reply_id": str(result["reply_id"]),
             "correlation_id": str(result["correlation_id"]),
-            "timestamp": result["timestamp"].isoformat() if isinstance(result["timestamp"], datetime) else str(result["timestamp"]),
+            "timestamp": (
+                result["timestamp"].isoformat()
+                if isinstance(result["timestamp"], datetime)
+                else str(result["timestamp"])
+            ),
             "status": result["status"],
             "success": str(result["success"]),
             "data": str(self.data.model_dump()) if self.data else "",
@@ -452,7 +456,9 @@ class ModelOnexReply(BaseModel):
             "source_tool": result.get("source_tool") or "",
             "target_tool": result.get("target_tool") or "",
             "operation": result.get("operation") or "",
-            "performance": str(self.performance.model_dump()) if self.performance else "",
+            "performance": (
+                str(self.performance.model_dump()) if self.performance else ""
+            ),
             "metadata": str(self.metadata.model_dump()) if self.metadata else "",
             "onex_version": str(self.onex_version.model_dump()),
             "reply_version": str(self.reply_version.model_dump()),

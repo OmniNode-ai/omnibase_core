@@ -51,8 +51,6 @@ class ModelGenericMetadata(BaseModel):
         extra="allow",
     )  # Allow additional fields for backward compatibility
 
-
-
     @classmethod
     def from_dict(
         cls,

@@ -7,6 +7,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+
 class ModelErrorSummary(BaseModel):
     """
     Error summary with typed fields.
@@ -60,7 +61,6 @@ class ModelErrorSummary(BaseModel):
     has_been_reported: bool = Field(False, description="Whether error was reported")
 
     model_config = ConfigDict()
-
 
     @classmethod
     def from_dict(cls, data: dict | None) -> Optional["ModelErrorSummary"]:

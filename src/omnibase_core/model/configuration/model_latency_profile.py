@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelLatencyProfile(BaseModel):
     """
     Latency profile assessment with typed fields.

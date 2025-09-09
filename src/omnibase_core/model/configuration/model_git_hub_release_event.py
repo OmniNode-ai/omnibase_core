@@ -10,6 +10,7 @@ from .model_git_hub_release import ModelGitHubRelease
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
 
+
 class ModelGitHubReleaseEvent(BaseModel):
     """
     GitHub release event with typed fields.
@@ -23,6 +24,7 @@ class ModelGitHubReleaseEvent(BaseModel):
     release: ModelGitHubRelease = Field(..., description="Release data")
     repository: ModelGitHubRepository = Field(..., description="Repository data")
     sender: ModelGitHubUser = Field(..., description="User who triggered the event")
+
     @classmethod
     def from_dict(
         cls,

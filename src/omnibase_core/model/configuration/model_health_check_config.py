@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelHealthCheckConfig(BaseModel):
     """
     Health check configuration with typed fields.

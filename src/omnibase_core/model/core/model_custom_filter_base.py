@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelCustomFilterBase(BaseModel, ABC):
     """Base class for all custom filters."""
 

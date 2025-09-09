@@ -27,45 +27,41 @@ class PydanticDictMigrator:
         return [
             # Most common pattern: self.dict(exclude_none=True)
             (
-                re.compile(r'(\w+)\.dict\(exclude_none=True\)'),
-                r'\1.model_dump(exclude_none=True)'
+                re.compile(r"(\w+)\.dict\(exclude_none=True\)"),
+                r"\1.model_dump(exclude_none=True)",
             ),
             # Simple dict() calls
-            (
-                re.compile(r'(\w+)\.dict\(\)'),
-                r'\1.model_dump()'
-            ),
+            (re.compile(r"(\w+)\.dict\(\)"), r"\1.model_dump()"),
             # Dict with other parameters (by_alias=True, etc.)
-            (
-                re.compile(r'(\w+)\.dict\(([^)]+)\)'),
-                r'\1.model_dump(\2)'
-            ),
+            (re.compile(r"(\w+)\.dict\(([^)]+)\)"), r"\1.model_dump(\2)"),
         ]
 
     def migrate_file(self, file_path: Path) -> bool:
         """Migrate a single Python file."""
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
             original_content = content
-            
+
             patterns = self.get_migration_patterns()
             file_modified = False
-            
+
             for pattern, replacement in patterns:
                 new_content, count = pattern.subn(replacement, content)
                 if count > 0:
                     content = new_content
                     file_modified = True
                     self.migration_stats["patterns_replaced"] += count
-                    print(f"  ✓ Replaced {count} pattern(s) in {file_path.relative_to(self.root_dir.parent)}")
-            
+                    print(
+                        f"  ✓ Replaced {count} pattern(s) in {file_path.relative_to(self.root_dir.parent)}"
+                    )
+
             if file_modified:
-                file_path.write_text(content, encoding='utf-8')
+                file_path.write_text(content, encoding="utf-8")
                 self.migration_stats["files_modified"] += 1
                 return True
-                
+
             return False
-            
+
         except Exception as e:
             print(f"  ❌ Error processing {file_path}: {e}")
             return False
@@ -74,17 +70,17 @@ class PydanticDictMigrator:
         """Migrate all Python files in the source directory."""
         print("🔧 Starting Pydantic dict() → model_dump() migration...")
         print(f"📁 Scanning directory: {self.root_dir}")
-        
+
         python_files = list(self.root_dir.rglob("*.py"))
         print(f"📄 Found {len(python_files)} Python files")
-        
+
         for file_path in python_files:
             self.migration_stats["files_processed"] += 1
-            
+
             # Skip __pycache__ and other build artifacts
             if "__pycache__" in str(file_path) or ".pyc" in str(file_path):
                 continue
-                
+
             print(f"🔍 Processing: {file_path.relative_to(self.root_dir.parent)}")
             self.migrate_file(file_path)
 
@@ -96,8 +92,8 @@ class PydanticDictMigrator:
         print(f"Files processed: {stats['files_processed']}")
         print(f"Files modified:  {stats['files_modified']}")
         print(f"Patterns replaced: {stats['patterns_replaced']}")
-        
-        if stats['files_modified'] > 0:
+
+        if stats["files_modified"] > 0:
             print("\n✅ Migration completed successfully!")
             print("🔍 Recommended next steps:")
             print("  1. Run tests to verify functionality: poetry run pytest")
@@ -110,7 +106,7 @@ class PydanticDictMigrator:
 def main():
     """Main migration entry point."""
     migrator = PydanticDictMigrator()
-    
+
     try:
         migrator.migrate_all()
         migrator.print_summary()
@@ -125,4 +121,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

@@ -14,6 +14,7 @@ from omnibase_core.model.core.model_health_check_component import (
 # Backward compatibility alias
 HealthCheckComponent = ModelHealthCheckComponent
 
+
 class ModelHealthCheckResult(BaseModel):
     """
     Health check result with typed fields.
@@ -71,6 +72,7 @@ class ModelHealthCheckResult(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
     model_config = ConfigDict()
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelHealthCheckResult":
         """Create from dictionary for easy migration."""

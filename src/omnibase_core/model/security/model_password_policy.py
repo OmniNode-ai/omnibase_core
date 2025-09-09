@@ -7,6 +7,7 @@ replacing Dict[str, Any] with structured fields.
 
 from pydantic import BaseModel, Field
 
+
 class ModelPasswordPolicy(BaseModel):
     """
     Structured password policy configuration.
@@ -145,7 +146,6 @@ class ModelPasswordPolicy(BaseModel):
         description="Account lockout duration in minutes",
         ge=1,
     )
-
 
     @classmethod
     def create_minimal(cls) -> "ModelPasswordPolicy":

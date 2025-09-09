@@ -12,6 +12,7 @@ from omnibase_core.model.core.model_metric_value import ModelMetricValue
 # Backward compatibility alias
 MetricValue = ModelMetricValue
 
+
 class ModelMonitoringMetrics(BaseModel):
     """
     Monitoring metrics container with typed fields.
@@ -78,6 +79,7 @@ class ModelMonitoringMetrics(BaseModel):
     )
 
     model_config = ConfigDict()
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelMonitoringMetrics":
         """Create from dictionary for easy migration."""

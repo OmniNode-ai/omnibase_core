@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelPoolRecommendations(BaseModel):
     """
     Connection pool recommendations with typed fields.

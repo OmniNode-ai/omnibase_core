@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+
 class ModelParsedConnectionInfo(BaseModel):
     """
     Parsed connection information with typed fields.
@@ -45,6 +46,7 @@ class ModelParsedConnectionInfo(BaseModel):
         description="Command timeout in seconds",
     )
     pool_size: int | None = Field(None, description="Connection pool size")
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelParsedConnectionInfo":
         """Create from dictionary for easy migration."""

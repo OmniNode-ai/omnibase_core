@@ -241,12 +241,16 @@ class ModelOnexEnvelope(BaseModel):
         """Convert envelope to dictionary representation."""
         # Use model_dump() as base for consistency
         result = self.model_dump()
-        
+
         # Apply custom string formatting and transformations
         return {
             "envelope_id": str(result["envelope_id"]),
             "correlation_id": str(result["correlation_id"]),
-            "timestamp": result["timestamp"].isoformat() if isinstance(result["timestamp"], datetime) else str(result["timestamp"]),
+            "timestamp": (
+                result["timestamp"].isoformat()
+                if isinstance(result["timestamp"], datetime)
+                else str(result["timestamp"])
+            ),
             "source_tool": result.get("source_tool") or "",
             "target_tool": result.get("target_tool") or "",
             "operation": result.get("operation") or "",

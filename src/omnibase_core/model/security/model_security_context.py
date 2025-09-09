@@ -7,6 +7,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+
 class ModelSecurityContext(BaseModel):
     """
     Security context with typed fields.
@@ -58,7 +59,6 @@ class ModelSecurityContext(BaseModel):
     trust_level: int | None = Field(None, description="Trust level (0-100)")
 
     model_config = ConfigDict()
-
 
     @classmethod
     def from_dict(

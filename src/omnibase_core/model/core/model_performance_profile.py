@@ -158,8 +158,6 @@ class ModelPerformanceProfile(BaseModel):
 
     model_config = ConfigDict()
 
-
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelPerformanceProfile":
         """Create from dictionary for easy migration."""
