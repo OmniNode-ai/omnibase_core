@@ -289,7 +289,9 @@ class ContractValidator:
             with open(contract_path) as f:
                 # Load and validate YAML using Pydantic model
 
-                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+                yaml_model = load_and_validate_yaml_model(
+                    contract_path, ModelGenericYaml
+                )
 
                 contract_data = yaml_model.model_dump()
 
@@ -1010,7 +1012,7 @@ def main():
         with open(aggregator_path) as f:
             # Load and validate YAML using Pydantic model
 
-            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+            yaml_model = load_and_validate_yaml_model(aggregator_path, ModelGenericYaml)
 
             contract_data = yaml_model.model_dump()
 

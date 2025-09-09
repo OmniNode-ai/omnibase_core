@@ -6,15 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.core.node_effect import (
-    EffectType,
-    ModelEffectInput,
-    ModelEffectOutput,
-    TransactionState,
-)
+from omnibase_core.core.node_effect import EffectType
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
@@ -29,63 +21,16 @@ from omnibase_core.nodes.canary.utils.circuit_breaker import (
 from omnibase_core.nodes.canary.utils.error_handler import get_error_handler
 from omnibase_core.utils.node_configuration_utils import UtilsNodeConfiguration
 
-
-def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
-    """Convert a dictionary of primitive values to ModelScalarValue objects."""
-    converted = {}
-    for key, value in data.items():
-        if isinstance(value, str):
-            converted[key] = ModelScalarValue.create_string(value)
-        elif isinstance(value, int):
-            converted[key] = ModelScalarValue.create_int(value)
-        elif isinstance(value, float):
-            converted[key] = ModelScalarValue.create_float(value)
-        elif isinstance(value, bool):
-            converted[key] = ModelScalarValue.create_bool(value)
-        elif isinstance(value, dict):
-            # For nested dictionaries, convert to string representation
-            converted[key] = ModelScalarValue.create_string(str(value))
-        elif value is None:
-            converted[key] = ModelScalarValue.create_string("null")
-        else:
-            converted[key] = ModelScalarValue.create_string(str(value))
-    return converted
-
-
-class ModelCanaryEffectInput(BaseModel):
-    """Input model for canary effect operations."""
-
-    operation_type: str = Field(..., description="Type of canary effect operation")
-    target_system: str | None = Field(None, description="Target system for effect")
-    parameters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Operation parameters",
-    )
-    correlation_id: str | None = Field(None, description="Request correlation ID")
-
-
-class ModelCanaryEffectOutput(BaseModel):
-    """Output model for canary effect operations."""
-
-    operation_result: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Operation result data",
-    )
-    success: bool = Field(True, description="Whether operation succeeded")
-    error_message: str | None = Field(None, description="Error message if failed")
-    execution_time_ms: int | None = Field(
-        None,
-        description="Execution time in milliseconds",
-    )
-    correlation_id: str | None = Field(None, description="Request correlation ID")
+# Import contract-driven models - the ONLY models we use
+from .models import ModelCanaryEffectInput, ModelCanaryEffectOutput
 
 
 class NodeCanaryEffect(NodeEffectService):
     """
-    Canary Effect Node - Generic external system interaction capabilities for canary deployments.
+    Canary Effect Node - Contract-driven external system interaction capabilities.
 
-    This node handles external side effects in a controlled canary environment, providing
-    monitoring, logging, and safe failure modes for testing new functionality.
+    This node handles external side effects using only contract-driven Pydantic models,
+    eliminating architectural violations and providing type safety for canary deployments.
     """
 
     def __init__(self, container: ModelONEXContainer):
@@ -93,7 +38,7 @@ class NodeCanaryEffect(NodeEffectService):
         super().__init__(container)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # Get dependencies from container (no direct config access)
+        # Get dependencies from container
         self.config_utils = UtilsNodeConfiguration(container)
         self.error_handler = get_error_handler(self.logger)
 
@@ -240,27 +185,22 @@ class NodeCanaryEffect(NodeEffectService):
     def _handle_effect_execution_request(
         self, event: ModelOnexEvent, correlation_id: str
     ) -> None:
-        """Handle effect execution request from orchestrator."""
+        """Handle effect execution request from orchestrator using contract-driven models."""
         try:
             effect_data = event.data
             operation_type = effect_data.get("operation_type", "external_api_call")
 
-            # Create effect input for async execution
-            effect_input = ModelEffectInput(
-                effect_type=EffectType.API_CALL,
-                operation_data=_convert_to_scalar_dict(
-                    {
-                        "operation_type": operation_type,
-                        "parameters": effect_data.get("parameters", {}),
-                        "target_system": effect_data.get("target_system"),
-                        "correlation_id": correlation_id,
-                    }
-                ),
+            # Create contract-driven input
+            canary_input = ModelCanaryEffectInput(
+                operation_type=operation_type,
+                parameters=effect_data.get("parameters", {}),
+                target_system=effect_data.get("target_system"),
+                correlation_id=correlation_id,
             )
 
             # Schedule async effect execution (fire-and-forget pattern)
             task = asyncio.create_task(
-                self.perform_effect(effect_input, EffectType.API_CALL)
+                self.perform_canary_effect(canary_input, EffectType.API_CALL)
             )
 
             # Add callback to publish result when complete
@@ -335,16 +275,16 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
     def _publish_effect_result(
-        self, result: ModelEffectOutput, correlation_id: str
+        self, result: ModelCanaryEffectOutput, correlation_id: str
     ) -> None:
         """Publish effect operation result to other nodes."""
         try:
             self._publish_canary_event(
                 "effect.result",
                 {
-                    "success": result.metadata.get("error") != True,
-                    "execution_time_ms": result.metadata.get("execution_time_ms", 0),
-                    "result_data": result.data,
+                    "success": result.success,
+                    "execution_time_ms": result.execution_time_ms,
+                    "result_data": result.operation_result,
                 },
                 correlation_id,
             )
@@ -353,222 +293,117 @@ class NodeCanaryEffect(NodeEffectService):
                 f"Failed to publish effect result: {e!s} [correlation_id={correlation_id}]"
             )
 
-    async def perform_effect(
+    async def perform_canary_effect(
         self,
-        effect_input: ModelEffectInput,
+        canary_input: ModelCanaryEffectInput,
         effect_type: EffectType = EffectType.API_CALL,
-    ) -> ModelEffectOutput:
+    ) -> ModelCanaryEffectOutput:
         """
-        Perform a canary effect operation with monitoring and safety controls.
+        Contract-driven canary effect operation using proper Pydantic models.
 
-        This method executes canary effects with comprehensive monitoring, error handling,
-        circuit breaker protection, and performance tracking. It supports various operation
-        types including API calls, database operations, file I/O, and queue operations.
+        This is the ONLY method for performing canary operations, using contract-driven
+        models directly and eliminating all ModelScalarValue conversions and JSON/YAML parsing.
 
         Args:
-            effect_input: Input data for the effect operation containing:
-                - operation_data: Dictionary with operation-specific parameters
-                - transaction_id: Optional transaction identifier for tracking
-                - metadata: Additional context and configuration
-            effect_type: Type of effect to perform (API_CALL, DATABASE, FILE_IO, QUEUE)
+            canary_input: Contract-driven input model from YAML schema
+            effect_type: Type of effect operation
 
         Returns:
-            ModelEffectOutput: Result containing:
-                - data: Operation result data
-                - metadata: Execution metadata (timing, success status, etc.)
-                - transaction_state: Final transaction state
-
-        Raises:
-            ValueError: If input data is invalid or missing required fields
-            RuntimeError: If circuit breaker is open or operation fails critically
-            TimeoutError: If operation exceeds configured timeout
-
-        Examples:
-            Basic API call effect:
-                >>> effect_input = ModelEffectInput(
-                ...     operation_data={
-                ...         "operation_type": "api_call",
-                ...         "endpoint": "https://api.example.com/users",
-                ...         "method": "GET",
-                ...         "timeout_ms": 5000
-                ...     }
-                ... )
-                >>> result = await node.perform_effect(effect_input, EffectType.API_CALL)
-                >>> print(f"Status: {result.metadata.get('success', False)}")
-
-            Database operation with parameters:
-                >>> effect_input = ModelEffectInput(
-                ...     operation_data={
-                ...         "operation_type": "database_query",
-                ...         "query": "SELECT * FROM customers WHERE score > ?",
-                ...         "parameters": [25],
-                ...         "timeout_ms": 10000
-                ...     }
-                ... )
-                >>> result = await node.perform_effect(effect_input, EffectType.DATABASE)
-                >>> customers = result.data.get("rows", [])
-
-            File operation with error handling:
-                >>> try:
-                ...     effect_input = ModelEffectInput(
-                ...         operation_data={
-                ...             "operation_type": "file_read",
-                ...             "file_path": "/data/large_file.json",
-                ...             "chunk_size": 1024
-                ...         }
-                ...     )
-                ...     result = await node.perform_effect(effect_input, EffectType.FILE_IO)
-                ...     if result.metadata.get("error"):
-                ...         print(f"File operation failed: {result.metadata['error']}")
-                ... except TimeoutError:
-                ...     print("File operation timed out")
-
-            Queue operation with retry logic:
-                >>> effect_input = ModelEffectInput(
-                ...     operation_data={
-                ...         "operation_type": "queue_publish",
-                ...         "queue_name": "events",
-                ...         "message": {"event": "user_signup", "user_id": 123},
-                ...         "retry_count": 3
-                ...     }
-                ... )
-                >>> result = await node.perform_effect(effect_input, EffectType.QUEUE)
-                >>> message_id = result.data.get("message_id")
-
-        Note:
-            - All operations are monitored for performance and memory usage
-            - Circuit breaker protection prevents cascading failures
-            - Correlation IDs are automatically generated for tracing
-            - Metrics are collected for monitoring and alerting
-            - Simulation delays are applied in debug mode for testing
+            ModelCanaryEffectOutput: Contract-driven output model
         """
         start_time = datetime.now()
-        correlation_id = str(uuid.uuid4())
 
         try:
             self.operation_count += 1
 
-            # Parse input
-            input_data = ModelCanaryEffectInput.model_validate(
-                effect_input.operation_data
-            )
-            input_data.correlation_id = correlation_id
-
             self.logger.info(
-                f"Starting canary effect operation: {input_data.operation_type} "
-                f"[correlation_id={correlation_id}]",
+                f"Starting canary effect operation: {canary_input.operation_type} "
+                f"[correlation_id={canary_input.correlation_id}]",
             )
 
             # Publish operation start event
             self._publish_canary_event(
                 "operation.start",
                 {
-                    "operation_type": input_data.operation_type,
+                    "operation_type": canary_input.operation_type,
                     "effect_type": effect_type.value,
-                    "target_system": input_data.target_system,
+                    "target_system": canary_input.target_system,
                 },
-                correlation_id,
+                canary_input.correlation_id,
             )
 
-            # Perform the actual effect operation
-            result = await self._execute_canary_operation(input_data, effect_type)
+            # Perform the actual effect operation using contract models directly
+            result = await self._execute_canary_operation(canary_input, effect_type)
 
             self.success_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-            # Create output
+            # Create contract-driven output
             output = ModelCanaryEffectOutput(
                 operation_result=result,
                 success=True,
                 execution_time_ms=execution_time,
-                correlation_id=correlation_id,
+                correlation_id=canary_input.correlation_id,
             )
 
             # Publish operation success event
             self._publish_canary_event(
                 "operation.success",
                 {
-                    "operation_type": input_data.operation_type,
+                    "operation_type": canary_input.operation_type,
                     "effect_type": effect_type.value,
                     "execution_time_ms": execution_time,
-                    "result_summary": {
-                        "status": "success",
-                        "result_size": len(str(result)),
-                    },
+                    "result_summary": output.get_result_summary(),
                 },
-                correlation_id,
+                canary_input.correlation_id,
             )
 
             self.logger.info(
                 f"Canary effect operation completed successfully "
-                f"[correlation_id={correlation_id}, duration={execution_time}ms]",
+                f"[correlation_id={canary_input.correlation_id}, duration={execution_time}ms]",
             )
 
-            return ModelEffectOutput(
-                result=output.model_dump(),
-                operation_id=correlation_id,
-                effect_type=effect_type,
-                transaction_state=TransactionState.COMMITTED,
-                processing_time_ms=execution_time,
-                metadata={
-                    "node_type": "canary_effect",
-                },
-            )
+            return output
 
         except Exception as e:
             self.error_count += 1
             execution_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-            # Handle error with secure error handler first
+            # Handle error with secure error handler
             safe_context = {
-                "operation_type": getattr(input_data, "operation_type", "unknown"),
+                "operation_type": canary_input.operation_type,
                 "effect_type": effect_type.value,
                 "execution_time_ms": execution_time,
                 "error_type": type(e).__name__,
             }
             error_details = self.error_handler.handle_error(
-                e, safe_context, correlation_id, "effect_operation"
+                e, safe_context, canary_input.correlation_id, "effect_operation"
             )
 
             # Publish operation failure event with sanitized error
             self._publish_canary_event(
                 "operation.failure",
                 {
-                    "operation_type": getattr(input_data, "operation_type", "unknown"),
+                    "operation_type": canary_input.operation_type,
                     "effect_type": effect_type.value,
                     "execution_time_ms": execution_time,
                     "error_type": type(e).__name__,
-                    "error_summary": error_details[
-                        "message"
-                    ],  # Use sanitized error message
+                    "error_summary": error_details["message"],
                 },
-                correlation_id,
+                canary_input.correlation_id,
             )
 
-            # Log the error with sanitized details
-            self.logger.exception(
+            self.logger.error(
                 f"Canary effect operation failed: {error_details['message']} "
-                f"[correlation_id={correlation_id}, duration={execution_time}ms]",
+                f"[correlation_id={canary_input.correlation_id}, duration={execution_time}ms]"
             )
 
-            output = ModelCanaryEffectOutput(
+            return ModelCanaryEffectOutput(
                 operation_result={},
                 success=False,
-                error_message=f"Effect operation failed: {type(e).__name__}",
+                error_message=str(e),
                 execution_time_ms=execution_time,
-                correlation_id=correlation_id,
-            )
-
-            return ModelEffectOutput(
-                result=output.model_dump(),
-                operation_id=correlation_id,
-                effect_type=effect_type,
-                transaction_state=TransactionState.FAILED,
-                processing_time_ms=execution_time,
-                metadata={
-                    "node_type": "canary_effect",
-                    "error": True,
-                },
+                correlation_id=canary_input.correlation_id,
             )
 
     async def _execute_canary_operation(
@@ -580,7 +415,7 @@ class NodeCanaryEffect(NodeEffectService):
         Execute the specific canary operation based on type.
 
         Args:
-            input_data: Validated input data
+            input_data: Validated contract-driven input data
             effect_type: Type of effect to perform
 
         Returns:
@@ -605,12 +440,14 @@ class NodeCanaryEffect(NodeEffectService):
     async def _perform_health_check(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Perform health check operation."""
         return {
-            "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "operation_count": self.operation_count,
-            "success_count": self.success_count,
-            "error_count": self.error_count,
-            "success_rate": self.success_count / max(1, self.operation_count),
+            "operation_result": {
+                "status": "healthy",
+                "timestamp": datetime.now().isoformat(),
+                "operation_count": self.operation_count,
+                "success_count": self.success_count,
+                "error_count": self.error_count,
+                "success_rate": self.success_count / max(1, self.operation_count),
+            }
         }
 
     async def _perform_external_api_call(
@@ -641,84 +478,11 @@ class NodeCanaryEffect(NodeEffectService):
         """
         Perform safe file system operations for canary testing with security validation.
 
-        Executes file system operations with comprehensive security checks, path validation,
-        and size limitations to prevent security vulnerabilities and resource exhaustion.
-
         Args:
-            parameters: Dictionary containing operation parameters:
-                - operation: Type of file operation ("read", "write", "list", "stat")
-                - file_path: Path to file or directory (validated for security)
-                - content: Content for write operations (optional)
-                - max_size_mb: Maximum file size limit in MB (default: 10)
-                - encoding: Text encoding for read/write operations (default: "utf-8")
+            parameters: Dictionary containing operation parameters
 
         Returns:
-            Dictionary containing operation results:
-                - success: Boolean indicating operation success
-                - operation_type: Echo of requested operation
-                - file_path: Sanitized file path used
-                - data: Operation-specific result data
-                - metadata: Additional operation metadata (size, timestamps, etc.)
-
-        Raises:
-            ValueError: If required parameters are missing or invalid
-            SecurityError: If file path fails security validation
-            PermissionError: If insufficient permissions for operation
-            FileNotFoundError: If target file/directory doesn't exist (for read operations)
-
-        Examples:
-            Read file operation:
-                >>> parameters = {
-                ...     "operation": "read",
-                ...     "file_path": "data/config.json",
-                ...     "max_size_mb": 5
-                ... }
-                >>> result = await node._perform_file_system_operation(parameters)
-                >>> if result["success"]:
-                ...     content = result["data"]["content"]
-                ...     print(f"File size: {result['metadata']['size_bytes']} bytes")
-
-            Write file operation with validation:
-                >>> parameters = {
-                ...     "operation": "write",
-                ...     "file_path": "output/results.txt",
-                ...     "content": "Processing complete",
-                ...     "encoding": "utf-8"
-                ... }
-                >>> result = await node._perform_file_system_operation(parameters)
-                >>> if not result["success"]:
-                ...     print(f"Write failed: {result.get('error')}")
-
-            Directory listing:
-                >>> parameters = {
-                ...     "operation": "list",
-                ...     "file_path": "data/"
-                ... }
-                >>> result = await node._perform_file_system_operation(parameters)
-                >>> files = result["data"]["files"]
-                >>> print(f"Found {len(files)} files")
-
-            File metadata:
-                >>> parameters = {
-                ...     "operation": "stat",
-                ...     "file_path": "logs/application.log"
-                ... }
-                >>> result = await node._perform_file_system_operation(parameters)
-                >>> size_mb = result["data"]["size_bytes"] / (1024 * 1024)
-                >>> print(f"Log file is {size_mb:.1f}MB")
-
-        Security Notes:
-            - All file paths are validated against directory traversal attacks
-            - Operations are restricted to allowed directories only
-            - File size limits prevent resource exhaustion
-            - Sensitive paths and system files are automatically blocked
-            - All operations are logged with correlation IDs for auditing
-
-        Performance Considerations:
-            - Large file operations may trigger memory monitoring alerts
-            - Debug mode applies artificial delays for testing
-            - Binary files are handled safely with size validation
-            - Concurrent file operations are tracked and limited
+            Dictionary containing operation results
         """
         operation = parameters.get("operation", "read")
 

@@ -54,7 +54,9 @@ class UtilityMockFileReader:
             with open(test_data_path) as f:
                 # Load and validate YAML using Pydantic model
 
-                yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+                yaml_model = load_and_validate_yaml_model(
+                    test_data_path, ModelGenericYaml
+                )
 
                 contract_data = yaml_model.model_dump()
 

@@ -146,9 +146,9 @@ service_configuration:
 
 # === ACTIONS ===
 actions:
-  - name: "perform_effect"
-    description: "Perform canary effect operation with monitoring"
-    inputs: ["operation_type"]
+  - name: "perform_canary_effect"
+    description: "Perform canary effect operation with contract-driven models"
+    inputs: ["canary_input", "effect_type"]
   - name: "health_check"
     description: "Check canary effect node health"
     inputs: []

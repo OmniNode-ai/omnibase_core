@@ -127,7 +127,7 @@ class TreeFileDiscoverySource(ProtocolFileDiscoverySource):
         with open(tree_file) as f:
             # Load and validate YAML using Pydantic model
 
-            yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+            yaml_model = load_and_validate_yaml_model(tree_file, ModelGenericYaml)
 
             data = yaml_model.model_dump()
         return set(self._extract_files_from_tree_data(tree_file.parent, data))
