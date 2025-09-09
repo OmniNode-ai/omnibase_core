@@ -5,23 +5,27 @@ Tests the full end-to-end canary architecture including:
 - Container setup and dependency injection
 - Event-driven communication between nodes
 - Health checks and metrics collection
-- Effect operations with proper error handling
+- Contract-driven effect operations with proper error handling
 - Inter-node coordination and messaging
 
-This test can be run repeatedly and provides comprehensive coverage
-of the canary system functionality.
+This test uses only contract-driven models - no legacy ModelScalarValue conversions.
 """
 
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Any
 
 import pytest
 
-from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.core.node_effect import EffectType, ModelEffectInput
+from omnibase_core.core.node_effect import EffectType
 from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.models import (
+    ModelCanaryEffectInput,
+    ModelCanaryEffectOutput,
+)
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.models.model_canary_effect_input import (
+    EnumCanaryOperationType,
+)
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 
@@ -29,33 +33,8 @@ from omnibase_core.nodes.canary.container import create_infrastructure_container
 NODE_TYPE_FIELD = "node_type"
 
 
-def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
-    """Convert a dictionary of primitive values to ModelScalarValue objects."""
-    converted = {}
-    for key, value in data.items():
-        if isinstance(value, str):
-            converted[key] = ModelScalarValue.create_string(value)
-        elif isinstance(value, int):
-            converted[key] = ModelScalarValue.create_int(value)
-        elif isinstance(value, float):
-            converted[key] = ModelScalarValue.create_float(value)
-        elif isinstance(value, bool):
-            converted[key] = ModelScalarValue.create_bool(value)
-        elif isinstance(value, dict):
-            # For the parameters dict, pass it directly without ModelScalarValue wrapping
-            # since ModelCanaryEffectInput expects parameters: dict[str, Any]
-            if key == "parameters":
-                converted[key] = value
-            else:
-                # For other dictionaries, convert to string
-                converted[key] = ModelScalarValue.create_string(str(value))
-        else:
-            converted[key] = ModelScalarValue.create_string(str(value))
-    return converted
-
-
 class TestCanarySystemIntegration:
-    """Comprehensive integration tests for the canary system."""
+    """Comprehensive integration tests for the canary system using contract-driven models."""
 
     @pytest.fixture
     def container(self):
@@ -136,25 +115,22 @@ class TestCanarySystemIntegration:
 
     @pytest.mark.asyncio
     async def test_effect_operation_health_check(self, effect_node):
-        """Test performing a health check effect operation."""
-        effect_input = ModelEffectInput(
-            effect_type=EffectType.API_CALL,
-            operation_data=_convert_to_scalar_dict(
-                {
-                    "operation_type": "health_check",
-                    "parameters": {},
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
+        """Test performing a health check effect operation using contract-driven models."""
+        canary_input = ModelCanaryEffectInput(
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
+            parameters={},
+            correlation_id=str(uuid.uuid4()),
         )
 
-        result = await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+        result = await effect_node.perform_canary_effect(
+            canary_input, EffectType.API_CALL
+        )
 
         assert result is not None
-        assert hasattr(result, "result")
-        assert "operation_result" in result.result
-        assert hasattr(result, "metadata")
-        assert result.metadata["node_type"].to_string_primitive() == "canary_effect"
+        assert isinstance(result, ModelCanaryEffectOutput)
+        assert result.success is True
+        assert "operation_result" in result.operation_result
+        assert result.correlation_id is not None
 
         # Verify metrics were updated
         assert effect_node.operation_count > 0
@@ -162,14 +138,6 @@ class TestCanarySystemIntegration:
     @pytest.mark.asyncio
     async def test_effect_operation_external_api_call(self, effect_node):
         """Test performing an external API call effect operation."""
-        # Use contract-driven models instead of ModelScalarValue conversions
-        from omnibase_core.nodes.canary.canary_effect.v1_0_0.models import (
-            ModelCanaryEffectInput,
-        )
-        from omnibase_core.nodes.canary.canary_effect.v1_0_0.models.model_canary_effect_input import (
-            EnumCanaryOperationType,
-        )
-
         canary_input = ModelCanaryEffectInput(
             operation_type=EnumCanaryOperationType.EXTERNAL_API_CALL,
             parameters={"test_param": "test_value"},
@@ -192,55 +160,61 @@ class TestCanarySystemIntegration:
     @pytest.mark.asyncio
     async def test_effect_operation_file_system(self, effect_node):
         """Test performing a file system effect operation."""
-        effect_input = ModelEffectInput(
-            effect_type=EffectType.FILE_OPERATION,
-            operation_data=_convert_to_scalar_dict(
-                {
-                    "operation_type": "file_system_operation",
-                    "parameters": {"operation": "read"},
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
+        canary_input = ModelCanaryEffectInput(
+            operation_type=EnumCanaryOperationType.FILE_SYSTEM_OPERATION,
+            parameters={"operation": "read"},
+            correlation_id=str(uuid.uuid4()),
         )
 
-        result = await effect_node.perform_effect(
-            effect_input, EffectType.FILE_OPERATION
+        result = await effect_node.perform_canary_effect(
+            canary_input, EffectType.FILE_OPERATION
         )
 
         assert result is not None
-        result_data = result.result
+        assert result.success is True
 
-        assert "operation_result" in result_data
-        operation_result = result_data["operation_result"]
+        operation_result = result.operation_result
         assert operation_result["operation"] == "read"
         assert operation_result["result"] == "file_content_simulated"
 
     @pytest.mark.asyncio
     async def test_effect_operation_error_handling(self, effect_node):
-        """Test error handling for invalid operations."""
-        effect_input = ModelEffectInput(
-            effect_type=EffectType.API_CALL,
-            operation_data=_convert_to_scalar_dict(
-                {
-                    "operation_type": "invalid_operation_type",
-                    "parameters": {},
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
+        """Test error handling for operations that fail during execution."""
+        # Test with a valid operation that will fail during execution
+        # Use health_check but simulate an internal error
+        canary_input = ModelCanaryEffectInput(
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
+            parameters={
+                "force_internal_error": True
+            },  # This will trigger error in _perform_health_check
+            correlation_id=str(uuid.uuid4()),
         )
 
-        result = await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+        # Mock the _perform_health_check method to raise an exception
+        original_method = effect_node._perform_health_check
 
-        assert result is not None
-        result_data = result.result
+        async def mock_error_method(parameters):
+            if parameters.get("force_internal_error"):
+                raise RuntimeError("Simulated internal error for testing")
+            return await original_method(parameters)
 
-        # Should have error information
-        assert result_data["success"] is False
-        assert "error_message" in result_data
-        assert result.metadata.get("error").to_bool_primitive() is True
+        effect_node._perform_health_check = mock_error_method
 
-        # Verify error metrics were updated
-        assert effect_node.error_count > 0
+        try:
+            result = await effect_node.perform_canary_effect(
+                canary_input, EffectType.API_CALL
+            )
+
+            assert result is not None
+            assert result.success is False
+            assert result.error_message is not None
+            assert "Simulated internal error" in result.error_message
+
+            # Verify error metrics were updated
+            assert effect_node.error_count > 0
+        finally:
+            # Restore original method
+            effect_node._perform_health_check = original_method
 
     @pytest.mark.asyncio
     async def test_multiple_operations_metrics(self, effect_node):
@@ -249,30 +223,34 @@ class TestCanarySystemIntegration:
 
         # Perform multiple successful operations
         for i in range(3):
-            effect_input = ModelEffectInput(
-                effect_type=EffectType.API_CALL,
-                operation_data=_convert_to_scalar_dict(
-                    {
-                        "operation_type": "health_check",
-                        "parameters": {},
-                        "correlation_id": str(uuid.uuid4()),
-                    }
-                ),
+            canary_input = ModelCanaryEffectInput(
+                operation_type=EnumCanaryOperationType.HEALTH_CHECK,
+                parameters={},
+                correlation_id=str(uuid.uuid4()),
             )
-            await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+            await effect_node.perform_canary_effect(canary_input, EffectType.API_CALL)
 
-        # Perform one error operation
-        error_input = ModelEffectInput(
-            effect_type=EffectType.API_CALL,
-            operation_data=_convert_to_scalar_dict(
-                {
-                    "operation_type": "invalid_operation",
-                    "parameters": {},
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
+        # Perform one error operation using method mocking
+        error_input = ModelCanaryEffectInput(
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
+            parameters={"force_error": True},
+            correlation_id=str(uuid.uuid4()),
         )
-        await effect_node.perform_effect(error_input, EffectType.API_CALL)
+
+        # Mock the method to cause an error
+        original_method = effect_node._perform_health_check
+
+        async def mock_error_method(parameters):
+            if parameters.get("force_error"):
+                raise RuntimeError("Test error")
+            return await original_method(parameters)
+
+        effect_node._perform_health_check = mock_error_method
+
+        try:
+            await effect_node.perform_canary_effect(error_input, EffectType.API_CALL)
+        finally:
+            effect_node._perform_health_check = original_method
 
         # Verify metrics
         assert effect_node.operation_count == initial_count + 4
@@ -308,19 +286,27 @@ class TestCanarySystemIntegration:
             + 1
         )
 
-        # Perform mostly error operations
-        for i in range(min_ops):
-            effect_input = ModelEffectInput(
-                effect_type=EffectType.API_CALL,
-                operation_data=_convert_to_scalar_dict(
-                    {
-                        "operation_type": "invalid_operation",
-                        "parameters": {},
-                        "correlation_id": str(uuid.uuid4()),
-                    }
-                ),
-            )
-            await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+        # Mock the method to force errors
+        original_method = effect_node._perform_health_check
+
+        async def mock_error_method(parameters):
+            raise RuntimeError("Forced error for degradation test")
+
+        effect_node._perform_health_check = mock_error_method
+
+        try:
+            # Perform mostly error operations
+            for i in range(min_ops):
+                error_input = ModelCanaryEffectInput(
+                    operation_type=EnumCanaryOperationType.HEALTH_CHECK,
+                    parameters={},
+                    correlation_id=str(uuid.uuid4()),
+                )
+                await effect_node.perform_canary_effect(
+                    error_input, EffectType.API_CALL
+                )
+        finally:
+            effect_node._perform_health_check = original_method
 
         health_status = await effect_node.get_health_status()
 
@@ -345,7 +331,7 @@ class TestCanarySystemIntegration:
 
     @pytest.mark.asyncio
     async def test_end_to_end_canary_workflow(self, effect_node):
-        """Test a complete end-to-end canary workflow."""
+        """Test a complete end-to-end canary workflow using contract-driven models."""
         # Step 1: Initial health check
         initial_health = await effect_node.get_health_status()
         assert initial_health.status in [
@@ -353,36 +339,34 @@ class TestCanarySystemIntegration:
             EnumHealthStatus.DEGRADED,
         ]
 
-        # Step 2: Perform various effect operations
+        # Step 2: Perform various effect operations using contract-driven models
         operations = [
-            "health_check",
-            "external_api_call",
-            "file_system_operation",
-            "database_operation",
-            "message_queue_operation",
+            EnumCanaryOperationType.HEALTH_CHECK,
+            EnumCanaryOperationType.EXTERNAL_API_CALL,
+            EnumCanaryOperationType.FILE_SYSTEM_OPERATION,
+            EnumCanaryOperationType.DATABASE_OPERATION,
+            EnumCanaryOperationType.MESSAGE_QUEUE_OPERATION,
         ]
 
         results = []
-        for operation in operations:
-            effect_input = ModelEffectInput(
-                effect_type=EffectType.API_CALL,
-                operation_data=_convert_to_scalar_dict(
-                    {
-                        "operation_type": operation,
-                        "parameters": {"test": f"param_for_{operation}"},
-                        "correlation_id": str(uuid.uuid4()),
-                    }
-                ),
+        for operation_type in operations:
+            canary_input = ModelCanaryEffectInput(
+                operation_type=operation_type,
+                parameters={"test": f"param_for_{operation_type.value}"},
+                correlation_id=str(uuid.uuid4()),
             )
-            result = await effect_node.perform_effect(effect_input, EffectType.API_CALL)
+            result = await effect_node.perform_canary_effect(
+                canary_input, EffectType.API_CALL
+            )
             results.append(result)
 
         # Step 3: Verify all operations completed
         assert len(results) == len(operations)
         for result in results:
             assert result is not None
-            assert hasattr(result, "result")
-            assert "operation_result" in result.result
+            assert isinstance(result, ModelCanaryEffectOutput)
+            assert result.success is True
+            assert result.operation_result is not None
 
         # Step 4: Final health and metrics check
         final_health = await effect_node.get_health_status()

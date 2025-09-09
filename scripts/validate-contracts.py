@@ -316,7 +316,7 @@ class ContractValidator:
             # Validate required methods based on node type
             if "Effect" in node_name:
                 required_methods = [
-                    "perform_effect",
+                    "perform_canary_effect",
                     "get_health_status",
                     "get_metrics",
                 ]
