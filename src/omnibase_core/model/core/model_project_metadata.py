@@ -41,7 +41,6 @@ from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.model.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 # Import separated models
@@ -91,7 +90,8 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
         # Load and validate YAML using Pydantic model
 
         yaml_model = load_and_validate_yaml_model(
-            PROJECT_ONEX_YAML_PATH, ModelGenericYaml
+            PROJECT_ONEX_YAML_PATH,
+            ModelGenericYaml,
         )
 
         data = yaml_model.model_dump()
@@ -112,7 +112,8 @@ def get_canonical_namespace_prefix() -> str:
         # Load and validate YAML using Pydantic model
 
         yaml_model = load_and_validate_yaml_model(
-            PROJECT_ONEX_YAML_PATH, ModelGenericYaml
+            PROJECT_ONEX_YAML_PATH,
+            ModelGenericYaml,
         )
 
         data = yaml_model.model_dump()

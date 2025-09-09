@@ -36,13 +36,16 @@ class ModelWorkflowResponse(BaseModel):
         description="Error details if processing failed",
     )
     processing_time_ms: float = Field(
-        ..., description="Processing time in milliseconds"
+        ...,
+        description="Processing time in milliseconds",
     )
     subreducer_name: str = Field(
-        ..., description="Name of the subreducer that processed this workflow"
+        ...,
+        description="Name of the subreducer that processed this workflow",
     )
     completed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Completion timestamp"
+        default_factory=datetime.utcnow,
+        description="Completion timestamp",
     )
 
     @field_validator("instance_id")
@@ -79,7 +82,7 @@ class ModelWorkflowResponse(BaseModel):
         if not pattern.match(v):
             raise ValueError(
                 "instance_id must contain only alphanumeric characters, hyphens, and underscores. "
-                "Must start and end with alphanumeric characters."
+                "Must start and end with alphanumeric characters.",
             )
 
         return v

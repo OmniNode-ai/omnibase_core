@@ -8,7 +8,7 @@ circuit breaker configuration, metrics collection, and node configuration.
 import os
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -50,10 +50,15 @@ class ModelRetryConfig(BaseModel):
         description="Type of retry strategy to use",
     )
     max_attempts: int = Field(
-        default=3, ge=1, le=10, description="Maximum number of retry attempts"
+        default=3,
+        ge=1,
+        le=10,
+        description="Maximum number of retry attempts",
     )
     base_delay_ms: int = Field(
-        default=1000, ge=0, description="Base delay in milliseconds"
+        default=1000,
+        ge=0,
+        description="Base delay in milliseconds",
     )
     max_delay_ms: int = Field(
         default=30000,
@@ -61,19 +66,25 @@ class ModelRetryConfig(BaseModel):
         description="Maximum delay between attempts in milliseconds",
     )
     backoff_multiplier: float = Field(
-        default=2.0, ge=1.0, le=10.0, description="Multiplier for exponential backoff"
+        default=2.0,
+        ge=1.0,
+        le=10.0,
+        description="Multiplier for exponential backoff",
     )
     jitter_enabled: bool = Field(
-        default=True, description="Whether to add random jitter to delays"
+        default=True,
+        description="Whether to add random jitter to delays",
     )
     jitter_max_ms: int = Field(
-        default=1000, ge=0, description="Maximum jitter to add in milliseconds"
+        default=1000,
+        ge=0,
+        description="Maximum jitter to add in milliseconds",
     )
     retry_condition: RetryCondition = Field(
         default=RetryCondition.ANY_EXCEPTION,
         description="Condition that determines when to retry",
     )
-    retryable_exceptions: List[str] = Field(
+    retryable_exceptions: list[str] = Field(
         default_factory=lambda: [
             "ConnectionError",
             "TimeoutError",
@@ -96,13 +107,16 @@ class ModelCircuitBreakerConfig(BaseModel):
     """Configuration for circuit breaker behavior."""
 
     failure_threshold: int = Field(
-        default=5, description="Number of failures before opening"
+        default=5,
+        description="Number of failures before opening",
     )
     recovery_timeout_seconds: int = Field(
-        default=60, description="Time before trying recovery"
+        default=60,
+        description="Time before trying recovery",
     )
     success_threshold: int = Field(
-        default=3, description="Successes needed to close from half-open"
+        default=3,
+        description="Successes needed to close from half-open",
     )
     timeout_seconds: float = Field(default=10.0, description="Request timeout")
 
@@ -114,8 +128,8 @@ class ModelCircuitBreakerStats(BaseModel):
     failure_count: int = 0
     success_count: int = 0
     total_requests: int = 0
-    last_failure_time: Optional[float] = None
-    last_success_time: Optional[float] = None
+    last_failure_time: float | None = None
+    last_success_time: float | None = None
 
 
 class ModelMetricSummary(BaseModel):
@@ -155,10 +169,10 @@ class ModelNodeMetrics(BaseModel):
 
     # Health metrics
     health_score: float = 1.0
-    last_health_check: Optional[datetime] = None
+    last_health_check: datetime | None = None
 
     # Custom metrics
-    custom_metrics: Dict[str, Any] = Field(default_factory=dict)
+    custom_metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 # Main Configuration Models
@@ -181,19 +195,19 @@ class ModelDatabaseConfig(BaseModel):
         if is_production and not self.password:
             raise ValueError(
                 "Database password is required in production environment. "
-                "Set POSTGRES_PASSWORD environment variable."
+                "Set POSTGRES_PASSWORD environment variable.",
             )
 
         if is_production and self.password == "password":
             raise ValueError(
                 "Default password 'password' is not allowed in production. "
-                "Use a strong, unique password."
+                "Use a strong, unique password.",
             )
 
         # Validate password strength in production
         if is_production and len(self.password) < 8:
             raise ValueError(
-                "Database password must be at least 8 characters long in production."
+                "Database password must be at least 8 characters long in production.",
             )
 
     def _is_production_environment(self) -> bool:
@@ -205,8 +219,8 @@ class ModelDatabaseConfig(BaseModel):
             environment in ["production", "prod"]
             or node_env in ["production", "prod"]
             or (
-                not os.getenv("DEBUG", "").lower() == "true"
-                and not os.getenv("DEV_MODE", "").lower() == "true"
+                os.getenv("DEBUG", "").lower() != "true"
+                and os.getenv("DEV_MODE", "").lower() != "true"
             )
         )
 
@@ -215,19 +229,34 @@ class ModelTimeoutConfig(BaseModel):
     """Timeout configuration for various operations."""
 
     default_timeout_ms: int = Field(
-        default=30000, description="Default timeout in milliseconds", ge=1000, le=300000
+        default=30000,
+        description="Default timeout in milliseconds",
+        ge=1000,
+        le=300000,
     )
     gateway_timeout_ms: int = Field(
-        default=10000, description="Gateway routing timeout", ge=1000, le=60000
+        default=10000,
+        description="Gateway routing timeout",
+        ge=1000,
+        le=60000,
     )
     health_check_timeout_ms: int = Field(
-        default=5000, description="Health check timeout", ge=500, le=30000
+        default=5000,
+        description="Health check timeout",
+        ge=500,
+        le=30000,
     )
     api_call_timeout_ms: int = Field(
-        default=10000, description="External API call timeout", ge=1000, le=120000
+        default=10000,
+        description="External API call timeout",
+        ge=1000,
+        le=120000,
     )
     workflow_step_timeout_ms: int = Field(
-        default=60000, description="Workflow step timeout", ge=5000, le=600000
+        default=60000,
+        description="Workflow step timeout",
+        ge=5000,
+        le=600000,
     )
 
 
@@ -235,16 +264,28 @@ class ModelPerformanceConfig(BaseModel):
     """Performance and capacity configuration."""
 
     cache_max_size: int = Field(
-        default=1000, description="Maximum cache entries", ge=10, le=100000
+        default=1000,
+        description="Maximum cache entries",
+        ge=10,
+        le=100000,
     )
     cache_ttl_seconds: int = Field(
-        default=300, description="Cache TTL in seconds", ge=60, le=86400
+        default=300,
+        description="Cache TTL in seconds",
+        ge=60,
+        le=86400,
     )
     metrics_retention_count: int = Field(
-        default=1000, description="Number of metrics to retain", ge=100, le=50000
+        default=1000,
+        description="Number of metrics to retain",
+        ge=100,
+        le=50000,
     )
     max_concurrent_operations: int = Field(
-        default=100, description="Maximum concurrent operations", ge=1, le=10000
+        default=100,
+        description="Maximum concurrent operations",
+        ge=1,
+        le=10000,
     )
     error_rate_threshold: float = Field(
         default=0.1,
@@ -265,58 +306,74 @@ class ModelBusinessLogicConfig(BaseModel):
 
     # Customer scoring
     customer_purchase_threshold: float = Field(
-        default=1000.0, description="Customer purchase amount threshold"
+        default=1000.0,
+        description="Customer purchase amount threshold",
     )
     customer_loyalty_years_threshold: int = Field(
-        default=2, description="Customer loyalty years threshold"
+        default=2,
+        description="Customer loyalty years threshold",
     )
     customer_support_tickets_threshold: int = Field(
-        default=3, description="Max support tickets for good score"
+        default=3,
+        description="Max support tickets for good score",
     )
     customer_premium_score_threshold: int = Field(
-        default=30, description="Score threshold for premium tier"
+        default=30,
+        description="Score threshold for premium tier",
     )
     customer_purchase_score_points: int = Field(
-        default=20, description="Points for high purchase history"
+        default=20,
+        description="Points for high purchase history",
     )
     customer_loyalty_score_points: int = Field(
-        default=15, description="Points for loyalty"
+        default=15,
+        description="Points for loyalty",
     )
     customer_support_score_points: int = Field(
-        default=10, description="Points for low support tickets"
+        default=10,
+        description="Points for low support tickets",
     )
 
     # Health metrics
     health_score_excellent_threshold: float = Field(
-        default=0.9, description="Health score threshold for excellent"
+        default=0.9,
+        description="Health score threshold for excellent",
     )
     health_score_good_threshold: float = Field(
-        default=0.6, description="Health score threshold for good/degraded"
+        default=0.6,
+        description="Health score threshold for good/degraded",
     )
 
     # Canary deployment
     canary_error_rate_threshold: float = Field(
-        default=0.05, description="Error rate threshold for canary promotion"
+        default=0.05,
+        description="Error rate threshold for canary promotion",
     )
     canary_default_traffic_percentage: int = Field(
-        default=10, description="Default canary traffic percentage"
+        default=10,
+        description="Default canary traffic percentage",
     )
     canary_test_duration_minutes: int = Field(
-        default=15, description="Default canary test duration"
+        default=15,
+        description="Default canary test duration",
     )
 
     # Simulation delays (for testing)
     api_simulation_delay_ms: int = Field(
-        default=100, description="API call simulation delay"
+        default=100,
+        description="API call simulation delay",
     )
     file_operation_delay_ms: int = Field(
-        default=50, description="File operation simulation delay"
+        default=50,
+        description="File operation simulation delay",
     )
     database_operation_delay_ms: int = Field(
-        default=150, description="Database operation simulation delay"
+        default=150,
+        description="Database operation simulation delay",
     )
     queue_operation_delay_ms: int = Field(
-        default=50, description="Queue operation simulation delay"
+        default=50,
+        description="Queue operation simulation delay",
     )
 
 
@@ -324,54 +381,68 @@ class ModelSecurityConfig(BaseModel):
     """Security configuration for canary nodes."""
 
     log_sensitive_data: bool = Field(
-        default=False, description="Whether to log sensitive data"
+        default=False,
+        description="Whether to log sensitive data",
     )
     max_error_detail_length: int = Field(
-        default=1000, description="Maximum error detail length in logs"
+        default=1000,
+        description="Maximum error detail length in logs",
     )
     sanitize_stack_traces: bool = Field(
-        default=True, description="Whether to sanitize stack traces in production"
+        default=True,
+        description="Whether to sanitize stack traces in production",
     )
     correlation_id_validation: bool = Field(
-        default=True, description="Whether to validate correlation IDs"
+        default=True,
+        description="Whether to validate correlation IDs",
     )
 
     # Environment and debugging
     debug_mode: bool = Field(
-        default=False, description="Enable debug mode with simulation delays"
+        default=False,
+        description="Enable debug mode with simulation delays",
     )
 
     # Correlation ID validation parameters
     correlation_id_min_length: int = Field(
-        default=8, description="Minimum correlation ID length"
+        default=8,
+        description="Minimum correlation ID length",
     )
     correlation_id_max_length: int = Field(
-        default=128, description="Maximum correlation ID length"
+        default=128,
+        description="Maximum correlation ID length",
     )
 
     # Connection pool limits
     max_connections_per_endpoint: int = Field(
-        default=10, description="Maximum pooled connections per endpoint"
+        default=10,
+        description="Maximum pooled connections per endpoint",
     )
     circuit_breaker_failure_threshold: int = Field(
-        default=5, description="Circuit breaker failure threshold"
+        default=5,
+        description="Circuit breaker failure threshold",
     )
     circuit_breaker_recovery_timeout: int = Field(
-        default=60, description="Circuit breaker recovery timeout in seconds"
+        default=60,
+        description="Circuit breaker recovery timeout in seconds",
     )
 
     # Enhanced security parameters
     mask_credentials_in_logs: bool = Field(
-        default=True, description="Always mask credentials in log outputs"
+        default=True,
+        description="Always mask credentials in log outputs",
     )
     mask_sensitive_headers: bool = Field(
-        default=True, description="Mask sensitive HTTP headers in logs"
+        default=True,
+        description="Mask sensitive HTTP headers in logs",
     )
     secure_error_responses: bool = Field(
-        default=True, description="Sanitize error responses in production"
+        default=True,
+        description="Sanitize error responses in production",
     )
     connection_string_logging: bool = Field(
-        default=False, description="Enable connection string logging (dev only)"
+        default=False,
+        description="Enable connection string logging (dev only)",
     )
 
     def model_post_init(self, __context) -> None:
@@ -384,7 +455,7 @@ class ModelSecurityConfig(BaseModel):
                 raise ValueError("log_sensitive_data must be False in production")
             if self.connection_string_logging:
                 raise ValueError(
-                    "connection_string_logging must be False in production"
+                    "connection_string_logging must be False in production",
                 )
             if not self.mask_credentials_in_logs:
                 raise ValueError("mask_credentials_in_logs must be True in production")
@@ -402,8 +473,8 @@ class ModelSecurityConfig(BaseModel):
             environment in ["production", "prod"]
             or node_env in ["production", "prod"]
             or (
-                not os.getenv("DEBUG", "").lower() == "true"
-                and not os.getenv("DEV_MODE", "").lower() == "true"
+                os.getenv("DEBUG", "").lower() != "true"
+                and os.getenv("DEV_MODE", "").lower() != "true"
             )
         )
 
@@ -415,7 +486,7 @@ class ModelCanaryNodeConfig(BaseModel):
     timeouts: ModelTimeoutConfig = Field(default_factory=ModelTimeoutConfig)
     performance: ModelPerformanceConfig = Field(default_factory=ModelPerformanceConfig)
     business_logic: ModelBusinessLogicConfig = Field(
-        default_factory=ModelBusinessLogicConfig
+        default_factory=ModelBusinessLogicConfig,
     )
     security: ModelSecurityConfig = Field(default_factory=ModelSecurityConfig)
 
@@ -441,7 +512,7 @@ class ModelCanaryNodeConfig(BaseModel):
             health_check_timeout_ms=int(os.getenv("HEALTH_CHECK_TIMEOUT_MS", "5000")),
             api_call_timeout_ms=int(os.getenv("API_CALL_TIMEOUT_MS", "10000")),
             workflow_step_timeout_ms=int(
-                os.getenv("WORKFLOW_STEP_TIMEOUT_MS", "60000")
+                os.getenv("WORKFLOW_STEP_TIMEOUT_MS", "60000"),
             ),
         )
 
@@ -451,7 +522,7 @@ class ModelCanaryNodeConfig(BaseModel):
             cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "300")),
             metrics_retention_count=int(os.getenv("METRICS_RETENTION_COUNT", "1000")),
             max_concurrent_operations=int(
-                os.getenv("MAX_CONCURRENT_OPERATIONS", "100")
+                os.getenv("MAX_CONCURRENT_OPERATIONS", "100"),
             ),
             error_rate_threshold=float(os.getenv("ERROR_RATE_THRESHOLD", "0.1")),
             min_operations_for_health=int(os.getenv("MIN_OPERATIONS_FOR_HEALTH", "10")),
@@ -460,25 +531,25 @@ class ModelCanaryNodeConfig(BaseModel):
         # Business logic config from environment
         business_logic_config = ModelBusinessLogicConfig(
             customer_purchase_threshold=float(
-                os.getenv("CUSTOMER_PURCHASE_THRESHOLD", "1000.0")
+                os.getenv("CUSTOMER_PURCHASE_THRESHOLD", "1000.0"),
             ),
             customer_loyalty_years_threshold=int(
-                os.getenv("CUSTOMER_LOYALTY_YEARS_THRESHOLD", "2")
+                os.getenv("CUSTOMER_LOYALTY_YEARS_THRESHOLD", "2"),
             ),
             customer_support_tickets_threshold=int(
-                os.getenv("CUSTOMER_SUPPORT_TICKETS_THRESHOLD", "3")
+                os.getenv("CUSTOMER_SUPPORT_TICKETS_THRESHOLD", "3"),
             ),
             customer_premium_score_threshold=int(
-                os.getenv("CUSTOMER_PREMIUM_SCORE_THRESHOLD", "30")
+                os.getenv("CUSTOMER_PREMIUM_SCORE_THRESHOLD", "30"),
             ),
             canary_error_rate_threshold=float(
-                os.getenv("CANARY_ERROR_RATE_THRESHOLD", "0.05")
+                os.getenv("CANARY_ERROR_RATE_THRESHOLD", "0.05"),
             ),
             canary_default_traffic_percentage=int(
-                os.getenv("CANARY_DEFAULT_TRAFFIC_PERCENTAGE", "10")
+                os.getenv("CANARY_DEFAULT_TRAFFIC_PERCENTAGE", "10"),
             ),
             canary_test_duration_minutes=int(
-                os.getenv("CANARY_TEST_DURATION_MINUTES", "15")
+                os.getenv("CANARY_TEST_DURATION_MINUTES", "15"),
             ),
         )
 
@@ -490,7 +561,8 @@ class ModelCanaryNodeConfig(BaseModel):
             sanitize_stack_traces=os.getenv("SANITIZE_STACK_TRACES", "true").lower()
             == "true",
             correlation_id_validation=os.getenv(
-                "CORRELATION_ID_VALIDATION", "true"
+                "CORRELATION_ID_VALIDATION",
+                "true",
             ).lower()
             == "true",
         )

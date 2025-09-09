@@ -5,9 +5,7 @@ Defines the contract structure for Gateway nodes that handle message routing,
 response aggregation, and network coordination patterns.
 """
 
-from typing import Dict, List, Optional
-
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from omnibase_core.core.contracts.model_contract_base import ModelContractBase
 from omnibase_core.core.subcontracts.model_routing_subcontract import (
@@ -28,8 +26,9 @@ class ModelContractGateway(ModelContractBase):
     """
 
     # Gateway-specific configuration
-    routing_subcontract: Optional[ModelRoutingSubcontract] = Field(
-        default=None, description="Message routing and forwarding configuration"
+    routing_subcontract: ModelRoutingSubcontract | None = Field(
+        default=None,
+        description="Message routing and forwarding configuration",
     )
 
     max_concurrent_connections: int = Field(
@@ -40,15 +39,20 @@ class ModelContractGateway(ModelContractBase):
     )
 
     timeout_ms: int = Field(
-        default=30000, ge=1000, le=300000, description="Request timeout in milliseconds"
+        default=30000,
+        ge=1000,
+        le=300000,
+        description="Request timeout in milliseconds",
     )
 
     load_balancing_enabled: bool = Field(
-        default=True, description="Whether to enable load balancing across endpoints"
+        default=True,
+        description="Whether to enable load balancing across endpoints",
     )
 
     circuit_breaker_enabled: bool = Field(
-        default=True, description="Whether to enable circuit breaker pattern"
+        default=True,
+        description="Whether to enable circuit breaker pattern",
     )
 
     response_aggregation_enabled: bool = Field(
@@ -56,8 +60,9 @@ class ModelContractGateway(ModelContractBase):
         description="Whether to aggregate responses from multiple sources",
     )
 
-    protocol_translation: Optional[Dict[str, str]] = Field(
-        default=None, description="Protocol translation mapping (source -> target)"
+    protocol_translation: dict[str, str] | None = Field(
+        default=None,
+        description="Protocol translation mapping (source -> target)",
     )
 
     def validate_node_specific_config(self) -> None:
@@ -70,24 +75,25 @@ class ModelContractGateway(ModelContractBase):
         # Gateway nodes must have routing capabilities
         if not self.routing_subcontract:
             raise ValueError(
-                "Gateway nodes must specify routing_subcontract for message forwarding"
+                "Gateway nodes must specify routing_subcontract for message forwarding",
             )
 
         # Validate timeout configuration
         if self.timeout_ms < 1000:
             raise ValueError(
-                "Gateway timeout must be at least 1000ms for reliable operations"
+                "Gateway timeout must be at least 1000ms for reliable operations",
             )
 
         # Validate connection limits
         if self.max_concurrent_connections > 10000:
             raise ValueError(
-                "Gateway connection limit cannot exceed 10000 for stability"
+                "Gateway connection limit cannot exceed 10000 for stability",
             )
 
         # Protocol translation validation
         if self.protocol_translation and not isinstance(
-            self.protocol_translation, dict
+            self.protocol_translation,
+            dict,
         ):
             raise ValueError("protocol_translation must be a dictionary mapping")
 
@@ -109,7 +115,9 @@ class ModelContractGateway(ModelContractBase):
         )
 
         return serialize_pydantic_model_to_yaml(
-            self, default_flow_style=False, sort_keys=False
+            self,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     @classmethod
@@ -125,7 +133,6 @@ class ModelContractGateway(ModelContractBase):
         """
         from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
-            load_and_validate_yaml_model,
             load_yaml_content_as_model,
         )
 

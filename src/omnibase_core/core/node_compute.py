@@ -23,7 +23,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, TypeVar
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -56,11 +56,11 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     """
 
     data: T_Input
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -83,7 +83,7 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     processing_time_ms: float
     cache_hit: bool = False
     parallel_execution_used: bool = False
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
 
     class Config:
         """Pydantic configuration."""

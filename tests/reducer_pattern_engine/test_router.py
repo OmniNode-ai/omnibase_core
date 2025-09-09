@@ -5,8 +5,7 @@ Tests the router functionality including subreducer registration,
 workflow routing decisions, hash-based routing, and error handling.
 """
 
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -52,7 +51,7 @@ class InvalidSubreducer:
 def router():
     """Create a WorkflowRouter instance for testing."""
     with patch(
-        "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+        "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
     ):
         return WorkflowRouter()
 
@@ -80,7 +79,7 @@ class TestWorkflowRouterInitialization:
     def test_router_initialization(self):
         """Test that router initializes correctly."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router = WorkflowRouter()
 
@@ -104,7 +103,7 @@ class TestSubreducerRegistration:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -129,7 +128,7 @@ class TestSubreducerRegistration:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             with pytest.raises(OnexError) as exc_info:
                 router.register_subreducer(invalid_subreducer, workflow_types)
@@ -144,7 +143,7 @@ class TestSubreducerRegistration:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             # Register first subreducer
             router.register_subreducer(subreducer1, workflow_types)
@@ -163,7 +162,7 @@ class TestSubreducerRegistration:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -189,7 +188,7 @@ class TestWorkflowRouting:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -210,20 +209,22 @@ class TestWorkflowRouting:
         assert "routing_algorithm" in decision.routing_metadata
         assert "total_subreducers" in decision.routing_metadata
         assert decision.routing_metadata["correlation_id"] == str(
-            sample_workflow_request.correlation_id
+            sample_workflow_request.correlation_id,
         )
         assert decision.routing_metadata["routing_algorithm"] == "hash_based"
         assert decision.routing_metadata["total_subreducers"] == 1
 
     @pytest.mark.asyncio
     async def test_routing_unsupported_workflow_type(
-        self, router, sample_workflow_request
+        self,
+        router,
+        sample_workflow_request,
     ):
         """Test routing with unsupported workflow type."""
         # Don't register any subreducers
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             with pytest.raises(OnexError) as exc_info:
                 await router.route(sample_workflow_request)
@@ -239,7 +240,7 @@ class TestWorkflowRouting:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -271,7 +272,7 @@ class TestWorkflowRouting:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -296,7 +297,7 @@ class TestWorkflowRouting:
         assert initial_metrics["average_routing_time_ms"] == 0.0
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -316,7 +317,7 @@ class TestWorkflowRouting:
         initial_metrics = router.get_routing_metrics()
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             with pytest.raises(OnexError):
                 await router.route(sample_workflow_request)
@@ -359,7 +360,7 @@ class TestRoutingMetrics:
         ]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -410,14 +411,16 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_routing_with_exception_during_processing(
-        self, router, sample_workflow_request
+        self,
+        router,
+        sample_workflow_request,
     ):
         """Test handling of exceptions during routing process."""
         subreducer = MockSubreducer("doc_regeneration_subreducer")
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 
@@ -442,7 +445,7 @@ class TestErrorHandling:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ) as mock_log:
             with pytest.raises(OnexError):
                 router.register_subreducer(invalid_subreducer, workflow_types)
@@ -465,7 +468,7 @@ class TestEdgeCases:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             # Should still work with empty name
             router.register_subreducer(subreducer, workflow_types)
@@ -480,7 +483,7 @@ class TestEdgeCases:
         workflow_types = []
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             # Should succeed but not map any workflow types
             router.register_subreducer(subreducer, workflow_types)
@@ -502,7 +505,7 @@ class TestEdgeCases:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router.register_subreducer(subreducer, workflow_types)
 

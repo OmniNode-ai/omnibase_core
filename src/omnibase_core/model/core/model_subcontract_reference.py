@@ -15,5 +15,6 @@ class ModelSubcontractReference(BaseModel):
 
     path: str = Field(..., description="Relative path to the subcontract YAML file")
     integration_field: str = Field(
-        ..., description="Field name for integrating subcontract configuration"
+        ...,
+        description="Field name for integrating subcontract configuration",
     )

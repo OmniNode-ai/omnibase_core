@@ -8,7 +8,7 @@ The ONEX framework implements a sophisticated 4-node architectural pattern where
 
 ### The 4-Node Pattern
 
-Based on research of both the current omnibase-core implementation and the reference architecture in omnibase_3, the ONEX system organizes functionality into four distinct node types:
+Based on research of both the current omnibase_core implementation and the reference architecture in omnibase_3, the ONEX system organizes functionality into four distinct node types:
 
 1. **Effect Nodes** - Handle external system interactions
 2. **Compute Nodes** - Process data transformations and business logic  
@@ -489,4 +489,4 @@ class NodeServiceFactory:
         return NodeEffectService(node, container)
 ```
 
-This comprehensive guide provides the foundation for developing with the ONEX 4-Node System. For specific implementation details, refer to the source code and example implementations in the omnibase-core and omnibase_3 repositories.
+This comprehensive guide provides the foundation for developing with the ONEX 4-Node System. For specific implementation details, refer to the source code and example implementations in the omnibase_core and omnibase_3 repositories.

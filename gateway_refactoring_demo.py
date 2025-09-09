@@ -5,7 +5,7 @@ This file shows the exact changes needed to replace Union types with proper Pyda
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -39,14 +39,14 @@ class ModelGatewayInputBefore(BaseModel):
     """Original model with Union types."""
 
     # This uses weak typing - any string key with any primitive value
-    message_data: Dict[str, Union[str, int, float, bool]]
-    destination_endpoints: List[str]
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    message_data: dict[str, Union[str, int, float, bool]]
+    destination_endpoints: list[str]
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     routing_strategy: str = RoutingStrategy.ROUND_ROBIN
 
     # More weak typing - generic metadata dictionary
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
+    metadata: dict[str, Union[str, int, float, bool]] | None = Field(
+        default_factory=dict,
     )
     timestamp: datetime = Field(default_factory=datetime.now)
 
@@ -55,16 +55,16 @@ class ModelGatewayOutputBefore(BaseModel):
     """Original output model with Union types."""
 
     # Weak return type - could be anything
-    result: Dict[str, Union[str, int, float, bool]]
+    result: dict[str, Union[str, int, float, bool]]
     operation_id: str
     routing_strategy: str
     selected_endpoint: str
     response_time_ms: float
 
     # Weak metadata typing
-    load_balance_decision: Optional[Dict[str, Union[str, int, float]]] = None
-    metadata: Optional[Dict[str, Union[str, int, float, bool]]] = Field(
-        default_factory=dict
+    load_balance_decision: dict[str, Union[str, int, float]] | None = None
+    metadata: dict[str, Union[str, int, float, bool]] | None = Field(
+        default_factory=dict,
     )
 
 
@@ -82,12 +82,14 @@ class GatewayMessageData(BaseModel):
     content_length: int = Field(ge=0, description="Size of message content")
     priority: int = Field(default=1, ge=1, le=10, description="Message priority")
     compression_enabled: bool = Field(
-        default=False, description="Whether content is compressed"
+        default=False,
+        description="Whether content is compressed",
     )
 
     # Allow additional fields for flexibility, but validate known ones
-    additional_data: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional message data"
+    additional_data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional message data",
     )
 
     class Config:
@@ -116,8 +118,8 @@ class ModelGatewayInputAfter(BaseModel):
 
     # Strongly typed message data
     message_data: GatewayMessageData
-    destination_endpoints: List[str]
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    destination_endpoints: list[str]
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     routing_strategy: str = RoutingStrategy.ROUND_ROBIN
     protocol_source: str = ProtocolType.HTTP
     protocol_target: str = ProtocolType.HTTP
@@ -149,12 +151,12 @@ class ModelGatewayOutputAfter(BaseModel):
     selected_endpoint: str
     response_time_ms: float
     retry_count: int = 0
-    endpoints_tried: List[str] = Field(default_factory=list)
+    endpoints_tried: list[str] = Field(default_factory=list)
     circuit_breaker_triggered: bool = False
 
     # Strongly typed load balancing decision
-    load_balance_decision: Optional[LoadBalancingDecision] = None
-    aggregated_responses: Optional[List[GatewayResult]] = None
+    load_balance_decision: LoadBalancingDecision | None = None
+    aggregated_responses: list[GatewayResult] | None = None
 
     # Strongly typed metadata
     metadata: GatewayMetadata = Field(default_factory=GatewayMetadata)

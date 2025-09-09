@@ -1,7 +1,6 @@
 """Subreducer result model for Reducer Pattern Engine."""
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -20,7 +19,8 @@ class ModelSubreducerResult(BaseModel):
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
     subreducer_name: str = Field(
-        ..., description="Name of the subreducer that processed the workflow"
+        ...,
+        description="Name of the subreducer that processed the workflow",
     )
     success: bool = Field(..., description="Whether subreducer processing succeeded")
     result: ModelWorkflowResult = Field(..., description="Processing result details")
@@ -29,10 +29,12 @@ class ModelSubreducerResult(BaseModel):
         description="Error details if processing failed",
     )
     processing_time_ms: float = Field(
-        ..., description="Processing time in milliseconds"
+        ...,
+        description="Processing time in milliseconds",
     )
     processed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Processing completion timestamp"
+        default_factory=datetime.utcnow,
+        description="Processing completion timestamp",
     )
 
     class Config:

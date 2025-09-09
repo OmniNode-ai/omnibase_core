@@ -7,25 +7,17 @@ instance isolation, concurrent processing, and comprehensive validation.
 
 import asyncio
 import time
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
-    ModelWorkflowStateModel,
     WorkflowState,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
-)
-from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration import (
-    ReducerDocumentRegenerationSubreducer,
-)
-from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
-    ReducerReportGenerationSubreducer,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine import (
     ReducerPatternEngine,
@@ -34,7 +26,6 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
     ModelSubreducerResult,
     ModelWorkflowRequest,
-    ModelWorkflowResponse,
     WorkflowStatus,
     WorkflowType,
 )
@@ -78,14 +69,13 @@ class MockSubreducer(BaseSubreducer):
                 },
                 processing_time_ms=self._processing_delay * 1000,
             )
-        else:
-            return ModelSubreducerResult(
-                workflow_id=request.workflow_id,
-                subreducer_name=self.name,
-                success=False,
-                error_message="Mock processing failure",
-                error_details={"mock_error": True},
-            )
+        return ModelSubreducerResult(
+            workflow_id=request.workflow_id,
+            subreducer_name=self.name,
+            success=False,
+            error_message="Mock processing failure",
+            error_details={"mock_error": True},
+        )
 
     @property
     def call_count(self) -> int:
@@ -107,7 +97,7 @@ class TestMultiWorkflowProcessing:
         return ReducerPatternEngine(mock_container)
 
     @pytest.fixture
-    def sample_workflows(self) -> Dict[str, ModelWorkflowRequest]:
+    def sample_workflows(self) -> dict[str, ModelWorkflowRequest]:
         """Create sample workflow requests for all supported types."""
         base_correlation_id = uuid4()
 
@@ -440,7 +430,7 @@ class TestMultiWorkflowProcessing:
         # Check legacy metrics
         legacy_metrics = comprehensive_metrics["legacy_metrics"]
         assert legacy_metrics["total_workflows_processed"] == rounds * len(
-            sample_workflows
+            sample_workflows,
         )
         assert legacy_metrics["successful_workflows"] == rounds * len(sample_workflows)
         assert legacy_metrics["failed_workflows"] == 0
@@ -448,7 +438,7 @@ class TestMultiWorkflowProcessing:
         # Check enhanced metrics
         enhanced_metrics = comprehensive_metrics["enhanced_metrics"]
         assert enhanced_metrics["total_workflows_processed"] == rounds * len(
-            sample_workflows
+            sample_workflows,
         )
         assert enhanced_metrics["overall_success_rate"] == 100.0
 
@@ -523,7 +513,8 @@ class TestMultiWorkflowProcessing:
         # Create real data analysis subreducer
         data_analysis_subreducer = ReducerDataAnalysisSubreducer("real_data_analysis")
         engine.register_subreducer(
-            data_analysis_subreducer, [WorkflowType.DATA_ANALYSIS]
+            data_analysis_subreducer,
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Create realistic data analysis request
@@ -626,7 +617,7 @@ class TestMultiWorkflowProcessing:
                 {
                     "subreducer": mock_subreducer,
                     "workflow_types": [request.workflow_type],
-                }
+                },
             )
 
         # Register all subreducers at once

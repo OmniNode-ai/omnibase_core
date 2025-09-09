@@ -7,9 +7,8 @@ and system-level metrics tracking for the Reducer Pattern Engine Phase 2.
 
 import threading
 import time
-from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -326,7 +325,9 @@ class TestReducerMetricsCollector:
             success = i % 2 == 0  # Alternate success/failure
 
             with patch.object(
-                metrics_collector, "_get_memory_usage_mb", return_value=50.0 + i * 10
+                metrics_collector,
+                "_get_memory_usage_mb",
+                return_value=50.0 + i * 10,
             ):
                 metrics_collector.record_workflow_completion(
                     workflow_id=workflow_id,
@@ -386,7 +387,9 @@ class TestReducerMetricsCollector:
             success = i < 3  # 3 successes, 2 failures
 
             with patch.object(
-                metrics_collector, "_get_memory_usage_mb", return_value=40.0 + i * 5
+                metrics_collector,
+                "_get_memory_usage_mb",
+                return_value=40.0 + i * 5,
             ):
                 metrics_collector.record_workflow_completion(
                     workflow_id=workflow_id,
@@ -423,7 +426,9 @@ class TestReducerMetricsCollector:
         for workflow_type, success, processing_time in workflow_data:
             workflow_id = uuid4()
             with patch.object(
-                metrics_collector, "_get_memory_usage_mb", return_value=50.0
+                metrics_collector,
+                "_get_memory_usage_mb",
+                return_value=50.0,
             ):
                 metrics_collector.record_workflow_completion(
                     workflow_id=workflow_id,
@@ -493,7 +498,9 @@ class TestReducerMetricsCollector:
         for i in range(75):
             workflow_id = uuid4()
             with patch.object(
-                metrics_collector, "_get_memory_usage_mb", return_value=50.0
+                metrics_collector,
+                "_get_memory_usage_mb",
+                return_value=50.0,
             ):
                 metrics_collector.record_workflow_completion(
                     workflow_id=workflow_id,
@@ -525,7 +532,9 @@ class TestReducerMetricsCollector:
                 workflow_type = f"thread_{thread_id}_type"
 
                 with patch.object(
-                    metrics_collector, "_get_memory_usage_mb", return_value=50.0
+                    metrics_collector,
+                    "_get_memory_usage_mb",
+                    return_value=50.0,
                 ):
                     metrics_collector.record_workflow_completion(
                         workflow_id=workflow_id,
@@ -542,7 +551,8 @@ class TestReducerMetricsCollector:
 
         for thread_id in range(num_threads):
             thread = threading.Thread(
-                target=worker_function, args=(thread_id, iterations_per_thread)
+                target=worker_function,
+                args=(thread_id, iterations_per_thread),
             )
             threads.append(thread)
             thread.start()
@@ -632,7 +642,7 @@ class TestReducerMetricsCollector:
             )
 
         zero_time_metrics = metrics_collector.get_workflow_type_metrics(
-            "zero_time_test"
+            "zero_time_test",
         )
         assert zero_time_metrics["average_processing_time_ms"] == 0.0
         assert zero_time_metrics["min_processing_time_ms"] == 0.0

@@ -7,7 +7,6 @@ including validation, field constraints, and helper methods.
 """
 
 import uuid
-from typing import Any, Dict
 
 import pytest
 from pydantic import ValidationError
@@ -59,7 +58,7 @@ class TestModelCanaryEffectInput:
     def test_basic_creation(self):
         """Test basic model creation with required fields."""
         input_model = ModelCanaryEffectInput(
-            operation_type=EnumCanaryOperationType.HEALTH_CHECK
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
         )
 
         assert input_model.operation_type == EnumCanaryOperationType.HEALTH_CHECK
@@ -88,10 +87,10 @@ class TestModelCanaryEffectInput:
     def test_correlation_id_auto_generation(self):
         """Test automatic correlation ID generation."""
         input_model1 = ModelCanaryEffectInput(
-            operation_type=EnumCanaryOperationType.HEALTH_CHECK
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
         )
         input_model2 = ModelCanaryEffectInput(
-            operation_type=EnumCanaryOperationType.HEALTH_CHECK
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
         )
 
         # Should be auto-generated and unique
@@ -205,7 +204,8 @@ class TestModelCanaryEffectOutput:
     def test_basic_creation_failure(self):
         """Test basic model creation for failed operation."""
         output_model = ModelCanaryEffectOutput(
-            success=False, error_message="Operation failed"
+            success=False,
+            error_message="Operation failed",
         )
 
         assert output_model.success is False
@@ -257,7 +257,8 @@ class TestModelCanaryEffectOutput:
         """Test that extra fields are forbidden."""
         with pytest.raises(ValidationError) as exc_info:
             ModelCanaryEffectOutput(
-                success=True, invalid_field="not_allowed"  # type: ignore
+                success=True,
+                invalid_field="not_allowed",  # type: ignore
             )
 
         error = exc_info.value
@@ -271,14 +272,16 @@ class TestModelCanaryEffectOutput:
     def test_is_successful_false_with_error(self):
         """Test is_successful returns False when success=False."""
         output_model = ModelCanaryEffectOutput(
-            success=False, error_message="Something went wrong"
+            success=False,
+            error_message="Something went wrong",
         )
         assert output_model.is_successful() is False
 
     def test_is_successful_true_with_error(self):
         """Test is_successful returns False when success=True but has error."""
         output_model = ModelCanaryEffectOutput(
-            success=True, error_message="Warning message"
+            success=True,
+            error_message="Warning message",
         )
         assert output_model.is_successful() is False
 
@@ -321,7 +324,9 @@ class TestModelCanaryEffectOutput:
     def test_get_result_summary_with_error(self):
         """Test get_result_summary with error condition."""
         output_model = ModelCanaryEffectOutput(
-            success=False, error_message="Test error", execution_time_ms=None
+            success=False,
+            error_message="Test error",
+            execution_time_ms=None,
         )
 
         summary = output_model.get_result_summary()
@@ -336,7 +341,9 @@ class TestModelCanaryEffectOutput:
     def test_model_serialization(self):
         """Test model serialization to dict."""
         output_model = ModelCanaryEffectOutput(
-            operation_result={"result": "success"}, success=True, execution_time_ms=200
+            operation_result={"result": "success"},
+            success=True,
+            execution_time_ms=200,
         )
 
         serialized = output_model.model_dump()
@@ -373,12 +380,13 @@ class TestModelIntegration:
         """Test correlation ID propagation from input to output."""
         # Create input with auto-generated correlation ID
         input_model = ModelCanaryEffectInput(
-            operation_type=EnumCanaryOperationType.HEALTH_CHECK
+            operation_type=EnumCanaryOperationType.HEALTH_CHECK,
         )
 
         # Create output with same correlation ID
         output_model = ModelCanaryEffectOutput(
-            success=True, correlation_id=input_model.correlation_id
+            success=True,
+            correlation_id=input_model.correlation_id,
         )
 
         assert input_model.correlation_id == output_model.correlation_id

@@ -9,26 +9,22 @@ with external services for fault tolerance and graceful degradation.
 import asyncio
 import logging
 import random
-import time
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from omnibase_core.core.resilience import (
     CircuitBreakerEvent,
     CircuitBreakerException,
     CircuitBreakerFactory,
-    CircuitBreakerOpenException,
-    CircuitBreakerState,
     ExternalDependencyCircuitBreaker,
-    ModelCircuitBreakerConfig,
-    get_circuit_breaker,
     list_circuit_breakers,
     register_circuit_breaker,
 )
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -42,7 +38,7 @@ class MockExternalService:
         self.slow_rate = slow_rate
         self.call_count = 0
 
-    async def call(self, data: Any = None) -> Dict[str, Any]:
+    async def call(self, data: Any = None) -> dict[str, Any]:
         """Simulate API call with configurable failure and slowness."""
         self.call_count += 1
 
@@ -92,7 +88,7 @@ async def example_basic_circuit_breaker():
 
     # Show final metrics
     metrics = circuit_breaker.get_metrics()
-    print(f"\nFinal metrics:")
+    print("\nFinal metrics:")
     print(f"  State: {metrics.current_state}")
     print(f"  Total requests: {metrics.total_requests}")
     print(f"  Success rate: {metrics.get_success_rate():.2%}")
@@ -110,7 +106,7 @@ async def example_circuit_breaker_with_fallback():
     circuit_breaker = CircuitBreakerFactory.create_fast_fail("user-api")
 
     # Define fallback function
-    async def fallback_get_user(user_id: str = "default") -> Dict[str, Any]:
+    async def fallback_get_user(user_id: str = "default") -> dict[str, Any]:
         """Fallback that returns cached/default user data."""
         return {
             "service": "user-api-cache",
@@ -159,7 +155,7 @@ async def example_circuit_breaker_context_manager():
 
             print(f"Notification {i+1}: SUCCESS")
 
-        except CircuitBreakerException as e:
+        except CircuitBreakerException:
             print(f"Notification {i+1}: CIRCUIT OPEN - using default notification")
         except Exception as e:
             print(f"Notification {i+1}: FAILED - {e}")
@@ -185,7 +181,7 @@ async def example_environment_configured_circuit_breaker():
 
     service = MockExternalService("email-service", failure_rate=0.5)
 
-    print(f"Configuration loaded from environment:")
+    print("Configuration loaded from environment:")
     print(f"  Failure threshold: {circuit_breaker.config.failure_threshold}")
     print(f"  Failure rate threshold: {circuit_breaker.config.failure_rate_threshold}")
     print(f"  Recovery timeout: {circuit_breaker.config.recovery_timeout_seconds}s")
@@ -229,11 +225,13 @@ async def example_circuit_breaker_events():
     # Create circuit breaker and register event listeners
     circuit_breaker = CircuitBreakerFactory.create_fast_fail("analytics-api")
     circuit_breaker.add_event_listener(
-        CircuitBreakerEvent.STATE_CHANGE, log_state_changes
+        CircuitBreakerEvent.STATE_CHANGE,
+        log_state_changes,
     )
     circuit_breaker.add_event_listener(CircuitBreakerEvent.FAILURE, log_failures)
     circuit_breaker.add_event_listener(
-        CircuitBreakerEvent.FALLBACK_EXECUTED, log_fallbacks
+        CircuitBreakerEvent.FALLBACK_EXECUTED,
+        log_fallbacks,
     )
 
     service = MockExternalService("analytics-api", failure_rate=0.7)
@@ -246,7 +244,8 @@ async def example_circuit_breaker_events():
     for i in range(6):
         try:
             result = await circuit_breaker.call(
-                lambda: service.call(f"analytics-{i}"), fallback=analytics_fallback
+                lambda: service.call(f"analytics-{i}"),
+                fallback=analytics_fallback,
             )
             print(f"Analytics {i+1}: {result.get('status', 'success')}")
         except Exception as e:
@@ -299,18 +298,18 @@ async def example_multiple_circuit_breakers():
         for service_name, cb in circuit_breakers.items():
             try:
                 result = await cb.call(
-                    lambda sn=service_name: services[sn].call(f"request-{round_num}")
+                    lambda sn=service_name: services[sn].call(f"request-{round_num}"),
                 )
                 print(f"  {service_name}: SUCCESS")
             except CircuitBreakerException:
                 print(f"  {service_name}: CIRCUIT OPEN")
-            except Exception as e:
+            except Exception:
                 print(f"  {service_name}: FAILED")
 
         await asyncio.sleep(0.5)
 
     # Show status of all circuit breakers
-    print(f"\nFinal status of all circuit breakers:")
+    print("\nFinal status of all circuit breakers:")
     status_summary = list_circuit_breakers()
 
     for name, status in status_summary.items():
@@ -353,11 +352,11 @@ async def example_circuit_breaker_recovery():
             metrics = circuit_breaker.get_metrics()
             print(
                 f"Call {i+1}: SUCCESS (state: {metrics.current_state}, "
-                f"failure rate: {service.failure_rate:.1%})"
+                f"failure rate: {service.failure_rate:.1%})",
             )
-        except CircuitBreakerException as e:
+        except CircuitBreakerException:
             print(f"Call {i+1}: CIRCUIT OPEN")
-        except Exception as e:
+        except Exception:
             print(f"Call {i+1}: SERVICE FAILED")
 
         # Show recovery progress every 5 calls
@@ -365,14 +364,14 @@ async def example_circuit_breaker_recovery():
             metrics = circuit_breaker.get_metrics()
             print(
                 f"  Status after {i+1} calls: {metrics.current_state}, "
-                f"success rate: {metrics.get_success_rate():.1%}"
+                f"success rate: {metrics.get_success_rate():.1%}",
             )
 
         await asyncio.sleep(0.2)
 
     # Final metrics
     final_metrics = circuit_breaker.get_metrics()
-    print(f"\nFinal recovery status:")
+    print("\nFinal recovery status:")
     print(f"  Circuit breaker state: {final_metrics.current_state}")
     print(f"  Total requests: {final_metrics.total_requests}")
     print(f"  Success rate: {final_metrics.get_success_rate():.1%}")

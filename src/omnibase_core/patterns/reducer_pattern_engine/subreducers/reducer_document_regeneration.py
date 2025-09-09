@@ -7,7 +7,6 @@ contract and processing patterns.
 """
 
 import time
-from typing import Dict, Optional
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.core_structured_logging import (
@@ -118,7 +117,8 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
 
             # Perform document regeneration processing
             result_data = await self._process_document_regeneration(
-                document_params, request
+                document_params,
+                request,
             )
 
             # Calculate processing time
@@ -173,7 +173,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
             emit_log_event(
                 level=LogLevel.ERROR,
                 event="document_regeneration_failed",
-                message=f"Document regeneration failed for workflow {request.workflow_id}: {str(e)}",
+                message=f"Document regeneration failed for workflow {request.workflow_id}: {e!s}",
                 context={
                     "workflow_id": str(request.workflow_id),
                     "instance_id": request.instance_id,
@@ -187,7 +187,7 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
 
             return result
 
-    def get_metrics(self) -> Dict[str, ModelScalarValue]:
+    def get_metrics(self) -> dict[str, ModelScalarValue]:
         """
         Get processing metrics for this subreducer.
 
@@ -209,8 +209,9 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
         }
 
     def _extract_document_params(
-        self, request: WorkflowRequest
-    ) -> Dict[str, ModelScalarValue]:
+        self,
+        request: WorkflowRequest,
+    ) -> dict[str, ModelScalarValue]:
         """
         Extract and validate document regeneration parameters.
 
@@ -264,7 +265,9 @@ class ReducerDocumentRegenerationSubreducer(BaseSubreducer):
         return document_params
 
     async def _process_document_regeneration(
-        self, document_params: Dict[str, ModelScalarValue], request: WorkflowRequest
+        self,
+        document_params: dict[str, ModelScalarValue],
+        request: WorkflowRequest,
     ) -> WorkflowResultData:
         """
         Perform the actual document regeneration processing.

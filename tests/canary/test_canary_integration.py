@@ -12,12 +12,8 @@ This demonstrates the complete ONEX canary deployment system working together.
 """
 
 import asyncio
-import json
 import time
-from collections import defaultdict
-from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +27,7 @@ class NodeMessage(BaseModel):
     source_node: str = Field(..., description="Source node identifier")
     target_node: str = Field(..., description="Target node identifier")
     operation: str = Field(..., description="Operation to perform")
-    payload: Dict[str, Any] = Field(default_factory=dict, description="Message payload")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Message payload")
     correlation_id: str = Field(..., description="Correlation ID for tracking")
     timestamp: float = Field(default_factory=time.time, description="Message timestamp")
 
@@ -43,14 +39,16 @@ class NodeResponse(BaseModel):
     source_node: str = Field(..., description="Responding node identifier")
     target_node: str = Field(..., description="Original sender identifier")
     success: bool = Field(..., description="Whether operation succeeded")
-    result: Dict[str, Any] = Field(default_factory=dict, description="Operation result")
-    error_message: Optional[str] = Field(
-        default=None, description="Error if operation failed"
+    result: dict[str, Any] = Field(default_factory=dict, description="Operation result")
+    error_message: str | None = Field(
+        default=None,
+        description="Error if operation failed",
     )
     execution_time_ms: int = Field(..., description="Execution time in milliseconds")
     correlation_id: str = Field(..., description="Correlation ID for tracking")
     timestamp: float = Field(
-        default_factory=time.time, description="Response timestamp"
+        default_factory=time.time,
+        description="Response timestamp",
     )
 
 
@@ -58,21 +56,21 @@ class NodeRegistry:
     """Registry for managing node instances and routing."""
 
     def __init__(self):
-        self.nodes: Dict[str, Any] = {}
-        self.message_queue: List[NodeMessage] = []
-        self.response_queue: List[NodeResponse] = []
-        self.routing_log: List[Dict[str, Any]] = []
+        self.nodes: dict[str, Any] = {}
+        self.message_queue: list[NodeMessage] = []
+        self.response_queue: list[NodeResponse] = []
+        self.routing_log: list[dict[str, Any]] = []
 
     def register_node(self, node_id: str, node_instance: Any):
         """Register a node instance."""
         self.nodes[node_id] = node_instance
         print(f"📝 Registered node: {node_id}")
 
-    def get_node(self, node_id: str) -> Optional[Any]:
+    def get_node(self, node_id: str) -> Any | None:
         """Get a node instance by ID."""
         return self.nodes.get(node_id)
 
-    def list_nodes(self) -> List[str]:
+    def list_nodes(self) -> list[str]:
         """List all registered node IDs."""
         return list(self.nodes.keys())
 
@@ -88,7 +86,7 @@ class NodeRegistry:
                 "target": message.target_node,
                 "operation": message.operation,
                 "timestamp": message.timestamp,
-            }
+            },
         )
 
         # Get target node
@@ -155,7 +153,7 @@ class IntegratedCanaryCompute:
         self._processed_count = 0
         self._operation_history = []
 
-    async def process_computation_message(self, message: NodeMessage) -> Dict[str, Any]:
+    async def process_computation_message(self, message: NodeMessage) -> dict[str, Any]:
         """Process computation via message interface."""
         operation_type = message.payload.get("operation_type")
         data = message.payload.get("data", {})
@@ -179,7 +177,7 @@ class IntegratedCanaryCompute:
                 "operation": operation_type,
                 "timestamp": time.time(),
                 "message_id": message.message_id,
-            }
+            },
         )
 
         return {
@@ -189,7 +187,7 @@ class IntegratedCanaryCompute:
             "processed_count": self._processed_count,
         }
 
-    def _perform_addition(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_addition(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform addition operation."""
         values = data.get("values", [])
         if not values:
@@ -198,7 +196,7 @@ class IntegratedCanaryCompute:
         result = sum(values)
         return {"operation": "addition", "values": values, "result": result}
 
-    def _perform_multiplication(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_multiplication(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform multiplication operation."""
         values = data.get("values", [])
         if not values:
@@ -210,7 +208,7 @@ class IntegratedCanaryCompute:
 
         return {"operation": "multiplication", "values": values, "result": result}
 
-    def _perform_aggregation(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_aggregation(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform data aggregation."""
         items = data.get("items", [])
         if not items:
@@ -228,7 +226,7 @@ class IntegratedCanaryCompute:
             "summary": f"Aggregated {total} items with average {avg:.2f}",
         }
 
-    async def _compute_canary_health(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _compute_canary_health(self, data: dict[str, Any]) -> dict[str, Any]:
         """Compute canary deployment health metrics."""
         await asyncio.sleep(0.1)  # Simulate computation
 
@@ -253,7 +251,7 @@ class IntegratedCanaryCompute:
             ),
         }
 
-    async def _compute_deployment_metrics(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _compute_deployment_metrics(self, data: dict[str, Any]) -> dict[str, Any]:
         """Compute deployment performance metrics."""
         await asyncio.sleep(0.05)  # Simulate computation
 
@@ -264,7 +262,8 @@ class IntegratedCanaryCompute:
 
         success_rate = successful_requests / total_requests if total_requests > 0 else 0
         performance_score = max(
-            0, 1 - (average_latency - 100) / 500
+            0,
+            1 - (average_latency - 100) / 500,
         )  # Penalty for latency > 100ms
 
         return {
@@ -291,7 +290,7 @@ class IntegratedCanaryEffect:
         self._operation_history = []
         self._canary_state = {"deployed": False, "traffic_percentage": 0}
 
-    async def perform_effect_message(self, message: NodeMessage) -> Dict[str, Any]:
+    async def perform_effect_message(self, message: NodeMessage) -> dict[str, Any]:
         """Perform effect operation via message interface."""
         operation_type = message.payload.get("operation_type")
         parameters = message.payload.get("parameters", {})
@@ -317,7 +316,7 @@ class IntegratedCanaryEffect:
                 "operation": operation_type,
                 "timestamp": time.time(),
                 "message_id": message.message_id,
-            }
+            },
         )
 
         return {
@@ -328,7 +327,7 @@ class IntegratedCanaryEffect:
             "canary_state": self._canary_state.copy(),
         }
 
-    async def _simulate_health_check(self) -> Dict[str, Any]:
+    async def _simulate_health_check(self) -> dict[str, Any]:
         """Simulate a health check operation."""
         await asyncio.sleep(0.1)  # Simulate network delay
 
@@ -354,7 +353,7 @@ class IntegratedCanaryEffect:
             "check_duration_ms": 100,
         }
 
-    async def _deploy_canary(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _deploy_canary(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Deploy canary version."""
         await asyncio.sleep(0.3)  # Simulate deployment time
 
@@ -376,7 +375,7 @@ class IntegratedCanaryEffect:
             "endpoints": [f"canary-{i}.example.com" for i in range(instance_count)],
         }
 
-    async def _route_traffic(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _route_traffic(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Route traffic to canary deployment."""
         await asyncio.sleep(0.1)  # Simulate routing configuration
 
@@ -396,7 +395,7 @@ class IntegratedCanaryEffect:
             "monitoring_enabled": True,
         }
 
-    async def _rollback_canary(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _rollback_canary(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Rollback canary deployment."""
         await asyncio.sleep(0.2)  # Simulate rollback time
 
@@ -415,7 +414,7 @@ class IntegratedCanaryEffect:
             "traffic_restored_to_stable": True,
         }
 
-    async def _simulate_api_call(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _simulate_api_call(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Simulate an external API call."""
         endpoint = parameters.get("endpoint", "/default")
         method = parameters.get("method", "GET")
@@ -433,8 +432,9 @@ class IntegratedCanaryEffect:
         }
 
     async def _simulate_database_operation(
-        self, parameters: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
         """Simulate a database operation."""
         operation = parameters.get("operation", "select")
         table = parameters.get("table", "deployments")
@@ -455,7 +455,9 @@ class IntegratedCanaryOrchestrator:
     """Canary Orchestrator with inter-node communication for coordinating workflows."""
 
     def __init__(
-        self, node_id: str = "orchestrator_node", registry: NodeRegistry = None
+        self,
+        node_id: str = "orchestrator_node",
+        registry: NodeRegistry = None,
     ):
         self.node_id = node_id
         self.registry = registry
@@ -463,7 +465,7 @@ class IntegratedCanaryOrchestrator:
         self._completed_workflows = {}
         self._workflow_count = 0
 
-    async def start_workflow_message(self, message: NodeMessage) -> Dict[str, Any]:
+    async def start_workflow_message(self, message: NodeMessage) -> dict[str, Any]:
         """Start workflow via message interface."""
         operation_type = message.payload.get("operation_type", "start_workflow")
         workflow_id = message.payload.get("workflow_id")
@@ -472,7 +474,10 @@ class IntegratedCanaryOrchestrator:
 
         if operation_type == "start_workflow":
             result = await self._execute_integrated_workflow(
-                workflow_id, workflow_type, parameters, message.correlation_id
+                workflow_id,
+                workflow_type,
+                parameters,
+                message.correlation_id,
             )
         elif operation_type == "stop_workflow":
             result = await self._stop_workflow(workflow_id)
@@ -493,9 +498,9 @@ class IntegratedCanaryOrchestrator:
         self,
         workflow_id: str,
         workflow_type: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         correlation_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute workflow that coordinates with other nodes."""
         start_time = time.time()
 
@@ -513,15 +518,21 @@ class IntegratedCanaryOrchestrator:
         try:
             if workflow_type == "canary_deployment":
                 result = await self._execute_canary_deployment_workflow(
-                    workflow_id, parameters, correlation_id
+                    workflow_id,
+                    parameters,
+                    correlation_id,
                 )
             elif workflow_type == "infrastructure_health_check":
                 result = await self._execute_health_check_workflow(
-                    workflow_id, parameters, correlation_id
+                    workflow_id,
+                    parameters,
+                    correlation_id,
                 )
             elif workflow_type == "performance_analysis":
                 result = await self._execute_performance_analysis_workflow(
-                    workflow_id, parameters, correlation_id
+                    workflow_id,
+                    parameters,
+                    correlation_id,
                 )
             else:
                 raise ValueError(f"Unknown workflow type: {workflow_type}")
@@ -531,7 +542,7 @@ class IntegratedCanaryOrchestrator:
             workflow["status"] = "completed"
             workflow["end_time"] = time.time()
             workflow["duration_ms"] = int(
-                (workflow["end_time"] - workflow["start_time"]) * 1000
+                (workflow["end_time"] - workflow["start_time"]) * 1000,
             )
             self._completed_workflows[workflow_id] = workflow
             self._workflow_count += 1
@@ -548,8 +559,11 @@ class IntegratedCanaryOrchestrator:
             raise
 
     async def _execute_canary_deployment_workflow(
-        self, workflow_id: str, parameters: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        workflow_id: str,
+        parameters: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Execute full canary deployment workflow coordinating all nodes."""
         steps_results = []
         workflow = self._active_workflows[workflow_id]
@@ -557,7 +571,7 @@ class IntegratedCanaryOrchestrator:
 
         try:
             # Step 1: Deploy canary via Effect node
-            print(f"  🚀 Step 1: Deploying canary version...")
+            print("  🚀 Step 1: Deploying canary version...")
             deploy_message = NodeMessage(
                 message_id=f"{workflow_id}-deploy",
                 source_node=self.node_id,
@@ -576,7 +590,7 @@ class IntegratedCanaryOrchestrator:
             deploy_response = await self.registry.send_message(deploy_message)
             if not deploy_response.success:
                 raise Exception(
-                    f"Canary deployment failed: {deploy_response.error_message}"
+                    f"Canary deployment failed: {deploy_response.error_message}",
                 )
 
             steps_results.append(
@@ -584,12 +598,12 @@ class IntegratedCanaryOrchestrator:
                     "step": "deploy_canary",
                     "result": deploy_response.result,
                     "duration_ms": deploy_response.execution_time_ms,
-                }
+                },
             )
             workflow["steps_completed"] += 1
 
             # Step 2: Route initial traffic via Effect node
-            print(f"  🔀 Step 2: Routing traffic to canary...")
+            print("  🔀 Step 2: Routing traffic to canary...")
             traffic_message = NodeMessage(
                 message_id=f"{workflow_id}-traffic",
                 source_node=self.node_id,
@@ -608,7 +622,7 @@ class IntegratedCanaryOrchestrator:
             traffic_response = await self.registry.send_message(traffic_message)
             if not traffic_response.success:
                 raise Exception(
-                    f"Traffic routing failed: {traffic_response.error_message}"
+                    f"Traffic routing failed: {traffic_response.error_message}",
                 )
 
             steps_results.append(
@@ -616,12 +630,12 @@ class IntegratedCanaryOrchestrator:
                     "step": "route_traffic",
                     "result": traffic_response.result,
                     "duration_ms": traffic_response.execution_time_ms,
-                }
+                },
             )
             workflow["steps_completed"] += 1
 
             # Step 3: Compute canary health metrics
-            print(f"  📊 Step 3: Computing health metrics...")
+            print("  📊 Step 3: Computing health metrics...")
             await asyncio.sleep(2)  # Simulate monitoring period
 
             health_compute_message = NodeMessage(
@@ -645,7 +659,7 @@ class IntegratedCanaryOrchestrator:
             health_response = await self.registry.send_message(health_compute_message)
             if not health_response.success:
                 raise Exception(
-                    f"Health computation failed: {health_response.error_message}"
+                    f"Health computation failed: {health_response.error_message}",
                 )
 
             steps_results.append(
@@ -653,12 +667,12 @@ class IntegratedCanaryOrchestrator:
                     "step": "compute_health",
                     "result": health_response.result,
                     "duration_ms": health_response.execution_time_ms,
-                }
+                },
             )
             workflow["steps_completed"] += 1
 
             # Step 4: Collect deployment metrics via Compute node
-            print(f"  📈 Step 4: Computing deployment metrics...")
+            print("  📈 Step 4: Computing deployment metrics...")
             metrics_message = NodeMessage(
                 message_id=f"{workflow_id}-metrics",
                 source_node=self.node_id,
@@ -671,7 +685,7 @@ class IntegratedCanaryOrchestrator:
                             "total_requests": 1000,
                             "successful_requests": 950,
                             "average_latency_ms": 140,
-                        }
+                        },
                     },
                 },
                 correlation_id=correlation_id,
@@ -680,7 +694,7 @@ class IntegratedCanaryOrchestrator:
             metrics_response = await self.registry.send_message(metrics_message)
             if not metrics_response.success:
                 raise Exception(
-                    f"Metrics computation failed: {metrics_response.error_message}"
+                    f"Metrics computation failed: {metrics_response.error_message}",
                 )
 
             steps_results.append(
@@ -688,12 +702,12 @@ class IntegratedCanaryOrchestrator:
                     "step": "compute_metrics",
                     "result": metrics_response.result,
                     "duration_ms": metrics_response.execution_time_ms,
-                }
+                },
             )
             workflow["steps_completed"] += 1
 
             # Step 5: Aggregate all results via Reducer node
-            print(f"  🔄 Step 5: Aggregating deployment results...")
+            print("  🔄 Step 5: Aggregating deployment results...")
             aggregation_data = [
                 {
                     "adapter": "canary_health",
@@ -731,7 +745,7 @@ class IntegratedCanaryOrchestrator:
             reducer_response = await self.registry.send_message(reducer_message)
             if not reducer_response.success:
                 raise Exception(
-                    f"Result aggregation failed: {reducer_response.error_message}"
+                    f"Result aggregation failed: {reducer_response.error_message}",
                 )
 
             steps_results.append(
@@ -739,12 +753,12 @@ class IntegratedCanaryOrchestrator:
                     "step": "aggregate_results",
                     "result": reducer_response.result,
                     "duration_ms": reducer_response.execution_time_ms,
-                }
+                },
             )
             workflow["steps_completed"] += 1
 
             # Step 6: Make decision and take action
-            print(f"  ⚖️ Step 6: Making deployment decision...")
+            print("  ⚖️ Step 6: Making deployment decision...")
             aggregated_result = reducer_response.result["aggregated_result"]
             should_proceed = (
                 aggregated_result.get("overall_status") in ["ready", "healthy"]
@@ -813,8 +827,11 @@ class IntegratedCanaryOrchestrator:
             raise
 
     async def _execute_health_check_workflow(
-        self, workflow_id: str, parameters: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        workflow_id: str,
+        parameters: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Execute infrastructure health check workflow."""
         steps_results = []
         workflow = self._active_workflows[workflow_id]
@@ -836,7 +853,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "health_check",
                 "result": health_response.result,
                 "duration_ms": health_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -855,7 +872,7 @@ class IntegratedCanaryOrchestrator:
                     "items": [
                         1 if service == "healthy" else 0
                         for service in health_data.get("services", {}).values()
-                    ]
+                    ],
                 },
             },
             correlation_id=correlation_id,
@@ -867,7 +884,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "compute_health_metrics",
                 "result": compute_response.result,
                 "duration_ms": compute_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -881,7 +898,8 @@ class IntegratedCanaryOrchestrator:
                 "adapter": "computed_metrics",
                 "status": "healthy",
                 "average_health": compute_response.result.get("result", {}).get(
-                    "average", 0
+                    "average",
+                    0,
                 ),
             },
         ]
@@ -904,7 +922,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "aggregate_health",
                 "result": reducer_response.result,
                 "duration_ms": reducer_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -914,13 +932,17 @@ class IntegratedCanaryOrchestrator:
             "status": "completed",
             "steps": steps_results,
             "overall_health": reducer_response.result.get("aggregated_result", {}).get(
-                "overall_status", "unknown"
+                "overall_status",
+                "unknown",
             ),
         }
 
     async def _execute_performance_analysis_workflow(
-        self, workflow_id: str, parameters: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        workflow_id: str,
+        parameters: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Execute performance analysis workflow."""
         steps_results = []
         workflow = self._active_workflows[workflow_id]
@@ -945,7 +967,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "collect_performance_data",
                 "result": perf_response.result,
                 "duration_ms": perf_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -961,10 +983,11 @@ class IntegratedCanaryOrchestrator:
                     "deployment_data": {
                         "total_requests": parameters.get("total_requests", 5000),
                         "successful_requests": parameters.get(
-                            "successful_requests", 4800
+                            "successful_requests",
+                            4800,
                         ),
                         "average_latency_ms": parameters.get("average_latency_ms", 180),
-                    }
+                    },
                 },
             },
             correlation_id=correlation_id,
@@ -976,7 +999,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "compute_performance_metrics",
                 "result": compute_response.result,
                 "duration_ms": compute_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -999,7 +1022,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "database_performance_check",
                 "result": db_response.result,
                 "duration_ms": db_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -1009,21 +1032,24 @@ class IntegratedCanaryOrchestrator:
                 "adapter": "api_performance",
                 "status": "healthy",
                 "response_time_ms": perf_response.result.get("result", {}).get(
-                    "response_time_ms", 200
+                    "response_time_ms",
+                    200,
                 ),
             },
             {
                 "adapter": "compute_metrics",
                 "status": "healthy",
                 "recommendation": compute_response.result.get("result", {}).get(
-                    "recommendation", "proceed"
+                    "recommendation",
+                    "proceed",
                 ),
             },
             {
                 "adapter": "database_performance",
                 "status": "healthy",
                 "query_time_ms": db_response.result.get("result", {}).get(
-                    "query_time_ms", 150
+                    "query_time_ms",
+                    150,
                 ),
             },
         ]
@@ -1046,7 +1072,7 @@ class IntegratedCanaryOrchestrator:
                 "step": "aggregate_performance_analysis",
                 "result": reducer_response.result,
                 "duration_ms": reducer_response.execution_time_ms,
-            }
+            },
         )
         workflow["steps_completed"] += 1
 
@@ -1057,11 +1083,12 @@ class IntegratedCanaryOrchestrator:
             "steps": steps_results,
             "performance_summary": reducer_response.result.get("aggregated_result", {}),
             "recommendation": compute_response.result.get("result", {}).get(
-                "recommendation", "unknown"
+                "recommendation",
+                "unknown",
             ),
         }
 
-    async def _stop_workflow(self, workflow_id: str) -> Dict[str, Any]:
+    async def _stop_workflow(self, workflow_id: str) -> dict[str, Any]:
         """Stop a running workflow."""
         if workflow_id in self._active_workflows:
             workflow = self._active_workflows.pop(workflow_id)
@@ -1074,10 +1101,9 @@ class IntegratedCanaryOrchestrator:
                 "status": "cancelled",
                 "message": "Workflow stopped successfully",
             }
-        else:
-            raise ValueError(f"Workflow {workflow_id} not found or not active")
+        raise ValueError(f"Workflow {workflow_id} not found or not active")
 
-    def _get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
+    def _get_workflow_status(self, workflow_id: str) -> dict[str, Any]:
         """Get workflow status."""
         if workflow_id in self._active_workflows:
             workflow = self._active_workflows[workflow_id]
@@ -1106,7 +1132,7 @@ class IntegratedCanaryReducer:
         self._cached_results = {}
         self._aggregation_history = []
 
-    async def aggregate_results_message(self, message: NodeMessage) -> Dict[str, Any]:
+    async def aggregate_results_message(self, message: NodeMessage) -> dict[str, Any]:
         """Aggregate results via message interface."""
         adapter_results = message.payload.get("adapter_results", [])
         operation_type = message.payload.get("operation_type", "general")
@@ -1129,7 +1155,7 @@ class IntegratedCanaryReducer:
                 "result_count": len(adapter_results),
                 "timestamp": time.time(),
                 "message_id": message.message_id,
-            }
+            },
         )
 
         return {
@@ -1141,8 +1167,9 @@ class IntegratedCanaryReducer:
         }
 
     def _aggregate_canary_deployment_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate canary deployment specific results."""
         total_adapters = len(results)
 
@@ -1194,8 +1221,9 @@ class IntegratedCanaryReducer:
         }
 
     def _aggregate_health_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate health check results."""
         total_adapters = len(results)
         healthy_adapters = sum(1 for r in results if r.get("status") == "healthy")
@@ -1224,8 +1252,9 @@ class IntegratedCanaryReducer:
         }
 
     def _aggregate_performance_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate performance analysis results."""
         total_adapters = len(results)
 
@@ -1286,8 +1315,9 @@ class IntegratedCanaryReducer:
         }
 
     def _aggregate_bootstrap_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate bootstrap initialization results."""
         total_adapters = len(results)
         successful_bootstraps = sum(
@@ -1308,8 +1338,9 @@ class IntegratedCanaryReducer:
         }
 
     def _aggregate_general_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate general results."""
         return {
             "operation": "general_aggregation",
@@ -1338,7 +1369,7 @@ class IntegratedCanaryGateway:
         self._response_times = []
         self._routing_history = []
 
-    async def route_message_message(self, message: NodeMessage) -> Dict[str, Any]:
+    async def route_message_message(self, message: NodeMessage) -> dict[str, Any]:
         """Route message via message interface."""
         operation_type = message.payload.get("operation_type")
         target_nodes = message.payload.get("target_nodes", [])
@@ -1350,15 +1381,21 @@ class IntegratedCanaryGateway:
         try:
             if routing_strategy == "broadcast":
                 result = await self._route_broadcast_to_nodes(
-                    target_nodes, routing_data, message.correlation_id
+                    target_nodes,
+                    routing_data,
+                    message.correlation_id,
                 )
             elif routing_strategy == "round_robin":
                 result = await self._route_round_robin_to_nodes(
-                    target_nodes, routing_data, message.correlation_id
+                    target_nodes,
+                    routing_data,
+                    message.correlation_id,
                 )
             elif routing_strategy == "aggregate":
                 result = await self._route_and_aggregate_from_nodes(
-                    target_nodes, routing_data, message.correlation_id
+                    target_nodes,
+                    routing_data,
+                    message.correlation_id,
                 )
             else:
                 raise ValueError(f"Unsupported routing strategy: {routing_strategy}")
@@ -1369,7 +1406,7 @@ class IntegratedCanaryGateway:
             self._routing_metrics["total_routes"] += 1
             self._routing_metrics["successful_routes"] += 1
             self._routing_metrics["avg_response_time_ms"] = sum(
-                self._response_times
+                self._response_times,
             ) / len(self._response_times)
 
             self._routing_history.append(
@@ -1379,7 +1416,7 @@ class IntegratedCanaryGateway:
                     "timestamp": time.time(),
                     "duration_ms": execution_time,
                     "message_id": message.message_id,
-                }
+                },
             )
 
             return {
@@ -1407,8 +1444,11 @@ class IntegratedCanaryGateway:
             }
 
     async def _route_broadcast_to_nodes(
-        self, target_nodes: List[str], routing_data: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        target_nodes: list[str],
+        routing_data: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Broadcast message to all target nodes."""
         responses = []
 
@@ -1434,7 +1474,7 @@ class IntegratedCanaryGateway:
                             response.error_message if not response.success else None
                         ),
                         "execution_time_ms": response.execution_time_ms,
-                    }
+                    },
                 )
 
             except Exception as e:
@@ -1445,7 +1485,7 @@ class IntegratedCanaryGateway:
                         "result": None,
                         "error": str(e),
                         "execution_time_ms": 0,
-                    }
+                    },
                 )
 
         successful_responses = sum(1 for r in responses if r["success"])
@@ -1461,8 +1501,11 @@ class IntegratedCanaryGateway:
         }
 
     async def _route_round_robin_to_nodes(
-        self, target_nodes: List[str], routing_data: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        target_nodes: list[str],
+        routing_data: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Route message using round-robin to target nodes."""
         if not target_nodes:
             raise ValueError("No target nodes provided for round-robin routing")
@@ -1493,8 +1536,11 @@ class IntegratedCanaryGateway:
         }
 
     async def _route_and_aggregate_from_nodes(
-        self, target_nodes: List[str], routing_data: Dict[str, Any], correlation_id: str
-    ) -> Dict[str, Any]:
+        self,
+        target_nodes: list[str],
+        routing_data: dict[str, Any],
+        correlation_id: str,
+    ) -> dict[str, Any]:
         """Route message to all nodes and aggregate responses."""
         individual_responses = []
         aggregated_data = {
@@ -1523,7 +1569,7 @@ class IntegratedCanaryGateway:
                         "success": response.success,
                         "result": response.result,
                         "execution_time_ms": response.execution_time_ms,
-                    }
+                    },
                 )
 
                 if response.success:
@@ -1538,7 +1584,7 @@ class IntegratedCanaryGateway:
                         "success": False,
                         "result": None,
                         "error": str(e),
-                    }
+                    },
                 )
 
         return {
@@ -1608,10 +1654,10 @@ async def test_full_canary_deployment_workflow():
                 registry.send_message(workflow_message),
                 timeout=60.0,  # 60 second timeout for integration test
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
                 "Integration test timeout: Workflow execution exceeded 60 seconds. "
-                "This may indicate a deadlock, infinite loop, or performance issue."
+                "This may indicate a deadlock, infinite loop, or performance issue.",
             )
 
         execution_time = int((time.time() - start_time) * 1000)
@@ -1619,25 +1665,24 @@ async def test_full_canary_deployment_workflow():
         # Analyze results
         if response.success:
             workflow_result = response.result["result"]
-            print(f"\n✅ Canary Deployment Workflow Completed Successfully!")
+            print("\n✅ Canary Deployment Workflow Completed Successfully!")
             print(f"   📊 Decision: {workflow_result['decision'].upper()}")
             print(f"   ⏱️  Total Duration: {workflow_result['total_duration_ms']}ms")
             print(
-                f"   🔗 Nodes Coordinated: {', '.join(workflow_result['nodes_coordinated'])}"
+                f"   🔗 Nodes Coordinated: {', '.join(workflow_result['nodes_coordinated'])}",
             )
             print(f"   📋 Steps Completed: {len(workflow_result['steps'])}")
 
             # Print step details
-            print(f"\n📝 Workflow Steps:")
+            print("\n📝 Workflow Steps:")
             for i, step in enumerate(workflow_result["steps"], 1):
                 step_name = step["step"].replace("_", " ").title()
                 duration = step.get("duration_ms", "N/A")
                 print(f"   {i}. {step_name} ({duration}ms)")
 
             return True
-        else:
-            print(f"\n❌ Canary Deployment Workflow Failed: {response.error_message}")
-            return False
+        print(f"\n❌ Canary Deployment Workflow Failed: {response.error_message}")
+        return False
 
     except Exception as e:
         print(f"\n❌ Exception during canary deployment workflow: {e}")
@@ -1684,21 +1729,20 @@ async def test_infrastructure_health_check_workflow():
                 registry.send_message(health_workflow_message),
                 timeout=30.0,  # 30 second timeout for health check
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
-                "Health check timeout: Infrastructure health check exceeded 30 seconds"
+                "Health check timeout: Infrastructure health check exceeded 30 seconds",
             )
 
         if response.success:
             health_result = response.result["result"]
-            print(f"\n✅ Health Check Workflow Completed!")
+            print("\n✅ Health Check Workflow Completed!")
             print(f"   🏥 Overall Health: {health_result['overall_health'].upper()}")
             print(f"   📋 Steps Completed: {len(health_result['steps'])}")
 
             return True
-        else:
-            print(f"\n❌ Health Check Workflow Failed: {response.error_message}")
-            return False
+        print(f"\n❌ Health Check Workflow Failed: {response.error_message}")
+        return False
 
     except Exception as e:
         print(f"\n❌ Exception during health check workflow: {e}")
@@ -1750,9 +1794,9 @@ async def test_gateway_message_routing():
                 registry.send_message(broadcast_message),
                 timeout=15.0,  # 15 second timeout for broadcast
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
-                "Broadcast timeout: Gateway broadcast operation exceeded 15 seconds"
+                "Broadcast timeout: Gateway broadcast operation exceeded 15 seconds",
             )
 
         if broadcast_response.success:
@@ -1793,9 +1837,9 @@ async def test_gateway_message_routing():
                 registry.send_message(roundrobin_message),
                 timeout=15.0,  # 15 second timeout for round-robin
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
-                "Round-robin timeout: Gateway round-robin operation exceeded 15 seconds"
+                "Round-robin timeout: Gateway round-robin operation exceeded 15 seconds",
             )
 
         if roundrobin_response.success:
@@ -1833,9 +1877,9 @@ async def test_gateway_message_routing():
                 registry.send_message(aggregate_message),
                 timeout=15.0,  # 15 second timeout for aggregation
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
-                "Aggregation timeout: Gateway aggregation operation exceeded 15 seconds"
+                "Aggregation timeout: Gateway aggregation operation exceeded 15 seconds",
             )
 
         if aggregate_response.success:
@@ -1843,7 +1887,7 @@ async def test_gateway_message_routing():
             successful = result["successful_responses"]
             total = result["total_targets"]
             print(
-                f"   ✅ Aggregate: {successful}/{total} responses aggregated successfully"
+                f"   ✅ Aggregate: {successful}/{total} responses aggregated successfully",
             )
             test_results.append(("Aggregate Routing", True))
         else:
@@ -1900,27 +1944,26 @@ async def test_performance_analysis_workflow():
                 registry.send_message(perf_workflow_message),
                 timeout=90.0,  # 90 second timeout for performance analysis
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AssertionError(
                 "Performance analysis timeout: Performance workflow exceeded 90 seconds. "
-                "This may indicate a performance issue or resource contention."
+                "This may indicate a performance issue or resource contention.",
             )
 
         if response.success:
             perf_result = response.result["result"]
-            print(f"\n✅ Performance Analysis Workflow Completed!")
+            print("\n✅ Performance Analysis Workflow Completed!")
             print(
-                f"   📊 Performance Status: {perf_result['performance_summary']['overall_status'].upper()}"
+                f"   📊 Performance Status: {perf_result['performance_summary']['overall_status'].upper()}",
             )
             print(f"   💡 Recommendation: {perf_result['recommendation'].upper()}")
             print(f"   📋 Steps Completed: {len(perf_result['steps'])}")
 
             return True
-        else:
-            print(
-                f"\n❌ Performance Analysis Workflow Failed: {response.error_message}"
-            )
-            return False
+        print(
+            f"\n❌ Performance Analysis Workflow Failed: {response.error_message}",
+        )
+        return False
 
     except Exception as e:
         print(f"\n❌ Exception during performance analysis workflow: {e}")
@@ -1972,7 +2015,7 @@ async def main():
         print("🎉 All integration tests passed!")
         print("✅ Full 4-node canary architecture is working correctly!")
         print(
-            "🏗️  Orchestrator ↔ Compute ↔ Effect ↔ Reducer ↔ Gateway communication verified"
+            "🏗️  Orchestrator ↔ Compute ↔ Effect ↔ Reducer ↔ Gateway communication verified",
         )
     else:
         print(f"⚠️  {failed_tests} integration tests failed.")

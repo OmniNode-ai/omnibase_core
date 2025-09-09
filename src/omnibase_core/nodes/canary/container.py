@@ -1,11 +1,11 @@
 """
 Canary Node Group Container
 
-Provides proper dependency injection for all canary nodes in omnibase-core.
+Provides proper dependency injection for all canary nodes in omnibase_core.
 Implements duck typing for protocol resolution per ONEX standards.
 
 This is a reference implementation based on omnibase_3 infrastructure patterns,
-adapted for omnibase-core architecture with temporary service implementations.
+adapted for omnibase_core architecture with temporary service implementations.
 
 Per user requirements:
 - "it should be get_service("ProtocolEventBus") and we should have a onexcontainer
@@ -19,7 +19,6 @@ import types
 from typing import TypeVar
 
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 
 T = TypeVar("T")
 
@@ -59,7 +58,7 @@ def create_infrastructure_container() -> ModelONEXContainer:
 def _setup_infrastructure_dependencies(container: ModelONEXContainer):
     """Set up all dependencies needed by infrastructure canary nodes."""
 
-    # Event Bus - Use in-memory implementation for omnibase-core
+    # Event Bus - Use in-memory implementation for omnibase_core
     from omnibase_core.nodes.canary.utils.memory_event_bus import MemoryEventBus
 
     event_bus = MemoryEventBus()
@@ -91,7 +90,9 @@ def _setup_infrastructure_dependencies(container: ModelONEXContainer):
 
 
 def _register_service(
-    container: ModelONEXContainer, service_name: str, service_instance
+    container: ModelONEXContainer,
+    service_name: str,
+    service_instance,
 ):
     """Register a service in the container for later retrieval."""
     # Store in the container's provider registry
@@ -140,14 +141,14 @@ def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
             or callable(protocol_type_or_name)
         ):
             raise ValueError(
-                f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}"
+                f"protocol_type_or_name must be a string or type, got {type(protocol_type_or_name)}",
             )
 
         # Validate service_name if provided
         if service_name is not None:
             if not isinstance(service_name, str):
                 raise ValueError(
-                    f"service_name must be string or None, got {type(service_name)}"
+                    f"service_name must be string or None, got {type(service_name)}",
                 )
             if not service_name.strip():
                 raise ValueError("service_name cannot be empty string")
@@ -170,7 +171,9 @@ def _bind_infrastructure_get_service_method(container: ModelONEXContainer):
         # Generate helpful error message
         available_services = list(self._service_registry.keys())
         search_term = service_name or getattr(
-            protocol_type_or_name, "__name__", str(protocol_type_or_name)
+            protocol_type_or_name,
+            "__name__",
+            str(protocol_type_or_name),
         )
 
         # Suggest similar service names if available

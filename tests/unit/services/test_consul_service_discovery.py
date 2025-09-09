@@ -6,7 +6,7 @@ Tests Consul integration, fallback mechanisms, and strong typing with ModelScala
 """
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -106,7 +106,8 @@ class TestConsulServiceDiscovery:
     async def test_consul_import_error_triggers_fallback(self):
         """Test ImportError (consul library not available) triggers fallback."""
         with patch(
-            "consul.Consul", side_effect=ImportError("No module named 'consul'")
+            "consul.Consul",
+            side_effect=ImportError("No module named 'consul'"),
         ):
             service_discovery = ConsulServiceDiscovery(enable_fallback=True)
 
@@ -119,7 +120,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_register_service_consul_success(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test successful service registration with Consul."""
         mock_consul_client.agent.service.register.return_value = True
@@ -146,7 +149,10 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_register_service_with_metadata(
-        self, consul_service_discovery, mock_consul_client, sample_metadata
+        self,
+        consul_service_discovery,
+        mock_consul_client,
+        sample_metadata,
     ):
         """Test service registration with ModelScalarValue metadata."""
         mock_consul_client.agent.service.register.return_value = True
@@ -170,7 +176,7 @@ class TestConsulServiceDiscovery:
     async def test_register_service_consul_failure_fallback(self, mock_consul_client):
         """Test Consul registration failure triggers fallback."""
         mock_consul_client.agent.service.register.side_effect = Exception(
-            "Consul error"
+            "Consul error",
         )
 
         with patch("consul.Consul", return_value=mock_consul_client):
@@ -190,11 +196,13 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_register_service_consul_failure_no_fallback(
-        self, consul_service_discovery_no_fallback, mock_consul_client
+        self,
+        consul_service_discovery_no_fallback,
+        mock_consul_client,
     ):
         """Test Consul registration failure without fallback returns False."""
         mock_consul_client.agent.service.register.side_effect = Exception(
-            "Consul error"
+            "Consul error",
         )
 
         result = await consul_service_discovery_no_fallback.register_service(
@@ -211,7 +219,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_discover_services_consul_success(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test successful service discovery from Consul with ModelScalarValue conversion."""
         # Mock Consul response
@@ -226,7 +236,7 @@ class TestConsulServiceDiscovery:
                         "version": "1.0.0",
                         "datacenter": "east",
                     },
-                }
+                },
             },
             {
                 "Service": {
@@ -235,14 +245,15 @@ class TestConsulServiceDiscovery:
                     "Address": "10.0.0.2",
                     "Port": 80,
                     "Meta": {},
-                }
+                },
             },
         ]
 
         mock_consul_client.health.service.return_value = (None, consul_response)
 
         services = await consul_service_discovery.discover_services(
-            "web-service", healthy_only=True
+            "web-service",
+            healthy_only=True,
         )
 
         assert len(services) == 2
@@ -294,13 +305,15 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_discover_services_empty_result(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test discovery with no matching services."""
         mock_consul_client.health.service.return_value = (None, [])
 
         services = await consul_service_discovery.discover_services(
-            "non-existent-service"
+            "non-existent-service",
         )
 
         assert isinstance(services, list)
@@ -310,7 +323,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_consul_healthy(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test getting healthy service status from Consul."""
         consul_checks = [
@@ -329,7 +344,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_consul_critical(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test getting critical service status from Consul."""
         consul_checks = [
@@ -347,7 +364,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_consul_warning(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test getting warning service status from Consul."""
         consul_checks = [
@@ -365,7 +384,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_no_checks(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test getting health for service with no health checks."""
         mock_consul_client.health.checks.return_value = (None, [])
@@ -379,7 +400,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_deregister_service_consul_success(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test successful service deregistration from Consul."""
         mock_consul_client.agent.service.deregister.return_value = True
@@ -393,7 +416,7 @@ class TestConsulServiceDiscovery:
     async def test_deregister_service_consul_failure_fallback(self, mock_consul_client):
         """Test Consul deregistration failure triggers fallback."""
         mock_consul_client.agent.service.deregister.side_effect = Exception(
-            "Consul error"
+            "Consul error",
         )
 
         with patch("consul.Consul", return_value=mock_consul_client):
@@ -409,13 +432,16 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_key_value_operations_consul(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test key-value operations with Consul."""
         # Set key-value
         mock_consul_client.kv.put.return_value = True
         result = await consul_service_discovery.set_key_value(
-            "config/test", "test_value"
+            "config/test",
+            "test_value",
         )
         assert result is True
         mock_consul_client.kv.put.assert_called_with("config/test", "test_value")
@@ -432,7 +458,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_delete_key_consul(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test key deletion with Consul."""
         mock_consul_client.kv.delete.return_value = True
@@ -473,7 +501,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_health_check_consul_healthy(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test system health check with healthy Consul."""
         mock_consul_client.agent.self.return_value = {}
@@ -484,7 +514,9 @@ class TestConsulServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_health_check_consul_unhealthy(
-        self, consul_service_discovery, mock_consul_client
+        self,
+        consul_service_discovery,
+        mock_consul_client,
     ):
         """Test system health check with unhealthy Consul."""
         mock_consul_client.agent.self.side_effect = Exception("Consul down")
@@ -553,7 +585,7 @@ class TestConsulServiceDiscovery:
 
             # Consul fails on next operation
             mock_consul_client.agent.service.register.side_effect = Exception(
-                "Consul failed"
+                "Consul failed",
             )
 
             # Should automatically switch to fallback

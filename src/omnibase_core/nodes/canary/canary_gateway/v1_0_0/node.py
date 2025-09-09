@@ -5,14 +5,12 @@ This tool implements the Group Gateway component of ONEX Messaging Architecture 
 providing intelligent message routing, response aggregation, and PostgreSQL-based caching.
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import time
 import uuid
-from datetime import datetime, timedelta
-from typing import Dict, Optional
+from datetime import datetime
 
 from omnibase.protocols.core import ProtocolCacheService
 
@@ -20,7 +18,6 @@ from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
-    CircuitBreakerException,
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
 )
@@ -42,7 +39,9 @@ class ResponseAggregator:
     """Handles response aggregation with protocol-based cache service."""
 
     def __init__(
-        self, container: ModelONEXContainer, cache_service: ProtocolCacheService
+        self,
+        container: ModelONEXContainer,
+        cache_service: ProtocolCacheService,
     ):
         """Initialize with container dependency injection and cache service."""
         self.container = container
@@ -87,7 +86,10 @@ class ResponseAggregator:
 
         except Exception as e:
             error_details = self.error_handler.handle_error(
-                e, context, correlation_id, "aggregate_responses"
+                e,
+                context,
+                correlation_id,
+                "aggregate_responses",
             )
             msg = f"Failed to aggregate responses: {error_details['message']}"
             raise OnexError(msg) from e
@@ -109,13 +111,16 @@ class ResponseAggregator:
         except Exception as e:
             # Use secure error handler for cache lookup failures
             error_details = self.error_handler.handle_error(
-                e, {"cache_key": cache_key}, correlation_id, "cache_lookup"
+                e,
+                {"cache_key": cache_key},
+                correlation_id,
+                "cache_lookup",
             )
             correlation_context = (
                 f" [correlation_id={correlation_id}]" if correlation_id else ""
             )
             self.logger.exception(
-                f"Cache lookup failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}"
+                f"Cache lookup failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}",
             )
             return None
 
@@ -131,7 +136,7 @@ class ResponseAggregator:
             # Use configurable cache TTL
             if ttl_seconds is None:
                 ttl_seconds = int(
-                    self.config_utils.get_performance_config("cache_ttl_seconds", 300)
+                    self.config_utils.get_performance_config("cache_ttl_seconds", 300),
                 )
 
             # Convert ModelAggregatedResponse to dictionary for caching
@@ -142,13 +147,16 @@ class ResponseAggregator:
         except Exception as e:
             # Use secure error handler for cache storage failures
             error_details = self.error_handler.handle_error(
-                e, {"cache_key": cache_key}, correlation_id, "cache_storage"
+                e,
+                {"cache_key": cache_key},
+                correlation_id,
+                "cache_storage",
             )
             correlation_context = (
                 f" [correlation_id={correlation_id}]" if correlation_id else ""
             )
             self.logger.exception(
-                f"Cache storage failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}"
+                f"Cache storage failed: {error_details['message']} [cache_key={cache_key}]{correlation_context}",
             )
             return False
 
@@ -222,7 +230,7 @@ class NodeCanaryGateway(NodeEffectService):
             self.response_aggregator = ResponseAggregator(self.container, cache_service)
 
             self.logger.info(
-                "Group Gateway initialized successfully with protocol-based cache service"
+                "Group Gateway initialized successfully with protocol-based cache service",
             )
 
         except Exception as e:
@@ -249,7 +257,7 @@ class NodeCanaryGateway(NodeEffectService):
         current_time = time.time()
         window_size = 60  # 1 minute window
         max_requests = int(
-            self.config_utils.get_performance_config("max_concurrent_operations", 100)
+            self.config_utils.get_performance_config("max_concurrent_operations", 100),
         )
 
         # Clean old entries
@@ -265,14 +273,16 @@ class NodeCanaryGateway(NodeEffectService):
         # Check limit
         if len(self.rate_limit_requests[client_id]) >= max_requests:
             self.metrics_collector.increment_counter(
-                "rate_limit.exceeded", {"client_id": client_id}
+                "rate_limit.exceeded",
+                {"client_id": client_id},
             )
             return False
 
         # Add current request
         self.rate_limit_requests[client_id].append(current_time)
         self.metrics_collector.increment_counter(
-            "rate_limit.allowed", {"client_id": client_id}
+            "rate_limit.allowed",
+            {"client_id": client_id},
         )
         return True
 
@@ -302,7 +312,8 @@ class NodeCanaryGateway(NodeEffectService):
 
         # Start metrics collection
         await self.metrics_collector.record_operation_start(
-            operation_id, operation_type
+            operation_id,
+            operation_type,
         )
 
         # Create error handling context
@@ -378,7 +389,9 @@ class NodeCanaryGateway(NodeEffectService):
 
             # Record successful operation
             await self.metrics_collector.record_operation_end(
-                operation_id, operation_type, True
+                operation_id,
+                operation_type,
+                True,
             )
 
             return ModelGroupGatewayOutput(
@@ -393,12 +406,18 @@ class NodeCanaryGateway(NodeEffectService):
 
             # Handle error with secure error handler
             error_details = self.error_handler.handle_error(
-                e, context, correlation_id, "route_message"
+                e,
+                context,
+                correlation_id,
+                "route_message",
             )
 
             # Record failed operation
             await self.metrics_collector.record_operation_end(
-                operation_id, operation_type, False, type(e).__name__
+                operation_id,
+                operation_type,
+                False,
+                type(e).__name__,
             )
 
             return ModelGroupGatewayOutput(
@@ -432,13 +451,17 @@ class NodeCanaryGateway(NodeEffectService):
 
                 # Record successful routing
                 self.metrics_collector.increment_counter(
-                    "tool.routing.success", {"tool": tool}
+                    "tool.routing.success",
+                    {"tool": tool},
                 )
 
             except Exception as e:
                 # Use secure error handler for tool routing errors
                 error_details = self.error_handler.handle_error(
-                    e, {"tool": tool}, None, "tool_routing"
+                    e,
+                    {"tool": tool},
+                    None,
+                    "tool_routing",
                 )
                 error_response = {
                     "tool": tool,
@@ -457,7 +480,9 @@ class NodeCanaryGateway(NodeEffectService):
         return responses
 
     async def _call_tool(
-        self, tool: str, message_data: ModelMessageData
+        self,
+        tool: str,
+        message_data: ModelMessageData,
     ) -> dict[str, str]:
         """Simulate calling an external tool (placeholder for actual implementation)."""
         # In production, this would make actual HTTP/gRPC calls
@@ -469,8 +494,9 @@ class NodeCanaryGateway(NodeEffectService):
 
             delay_ms = float(
                 self.config_utils.get_business_logic_config(
-                    "api_simulation_delay_ms", 100
-                )
+                    "api_simulation_delay_ms",
+                    100,
+                ),
             )
             await asyncio.sleep(delay_ms / 1000)
 
@@ -517,7 +543,8 @@ class NodeCanaryGateway(NodeEffectService):
         """Check health of Group Gateway and dependencies with comprehensive monitoring."""
         operation_id = str(uuid.uuid4())
         await self.metrics_collector.record_operation_start(
-            operation_id, "health_check"
+            operation_id,
+            "health_check",
         )
 
         context = self.error_handler.create_operation_context("health_check", {}, None)
@@ -533,7 +560,8 @@ class NodeCanaryGateway(NodeEffectService):
 
             # Check cache service health
             cache_healthy = self.response_aggregator is not None and hasattr(
-                self.response_aggregator, "cache_service"
+                self.response_aggregator,
+                "cache_service",
             )
             if cache_healthy:
                 # Get cache statistics
@@ -551,7 +579,9 @@ class NodeCanaryGateway(NodeEffectService):
             overall_status = "healthy" if cache_healthy else "degraded"
 
             await self.metrics_collector.record_operation_end(
-                operation_id, "health_check", True
+                operation_id,
+                "health_check",
+                True,
             )
 
             return ModelGroupGatewayOutput(
@@ -561,10 +591,16 @@ class NodeCanaryGateway(NodeEffectService):
 
         except Exception as e:
             error_details = self.error_handler.handle_error(
-                e, context, None, "health_check"
+                e,
+                context,
+                None,
+                "health_check",
             )
             await self.metrics_collector.record_operation_end(
-                operation_id, "health_check", False, type(e).__name__
+                operation_id,
+                "health_check",
+                False,
+                type(e).__name__,
             )
 
             return ModelGroupGatewayOutput(
@@ -582,20 +618,25 @@ class NodeCanaryGateway(NodeEffectService):
         await self.metrics_collector.record_operation_start(operation_id, "clear_cache")
 
         context = self.error_handler.create_operation_context(
-            "clear_cache", {"cache_pattern": cache_pattern}, None
+            "clear_cache",
+            {"cache_pattern": cache_pattern},
+            None,
         )
 
         try:
             # Use protocol-based cache service for clearing
             deleted_count = await self.response_aggregator.cache_service.clear(
-                cache_pattern
+                cache_pattern,
             )
 
             await self.metrics_collector.record_operation_end(
-                operation_id, "clear_cache", True
+                operation_id,
+                "clear_cache",
+                True,
             )
             self.metrics_collector.increment_counter(
-                "cache.cleared", {"pattern": cache_pattern or "all"}
+                "cache.cleared",
+                {"pattern": cache_pattern or "all"},
             )
 
             return ModelGroupGatewayOutput(
@@ -605,10 +646,16 @@ class NodeCanaryGateway(NodeEffectService):
 
         except Exception as e:
             error_details = self.error_handler.handle_error(
-                e, context, None, "clear_cache"
+                e,
+                context,
+                None,
+                "clear_cache",
             )
             await self.metrics_collector.record_operation_end(
-                operation_id, "clear_cache", False, type(e).__name__
+                operation_id,
+                "clear_cache",
+                False,
+                type(e).__name__,
             )
 
             return ModelGroupGatewayOutput(
@@ -641,7 +688,8 @@ class NodeCanaryGateway(NodeEffectService):
         )
 
     async def route(
-        self, input_data: ModelGroupGatewayInput
+        self,
+        input_data: ModelGroupGatewayInput,
     ) -> ModelGroupGatewayOutput:
         """Route message - alias for process method to satisfy contract validator."""
         return await self.process(input_data)
@@ -649,7 +697,8 @@ class NodeCanaryGateway(NodeEffectService):
     async def get_health_status(self) -> dict[str, str | int | bool]:
         """Get gateway health status."""
         cache_healthy = self.response_aggregator is not None and hasattr(
-            self.response_aggregator, "cache_service"
+            self.response_aggregator,
+            "cache_service",
         )
         return {
             "status": "healthy" if cache_healthy else "degraded",
@@ -665,7 +714,7 @@ class NodeCanaryGateway(NodeEffectService):
         avg_response_time = 0.0
         if self.routing_metrics["response_times"]:
             avg_response_time = sum(self.routing_metrics["response_times"]) / len(
-                self.routing_metrics["response_times"]
+                self.routing_metrics["response_times"],
             )
 
         return {

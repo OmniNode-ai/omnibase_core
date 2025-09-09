@@ -43,5 +43,5 @@ class BaseSubreducer:
             bool: True if supported, False otherwise
         """
         raise NotImplementedError(
-            "Subclasses must implement supports_workflow_type method"
+            "Subclasses must implement supports_workflow_type method",
         )

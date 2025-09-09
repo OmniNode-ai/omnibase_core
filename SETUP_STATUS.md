@@ -46,7 +46,7 @@
   - YAML formatting with yamlfmt
   - File formatting (trailing whitespace, EOF, merge conflicts)
   - Python formatting (Black + isort) with exact same versions/args
-  - Ruff linting for omnibase-core specific needs
+  - Ruff linting for omnibase_core specific needs
   - MyPy type checking focused on core framework files
 - ✅ Ready for development environment setup
 

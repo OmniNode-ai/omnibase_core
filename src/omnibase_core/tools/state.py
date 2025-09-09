@@ -1,5 +1,3 @@
-from typing import Optional
-
 """State models for model splitter tool."""
 
 from enum import Enum
@@ -60,7 +58,7 @@ class ModelInfo(BaseModel):
     imports: list[str] = Field(description="Import statements needed by this model")
     dependencies: list[str] = Field(description="Other models this model depends on")
     base_classes: list[str] = Field(description="Base classes of the model")
-    docstring: Optional[str] = Field(
+    docstring: str | None = Field(
         default=None,
         description="Model docstring if present",
     )
@@ -96,7 +94,7 @@ class ModelSplitterResult(BaseModel):
     models: list[ModelInfo] = Field(
         description="Information about models found in the file",
     )
-    extraction_plan: Optional[ModelExtractionPlan] = Field(
+    extraction_plan: ModelExtractionPlan | None = Field(
         default=None,
         description="Plan for extracting models",
     )
@@ -104,7 +102,7 @@ class ModelSplitterResult(BaseModel):
         default_factory=list,
         description="Paths to files created during split operation",
     )
-    backup_path: Optional[str] = Field(
+    backup_path: str | None = Field(
         default=None,
         description="Path to backup file if created",
     )
@@ -119,7 +117,7 @@ class ModelSplitterInputState(OnexInputState):
     """Input state for model splitter tool."""
 
     file_path: str = Field(description="Path to the Python file to analyze or split")
-    output_dir: Optional[str] = Field(
+    output_dir: str | None = Field(
         default=None,
         description="Directory where split model files will be created",
     )
@@ -138,11 +136,11 @@ class ModelSplitterOutputState(OnexOutputState):
     """Output state for model splitter tool."""
 
     success: bool = Field(description="Whether operation completed successfully")
-    operation_result: Optional[ModelSplitterResult] = Field(
+    operation_result: ModelSplitterResult | None = Field(
         default=None,
         description="Complete operation results",
     )
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         default=None,
         description="Error message if operation failed",
     )
@@ -157,8 +155,8 @@ class ModelSplitterOutputState(OnexOutputState):
 
 def create_model_splitter_input_state(
     file_path: str,
-    output_dir: Optional[str] = None,
-    config: Optional[ModelSplitterConfig] = None,
+    output_dir: str | None = None,
+    config: ModelSplitterConfig | None = None,
     operation: str = "analyze",
 ) -> ModelSplitterInputState:
     """
@@ -186,8 +184,8 @@ def create_model_splitter_output_state(
     models_found: int,
     files_created: int,
     processing_time_ms: float,
-    operation_result: Optional[ModelSplitterResult] = None,
-    error_message: Optional[str] = None,
+    operation_result: ModelSplitterResult | None = None,
+    error_message: str | None = None,
 ) -> ModelSplitterOutputState:
     """
     Create a model splitter output state.

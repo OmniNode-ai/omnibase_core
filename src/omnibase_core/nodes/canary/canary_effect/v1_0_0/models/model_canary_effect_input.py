@@ -8,7 +8,7 @@ Eliminates JSON/YAML parsing architecture violations by using proper contract-dr
 
 import uuid
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -43,17 +43,17 @@ class ModelCanaryEffectInput(BaseModel):
         description="Type of canary effect operation to perform - from contract enum",
     )
 
-    target_system: Optional[str] = Field(
+    target_system: str | None = Field(
         None,
         description="Target system for effect operation (optional) - string type from contract",
     )
 
-    parameters: Dict[str, Any] = Field(
+    parameters: dict[str, Any] = Field(
         default_factory=dict,
         description="Operation-specific parameters - object type from contract schema",
     )
 
-    correlation_id: Optional[str] = Field(
+    correlation_id: str | None = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="Request correlation ID (auto-generated if not provided) - string type from contract",
     )
@@ -70,7 +70,7 @@ class ModelCanaryEffectInput(BaseModel):
         json_schema_serialization_defaults_required=True,
     )
 
-    def to_operation_data(self) -> Dict[str, Any]:
+    def to_operation_data(self) -> dict[str, Any]:
         """
         Convert to operation data dictionary for backward compatibility.
 

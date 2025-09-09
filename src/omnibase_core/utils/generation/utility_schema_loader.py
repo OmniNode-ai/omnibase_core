@@ -21,14 +21,17 @@ class ModelJsonSchema(BaseModel):
     """Pydantic model for JSON Schema validation."""
 
     type: str = Field(
-        default="object", description="Schema type (object, string, etc.)"
+        default="object",
+        description="Schema type (object, string, etc.)",
     )
     properties: dict[str, Any] = Field(
-        default_factory=dict, description="Schema properties"
+        default_factory=dict,
+        description="Schema properties",
     )
     required: list[str] = Field(default_factory=list, description="Required fields")
     definitions: dict[str, Any] = Field(
-        default_factory=dict, description="Schema definitions"
+        default_factory=dict,
+        description="Schema definitions",
     )
     description: str = Field(default="", description="Schema description")
     title: str = Field(default="", description="Schema title")

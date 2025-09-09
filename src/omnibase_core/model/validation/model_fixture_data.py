@@ -3,14 +3,14 @@ Canonical model for fixture data used in test and protocol infrastructure.
 Decoupled from fixture/protocol modules to avoid circular imports.
 """
 
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
 # Strongly typed union for fixture data types
 FixtureDataType = Union[
-    Dict[str, Any],  # Dictionary fixtures (most common)
-    List[Any],  # List fixtures
+    dict[str, Any],  # Dictionary fixtures (most common)
+    list[Any],  # List fixtures
     str,  # String fixtures
     int,  # Integer fixtures
     float,  # Float fixtures

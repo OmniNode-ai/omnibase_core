@@ -8,7 +8,7 @@ using hash-based distribution with correlation ID tracking and error handling.
 import hashlib
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -39,8 +39,8 @@ class WorkflowRouter:
 
     def __init__(self):
         """Initialize the WorkflowRouter."""
-        self._subreducers: Dict[str, BaseSubreducer] = {}
-        self._workflow_type_mappings: Dict[WorkflowType, str] = {}
+        self._subreducers: dict[str, BaseSubreducer] = {}
+        self._workflow_type_mappings: dict[WorkflowType, str] = {}
         self._routing_metrics = {
             "total_routed": 0,
             "routing_errors": 0,
@@ -49,7 +49,9 @@ class WorkflowRouter:
         self._lock = threading.RLock()  # Thread-safe operations
 
     def register_subreducer(
-        self, subreducer: BaseSubreducer, workflow_types: List[WorkflowType]
+        self,
+        subreducer: BaseSubreducer,
+        workflow_types: list[WorkflowType],
     ) -> None:
         """
         Register a subreducer for specific workflow types.
@@ -104,7 +106,7 @@ class WorkflowRouter:
             emit_log_event(
                 level=LogLevel.ERROR,
                 event="subreducer_registration_failed",
-                message=f"Failed to register subreducer: {str(e)}",
+                message=f"Failed to register subreducer: {e!s}",
                 context={
                     "subreducer_name": getattr(subreducer, "name", "unknown"),
                     "error": str(e),
@@ -148,7 +150,8 @@ class WorkflowRouter:
 
             # Generate routing hash for consistency and observability
             routing_hash = self._generate_routing_hash(
-                request.workflow_type.value, request.instance_id
+                request.workflow_type.value,
+                request.instance_id,
             )
 
             # Create routing decision
@@ -193,7 +196,7 @@ class WorkflowRouter:
             emit_log_event(
                 level=LogLevel.ERROR,
                 event="routing_failed",
-                message=f"Failed to route workflow: {str(e)}",
+                message=f"Failed to route workflow: {e!s}",
                 context={
                     "workflow_id": str(request.workflow_id),
                     "workflow_type": request.workflow_type.value,
@@ -216,7 +219,7 @@ class WorkflowRouter:
         """
         return self._subreducers.get(name, self._create_not_found_subreducer(name))
 
-    def get_routing_metrics(self) -> Dict[str, Any]:
+    def get_routing_metrics(self) -> dict[str, Any]:
         """
         Get current routing performance metrics.
 

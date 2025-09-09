@@ -29,8 +29,6 @@ from omnibase_core.model.memory.model_statistics import ModelStatistics
 ```
 """
 
-from typing import Union
-
 from omnibase_core.core.common_types import ModelScalarValue
 
 # Type aliases for CLI configuration

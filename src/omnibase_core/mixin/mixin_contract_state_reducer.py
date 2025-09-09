@@ -89,7 +89,8 @@ class MixinContractStateReducer:
 
             # Load and validate contract using safe YAML loader
             contract = load_and_validate_yaml_model(
-                transitions_path, ModelGenericContract
+                transitions_path,
+                ModelGenericContract,
             )
 
             # Extract state_transitions section

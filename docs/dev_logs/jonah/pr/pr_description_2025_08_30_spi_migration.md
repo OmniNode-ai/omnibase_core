@@ -2,7 +2,7 @@
 
 ## Summary
 
-This pull request completes a comprehensive migration to the omnibase-spi standardized interface, representing a major architectural consolidation that eliminates local protocol definitions in favor of centralized SPI patterns. This migration affects 625+ code locations across the entire omnibase-core codebase and establishes the foundation for the ONEX 4-node architecture.
+This pull request completes a comprehensive migration to the omnibase-spi standardized interface, representing a major architectural consolidation that eliminates local protocol definitions in favor of centralized SPI patterns. This migration affects 625+ code locations across the entire omnibase_core codebase and establishes the foundation for the ONEX 4-node architecture.
 
 ## Implementation Status Assessment
 

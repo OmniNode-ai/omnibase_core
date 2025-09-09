@@ -412,11 +412,13 @@ class UtilityDebugIntelligenceCapture:
                         value.startswith(("sk-", "pk-", "Bearer ", "Basic "))
                         or
                         # Detect base64-like strings
-                        len(value) > 40
-                        and value.replace("=", "")
-                        .replace("+", "")
-                        .replace("/", "")
-                        .isalnum()
+                        (
+                            len(value) > 40
+                            and value.replace("=", "")
+                            .replace("+", "")
+                            .replace("/", "")
+                            .isalnum()
+                        )
                     )
                 ):
                     sanitized[key] = f"[REDACTED_STRING_LENGTH_{len(value)}]"

@@ -10,9 +10,9 @@ import logging
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, get_type_hints
+from typing import Any, TypeVar, Union, get_type_hints
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -27,17 +27,21 @@ class ModelEnvironmentVariable(BaseModel):
     required: bool = Field(False, description="Whether variable is required")
     description: str = Field("", description="Description of the variable")
     sensitive: bool = Field(False, description="Whether to mask in logs")
-    validation_pattern: Optional[str] = Field(
-        None, description="Regex pattern for validation"
+    validation_pattern: str | None = Field(
+        None,
+        description="Regex pattern for validation",
     )
-    min_value: Optional[Union[int, float]] = Field(
-        None, description="Minimum numeric value"
+    min_value: int | float | None = Field(
+        None,
+        description="Minimum numeric value",
     )
-    max_value: Optional[Union[int, float]] = Field(
-        None, description="Maximum numeric value"
+    max_value: int | float | None = Field(
+        None,
+        description="Maximum numeric value",
     )
-    allowed_values: Optional[List[str]] = Field(
-        None, description="List of allowed values"
+    allowed_values: list[str] | None = Field(
+        None,
+        description="List of allowed values",
     )
 
 
@@ -57,8 +61,8 @@ class ModelEnvironmentPrefix(BaseModel):
 class ModelEnvironmentConfig(BaseModel):
     """Base configuration model with environment variable support."""
 
-    _env_prefix: Optional[ModelEnvironmentPrefix] = None
-    _env_variables: Dict[str, ModelEnvironmentVariable] = {}
+    _env_prefix: ModelEnvironmentPrefix | None = None
+    _env_variables: dict[str, ModelEnvironmentVariable] = {}
 
     class Config:
         """Pydantic configuration."""
@@ -68,9 +72,9 @@ class ModelEnvironmentConfig(BaseModel):
 
     @classmethod
     def from_environment(
-        cls: Type[T],
-        prefix: Optional[str] = None,
-        env_file: Optional[Path] = None,
+        cls: type[T],
+        prefix: str | None = None,
+        env_file: Path | None = None,
         strict: bool = True,
         **overrides: Any,
     ) -> T:
@@ -113,14 +117,14 @@ class ModelEnvironmentConfig(BaseModel):
             logger.warning(f"Configuration validation failed: {e}")
             # Return with available values, missing will use defaults
             return cls(
-                **{k: v for k, v in config_values.items() if k in cls.model_fields}
+                **{k: v for k, v in config_values.items() if k in cls.model_fields},
             )
 
     @classmethod
     def _load_env_file(cls, env_file: Path) -> None:
         """Load environment variables from file."""
         try:
-            with open(env_file, "r") as f:
+            with open(env_file) as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#") and "=" in line:
@@ -130,7 +134,7 @@ class ModelEnvironmentConfig(BaseModel):
             logger.warning(f"Failed to load env file {env_file}: {e}")
 
     @classmethod
-    def _extract_env_values(cls) -> Dict[str, Any]:
+    def _extract_env_values(cls) -> dict[str, Any]:
         """Extract configuration values from environment variables."""
         values = {}
         type_hints = get_type_hints(cls)
@@ -151,7 +155,7 @@ class ModelEnvironmentConfig(BaseModel):
         return values
 
     @classmethod
-    def _generate_env_keys(cls, field_name: str) -> List[str]:
+    def _generate_env_keys(cls, field_name: str) -> list[str]:
         """Generate possible environment variable keys for a field."""
         keys = []
 
@@ -177,7 +181,7 @@ class ModelEnvironmentConfig(BaseModel):
         return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
     @staticmethod
-    def _convert_env_value(value: str, target_type: Optional[Type]) -> Any:
+    def _convert_env_value(value: str, target_type: type | None) -> Any:
         """Convert string environment value to target type."""
         if target_type is None:
             return value
@@ -196,25 +200,24 @@ class ModelEnvironmentConfig(BaseModel):
         # Type conversion
         if target_type == bool:
             return value.lower() in ("true", "1", "yes", "on")
-        elif target_type == int:
+        if target_type == int:
             return int(value)
-        elif target_type == float:
+        if target_type == float:
             return float(value)
-        elif target_type == list or (
+        if target_type == list or (
             hasattr(target_type, "__origin__") and target_type.__origin__ is list
         ):
             return [item.strip() for item in value.split(",")]
-        elif target_type == dict:
+        if target_type == dict:
             # Simple key=value,key2=value2 format
             pairs = value.split(",")
             return {
                 k.strip(): v.strip()
                 for k, v in [pair.split("=", 1) for pair in pairs if "=" in pair]
             }
-        else:
-            return value
+        return value
 
-    def get_env_summary(self, mask_sensitive: bool = True) -> Dict[str, Any]:
+    def get_env_summary(self, mask_sensitive: bool = True) -> dict[str, Any]:
         """Get summary of environment configuration."""
         summary = {}
 
@@ -229,7 +232,7 @@ class ModelEnvironmentConfig(BaseModel):
         return summary
 
     @classmethod
-    def get_env_documentation(cls) -> List[Dict[str, Any]]:
+    def get_env_documentation(cls) -> list[dict[str, Any]]:
         """Get documentation for all environment variables."""
         docs = []
 
@@ -252,7 +255,7 @@ class ModelEnvironmentConfig(BaseModel):
                         if field_info.annotation
                         else "Any"
                     ),
-                }
+                },
             )
 
         return docs
@@ -262,7 +265,7 @@ class ModelEnvironmentConfig(BaseModel):
 class EnvironmentConfigRegistry:
     """Registry for managing environment-based configurations."""
 
-    _configs: Dict[str, ModelEnvironmentConfig] = {}
+    _configs: dict[str, ModelEnvironmentConfig] = {}
 
     @classmethod
     def register(cls, name: str, config: ModelEnvironmentConfig) -> None:
@@ -271,12 +274,12 @@ class EnvironmentConfigRegistry:
         logger.info(f"Registered configuration: {name}")
 
     @classmethod
-    def get(cls, name: str) -> Optional[ModelEnvironmentConfig]:
+    def get(cls, name: str) -> ModelEnvironmentConfig | None:
         """Get a registered configuration."""
         return cls._configs.get(name)
 
     @classmethod
-    def list_configs(cls) -> List[str]:
+    def list_configs(cls) -> list[str]:
         """List all registered configuration names."""
         return list(cls._configs.keys())
 
@@ -298,7 +301,9 @@ config_registry = EnvironmentConfigRegistry()
 
 
 def register_config(
-    name: str, config_class: Type[ModelEnvironmentConfig], **kwargs
+    name: str,
+    config_class: type[ModelEnvironmentConfig],
+    **kwargs,
 ) -> ModelEnvironmentConfig:
     """
     Helper to register and create configuration from environment.
@@ -344,8 +349,10 @@ def get_env_float(key: str, default: float = 0.0) -> float:
 
 
 def get_env_list(
-    key: str, default: List[str] = None, separator: str = ","
-) -> List[str]:
+    key: str,
+    default: list[str] = None,
+    separator: str = ",",
+) -> list[str]:
     """Get list value from environment."""
     if default is None:
         default = []
@@ -365,8 +372,7 @@ def is_production_environment() -> bool:
     return (
         env in ("production", "prod")
         or node_env in ("production", "prod")
-        or not get_env_bool("DEBUG", False)
-        and not get_env_bool("DEV_MODE", False)
+        or (not get_env_bool("DEBUG", False) and not get_env_bool("DEV_MODE", False))
     )
 
 

@@ -13,7 +13,7 @@ import logging
 import threading
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 from omnibase.protocols.container import (
     ProtocolDependencyGraph,
@@ -76,11 +76,11 @@ class SPIServiceRegistry:
         self._registry_id = str(uuid.uuid4())
 
         # Protocol-based external services
-        self._service_discovery: Optional[ProtocolServiceDiscovery] = None
-        self._database: Optional[ProtocolDatabaseConnection] = None
+        self._service_discovery: ProtocolServiceDiscovery | None = None
+        self._database: ProtocolDatabaseConnection | None = None
         self._initialization_errors: list[str] = []
         self._is_initialized = False
-        self._init_task: Optional[asyncio.Task] = None
+        self._init_task: asyncio.Task | None = None
 
         # Initialize logger
         self._logger = logging.getLogger(__name__)
@@ -97,13 +97,13 @@ class SPIServiceRegistry:
             # Initialize external dependencies asynchronously
             # Store the initialization task to allow proper waiting
             self._init_task = asyncio.create_task(
-                self._initialize_external_dependencies()
+                self._initialize_external_dependencies(),
             )
 
             # Only mark as initialized after external dependencies are ready
             # Note: For immediate use, check is_ready() instead of _is_initialized
             self._logger.info(
-                f"SPI Service Registry initialized successfully: {self._registry_id}"
+                f"SPI Service Registry initialized successfully: {self._registry_id}",
             )
 
         except Exception as e:
@@ -122,7 +122,7 @@ class SPIServiceRegistry:
             # Initialize service discovery
             try:
                 self._service_discovery = await service_resolver.resolve_service(
-                    ProtocolServiceDiscovery
+                    ProtocolServiceDiscovery,
                 )
                 self._logger.info("Service discovery initialized successfully")
             except Exception as e:
@@ -135,7 +135,7 @@ class SPIServiceRegistry:
             # Initialize database
             try:
                 self._database = await service_resolver.resolve_service(
-                    ProtocolDatabaseConnection
+                    ProtocolDatabaseConnection,
                 )
                 self._logger.info("Database connection initialized successfully")
             except Exception as e:
@@ -167,7 +167,7 @@ class SPIServiceRegistry:
         """Check if registry is healthy (initialized and no critical errors)."""
         return self._is_initialized and len(self._initialization_errors) == 0
 
-    async def get_external_services_health(self) -> Dict[str, Any]:
+    async def get_external_services_health(self) -> dict[str, Any]:
         """Get health status of external services."""
         health_status = {}
 
@@ -268,21 +268,21 @@ class SPIServiceRegistry:
         for key, value in config.items():
             if not isinstance(key, str):
                 raise ValueError(
-                    f"Configuration keys must be strings, got {type(key).__name__}"
+                    f"Configuration keys must be strings, got {type(key).__name__}",
                 )
 
             # Validate common configuration patterns
             if key.endswith("_ms") and not isinstance(value, (int, float)):
                 raise ValueError(
-                    f"Timeout configurations must be numeric, got {type(value).__name__} for {key}"
+                    f"Timeout configurations must be numeric, got {type(value).__name__} for {key}",
                 )
             if key.endswith("_count") and not isinstance(value, int):
                 raise ValueError(
-                    f"Count configurations must be integers, got {type(value).__name__} for {key}"
+                    f"Count configurations must be integers, got {type(value).__name__} for {key}",
                 )
             if "password" in key.lower() and not isinstance(value, str):
                 raise ValueError(
-                    f"Password configurations must be strings, got {type(value).__name__} for {key}"
+                    f"Password configurations must be strings, got {type(value).__name__} for {key}",
                 )
 
         self._config.update(config)
@@ -495,18 +495,19 @@ def get_spi_registry() -> SPIServiceRegistry:
                 except Exception as e:
                     # Log error but don't fail completely
                     logging.getLogger(__name__).error(
-                        f"Critical error creating SPI registry: {e}", exc_info=True
+                        f"Critical error creating SPI registry: {e}",
+                        exc_info=True,
                     )
 
                     # Create minimal registry that won't cause further failures
                     _spi_registry = SPIServiceRegistry()
                     _spi_registry._initialization_errors.append(
-                        f"Critical initialization failure: {e}"
+                        f"Critical initialization failure: {e}",
                     )
     return _spi_registry
 
 
-async def get_spi_registry_health() -> Dict[str, Any]:
+async def get_spi_registry_health() -> dict[str, Any]:
     """Get comprehensive health status of the global SPI registry."""
     try:
         registry = get_spi_registry()

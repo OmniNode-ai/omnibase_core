@@ -42,10 +42,14 @@ class ModelCanaryReducerInput(BaseModel):
     )
     correlation_id: str | None = Field(None, description="Request correlation ID")
     timeout_ms: int | None = Field(
-        None, description="Operation timeout in milliseconds"
+        None,
+        description="Operation timeout in milliseconds",
     )
     priority: int = Field(
-        default=5, ge=1, le=10, description="Reduction priority (1-10)"
+        default=5,
+        ge=1,
+        le=10,
+        description="Reduction priority (1-10)",
     )
 
     @field_validator("operation_type")
@@ -111,10 +115,12 @@ class NodeCanaryReducer(NodeReducerService):
             timeout_seconds=timeout_ms / 1000,
         )
         self.aggregation_circuit_breaker = get_circuit_breaker(
-            "state_aggregation", cb_config
+            "state_aggregation",
+            cb_config,
         )
         self.health_circuit_breaker = get_circuit_breaker(
-            "health_aggregation", cb_config
+            "health_aggregation",
+            cb_config,
         )
 
         # State management and metrics tracking
@@ -149,7 +155,7 @@ class NodeCanaryReducer(NodeReducerService):
             {
                 "input_keys": (
                     list(reducer_input.data.keys()) if reducer_input.data else []
-                )
+                ),
             },
             correlation_id,
         )
@@ -178,7 +184,9 @@ class NodeCanaryReducer(NodeReducerService):
 
             # Record successful operation
             await self.metrics_collector.record_operation_end(
-                operation_id, "reduce", True
+                operation_id,
+                "reduce",
+                True,
             )
             self.metrics_collector.record_custom_metric(
                 "reduction.execution_time",
@@ -216,12 +224,18 @@ class NodeCanaryReducer(NodeReducerService):
 
             # Handle error with secure error handler
             error_details = self.error_handler.handle_error(
-                e, context, correlation_id, "reduce"
+                e,
+                context,
+                correlation_id,
+                "reduce",
             )
 
             # Record failed operation
             await self.metrics_collector.record_operation_end(
-                operation_id, "reduce", False, type(e).__name__
+                operation_id,
+                "reduce",
+                False,
+                type(e).__name__,
             )
 
             output = ModelCanaryReducerOutput(
@@ -270,7 +284,8 @@ class NodeCanaryReducer(NodeReducerService):
             return await self._generate_status_summary(state_data, parameters)
         # Log unsupported operation type for monitoring
         self.metrics_collector.increment_counter(
-            "reduction.unsupported_type", {"operation_type": operation_type}
+            "reduction.unsupported_type",
+            {"operation_type": operation_type},
         )
         msg = f"Unsupported canary reduction operation: {operation_type}"
         raise ValueError(msg)
@@ -283,7 +298,7 @@ class NodeCanaryReducer(NodeReducerService):
         """Aggregate performance metrics from canary nodes with configuration-driven behavior."""
         metric_types = parameters.get("metric_types", ["cpu", "memory", "requests"])
         max_retention = int(
-            self.config_utils.get_performance_config("metrics_retention_count", 1000)
+            self.config_utils.get_performance_config("metrics_retention_count", 1000),
         )
 
         # Simulate metric aggregation delay only in debug mode
@@ -291,8 +306,9 @@ class NodeCanaryReducer(NodeReducerService):
         if debug_mode:
             delay_ms = float(
                 self.config_utils.get_business_logic_config(
-                    "api_simulation_delay_ms", 100
-                )
+                    "api_simulation_delay_ms",
+                    100,
+                ),
             )
             await asyncio.sleep(delay_ms / 1000 / 2)
 
@@ -337,7 +353,8 @@ class NodeCanaryReducer(NodeReducerService):
 
         # Record successful aggregation
         self.metrics_collector.increment_counter(
-            "aggregation.metrics.completed", {"metrics_count": str(len(metric_types))}
+            "aggregation.metrics.completed",
+            {"metrics_count": str(len(metric_types))},
         )
 
         return {
@@ -511,10 +528,10 @@ class NodeCanaryReducer(NodeReducerService):
         """Get the health status of the canary reducer node with comprehensive metrics."""
         # Use configuration for health thresholds
         error_rate_threshold = float(
-            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1),
         )
         min_operations = int(
-            self.config_utils.get_performance_config("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10),
         )
 
         status = EnumHealthStatus.HEALTHY

@@ -10,20 +10,19 @@ real validation issues.
 import ast
 import sys
 from pathlib import Path
-from typing import List
 
 
 class ManualYamlValidationDetector:
     """Detects manual YAML validation that bypasses Pydantic models."""
 
     def __init__(self):
-        self.errors: List[str] = []
+        self.errors: list[str] = []
         self.checked_files = 0
 
     def validate_python_file(self, py_path: Path) -> bool:
         """Check Python file for manual YAML validation patterns."""
         try:
-            with open(py_path, "r", encoding="utf-8") as f:
+            with open(py_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Parse AST to detect problematic patterns
@@ -43,11 +42,14 @@ class ManualYamlValidationDetector:
             return True
 
         except Exception as e:
-            self.errors.append(f"{py_path}: Failed to parse Python file - {str(e)}")
+            self.errors.append(f"{py_path}: Failed to parse Python file - {e!s}")
             return False
 
     def _check_node_with_context(
-        self, node: ast.AST, file_path: Path, errors: List[str]
+        self,
+        node: ast.AST,
+        file_path: Path,
+        errors: list[str],
     ) -> None:
         """Check AST node with function context tracking."""
         # Track function context
@@ -70,7 +72,10 @@ class ManualYamlValidationDetector:
                 self._check_node_with_context(child, file_path, errors)
 
     def _check_yaml_validation_patterns(
-        self, node: ast.AST, file_path: Path, errors: List[str]
+        self,
+        node: ast.AST,
+        file_path: Path,
+        errors: list[str],
     ) -> None:
         """Check AST node for manual YAML validation patterns."""
 
@@ -79,7 +84,7 @@ class ManualYamlValidationDetector:
             if self._is_yaml_safe_load(node) and not self._is_in_from_yaml_method(node):
                 errors.append(
                     f"Line {node.lineno}: Found yaml.safe_load() - "
-                    f"use Pydantic model.model_validate() instead"
+                    f"use Pydantic model.model_validate() instead",
                 )
 
         # Pattern 2: Direct YAML field checking
@@ -87,7 +92,7 @@ class ManualYamlValidationDetector:
             if self._is_yaml_field_access(node):
                 errors.append(
                     f"Line {node.lineno}: Direct YAML field access detected - "
-                    f"use Pydantic model properties instead"
+                    f"use Pydantic model properties instead",
                 )
 
         # Pattern 3: Manual essential_fields validation
@@ -100,7 +105,7 @@ class ManualYamlValidationDetector:
                 ):
                     errors.append(
                         f"Line {node.lineno}: Manual essential_fields validation - "
-                        f"Pydantic models should handle validation"
+                        f"Pydantic models should handle validation",
                     )
 
     def _is_yaml_safe_load(self, node: ast.Call) -> bool:
@@ -139,7 +144,7 @@ class ManualYamlValidationDetector:
                 return True
         return False
 
-    def validate_all_python_files(self, file_paths: List[Path]) -> bool:
+    def validate_all_python_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided Python files."""
         success = True
 
@@ -155,7 +160,7 @@ class ManualYamlValidationDetector:
             print("❌ Manual YAML Validation Detection FAILED")
             print("=" * 60)
             print(
-                f"Found {len(self.errors)} manual YAML validation violations in {self.checked_files} files:\n"
+                f"Found {len(self.errors)} manual YAML validation violations in {self.checked_files} files:\n",
             )
 
             for error in self.errors:
@@ -181,7 +186,7 @@ class ManualYamlValidationDetector:
 
         else:
             print(
-                f"✅ Manual YAML Validation Check PASSED ({self.checked_files} files checked)"
+                f"✅ Manual YAML Validation Check PASSED ({self.checked_files} files checked)",
             )
 
 

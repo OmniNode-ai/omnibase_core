@@ -9,10 +9,10 @@ Generated from workflow_coordination subcontract following ONEX patterns.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import HealthStatus, NodeType
+from omnibase.protocols.types.core_types import NodeType
 from pydantic import BaseModel, Field
 
 
@@ -64,7 +64,8 @@ class ModelWorkflowInstance(BaseModel):
     """A workflow execution instance."""
 
     workflow_id: str = Field(
-        ..., description="Unique identifier for the workflow instance"
+        ...,
+        description="Unique identifier for the workflow instance",
     )
 
     workflow_name: str = Field(..., description="Name of the workflow")
@@ -72,17 +73,20 @@ class ModelWorkflowInstance(BaseModel):
     workflow_version: str = Field(..., description="Version of the workflow definition")
 
     created_timestamp: datetime = Field(
-        ..., description="When the workflow instance was created"
+        ...,
+        description="When the workflow instance was created",
     )
 
     status: WorkflowStatus = Field(..., description="Current status of the workflow")
 
-    input_parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Input parameters for the workflow"
+    input_parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Input parameters for the workflow",
     )
 
-    execution_context: Dict[str, Any] = Field(
-        default_factory=dict, description="Execution context for the workflow"
+    execution_context: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Execution context for the workflow",
     )
 
 
@@ -94,15 +98,19 @@ class ModelNodeAssignment(BaseModel):
     node_type: NodeType = Field(..., description="Type of the node")
 
     assignment_status: AssignmentStatus = Field(
-        ..., description="Current status of the assignment"
+        ...,
+        description="Current status of the assignment",
     )
 
     execution_time_ms: int = Field(
-        default=0, description="Time spent executing on this node in milliseconds", ge=0
+        default=0,
+        description="Time spent executing on this node in milliseconds",
+        ge=0,
     )
 
-    resource_usage: Dict[str, float] = Field(
-        default_factory=dict, description="Resource usage metrics for this node"
+    resource_usage: dict[str, float] = Field(
+        default_factory=dict,
+        description="Resource usage metrics for this node",
     )
 
 
@@ -114,7 +122,9 @@ class ModelSynchronizationPoint(BaseModel):
     timestamp: datetime = Field(..., description="When the synchronization occurred")
 
     nodes_synchronized: int = Field(
-        ..., description="Number of nodes synchronized at this point", ge=0
+        ...,
+        description="Number of nodes synchronized at this point",
+        ge=0,
     )
 
 
@@ -122,20 +132,24 @@ class ModelCoordinationResult(BaseModel):
     """Result of node coordination operation."""
 
     coordination_id: str = Field(
-        ..., description="Unique identifier for this coordination"
+        ...,
+        description="Unique identifier for this coordination",
     )
 
     workflow_id: str = Field(..., description="Workflow this coordination belongs to")
 
-    nodes_coordinated: List[ModelNodeAssignment] = Field(
-        default_factory=list, description="List of nodes that were coordinated"
+    nodes_coordinated: list[ModelNodeAssignment] = Field(
+        default_factory=list,
+        description="List of nodes that were coordinated",
     )
 
     coordination_overhead_ms: int = Field(
-        ..., description="Time spent on coordination overhead in milliseconds", ge=0
+        ...,
+        description="Time spent on coordination overhead in milliseconds",
+        ge=0,
     )
 
-    synchronization_points: List[ModelSynchronizationPoint] = Field(
+    synchronization_points: list[ModelSynchronizationPoint] = Field(
         default_factory=list,
         description="Synchronization points reached during coordination",
     )
@@ -149,7 +163,10 @@ class ModelNodeProgress(BaseModel):
     node_type: NodeType = Field(..., description="Type of the node")
 
     progress_percent: float = Field(
-        ..., description="Progress percentage for this node", ge=0.0, le=100.0
+        ...,
+        description="Progress percentage for this node",
+        ge=0.0,
+        le=100.0,
     )
 
     status: str = Field(..., description="Current status of the node")
@@ -161,7 +178,10 @@ class ModelProgressStatus(BaseModel):
     workflow_id: str = Field(..., description="Workflow identifier")
 
     overall_progress_percent: float = Field(
-        ..., description="Overall workflow progress percentage", ge=0.0, le=100.0
+        ...,
+        description="Overall workflow progress percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     current_stage: str = Field(..., description="Current stage of the workflow")
@@ -169,15 +189,19 @@ class ModelProgressStatus(BaseModel):
     stages_completed: int = Field(..., description="Number of stages completed", ge=0)
 
     stages_total: int = Field(
-        ..., description="Total number of stages in the workflow", ge=1
+        ...,
+        description="Total number of stages in the workflow",
+        ge=1,
     )
 
-    estimated_completion: Optional[datetime] = Field(
-        default=None, description="Estimated completion time"
+    estimated_completion: datetime | None = Field(
+        default=None,
+        description="Estimated completion time",
     )
 
-    node_progress: List[ModelNodeProgress] = Field(
-        default_factory=list, description="Progress of individual nodes"
+    node_progress: list[ModelNodeProgress] = Field(
+        default_factory=list,
+        description="Progress of individual nodes",
     )
 
 
@@ -185,27 +209,41 @@ class ModelWorkflowMetrics(BaseModel):
     """Performance metrics for workflow execution."""
 
     total_execution_time_ms: int = Field(
-        ..., description="Total workflow execution time in milliseconds", ge=0
+        ...,
+        description="Total workflow execution time in milliseconds",
+        ge=0,
     )
 
     coordination_overhead_ms: int = Field(
-        ..., description="Time spent on coordination overhead in milliseconds", ge=0
+        ...,
+        description="Time spent on coordination overhead in milliseconds",
+        ge=0,
     )
 
     node_utilization_percent: float = Field(
-        ..., description="Node utilization percentage", ge=0.0, le=100.0
+        ...,
+        description="Node utilization percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     parallelism_achieved: float = Field(
-        ..., description="Achieved parallelism factor", ge=0.0
+        ...,
+        description="Achieved parallelism factor",
+        ge=0.0,
     )
 
     synchronization_delays_ms: int = Field(
-        ..., description="Total time spent on synchronization delays", ge=0
+        ...,
+        description="Total time spent on synchronization delays",
+        ge=0,
     )
 
     resource_efficiency_score: float = Field(
-        ..., description="Resource efficiency score", ge=0.0, le=1.0
+        ...,
+        description="Resource efficiency score",
+        ge=0.0,
+        le=1.0,
     )
 
 
@@ -216,32 +254,37 @@ class ModelWorkflowNode(BaseModel):
 
     node_type: NodeType = Field(..., description="Type of the node")
 
-    node_requirements: Dict[str, Any] = Field(
-        default_factory=dict, description="Requirements for this node"
+    node_requirements: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Requirements for this node",
     )
 
-    dependencies: List[str] = Field(
-        default_factory=list, description="List of node IDs this node depends on"
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="List of node IDs this node depends on",
     )
 
 
 class ModelExecutionGraph(BaseModel):
     """Execution graph for a workflow."""
 
-    nodes: List[ModelWorkflowNode] = Field(
-        default_factory=list, description="Nodes in the execution graph"
+    nodes: list[ModelWorkflowNode] = Field(
+        default_factory=list,
+        description="Nodes in the execution graph",
     )
 
 
 class ModelCoordinationRules(BaseModel):
     """Rules for workflow coordination."""
 
-    synchronization_points: List[str] = Field(
-        default_factory=list, description="Named synchronization points in the workflow"
+    synchronization_points: list[str] = Field(
+        default_factory=list,
+        description="Named synchronization points in the workflow",
     )
 
     parallel_execution_allowed: bool = Field(
-        default=True, description="Whether parallel execution is allowed"
+        default=True,
+        description="Whether parallel execution is allowed",
     )
 
     failure_recovery_strategy: FailureRecoveryStrategy = Field(
@@ -260,7 +303,9 @@ class ModelWorkflowMetadata(BaseModel):
     description: str = Field(..., description="Description of the workflow")
 
     timeout_ms: int = Field(
-        default=600000, description="Workflow timeout in milliseconds", ge=1000
+        default=600000,
+        description="Workflow timeout in milliseconds",
+        ge=1000,
     )
 
 
@@ -268,11 +313,13 @@ class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
     workflow_metadata: ModelWorkflowMetadata = Field(
-        ..., description="Workflow metadata"
+        ...,
+        description="Workflow metadata",
     )
 
     execution_graph: ModelExecutionGraph = Field(
-        ..., description="Execution graph for the workflow"
+        ...,
+        description="Execution graph for the workflow",
     )
 
     coordination_rules: ModelCoordinationRules = Field(
@@ -289,19 +336,24 @@ class ModelExecutionResult(BaseModel):
     status: WorkflowStatus = Field(..., description="Final status of the workflow")
 
     execution_time_ms: int = Field(
-        ..., description="Total execution time in milliseconds", ge=0
+        ...,
+        description="Total execution time in milliseconds",
+        ge=0,
     )
 
-    result_data: Dict[str, Any] = Field(
-        default_factory=dict, description="Result data from the workflow"
+    result_data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Result data from the workflow",
     )
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if workflow failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if workflow failed",
     )
 
     coordination_metrics: ModelWorkflowMetrics = Field(
-        ..., description="Performance metrics for the execution"
+        ...,
+        description="Performance metrics for the execution",
     )
 
 
@@ -320,17 +372,21 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     subcontract_version: str = Field(
-        default="1.0.0", description="Version of the subcontract"
+        default="1.0.0",
+        description="Version of the subcontract",
     )
 
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["ORCHESTRATOR"],
         description="Node types this subcontract applies to (ORCHESTRATOR only)",
     )
 
     # Configuration
     max_concurrent_workflows: int = Field(
-        default=10, description="Maximum number of concurrent workflows", ge=1, le=100
+        default=10,
+        description="Maximum number of concurrent workflows",
+        ge=1,
+        le=100,
     )
 
     default_workflow_timeout_ms: int = Field(
@@ -355,15 +411,18 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     auto_retry_enabled: bool = Field(
-        default=True, description="Whether automatic retry is enabled"
+        default=True,
+        description="Whether automatic retry is enabled",
     )
 
     parallel_execution_enabled: bool = Field(
-        default=True, description="Whether parallel execution is enabled"
+        default=True,
+        description="Whether parallel execution is enabled",
     )
 
     workflow_persistence_enabled: bool = Field(
-        default=True, description="Whether workflow state persistence is enabled"
+        default=True,
+        description="Whether workflow state persistence is enabled",
     )
 
     # Failure recovery configuration
@@ -382,7 +441,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     exponential_backoff: bool = Field(
-        default=True, description="Whether to use exponential backoff for retries"
+        default=True,
+        description="Whether to use exponential backoff for retries",
     )
 
     class Config:
@@ -401,5 +461,5 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
                 "max_retries": 3,
                 "retry_delay_ms": 2000,
                 "exponential_backoff": True,
-            }
+            },
         }

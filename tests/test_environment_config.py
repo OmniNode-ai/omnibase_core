@@ -8,17 +8,15 @@ validation, type conversion, and registry functionality.
 
 import os
 from pathlib import Path
-from typing import List, Optional
 from unittest.mock import mock_open, patch
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 from omnibase_core.core.configuration import (
     EnvironmentConfigRegistry,
     ModelEnvironmentConfig,
     ModelEnvironmentPrefix,
-    ModelEnvironmentVariable,
     config_registry,
     get_env_bool,
     get_env_float,
@@ -37,8 +35,8 @@ class TestModelConfig(ModelEnvironmentConfig):
     debug: bool = Field(default=False, description="Debug mode")
     port: int = Field(default=8000, description="Server port")
     timeout: float = Field(default=30.0, description="Request timeout")
-    features: List[str] = Field(default_factory=list, description="Enabled features")
-    database_url: Optional[str] = Field(default=None, description="Database URL")
+    features: list[str] = Field(default_factory=list, description="Enabled features")
+    database_url: str | None = Field(default=None, description="Database URL")
 
 
 class TestModelEnvironmentPrefix:
@@ -60,10 +58,12 @@ class TestModelEnvironmentPrefix:
     def test_format_key_case_sensitivity(self):
         """Test case sensitivity in key formatting."""
         prefix_case_sensitive = ModelEnvironmentPrefix(
-            prefix="Test", case_sensitive=True
+            prefix="Test",
+            case_sensitive=True,
         )
         prefix_case_insensitive = ModelEnvironmentPrefix(
-            prefix="Test", case_sensitive=False
+            prefix="Test",
+            case_sensitive=False,
         )
 
         assert prefix_case_sensitive.format_key("Key") == "Test_Key"
@@ -199,7 +199,7 @@ class TestModelEnvironmentConfig:
     @patch(
         "builtins.open",
         mock_open(
-            read_data='KEY1=value1\nKEY2=value2\n# Comment\nKEY3="quoted value"\n'
+            read_data='KEY1=value1\nKEY2=value2\n# Comment\nKEY3="quoted value"\n',
         ),
     )
     def test_load_env_file(self):
@@ -417,7 +417,8 @@ class TestIntegration:
 
         # Create configuration
         config = TestModelConfig.from_environment(
-            prefix="INTEGRATION", timeout=60.0  # Override
+            prefix="INTEGRATION",
+            timeout=60.0,  # Override
         )
 
         # Verify configuration

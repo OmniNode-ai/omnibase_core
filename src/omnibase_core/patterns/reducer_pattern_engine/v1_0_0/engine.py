@@ -9,7 +9,7 @@ import atexit
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -80,8 +80,8 @@ class ReducerPatternEngine(NodeReducer):
         self._metrics = WorkflowMetrics()
 
         # State management with thread-safe access
-        self._active_workflows: Dict[str, WorkflowRequest] = {}
-        self._workflow_states: Dict[str, WorkflowStateModel] = {}
+        self._active_workflows: dict[str, WorkflowRequest] = {}
+        self._workflow_states: dict[str, WorkflowStateModel] = {}
         self._state_lock = threading.RLock()  # Re-entrant lock for nested operations
 
         # Memory cleanup configuration (configurable parameters)
@@ -120,7 +120,9 @@ class ReducerPatternEngine(NodeReducer):
         )
 
     def register_subreducer(
-        self, subreducer: BaseSubreducer, workflow_types: List[WorkflowType]
+        self,
+        subreducer: BaseSubreducer,
+        workflow_types: list[WorkflowType],
     ) -> None:
         """
         Register a subreducer for handling specific workflow types.
@@ -164,7 +166,7 @@ class ReducerPatternEngine(NodeReducer):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Failed to register subreducer in engine: {str(e)}",
+                message=f"Failed to register subreducer in engine: {e!s}",
                 context={
                     "event": "subreducer_registration_failed_in_engine",
                     "subreducer_name": getattr(subreducer, "name", "unknown"),
@@ -241,7 +243,7 @@ class ReducerPatternEngine(NodeReducer):
 
             # Step 4: Get the selected subreducer from registry
             subreducer_instance = self._registry.get_subreducer_instance(
-                request.workflow_type
+                request.workflow_type,
             )
             if not subreducer_instance:
                 raise OnexError(
@@ -312,7 +314,8 @@ class ReducerPatternEngine(NodeReducer):
                     success=False,
                     processing_time_ms=processing_time_ms,
                     error_type=subreducer_result.error_details.get(
-                        "error_type", "unknown"
+                        "error_type",
+                        "unknown",
                     ),
                 )
 
@@ -392,7 +395,7 @@ class ReducerPatternEngine(NodeReducer):
 
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Failed to process workflow {request.workflow_id}: {str(e)}",
+                message=f"Failed to process workflow {request.workflow_id}: {e!s}",
                 context={
                     "event": "workflow_processing_failed",
                     "workflow_id": str(request.workflow_id),
@@ -474,7 +477,7 @@ class ReducerPatternEngine(NodeReducer):
                     - self._max_workflow_states
                 )
                 states_to_remove.extend(
-                    [wf_id for wf_id, _ in completed_states[:excess_count]]
+                    [wf_id for wf_id, _ in completed_states[:excess_count]],
                 )
 
             # Remove identified states
@@ -528,7 +531,7 @@ class ReducerPatternEngine(NodeReducer):
             except Exception as e:
                 emit_log_event(
                     level=LogLevel.ERROR,
-                    message=f"Background cleanup encountered an error: {str(e)}",
+                    message=f"Background cleanup encountered an error: {e!s}",
                     context={
                         "event": "background_cleanup_error",
                         "error": str(e),
@@ -600,7 +603,7 @@ class ReducerPatternEngine(NodeReducer):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Error during final cleanup: {str(e)}",
+                message=f"Error during final cleanup: {e!s}",
                 context={"event": "final_cleanup_error", "error": str(e)},
             )
 
@@ -630,7 +633,7 @@ class ReducerPatternEngine(NodeReducer):
                 subreducer_metrics=self._metrics.subreducer_metrics.copy(),
             )
 
-    def get_active_workflows(self) -> Dict[str, WorkflowRequest]:
+    def get_active_workflows(self) -> dict[str, WorkflowRequest]:
         """
         Get currently active workflows.
 
@@ -661,7 +664,7 @@ class ReducerPatternEngine(NodeReducer):
 
     # Phase 2 Enhanced Methods
 
-    def get_registry_summary(self) -> Dict[str, Any]:
+    def get_registry_summary(self) -> dict[str, Any]:
         """
         Get comprehensive registry summary with health checks.
 
@@ -670,7 +673,7 @@ class ReducerPatternEngine(NodeReducer):
         """
         return self._registry.get_registry_summary()
 
-    def get_comprehensive_metrics(self) -> Dict[str, Any]:
+    def get_comprehensive_metrics(self) -> dict[str, Any]:
         """
         Get comprehensive metrics from all Phase 2 components.
 
@@ -690,7 +693,7 @@ class ReducerPatternEngine(NodeReducer):
         with self._state_lock:
             return len(self._active_workflows)
 
-    def _get_workflow_states_summary(self) -> Dict[str, Dict]:
+    def _get_workflow_states_summary(self) -> dict[str, dict]:
         """Get workflow states summary (thread-safe)."""
         with self._state_lock:
             return {
@@ -710,10 +713,11 @@ class ReducerPatternEngine(NodeReducer):
         """
         with self._state_lock:
             return self._workflow_states.get(
-                workflow_id, self._create_not_found_workflow_state(workflow_id)
+                workflow_id,
+                self._create_not_found_workflow_state(workflow_id),
             )
 
-    def list_supported_workflow_types(self) -> List[str]:
+    def list_supported_workflow_types(self) -> list[str]:
         """
         Get list of all supported workflow types from registry.
 
@@ -722,7 +726,7 @@ class ReducerPatternEngine(NodeReducer):
         """
         return self._registry.list_registered_workflows()
 
-    def get_workflow_type_metrics(self, workflow_type: str) -> Dict[str, Any]:
+    def get_workflow_type_metrics(self, workflow_type: str) -> dict[str, Any]:
         """
         Get metrics for a specific workflow type.
 
@@ -734,7 +738,7 @@ class ReducerPatternEngine(NodeReducer):
         """
         return self._metrics_collector.get_workflow_type_metrics(workflow_type) or {}
 
-    def health_check_subreducers(self) -> Dict[str, bool]:
+    def health_check_subreducers(self) -> dict[str, bool]:
         """
         Perform health checks on all registered subreducers.
 
@@ -744,8 +748,9 @@ class ReducerPatternEngine(NodeReducer):
         return self._registry.health_check_subreducers()
 
     def register_multiple_subreducers(
-        self, subreducer_configs: List[Dict[str, Any]]
-    ) -> Dict[str, bool]:
+        self,
+        subreducer_configs: list[dict[str, Any]],
+    ) -> dict[str, bool]:
         """
         Register multiple subreducers at once.
 
@@ -768,7 +773,7 @@ class ReducerPatternEngine(NodeReducer):
                 results[subreducer_name] = False
                 emit_log_event(
                     level=LogLevel.ERROR,
-                    message=f"Failed to register subreducer {subreducer_name}: {str(e)}",
+                    message=f"Failed to register subreducer {subreducer_name}: {e!s}",
                     context={
                         "event": "bulk_subreducer_registration_failed",
                         "subreducer_name": subreducer_name,

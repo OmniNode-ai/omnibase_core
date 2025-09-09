@@ -6,18 +6,16 @@ data validation, multiple analysis types, and error handling.
 """
 
 import statistics
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import OnexError
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
-    ModelSubreducerResult,
     ModelWorkflowRequest,
     WorkflowType,
 )
@@ -92,7 +90,7 @@ class TestReducerDataAnalysisSubreducer:
         assert descriptive["count"] == 8
         assert descriptive["mean"] == statistics.mean([10, 20, 30, 40, 50, 25, 35, 45])
         assert descriptive["median"] == statistics.median(
-            [10, 20, 30, 40, 50, 25, 35, 45]
+            [10, 20, 30, 40, 50, 25, 35, 45],
         )
         assert "std_dev" in descriptive
         assert "variance" in descriptive
@@ -208,7 +206,7 @@ class TestReducerDataAnalysisSubreducer:
         data_stats = result.result["data_statistics"]
         assert data_stats["original_data_points"] == len(messy_data)
         assert data_stats["cleaned_data_points"] < len(
-            messy_data
+            messy_data,
         )  # Some data should be removed
 
         # Outlier (100) should be removed
@@ -459,19 +457,22 @@ class TestReducerDataAnalysisSubreducer:
         """Test data quality score calculation."""
         # Perfect data (all valid)
         perfect_score = subreducer._calculate_data_quality_score(
-            [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]
+            [1, 2, 3, 4, 5],
+            [1, 2, 3, 4, 5],
         )
         assert perfect_score == 1.0
 
         # Good data (some data removed but high retention)
         good_score = subreducer._calculate_data_quality_score(
-            [1, 2, 3, 4, 5], [1, 2, 3, 4]
+            [1, 2, 3, 4, 5],
+            [1, 2, 3, 4],
         )
         assert 0.8 <= good_score <= 1.0
 
         # Poor data (low retention)
         poor_score = subreducer._calculate_data_quality_score(
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [1, 2]
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            [1, 2],
         )
         assert poor_score < 0.5
 
@@ -531,7 +532,8 @@ class TestReducerDataAnalysisSubreducer:
             "data_validation": {"remove_outliers": True, "handle_missing": True},
         }
         cleaned_with_removal = subreducer._validate_and_clean_data(
-            config_with_outlier_removal["data"], config_with_outlier_removal
+            config_with_outlier_removal["data"],
+            config_with_outlier_removal,
         )
 
         # Test with outlier removal disabled
@@ -541,7 +543,8 @@ class TestReducerDataAnalysisSubreducer:
             "data_validation": {"remove_outliers": False, "handle_missing": True},
         }
         cleaned_without_removal = subreducer._validate_and_clean_data(
-            config_without_outlier_removal["data"], config_without_outlier_removal
+            config_without_outlier_removal["data"],
+            config_without_outlier_removal,
         )
 
         # Both should be the same for this clean data

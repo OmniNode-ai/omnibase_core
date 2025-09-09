@@ -11,8 +11,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from .model_node_service_config import ModelNodeServiceConfig
 
 
@@ -217,7 +215,9 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
         return serialize_data_to_yaml(
-            compose_config, default_flow_style=False, sort_keys=False
+            compose_config,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     def _get_dependency_services(self) -> dict[str, Any]:

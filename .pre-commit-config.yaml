@@ -98,7 +98,7 @@ repos:
 # Configuration
 ci:
   autofix_commit_msg: |
-    [pre-commit.ci] auto fixes for omnibase-core
+    [pre-commit.ci] auto fixes for omnibase_core
 
     for more information, see https://pre-commit.ci
   autofix_prs: true

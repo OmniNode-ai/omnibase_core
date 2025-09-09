@@ -9,13 +9,14 @@ for external service calls with comprehensive monitoring and configuration.
 import asyncio
 import logging
 import time
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
 from omnibase_core.core.configuration.environment_config import ModelEnvironmentConfig
 
@@ -54,11 +55,11 @@ class CircuitBreakerMetrics:
     # State tracking
     current_state: CircuitBreakerState = CircuitBreakerState.CLOSED
     state_changes: int = 0
-    last_state_change: Optional[datetime] = None
+    last_state_change: datetime | None = None
 
     # Timing metrics
-    last_success_time: Optional[datetime] = None
-    last_failure_time: Optional[datetime] = None
+    last_success_time: datetime | None = None
+    last_failure_time: datetime | None = None
     average_response_time_ms: float = 0.0
 
     # Window-based metrics (rolling)
@@ -93,7 +94,10 @@ class ModelCircuitBreakerConfig(ModelEnvironmentConfig):
 
     # Core thresholds
     failure_threshold: int = Field(
-        default=5, description="Number of failures before opening circuit", ge=1, le=100
+        default=5,
+        description="Number of failures before opening circuit",
+        ge=1,
+        le=100,
     )
 
     failure_rate_threshold: float = Field(
@@ -119,49 +123,70 @@ class ModelCircuitBreakerConfig(ModelEnvironmentConfig):
     )
 
     success_threshold: int = Field(
-        default=3, description="Successes needed to close from half-open", ge=1, le=20
+        default=3,
+        description="Successes needed to close from half-open",
+        ge=1,
+        le=20,
     )
 
     half_open_max_requests: int = Field(
-        default=5, description="Maximum requests in half-open state", ge=1, le=50
+        default=5,
+        description="Maximum requests in half-open state",
+        ge=1,
+        le=50,
     )
 
     # Timing settings
     request_timeout_seconds: float = Field(
-        default=10.0, description="Request timeout in seconds", ge=0.1, le=300.0
+        default=10.0,
+        description="Request timeout in seconds",
+        ge=0.1,
+        le=300.0,
     )
 
     window_size_seconds: int = Field(
-        default=60, description="Rolling window size for metrics", ge=30, le=3600
+        default=60,
+        description="Rolling window size for metrics",
+        ge=30,
+        le=3600,
     )
 
     # Advanced settings
-    slow_call_threshold_ms: Optional[int] = Field(
+    slow_call_threshold_ms: int | None = Field(
         default=None,
         description="Threshold for considering calls slow",
         ge=100,
         le=60000,
     )
 
-    slow_call_rate_threshold: Optional[float] = Field(
-        default=None, description="Slow call rate to trigger opening", ge=0.0, le=1.0
+    slow_call_rate_threshold: float | None = Field(
+        default=None,
+        description="Slow call rate to trigger opening",
+        ge=0.0,
+        le=1.0,
     )
 
     exponential_backoff: bool = Field(
-        default=True, description="Use exponential backoff for recovery timeout"
+        default=True,
+        description="Use exponential backoff for recovery timeout",
     )
 
     max_backoff_seconds: int = Field(
-        default=300, description="Maximum backoff time in seconds", ge=60, le=3600
+        default=300,
+        description="Maximum backoff time in seconds",
+        ge=60,
+        le=3600,
     )
 
     # Monitoring and logging
     enable_metrics: bool = Field(
-        default=True, description="Enable detailed metrics collection"
+        default=True,
+        description="Enable detailed metrics collection",
     )
 
     log_state_changes: bool = Field(
-        default=True, description="Log circuit breaker state changes"
+        default=True,
+        description="Log circuit breaker state changes",
     )
 
     @field_validator("failure_rate_threshold")
@@ -179,26 +204,22 @@ class CircuitBreakerException(Exception):
         self,
         service_name: str,
         state: CircuitBreakerState,
-        metrics: Optional[CircuitBreakerMetrics] = None,
+        metrics: CircuitBreakerMetrics | None = None,
     ):
         self.service_name = service_name
         self.state = state
         self.metrics = metrics
         super().__init__(
-            f"Circuit breaker is {state.value} for service '{service_name}'"
+            f"Circuit breaker is {state.value} for service '{service_name}'",
         )
 
 
 class CircuitBreakerOpenException(CircuitBreakerException):
     """Exception for when circuit breaker is in OPEN state."""
 
-    pass
-
 
 class CircuitBreakerTimeoutException(CircuitBreakerException):
     """Exception for when request times out."""
-
-    pass
 
 
 class ExternalDependencyCircuitBreaker:
@@ -215,11 +236,13 @@ class ExternalDependencyCircuitBreaker:
     """
 
     def __init__(
-        self, service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
+        self,
+        service_name: str,
+        config: ModelCircuitBreakerConfig | None = None,
     ):
         self.service_name = service_name
         self.config = config or ModelCircuitBreakerConfig.from_environment(
-            prefix=f"CIRCUIT_BREAKER_{service_name.upper()}"
+            prefix=f"CIRCUIT_BREAKER_{service_name.upper()}",
         )
 
         # State management
@@ -232,7 +255,7 @@ class ExternalDependencyCircuitBreaker:
         self._current_backoff = self.config.recovery_timeout_seconds
 
         # Event callbacks
-        self._event_callbacks: Dict[CircuitBreakerEvent, list] = {
+        self._event_callbacks: dict[CircuitBreakerEvent, list] = {
             event: [] for event in CircuitBreakerEvent
         }
 
@@ -241,8 +264,8 @@ class ExternalDependencyCircuitBreaker:
     async def call(
         self,
         func: Callable[[], Awaitable[T]],
-        fallback: Optional[Callable[[], Awaitable[T]]] = None,
-        timeout: Optional[float] = None,
+        fallback: Callable[[], Awaitable[T]] | None = None,
+        timeout: float | None = None,
     ) -> T:
         """
         Execute function through circuit breaker with optional fallback.
@@ -265,14 +288,15 @@ class ExternalDependencyCircuitBreaker:
             if not await self._should_allow_request():
                 if fallback:
                     logger.info(
-                        f"Circuit breaker open for {self.service_name}, executing fallback"
+                        f"Circuit breaker open for {self.service_name}, executing fallback",
                     )
                     await self._emit_event(CircuitBreakerEvent.FALLBACK_EXECUTED)
                     return await self._execute_with_timeout(fallback, timeout)
-                else:
-                    raise CircuitBreakerOpenException(
-                        self.service_name, self.metrics.current_state, self.metrics
-                    )
+                raise CircuitBreakerOpenException(
+                    self.service_name,
+                    self.metrics.current_state,
+                    self.metrics,
+                )
 
             # Execute the function
             start_time = time.time()
@@ -285,10 +309,12 @@ class ExternalDependencyCircuitBreaker:
 
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 await self._record_timeout()
                 raise CircuitBreakerTimeoutException(
-                    self.service_name, self.metrics.current_state, self.metrics
+                    self.service_name,
+                    self.metrics.current_state,
+                    self.metrics,
                 )
             except Exception as e:
                 await self._record_failure(e)
@@ -296,7 +322,9 @@ class ExternalDependencyCircuitBreaker:
 
     @asynccontextmanager
     async def protect(
-        self, timeout: Optional[float] = None, fallback_result: Optional[T] = None
+        self,
+        timeout: float | None = None,
+        fallback_result: T | None = None,
     ):
         """
         Context manager for circuit breaker protection.
@@ -312,7 +340,9 @@ class ExternalDependencyCircuitBreaker:
                 return
             else:
                 raise CircuitBreakerOpenException(
-                    self.service_name, self.metrics.current_state, self.metrics
+                    self.service_name,
+                    self.metrics.current_state,
+                    self.metrics,
                 )
 
         context = _CircuitBreakerContext()
@@ -323,7 +353,8 @@ class ExternalDependencyCircuitBreaker:
             if timeout or self.config.request_timeout_seconds:
                 timeout_val = timeout or self.config.request_timeout_seconds
                 await asyncio.wait_for(
-                    self._yield_context(context), timeout=timeout_val
+                    self._yield_context(context),
+                    timeout=timeout_val,
                 )
             else:
                 yield context
@@ -333,11 +364,13 @@ class ExternalDependencyCircuitBreaker:
                 execution_time = (time.time() - start_time) * 1000
                 await self._record_success(execution_time)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             context.has_exception = True
             await self._record_timeout()
             raise CircuitBreakerTimeoutException(
-                self.service_name, self.metrics.current_state, self.metrics
+                self.service_name,
+                self.metrics.current_state,
+                self.metrics,
             )
         except Exception as e:
             context.has_exception = True
@@ -349,7 +382,9 @@ class ExternalDependencyCircuitBreaker:
         yield context
 
     async def _execute_with_timeout(
-        self, func: Callable[[], Awaitable[T]], timeout: Optional[float]
+        self,
+        func: Callable[[], Awaitable[T]],
+        timeout: float | None,
     ) -> T:
         """Execute function with timeout."""
         timeout_val = timeout or self.config.request_timeout_seconds
@@ -364,14 +399,14 @@ class ExternalDependencyCircuitBreaker:
         if current_state == CircuitBreakerState.CLOSED:
             return True
 
-        elif current_state == CircuitBreakerState.OPEN:
+        if current_state == CircuitBreakerState.OPEN:
             # Check if we should transition to half-open
             if await self._should_transition_to_half_open():
                 await self._transition_to_half_open()
                 return True
             return False
 
-        elif current_state == CircuitBreakerState.HALF_OPEN:
+        if current_state == CircuitBreakerState.HALF_OPEN:
             # Allow limited requests in half-open
             return self.metrics.half_open_requests < self.config.half_open_max_requests
 
@@ -421,7 +456,7 @@ class ExternalDependencyCircuitBreaker:
     async def _record_timeout(self) -> None:
         """Record timed out request."""
         self.metrics.timeout_requests += 1
-        await self._record_failure(asyncio.TimeoutError())
+        await self._record_failure(TimeoutError())
         await self._emit_event(CircuitBreakerEvent.TIMEOUT)
 
     def _update_average_response_time(self, execution_time_ms: float) -> None:
@@ -483,7 +518,7 @@ class ExternalDependencyCircuitBreaker:
             logger.warning(
                 f"Circuit breaker for {self.service_name} transitioned: "
                 f"{old_state} -> {self.metrics.current_state} "
-                f"(backoff: {self._current_backoff}s)"
+                f"(backoff: {self._current_backoff}s)",
             )
 
         await self._emit_event(CircuitBreakerEvent.STATE_CHANGE)
@@ -503,7 +538,7 @@ class ExternalDependencyCircuitBreaker:
         if self.config.log_state_changes:
             logger.info(
                 f"Circuit breaker for {self.service_name} transitioned: "
-                f"{old_state} -> {self.metrics.current_state}"
+                f"{old_state} -> {self.metrics.current_state}",
             )
 
         await self._emit_event(CircuitBreakerEvent.STATE_CHANGE)
@@ -528,7 +563,7 @@ class ExternalDependencyCircuitBreaker:
         if self.config.log_state_changes:
             logger.info(
                 f"Circuit breaker for {self.service_name} transitioned: "
-                f"{old_state} -> {self.metrics.current_state} (recovered)"
+                f"{old_state} -> {self.metrics.current_state} (recovered)",
             )
 
         await self._emit_event(CircuitBreakerEvent.STATE_CHANGE)
@@ -599,7 +634,7 @@ class ExternalDependencyCircuitBreaker:
 class _CircuitBreakerContext:
     """Internal context for circuit breaker protection."""
 
-    result: Optional[Any] = None
+    result: Any | None = None
     is_fallback: bool = False
     has_exception: bool = False
 
@@ -646,7 +681,8 @@ class CircuitBreakerFactory:
 
     @staticmethod
     def create_from_environment(
-        service_name: str, prefix: Optional[str] = None
+        service_name: str,
+        prefix: str | None = None,
     ) -> ExternalDependencyCircuitBreaker:
         """Create circuit breaker with environment-based configuration."""
         env_prefix = prefix or f"CIRCUIT_BREAKER_{service_name.upper()}"
@@ -655,14 +691,14 @@ class CircuitBreakerFactory:
 
 
 # Global registry for circuit breakers
-_circuit_breaker_registry: Dict[str, ExternalDependencyCircuitBreaker] = {}
+_circuit_breaker_registry: dict[str, ExternalDependencyCircuitBreaker] = {}
 
 
 def get_circuit_breaker(
     service_name: str,
-    config: Optional[ModelCircuitBreakerConfig] = None,
+    config: ModelCircuitBreakerConfig | None = None,
     create_if_missing: bool = True,
-) -> Optional[ExternalDependencyCircuitBreaker]:
+) -> ExternalDependencyCircuitBreaker | None:
     """
     Get or create circuit breaker for a service.
 
@@ -686,14 +722,15 @@ def get_circuit_breaker(
 
 
 def register_circuit_breaker(
-    service_name: str, circuit_breaker: ExternalDependencyCircuitBreaker
+    service_name: str,
+    circuit_breaker: ExternalDependencyCircuitBreaker,
 ) -> None:
     """Register circuit breaker in global registry."""
     _circuit_breaker_registry[service_name] = circuit_breaker
     logger.info(f"Registered circuit breaker for service: {service_name}")
 
 
-def list_circuit_breakers() -> Dict[str, Dict[str, Any]]:
+def list_circuit_breakers() -> dict[str, dict[str, Any]]:
     """List all registered circuit breakers with their status."""
     result = {}
     for name, cb in _circuit_breaker_registry.items():

@@ -1,6 +1,5 @@
 """Tests for ONEX protocol compliance in Reducer Pattern Engine Phase 3."""
 
-from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
@@ -84,7 +83,8 @@ class TestONEXCompliance:
         """Create NodeReducerPatternEngine instance."""
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
             with patch.object(
-                NodeReducerPatternEngine, "_load_contract_model"
+                NodeReducerPatternEngine,
+                "_load_contract_model",
             ) as mock_load:
                 # Mock contract model
                 mock_contract = Mock()
@@ -120,11 +120,14 @@ class TestONEXCompliance:
 
     @pytest.mark.asyncio
     async def test_onex_input_creation_from_envelope(
-        self, mock_envelope, workflow_request
+        self,
+        mock_envelope,
+        workflow_request,
     ):
         """Test creating ONEX input from event envelope."""
         with patch.object(
-            ModelReducerPatternEngineInput, "from_envelope"
+            ModelReducerPatternEngineInput,
+            "from_envelope",
         ) as mock_from_envelope:
             # Mock the from_envelope method since ModelEventEnvelope is complex to create
             expected_input = ModelReducerPatternEngineInput.from_workflow_request(
@@ -158,7 +161,8 @@ class TestONEXCompliance:
         )
 
         onex_output = ModelReducerPatternEngineOutput.from_workflow_response(
-            workflow_response=workflow_response, source_node_id="reducer_pattern_engine"
+            workflow_response=workflow_response,
+            source_node_id="reducer_pattern_engine",
         )
 
         assert onex_output.workflow_response == workflow_response
@@ -171,7 +175,8 @@ class TestONEXCompliance:
         """Test NodeReducerPatternEngine initialization."""
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
             with patch.object(
-                NodeReducerPatternEngine, "_load_contract_model"
+                NodeReducerPatternEngine,
+                "_load_contract_model",
             ) as mock_load:
                 mock_contract = Mock()
                 mock_contract.pattern_config.supported_workflows = ["DATA_ANALYSIS"]
@@ -187,7 +192,9 @@ class TestONEXCompliance:
 
     @pytest.mark.asyncio
     async def test_protocol_compliance_workflow_processing(
-        self, node_engine, onex_input
+        self,
+        node_engine,
+        onex_input,
     ):
         """Test ONEX protocol-compliant workflow processing."""
         # Mock workflow response
@@ -214,7 +221,7 @@ class TestONEXCompliance:
 
         # Verify underlying engine was called
         node_engine._pattern_engine.process_workflow.assert_called_once_with(
-            onex_input.workflow_request
+            onex_input.workflow_request,
         )
 
     @pytest.mark.asyncio
@@ -284,7 +291,9 @@ class TestONEXCompliance:
 
     @pytest.mark.asyncio
     async def test_backward_compatibility_reduce_method(
-        self, node_engine, workflow_request
+        self,
+        node_engine,
+        workflow_request,
     ):
         """Test backward compatibility reduce method."""
         # Mock workflow response
@@ -315,7 +324,7 @@ class TestONEXCompliance:
         # Mock processing failure
         error_message = "Processing failed"
         node_engine._pattern_engine.process_workflow.side_effect = Exception(
-            error_message
+            error_message,
         )
 
         # Process workflow (should handle error gracefully)
@@ -334,7 +343,8 @@ class TestONEXCompliance:
         """Test input validation for protocol compliance."""
         # Test with invalid input type
         with pytest.raises(
-            ValueError, match="Input must be ModelReducerPatternEngineInput"
+            ValueError,
+            match="Input must be ModelReducerPatternEngineInput",
         ):
             await node_engine.validate_input("invalid_input")
 
@@ -397,7 +407,7 @@ class TestONEXCompliance:
         )
 
         onex_output = ModelReducerPatternEngineOutput.from_workflow_response(
-            workflow_response=workflow_response
+            workflow_response=workflow_response,
         )
 
         # Test error information
@@ -429,7 +439,7 @@ class TestONEXCompliance:
         )
 
         onex_output = ModelReducerPatternEngineOutput.from_workflow_response(
-            workflow_response=workflow_response
+            workflow_response=workflow_response,
         )
 
         # Test success information

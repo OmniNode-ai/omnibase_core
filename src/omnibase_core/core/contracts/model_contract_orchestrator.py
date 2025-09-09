@@ -892,11 +892,13 @@ class ModelContractOrchestrator(ModelContractBase):  # type: ignore[misc]
         )
 
         return serialize_pydantic_model_to_yaml(
-            self, default_flow_style=False, sort_keys=False
+            self,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     @classmethod
-    def from_yaml(cls, yaml_content: str) -> "ModelContractOrchestrator":
+    def from_yaml(cls, yaml_content: str) -> ModelContractOrchestrator:
         """
         Create contract model from YAML content.
 

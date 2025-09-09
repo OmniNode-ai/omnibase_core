@@ -9,12 +9,11 @@ and ONEX compliance throughout the pipeline.
 
 import asyncio
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.errors.core_errors import OnexError
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration import (
     ReducerDocumentRegenerationSubreducer,
@@ -42,10 +41,10 @@ def engine_with_subreducer(mock_container):
     """Create a ReducerPatternEngine with registered document regeneration subreducer."""
     with (
         patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ),
         patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ),
     ):
 
@@ -82,20 +81,22 @@ class TestPhase1EndToEndIntegration:
 
     @pytest.mark.asyncio
     async def test_complete_successful_workflow(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test complete successful workflow from engine to subreducer."""
         engine, subreducer = engine_with_subreducer
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ) as engine_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ) as router_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ) as subreducer_log,
         ):
 
@@ -122,7 +123,7 @@ class TestPhase1EndToEndIntegration:
         proc_info = response.result["processing_info"]
         assert proc_info["workflow_id"] == str(sample_workflow_request.workflow_id)
         assert proc_info["correlation_id"] == str(
-            sample_workflow_request.correlation_id
+            sample_workflow_request.correlation_id,
         )
         assert proc_info["instance_id"] == sample_workflow_request.instance_id
 
@@ -149,7 +150,9 @@ class TestPhase1EndToEndIntegration:
 
     @pytest.mark.asyncio
     async def test_correlation_id_tracking_through_pipeline(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that correlation ID is tracked throughout the entire pipeline."""
         engine, subreducer = engine_with_subreducer
@@ -157,13 +160,13 @@ class TestPhase1EndToEndIntegration:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ) as engine_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ) as router_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ) as subreducer_log,
         ):
 
@@ -211,13 +214,13 @@ class TestPhase1EndToEndIntegration:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -272,13 +275,13 @@ class TestPhase1EndToEndIntegration:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -310,10 +313,10 @@ class TestPhase1ErrorPropagation:
         """Test that subreducer errors are properly propagated to engine response."""
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -351,7 +354,7 @@ class TestPhase1ErrorPropagation:
     async def test_router_error_propagation(self, mock_container):
         """Test that router errors are properly propagated to engine response."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
             # Don't register any subreducers to cause router error
@@ -377,7 +380,9 @@ class TestPhase1ErrorPropagation:
 
     @pytest.mark.asyncio
     async def test_exception_handling_throughout_pipeline(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test handling of unexpected exceptions in the pipeline."""
         engine, subreducer = engine_with_subreducer
@@ -385,7 +390,7 @@ class TestPhase1ErrorPropagation:
         # Mock router to raise an unexpected exception
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch.object(
                 engine._router,
@@ -413,20 +418,22 @@ class TestPhase1PerformanceMetrics:
 
     @pytest.mark.asyncio
     async def test_end_to_end_performance_metrics(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that performance metrics are collected throughout the pipeline."""
         engine, subreducer = engine_with_subreducer
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -480,13 +487,13 @@ class TestPhase1PerformanceMetrics:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -520,20 +527,22 @@ class TestPhase1ONEXCompliance:
 
     @pytest.mark.asyncio
     async def test_structured_logging_compliance(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that structured logging follows ONEX patterns throughout pipeline."""
         engine, subreducer = engine_with_subreducer
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ) as engine_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ) as router_log,
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ) as subreducer_log,
         ):
 
@@ -572,10 +581,10 @@ class TestPhase1ONEXCompliance:
         """Test that error handling follows ONEX patterns."""
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ) as subreducer_log,
         ):
 
@@ -606,7 +615,9 @@ class TestPhase1ONEXCompliance:
 
     @pytest.mark.asyncio
     async def test_model_container_integration(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test proper integration with ModelONEXContainer."""
         engine, subreducer = engine_with_subreducer
@@ -617,13 +628,13 @@ class TestPhase1ONEXCompliance:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -640,17 +651,20 @@ class TestPhase1ONEXCompliance:
 
         # Verify engine typing
         assert hasattr(engine, "__annotations__") or hasattr(
-            engine.__init__, "__annotations__"
+            engine.__init__,
+            "__annotations__",
         )
 
         # Verify subreducer typing
         assert hasattr(subreducer, "__annotations__") or hasattr(
-            subreducer.__init__, "__annotations__"
+            subreducer.__init__,
+            "__annotations__",
         )
 
         # Verify router typing
         assert hasattr(engine._router, "__annotations__") or hasattr(
-            engine._router.__init__, "__annotations__"
+            engine._router.__init__,
+            "__annotations__",
         )
 
         # This test primarily ensures imports work correctly with proper typing
@@ -661,7 +675,9 @@ class TestPhase1ActiveWorkflowTracking:
 
     @pytest.mark.asyncio
     async def test_active_workflow_lifecycle(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that active workflows are properly tracked during processing."""
         engine, subreducer = engine_with_subreducer
@@ -686,7 +702,8 @@ class TestPhase1ActiveWorkflowTracking:
         engine._router._subreducers.clear()
         engine._router._workflow_type_mappings.clear()
         engine.register_subreducer(
-            tracking_subreducer, [WorkflowType.DOCUMENT_REGENERATION]
+            tracking_subreducer,
+            [WorkflowType.DOCUMENT_REGENERATION],
         )
 
         # Verify no active workflows initially
@@ -695,13 +712,13 @@ class TestPhase1ActiveWorkflowTracking:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -735,13 +752,13 @@ class TestPhase1ActiveWorkflowTracking:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -768,20 +785,22 @@ class TestPhase1AcceptanceCriteria:
 
     @pytest.mark.asyncio
     async def test_phase1_workflow_processing_acceptance(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that Phase 1 implements basic workflow processing as required."""
         engine, subreducer = engine_with_subreducer
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -809,20 +828,22 @@ class TestPhase1AcceptanceCriteria:
 
     @pytest.mark.asyncio
     async def test_phase1_reference_implementation_acceptance(
-        self, engine_with_subreducer, sample_workflow_request
+        self,
+        engine_with_subreducer,
+        sample_workflow_request,
     ):
         """Test that Phase 1 includes working reference implementation."""
         engine, subreducer = engine_with_subreducer
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 
@@ -846,15 +867,16 @@ class TestPhase1AcceptanceCriteria:
 
         # ✅ Acceptance Criteria: Integration with ONEX patterns
         assert response.result["processing_info"]["workflow_id"] == str(
-            sample_workflow_request.workflow_id
+            sample_workflow_request.workflow_id,
         )
         assert response.result["processing_info"]["correlation_id"] == str(
-            sample_workflow_request.correlation_id
+            sample_workflow_request.correlation_id,
         )
 
     @pytest.mark.asyncio
     async def test_phase1_architecture_compliance_acceptance(
-        self, engine_with_subreducer
+        self,
+        engine_with_subreducer,
     ):
         """Test that Phase 1 follows ONEX four-node architecture patterns."""
         engine, subreducer = engine_with_subreducer
@@ -866,7 +888,6 @@ class TestPhase1AcceptanceCriteria:
         assert isinstance(engine, NodeReducer)
 
         # ✅ Acceptance Criteria: ModelONEXContainer integration
-        from omnibase_core.core.model_onex_container import ModelONEXContainer
 
         assert hasattr(engine, "container")
         # Container is mocked but type should be preserved in real usage
@@ -874,8 +895,6 @@ class TestPhase1AcceptanceCriteria:
         # ✅ Acceptance Criteria: Proper contract usage throughout
         from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
             ModelWorkflowRequest,
-            ModelWorkflowResponse,
-            WorkflowStatus,
             WorkflowType,
         )
 
@@ -889,14 +908,15 @@ class TestPhase1AcceptanceCriteria:
 
         # ✅ Acceptance Criteria: Registry pattern for subreducers
         registered_subreducer = engine._router.get_subreducer(
-            "reducer_document_regeneration"
+            "reducer_document_regeneration",
         )
         assert registered_subreducer is not None
         assert registered_subreducer.name == "reducer_document_regeneration"
 
     @pytest.mark.asyncio
     async def test_phase1_performance_requirements_acceptance(
-        self, engine_with_subreducer
+        self,
+        engine_with_subreducer,
     ):
         """Test that Phase 1 meets basic performance requirements."""
         engine, subreducer = engine_with_subreducer
@@ -911,13 +931,13 @@ class TestPhase1AcceptanceCriteria:
 
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
         ):
 

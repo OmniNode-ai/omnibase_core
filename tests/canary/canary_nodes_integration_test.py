@@ -119,7 +119,7 @@ class CanaryNodeTester:
             node_results.append(("Health Check", success, health))
 
             self.results["node_results"]["compute"] = node_results
-            print(f"✅ COMPUTE node tests completed")
+            print("✅ COMPUTE node tests completed")
 
         except Exception as e:
             print(f"❌ COMPUTE node test failed: {e}")
@@ -186,7 +186,7 @@ class CanaryNodeTester:
             node_results.append(("Node Health", success, health))
 
             self.results["node_results"]["effect"] = node_results
-            print(f"✅ EFFECT node tests completed")
+            print("✅ EFFECT node tests completed")
 
         except Exception as e:
             print(f"❌ EFFECT node test failed: {e}")
@@ -213,7 +213,7 @@ class CanaryNodeTester:
             success = result.status == "completed"
             self.record_test("Orchestrator - Infrastructure Startup", success, result)
             node_results.append(
-                ("Infrastructure Startup", success, result.workflow_result)
+                ("Infrastructure Startup", success, result.workflow_result),
             )
 
             # Test 2: Canary deployment workflow
@@ -246,7 +246,7 @@ class CanaryNodeTester:
             node_results.append(("Health Check", success, health))
 
             self.results["node_results"]["orchestrator"] = node_results
-            print(f"✅ ORCHESTRATOR node tests completed")
+            print("✅ ORCHESTRATOR node tests completed")
 
         except Exception as e:
             print(f"❌ ORCHESTRATOR node test failed: {e}")
@@ -282,7 +282,8 @@ class CanaryNodeTester:
             ]
 
             input_data = ModelCanaryReducerInput(
-                adapter_results=mock_results, operation_type="health_check"
+                adapter_results=mock_results,
+                operation_type="health_check",
             )
 
             result = await node.aggregate_results(input_data)
@@ -292,7 +293,7 @@ class CanaryNodeTester:
             )
             self.record_test("Reducer - Health Aggregation", success, result)
             node_results.append(
-                ("Health Aggregation", success, result.aggregated_result)
+                ("Health Aggregation", success, result.aggregated_result),
             )
 
             # Test 2: Bootstrap aggregation
@@ -310,7 +311,8 @@ class CanaryNodeTester:
             ]
 
             input_data = ModelCanaryReducerInput(
-                adapter_results=bootstrap_results, operation_type="bootstrap"
+                adapter_results=bootstrap_results,
+                operation_type="bootstrap",
             )
 
             result = await node.aggregate_results(input_data)
@@ -320,7 +322,7 @@ class CanaryNodeTester:
             )
             self.record_test("Reducer - Bootstrap Aggregation", success, result)
             node_results.append(
-                ("Bootstrap Aggregation", success, result.aggregated_result)
+                ("Bootstrap Aggregation", success, result.aggregated_result),
             )
 
             # Test 3: List loaded adapters
@@ -338,7 +340,7 @@ class CanaryNodeTester:
             node_results.append(("Health Check", success, health))
 
             self.results["node_results"]["reducer"] = node_results
-            print(f"✅ REDUCER node tests completed")
+            print("✅ REDUCER node tests completed")
 
         except Exception as e:
             print(f"❌ REDUCER node test failed: {e}")
@@ -385,7 +387,7 @@ class CanaryNodeTester:
             )
             self.record_test("Gateway - Broadcast Message", success, result)
             node_results.append(
-                ("Broadcast Message", success, result.aggregated_response)
+                ("Broadcast Message", success, result.aggregated_response),
             )
 
             # Test 3: Aggregate from targets
@@ -403,7 +405,7 @@ class CanaryNodeTester:
             )
             self.record_test("Gateway - Aggregate Messages", success, result)
             node_results.append(
-                ("Aggregate Messages", success, result.aggregated_response)
+                ("Aggregate Messages", success, result.aggregated_response),
             )
 
             # Test 4: Get routing metrics
@@ -419,7 +421,7 @@ class CanaryNodeTester:
             node_results.append(("Health Check", success, health))
 
             self.results["node_results"]["gateway"] = node_results
-            print(f"✅ GATEWAY node tests completed")
+            print("✅ GATEWAY node tests completed")
 
         except Exception as e:
             print(f"❌ GATEWAY node test failed: {e}")

@@ -1,7 +1,6 @@
 """Tests for ModelOnexContainer integration in Reducer Pattern Engine Phase 3."""
 
 from unittest.mock import AsyncMock, Mock, patch
-from uuid import uuid4
 
 import pytest
 
@@ -55,7 +54,9 @@ class TestContainerIntegration:
             instance_id="test-instance-456",
             payload=ModelWorkflowPayload(data={"dataset": "test_data.csv"}),
             metadata=ModelWorkflowMetadata(
-                priority=7, timeout_seconds=600, tags=["integration", "container"]
+                priority=7,
+                timeout_seconds=600,
+                tags=["integration", "container"],
             ),
         )
 
@@ -64,7 +65,8 @@ class TestContainerIntegration:
         """Create NodeReducerPatternEngine with mocked container."""
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
             with patch.object(
-                NodeReducerPatternEngine, "_load_contract_model"
+                NodeReducerPatternEngine,
+                "_load_contract_model",
             ) as mock_load:
                 # Mock contract model
                 mock_contract = Mock()
@@ -85,7 +87,7 @@ class TestContainerIntegration:
                     return_value={
                         "legacy_metrics": {"total_workflows": 5},
                         "enhanced_metrics": {"success_rate": 0.9},
-                    }
+                    },
                 )
 
                 return engine
@@ -94,10 +96,11 @@ class TestContainerIntegration:
         """Test that container is properly injected during initialization."""
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
             with patch(
-                "omnibase_core.core.node_reducer.NodeReducer._load_contract_model"
+                "omnibase_core.core.node_reducer.NodeReducer._load_contract_model",
             ) as mock_parent_load:
                 with patch.object(
-                    NodeReducerPatternEngine, "_load_contract_model"
+                    NodeReducerPatternEngine,
+                    "_load_contract_model",
                 ) as mock_child_load:
                     # Create a mock contract that's compatible with both parent and child expectations
                     mock_contract = Mock()
@@ -118,7 +121,9 @@ class TestContainerIntegration:
 
     @pytest.mark.asyncio
     async def test_service_resolution_through_container(
-        self, node_engine, mock_container
+        self,
+        node_engine,
+        mock_container,
     ):
         """Test service resolution through ModelOnexContainer."""
         # Mock service resolution
@@ -127,7 +132,8 @@ class TestContainerIntegration:
 
         # Test service resolution
         service = await mock_container.get_service_async(
-            protocol_type=Mock, service_name="test_service"
+            protocol_type=Mock,
+            service_name="test_service",
         )
 
         assert service == mock_service
@@ -157,12 +163,15 @@ class TestContainerIntegration:
 
     @pytest.mark.asyncio
     async def test_workflow_processing_with_container_context(
-        self, node_engine, workflow_request
+        self,
+        node_engine,
+        workflow_request,
     ):
         """Test workflow processing with container context."""
         # Create engine input
         engine_input = ModelReducerPatternEngineInput.from_workflow_request(
-            workflow_request=workflow_request, source_node_id="test_client"
+            workflow_request=workflow_request,
+            source_node_id="test_client",
         )
 
         # Mock successful processing
@@ -187,7 +196,7 @@ class TestContainerIntegration:
 
         # Verify underlying engine was called with container context
         node_engine._pattern_engine.process_workflow.assert_called_once_with(
-            workflow_request
+            workflow_request,
         )
 
     def test_container_dependency_injection_patterns(self, mock_container):
@@ -195,7 +204,8 @@ class TestContainerIntegration:
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
             with patch.object(NodeReducerPatternEngine, "_load_contract_model"):
                 with patch.object(
-                    NodeReducerPatternEngine, "_initialize_services"
+                    NodeReducerPatternEngine,
+                    "_initialize_services",
                 ) as mock_init:
                     engine = NodeReducerPatternEngine(mock_container)
 
@@ -231,7 +241,8 @@ class TestContainerIntegration:
         if hasattr(workflow_factory, "create_workflow"):
             workflow_factory.create_workflow("test_workflow", {})
             workflow_factory.create_workflow.assert_called_once_with(
-                "test_workflow", {}
+                "test_workflow",
+                {},
             )
 
     def test_container_workflow_coordinator_integration(self, node_engine):
@@ -250,7 +261,7 @@ class TestContainerIntegration:
         """Test error handling with container integration."""
         # Mock container that raises errors
         mock_container.get_service_async.side_effect = Exception(
-            "Service resolution failed"
+            "Service resolution failed",
         )
 
         with patch.object(NodeReducerPatternEngine, "_register_contract_subreducers"):
@@ -350,12 +361,14 @@ class TestContainerIntegration:
 
     @pytest.mark.asyncio
     async def test_container_workflow_orchestration(
-        self, node_engine, workflow_request
+        self,
+        node_engine,
+        workflow_request,
     ):
         """Test workflow orchestration through container."""
         # Create engine input
         engine_input = ModelReducerPatternEngineInput.from_workflow_request(
-            workflow_request=workflow_request
+            workflow_request=workflow_request,
         )
 
         # Mock orchestration

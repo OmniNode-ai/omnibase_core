@@ -10,8 +10,8 @@ from .state_transitions import ModelWorkflowStateModel as WorkflowStateModel
 from .state_transitions import StateTransitionValidator, WorkflowState
 
 __all__ = [
-    "WorkflowState",
-    "WorkflowStateModel",
     "StateTransition",
     "StateTransitionValidator",
+    "WorkflowState",
+    "WorkflowStateModel",
 ]

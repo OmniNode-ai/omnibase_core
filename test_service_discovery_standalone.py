@@ -9,7 +9,6 @@ to verify the strong typing changes work correctly.
 import asyncio
 import os
 import sys
-from typing import Dict
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
@@ -67,10 +66,11 @@ async def test_memory_service_discovery():
         for field in required_fields:
             assert field in service, f"Missing field: {field}"
             assert isinstance(
-                service[field], ModelScalarValue
+                service[field],
+                ModelScalarValue,
             ), f"Field {field} is not ModelScalarValue: {type(service[field])}"
             print(
-                f"    ✅ {field}: {service[field].type_hint} = {getattr(service[field], f'{service[field].type_hint}_value')}"
+                f"    ✅ {field}: {service[field].type_hint} = {getattr(service[field], f'{service[field].type_hint}_value')}",
             )
 
         # Verify metadata preservation
@@ -80,10 +80,11 @@ async def test_memory_service_discovery():
         for field in metadata_fields:
             assert field in service, f"Missing metadata field: {field}"
             assert isinstance(
-                service[field], ModelScalarValue
+                service[field],
+                ModelScalarValue,
             ), f"Metadata field {field} is not ModelScalarValue"
             print(
-                f"    ✅ {field}: {service[field].type_hint} = {getattr(service[field], f'{service[field].type_hint}_value')}"
+                f"    ✅ {field}: {service[field].type_hint} = {getattr(service[field], f'{service[field].type_hint}_value')}",
             )
 
         # Test specific values
@@ -277,7 +278,7 @@ async def main():
         "ConsulServiceDiscovery",
     ]
 
-    for i, (name, result) in enumerate(zip(test_names, results)):
+    for i, (name, result) in enumerate(zip(test_names, results, strict=False)):
         status = "✅ PASS" if result else "❌ FAIL"
         print(f"{i+1}. {name}: {status}")
 
@@ -294,11 +295,10 @@ async def main():
         print("   • Type conversion and primitive extraction working")
         print("   • Edge cases handled correctly")
         return 0
-    else:
-        print("💥 SOME TESTS FAILED!")
-        failed_count = len([r for r in results if not r])
-        print(f"   {failed_count}/{len(results)} tests failed")
-        return 1
+    print("💥 SOME TESTS FAILED!")
+    failed_count = len([r for r in results if not r])
+    print(f"   {failed_count}/{len(results)} tests failed")
+    return 1
 
 
 if __name__ == "__main__":

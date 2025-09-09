@@ -10,10 +10,10 @@ from .config import CLIConfig
 from .handlers import ConfigHandler, ProcessHandler, StatusHandler, TypeQualityHandler
 
 __all__ = [
-    "cli",
     "CLIConfig",
     "ConfigHandler",
     "ProcessHandler",
     "StatusHandler",
     "TypeQualityHandler",
+    "cli",
 ]

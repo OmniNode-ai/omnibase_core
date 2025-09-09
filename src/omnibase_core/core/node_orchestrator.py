@@ -23,7 +23,7 @@ from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -149,15 +149,15 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: str
-    steps: List[Dict[str, ModelScalarValue]]  # Simplified WorkflowStep representation
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    steps: list[dict[str, ModelScalarValue]]  # Simplified WorkflowStep representation
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     execution_mode: ExecutionMode = ExecutionMode.SEQUENTIAL
     max_parallel_steps: int = 5
     global_timeout_ms: int = 300000  # 5 minutes default
     failure_strategy: str = "fail_fast"
     load_balancing_enabled: bool = False
     dependency_resolution_enabled: bool = True
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:

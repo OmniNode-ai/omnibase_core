@@ -4,8 +4,6 @@ This module defines the core event types used throughout the ONEX ecosystem
 for inter-service communication, discovery, and introspection.
 """
 
-from typing import Union
-
 
 class CoreEventTypes:
     """Core event type constants for ONEX system communication.
@@ -37,7 +35,7 @@ class CoreEventTypes:
     NODE_FAILURE = "node_failure"
 
 
-def normalize_legacy_event_type(event_type: Union[str, dict, object]) -> str:
+def normalize_legacy_event_type(event_type: str | dict | object) -> str:
     """Normalize legacy event types to consistent string format.
 
     This function handles backward compatibility by converting various
@@ -70,7 +68,7 @@ def normalize_legacy_event_type(event_type: Union[str, dict, object]) -> str:
     if isinstance(event_type, dict):
         if "value" in event_type:
             return str(event_type["value"])
-        elif "event_type" in event_type:
+        if "event_type" in event_type:
             return str(event_type["event_type"])
 
     # Fallback to string conversion

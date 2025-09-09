@@ -5,7 +5,7 @@ Manages service discovery and resolution with protocol-based abstraction.
 Provides fallback strategies and service caching for ONEX container.
 """
 
-from typing import Dict, List, Optional, TypeVar
+from typing import TypeVar
 
 from omnibase.protocols.core.protocol_logger import ProtocolLogger
 
@@ -37,7 +37,7 @@ class ServiceDiscoveryManager:
             str,
             object,
         ] = {}  # allow_dict_str_any: service cache needs flexible typing
-        self._service_discovery: Optional[ProtocolServiceDiscovery] = None
+        self._service_discovery: ProtocolServiceDiscovery | None = None
 
     async def resolve_service(
         self,
@@ -68,7 +68,8 @@ class ServiceDiscoveryManager:
             # Try protocol-based service discovery if service name provided
             if service_name and await self._is_service_discovery_available():
                 service = await self._discover_from_service_discovery(
-                    protocol_type, service_name
+                    protocol_type,
+                    service_name,
                 )
                 if service:
                     self.service_cache[cache_key] = service
@@ -139,7 +140,7 @@ class ServiceDiscoveryManager:
     def _create_service_client(
         self,
         protocol_type: type[T],
-        service_info: Dict[str, object],
+        service_info: dict[str, object],
     ) -> T:
         """Create service client from discovered service information."""
         # Build service URL from discovered service

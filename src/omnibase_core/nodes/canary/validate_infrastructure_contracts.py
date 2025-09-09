@@ -28,7 +28,6 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 
@@ -290,7 +289,8 @@ class ContractValidator:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(
-                    contract_path, ModelGenericYaml
+                    contract_path,
+                    ModelGenericYaml,
                 )
 
                 contract_data = yaml_model.model_dump()
@@ -706,7 +706,7 @@ class ContractValidator:
             # Check container injection
             if tool_spec.get("container_injection") == "ModelONEXContainer":
                 spec_validations.append(
-                    "✅ Correct container_injection: ModelONEXContainer"
+                    "✅ Correct container_injection: ModelONEXContainer",
                 )
             else:
                 spec_validations.append(
@@ -1006,7 +1006,6 @@ def main():
         from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
             load_and_validate_yaml_model,
-            load_yaml_content_as_model,
         )
 
         with open(aggregator_path) as f:

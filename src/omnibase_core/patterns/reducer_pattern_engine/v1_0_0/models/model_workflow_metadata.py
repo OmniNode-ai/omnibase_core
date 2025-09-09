@@ -1,7 +1,5 @@
 """Workflow metadata model for Reducer Pattern Engine."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -9,11 +7,13 @@ class ModelWorkflowMetadata(BaseModel):
     """Strongly typed workflow metadata model."""
 
     correlation_context: str = Field(
-        "", description="Correlation context for the workflow"
+        "",
+        description="Correlation context for the workflow",
     )
     processing_hints: str = Field("", description="Processing hints for the workflow")
     quality_requirements: str = Field(
-        "", description="Quality requirements for processing"
+        "",
+        description="Quality requirements for processing",
     )
 
     # Execution metadata
@@ -21,17 +21,21 @@ class ModelWorkflowMetadata(BaseModel):
     max_retries: int = Field(3, description="Maximum retries allowed", ge=0, le=10)
 
     # Source tracking
-    source_system: Optional[str] = Field(
-        None, description="Source system that initiated the workflow"
+    source_system: str | None = Field(
+        None,
+        description="Source system that initiated the workflow",
     )
-    user_context: Optional[str] = Field(
-        None, description="User context for the workflow"
+    user_context: str | None = Field(
+        None,
+        description="User context for the workflow",
     )
 
     # Processing preferences
     async_processing: bool = Field(
-        True, description="Whether to process asynchronously"
+        True,
+        description="Whether to process asynchronously",
     )
     notify_on_completion: bool = Field(
-        False, description="Whether to send completion notifications"
+        False,
+        description="Whether to send completion notifications",
     )

@@ -1,5 +1,5 @@
 """
-omnibase-core: ONEX foundational architecture
+omnibase_core: ONEX foundational architecture
 
 Provides:
 - 4 node service base classes (Effect, Compute, Reducer, Orchestrator)

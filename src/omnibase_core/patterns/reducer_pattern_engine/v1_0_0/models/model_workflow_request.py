@@ -20,7 +20,8 @@ class ModelWorkflowRequest(BaseModel):
     """
 
     workflow_id: UUID = Field(
-        default_factory=uuid4, description="Unique workflow identifier"
+        default_factory=uuid4,
+        description="Unique workflow identifier",
     )
     workflow_type: WorkflowType = Field(..., description="Type of workflow to process")
     instance_id: str = Field(
@@ -31,7 +32,8 @@ class ModelWorkflowRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$",
     )
     correlation_id: UUID = Field(
-        default_factory=uuid4, description="Correlation ID for tracking"
+        default_factory=uuid4,
+        description="Correlation ID for tracking",
     )
     payload: ModelWorkflowPayload = Field(
         default_factory=ModelWorkflowPayload,
@@ -42,7 +44,8 @@ class ModelWorkflowRequest(BaseModel):
         description="Strongly typed workflow metadata",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Request creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Request creation timestamp",
     )
 
     @field_validator("instance_id")
@@ -79,7 +82,7 @@ class ModelWorkflowRequest(BaseModel):
         if not pattern.match(v):
             raise ValueError(
                 "instance_id must contain only alphanumeric characters, hyphens, and underscores. "
-                "Must start and end with alphanumeric characters."
+                "Must start and end with alphanumeric characters.",
             )
 
         return v

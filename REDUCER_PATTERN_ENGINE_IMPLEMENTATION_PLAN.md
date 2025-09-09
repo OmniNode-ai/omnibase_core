@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the comprehensive implementation plan for the Reducer Pattern Engine, a core architectural component for multi-workflow execution in the omnibase-core system. Based on Archon ticket ccf4203c-639c-49a9-8e11-46cf136461a2, this plan addresses the key requirements for workflow routing, subreducer frameworks, instance isolation, and integration with the existing ONEX 4-node architecture.
+This document outlines the comprehensive implementation plan for the Reducer Pattern Engine, a core architectural component for multi-workflow execution in the omnibase_core system. Based on Archon ticket ccf4203c-639c-49a9-8e11-46cf136461a2, this plan addresses the key requirements for workflow routing, subreducer frameworks, instance isolation, and integration with the existing ONEX 4-node architecture.
 
 ## 1. Architecture Overview
 

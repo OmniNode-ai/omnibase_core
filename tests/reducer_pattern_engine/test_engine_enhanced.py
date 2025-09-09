@@ -8,22 +8,17 @@ comprehensive error handling with real subreducer integration.
 
 import asyncio
 import time
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
-    ModelWorkflowStateModel,
     WorkflowState,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
     ReducerDataAnalysisSubreducer,
-)
-from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration import (
-    ReducerDocumentRegenerationSubreducer,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
     ReducerReportGenerationSubreducer,
@@ -47,7 +42,7 @@ class TestEnhancedSubreducer(BaseSubreducer):
     def __init__(
         self,
         name: str,
-        supported_types: List[WorkflowType],
+        supported_types: list[WorkflowType],
         processing_time: float = 0.1,
         success_rate: float = 1.0,
     ):
@@ -89,25 +84,24 @@ class TestEnhancedSubreducer(BaseSubreducer):
                 },
                 processing_time_ms=self._processing_time * 1000,
             )
-        else:
-            return ModelSubreducerResult(
-                workflow_id=request.workflow_id,
-                subreducer_name=self.name,
-                success=False,
-                error_message=f"Simulated failure (call #{self._call_count})",
-                error_details={
-                    "call_number": self._call_count,
-                    "failure_reason": "configured_failure",
-                    "success_rate": self._success_rate,
-                },
-            )
+        return ModelSubreducerResult(
+            workflow_id=request.workflow_id,
+            subreducer_name=self.name,
+            success=False,
+            error_message=f"Simulated failure (call #{self._call_count})",
+            error_details={
+                "call_number": self._call_count,
+                "failure_reason": "configured_failure",
+                "success_rate": self._success_rate,
+            },
+        )
 
     @property
     def call_count(self) -> int:
         return self._call_count
 
     @property
-    def processed_requests(self) -> List[ModelWorkflowRequest]:
+    def processed_requests(self) -> list[ModelWorkflowRequest]:
         return self._processed_requests.copy()
 
 
@@ -126,7 +120,7 @@ class TestReducerPatternEngineEnhanced:
         return ReducerPatternEngine(mock_container)
 
     @pytest.fixture
-    def sample_requests(self) -> Dict[str, ModelWorkflowRequest]:
+    def sample_requests(self) -> dict[str, ModelWorkflowRequest]:
         """Create comprehensive sample workflow requests."""
         base_correlation_id = uuid4()
 
@@ -193,7 +187,9 @@ class TestReducerPatternEngineEnhanced:
 
     @pytest.mark.asyncio
     async def test_enhanced_workflow_processing_with_state_tracking(
-        self, engine, sample_requests
+        self,
+        engine,
+        sample_requests,
     ):
         """Test enhanced workflow processing with comprehensive state tracking."""
 
@@ -248,7 +244,9 @@ class TestReducerPatternEngineEnhanced:
 
     @pytest.mark.asyncio
     async def test_comprehensive_metrics_collection_integration(
-        self, engine, sample_requests
+        self,
+        engine,
+        sample_requests,
     ):
         """Test integration with comprehensive metrics collection system."""
 
@@ -334,7 +332,8 @@ class TestReducerPatternEngineEnhanced:
             TestEnhancedSubreducer("registry_test_1", [WorkflowType.DATA_ANALYSIS]),
             TestEnhancedSubreducer("registry_test_2", [WorkflowType.REPORT_GENERATION]),
             TestEnhancedSubreducer(
-                "registry_test_3", [WorkflowType.DOCUMENT_REGENERATION]
+                "registry_test_3",
+                [WorkflowType.DOCUMENT_REGENERATION],
             ),
         ]
 
@@ -361,10 +360,11 @@ class TestReducerPatternEngineEnhanced:
         bulk_configs = [
             {
                 "subreducer": TestEnhancedSubreducer(
-                    "bulk_test_1", [WorkflowType.DATA_ANALYSIS]
+                    "bulk_test_1",
+                    [WorkflowType.DATA_ANALYSIS],
                 ),
                 "workflow_types": [WorkflowType.DATA_ANALYSIS],
-            }
+            },
         ]
 
         bulk_results = engine.register_multiple_subreducers(bulk_configs)
@@ -396,10 +396,12 @@ class TestReducerPatternEngineEnhanced:
 
         engine.register_subreducer(failing_subreducer, [WorkflowType.DATA_ANALYSIS])
         engine.register_subreducer(
-            intermittent_subreducer, [WorkflowType.REPORT_GENERATION]
+            intermittent_subreducer,
+            [WorkflowType.REPORT_GENERATION],
         )
         engine.register_subreducer(
-            reliable_subreducer, [WorkflowType.DOCUMENT_REGENERATION]
+            reliable_subreducer,
+            [WorkflowType.DOCUMENT_REGENERATION],
         )
 
         # Test processing with guaranteed failure
@@ -508,16 +510,16 @@ class TestReducerPatternEngineEnhanced:
         assert total_time < expected_sequential_time * 0.3  # Should be much faster
 
         print(
-            f"Processed {len(concurrent_tasks)} workflows concurrently in {total_time:.2f}s"
+            f"Processed {len(concurrent_tasks)} workflows concurrently in {total_time:.2f}s",
         )
 
         # Verify comprehensive metrics
         final_metrics = engine.get_comprehensive_metrics()
         assert final_metrics["legacy_metrics"]["total_workflows_processed"] == len(
-            concurrent_tasks
+            concurrent_tasks,
         )
         assert final_metrics["legacy_metrics"]["successful_workflows"] == len(
-            concurrent_tasks
+            concurrent_tasks,
         )
         assert final_metrics["enhanced_metrics"]["overall_success_rate"] == 100.0
 

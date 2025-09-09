@@ -19,7 +19,6 @@ from omnibase_core.utils.generation.utility_schema_composer import UtilitySchema
 from omnibase_core.utils.generation.utility_schema_loader import UtilitySchemaLoader
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 
@@ -128,7 +127,8 @@ class UtilityContractAnalyzer:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(
-                    contract_path, ModelGenericYaml
+                    contract_path,
+                    ModelGenericYaml,
                 )
 
                 contract_data = yaml_model.model_dump()
@@ -184,7 +184,8 @@ class UtilityContractAnalyzer:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(
-                    contract_path, ModelGenericYaml
+                    contract_path,
+                    ModelGenericYaml,
                 )
 
                 contract_data = yaml_model.model_dump()

@@ -1,7 +1,6 @@
 """Model for Read tool hook event."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,10 +10,10 @@ class ModelReadToolEvent(BaseModel):
 
     tool_name: str = Field(..., description="Tool name (Read)")
     file_path: str = Field(..., description="Path to file being read")
-    limit: Optional[int] = Field(None, description="Number of lines to read")
-    offset: Optional[int] = Field(None, description="Line number to start reading from")
+    limit: int | None = Field(None, description="Number of lines to read")
+    offset: int | None = Field(None, description="Line number to start reading from")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
+    conversation_id: str | None = Field(
         None,
         description="Correlated conversation ID",
     )
@@ -29,7 +28,7 @@ class ModelWriteToolEvent(BaseModel):
     file_path: str = Field(..., description="Path to file being written")
     content: str = Field(..., description="Content being written")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
+    conversation_id: str | None = Field(
         None,
         description="Correlated conversation ID",
     )
@@ -44,9 +43,9 @@ class ModelEditToolEvent(BaseModel):
     file_path: str = Field(..., description="Path to file being edited")
     old_string: str = Field(..., description="Text being replaced")
     new_string: str = Field(..., description="Replacement text")
-    replace_all: Optional[bool] = Field(False, description="Replace all occurrences")
+    replace_all: bool | None = Field(False, description="Replace all occurrences")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
+    conversation_id: str | None = Field(
         None,
         description="Correlated conversation ID",
     )
@@ -59,10 +58,10 @@ class ModelBashToolEvent(BaseModel):
 
     tool_name: str = Field(..., description="Tool name (Bash)")
     command: str = Field(..., description="Command being executed")
-    timeout: Optional[int] = Field(None, description="Timeout in milliseconds")
-    description: Optional[str] = Field(None, description="Command description")
+    timeout: int | None = Field(None, description="Timeout in milliseconds")
+    description: str | None = Field(None, description="Command description")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
+    conversation_id: str | None = Field(
         None,
         description="Correlated conversation ID",
     )
@@ -75,15 +74,15 @@ class ModelGrepToolEvent(BaseModel):
 
     tool_name: str = Field(..., description="Tool name (Grep)")
     pattern: str = Field(..., description="Search pattern")
-    path: Optional[str] = Field(None, description="Path to search")
-    glob: Optional[str] = Field(None, description="Glob pattern to filter files")
-    case_insensitive: Optional[bool] = Field(
+    path: str | None = Field(None, description="Path to search")
+    glob: str | None = Field(None, description="Glob pattern to filter files")
+    case_insensitive: bool | None = Field(
         False,
         description="Case insensitive search",
     )
-    output_mode: Optional[str] = Field("files_with_matches", description="Output mode")
+    output_mode: str | None = Field("files_with_matches", description="Output mode")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
+    conversation_id: str | None = Field(
         None,
         description="Correlated conversation ID",
     )

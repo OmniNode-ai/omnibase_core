@@ -2,7 +2,7 @@
 
 ## 🎯 Objective
 
-Eliminate ALL raw dictionary metadata patterns throughout omnibase-core and replace with **strongly-typed Pydantic models** that:
+Eliminate ALL raw dictionary metadata patterns throughout omnibase_core and replace with **strongly-typed Pydantic models** that:
 
 1. **Start with "Model" prefix** (naming standards compliance)
 2. **Use NO basic types** or `Dict[str, Any]` that will require future refactoring

@@ -6,8 +6,6 @@ Unit tests for canary nodes with mock implementations to validate
 functionality without requiring full infrastructure services.
 """
 
-import asyncio
-from typing import Any, Dict
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -49,7 +47,7 @@ class TestMockedCanaryEffect:
         # Mock error handler
         mock_error_handler = Mock()
         mock_error_handler.handle_error = Mock(
-            return_value={"message": error_message, "type": "test_error"}
+            return_value={"message": error_message, "type": "test_error"},
         )
 
         # Verify error handling structure
@@ -78,9 +76,9 @@ class TestMockedCanaryEffect:
                         "operation_count": 10,
                         "success_count": 9,
                         "error_count": 1,
-                    }
-                )
-            )
+                    },
+                ),
+            ),
         )
 
         # Test metrics recording
@@ -90,13 +88,17 @@ class TestMockedCanaryEffect:
 
         # Verify calls were made
         mock_metrics.record_operation_start.assert_called_once_with(
-            "test-op-id", "test_operation"
+            "test-op-id",
+            "test_operation",
         )
         mock_metrics.increment_counter.assert_called_once_with(
-            "test.counter", {"tag": "value"}
+            "test.counter",
+            {"tag": "value"},
         )
         mock_metrics.record_operation_end.assert_called_once_with(
-            "test-op-id", "test_operation", True
+            "test-op-id",
+            "test_operation",
+            True,
         )
 
         # Verify metrics structure
@@ -141,7 +143,7 @@ class TestMockedCanaryEffect:
         mock_cache.clear = AsyncMock(return_value=5)
         mock_cache.exists = AsyncMock(return_value=True)
         mock_cache.get_stats = Mock(
-            return_value={"hits": 10, "misses": 2, "current_entries": 5}
+            return_value={"hits": 10, "misses": 2, "current_entries": 5},
         )
 
         # Test cache operations
@@ -166,7 +168,7 @@ class TestMockedCanaryEffect:
         # Mock circuit breaker
         mock_circuit_breaker = Mock()
         mock_circuit_breaker.get_stats = Mock(
-            return_value={"state": "CLOSED", "failure_count": 0, "success_count": 10}
+            return_value={"state": "CLOSED", "failure_count": 0, "success_count": 10},
         )
 
         # Test circuit breaker stats
@@ -185,14 +187,14 @@ class TestMockedCanaryEffect:
         mock_cache_service = Mock()
         mock_cache_service_provider = Mock()
         mock_cache_service_provider.create_cache_service = Mock(
-            return_value=mock_cache_service
+            return_value=mock_cache_service,
         )
         mock_cache_service_provider.get_cache_configuration = Mock(
             return_value={
                 "type": "in_memory",
                 "default_ttl_seconds": 300,
                 "max_entries": 10000,
-            }
+            },
         )
 
         # Verify protocol compliance

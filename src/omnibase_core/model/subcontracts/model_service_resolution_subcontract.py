@@ -9,10 +9,8 @@ Generated from service_resolution subcontract following ONEX patterns.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
 
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.service.model_service_health import ServiceHealthStatus
@@ -55,15 +53,18 @@ class ModelServiceEndpoint(BaseModel):
     port: int = Field(..., description="Port number for the service", ge=1, le=65535)
 
     health_status: ServiceHealthStatus = Field(
-        ..., description="Current health status of the service"
+        ...,
+        description="Current health status of the service",
     )
 
     last_checked: datetime = Field(
-        ..., description="When the service health was last checked"
+        ...,
+        description="When the service health was last checked",
     )
 
-    metadata: Dict[str, str] = Field(
-        default_factory=dict, description="Additional service metadata"
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional service metadata",
     )
 
 
@@ -73,15 +74,18 @@ class ModelServiceMetadata(BaseModel):
     service_version: str = Field(..., description="Version of the service")
 
     node_type: str = Field(
-        ..., description="Type of ONEX node (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)"
+        ...,
+        description="Type of ONEX node (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)",
     )
 
-    capabilities: List[str] = Field(
-        default_factory=list, description="List of capabilities provided by the service"
+    capabilities: list[str] = Field(
+        default_factory=list,
+        description="List of capabilities provided by the service",
     )
 
     discovery_method: DiscoveryMethod = Field(
-        ..., description="Method used to discover this service"
+        ...,
+        description="Method used to discover this service",
     )
 
 
@@ -93,7 +97,10 @@ class ModelServiceDiscoveryEndpoint(BaseModel):
     health_status: str = Field(..., description="Health status of this endpoint")
 
     weight: int = Field(
-        default=1, description="Load balancing weight for this endpoint", ge=0, le=100
+        default=1,
+        description="Load balancing weight for this endpoint",
+        ge=0,
+        le=100,
     )
 
 
@@ -104,24 +111,29 @@ class ModelDiscoveredService(BaseModel):
 
     service_type: str = Field(..., description="Type or category of the service")
 
-    endpoints: List[ModelServiceDiscoveryEndpoint] = Field(
-        default_factory=list, description="List of endpoints for this service"
+    endpoints: list[ModelServiceDiscoveryEndpoint] = Field(
+        default_factory=list,
+        description="List of endpoints for this service",
     )
 
     discovery_time: datetime = Field(
-        ..., description="When this service was discovered"
+        ...,
+        description="When this service was discovered",
     )
 
 
 class ModelDiscoveredServices(BaseModel):
     """Collection of services discovered through service discovery."""
 
-    services: List[ModelDiscoveredService] = Field(
-        default_factory=list, description="List of discovered services"
+    services: list[ModelDiscoveredService] = Field(
+        default_factory=list,
+        description="List of discovered services",
     )
 
     total_count: int = Field(
-        default=0, description="Total number of services discovered", ge=0
+        default=0,
+        description="Total number of services discovered",
+        ge=0,
     )
 
     discovery_duration_ms: int = Field(
@@ -135,21 +147,25 @@ class ModelRegistrationStatus(BaseModel):
     """Status of service registration operation."""
 
     registration_id: str = Field(
-        ..., description="Unique identifier for the service registration"
+        ...,
+        description="Unique identifier for the service registration",
     )
 
     registration_success: bool = Field(
-        ..., description="Whether the registration was successful"
+        ...,
+        description="Whether the registration was successful",
     )
 
     registration_time: datetime = Field(
-        ..., description="When the registration occurred"
+        ...,
+        description="When the registration occurred",
     )
 
     service_name: str = Field(..., description="Name of the registered service")
 
-    health_check_endpoint: Optional[str] = Field(
-        default=None, description="Health check endpoint for the registered service"
+    health_check_endpoint: str | None = Field(
+        default=None,
+        description="Health check endpoint for the registered service",
     )
 
 
@@ -157,15 +173,18 @@ class ModelDeregistrationStatus(BaseModel):
     """Status of service deregistration operation."""
 
     registration_id: str = Field(
-        ..., description="Registration ID that was deregistered"
+        ...,
+        description="Registration ID that was deregistered",
     )
 
     deregistration_success: bool = Field(
-        ..., description="Whether the deregistration was successful"
+        ...,
+        description="Whether the deregistration was successful",
     )
 
     deregistration_time: datetime = Field(
-        ..., description="When the deregistration occurred"
+        ...,
+        description="When the deregistration occurred",
     )
 
 
@@ -179,13 +198,16 @@ class ModelServiceHealthCheck(BaseModel):
     health_status: ServiceHealthStatus = Field(..., description="Health status result")
 
     response_time_ms: int = Field(
-        ..., description="Response time for health check in milliseconds", ge=0
+        ...,
+        description="Response time for health check in milliseconds",
+        ge=0,
     )
 
     check_time: datetime = Field(..., description="When the health check was performed")
 
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if health check failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if health check failed",
     )
 
 
@@ -199,29 +221,34 @@ class ModelServiceResolutionSubcontract(BaseModel):
     """
 
     subcontract_name: str = Field(
-        default="service_resolution_subcontract", description="Name of the subcontract"
+        default="service_resolution_subcontract",
+        description="Name of the subcontract",
     )
 
     subcontract_version: str = Field(
-        default="1.0.0", description="Version of the subcontract"
+        default="1.0.0",
+        description="Version of the subcontract",
     )
 
-    applicable_node_types: List[str] = Field(
+    applicable_node_types: list[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"],
         description="Node types this subcontract applies to",
     )
 
     # Configuration
     primary_strategy: str = Field(
-        default="consul", description="Primary service resolution strategy"
+        default="consul",
+        description="Primary service resolution strategy",
     )
 
     fallback_strategy: str = Field(
-        default="environment", description="Fallback service resolution strategy"
+        default="environment",
+        description="Fallback service resolution strategy",
     )
 
     cache_enabled: bool = Field(
-        default=True, description="Whether service resolution caching is enabled"
+        default=True,
+        description="Whether service resolution caching is enabled",
     )
 
     cache_ttl_ms: int = Field(
@@ -239,7 +266,10 @@ class ModelServiceResolutionSubcontract(BaseModel):
     )
 
     max_retries: int = Field(
-        default=3, description="Maximum number of resolution retries", ge=1, le=10
+        default=3,
+        description="Maximum number of resolution retries",
+        ge=1,
+        le=10,
     )
 
     retry_delay_ms: int = Field(
@@ -250,7 +280,8 @@ class ModelServiceResolutionSubcontract(BaseModel):
     )
 
     exponential_backoff: bool = Field(
-        default=True, description="Whether to use exponential backoff for retries"
+        default=True,
+        description="Whether to use exponential backoff for retries",
     )
 
     class Config:
@@ -272,5 +303,5 @@ class ModelServiceResolutionSubcontract(BaseModel):
                 "max_retries": 3,
                 "retry_delay_ms": 500,
                 "exponential_backoff": True,
-            }
+            },
         }

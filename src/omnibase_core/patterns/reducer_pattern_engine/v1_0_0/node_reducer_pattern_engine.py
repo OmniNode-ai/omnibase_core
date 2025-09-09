@@ -3,8 +3,7 @@
 import asyncio
 import threading
 import time
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -24,7 +23,6 @@ from .models.model_workflow_request import ModelWorkflowRequest
 from .models.model_workflow_response import ModelWorkflowResponse
 from .protocols.protocol_reducer_pattern_engine import (
     BaseReducerPatternEngine,
-    ProtocolReducerPatternEngine,
 )
 
 
@@ -77,7 +75,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         self._onex_compliance_version = "1.0.0"
 
         # Service caching for performance optimization
-        self._service_cache: Dict[str, Any] = {}
+        self._service_cache: dict[str, Any] = {}
         self._service_cache_lock = threading.RLock()
 
         # Service resolution through container
@@ -123,7 +121,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.INITIALIZATION_FAILED,
-                message=f"Failed to load contract model: {str(e)}",
+                message=f"Failed to load contract model: {e!s}",
                 context={"error_type": type(e).__name__, "node_type": "REDUCER"},
             )
 
@@ -140,7 +138,8 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                     "event": "services_initialized",
                     "container_available": self.container is not None,
                     "base_container_available": hasattr(
-                        self.container, "base_container"
+                        self.container,
+                        "base_container",
                     ),
                 },
             )
@@ -148,7 +147,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.WARNING,
-                message=f"Some services could not be initialized: {str(e)}",
+                message=f"Some services could not be initialized: {e!s}",
                 context={"event": "service_initialization_partial", "error": str(e)},
             )
 
@@ -199,7 +198,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
             except Exception as e:
                 raise OnexError(
                     error_code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
-                    message=f"Failed to resolve service '{service_name}': {str(e)}",
+                    message=f"Failed to resolve service '{service_name}': {e!s}",
                     context={
                         "service_name": service_name,
                         "error_type": type(e).__name__,
@@ -270,7 +269,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Failed to register contract subreducers: {str(e)}",
+                message=f"Failed to register contract subreducers: {e!s}",
                 context={
                     "event": "contract_subreducer_registration_failed",
                     "error": str(e),
@@ -280,7 +279,8 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
     # Protocol Implementation
 
     async def process_workflow(
-        self, engine_input: ModelReducerPatternEngineInput
+        self,
+        engine_input: ModelReducerPatternEngineInput,
     ) -> ModelReducerPatternEngineOutput:
         """
         Process a workflow through the ONEX-compliant engine.
@@ -315,7 +315,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
 
             # Process through underlying pattern engine
             workflow_response = await self._pattern_engine.process_workflow(
-                engine_input.workflow_request
+                engine_input.workflow_request,
             )
 
             # Calculate processing time
@@ -359,7 +359,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
 
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"ONEX workflow processing failed: {str(e)}",
+                message=f"ONEX workflow processing failed: {e!s}",
                 context={
                     "event": "onex_workflow_processing_failed",
                     "workflow_id": str(engine_input.workflow_request.workflow_id),
@@ -427,12 +427,12 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
                 context={"event": "node_health_check_failed", "error": str(e)},
             )
             return False
 
-    def get_supported_workflow_types(self) -> List[str]:
+    def get_supported_workflow_types(self) -> list[str]:
         """
         Get list of supported workflow types.
 
@@ -444,7 +444,8 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
     # Additional ONEX Methods
 
     async def process_envelope(
-        self, envelope: "ModelEventEnvelope"
+        self,
+        envelope: "ModelEventEnvelope",
     ) -> "ModelEventEnvelope":
         """
         Process an ONEX event envelope for full protocol compliance.
@@ -471,7 +472,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             raise OnexError(
                 error_code=CoreErrorCode.PROCESSING_ERROR,
-                message=f"Envelope processing failed: {str(e)}",
+                message=f"Envelope processing failed: {e!s}",
                 context={
                     "envelope_id": envelope.envelope_id,
                     "correlation_id": str(envelope.correlation_id),
@@ -479,7 +480,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                 },
             )
 
-    def get_node_metadata(self) -> Dict[str, Any]:
+    def get_node_metadata(self) -> dict[str, Any]:
         """
         Get node metadata for ONEX compliance.
 
@@ -513,7 +514,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         """
         return self.contract_model
 
-    def get_processing_metrics(self) -> Dict[str, Any]:
+    def get_processing_metrics(self) -> dict[str, Any]:
         """
         Get comprehensive processing metrics.
 
@@ -542,7 +543,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Failed to collect metrics: {str(e)}",
+                message=f"Failed to collect metrics: {e!s}",
                 context={"event": "metrics_collection_failed", "error": str(e)},
             )
             return {
@@ -553,7 +554,8 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
     # Backward Compatibility Methods
 
     async def reduce(
-        self, workflow_request: ModelWorkflowRequest
+        self,
+        workflow_request: ModelWorkflowRequest,
     ) -> ModelWorkflowResponse:
         """
         Backward compatibility method for direct workflow processing.
@@ -566,7 +568,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         """
         # Create ONEX input from workflow request
         engine_input = ModelReducerPatternEngineInput.from_workflow_request(
-            workflow_request
+            workflow_request,
         )
 
         # Process through ONEX interface
@@ -577,7 +579,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
 
     # Required ONEX Node Methods
 
-    async def get_health_status(self) -> Dict[str, Any]:
+    async def get_health_status(self) -> dict[str, Any]:
         """
         Get comprehensive health status for ONEX contract compliance.
 
@@ -622,7 +624,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
                 context={"event": "health_check_failed", "error": str(e)},
             )
             return {
@@ -632,7 +634,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                 "timestamp": int(time.time() * 1000),
             }
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get comprehensive metrics for ONEX contract compliance.
 
@@ -664,7 +666,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
         except Exception as e:
             emit_log_event(
                 level=LogLevel.ERROR,
-                message=f"Failed to collect metrics: {str(e)}",
+                message=f"Failed to collect metrics: {e!s}",
                 context={"event": "metrics_collection_failed", "error": str(e)},
             )
             return {

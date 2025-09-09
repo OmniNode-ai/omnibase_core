@@ -11,7 +11,6 @@ Python's logging module to maintain architectural purity and centralized process
 import inspect
 import os
 from datetime import datetime
-from typing import Dict, Optional
 from uuid import UUID
 
 from omnibase_core.core.core_uuid_service import UUIDService
@@ -25,9 +24,9 @@ def emit_log_event(
     event_type: str,
     message: str,
     correlation_id: UUID,
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, str | int | float | bool | None]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Emit a structured log event through the logger node.
@@ -76,9 +75,9 @@ def emit_log_event_with_new_correlation(
     level: LogLevel,
     event_type: str,
     message: str,
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, str | int | float | bool | None]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> UUID:
     """
     Emit a structured log event with a new correlation ID.
@@ -115,9 +114,9 @@ def emit_log_event_sync(
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, str | int | float | bool | None]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Synchronous version of emit_log_event for compatibility.
@@ -147,9 +146,9 @@ async def emit_log_event_async(
     message: str,
     correlation_id: UUID,
     event_type: str = "generic",
-    node_id: Optional[str] = None,
-    data: Optional[Dict[str, str | int | float | bool | None]] = None,
-    event_bus: Optional[ProtocolEventBus] = None,
+    node_id: str | None = None,
+    data: dict[str, str | int | float | bool | None] | None = None,
+    event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
     Asynchronous version of emit_log_event.
@@ -270,7 +269,7 @@ class log_code_block:
         block_name: str,
         correlation_id: UUID,
         level: LogLevel = LogLevel.DEBUG,
-        data: Optional[Dict[str, str | int | float | bool | None]] = None,
+        data: dict[str, str | int | float | bool | None] | None = None,
     ):
         self.block_name = block_name
         self.correlation_id = correlation_id
@@ -452,8 +451,8 @@ def _sanitize_sensitive_data(text: str) -> str:
 
 
 def _sanitize_data_dict(
-    data: Dict[str, str | int | float | bool | None],
-) -> Dict[str, str | int | float | bool | None]:
+    data: dict[str, str | int | float | bool | None],
+) -> dict[str, str | int | float | bool | None]:
     """
     Sanitize sensitive data in a data dictionary and ensure JSON compatibility.
 
@@ -559,7 +558,7 @@ def _create_log_context_from_frame() -> LogModelContext:
     )
 
 
-def _get_default_event_bus() -> Optional[ProtocolEventBus]:
+def _get_default_event_bus() -> ProtocolEventBus | None:
     """Get the default event bus for logging using protocol-based discovery."""
     try:
         from omnibase_core.core.core_registry_factory import create_development_registry
@@ -588,8 +587,8 @@ def _route_to_logger_node(
     node_id: str,
     correlation_id: UUID,
     context: LogModelContext,
-    data: Dict[str, str | int | float | bool | None],
-    event_bus: Optional[ProtocolEventBus],
+    data: dict[str, str | int | float | bool | None],
+    event_bus: ProtocolEventBus | None,
 ) -> None:
     """
     Route log event to logger node for processing using protocol-based discovery.

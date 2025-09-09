@@ -9,7 +9,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import click
 from rich.console import Console
@@ -49,15 +49,14 @@ class BaseHandler:
             try:
                 yaml_output = serialize_data_to_yaml(output, default_flow_style=False)
                 click.echo(yaml_output)
-            except Exception as e:
+            except Exception:
                 # Fallback to JSON if YAML serialization fails
                 click.echo(json.dumps(output, indent=2, default=str))
+        # Text format
+        elif success:
+            self.console.print(f"✅ {data}", style="green")
         else:
-            # Text format
-            if success:
-                self.console.print(f"✅ {data}", style="green")
-            else:
-                self.console.print(f"❌ {data}", style="red")
+            self.console.print(f"❌ {data}", style="red")
 
     def _get_timestamp(self) -> str:
         """Get current timestamp."""
@@ -76,9 +75,9 @@ class TypeQualityHandler(BaseHandler):
     async def analyze_path(
         self,
         path: Path,
-        output: Optional[Path] = None,
-        include_patterns: Optional[List[str]] = None,
-        exclude_patterns: Optional[List[str]] = None,
+        output: Path | None = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> None:
         """
         Analyze type quality for code at the given path.
@@ -111,15 +110,20 @@ class TypeQualityHandler(BaseHandler):
             try:
                 # Collect files to analyze
                 files_to_analyze = self._collect_files(
-                    path, include_patterns, exclude_patterns
+                    path,
+                    include_patterns,
+                    exclude_patterns,
                 )
                 progress.update(
-                    task, description=f"Found {len(files_to_analyze)} files to analyze"
+                    task,
+                    description=f"Found {len(files_to_analyze)} files to analyze",
                 )
 
                 # Perform analysis
                 results = await self._perform_type_analysis(
-                    files_to_analyze, progress, task
+                    files_to_analyze,
+                    progress,
+                    task,
                 )
 
                 # Generate report
@@ -139,9 +143,9 @@ class TypeQualityHandler(BaseHandler):
     def _collect_files(
         self,
         path: Path,
-        include_patterns: Optional[List[str]],
-        exclude_patterns: Optional[List[str]],
-    ) -> List[Path]:
+        include_patterns: list[str] | None,
+        exclude_patterns: list[str] | None,
+    ) -> list[Path]:
         """Collect Python files for analysis."""
         import fnmatch
 
@@ -170,8 +174,11 @@ class TypeQualityHandler(BaseHandler):
         return files
 
     async def _perform_type_analysis(
-        self, files: List[Path], progress: Progress, task_id: Any
-    ) -> Dict[str, Any]:
+        self,
+        files: list[Path],
+        progress: Progress,
+        task_id: Any,
+    ) -> dict[str, Any]:
         """Perform actual type analysis on collected files."""
         import subprocess
 
@@ -185,7 +192,8 @@ class TypeQualityHandler(BaseHandler):
 
         for i, file_path in enumerate(files):
             progress.update(
-                task_id, description=f"Analyzing {file_path.name} ({i+1}/{len(files)})"
+                task_id,
+                description=f"Analyzing {file_path.name} ({i+1}/{len(files)})",
             )
 
             try:
@@ -195,10 +203,13 @@ class TypeQualityHandler(BaseHandler):
                     capture_output=True,
                     text=True,
                     timeout=30,
+                    check=False,
                 )
 
                 file_result = self._parse_mypy_output(
-                    file_path, result.stdout, result.stderr
+                    file_path,
+                    result.stdout,
+                    result.stderr,
                 )
                 results["file_results"].append(file_result)
 
@@ -234,8 +245,11 @@ class TypeQualityHandler(BaseHandler):
         return results
 
     def _parse_mypy_output(
-        self, file_path: Path, stdout: str, stderr: str
-    ) -> Dict[str, Any]:
+        self,
+        file_path: Path,
+        stdout: str,
+        stderr: str,
+    ) -> dict[str, Any]:
         """Parse mypy output into structured format."""
         import re
         import time
@@ -263,7 +277,7 @@ class TypeQualityHandler(BaseHandler):
                         "severity": severity,
                         "message": message,
                         "error_code": error_code or "unknown",
-                    }
+                    },
                 )
 
         return {
@@ -273,7 +287,7 @@ class TypeQualityHandler(BaseHandler):
             "analysis_time": time.time() - start_time,
         }
 
-    def _generate_type_quality_report(self, results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_type_quality_report(self, results: dict[str, Any]) -> dict[str, Any]:
         """Generate comprehensive type quality report."""
         # Calculate quality score
         total_files = results["files_analyzed"]
@@ -289,7 +303,8 @@ class TypeQualityHandler(BaseHandler):
 
             # Quality score: 70% clean files + 30% issue density
             quality_score = (clean_files_ratio * 70) + max(
-                0, (1 - avg_issues_per_file / 10) * 30
+                0,
+                (1 - avg_issues_per_file / 10) * 30,
             )
             quality_score = min(100.0, max(0.0, quality_score))
 
@@ -313,31 +328,30 @@ class TypeQualityHandler(BaseHandler):
         """Calculate letter grade from quality score."""
         if score >= 95:
             return "A+"
-        elif score >= 90:
+        if score >= 90:
             return "A"
-        elif score >= 85:
+        if score >= 85:
             return "A-"
-        elif score >= 80:
+        if score >= 80:
             return "B+"
-        elif score >= 75:
+        if score >= 75:
             return "B"
-        elif score >= 70:
+        if score >= 70:
             return "B-"
-        elif score >= 65:
+        if score >= 65:
             return "C+"
-        elif score >= 60:
+        if score >= 60:
             return "C"
-        else:
-            return "F"
+        return "F"
 
-    def _get_top_issues(self, issue_types: Dict[str, int]) -> List[Dict[str, Any]]:
+    def _get_top_issues(self, issue_types: dict[str, int]) -> list[dict[str, Any]]:
         """Get top 5 most common issues."""
         sorted_issues = sorted(issue_types.items(), key=lambda x: x[1], reverse=True)
         return [
             {"error_code": code, "count": count} for code, count in sorted_issues[:5]
         ]
 
-    def _generate_recommendations(self, results: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(self, results: dict[str, Any]) -> list[str]:
         """Generate improvement recommendations."""
         recommendations = []
 
@@ -351,7 +365,7 @@ class TypeQualityHandler(BaseHandler):
         # Specific recommendations based on common issues
         if issue_types.get("import-untyped", 0) > 0:
             recommendations.append(
-                "Consider adding type stubs or using typed alternatives for untyped imports"
+                "Consider adding type stubs or using typed alternatives for untyped imports",
             )
 
         if issue_types.get("no-untyped-def", 0) > 0:
@@ -362,17 +376,17 @@ class TypeQualityHandler(BaseHandler):
 
         if issue_types.get("return-value", 0) > 0:
             recommendations.append(
-                "Ensure functions return values matching their type annotations"
+                "Ensure functions return values matching their type annotations",
             )
 
         if total_issues > 50:
             recommendations.append(
-                "Consider running mypy with --strict mode for comprehensive type checking"
+                "Consider running mypy with --strict mode for comprehensive type checking",
             )
 
         return recommendations
 
-    def _save_report(self, report: Dict[str, Any], output_path: Path) -> None:
+    def _save_report(self, report: dict[str, Any], output_path: Path) -> None:
         """Save report to file."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -386,7 +400,7 @@ class TypeQualityHandler(BaseHandler):
                 yaml_output = serialize_data_to_yaml(report, default_flow_style=False)
                 with open(output_path, "w") as f:
                     f.write(yaml_output)
-            except Exception as e:
+            except Exception:
                 # Fallback to JSON if YAML serialization fails
                 with open(output_path.with_suffix(".json"), "w") as f:
                     json.dump(report, f, indent=2, default=str)
@@ -395,7 +409,7 @@ class TypeQualityHandler(BaseHandler):
             with open(output_path, "w") as f:
                 f.write(self._format_report_text(report))
 
-    def _format_report_text(self, report: Dict[str, Any]) -> str:
+    def _format_report_text(self, report: dict[str, Any]) -> str:
         """Format report as human-readable text."""
         lines = []
 
@@ -432,8 +446,8 @@ class ProcessHandler(BaseHandler):
         self,
         request: str,
         max_tier: str = "local-large",
-        timeout: Optional[int] = None,
-        retry_attempts: Optional[int] = None,
+        timeout: int | None = None,
+        retry_attempts: int | None = None,
     ) -> None:
         """
         Process a request using the Smart Responder Chain.
@@ -461,7 +475,8 @@ class ProcessHandler(BaseHandler):
         ]
         if max_tier not in valid_tiers:
             self._output_result(
-                f"Invalid tier. Must be one of: {', '.join(valid_tiers)}", success=False
+                f"Invalid tier. Must be one of: {', '.join(valid_tiers)}",
+                success=False,
             )
             sys.exit(1)
 
@@ -480,14 +495,18 @@ class ProcessHandler(BaseHandler):
             try:
                 # Initialize processing chain
                 progress.update(
-                    task, description="Initializing Smart Responder Chain..."
+                    task,
+                    description="Initializing Smart Responder Chain...",
                 )
                 chain = await self._initialize_processing_chain(max_tier)
 
                 # Process the request
                 progress.update(task, description=f"Processing with {max_tier} tier...")
                 result = await self._execute_processing(
-                    chain, request, timeout, retry_attempts
+                    chain,
+                    request,
+                    timeout,
+                    retry_attempts,
                 )
 
                 # Format and output result
@@ -498,12 +517,13 @@ class ProcessHandler(BaseHandler):
                         "processing_time": result.get("processing_time", 0),
                         "result": result.get("content", ""),
                         "metadata": result.get("metadata", {}),
-                    }
+                    },
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._output_result(
-                    f"Processing timed out after {timeout} seconds", success=False
+                    f"Processing timed out after {timeout} seconds",
+                    success=False,
                 )
                 sys.exit(1)
             except Exception as e:
@@ -522,8 +542,12 @@ class ProcessHandler(BaseHandler):
         return MockProcessingChain(max_tier)
 
     async def _execute_processing(
-        self, chain: Any, request: str, timeout: int, retry_attempts: int
-    ) -> Dict[str, Any]:
+        self,
+        chain: Any,
+        request: str,
+        timeout: int,
+        retry_attempts: int,
+    ) -> dict[str, Any]:
         """Execute processing with the given chain."""
         import time
 
@@ -600,7 +624,7 @@ class StatusHandler(BaseHandler):
                 self._output_result(f"Status check failed: {e}", success=False)
                 sys.exit(1)
 
-    async def _check_model_availability(self) -> Dict[str, Any]:
+    async def _check_model_availability(self) -> dict[str, Any]:
         """Check availability of different model tiers."""
         models = {
             "local-small": await self._ping_model(self.config.tiers.local_small),
@@ -620,7 +644,7 @@ class StatusHandler(BaseHandler):
             "status": "healthy" if available_count > 0 else "unhealthy",
         }
 
-    async def _ping_model(self, model_name: str) -> Dict[str, Any]:
+    async def _ping_model(self, model_name: str) -> dict[str, Any]:
         """Ping a specific model to check availability."""
         try:
             # Mock implementation - replace with actual model ping
@@ -634,7 +658,7 @@ class StatusHandler(BaseHandler):
                 "version": None,
             }
 
-    async def _check_api_status(self) -> Dict[str, Any]:
+    async def _check_api_status(self) -> dict[str, Any]:
         """Check API server status."""
         try:
             import aiohttp
@@ -648,12 +672,11 @@ class StatusHandler(BaseHandler):
                             "response_time": 0.1,  # Mock value
                             "endpoint": url,
                         }
-                    else:
-                        return {
-                            "status": "unhealthy",
-                            "error": f"HTTP {response.status}",
-                            "endpoint": url,
-                        }
+                    return {
+                        "status": "unhealthy",
+                        "error": f"HTTP {response.status}",
+                        "endpoint": url,
+                    }
         except Exception as e:
             return {
                 "status": "unavailable",
@@ -661,7 +684,7 @@ class StatusHandler(BaseHandler):
                 "endpoint": f"http://{self.config.api.host}:{self.config.api.port}",
             }
 
-    async def _check_database_status(self) -> Dict[str, Any]:
+    async def _check_database_status(self) -> dict[str, Any]:
         """Check database connectivity and status."""
         try:
             # Mock database check - replace with actual database ping
@@ -678,7 +701,7 @@ class StatusHandler(BaseHandler):
                 "connection_pool": "0/10 active",
             }
 
-    async def _check_system_resources(self) -> Dict[str, Any]:
+    async def _check_system_resources(self) -> dict[str, Any]:
         """Check system resource usage."""
         try:
             import psutil
@@ -695,7 +718,7 @@ class StatusHandler(BaseHandler):
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    async def _check_monitoring_status(self) -> Dict[str, Any]:
+    async def _check_monitoring_status(self) -> dict[str, Any]:
         """Check monitoring services status."""
         monitoring = {}
 
@@ -710,7 +733,7 @@ class StatusHandler(BaseHandler):
 
         return monitoring
 
-    async def _check_prometheus(self) -> Dict[str, Any]:
+    async def _check_prometheus(self) -> dict[str, Any]:
         """Check Prometheus metrics endpoint."""
         try:
             # Mock Prometheus check
@@ -718,7 +741,7 @@ class StatusHandler(BaseHandler):
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    async def _check_jaeger(self) -> Dict[str, Any]:
+    async def _check_jaeger(self) -> dict[str, Any]:
         """Check Jaeger tracing."""
         try:
             # Mock Jaeger check
@@ -726,7 +749,7 @@ class StatusHandler(BaseHandler):
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    async def _check_sentry(self) -> Dict[str, Any]:
+    async def _check_sentry(self) -> dict[str, Any]:
         """Check Sentry error tracking."""
         try:
             # Mock Sentry check
@@ -734,7 +757,7 @@ class StatusHandler(BaseHandler):
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    def _calculate_overall_status(self, status_data: Dict[str, Any]) -> str:
+    def _calculate_overall_status(self, status_data: dict[str, Any]) -> str:
         """Calculate overall system health status."""
         critical_components = ["models", "api"]
 
@@ -746,7 +769,7 @@ class StatusHandler(BaseHandler):
 
         return "healthy"
 
-    def _display_status_table(self, status_data: Dict[str, Any]) -> None:
+    def _display_status_table(self, status_data: dict[str, Any]) -> None:
         """Display status as a formatted table."""
         table = Table(title="ONEX System Status")
         table.add_column("Component", style="cyan")
@@ -757,7 +780,9 @@ class StatusHandler(BaseHandler):
         overall = status_data["overall_status"]
         status_color = "green" if overall == "healthy" else "red"
         table.add_row(
-            "Overall", f"[{status_color}]{overall.upper()}[/{status_color}]", ""
+            "Overall",
+            f"[{status_color}]{overall.upper()}[/{status_color}]",
+            "",
         )
 
         # Add component details
@@ -793,7 +818,8 @@ class ConfigHandler(BaseHandler):
 
         if config_path.exists() and not force:
             self._output_result(
-                "Configuration already exists. Use --force to overwrite.", success=False
+                "Configuration already exists. Use --force to overwrite.",
+                success=False,
             )
             return
 
@@ -810,16 +836,17 @@ class ConfigHandler(BaseHandler):
                 self.console.print(f"Config directory: {config.config_dir}")
                 self.console.print(f"Data directory: {config.data_dir}")
                 self.console.print(
-                    f"API endpoint: http://{config.api.host}:{config.api.port}"
+                    f"API endpoint: http://{config.api.host}:{config.api.port}",
                 )
 
         except Exception as e:
             self._output_result(
-                f"Failed to initialize configuration: {e}", success=False
+                f"Failed to initialize configuration: {e}",
+                success=False,
             )
             sys.exit(1)
 
-    def show_config(self, section: Optional[str] = None) -> None:
+    def show_config(self, section: str | None = None) -> None:
         """Show current configuration."""
         try:
             config_dict = self.config.dict()
@@ -827,7 +854,8 @@ class ConfigHandler(BaseHandler):
             if section:
                 if section not in config_dict:
                     self._output_result(
-                        f"Configuration section '{section}' not found", success=False
+                        f"Configuration section '{section}' not found",
+                        success=False,
                     )
                     return
                 config_dict = {section: config_dict[section]}
@@ -854,14 +882,14 @@ class ConfigHandler(BaseHandler):
             # Validate database URL
             if not self.config.database.url.startswith(("postgresql://", "sqlite://")):
                 warnings.append(
-                    "Database URL should use postgresql:// or sqlite:// scheme"
+                    "Database URL should use postgresql:// or sqlite:// scheme",
                 )
 
             # Validate monitoring configuration
             if self.config.monitoring.prometheus_enabled:
                 if not (1024 <= self.config.monitoring.prometheus_port <= 65535):
                     errors.append(
-                        f"Invalid Prometheus port: {self.config.monitoring.prometheus_port}"
+                        f"Invalid Prometheus port: {self.config.monitoring.prometheus_port}",
                     )
 
             # Check directory permissions
@@ -874,7 +902,7 @@ class ConfigHandler(BaseHandler):
                     warnings.append(f"{dir_name} directory does not exist: {directory}")
                 elif not os.access(directory, os.W_OK):
                     errors.append(
-                        f"No write permission for {dir_name} directory: {directory}"
+                        f"No write permission for {dir_name} directory: {directory}",
                     )
 
             # Generate validation result
@@ -902,7 +930,8 @@ class ConfigHandler(BaseHandler):
                         self.console.print(f"  • {warning}")
             else:
                 self._output_result(
-                    validation_result, success=validation_result["valid"]
+                    validation_result,
+                    success=validation_result["valid"],
                 )
 
         except Exception as e:

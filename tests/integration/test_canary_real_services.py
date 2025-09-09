@@ -10,7 +10,6 @@ Tests the canary system against actual running external services:
 This validates that our protocol abstractions work with real infrastructure.
 """
 
-import asyncio
 import os
 import uuid
 from datetime import datetime
@@ -19,10 +18,8 @@ import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
-from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
 from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
-from omnibase_core.nodes.canary.container import create_infrastructure_container
 
 
 def _convert_to_scalar_dict(data: dict[str, any]) -> dict[str, ModelScalarValue]:
@@ -64,7 +61,7 @@ class TestCanaryRealServices:
                 "REDIS_ENABLED": "true",
                 "REDIS_URL": os.getenv("REDIS_URL", "redis://localhost:6379"),
                 "OMNIBASE_LOGGING_LEVEL": "INFO",
-            }
+            },
         )
 
         # Use ModelONEXContainer with real service integrations
@@ -108,7 +105,8 @@ class TestCanaryRealServices:
         assert len(services) > 0, "Should find the registered service"
 
         found_service = next(
-            (s for s in services if s.get("ServiceID") == test_service_id), None
+            (s for s in services if s.get("ServiceID") == test_service_id),
+            None,
         )
         assert found_service is not None, "Should find our specific service"
         assert found_service["ServiceName"] == "canary_test_service"
@@ -178,7 +176,8 @@ class TestCanaryRealServices:
 
         # Test transaction with lock
         lock_id = await database.acquire_lock(
-            f"canary_test_lock_{uuid.uuid4().hex[:8]}", 30
+            f"canary_test_lock_{uuid.uuid4().hex[:8]}",
+            30,
         )
         assert lock_id is not None, "Should acquire database lock"
 
@@ -203,7 +202,7 @@ class TestCanaryRealServices:
                         "use_real_services": True,
                     },
                     "correlation_id": str(uuid.uuid4()),
-                }
+                },
             ),
         )
 
@@ -293,12 +292,13 @@ class TestCanaryRealServices:
                         "health_endpoint": "/health",
                     },
                     "correlation_id": workflow_id,
-                }
+                },
             ),
         )
 
         registration_result = await effect_node.perform_effect(
-            registration_input, EffectType.API_CALL
+            registration_input,
+            EffectType.API_CALL,
         )
         assert registration_result.result["success"] is True
 
@@ -312,12 +312,13 @@ class TestCanaryRealServices:
                     "phase": "start",
                     "status": "initiated",
                     "correlation_id": workflow_id,
-                }
+                },
             ),
         )
 
         logging_result = await effect_node.perform_effect(
-            logging_input, EffectType.DATABASE_OPERATION
+            logging_input,
+            EffectType.DATABASE_OPERATION,
         )
         assert logging_result.result["success"] is True
 
@@ -343,7 +344,6 @@ class TestCanaryRealServices:
 
     def test_real_service_connectivity(self):
         """Verify we can connect to real services before running tests."""
-        import socket
 
         import consul
         import psycopg2
@@ -390,15 +390,15 @@ class TestCanaryRealServices:
         healthy_services = sum(services_status.values())
         total_services = len(services_status)
 
-        print(f"\n🔍 Real Service Connectivity Check:")
+        print("\n🔍 Real Service Connectivity Check:")
         print(
-            f"   Consul (8500): {'✅ Connected' if consul_healthy else '❌ Unavailable'}"
+            f"   Consul (8500): {'✅ Connected' if consul_healthy else '❌ Unavailable'}",
         )
         print(
-            f"   PostgreSQL (5433): {'✅ Connected' if postgres_healthy else '❌ Unavailable'}"
+            f"   PostgreSQL (5433): {'✅ Connected' if postgres_healthy else '❌ Unavailable'}",
         )
         print(
-            f"   Redis (6379): {'✅ Connected' if redis_healthy else '❌ Unavailable'}"
+            f"   Redis (6379): {'✅ Connected' if redis_healthy else '❌ Unavailable'}",
         )
         print(f"   Overall: {healthy_services}/{total_services} services healthy")
 

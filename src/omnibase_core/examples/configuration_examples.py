@@ -8,8 +8,6 @@ ONEX components with validation, type conversion, and hierarchical overrides.
 
 import asyncio
 import os
-from pathlib import Path
-from typing import List, Optional
 
 from pydantic import Field, field_validator
 
@@ -21,8 +19,6 @@ from omnibase_core.core.configuration import (
 )
 from omnibase_core.core.resilience import (
     CircuitBreakerFactory,
-    ExternalDependencyCircuitBreaker,
-    ModelCircuitBreakerConfig,
 )
 
 
@@ -41,8 +37,9 @@ class ModelDatabaseConfig(ModelEnvironmentConfig):
 
     # Security settings
     use_ssl: bool = Field(default=True, description="Use SSL connection")
-    ssl_cert_path: Optional[str] = Field(
-        default=None, description="SSL certificate path"
+    ssl_cert_path: str | None = Field(
+        default=None,
+        description="SSL certificate path",
     )
 
     @field_validator("password")
@@ -72,7 +69,7 @@ class ModelAPIServiceConfig(ModelEnvironmentConfig):
     base_url: str = Field(..., description="Base API URL")
 
     # Authentication
-    api_key: Optional[str] = Field(default=None, description="API key")
+    api_key: str | None = Field(default=None, description="API key")
     auth_header: str = Field(default="Authorization", description="Auth header name")
 
     # Request settings
@@ -83,13 +80,15 @@ class ModelAPIServiceConfig(ModelEnvironmentConfig):
     # Rate limiting
     rate_limit_requests: int = Field(default=100, description="Requests per minute")
     rate_limit_window: int = Field(
-        default=60, description="Rate limit window in seconds"
+        default=60,
+        description="Rate limit window in seconds",
     )
 
     # Feature flags
     enable_caching: bool = Field(default=True, description="Enable response caching")
     enable_circuit_breaker: bool = Field(
-        default=True, description="Enable circuit breaker"
+        default=True,
+        description="Enable circuit breaker",
     )
 
     @field_validator("base_url")
@@ -111,7 +110,7 @@ class ModelMonitoringConfig(ModelEnvironmentConfig):
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
     log_format: str = Field(default="json", description="Log format (json|text)")
-    log_file: Optional[str] = Field(default=None, description="Log file path")
+    log_file: str | None = Field(default=None, description="Log file path")
 
     # Health checks
     health_check_interval: int = Field(default=30, description="Health check interval")
@@ -119,13 +118,16 @@ class ModelMonitoringConfig(ModelEnvironmentConfig):
 
     # Tracing
     enable_tracing: bool = Field(
-        default=False, description="Enable distributed tracing"
+        default=False,
+        description="Enable distributed tracing",
     )
-    tracing_service_name: Optional[str] = Field(
-        default=None, description="Tracing service name"
+    tracing_service_name: str | None = Field(
+        default=None,
+        description="Tracing service name",
     )
-    jaeger_endpoint: Optional[str] = Field(
-        default=None, description="Jaeger endpoint URL"
+    jaeger_endpoint: str | None = Field(
+        default=None,
+        description="Jaeger endpoint URL",
     )
 
     @field_validator("log_level")
@@ -158,8 +160,9 @@ class ModelApplicationConfig(ModelEnvironmentConfig):
     monitoring: ModelMonitoringConfig = Field(default_factory=ModelMonitoringConfig)
 
     # External services
-    external_services: List[str] = Field(
-        default_factory=list, description="List of external service names"
+    external_services: list[str] = Field(
+        default_factory=list,
+        description="List of external service names",
     )
 
     @field_validator("environment")
@@ -265,7 +268,9 @@ def example_configuration_registry():
     db_config = register_config("database", ModelDatabaseConfig, prefix="DB")
 
     monitoring_config = register_config(
-        "monitoring", ModelMonitoringConfig, prefix="MONITORING"
+        "monitoring",
+        ModelMonitoringConfig,
+        prefix="MONITORING",
     )
 
     # Retrieve from registry
@@ -275,7 +280,7 @@ def example_configuration_registry():
     print(f"Registered configs: {config_registry.list_configs()}")
     print(f"Database from registry: {retrieved_db.host if retrieved_db else 'None'}")
     print(
-        f"Monitoring from registry: {retrieved_monitoring.log_level if retrieved_monitoring else 'None'}"
+        f"Monitoring from registry: {retrieved_monitoring.log_level if retrieved_monitoring else 'None'}",
     )
 
     # Reload all configurations
@@ -313,7 +318,8 @@ async def example_with_circuit_breaker():
     os.environ["PAYMENT_API_ENABLE_CIRCUIT_BREAKER"] = "true"
 
     api_config = ModelAPIServiceConfig.from_environment(
-        prefix="PAYMENT_API", service_name="stripe-api"
+        prefix="PAYMENT_API",
+        service_name="stripe-api",
     )
 
     # Create circuit breaker if enabled
@@ -349,7 +355,7 @@ async def example_with_circuit_breaker():
         # Show metrics
         metrics = circuit_breaker.get_metrics()
         print(
-            f"Circuit breaker metrics: {metrics.total_requests} requests, {metrics.failed_requests} failures"
+            f"Circuit breaker metrics: {metrics.total_requests} requests, {metrics.failed_requests} failures",
         )
 
 

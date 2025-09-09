@@ -6,8 +6,7 @@ and audit trail functionality for the Phase 2 implementation.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -52,7 +51,9 @@ class TestModelStateTransition:
         )
 
         reason = ModelTransitionReason(
-            description="Started processing", category="manual", automated=False
+            description="Started processing",
+            category="manual",
+            automated=False,
         )
 
         transition = ModelStateTransition(
@@ -72,7 +73,8 @@ class TestModelStateTransition:
     def test_state_transition_default_values(self):
         """Test ModelStateTransition with default values."""
         transition = ModelStateTransition(
-            from_state=WorkflowState.PROCESSING, to_state=WorkflowState.COMPLETED
+            from_state=WorkflowState.PROCESSING,
+            to_state=WorkflowState.COMPLETED,
         )
 
         # Reason has a default factory that creates a ModelTransitionReason
@@ -89,7 +91,9 @@ class TestModelStateTransition:
         )
 
         reason = ModelTransitionReason(
-            description="Test transition", category="automated", automated=True
+            description="Test transition",
+            category="automated",
+            automated=True,
         )
 
         transition = ModelStateTransition(
@@ -186,7 +190,9 @@ class TestModelWorkflowStateModel:
         )
 
         identity = ModelWorkflowIdentity(
-            workflow_id=uuid4(), workflow_type="DATA_ANALYSIS", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="DATA_ANALYSIS",
+            correlation_id=uuid4(),
         )
 
         state_model = ModelWorkflowStateModel(identity=identity)
@@ -223,7 +229,9 @@ class TestModelWorkflowStateModel:
     def test_transition_to_valid(self):
         """Test valid state transitions."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # PENDING -> PROCESSING
@@ -279,7 +287,8 @@ class TestModelWorkflowStateModel:
 
         initial_retry_count = state_model.retry_count
         state_model.transition_to(
-            WorkflowState.RETRYING, reason="Retrying after failure"
+            WorkflowState.RETRYING,
+            reason="Retrying after failure",
         )
 
         assert state_model.current_state == WorkflowState.RETRYING
@@ -288,7 +297,9 @@ class TestModelWorkflowStateModel:
     def test_can_transition_to(self):
         """Test can_transition_to validation."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # From PENDING
@@ -309,7 +320,9 @@ class TestModelWorkflowStateModel:
     def test_is_terminal_state(self):
         """Test terminal state detection."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # PENDING is not terminal
@@ -343,7 +356,9 @@ class TestModelWorkflowStateModel:
     def test_is_active_state(self):
         """Test active state detection."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # PENDING is not active
@@ -434,7 +449,9 @@ class TestModelWorkflowStateModel:
     def test_get_duration_ms(self):
         """Test duration calculation."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # No duration for non-completed workflow
@@ -465,7 +482,9 @@ class TestModelWorkflowStateModel:
         import time
 
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="test",
+            correlation_id=uuid4(),
         )
 
         # Should return positive duration
@@ -541,7 +560,7 @@ class TestStateTransitionValidator:
             },
         }
 
-        assert StateTransitionValidator.VALID_TRANSITIONS == expected_valid_transitions
+        assert expected_valid_transitions == StateTransitionValidator.VALID_TRANSITIONS
 
     def test_is_valid_transition(self):
         """Test individual transition validation."""
@@ -550,14 +569,16 @@ class TestStateTransitionValidator:
         # Valid transitions
         assert (
             validator.is_valid_transition(
-                WorkflowState.PENDING, WorkflowState.PROCESSING
+                WorkflowState.PENDING,
+                WorkflowState.PROCESSING,
             )
             is True
         )
 
         assert (
             validator.is_valid_transition(
-                WorkflowState.PROCESSING, WorkflowState.COMPLETED
+                WorkflowState.PROCESSING,
+                WorkflowState.COMPLETED,
             )
             is True
         )
@@ -570,21 +591,24 @@ class TestStateTransitionValidator:
         # Invalid transitions
         assert (
             validator.is_valid_transition(
-                WorkflowState.COMPLETED, WorkflowState.PROCESSING
+                WorkflowState.COMPLETED,
+                WorkflowState.PROCESSING,
             )
             is False
         )
 
         assert (
             validator.is_valid_transition(
-                WorkflowState.PENDING, WorkflowState.COMPLETED
+                WorkflowState.PENDING,
+                WorkflowState.COMPLETED,
             )
             is False
         )
 
         assert (
             validator.is_valid_transition(
-                WorkflowState.CANCELLED, WorkflowState.PROCESSING
+                WorkflowState.CANCELLED,
+                WorkflowState.PROCESSING,
             )
             is False
         )
@@ -602,7 +626,7 @@ class TestStateTransitionValidator:
 
         # PROCESSING state transitions
         processing_transitions = validator.get_valid_transitions(
-            WorkflowState.PROCESSING
+            WorkflowState.PROCESSING,
         )
         assert processing_transitions == {
             WorkflowState.COMPLETED,
@@ -696,7 +720,8 @@ class TestStateTransitionValidator:
         # PENDING -> PROCESSING -> COMPLETED
         state_model.transition_to(WorkflowState.PROCESSING, reason="Starting work")
         state_model.transition_to(
-            WorkflowState.COMPLETED, reason="Work finished successfully"
+            WorkflowState.COMPLETED,
+            reason="Work finished successfully",
         )
 
         assert state_model.current_state == WorkflowState.COMPLETED
@@ -717,7 +742,8 @@ class TestStateTransitionValidator:
         assert state_model.can_retry() is True
 
         state_model.transition_to(
-            WorkflowState.RETRYING, reason="Retrying after failure"
+            WorkflowState.RETRYING,
+            reason="Retrying after failure",
         )
         assert state_model.retry_count == 1
 
@@ -765,7 +791,9 @@ class TestStateTransitionValidator:
     def test_transition_metadata_preservation(self):
         """Test that transition metadata is properly preserved."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="metadata_test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="metadata_test",
+            correlation_id=uuid4(),
         )
 
         # Transition with rich metadata
@@ -813,7 +841,9 @@ class TestStateTransitionValidator:
     def test_state_model_immutability_after_terminal(self):
         """Test that state model behavior after reaching terminal states."""
         state_model = ModelWorkflowStateModel(
-            workflow_id=uuid4(), workflow_type="terminal_test", correlation_id=uuid4()
+            workflow_id=uuid4(),
+            workflow_type="terminal_test",
+            correlation_id=uuid4(),
         )
 
         # Complete the workflow

@@ -17,13 +17,11 @@ Key Capabilities:
 Author: ONEX Framework Team
 """
 
-import asyncio
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import aiohttp
 from pydantic import BaseModel, Field
@@ -77,9 +75,9 @@ class ModelGatewayInput(BaseModel):
     with protocol translation and load balancing configuration.
     """
 
-    message_data: Dict[str, ModelScalarValue]
-    destination_endpoints: List[str]
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    message_data: dict[str, ModelScalarValue]
+    destination_endpoints: list[str]
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     routing_strategy: RoutingStrategy = RoutingStrategy.ROUND_ROBIN
     protocol_source: ProtocolType = ProtocolType.HTTP
     protocol_target: ProtocolType = ProtocolType.HTTP
@@ -89,7 +87,7 @@ class ModelGatewayInput(BaseModel):
     circuit_breaker_enabled: bool = True
     load_balancing_enabled: bool = True
     response_aggregation_enabled: bool = False
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -106,17 +104,17 @@ class ModelGatewayOutput(BaseModel):
     and network coordination metadata.
     """
 
-    result: Dict[str, ModelScalarValue]
+    result: dict[str, ModelScalarValue]
     operation_id: str
     routing_strategy: RoutingStrategy
     selected_endpoint: str
     response_time_ms: float
     retry_count: int = 0
-    endpoints_tried: List[str] = Field(default_factory=list)
+    endpoints_tried: list[str] = Field(default_factory=list)
     circuit_breaker_triggered: bool = False
-    load_balance_decision: Optional[Dict[str, ModelScalarValue]] = None
-    aggregated_responses: Optional[List[Dict]] = None
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    load_balance_decision: dict[str, ModelScalarValue] | None = None
+    aggregated_responses: list[dict] | None = None
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -191,8 +189,8 @@ class ConnectionPool:
         circuit_breaker_recovery_timeout: int = 60,
     ):
         self.max_connections = max_connections
-        self.connections: Dict[str, List[aiohttp.ClientSession]] = defaultdict(list)
-        self.connection_states: Dict[str, ConnectionState] = {}
+        self.connections: dict[str, list[aiohttp.ClientSession]] = defaultdict(list)
+        self.connection_states: dict[str, ConnectionState] = {}
         self.active_connections = 0
 
         # Create circuit breakers with provided configuration
@@ -202,11 +200,11 @@ class ConnectionPool:
                 recovery_timeout=circuit_breaker_recovery_timeout,
             )
 
-        self.circuit_breakers: Dict[str, CircuitBreaker] = defaultdict(
-            create_circuit_breaker
+        self.circuit_breakers: dict[str, CircuitBreaker] = defaultdict(
+            create_circuit_breaker,
         )
 
-    async def get_connection(self, endpoint: str) -> Optional[aiohttp.ClientSession]:
+    async def get_connection(self, endpoint: str) -> aiohttp.ClientSession | None:
         """Get or create connection to endpoint."""
         # Check circuit breaker
         circuit_breaker = self.circuit_breakers[endpoint]
@@ -308,7 +306,7 @@ class LoadBalancer:
         self.endpoint_stats = defaultdict(dict)
         self.current_index = 0
 
-    def select_endpoint(self, endpoints: List[str]) -> str:
+    def select_endpoint(self, endpoints: list[str]) -> str:
         """Select best endpoint based on strategy."""
         if not endpoints:
             raise ValueError("No endpoints available for routing")
@@ -317,13 +315,12 @@ class LoadBalancer:
             endpoint = endpoints[self.current_index % len(endpoints)]
             self.current_index += 1
             return endpoint
-        elif self.strategy == RoutingStrategy.RANDOM:
+        if self.strategy == RoutingStrategy.RANDOM:
             import random
 
             return random.choice(endpoints)
-        else:
-            # Default to first endpoint
-            return endpoints[0]
+        # Default to first endpoint
+        return endpoints[0]
 
 
 class NodeGateway(NodeCoreBase):
@@ -341,17 +338,19 @@ class NodeGateway(NodeCoreBase):
 
         # Get configuration for connection pool
         max_connections = int(
-            self.config_utils.get_performance_config("max_concurrent_operations", 100)
+            self.config_utils.get_performance_config("max_concurrent_operations", 100),
         )
         failure_threshold = int(
             self.config_utils.get_security_config(
-                "circuit_breaker_failure_threshold", 5
-            )
+                "circuit_breaker_failure_threshold",
+                5,
+            ),
         )
         recovery_timeout = int(
             self.config_utils.get_security_config(
-                "circuit_breaker_recovery_timeout", 60
-            )
+                "circuit_breaker_recovery_timeout",
+                60,
+            ),
         )
 
         self.connection_pool = ConnectionPool(
@@ -391,7 +390,7 @@ class NodeGateway(NodeCoreBase):
             # Select endpoint using load balancer
             self.load_balancer.strategy = gateway_input.routing_strategy
             selected_endpoint = self.load_balancer.select_endpoint(
-                gateway_input.destination_endpoints
+                gateway_input.destination_endpoints,
             )
 
             # Get connection from pool with circuit breaker protection
@@ -426,7 +425,8 @@ class NodeGateway(NodeCoreBase):
             finally:
                 # Always release connection back to pool
                 await self.connection_pool.release_connection(
-                    selected_endpoint, connection
+                    selected_endpoint,
+                    connection,
                 )
 
             output = ModelGatewayOutput(
@@ -470,7 +470,7 @@ class NodeGateway(NodeCoreBase):
                 {"operation_id": operation_id, "error": str(e)},
             )
 
-    async def get_health_status(self) -> Dict[str, ModelScalarValue]:
+    async def get_health_status(self) -> dict[str, ModelScalarValue]:
         """Get gateway health status."""
         # Check circuit breaker states
         circuit_breaker_status = {}
@@ -504,7 +504,7 @@ class NodeGateway(NodeCoreBase):
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def get_metrics(self) -> Dict[str, ModelScalarValue]:
+    async def get_metrics(self) -> dict[str, ModelScalarValue]:
         """Get gateway performance metrics."""
         # Count circuit breaker trips
         circuit_breaker_trips = sum(

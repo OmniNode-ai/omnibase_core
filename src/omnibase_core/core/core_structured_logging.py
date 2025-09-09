@@ -29,7 +29,7 @@ class PydanticJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, BaseModel):
             return obj.model_dump()
-        elif hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
+        if hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
             return obj.to_dict()
         return super().default(obj)
 

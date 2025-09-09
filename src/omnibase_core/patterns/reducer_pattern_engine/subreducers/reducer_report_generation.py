@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 from uuid import uuid4
 
 from omnibase_core.core.core_structured_logging import (
@@ -77,7 +77,7 @@ class ModelTemplateConfig:
     """Strongly typed template configuration model."""
 
     include_aggregations: bool = False
-    sections: List[Dict[str, str]] = None
+    sections: list[dict[str, str]] = None
 
     def __post_init__(self):
         if self.sections is None:
@@ -108,7 +108,7 @@ class ModelValidationRules:
 class ModelListDataSummary:
     """Strongly typed summary for list data processing."""
 
-    values: List[Any]
+    values: list[Any]
     count: int
     first_item: Any = None
     last_item: Any = None
@@ -119,8 +119,8 @@ class ModelListDataSummary:
 class ModelDictDataSummary:
     """Strongly typed summary for dictionary data processing."""
 
-    data: Dict[str, Any]
-    keys: List[str]
+    data: dict[str, Any]
+    keys: list[str]
     key_count: int
     has_nested: bool
 
@@ -139,7 +139,7 @@ class ModelDataAggregations:
     """Strongly typed data aggregations model."""
 
     total_data_keys: int
-    data_types_present: List[str]
+    data_types_present: list[str]
     has_lists: bool
     has_dicts: bool
     total_list_items: int
@@ -163,7 +163,7 @@ class ModelReportContent:
     title: str
     description: str
     template_type: EnumTemplateType
-    sections: List[ModelReportSection]
+    sections: list[ModelReportSection]
     generation_timestamp: str
 
 
@@ -186,9 +186,9 @@ class ModelValidationResults:
     """Strongly typed validation results model."""
 
     is_valid: bool
-    validation_checks: List[str]
-    warnings: List[str]
-    errors: List[str]
+    validation_checks: list[str]
+    warnings: list[str]
+    errors: list[str]
 
 
 @dataclass
@@ -211,8 +211,8 @@ class ModelProcessingMetrics:
     failed_reports: int = 0
     average_processing_time_ms: float = 0.0
     total_sections_generated: int = 0
-    output_formats_used: Dict[str, int] = None
-    template_types_used: Dict[str, int] = None
+    output_formats_used: dict[str, int] = None
+    template_types_used: dict[str, int] = None
 
     def __post_init__(self):
         if self.output_formats_used is None:
@@ -315,30 +315,35 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
             # Process report data
             processed_data = self._process_report_data(
-                report_config.get("data", {}), report_config
+                report_config.get("data", {}),
+                report_config,
             )
 
             # Generate report content based on template
             template_type = report_config["template_type"]
             if template_type in self._template_processors:
                 report_content = self._template_processors[template_type](
-                    processed_data, report_config
+                    processed_data,
+                    report_config,
                 )
             else:
                 report_content = self._template_processors["custom"](
-                    processed_data, report_config
+                    processed_data,
+                    report_config,
                 )
 
             # Generate output in requested format
             output_format = report_config["output_format"]
             if output_format in self._supported_formats:
                 formatted_output = self._supported_formats[output_format](
-                    report_content, report_config
+                    report_content,
+                    report_config,
                 )
             else:
                 # Default to JSON if format not supported
                 formatted_output = self._supported_formats["json"](
-                    report_content, report_config
+                    report_content,
+                    report_config,
                 )
                 emit_log_event(
                     level=LogLevel.WARNING,
@@ -348,12 +353,15 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
             # Generate report metadata
             report_metadata = self._generate_report_metadata(
-                report_config, report_content, len(processed_data)
+                report_config,
+                report_content,
+                len(processed_data),
             )
 
             # Validate generated report
             validation_results = self._validate_generated_report(
-                formatted_output, report_config
+                formatted_output,
+                report_config,
             )
 
             # Calculate processing metrics
@@ -394,7 +402,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
         except Exception as e:
             processing_time = (time.time() - start_time) * 1000
-            error_message = f"Report generation failed: {str(e)}"
+            error_message = f"Report generation failed: {e!s}"
 
             self._update_failure_metrics(processing_time, str(type(e).__name__))
 
@@ -433,7 +441,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                     CoreErrorCode.VALIDATION_FAILED,
                 )
 
-    def _extract_report_config(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_report_config(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Extract and validate report configuration from payload."""
         config = {
             "template_type": payload["template_type"],
@@ -468,8 +476,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         return config
 
     def _process_report_data(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Process and prepare data for report generation."""
         processed_data = {}
 
@@ -488,12 +498,12 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         template_config = config.get("template_config", {})
         if template_config.get("include_aggregations", False):
             processed_data["_aggregations"] = self._compute_data_aggregations(
-                processed_data
+                processed_data,
             )
 
         return processed_data
 
-    def _process_list_data(self, data: List[Any], key: str) -> Dict[str, Any]:
+    def _process_list_data(self, data: list[Any], key: str) -> dict[str, Any]:
         """Process list data and generate summary statistics."""
         return {
             "values": data,
@@ -507,7 +517,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             ),
         }
 
-    def _process_dict_data(self, data: Dict[str, Any], key: str) -> Dict[str, Any]:
+    def _process_dict_data(self, data: dict[str, Any], key: str) -> dict[str, Any]:
         """Process dictionary data and generate metadata."""
         return {
             "data": data,
@@ -516,7 +526,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             "has_nested": any(isinstance(v, (dict, list)) for v in data.values()),
         }
 
-    def _process_numeric_data(self, data: float, key: str) -> Dict[str, Any]:
+    def _process_numeric_data(self, data: float, key: str) -> dict[str, Any]:
         """Process numeric data with formatting options."""
         return {
             "value": data,
@@ -524,7 +534,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             "type": "float" if isinstance(data, float) else "integer",
         }
 
-    def _compute_data_aggregations(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _compute_data_aggregations(self, data: dict[str, Any]) -> dict[str, Any]:
         """Compute aggregations across processed data."""
         aggregations = {
             "total_data_keys": len(data),
@@ -550,8 +560,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         return aggregations
 
     def _process_summary_template(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Process data using summary report template."""
         sections = []
 
@@ -561,7 +573,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "title": "Executive Summary",
                 "content": self._generate_executive_summary(data, config),
                 "type": "summary",
-            }
+            },
         )
 
         # Key metrics section
@@ -571,7 +583,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                     "title": "Key Metrics",
                     "content": data["_aggregations"],
                     "type": "metrics",
-                }
+                },
             )
 
         # Data overview section
@@ -580,7 +592,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "title": "Data Overview",
                 "content": self._generate_data_overview(data),
                 "type": "overview",
-            }
+            },
         )
 
         return {
@@ -592,8 +604,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _process_detailed_template(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Process data using detailed report template."""
         sections = []
 
@@ -603,13 +617,14 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "title": "Introduction",
                 "content": {
                     "report_purpose": config.get(
-                        "report_description", "Detailed analysis report"
+                        "report_description",
+                        "Detailed analysis report",
                     ),
                     "data_scope": f"Analysis of {len(data)} data elements",
                     "generation_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 },
                 "type": "introduction",
-            }
+            },
         )
 
         # Detailed analysis for each data element
@@ -621,7 +636,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                         "content": value,
                         "type": "analysis",
                         "data_key": key,
-                    }
+                    },
                 )
 
         # Conclusions section
@@ -630,7 +645,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "title": "Conclusions",
                 "content": self._generate_conclusions(data),
                 "type": "conclusions",
-            }
+            },
         )
 
         return {
@@ -642,8 +657,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _process_dashboard_template(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Process data using dashboard report template."""
         sections = []
 
@@ -654,7 +671,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "content": self._extract_kpis(data),
                 "type": "kpi",
                 "visualization": "cards",
-            }
+            },
         )
 
         # Charts and graphs section
@@ -664,7 +681,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "content": self._prepare_chart_data(data),
                 "type": "charts",
                 "visualization": "mixed",
-            }
+            },
         )
 
         # Quick insights
@@ -673,7 +690,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 "title": "Quick Insights",
                 "content": self._generate_quick_insights(data),
                 "type": "insights",
-            }
+            },
         )
 
         return {
@@ -685,8 +702,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _process_custom_template(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Process data using custom template configuration."""
         template_config = config.get("template_config", {})
         sections = []
@@ -708,7 +727,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                         "title": key.replace("_", " ").title(),
                         "type": "data",
                         "content": value,
-                    }
+                    },
                 )
 
         return {
@@ -720,8 +739,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _generate_json_output(
-        self, content: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        content: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Generate JSON formatted output."""
         output = {
             "report": content,
@@ -738,7 +759,9 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         return output
 
     def _generate_html_output(
-        self, content: Dict[str, Any], config: Dict[str, Any]
+        self,
+        content: dict[str, Any],
+        config: dict[str, Any],
     ) -> str:
         """Generate HTML formatted output."""
         html_parts = [
@@ -767,7 +790,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                     f"<h2>{section['title']}</h2>",
                     f"<div>{self._format_content_for_html(section['content'])}</div>",
                     "</div>",
-                ]
+                ],
             )
 
         html_parts.extend(
@@ -775,13 +798,15 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                 f"<footer><small>Generated at {content['generation_timestamp']}</small></footer>",
                 "</body>",
                 "</html>",
-            ]
+            ],
         )
 
         return "\n".join(html_parts)
 
     def _generate_csv_output(
-        self, content: Dict[str, Any], config: Dict[str, Any]
+        self,
+        content: dict[str, Any],
+        config: dict[str, Any],
     ) -> str:
         """Generate CSV formatted output."""
         csv_lines = [
@@ -798,7 +823,9 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         return "\n".join(csv_lines)
 
     def _generate_text_output(
-        self, content: Dict[str, Any], config: Dict[str, Any]
+        self,
+        content: dict[str, Any],
+        config: dict[str, Any],
     ) -> str:
         """Generate plain text formatted output."""
         text_lines = ["=" * 50, content["title"].center(50), "=" * 50, ""]
@@ -814,14 +841,16 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                     "-" * 30,
                     self._format_content_for_text(section["content"]),
                     "",
-                ]
+                ],
             )
 
         text_lines.append(f"Generated at: {content['generation_timestamp']}")
         return "\n".join(text_lines)
 
     def _generate_markdown_output(
-        self, content: Dict[str, Any], config: Dict[str, Any]
+        self,
+        content: dict[str, Any],
+        config: dict[str, Any],
     ) -> str:
         """Generate Markdown formatted output."""
         md_lines = [f"# {content['title']}", ""]
@@ -836,7 +865,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
                     "",
                     self._format_content_for_markdown(section["content"]),
                     "",
-                ]
+                ],
             )
 
         md_lines.append(f"*Generated at: {content['generation_timestamp']}*")
@@ -844,12 +873,14 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
     # Helper methods for content formatting, metadata generation, etc.
     def _generate_executive_summary(
-        self, data: Dict[str, Any], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Generate executive summary from data."""
         return {
             "data_elements_analyzed": len(
-                [k for k in data.keys() if not k.startswith("_")]
+                [k for k in data if not k.startswith("_")],
             ),
             "report_scope": config.get("report_description", "Data analysis report"),
             "key_findings": "Analysis completed successfully",
@@ -861,8 +892,11 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _generate_report_metadata(
-        self, config: Dict[str, Any], content: Dict[str, Any], data_size: int
-    ) -> Dict[str, Any]:
+        self,
+        config: dict[str, Any],
+        content: dict[str, Any],
+        data_size: int,
+    ) -> dict[str, Any]:
         """Generate comprehensive report metadata."""
         return {
             "report_id": str(uuid4()),
@@ -880,8 +914,10 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         }
 
     def _validate_generated_report(
-        self, output: Any, config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        output: Any,
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Validate generated report against rules."""
         validation_results = {
             "is_valid": True,
@@ -900,12 +936,12 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             try:
                 json.dumps(output)
                 validation_results["validation_checks"].append(
-                    "JSON format validation: PASSED"
+                    "JSON format validation: PASSED",
                 )
             except Exception as e:
                 validation_results["is_valid"] = False
                 validation_results["errors"].append(
-                    f"JSON format validation failed: {str(e)}"
+                    f"JSON format validation failed: {e!s}",
                 )
 
         return validation_results
@@ -956,39 +992,41 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
         )
 
     # Additional helper methods (abbreviated for space)
-    def _generate_data_overview(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_data_overview(self, data: dict[str, Any]) -> dict[str, Any]:
         """Generate overview of data elements."""
         return {"summary": f"Contains {len(data)} data elements"}
 
-    def _generate_conclusions(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_conclusions(self, data: dict[str, Any]) -> dict[str, Any]:
         """Generate conclusions from data analysis."""
         return {"conclusion": "Analysis completed successfully"}
 
-    def _extract_kpis(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_kpis(self, data: dict[str, Any]) -> dict[str, Any]:
         """Extract key performance indicators from data."""
         return {"total_elements": len(data)}
 
-    def _prepare_chart_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_chart_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Prepare data for chart visualization."""
         return {"chart_type": "summary", "data_elements": len(data)}
 
-    def _generate_quick_insights(self, data: Dict[str, Any]) -> List[str]:
+    def _generate_quick_insights(self, data: dict[str, Any]) -> list[str]:
         """Generate quick insights from data."""
         return [f"Processed {len(data)} data elements"]
 
     def _apply_custom_section_logic(
-        self, data: Dict[str, Any], section_config: Dict[str, Any]
+        self,
+        data: dict[str, Any],
+        section_config: dict[str, Any],
     ) -> Any:
         """Apply custom section configuration logic."""
         return {"processed": "custom logic applied"}
 
     def _format_content_for_html(self, content: Any) -> str:
         """Format content for HTML output."""
-        return f"<pre>{str(content)}</pre>"
+        return f"<pre>{content!s}</pre>"
 
-    def _format_content_for_csv(self, content: Any) -> List[str]:
+    def _format_content_for_csv(self, content: Any) -> list[str]:
         """Format content for CSV output."""
-        return [f"Content,{str(content)}"]
+        return [f"Content,{content!s}"]
 
     def _format_content_for_text(self, content: Any) -> str:
         """Format content for plain text output."""
@@ -996,8 +1034,8 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
     def _format_content_for_markdown(self, content: Any) -> str:
         """Format content for Markdown output."""
-        return f"```\n{str(content)}\n```"
+        return f"```\n{content!s}\n```"
 
-    def get_processing_metrics(self) -> Dict[str, Any]:
+    def get_processing_metrics(self) -> dict[str, Any]:
         """Get current processing metrics."""
         return self._processing_metrics.copy()

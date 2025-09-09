@@ -161,7 +161,7 @@ class TestONEXContainer:
 
         # Test that has_service only checks direct registration, not shortcuts
         assert not container.has_service(
-            "event_bus"
+            "event_bus",
         )  # Shortcut not checked by has_service
 
     def test_service_resolution_failure(self):

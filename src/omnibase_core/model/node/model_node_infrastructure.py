@@ -42,24 +42,29 @@ class ModelMixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     # Core event bus properties
     node_id: str = Field(..., description="Unique node identifier")
     event_bus_enabled: bool = Field(
-        default=True, description="Enable event bus functionality"
+        default=True,
+        description="Enable event bus functionality",
     )
     max_event_queue_size: int = Field(
-        default=1000, description="Maximum event queue size"
+        default=1000,
+        description="Maximum event queue size",
     )
 
     # State management
     current_input_state: InputStateT | None = Field(
-        default=None, description="Current input state"
+        default=None,
+        description="Current input state",
     )
     current_output_state: OutputStateT | None = Field(
-        default=None, description="Current output state"
+        default=None,
+        description="Current output state",
     )
 
     # Event processing metrics
     events_processed: int = Field(default=0, description="Total events processed")
     events_failed: int = Field(
-        default=0, description="Total events that failed processing"
+        default=0,
+        description="Total events that failed processing",
     )
 
     def reset_metrics(self) -> None:

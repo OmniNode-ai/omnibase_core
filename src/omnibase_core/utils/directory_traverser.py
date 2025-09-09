@@ -441,7 +441,8 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 try:
                     # Load and validate YAML using Pydantic model
                     yaml_model = load_and_validate_yaml_model(
-                        onexignore, ModelGenericYaml
+                        onexignore,
+                        ModelGenericYaml,
                     )
                     data = yaml_model.model_dump()
                     if data:

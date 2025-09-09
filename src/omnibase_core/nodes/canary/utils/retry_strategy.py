@@ -16,17 +16,16 @@ Features:
 
 import asyncio
 import logging
-import math
 import random
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Awaitable, Callable, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.nodes.canary.utils.metrics_collector import get_metrics_collector
 
 # Type variables for generic retry functionality
@@ -85,10 +84,15 @@ class ModelRetryConfig(BaseModel):
         description="Type of retry strategy to use",
     )
     max_attempts: int = Field(
-        default=3, ge=1, le=10, description="Maximum number of retry attempts"
+        default=3,
+        ge=1,
+        le=10,
+        description="Maximum number of retry attempts",
     )
     base_delay_ms: int = Field(
-        default=1000, ge=0, description="Base delay in milliseconds"
+        default=1000,
+        ge=0,
+        description="Base delay in milliseconds",
     )
     max_delay_ms: int = Field(
         default=30000,
@@ -96,13 +100,19 @@ class ModelRetryConfig(BaseModel):
         description="Maximum delay between attempts in milliseconds",
     )
     backoff_multiplier: float = Field(
-        default=2.0, ge=1.0, le=10.0, description="Multiplier for exponential backoff"
+        default=2.0,
+        ge=1.0,
+        le=10.0,
+        description="Multiplier for exponential backoff",
     )
     jitter_enabled: bool = Field(
-        default=True, description="Whether to add random jitter to delays"
+        default=True,
+        description="Whether to add random jitter to delays",
     )
     jitter_max_ms: int = Field(
-        default=1000, ge=0, description="Maximum jitter to add in milliseconds"
+        default=1000,
+        ge=0,
+        description="Maximum jitter to add in milliseconds",
     )
     retry_condition: RetryCondition = Field(
         default=RetryCondition.ANY_EXCEPTION,
@@ -129,7 +139,9 @@ class ModelRetryConfig(BaseModel):
         description="List of exception class names that should NOT trigger retries",
     )
     timeout_ms: int | None = Field(
-        None, ge=1, description="Overall timeout for all retry attempts combined"
+        None,
+        ge=1,
+        description="Overall timeout for all retry attempts combined",
     )
 
     @field_validator("max_delay_ms")
@@ -146,13 +158,12 @@ class RetryStrategy(ABC):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.metrics = get_metrics_collector(
-            f"retry_strategy_{config.strategy_type.value}"
+            f"retry_strategy_{config.strategy_type.value}",
         )
 
     @abstractmethod
     def calculate_delay(self, attempt_number: int) -> float:
         """Calculate delay before the given attempt number (1-based)."""
-        pass
 
     def should_retry(self, exception: Exception, attempt_number: int) -> bool:
         """Determine if we should retry based on the exception and attempt count."""
@@ -169,7 +180,7 @@ class RetryStrategy(ABC):
             # Retry any exception not explicitly marked as non-retryable
             return True
 
-        elif self.config.retry_condition == RetryCondition.SPECIFIC_EXCEPTIONS:
+        if self.config.retry_condition == RetryCondition.SPECIFIC_EXCEPTIONS:
             return exception_name in self.config.retryable_exceptions
 
         return False
@@ -247,7 +258,9 @@ class CustomRetryStrategy(RetryStrategy):
     """Custom retry strategy with user-defined delay function."""
 
     def __init__(
-        self, config: ModelRetryConfig, delay_function: Callable[[int], float]
+        self,
+        config: ModelRetryConfig,
+        delay_function: Callable[[int], float],
     ):
         super().__init__(config)
         self.delay_function = delay_function
@@ -275,27 +288,27 @@ class RetryExecutor:
         self.strategy = self._create_strategy(custom_delay_fn)
 
     def _create_strategy(
-        self, custom_delay_fn: Callable[[int], float] | None = None
+        self,
+        custom_delay_fn: Callable[[int], float] | None = None,
     ) -> RetryStrategy:
         """Create the appropriate retry strategy based on configuration."""
         if self.config.strategy_type == RetryStrategyType.LINEAR:
             return LinearRetryStrategy(self.config)
-        elif self.config.strategy_type == RetryStrategyType.EXPONENTIAL:
+        if self.config.strategy_type == RetryStrategyType.EXPONENTIAL:
             return ExponentialRetryStrategy(self.config)
-        elif self.config.strategy_type == RetryStrategyType.JITTERED_EXPONENTIAL:
+        if self.config.strategy_type == RetryStrategyType.JITTERED_EXPONENTIAL:
             return JitteredExponentialRetryStrategy(self.config)
-        elif self.config.strategy_type == RetryStrategyType.FIBONACCI:
+        if self.config.strategy_type == RetryStrategyType.FIBONACCI:
             return FibonacciRetryStrategy(self.config)
-        elif self.config.strategy_type == RetryStrategyType.CUSTOM:
+        if self.config.strategy_type == RetryStrategyType.CUSTOM:
             if custom_delay_fn is None:
                 raise ValueError(
-                    "Custom delay function required for CUSTOM strategy type"
+                    "Custom delay function required for CUSTOM strategy type",
                 )
             return CustomRetryStrategy(self.config, custom_delay_fn)
-        else:
-            raise ValueError(
-                f"Unsupported retry strategy type: {self.config.strategy_type}"
-            )
+        raise ValueError(
+            f"Unsupported retry strategy type: {self.config.strategy_type}",
+        )
 
     async def execute_with_retry(
         self,
@@ -343,7 +356,9 @@ class RetryExecutor:
 
             attempt_start = time.time()
             attempt_result = RetryAttemptResult(
-                attempt_number=attempt, success=False, execution_time_ms=0
+                attempt_number=attempt,
+                success=False,
+                execution_time_ms=0,
             )
 
             try:
@@ -380,7 +395,9 @@ class RetryExecutor:
 
                 # Execute the function
                 self.logger.debug(
-                    "Executing attempt %d for %s", attempt, operation_name
+                    "Executing attempt %d for %s",
+                    attempt,
+                    operation_name,
                 )
                 function_result = await function()
 

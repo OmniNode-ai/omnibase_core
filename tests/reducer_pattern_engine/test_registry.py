@@ -5,19 +5,15 @@ Tests comprehensive subreducer registration, validation, health checks,
 and runtime lookup capabilities for the Phase 2 implementation.
 """
 
-import time
-from typing import Any, Dict, Type
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     BaseSubreducer,
     ModelSubreducerResult,
     ModelWorkflowRequest,
-    ModelWorkflowResponse,
     WorkflowType,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry import (
@@ -105,7 +101,10 @@ class MockUninstantiableSubreducer(BaseSubreducer):
 
     async def process(self, request: ModelWorkflowRequest) -> ModelSubreducerResult:
         return ModelSubreducerResult(
-            workflow_id=uuid4(), subreducer_name=self.name, success=True, result={}
+            workflow_id=uuid4(),
+            subreducer_name=self.name,
+            success=True,
+            result={},
         )
 
 
@@ -212,7 +211,7 @@ class TestReducerSubreducerRegistry:
 
         # Register different subreducer for same type (should overwrite)
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.registry.emit_log_event",
         ):
             registry.register_subreducer(workflow_type, MockMultiTypeSubreducer)
 
@@ -281,7 +280,8 @@ class TestReducerSubreducerRegistry:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(uuid4(), self.name, True, {})
 
@@ -351,7 +351,8 @@ class TestReducerSubreducerRegistry:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(uuid4(), self.name, True, {})
 
@@ -414,7 +415,8 @@ class TestReducerSubreducerRegistry:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(uuid4(), self.name, True, {})
 
@@ -503,7 +505,8 @@ class TestReducerSubreducerRegistry:
         # Register some subreducers
         registry.register_subreducer(WorkflowType.DATA_ANALYSIS, MockValidSubreducer)
         registry.register_subreducer(
-            WorkflowType.REPORT_GENERATION, MockMultiTypeSubreducer
+            WorkflowType.REPORT_GENERATION,
+            MockMultiTypeSubreducer,
         )
 
         # Create instances
@@ -558,7 +561,8 @@ class TestReducerSubreducerRegistry:
 
         # Unregistration should work with both
         registry.register_subreducer(
-            WorkflowType.REPORT_GENERATION, MockMultiTypeSubreducer
+            WorkflowType.REPORT_GENERATION,
+            MockMultiTypeSubreducer,
         )
         assert registry.unregister_subreducer(WorkflowType.REPORT_GENERATION) is True
         assert WorkflowType.REPORT_GENERATION.value not in registry._subreducers
@@ -566,7 +570,6 @@ class TestReducerSubreducerRegistry:
     def test_concurrent_access_safety(self, registry):
         """Test registry behavior under concurrent access patterns."""
         import threading
-        import time
 
         subreducer_class = MockValidSubreducer
         workflow_type = WorkflowType.DATA_ANALYSIS
@@ -576,7 +579,9 @@ class TestReducerSubreducerRegistry:
             try:
                 # Each thread tries to register (later ones should overwrite)
                 registry.register_subreducer(
-                    workflow_type, subreducer_class, {"thread_id": thread_id}
+                    workflow_type,
+                    subreducer_class,
+                    {"thread_id": thread_id},
                 )
 
                 # Each thread tries to get instance
@@ -621,7 +626,8 @@ class TestReducerSubreducerRegistry:
                 return workflow_type == WorkflowType.DATA_ANALYSIS
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(uuid4(), self.name, True, {})
 

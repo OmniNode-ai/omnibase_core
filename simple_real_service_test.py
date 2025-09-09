@@ -51,9 +51,8 @@ def test_real_consul():
         if stored_value == test_value:
             print(f"   ✅ KV operations working: {test_key}")
             return True
-        else:
-            print(f"   ❌ KV verification failed")
-            return False
+        print("   ❌ KV verification failed")
+        return False
 
     except Exception as e:
         print(f"   ❌ Consul test failed: {e}")
@@ -93,7 +92,7 @@ def test_real_postgresql():
                 test_data VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Insert test data
@@ -110,7 +109,7 @@ def test_real_postgresql():
         conn.commit()
 
         print(
-            f"   ✅ Table created and data inserted: {table_name} (ID: {inserted_id})"
+            f"   ✅ Table created and data inserted: {table_name} (ID: {inserted_id})",
         )
 
         # Verify data
@@ -124,13 +123,12 @@ def test_real_postgresql():
         retrieved_data = cursor.fetchone()[0]
 
         if retrieved_data == test_data:
-            print(f"   ✅ Data verification successful")
+            print("   ✅ Data verification successful")
             conn.close()
             return True
-        else:
-            print(f"   ❌ Data verification failed")
-            conn.close()
-            return False
+        print("   ❌ Data verification failed")
+        conn.close()
+        return False
 
     except Exception as e:
         print(f"   ❌ PostgreSQL test failed: {e}")

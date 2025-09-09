@@ -2,7 +2,7 @@
 """
 Missing Files Discovery Script
 
-Systematically identifies missing files preventing omnibase-core imports
+Systematically identifies missing files preventing omnibase_core imports
 by comparing with omnibase_3 and analyzing import failures.
 """
 
@@ -27,7 +27,7 @@ class MissingFileFinder:
     """Finds missing files by analyzing import failures."""
 
     def __init__(self):
-        self.omnibase_core_root = Path("/Volumes/PRO-G40/Code/omnibase-core")
+        self.omnibase_core_root = Path("/Volumes/PRO-G40/Code/omnibase_core")
         self.omnibase3_root = Path("/Volumes/PRO-G40/Code/omnibase_3")
         self.missing_files: dict[str, MissingFile] = {}
 
@@ -37,7 +37,7 @@ class MissingFileFinder:
 
         test_script = """
 import sys
-sys.path.insert(0, "/Volumes/PRO-G40/Code/omnibase-core/src")
+sys.path.insert(0, "/Volumes/PRO-G40/Code/omnibase_core/src")
 
 failed_imports = []
 
@@ -135,7 +135,7 @@ for failure in failed_imports:
         """Scan for missing files by analyzing imports."""
         print("🔍 Scanning for missing dependencies...")
 
-        # Get all Python files in omnibase-core
+        # Get all Python files in omnibase_core
         python_files = list(self.omnibase_core_root.glob("src/**/*.py"))
 
         for py_file in python_files:
@@ -147,7 +147,7 @@ for failure in failed_imports:
 
                 # Check if this import would fail
                 try:
-                    # Test if we can resolve this import path in omnibase-core
+                    # Test if we can resolve this import path in omnibase_core
                     import_parts = import_name.replace("omnibase.", "").split(".")
                     expected_path = (
                         self.omnibase_core_root
@@ -277,7 +277,7 @@ for failure in failed_imports:
     def run_discovery(self) -> None:
         """Run complete discovery process."""
         print("🚀 Starting Missing Files Discovery...")
-        print(f"📂 omnibase-core: {self.omnibase_core_root}")
+        print(f"📂 omnibase_core: {self.omnibase_core_root}")
         print(f"📂 omnibase_3: {self.omnibase3_root}")
         print()
 

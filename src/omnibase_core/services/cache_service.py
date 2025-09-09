@@ -9,7 +9,7 @@ import asyncio
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase.protocols.core import ProtocolCacheService, ProtocolCacheServiceProvider
 from omnibase.protocols.types.core_types import ContextValue, ProtocolCacheStatistics
@@ -19,14 +19,14 @@ from omnibase.protocols.types.core_types import ContextValue, ProtocolCacheStati
 class CacheEntry:
     """Cache entry with TTL support."""
 
-    data: Dict[str, Any]
+    data: dict[str, Any]
     created_at: float
-    expires_at: Optional[float] = None
+    expires_at: float | None = None
     access_count: int = 0
     last_accessed: float = 0
 
 
-class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
+class InMemoryCacheService(ProtocolCacheService[dict[str, Any]]):
     """
     Thread-safe in-memory cache service with TTL support.
 
@@ -45,7 +45,7 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
         self.default_ttl_seconds = default_ttl_seconds
         self.max_entries = max_entries
 
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._lock = asyncio.Lock()
 
         # Statistics
@@ -57,7 +57,7 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
             "deletes": 0,
         }
 
-    async def get(self, key: str) -> Optional[Dict[str, Any]]:
+    async def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve cached data by key with TTL checking."""
         async with self._lock:
             entry = self._cache.get(key)
@@ -82,7 +82,10 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
             return entry.data.copy()  # Return copy to prevent external mutations
 
     async def set(
-        self, key: str, value: Dict[str, Any], ttl_seconds: Optional[int] = None
+        self,
+        key: str,
+        value: dict[str, Any],
+        ttl_seconds: int | None = None,
     ) -> bool:
         """Store data in cache with TTL."""
         async with self._lock:
@@ -119,7 +122,7 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
                 return True
             return False
 
-    async def clear(self, pattern: Optional[str] = None) -> int:
+    async def clear(self, pattern: str | None = None) -> int:
         """Clear cache entries, optionally by pattern."""
         async with self._lock:
             if pattern is None:
@@ -167,8 +170,8 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
             memory_usage_bytes: int
             entry_count: int
             eviction_count: int
-            last_accessed: Optional[datetime]
-            cache_size_limit: Optional[int]
+            last_accessed: datetime | None
+            cache_size_limit: int | None
 
         return CacheStats(
             hit_count=self._stats["hits"],
@@ -184,7 +187,7 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
                     max(
                         (entry.last_accessed for entry in self._cache.values()),
                         default=0,
-                    )
+                    ),
                 )
                 if self._cache
                 else None
@@ -211,16 +214,16 @@ class InMemoryCacheService(ProtocolCacheService[Dict[str, Any]]):
         self._stats["evictions"] += evicted
 
 
-class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider[Dict[str, Any]]):
+class InMemoryCacheServiceProvider(ProtocolCacheServiceProvider[dict[str, Any]]):
     """Provider for in-memory cache service."""
 
     def __init__(self, default_ttl_seconds: int = 300, max_entries: int = 10000):
         """Initialize provider with configuration."""
         self.default_ttl_seconds = default_ttl_seconds
         self.max_entries = max_entries
-        self._cache_service: Optional[InMemoryCacheService] = None
+        self._cache_service: InMemoryCacheService | None = None
 
-    def create_cache_service(self) -> ProtocolCacheService[Dict[str, Any]]:
+    def create_cache_service(self) -> ProtocolCacheService[dict[str, Any]]:
         """Create or return existing cache service instance."""
         if self._cache_service is None:
             self._cache_service = InMemoryCacheService(

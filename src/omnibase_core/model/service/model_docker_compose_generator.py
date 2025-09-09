@@ -220,7 +220,9 @@ class DockerComposeGenerator:
         from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
         return serialize_data_to_yaml(
-            compose_config, default_flow_style=False, sort_keys=False
+            compose_config,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     def _validate_configuration(self) -> None:
@@ -650,7 +652,8 @@ class DockerComposeGenerator:
 
         return {
             "prometheus.yml": serialize_data_to_yaml(
-                prometheus_config, default_flow_style=False
+                prometheus_config,
+                default_flow_style=False,
             ),
         }
 

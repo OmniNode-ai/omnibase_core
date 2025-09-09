@@ -12,7 +12,6 @@ This test suite demonstrates proper ONEX architecture patterns:
 This replaces the architecture-violating test that was using hardcoded imports.
 """
 
-import asyncio
 import uuid
 from pathlib import Path
 from typing import Any
@@ -24,7 +23,6 @@ from omnibase_core.core.node_effect import EffectType, ModelEffectInput
 from omnibase_core.core.node_loader import NodeLoader
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.nodes.canary.container import create_infrastructure_container
-from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
 
 
 def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
@@ -115,7 +113,7 @@ class TestCanaryArchitectureCompliant:
                         break
                 else:
                     pytest.fail(
-                        f"No node.py found in any version directory for {node_dir}"
+                        f"No node.py found in any version directory for {node_dir}",
                     )
 
     @pytest.mark.asyncio
@@ -194,7 +192,7 @@ class TestCanaryArchitectureCompliant:
                         "operation_type": "health_check",
                         "parameters": {},
                         "correlation_id": str(uuid.uuid4()),
-                    }
+                    },
                 ),
             )
 

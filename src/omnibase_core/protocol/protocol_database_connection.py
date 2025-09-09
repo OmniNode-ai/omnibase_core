@@ -6,7 +6,7 @@ Provides a clean interface for database operations with proper fallback
 strategies and connection management.
 """
 
-from typing import Dict, List, Optional, Protocol, Union, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
@@ -37,8 +37,10 @@ class ProtocolDatabaseConnection(Protocol):
         ...
 
     async def execute_query(
-        self, query: str, parameters: Optional[tuple] = None
-    ) -> List[Dict[str, Union[str, int, float, bool, None]]]:
+        self,
+        query: str,
+        parameters: tuple | None = None,
+    ) -> list[dict[str, str | int | float | bool | None]]:
         """
         Execute a SELECT query and return results.
 
@@ -52,7 +54,9 @@ class ProtocolDatabaseConnection(Protocol):
         ...
 
     async def execute_command(
-        self, command: str, parameters: Optional[tuple] = None
+        self,
+        command: str,
+        parameters: tuple | None = None,
     ) -> int:
         """
         Execute an INSERT, UPDATE, or DELETE command.
@@ -67,7 +71,8 @@ class ProtocolDatabaseConnection(Protocol):
         ...
 
     async def execute_transaction(
-        self, commands: List[tuple[str, Optional[tuple]]]
+        self,
+        commands: list[tuple[str, tuple | None]],
     ) -> bool:
         """
         Execute multiple commands in a transaction.
@@ -81,8 +86,10 @@ class ProtocolDatabaseConnection(Protocol):
         ...
 
     async def acquire_lock(
-        self, lock_name: str, timeout_seconds: int = 30
-    ) -> Optional[str]:
+        self,
+        lock_name: str,
+        timeout_seconds: int = 30,
+    ) -> str | None:
         """
         Acquire a named advisory lock.
 
@@ -116,7 +123,7 @@ class ProtocolDatabaseConnection(Protocol):
         """
         ...
 
-    async def get_connection_info(self) -> Dict[str, ModelScalarValue]:
+    async def get_connection_info(self) -> dict[str, ModelScalarValue]:
         """
         Get connection information and statistics.
 

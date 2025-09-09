@@ -9,7 +9,7 @@ circuit breakers, metrics collection, and configuration management.
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -20,7 +20,6 @@ from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.model.subcontracts.model_error_handling_subcontract import (
-    GetConfigurationInput,
     HandleErrorInput,
     ModelErrorHandlingSubcontract,
     RecordMetricsInput,
@@ -57,7 +56,7 @@ class ModelCanaryComputeInput(BaseModel):
         }
         if v not in allowed_operations:
             raise ValueError(
-                f"Invalid operation_type. Must be one of: {allowed_operations}"
+                f"Invalid operation_type. Must be one of: {allowed_operations}",
             )
         return v
 
@@ -94,7 +93,8 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         # Initialize error handling mixin (replaces manual utilities)
         self.error_handling = ModelErrorHandlingSubcontract(
-            initialized=True, initialization_timestamp=datetime.now(timezone.utc)
+            initialized=True,
+            initialization_timestamp=datetime.now(UTC),
         )
 
         # Basic counters (metrics will be handled by mixin)
@@ -146,7 +146,10 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
             # Record metrics using mixin
             await self._record_operation_metrics(
-                input_data.operation_type, True, execution_time, context
+                input_data.operation_type,
+                True,
+                execution_time,
+                context,
             )
 
             # Create output
@@ -178,7 +181,10 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
             # Handle error using mixin instead of manual error handler
             error_details = await self._handle_error_with_mixin(
-                e, context, correlation_id, "compute"
+                e,
+                context,
+                correlation_id,
+                "compute",
             )
 
             # Record error metrics using mixin
@@ -283,26 +289,27 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         if operation_type == "add":
             return await self._compute_add(data_payload, parameters)
-        elif operation_type == "multiply":
+        if operation_type == "multiply":
             return await self._compute_multiply(data_payload, parameters)
-        elif operation_type == "aggregate":
+        if operation_type == "aggregate":
             return await self._compute_aggregate(data_payload, parameters)
-        elif operation_type == "customer_score":
+        if operation_type == "customer_score":
             return await self._compute_customer_score(data_payload, parameters)
-        elif operation_type == "risk_assessment":
+        if operation_type == "risk_assessment":
             return await self._compute_risk_assessment(data_payload, parameters)
-        elif operation_type == "data_transformation":
+        if operation_type == "data_transformation":
             return await self._compute_data_transformation(data_payload, parameters)
-        elif operation_type == "health_metrics":
+        if operation_type == "health_metrics":
             return await self._compute_health_metrics(data_payload, parameters)
-        elif operation_type == "statistical_analysis":
+        if operation_type == "statistical_analysis":
             return await self._compute_statistical_analysis(data_payload, parameters)
-        else:
-            msg = f"Unsupported canary compute operation: {operation_type}"
-            raise ValueError(msg)
+        msg = f"Unsupported canary compute operation: {operation_type}"
+        raise ValueError(msg)
 
     async def _compute_add(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute addition operation."""
         num1 = payload.get("num1", 0)
@@ -316,7 +323,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_multiply(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute multiplication operation."""
         num1 = payload.get("num1", 1)
@@ -330,7 +339,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_aggregate(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute data aggregation."""
         data_list = payload.get("data", [])
@@ -356,7 +367,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_customer_score(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute customer scoring."""
         customer_data = payload.get("customer", {})
@@ -376,7 +389,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_risk_assessment(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute risk assessment."""
         risk_data = payload.get("risk_factors", {})
@@ -395,7 +410,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_data_transformation(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute data transformation."""
         input_data = payload.get("data", [])
@@ -419,7 +436,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_health_metrics(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute health metrics."""
         metrics = payload.get("metrics", {})
@@ -428,8 +447,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         for metric, value in metrics.items():
             threshold_good = float(
                 self.config_utils.get_performance_config(
-                    "health_score_threshold_good", 0.6
-                )
+                    "health_score_threshold_good",
+                    0.6,
+                ),
             )
             if value < threshold_good:  # Use configurable threshold
                 health_score -= 10
@@ -443,7 +463,9 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
         }
 
     async def _compute_statistical_analysis(
-        self, payload: dict[str, Any], parameters: dict[str, Any]
+        self,
+        payload: dict[str, Any],
+        parameters: dict[str, Any],
     ) -> dict[str, Any]:
         """Compute statistical analysis."""
         data = payload.get("data", [])
@@ -482,10 +504,10 @@ class NodeCanaryComputeWithMixin(NodeComputeService):
 
         # Use mixin configuration for health thresholds
         min_ops = int(
-            self.config_utils.get_performance_config("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10),
         )
         error_threshold = float(
-            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1),
         )
 
         if (

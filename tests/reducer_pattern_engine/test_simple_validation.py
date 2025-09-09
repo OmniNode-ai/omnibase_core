@@ -8,8 +8,6 @@ to ensure the Phase 1 implementation works as expected.
 from datetime import datetime
 from uuid import UUID
 
-import pytest
-
 # Clean imports without sys.path manipulation - import from contracts.py not contracts/ directory
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     ModelWorkflowRequest,
@@ -85,7 +83,7 @@ def test_router_imports_work():
         import unittest.mock
 
         with unittest.mock.patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ):
             router = WorkflowRouter()
             assert router is not None
@@ -112,7 +110,7 @@ def test_subreducer_structure():
         assert os.path.exists(subreducer_path), "Subreducer file should exist"
 
         # Read file content to check structure
-        with open(subreducer_path, "r") as f:
+        with open(subreducer_path) as f:
             content = f.read()
 
         # Check for key class and methods
@@ -137,43 +135,43 @@ def test_phase1_file_structure():
 
     # Check main structure exists
     assert os.path.exists(
-        base_path
+        base_path,
     ), "Main reducer pattern engine directory should exist"
     assert os.path.exists(
-        os.path.join(base_path, "__init__.py")
+        os.path.join(base_path, "__init__.py"),
     ), "Main init file should exist"
 
     # Check v1.0.0 structure
     v1_path = os.path.join(base_path, "v1_0_0")
     assert os.path.exists(v1_path), "v1.0.0 directory should exist"
     assert os.path.exists(
-        os.path.join(v1_path, "__init__.py")
+        os.path.join(v1_path, "__init__.py"),
     ), "v1.0.0 init should exist"
     assert os.path.exists(
-        os.path.join(v1_path, "contracts.py")
+        os.path.join(v1_path, "contracts.py"),
     ), "Contracts file should exist"
     assert os.path.exists(
-        os.path.join(v1_path, "router.py")
+        os.path.join(v1_path, "router.py"),
     ), "Router file should exist"
     assert os.path.exists(
-        os.path.join(v1_path, "engine.py")
+        os.path.join(v1_path, "engine.py"),
     ), "Engine file should exist"
 
     # Check subreducers structure
     subreducers_path = os.path.join(base_path, "subreducers")
     assert os.path.exists(subreducers_path), "Subreducers directory should exist"
     assert os.path.exists(
-        os.path.join(subreducers_path, "__init__.py")
+        os.path.join(subreducers_path, "__init__.py"),
     ), "Subreducers init should exist"
     assert os.path.exists(
-        os.path.join(subreducers_path, "reducer_document_regeneration.py")
+        os.path.join(subreducers_path, "reducer_document_regeneration.py"),
     ), "Document regeneration subreducer should exist"
 
     # Check test structure exists
     test_base = os.path.join(os.path.dirname(__file__))
     assert os.path.exists(test_base), "Test directory should exist"
     assert os.path.exists(
-        os.path.join(test_base, "subreducers")
+        os.path.join(test_base, "subreducers"),
     ), "Test subreducers directory should exist"
 
     print("✓ Phase 1 file structure validation passed!")
@@ -187,7 +185,7 @@ def test_implementation_completeness():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/contracts.py",
     )
-    with open(contracts_path, "r") as f:
+    with open(contracts_path) as f:
         contracts_content = f.read()
 
     required_contracts = [
@@ -209,7 +207,7 @@ def test_implementation_completeness():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/router.py",
     )
-    with open(router_path, "r") as f:
+    with open(router_path) as f:
         router_content = f.read()
 
     required_router_elements = [
@@ -230,7 +228,7 @@ def test_implementation_completeness():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/engine.py",
     )
-    with open(engine_path, "r") as f:
+    with open(engine_path) as f:
         engine_content = f.read()
 
     required_engine_elements = [
@@ -262,7 +260,7 @@ def test_code_quality_checks():
 
     for file_path in files_to_check:
         full_path = os.path.join(os.path.dirname(__file__), file_path)
-        with open(full_path, "r") as f:
+        with open(full_path) as f:
             content = f.read()
 
         # Check for ONEX compliance requirements
@@ -311,7 +309,7 @@ def test_phase1_acceptance_criteria():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/engine.py",
     )
-    with open(engine_path, "r") as f:
+    with open(engine_path) as f:
         engine_content = f.read()
 
     assert (
@@ -327,7 +325,7 @@ def test_phase1_acceptance_criteria():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/v1_0_0/router.py",
     )
-    with open(router_path, "r") as f:
+    with open(router_path) as f:
         router_content = f.read()
 
     assert "_generate_routing_hash" in router_content, "AC2: Missing hash-based routing"
@@ -340,7 +338,7 @@ def test_phase1_acceptance_criteria():
         os.path.dirname(__file__),
         "../../src/omnibase_core/patterns/reducer_pattern_engine/subreducers/reducer_document_regeneration.py",
     )
-    with open(subreducer_path, "r") as f:
+    with open(subreducer_path) as f:
         subreducer_content = f.read()
 
     assert (

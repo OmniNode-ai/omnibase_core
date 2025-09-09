@@ -196,7 +196,7 @@ class ContractLoader:
             tool_spec_data = raw_content.get("tool_specification", {})
             tool_specification = ModelToolSpecification(
                 main_tool_class=str(
-                    tool_spec_data.get("main_tool_class", "DefaultToolNode")
+                    tool_spec_data.get("main_tool_class", "DefaultToolNode"),
                 ),
                 business_logic_pattern=str(
                     tool_spec_data.get("business_logic_pattern", "stateful"),

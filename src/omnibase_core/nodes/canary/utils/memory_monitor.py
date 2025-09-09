@@ -7,11 +7,11 @@ Provides memory usage tracking, alerting, and optimization for long-running oper
 
 import asyncio
 import gc
-import logging
 import time
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any
 
 import psutil
 
@@ -26,8 +26,8 @@ class MemoryMetrics:
     process_memory_mb: float
     system_memory_percent: float
     available_memory_mb: float
-    gc_collections: Dict[int, int]
-    operation_name: Optional[str] = None
+    gc_collections: dict[int, int]
+    operation_name: str | None = None
 
 
 class MemoryMonitor:
@@ -45,11 +45,12 @@ class MemoryMonitor:
         self.logger = create_secure_logger(self.__class__.__name__)
 
         self._process = psutil.Process()
-        self._monitoring_tasks: Dict[str, asyncio.Task] = {}
-        self._baseline_metrics: Optional[MemoryMetrics] = None
+        self._monitoring_tasks: dict[str, asyncio.Task] = {}
+        self._baseline_metrics: MemoryMetrics | None = None
 
     def _get_memory_metrics(
-        self, operation_name: Optional[str] = None
+        self,
+        operation_name: str | None = None,
     ) -> MemoryMetrics:
         """Get current memory usage metrics.
 
@@ -116,12 +117,14 @@ class MemoryMonitor:
         self._baseline_metrics = self._get_memory_metrics(operation_name)
         self.logger.info(
             f"Memory baseline set: {self._baseline_metrics.process_memory_mb:.1f}MB "
-            f"(system: {self._baseline_metrics.system_memory_percent:.1f}%)"
+            f"(system: {self._baseline_metrics.system_memory_percent:.1f}%)",
         )
         return self._baseline_metrics
 
     def check_memory_usage(
-        self, operation_name: str, correlation_id: Optional[str] = None
+        self,
+        operation_name: str,
+        correlation_id: str | None = None,
     ) -> bool:
         """Check if memory usage is within acceptable limits.
 
@@ -145,7 +148,7 @@ class MemoryMonitor:
             if current_metrics.process_memory_mb > self.threshold_mb:
                 self.logger.warning(
                     f"Process memory usage ({current_metrics.process_memory_mb:.1f}MB) "
-                    f"exceeds threshold ({self.threshold_mb:.1f}MB) for {operation_name} {log_context}"
+                    f"exceeds threshold ({self.threshold_mb:.1f}MB) for {operation_name} {log_context}",
                 )
                 return False
 
@@ -153,7 +156,7 @@ class MemoryMonitor:
             if current_metrics.system_memory_percent > self.warning_threshold_percent:
                 self.logger.warning(
                     f"System memory usage ({current_metrics.system_memory_percent:.1f}%) "
-                    f"exceeds warning threshold ({self.warning_threshold_percent:.1f}%) {log_context}"
+                    f"exceeds warning threshold ({self.warning_threshold_percent:.1f}%) {log_context}",
                 )
 
             # Log memory growth if baseline exists
@@ -164,7 +167,7 @@ class MemoryMonitor:
                 )
                 if growth_mb > 50.0:  # Significant growth threshold
                     self.logger.info(
-                        f"Memory growth detected: +{growth_mb:.1f}MB since baseline for {operation_name} {log_context}"
+                        f"Memory growth detected: +{growth_mb:.1f}MB since baseline for {operation_name} {log_context}",
                     )
 
             return True
@@ -174,7 +177,9 @@ class MemoryMonitor:
             return True  # Assume OK if check fails
 
     async def _monitor_operation(
-        self, operation_name: str, correlation_id: Optional[str] = None
+        self,
+        operation_name: str,
+        correlation_id: str | None = None,
     ) -> None:
         """Background monitoring task for an operation."""
         try:
@@ -187,7 +192,9 @@ class MemoryMonitor:
             self.logger.error(f"Memory monitoring error for {operation_name}: {e}")
 
     def start_monitoring(
-        self, operation_name: str, correlation_id: Optional[str] = None
+        self,
+        operation_name: str,
+        correlation_id: str | None = None,
     ) -> str:
         """Start background memory monitoring for an operation.
 
@@ -208,7 +215,7 @@ class MemoryMonitor:
 
         if task_key not in self._monitoring_tasks:
             task = asyncio.create_task(
-                self._monitor_operation(operation_name, correlation_id)
+                self._monitor_operation(operation_name, correlation_id),
             )
             self._monitoring_tasks[task_key] = task
             self.logger.debug(f"Started memory monitoring for {operation_name}")
@@ -242,10 +249,10 @@ class MemoryMonitor:
         if tasks_to_cancel:
             await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
             self.logger.debug(
-                f"Cancelled {len(tasks_to_cancel)} memory monitoring tasks"
+                f"Cancelled {len(tasks_to_cancel)} memory monitoring tasks",
             )
 
-    def force_garbage_collection(self, operation_name: str) -> Dict[str, Any]:
+    def force_garbage_collection(self, operation_name: str) -> dict[str, Any]:
         """Force garbage collection and return collection stats.
 
         Args:
@@ -283,7 +290,7 @@ class MemoryMonitor:
             self.logger.info(
                 f"Garbage collection for {operation_name}: "
                 f"collected {collected_objects} objects, "
-                f"freed {memory_freed_mb:.1f}MB"
+                f"freed {memory_freed_mb:.1f}MB",
             )
 
             return stats
@@ -296,8 +303,8 @@ class MemoryMonitor:
 @asynccontextmanager
 async def memory_monitored_operation(
     operation_name: str,
-    monitor: Optional[MemoryMonitor] = None,
-    correlation_id: Optional[str] = None,
+    monitor: MemoryMonitor | None = None,
+    correlation_id: str | None = None,
     auto_gc: bool = False,
 ) -> AsyncGenerator[MemoryMonitor, None]:
     """Context manager for memory-monitored operations.
@@ -340,7 +347,7 @@ async def memory_monitored_operation(
                 - monitor._baseline_metrics.process_memory_mb
             )
             monitor.logger.info(
-                f"Operation {operation_name} completed: total memory growth {total_growth:.1f}MB"
+                f"Operation {operation_name} completed: total memory growth {total_growth:.1f}MB",
             )
 
         # Optional garbage collection
@@ -349,7 +356,7 @@ async def memory_monitored_operation(
 
 
 # Global memory monitor instance
-_global_monitor: Optional[MemoryMonitor] = None
+_global_monitor: MemoryMonitor | None = None
 
 
 def get_memory_monitor() -> MemoryMonitor:

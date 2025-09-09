@@ -5,7 +5,7 @@ These models provide strongly typed data structures that can be reused
 across different services and components.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ModelProcessingResult(BaseModel):
