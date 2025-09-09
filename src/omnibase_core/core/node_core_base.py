@@ -29,6 +29,7 @@ from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.model.core.model_node_contract_data import ModelNodeContractData
 
 
 class NodeCoreBase(ABC):
@@ -85,7 +86,7 @@ class NodeCoreBase(ABC):
         }
 
         # Contract and configuration
-        self.contract_data: dict[str, Any] | None = None
+        self.contract_data: dict[str, str] | None = None
         self.version: str = "1.0.0"
 
         # Initialize metrics
@@ -336,15 +337,20 @@ class NodeCoreBase(ABC):
 
             if contract_service and hasattr(contract_service, "get_node_contract"):
                 # Load contract for this node type
-                contract_data = contract_service.get_node_contract(
+                contract_data_raw = contract_service.get_node_contract(
                     self.__class__.__name__,
                 )
-                if contract_data:
-                    self.contract_data = contract_data
-
-                    # Extract version if available
-                    if "version" in contract_data:
-                        self.version = str(contract_data["version"])
+                if contract_data_raw:
+                    # Validate contract data using Pydantic model
+                    try:
+                        contract_data = ModelNodeContractData.from_dict(contract_data_raw)
+                        self.contract_data = contract_data_raw  # Keep raw for backward compatibility
+                        self.version = contract_data.version
+                    except Exception as e:
+                        raise OnexError(
+                            error_code=CoreErrorCode.CONTRACT_VALIDATION_FAILED,
+                            message=f"Contract validation failed for {self.__class__.__name__}: {str(e)}"
+                        )
 
                     emit_log_event(
                         LogLevel.INFO,

@@ -2,7 +2,7 @@
 Consolidated Validation Result Model
 
 Unified ONEX-compliant model for all validation operations across the codebase.
-Merges features from multiple duplicate implementations into a single canonical model.
+Uses strong typing with no fallbacks - Path objects, not strings; specific types, not Any.
 
 This replaces:
 - omnibase_core.model.core.model_validation_result
@@ -11,7 +11,9 @@ This replaces:
 - omnibase_core.model.validation.model_validation_result
 """
 
-from typing import Any, Generic, TypeVar
+from datetime import datetime
+from pathlib import Path
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -38,9 +40,9 @@ class ModelValidationIssue(BaseModel):
         None,
         description="Machine-readable error code for programmatic handling",
     )
-    file_path: str | None = Field(
+    file_path: Path | None = Field(
         None,
-        description="Path to file where issue was found",
+        description="Path to file where issue was found (always Path object, never string)",
     )
     line_number: int | None = Field(
         None,
@@ -55,9 +57,9 @@ class ModelValidationIssue(BaseModel):
         description="Name of validation rule that triggered this issue",
     )
     suggestion: str | None = Field(None, description="Suggested fix for the issue")
-    context: dict[str, Any] | None = Field(
+    context: dict[str, str] | None = Field(
         None,
-        description="Additional context data for the issue",
+        description="Additional string context data for the issue (no Any types)",
     )
 
 
@@ -104,19 +106,19 @@ class ModelValidationResult(BaseModel, Generic[T]):
 
     # Core validation result
     is_valid: bool = Field(..., description="Overall validation result")
-    
+
     # Optional validated value with generic typing
     validated_value: T | None = Field(
         None,
         description="The validated and potentially normalized value",
     )
-    
+
     # Issues tracking
     issues: list[ModelValidationIssue] = Field(
         default_factory=list,
         description="List of all validation issues found",
     )
-    
+
     # Backwards compatibility fields
     errors: list[str] = Field(
         default_factory=list,
@@ -130,7 +132,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
         default_factory=list,
         description="List of suggestions (deprecated, use issues instead)",
     )
-    
+
     # Summary and details
     summary: str = Field(
         default="Validation completed",
@@ -140,7 +142,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
         None,
         description="Additional validation details",
     )
-    
+
     # Metadata
     metadata: ModelValidationMetadata | None = Field(
         None,
@@ -192,7 +194,7 @@ class ModelValidationResult(BaseModel, Generic[T]):
         """Create a failed validation result."""
         # Handle both legacy errors list and new issues list
         final_issues = issues or []
-        
+
         if errors:
             # Convert legacy errors to issues
             for error_msg in errors:
@@ -202,10 +204,10 @@ class ModelValidationResult(BaseModel, Generic[T]):
                         message=error_msg,
                     )
                 )
-        
+
         if summary is None:
             summary = f"Validation failed with {len(final_issues)} issues"
-        
+
         return cls(
             is_valid=False,
             issues=final_issues,
@@ -235,30 +237,30 @@ class ModelValidationResult(BaseModel, Generic[T]):
         self,
         severity: EnumValidationSeverity,
         message: str,
-        **kwargs: Any,
+        **kwargs: str,
     ) -> None:
         """Add a validation issue to the result."""
         issue = ModelValidationIssue(severity=severity, message=message, **kwargs)
         self.issues.append(issue)
-        
+
         # Update validity based on severity
         if severity in [EnumValidationSeverity.error, EnumValidationSeverity.critical]:
             self.is_valid = False
-        
+
         # Update legacy fields for backwards compatibility
         if severity == EnumValidationSeverity.error:
             self.errors.append(message)
         elif severity == EnumValidationSeverity.warning:
             self.warnings.append(message)
-        
+
         if kwargs.get("suggestion"):
             self.suggestions.append(kwargs["suggestion"])
 
-    def add_error(self, error: str, **kwargs: Any) -> None:
+    def add_error(self, error: str, **kwargs: str) -> None:
         """Add an error to the validation result (backwards compatibility)."""
         self.add_issue(EnumValidationSeverity.error, error, **kwargs)
 
-    def add_warning(self, warning: str, **kwargs: Any) -> None:
+    def add_warning(self, warning: str, **kwargs: str) -> None:
         """Add a warning to the validation result (backwards compatibility)."""
         self.add_issue(EnumValidationSeverity.warning, warning, **kwargs)
 
@@ -301,11 +303,11 @@ class ModelValidationResult(BaseModel, Generic[T]):
         self.errors.extend(other.errors)
         self.warnings.extend(other.warnings)
         self.suggestions.extend(other.suggestions)
-        
+
         # Update validity
         if not other.is_valid:
             self.is_valid = False
-        
+
         # Update summary
         if not self.is_valid:
             self.summary = f"Validation failed with {self.issues_found} total issues"

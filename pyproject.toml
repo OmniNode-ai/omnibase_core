@@ -3,7 +3,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "omnibase-core"
+name = "omnibase_core"
 version = "0.1.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = ["OmniNode Team <team@omninode.ai>"]

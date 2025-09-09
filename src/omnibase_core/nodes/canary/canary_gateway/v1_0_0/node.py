@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-from omnibase.protocols.core import ProtocolCacheService
+from omnibase_spi import ProtocolCacheService
 
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService

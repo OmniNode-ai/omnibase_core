@@ -274,42 +274,42 @@ class ModelContractCompute(ModelContractBase):
         description="Node name for infrastructure patterns",
     )
 
-    tool_specification: dict[str, Any] | None = Field(
+    tool_specification: dict[str, str] | None = Field(
         default=None,
         description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: dict[str, Any] | None = Field(
+    service_configuration: dict[str, str] | None = Field(
         default=None,
         description="Service configuration for infrastructure patterns",
     )
 
-    input_state: dict[str, Any] | None = Field(
+    input_state: dict[str, str] | None = Field(
         default=None,
         description="Input state specification",
     )
 
-    output_state: dict[str, Any] | None = Field(
+    output_state: dict[str, str] | None = Field(
         default=None,
         description="Output state specification",
     )
 
-    actions: list[dict[str, Any]] | None = Field(
+    actions: list[dict[str, str]] | None = Field(
         default=None,
         description="Action definitions",
     )
 
-    infrastructure: dict[str, Any] | None = Field(
+    infrastructure: dict[str, str] | None = Field(
         default=None,
         description="Infrastructure configuration",
     )
 
-    infrastructure_services: dict[str, Any] | None = Field(
+    infrastructure_services: dict[str, str] | None = Field(
         default=None,
         description="Infrastructure services configuration",
     )
 
-    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+    validation_rules: dict[str, str] | list[dict[str, str]] | None = Field(
         default=None,
         description="Validation rules in flexible format",
     )

@@ -12,10 +12,10 @@ from enum import Enum
 from typing import List, Optional
 
 # Import existing health models from omnibase_3
-from omnibase.model.health.model_health_status import ModelHealthStatus
+from omnibase_spi.model.health.model_health_status import ModelHealthStatus
 
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import HealthStatus, NodeType
+from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 # Use HealthStatus from omnibase_core.enums.node instead

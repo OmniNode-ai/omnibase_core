@@ -43,7 +43,7 @@ class LogEntry:
     level: str
     message: str
     timestamp: datetime
-    metadata: dict[str, Any] | None = None
+    metadata: dict[str, str] | None = None
 
 
 @dataclass
@@ -59,7 +59,7 @@ class ExecutionContext:
     logs: list[LogEntry]  # structured logs per step
     trust_score: float  # numeric trust level (0.0-1.0)
     timestamp: datetime  # execution timestamp
-    metadata: dict[str, Any]  # additional ad hoc data
+    metadata: dict[str, str]  # additional ad hoc data
     session_id: str | None = None  # session identifier
     correlation_id: str | None = None  # correlation identifier
     node_id: str | None = None  # executing node identifier
@@ -77,7 +77,7 @@ class Event:
     """
 
     type: str  # e.g., "workflow.step.completed"
-    payload: dict[str, Any]  # structured content
+    payload: dict[str, str]  # structured content
     timestamp: datetime
     source: str | None = None  # source node identifier
     correlation_id: str | None = None
@@ -386,7 +386,7 @@ class NodeResult(Generic[T]):
         value: T,
         provenance: list[str],
         trust_score: float = 1.0,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
         state_delta: dict | None = None,
         events: list[Event] | None = None,
         session_id: str | None = None,
@@ -419,7 +419,7 @@ class NodeResult(Generic[T]):
         error: ErrorInfo,
         provenance: list[str],
         trust_score: float = 0.0,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
         session_id: str | None = None,
         correlation_id: str | None = None,
         node_id: str | None = None,

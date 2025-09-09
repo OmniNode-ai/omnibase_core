@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import HealthStatus, NodeType
+from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 # Use HealthStatus from omnibase_core.enums.node instead

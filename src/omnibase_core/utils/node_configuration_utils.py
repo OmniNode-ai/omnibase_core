@@ -7,8 +7,8 @@ our architecture patterns and can be used by nodes via container injection.
 
 from typing import Optional
 
-from omnibase.protocols.core import ProtocolUtilsNodeConfiguration
-from omnibase.protocols.types.core_types import ContextValue
+from omnibase_spi.protocols.core import ProtocolUtilsNodeConfiguration
+from omnibase_spi.protocols.types.core_types import ContextValue
 
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.model.config.model_node_configuration import ModelNodeConfiguration

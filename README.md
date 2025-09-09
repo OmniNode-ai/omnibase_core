@@ -1,4 +1,4 @@
-# ONEX Core Framework (omnibase-core)
+# ONEX Core Framework (omnibase_core)
 
 Foundational implementations for the ONEX framework, providing base classes, dependency injection, and essential models.
 
@@ -17,7 +17,7 @@ This repository contains the core building blocks that all ONEX tools and servic
 ## Repository Structure
 
 ```
-src/omnibase/
+src/omnibase_core/
 ├── core/                           # Core framework components
 │   ├── infrastructure_service_bases.py  # Consolidated 4-node base class exports
 │   ├── node_effect_service.py           # EFFECT node base class
@@ -53,7 +53,7 @@ src/omnibase/
 
 ### 1. Initialize Git Repository
 ```bash
-cd /Volumes/PRO-G40/Code/omnibase-core
+cd /Volumes/PRO-G40/Code/omnibase_core
 git init
 git add .
 git commit -m "Initial commit: ONEX core framework implementation"
@@ -67,7 +67,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "omnibase-core"
+name = "omnibase_core"
 version = "0.1.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [{name = "OmniNode Team", email = "team@omninode.ai"}]
@@ -268,7 +268,7 @@ This repository implements the protocols defined in omnibase-spi:
 class ProtocolEventBus(Protocol):
     def publish(self, event: ModelEvent) -> None: ...
 
-# Implementation (in omnibase-core)  
+# Implementation (in omnibase_core)  
 class EventBusService(ProtocolEventBus):
     def publish(self, event: ModelEvent) -> None:
         # Concrete implementation

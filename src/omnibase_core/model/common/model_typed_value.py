@@ -1,316 +1,264 @@
 """
-Strongly-Typed Value Models
+Generic Value Container Models
 
-Discriminated union models to replace generic Union types throughout the codebase.
-These models provide type safety, validation, and clear semantics for values
-that can be of different types.
+Proper generic implementation to replace loose Union types throughout the codebase.
+Uses generic containers with protocol constraints instead of discriminated unions,
+following ONEX architecture patterns for type safety.
+
+This replaces patterns like Union[str, int, float, bool, dict, list] with
+type-safe generic containers that preserve exact type information.
 """
 
+import json
 from datetime import datetime
-from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from pathlib import Path
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-
-
-class EnumValueType(str, Enum):
-    """Enumeration of supported value types."""
-
-    string = "string"
-    integer = "integer"
-    float = "float"
-    boolean = "boolean"
-    datetime = "datetime"
-    list_string = "list_string"
-    null = "null"
-    dict = "dict"
-    list = "list"
+from pydantic import BaseModel, Field, field_validator
 
 
-class ModelStringValue(BaseModel):
-    """String value with validation."""
+# Protocol definitions (MUST start with "Protocol")
+@runtime_checkable
+class ProtocolJsonSerializable(Protocol):
+    """Protocol for values that can be JSON serialized."""
 
-    type: Literal["string"] = "string"
-    value: str = Field(..., description="String value")
-    
+    # Built-in types that implement this: str, int, float, bool, list, dict, None
+
+
+@runtime_checkable
+class ProtocolValidatable(Protocol):
+    """Protocol for values that can validate themselves."""
+
+    def is_valid(self) -> bool:
+        """Check if the value is valid."""
+        ...
+
+    def get_errors(self) -> list[str]:
+        """Get validation errors."""
+        ...
+
+
+# Constrained TypeVars for type safety
+SerializableValue = TypeVar(
+    "SerializableValue", str, int, float, bool, list, dict, type(None)
+)
+
+ValidatableValue = TypeVar("ValidatableValue", bound=ProtocolValidatable)
+
+
+class ModelValueContainer(BaseModel, Generic[SerializableValue]):
+    """
+    Generic container that preserves exact type information.
+
+    Replaces loose Union types with type-safe generic containers.
+    No wrapper classes needed - uses Python's native types directly.
+    """
+
+    value: SerializableValue = Field(..., description="The contained value")
+    metadata: dict[str, str] = Field(
+        default_factory=dict, description="Optional string metadata"
+    )
+
+    @property
+    def python_type(self) -> type:
+        """Get the actual Python type of the contained value."""
+        return type(self.value)
+
+    @property
+    def type_name(self) -> str:
+        """Get human-readable type name."""
+        return self.python_type.__name__
+
+    def is_type(self, expected_type: type[SerializableValue]) -> bool:
+        """Type-safe runtime type checking."""
+        return isinstance(self.value, expected_type)
+
+    def is_json_serializable(self) -> bool:
+        """Check if the value can be JSON serialized."""
+        try:
+            json.dumps(self.value)
+            return True
+        except (TypeError, ValueError):
+            return False
+
     @field_validator("value")
     @classmethod
-    def validate_string(cls, v: str) -> str:
-        """Validate string value."""
-        if not isinstance(v, str):
-            raise ValueError(f"Expected string, got {type(v).__name__}")
-        return v
+    def validate_serializable(cls, v: SerializableValue) -> SerializableValue:
+        """Validate that the value is JSON serializable."""
+        try:
+            json.dumps(v)
+            return v
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Value is not JSON serializable: {e}")
 
-
-class ModelIntegerValue(BaseModel):
-    """Integer value with validation."""
-
-    type: Literal["integer"] = "integer"
-    value: int = Field(..., description="Integer value")
-    min_value: int | None = Field(None, description="Optional minimum value")
-    max_value: int | None = Field(None, description="Optional maximum value")
-    
-    @model_validator(mode="after")
-    def validate_range(self) -> "ModelIntegerValue":
-        """Validate value is within range."""
-        if self.min_value is not None and self.value < self.min_value:
-            raise ValueError(f"Value {self.value} is below minimum {self.min_value}")
-        if self.max_value is not None and self.value > self.max_value:
-            raise ValueError(f"Value {self.value} is above maximum {self.max_value}")
-        return self
-
-
-class ModelFloatValue(BaseModel):
-    """Float value with validation."""
-
-    type: Literal["float"] = "float"
-    value: float = Field(..., description="Float value")
-    min_value: float | None = Field(None, description="Optional minimum value")
-    max_value: float | None = Field(None, description="Optional maximum value")
-    precision: int | None = Field(None, description="Optional decimal precision")
-    
-    @model_validator(mode="after")
-    def validate_range_and_precision(self) -> "ModelFloatValue":
-        """Validate value is within range and has correct precision."""
-        if self.min_value is not None and self.value < self.min_value:
-            raise ValueError(f"Value {self.value} is below minimum {self.min_value}")
-        if self.max_value is not None and self.value > self.max_value:
-            raise ValueError(f"Value {self.value} is above maximum {self.max_value}")
-        if self.precision is not None:
-            self.value = round(self.value, self.precision)
-        return self
-
-
-class ModelBooleanValue(BaseModel):
-    """Boolean value with validation."""
-
-    type: Literal["boolean"] = "boolean"
-    value: bool = Field(..., description="Boolean value")
-
-
-class ModelDateTimeValue(BaseModel):
-    """DateTime value with validation."""
-
-    type: Literal["datetime"] = "datetime"
-    value: datetime = Field(..., description="DateTime value")
-    format: str | None = Field(None, description="Optional datetime format string")
-    timezone: str | None = Field(None, description="Optional timezone")
-
-
-class ModelListStringValue(BaseModel):
-    """List of strings with validation."""
-
-    type: Literal["list_string"] = "list_string"
-    value: list[str] = Field(..., description="List of string values")
-    min_length: int | None = Field(None, description="Minimum list length")
-    max_length: int | None = Field(None, description="Maximum list length")
-    unique: bool = Field(False, description="Whether values must be unique")
-    
-    @model_validator(mode="after")
-    def validate_list(self) -> "ModelListStringValue":
-        """Validate list constraints."""
-        if self.min_length is not None and len(self.value) < self.min_length:
-            raise ValueError(f"List has {len(self.value)} items, minimum is {self.min_length}")
-        if self.max_length is not None and len(self.value) > self.max_length:
-            raise ValueError(f"List has {len(self.value)} items, maximum is {self.max_length}")
-        if self.unique and len(self.value) != len(set(self.value)):
-            raise ValueError("List values must be unique")
-        return self
-
-
-class ModelNullValue(BaseModel):
-    """Null value representation."""
-
-    type: Literal["null"] = "null"
-    value: None = Field(None, description="Null value")
-
-
-class ModelDictValue(BaseModel):
-    """Dictionary value with recursive typing."""
-
-    type: Literal["dict"] = "dict"
-    value: dict[str, Any] = Field(..., description="Dictionary value")
-    schema: dict[str, Any] | None = Field(None, description="Optional JSON schema for validation")
-
-
-class ModelListValue(BaseModel):
-    """Generic list value with recursive typing."""
-
-    type: Literal["list"] = "list"
-    value: list[Any] = Field(..., description="List value")
-    item_type: EnumValueType | None = Field(None, description="Optional type constraint for items")
-    min_length: int | None = Field(None, description="Minimum list length")
-    max_length: int | None = Field(None, description="Maximum list length")
-    
-    @model_validator(mode="after")
-    def validate_list(self) -> "ModelListValue":
-        """Validate list constraints."""
-        if self.min_length is not None and len(self.value) < self.min_length:
-            raise ValueError(f"List has {len(self.value)} items, minimum is {self.min_length}")
-        if self.max_length is not None and len(self.value) > self.max_length:
-            raise ValueError(f"List has {len(self.value)} items, maximum is {self.max_length}")
-        return self
-
-
-# Discriminated union for all typed values
-ModelTypedValue = Annotated[
-    Union[
-        ModelStringValue,
-        ModelIntegerValue,
-        ModelFloatValue,
-        ModelBooleanValue,
-        ModelDateTimeValue,
-        ModelListStringValue,
-        ModelNullValue,
-        ModelDictValue,
-        ModelListValue,
-    ],
-    Field(discriminator="type"),
-]
-
-
-class ModelTypedValueContainer(BaseModel):
-    """
-    Container for typed values with automatic type detection.
-    
-    This model can automatically convert Python values to the appropriate
-    typed model, or accept pre-typed models directly.
-    """
-
-    value: ModelTypedValue = Field(..., description="The typed value")
-    metadata: dict[str, Any] | None = Field(None, description="Optional metadata")
-    
+    # Type-safe factory methods
     @classmethod
-    def from_python_value(cls, value: Any, **kwargs: Any) -> "ModelTypedValueContainer":
-        """
-        Create a typed value container from a Python value.
-        
-        Args:
-            value: Python value to convert
-            **kwargs: Additional metadata
-            
-        Returns:
-            ModelTypedValueContainer with the appropriate typed value
-        """
-        typed_value: ModelTypedValue
-        
-        if value is None:
-            typed_value = ModelNullValue(value=None)
-        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
-            typed_value = ModelBooleanValue(value=value)
-        elif isinstance(value, int):
-            typed_value = ModelIntegerValue(value=value)
-        elif isinstance(value, float):
-            typed_value = ModelFloatValue(value=value)
-        elif isinstance(value, str):
-            typed_value = ModelStringValue(value=value)
-        elif isinstance(value, datetime):
-            typed_value = ModelDateTimeValue(value=value)
-        elif isinstance(value, list):
-            # Check if it's a list of strings
-            if all(isinstance(item, str) for item in value):
-                typed_value = ModelListStringValue(value=value)
-            else:
-                typed_value = ModelListValue(value=value)
-        elif isinstance(value, dict):
-            typed_value = ModelDictValue(value=value)
-        else:
-            # Fallback to string representation
-            typed_value = ModelStringValue(value=str(value))
-        
-        return cls(value=typed_value, metadata=kwargs if kwargs else None)
-    
-    def to_python_value(self) -> Any:
-        """
-        Convert the typed value back to a Python value.
-        
-        Returns:
-            The Python value
-        """
-        if isinstance(self.value, ModelNullValue):
-            return None
-        return self.value.value
-    
-    @property
-    def value_type(self) -> EnumValueType:
-        """Get the type of the contained value."""
-        return EnumValueType(self.value.type)
+    def create_string(cls, value: str, **metadata: str) -> "ModelValueContainer[str]":
+        """Create a string value container."""
+        return cls(value=value, metadata=metadata)
+
+    @classmethod
+    def create_int(cls, value: int, **metadata: str) -> "ModelValueContainer[int]":
+        """Create an integer value container."""
+        return cls(value=value, metadata=metadata)
+
+    @classmethod
+    def create_float(
+        cls, value: float, **metadata: str
+    ) -> "ModelValueContainer[float]":
+        """Create a float value container."""
+        return cls(value=value, metadata=metadata)
+
+    @classmethod
+    def create_bool(cls, value: bool, **metadata: str) -> "ModelValueContainer[bool]":
+        """Create a boolean value container."""
+        return cls(value=value, metadata=metadata)
+
+    @classmethod
+    def create_list(cls, value: list, **metadata: str) -> "ModelValueContainer[list]":
+        """Create a list value container."""
+        return cls(value=value, metadata=metadata)
+
+    @classmethod
+    def create_dict(cls, value: dict, **metadata: str) -> "ModelValueContainer[dict]":
+        """Create a dict value container."""
+        return cls(value=value, metadata=metadata)
 
 
 class ModelTypedMapping(BaseModel):
     """
     Strongly-typed mapping to replace Dict[str, Any] patterns.
-    
+
     This model provides a type-safe alternative to generic dictionaries,
     where each value is properly typed and validated.
     """
 
-    data: dict[str, ModelTypedValue] = Field(
+    data: dict[str, ModelValueContainer[SerializableValue]] = Field(
         default_factory=dict,
-        description="Mapping of keys to typed values",
+        description="Mapping of keys to typed value containers",
     )
-    
-    def set_value(self, key: str, value: Any) -> None:
-        """
-        Set a value in the mapping with automatic type conversion.
-        
-        Args:
-            key: The key to set
-            value: The value to set (will be automatically typed)
-        """
-        container = ModelTypedValueContainer.from_python_value(value)
-        self.data[key] = container.value
-    
-    def get_value(self, key: str, default: Any = None) -> Any:
-        """
-        Get a value from the mapping, converting to Python type.
-        
-        Args:
-            key: The key to get
-            default: Default value if key not found
-            
-        Returns:
-            The Python value or default
-        """
+
+    def set_string(self, key: str, value: str) -> None:
+        """Set a string value."""
+        self.data[key] = ModelValueContainer.create_string(value)
+
+    def set_int(self, key: str, value: int) -> None:
+        """Set an integer value."""
+        self.data[key] = ModelValueContainer.create_int(value)
+
+    def set_float(self, key: str, value: float) -> None:
+        """Set a float value."""
+        self.data[key] = ModelValueContainer.create_float(value)
+
+    def set_bool(self, key: str, value: bool) -> None:
+        """Set a boolean value."""
+        self.data[key] = ModelValueContainer.create_bool(value)
+
+    def set_list(self, key: str, value: list) -> None:
+        """Set a list value."""
+        self.data[key] = ModelValueContainer.create_list(value)
+
+    def set_dict(self, key: str, value: dict) -> None:
+        """Set a dict value."""
+        self.data[key] = ModelValueContainer.create_dict(value)
+
+    def get_value(
+        self, key: str, default: SerializableValue | None = None
+    ) -> SerializableValue | None:
+        """Get a value from the mapping."""
         if key not in self.data:
             return default
-        
-        typed_value = self.data[key]
-        if isinstance(typed_value, ModelNullValue):
-            return None
-        return typed_value.value
-    
+        return self.data[key].value
+
+    def get_string(self, key: str, default: str | None = None) -> str | None:
+        """Get a string value with type safety."""
+        container = self.data.get(key)
+        if container is None:
+            return default
+        if not container.is_type(str):
+            raise ValueError(
+                f"Value for key '{key}' is not a string, got {container.type_name}"
+            )
+        return container.value  # Type checker knows this is str
+
+    def get_int(self, key: str, default: int | None = None) -> int | None:
+        """Get an integer value with type safety."""
+        container = self.data.get(key)
+        if container is None:
+            return default
+        if not container.is_type(int):
+            raise ValueError(
+                f"Value for key '{key}' is not an int, got {container.type_name}"
+            )
+        return container.value  # Type checker knows this is int
+
     def has_key(self, key: str) -> bool:
         """Check if a key exists in the mapping."""
         return key in self.data
-    
+
     def keys(self) -> list[str]:
         """Get all keys in the mapping."""
         return list(self.data.keys())
-    
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the typed mapping to a regular Python dictionary."""
-        result = {}
-        for key, typed_value in self.data.items():
-            if isinstance(typed_value, ModelNullValue):
-                result[key] = None
-            else:
-                result[key] = typed_value.value
-        return result
-    
+
+    def to_python_dict(self) -> dict[str, SerializableValue]:
+        """Convert to a regular Python dictionary with native types."""
+        return {key: container.value for key, container in self.data.items()}
+
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelTypedMapping":
+    def from_python_dict(
+        cls, data: dict[str, SerializableValue]
+    ) -> "ModelTypedMapping":
         """
         Create a typed mapping from a regular Python dictionary.
-        
+
         Args:
-            data: Dictionary to convert
-            
+            data: Dictionary with JSON-serializable values
+
         Returns:
-            ModelTypedMapping with typed values
+            ModelTypedMapping with typed containers
         """
-        typed_data = {}
+        instance = cls()
         for key, value in data.items():
-            container = ModelTypedValueContainer.from_python_value(value)
-            typed_data[key] = container.value
-        return cls(data=typed_data)
+            # Type-safe assignment based on Python type
+            if isinstance(value, str):
+                instance.set_string(key, value)
+            elif isinstance(value, bool):  # Check bool before int
+                instance.set_bool(key, value)
+            elif isinstance(value, int):
+                instance.set_int(key, value)
+            elif isinstance(value, float):
+                instance.set_float(key, value)
+            elif isinstance(value, list):
+                instance.set_list(key, value)
+            elif isinstance(value, dict):
+                instance.set_dict(key, value)
+            elif value is None:
+                # For None values, we'll store as a special case
+                # This is the only legitimate use of a "null" representation
+                continue  # Skip None values for now
+            else:
+                raise ValueError(f"Unsupported type for key '{key}': {type(value)}")
+        return instance
+
+
+# Type aliases for common patterns
+StringContainer = ModelValueContainer[str]
+IntContainer = ModelValueContainer[int]
+FloatContainer = ModelValueContainer[float]
+BoolContainer = ModelValueContainer[bool]
+ListContainer = ModelValueContainer[list]
+DictContainer = ModelValueContainer[dict]
+
+
+# ARCHITECTURAL PRINCIPLE: Strong Typing Only
+#
+# ❌ NO string paths - always use Path objects
+# ❌ NO string versions - always use ModelSemVer objects
+# ❌ NO Union[Path, str] fallbacks - choose one type and stick to it
+# ❌ NO "convenience" conversion methods - use proper types from the start
+#
+# ✅ file_path: Path (not str | Path)
+# ✅ version: ModelSemVer (not str | ModelSemVer)
+# ✅ timestamp: datetime (not str | datetime)
+#
+# This prevents type confusion, platform issues, and API inconsistencies.
