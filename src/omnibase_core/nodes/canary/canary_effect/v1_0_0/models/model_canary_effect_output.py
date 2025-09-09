@@ -8,7 +8,7 @@ Eliminates JSON/YAML parsing architecture violations by using proper contract-dr
 
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelCanaryEffectOutput(BaseModel):
@@ -31,8 +31,8 @@ class ModelCanaryEffectOutput(BaseModel):
         description="Result data from the effect operation - object type from contract",
     )
 
-    success: Optional[bool] = Field(
-        None, description="Whether operation succeeded - boolean type from contract"
+    success: bool = Field(
+        True, description="Whether operation succeeded - boolean type from contract"
     )
 
     error_message: Optional[str] = Field(
@@ -50,17 +50,15 @@ class ModelCanaryEffectOutput(BaseModel):
         None, description="Request correlation ID - string type from contract"
     )
 
-    class Config:
-        """Pydantic model configuration following ONEX standards."""
-
+    # Pydantic v2 configuration using ConfigDict
+    model_config = ConfigDict(
         # Enable validation on assignment for runtime safety
-        validate_assignment = True
-
-        # Enable JSON schema generation
-        json_schema_serialization_defaults_required = True
-
+        validate_assignment=True,
         # Forbid extra fields to maintain contract compliance
-        extra = "forbid"
+        extra="forbid",
+        # Enable JSON schema generation
+        json_schema_serialization_defaults_required=True,
+    )
 
     @field_validator("execution_time_ms")
     @classmethod
@@ -70,29 +68,14 @@ class ModelCanaryEffectOutput(BaseModel):
             raise ValueError("execution_time_ms must be non-negative")
         return v
 
-    @field_validator("error_message")
-    @classmethod
-    def validate_error_message(cls, v: Optional[str]) -> Optional[str]:
-        """Validate error message format when provided."""
-        # Basic validation - just ensure it's a string if provided
-        if v is not None and not isinstance(v, str):
-            raise ValueError("error_message must be a string")
-        return v
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization validation for contract compliance."""
-        # Set default success value based on error_message
-        if self.success is None:
-            self.success = self.error_message is None
-
     def is_successful(self) -> bool:
         """
         Check if the operation was successful.
 
         Returns:
-            bool: True if operation succeeded, False otherwise
+            bool: True if operation succeeded with no error, False otherwise
         """
-        return self.success is True and self.error_message is None
+        return self.success and self.error_message is None
 
     def has_execution_metrics(self) -> bool:
         """

@@ -6,10 +6,11 @@ Strongly typed Pydantic model generated from ONEX contract input_state schema.
 Eliminates JSON/YAML parsing architecture violations by using proper contract-driven models.
 """
 
+import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EnumCanaryOperationType(str, Enum):
@@ -53,32 +54,21 @@ class ModelCanaryEffectInput(BaseModel):
     )
 
     correlation_id: Optional[str] = Field(
-        None,
-        description="Request correlation ID (optional) - string type from contract",
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Request correlation ID (auto-generated if not provided) - string type from contract",
     )
 
-    class Config:
-        """Pydantic model configuration following ONEX standards."""
-
+    # Pydantic v2 configuration using ConfigDict
+    model_config = ConfigDict(
         # Enable validation on assignment for runtime safety
-        validate_assignment = True
-
+        validate_assignment=True,
         # Use enum values for serialization
-        use_enum_values = True
-
-        # Enable JSON schema generation
-        json_schema_serialization_defaults_required = True
-
+        use_enum_values=True,
         # Forbid extra fields to maintain contract compliance
-        extra = "forbid"
-
-    def model_post_init(self, __context: Any) -> None:
-        """Post-initialization validation for contract compliance."""
-        # Ensure correlation_id is generated if not provided
-        if self.correlation_id is None:
-            import uuid
-
-            self.correlation_id = str(uuid.uuid4())
+        extra="forbid",
+        # Enable JSON schema generation
+        json_schema_serialization_defaults_required=True,
+    )
 
     def to_operation_data(self) -> Dict[str, Any]:
         """
