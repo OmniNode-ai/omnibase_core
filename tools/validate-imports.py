@@ -6,6 +6,7 @@ This tool systematically tests all critical imports to ensure
 downstream repositories can reliably depend on omnibase_core.
 """
 
+import importlib
 import sys
 import traceback
 from pathlib import Path
@@ -21,7 +22,7 @@ class ImportValidator:
     def test_import(self, import_path: str, description: str) -> bool:
         """Test a single import and record result."""
         try:
-            exec(f"import {import_path}")
+            importlib.import_module(import_path)
             self.results.append((description, True, "OK"))
             return True
         except Exception as e:
@@ -33,7 +34,15 @@ class ImportValidator:
     ) -> bool:
         """Test a from...import statement and record result."""
         try:
-            exec(f"from {from_path} import {import_items}")
+            # Import the module first
+            module = importlib.import_module(from_path)
+
+            # Test that each requested item exists in the module
+            items = [item.strip() for item in import_items.split(",")]
+            for item in items:
+                if not hasattr(module, item):
+                    raise ImportError(f"cannot import name '{item}' from '{from_path}'")
+
             self.results.append((description, True, "OK"))
             return True
         except Exception as e:
