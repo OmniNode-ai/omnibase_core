@@ -343,13 +343,17 @@ class NodeCoreBase(ABC):
                 if contract_data_raw:
                     # Validate contract data using Pydantic model
                     try:
-                        contract_data = ModelNodeContractData.from_dict(contract_data_raw)
-                        self.contract_data = contract_data_raw  # Keep raw for backward compatibility
+                        contract_data = ModelNodeContractData.from_dict(
+                            contract_data_raw
+                        )
+                        self.contract_data = (
+                            contract_data_raw  # Keep raw for backward compatibility
+                        )
                         self.version = contract_data.version
                     except Exception as e:
                         raise OnexError(
                             error_code=CoreErrorCode.CONTRACT_VALIDATION_FAILED,
-                            message=f"Contract validation failed for {self.__class__.__name__}: {str(e)}"
+                            message=f"Contract validation failed for {self.__class__.__name__}: {str(e)}",
                         )
 
                     emit_log_event(
