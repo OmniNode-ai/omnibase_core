@@ -60,9 +60,58 @@ class ImportValidator:
             "core_types",
         }
 
+    def _test_static_import(self, import_path: str):
+        """Perform static import tests without dynamic import calls.
+
+        Security: This method uses only static imports to avoid Semgrep warnings
+        about dynamic imports that could lead to code injection.
+        """
+        if import_path == "omnibase_core":
+            import omnibase_core
+
+            return omnibase_core
+        elif import_path == "omnibase_core.core.model_onex_container":
+            from omnibase_core.core import model_onex_container
+
+            return model_onex_container
+        elif import_path == "omnibase_core.core.infrastructure_service_bases":
+            from omnibase_core.core import infrastructure_service_bases
+
+            return infrastructure_service_bases
+        elif import_path == "omnibase_core.model.common.model_typed_value":
+            from omnibase_core.model.common import model_typed_value
+
+            return model_typed_value
+        elif import_path == "omnibase_core.enums.enum_log_level":
+            from omnibase_core.enums import enum_log_level
+
+            return enum_log_level
+        elif import_path == "omnibase_core.core.errors.core_errors":
+            from omnibase_core.core.errors import core_errors
+
+            return core_errors
+        elif import_path == "omnibase_core.model.core.model_event_envelope":
+            from omnibase_core.model.core import model_event_envelope
+
+            return model_event_envelope
+        elif import_path == "omnibase_core.cli.config":
+            from omnibase_core.cli import config
+
+            return config
+        elif import_path == "omnibase_spi.protocols.core":
+            from omnibase_spi.protocols import core
+
+            return core
+        elif import_path == "omnibase_spi.protocols.types":
+            from omnibase_spi.protocols import types
+
+            return types
+        else:
+            raise ImportError(f"No module named '{import_path}'")
+
     def test_import(self, import_path: str, description: str) -> bool:
         """Test a single import and record result."""
-        # Security: Validate import path against whitelist
+        # Security: Use static import mapping instead of dynamic imports
         if import_path not in self.allowed_imports:
             self.results.append(
                 (description, False, f"Import path '{import_path}' not in whitelist")
@@ -70,7 +119,8 @@ class ImportValidator:
             return False
 
         try:
-            importlib.import_module(import_path)
+            # Security: Use static imports instead of importlib.import_module
+            self._test_static_import(import_path)
             self.results.append((description, True, "OK"))
             return True
         except Exception as e:
@@ -98,8 +148,8 @@ class ImportValidator:
                 return False
 
         try:
-            # Import the module first
-            module = importlib.import_module(from_path)
+            # Security: Use static imports instead of importlib.import_module
+            module = self._test_static_import(from_path)
 
             # Test that each requested item exists in the module
             for item in items:
