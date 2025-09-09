@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.model.core.model_orchestrator_metrics import ModelOrchestratorMetrics
 
-
 class ModelOrchestratorInfo(BaseModel):
     """
     Orchestrator information with typed fields.
@@ -95,11 +94,6 @@ class ModelOrchestratorInfo(BaseModel):
     )
 
     model_config = ConfigDict()
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

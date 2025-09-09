@@ -44,6 +44,7 @@ class ModelCredentialsAnalysis(BaseModel):
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for backwards compatibility."""
+        # Custom dictionary format for credentials analysis
         return {
             "strength_score": self.strength_score,
             "password_entropy": self.password_entropy,

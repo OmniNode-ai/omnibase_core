@@ -47,6 +47,7 @@ class ModelGenericProperties(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to flat dictionary for backward compatibility."""
+        # Custom flattening logic for backward compatibility
         result = {}
         result.update(self.string_properties)
         result.update(self.numeric_properties)

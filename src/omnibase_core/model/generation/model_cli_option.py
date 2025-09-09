@@ -64,6 +64,7 @@ class ModelCliOption(BaseModel):
 
     def to_dict(self) -> ModelCliOptionData:
         """Convert to structured data format."""
+        # Custom transformation to structured data format
         return ModelCliOptionData(
             name=self.name,
             type=self.type,

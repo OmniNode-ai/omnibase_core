@@ -158,9 +158,7 @@ class ModelPerformanceProfile(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.model_dump(exclude_none=True)
+
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelPerformanceProfile":

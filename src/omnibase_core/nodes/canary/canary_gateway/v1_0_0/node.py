@@ -163,7 +163,7 @@ class ResponseAggregator:
         key_components = {
             "operation": operation_type,
             "tools": sorted(target_tools),
-            "data": message_data.dict(),
+            "data": message_data.model_dump(),
         }
 
         key_string = json.dumps(key_components, sort_keys=True)

@@ -34,6 +34,7 @@ class ModelConfigurationSummary(BaseModel):
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for backwards compatibility."""
+        # Custom dictionary format for configuration summary
         return {
             "backend_type": self.backend_type,
             "backend_capabilities": self.backend_capabilities,

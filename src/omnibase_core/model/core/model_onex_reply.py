@@ -325,7 +325,7 @@ class ModelOnexReply(BaseModel):
         Returns:
             New reply instance with metadata
         """
-        return self.copy(update={"metadata": metadata})
+        return self.model_copy(update={"metadata": metadata})
 
     def add_warning(self, warning: str) -> "ModelOnexReply":
         """
@@ -338,7 +338,7 @@ class ModelOnexReply(BaseModel):
             New reply instance with added warning
         """
         new_warnings = [*self.warnings, warning]
-        return self.copy(update={"warnings": new_warnings})
+        return self.model_copy(update={"warnings": new_warnings})
 
     def with_performance_metrics(
         self,
@@ -353,7 +353,7 @@ class ModelOnexReply(BaseModel):
         Returns:
             New reply instance with performance metrics
         """
-        return self.copy(update={"performance": metrics})
+        return self.model_copy(update={"performance": metrics})
 
     def with_routing(
         self,
@@ -435,26 +435,30 @@ class ModelOnexReply(BaseModel):
 
     def to_dict(self) -> dict[str, str]:
         """Convert reply to dictionary representation."""
+        # Use model_dump() as the base for consistency
+        result = self.model_dump()
+        
+        # Apply custom string formatting and transformations
         return {
-            "reply_id": str(self.reply_id),
-            "correlation_id": str(self.correlation_id),
-            "timestamp": self.timestamp.isoformat(),
-            "status": self.status,
-            "success": str(self.success),
-            "data": str(self.data.dict()) if self.data else "",
-            "data_type": self.data_type or "",
-            "error": str(self.error.dict()) if self.error else "",
-            "validation_errors": str(self.validation_errors),
-            "source_tool": self.source_tool or "",
-            "target_tool": self.target_tool or "",
-            "operation": self.operation or "",
-            "performance": str(self.performance.dict()) if self.performance else "",
-            "metadata": str(self.metadata.dict()) if self.metadata else "",
-            "onex_version": str(self.onex_version.dict()),
-            "reply_version": str(self.reply_version.dict()),
-            "request_id": self.request_id or "",
-            "trace_id": self.trace_id or "",
-            "span_id": self.span_id or "",
-            "warnings": str(self.warnings),
-            "debug_info": str(self.debug_info) if self.debug_info else "",
+            "reply_id": str(result["reply_id"]),
+            "correlation_id": str(result["correlation_id"]),
+            "timestamp": result["timestamp"].isoformat() if isinstance(result["timestamp"], datetime) else str(result["timestamp"]),
+            "status": result["status"],
+            "success": str(result["success"]),
+            "data": str(self.data.model_dump()) if self.data else "",
+            "data_type": result.get("data_type") or "",
+            "error": str(self.error.model_dump()) if self.error else "",
+            "validation_errors": str(result["validation_errors"]),
+            "source_tool": result.get("source_tool") or "",
+            "target_tool": result.get("target_tool") or "",
+            "operation": result.get("operation") or "",
+            "performance": str(self.performance.model_dump()) if self.performance else "",
+            "metadata": str(self.metadata.model_dump()) if self.metadata else "",
+            "onex_version": str(self.onex_version.model_dump()),
+            "reply_version": str(self.reply_version.model_dump()),
+            "request_id": result.get("request_id") or "",
+            "trace_id": result.get("trace_id") or "",
+            "span_id": result.get("span_id") or "",
+            "warnings": str(result["warnings"]),
+            "debug_info": str(result.get("debug_info")) if self.debug_info else "",
         }

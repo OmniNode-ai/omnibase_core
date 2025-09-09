@@ -141,7 +141,7 @@ class ModelOnexEnvelope(BaseModel):
         Returns:
             New envelope instance with metadata
         """
-        return self.copy(update={"metadata": metadata})
+        return self.model_copy(update={"metadata": metadata})
 
     def with_security_context(
         self,
@@ -156,7 +156,7 @@ class ModelOnexEnvelope(BaseModel):
         Returns:
             New envelope instance with security context
         """
-        return self.copy(update={"security_context": security_context})
+        return self.model_copy(update={"security_context": security_context})
 
     def with_routing(
         self,
@@ -211,7 +211,7 @@ class ModelOnexEnvelope(BaseModel):
         Returns:
             New envelope instance with incremented retry count
         """
-        return self.copy(update={"retry_count": self.retry_count + 1})
+        return self.model_copy(update={"retry_count": self.retry_count + 1})
 
     def is_high_priority(self) -> bool:
         """Check if envelope has high priority (>= 8)."""
@@ -239,25 +239,29 @@ class ModelOnexEnvelope(BaseModel):
 
     def to_dict(self) -> dict[str, str]:
         """Convert envelope to dictionary representation."""
+        # Use model_dump() as base for consistency
+        result = self.model_dump()
+        
+        # Apply custom string formatting and transformations
         return {
-            "envelope_id": str(self.envelope_id),
-            "correlation_id": str(self.correlation_id),
-            "timestamp": self.timestamp.isoformat(),
-            "source_tool": self.source_tool,
-            "target_tool": self.target_tool,
-            "operation": self.operation,
-            "payload": str(self.payload.dict()) if self.payload else "",
-            "payload_type": self.payload_type or "",
+            "envelope_id": str(result["envelope_id"]),
+            "correlation_id": str(result["correlation_id"]),
+            "timestamp": result["timestamp"].isoformat() if isinstance(result["timestamp"], datetime) else str(result["timestamp"]),
+            "source_tool": result.get("source_tool") or "",
+            "target_tool": result.get("target_tool") or "",
+            "operation": result.get("operation") or "",
+            "payload": str(self.payload.model_dump()) if self.payload else "",
+            "payload_type": result.get("payload_type") or "",
             "security_context": (
-                str(self.security_context.dict()) if self.security_context else ""
+                str(self.security_context.model_dump()) if self.security_context else ""
             ),
-            "metadata": str(self.metadata.dict()) if self.metadata else "",
+            "metadata": str(self.metadata.model_dump()) if self.metadata else "",
             "onex_version": str(self.onex_version),
             "envelope_version": str(self.envelope_version),
-            "request_id": self.request_id or "",
-            "trace_id": self.trace_id or "",
-            "span_id": self.span_id or "",
-            "priority": str(self.priority),
-            "timeout_seconds": str(self.timeout_seconds),
-            "retry_count": str(self.retry_count),
+            "request_id": result.get("request_id") or "",
+            "trace_id": result.get("trace_id") or "",
+            "span_id": result.get("span_id") or "",
+            "priority": str(result["priority"]),
+            "timeout_seconds": str(result.get("timeout_seconds")),
+            "retry_count": str(result["retry_count"]),
         }

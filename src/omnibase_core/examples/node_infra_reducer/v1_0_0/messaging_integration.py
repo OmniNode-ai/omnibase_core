@@ -137,7 +137,7 @@ class MessagingIntegration:
             tool_type="reducer",
             version="1.0.0",
             health_status="healthy",
-            metadata=metadata_dict.dict(),
+            metadata=metadata_dict.model_dump(),
             tags=["infrastructure", "reducer", "coordinator"],
         )
 
@@ -177,7 +177,7 @@ class MessagingIntegration:
 
             async with self.session.post(
                 f"{self.local_registry_url}/v0/tools",
-                json=self.tool_metadata.dict(),
+                json=self.tool_metadata.model_dump(),
                 headers={"Content-Type": "application/json"},
             ) as response:
                 if response.status in (200, 201):
@@ -228,12 +228,12 @@ class MessagingIntegration:
                         getattr(self, "_pending_registry_requests", {}),
                     ),
                     memory_usage_mb=self._get_memory_usage(),
-                ).dict(),
+                ).model_dump(),
             )
 
             async with self.session.post(
                 f"{self.local_registry_url}/v0/heartbeat",
-                json=heartbeat.dict(),
+                json=heartbeat.model_dump(),
                 headers={"Content-Type": "application/json"},
             ) as response:
                 if response.status == 200:
@@ -269,7 +269,7 @@ class MessagingIntegration:
         try:
             request = CommandRequest(
                 command=command,
-                parameters=parameters.dict(),
+                parameters=parameters.model_dump(),
                 scope=scope,
                 timeout_ms=timeout_ms,
             )
@@ -277,7 +277,7 @@ class MessagingIntegration:
             # Submit command
             async with self.session.post(
                 f"{self.group_gateway_url}/v0/commands/{command}",
-                json=request.dict(),
+                json=request.model_dump(),
                 headers={"Content-Type": "application/json"},
             ) as response:
                 if response.status == 202:
@@ -371,7 +371,7 @@ class MessagingIntegration:
 
             # Submit through Group Gateway
             command_params = ModelCommandParameters(
-                registry_request=registry_request.dict(),
+                registry_request=registry_request.model_dump(),
                 endpoint_path=endpoint_path,
                 http_method=http_method,
                 source="infrastructure_reducer",
@@ -435,7 +435,7 @@ class MessagingIntegration:
         try:
             self.tool_metadata.health_status = status
             if metadata:
-                self.tool_metadata.metadata.update(metadata.dict())
+                self.tool_metadata.metadata.update(metadata.model_dump())
 
             # Force heartbeat with updated status
             await self.send_heartbeat()

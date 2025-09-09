@@ -498,6 +498,7 @@ class ModelDependencyGraph(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert graph to dictionary representation."""
+        # Custom graph serialization using model_dump() for nodes and edges
         return {
             "graph_id": self.graph_id,
             "name": self.name,

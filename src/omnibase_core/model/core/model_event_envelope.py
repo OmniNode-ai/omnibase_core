@@ -276,15 +276,15 @@ class ModelEventEnvelope(BaseModel):
         """Create a copy of this envelope for retry delivery."""
         # Create a new envelope with the same payload and route spec
         new_envelope = ModelEventEnvelope(
-            payload=self.payload.copy(deep=True),
-            route_spec=self.route_spec.copy(deep=True),
+            payload=self.payload.model_copy(deep=True),
+            route_spec=self.route_spec.model_copy(deep=True),
             source_node_id=self.source_node_id,
             correlation_id=self.correlation_id,
             metadata=self.metadata.copy(),
         )
 
         # Copy trace but reset delivery state
-        new_envelope.trace = [hop.copy(deep=True) for hop in self.trace]
+        new_envelope.trace = [hop.model_copy(deep=True) for hop in self.trace]
         new_envelope.current_hop_count = self.current_hop_count
         new_envelope.delivery_attempts = self.delivery_attempts + 1
 

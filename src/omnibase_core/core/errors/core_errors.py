@@ -20,7 +20,6 @@
 # meta_type: tool
 # === /OmniNode:Metadata ===
 
-
 """
 Shared error codes and exit code mapping for all ONEX nodes.
 
@@ -50,7 +49,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
-
 class CLIExitCode(int, Enum):
     """Standard CLI exit codes for ONEX operations."""
 
@@ -61,7 +59,6 @@ class CLIExitCode(int, Enum):
     SKIPPED = 4
     FIXED = 5
     INFO = 6
-
 
 # Global mapping from EnumOnexStatus to CLI exit codes
 STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, CLIExitCode] = {
@@ -74,7 +71,6 @@ STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, CLIExitCode] = {
     EnumOnexStatus.INFO: CLIExitCode.INFO,
     EnumOnexStatus.UNKNOWN: CLIExitCode.ERROR,  # Treat unknown as error
 }
-
 
 def get_exit_code_for_status(status: EnumOnexStatus) -> int:
     """
@@ -98,7 +94,6 @@ def get_exit_code_for_status(status: EnumOnexStatus) -> int:
         2
     """
     return STATUS_TO_EXIT_CODE.get(status, CLIExitCode.ERROR).value
-
 
 class OnexErrorCode(str, Enum):
     """
@@ -134,7 +129,6 @@ class OnexErrorCode(str, Enum):
         for more specific mapping.
         """
         return CLIExitCode.ERROR.value
-
 
 class CoreErrorCode(OnexErrorCode):
     """
@@ -230,7 +224,6 @@ class CoreErrorCode(OnexErrorCode):
         """Get the appropriate CLI exit code for this error."""
         return get_exit_code_for_core_error(self)
 
-
 # Mapping from core error codes to exit codes
 CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     # Validation errors -> ERROR
@@ -279,7 +272,6 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[CoreErrorCode, CLIExitCode] = {
     CoreErrorCode.PROCESSING_ERROR: CLIExitCode.ERROR,
 }
 
-
 def get_exit_code_for_core_error(error_code: CoreErrorCode) -> int:
     """
     Get the appropriate CLI exit code for a core error code.
@@ -291,7 +283,6 @@ def get_exit_code_for_core_error(error_code: CoreErrorCode) -> int:
         The corresponding CLI exit code (integer)
     """
     return CORE_ERROR_CODE_TO_EXIT_CODE.get(error_code, CLIExitCode.ERROR).value
-
 
 def get_core_error_description(error_code: CoreErrorCode) -> str:
     """
@@ -344,7 +335,6 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
     }
     return descriptions.get(error_code, "Unknown error")
 
-
 class ModelOnexError(BaseModel):
     """
     Pydantic model for ONEX error serialization and validation.
@@ -396,7 +386,6 @@ class ModelOnexError(BaseModel):
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
-
 
 class ModelOnexWarning(BaseModel):
     """
@@ -451,7 +440,6 @@ class ModelOnexWarning(BaseModel):
         description="Additional context information for the warning",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
-
 
 class OnexError(Exception):
     """
@@ -679,9 +667,6 @@ class OnexError(Exception):
         """Convert error to JSON string for logging/telemetry."""
         return self.model.model_dump_json()
 
-    def to_dict(self) -> dict[str, str | int | bool | float]:
-        """Convert error to dictionary for serialization (alias for model_dump)."""
-        return self.model_dump()
 
     def to_json(self) -> str:
         """Convert error to JSON string for logging/telemetry (alias for model_dump_json)."""
@@ -717,7 +702,6 @@ class OnexError(Exception):
     def model_json_schema(cls) -> dict[str, str | int | bool | float]:
         """Get the JSON schema for OnexError."""
         return ModelOnexError.model_json_schema()
-
 
 class CLIAdapter:
     """
@@ -795,10 +779,8 @@ class CLIAdapter:
         )
         sys.exit(exit_code)
 
-
 # Registry for component-specific error code mappings
 _ERROR_CODE_REGISTRIES: dict[str, type[OnexErrorCode]] = {}
-
 
 def register_error_codes(component: str, error_code_enum: type[OnexErrorCode]) -> None:
     """
@@ -809,7 +791,6 @@ def register_error_codes(component: str, error_code_enum: type[OnexErrorCode]) -
         error_code_enum: Error code enum class for the component
     """
     _ERROR_CODE_REGISTRIES[component] = error_code_enum
-
 
 def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
     """
@@ -832,7 +813,6 @@ def get_error_codes_for_component(component: str) -> type[OnexErrorCode]:
         )
     return _ERROR_CODE_REGISTRIES[component]
 
-
 def list_registered_components() -> list[str]:
     """
     List all registered component identifiers.
@@ -841,7 +821,6 @@ def list_registered_components() -> list[str]:
         List of component identifiers that have registered error codes
     """
     return list(_ERROR_CODE_REGISTRIES.keys())
-
 
 class RegistryErrorCode(OnexErrorCode):
     """
@@ -872,7 +851,6 @@ class RegistryErrorCode(OnexErrorCode):
 
     def get_exit_code(self) -> int:
         return CLIExitCode.ERROR.value
-
 
 class RegistryErrorModel(ModelOnexError):
     """

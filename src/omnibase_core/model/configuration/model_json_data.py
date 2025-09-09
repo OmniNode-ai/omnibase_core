@@ -48,6 +48,7 @@ class ModelJsonData(BaseModel):
 
     def to_dict(self) -> ModelDictConfig:
         """Convert to strongly typed dict config for serialization."""
+        # Custom transformation logic for strongly typed fields
         result = {}
         for key, field in self.fields.items():
             result[key] = str(field.get_value())

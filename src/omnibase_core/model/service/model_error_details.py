@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-
 class ModelErrorDetails(BaseModel):
     """
     Error details with typed fields.
@@ -54,11 +53,6 @@ class ModelErrorDetails(BaseModel):
     documentation_url: str | None = Field(None, description="Documentation URL")
 
     model_config = ConfigDict()
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorDetails"]:
         """Create from dictionary for easy migration."""

@@ -39,8 +39,9 @@ class ModelSpanAttributes(BaseModel):
 
     def to_dict(self) -> dict[str, str | int | float | bool]:
         """Convert to dictionary with proper OpenTelemetry types."""
+        # Custom transformation using model_dump() for OpenTelemetry format
         result = {}
-        for key, value in self.dict(exclude_unset=True).items():
+        for key, value in self.model_dump(exclude_unset=True).items():
             if value is not None:
                 result[key] = value
         return result
@@ -56,8 +57,9 @@ class ModelMetricAttributes(BaseModel):
 
     def to_dict(self) -> dict[str, str]:
         """Convert to dictionary with string values for metrics."""
+        # Custom transformation using model_dump() with string conversion for metrics
         result = {}
-        for key, value in self.dict(exclude_unset=True).items():
+        for key, value in self.model_dump(exclude_unset=True).items():
             if value is not None:
                 result[key] = str(value)
         return result

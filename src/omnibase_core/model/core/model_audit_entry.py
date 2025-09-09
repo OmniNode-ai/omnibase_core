@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.model.core.model_audit_value import ModelAuditValue
 
-
 class AuditAction(str, Enum):
     """Common audit actions."""
 
@@ -28,7 +27,6 @@ class AuditAction(str, Enum):
     BACKUP = "backup"
     RESTORE = "restore"
     CUSTOM = "custom"
-
 
 class ModelAuditEntry(BaseModel):
     """
@@ -127,11 +125,6 @@ class ModelAuditEntry(BaseModel):
     )
 
     model_config = ConfigDict()
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelAuditEntry":
         """Create from dictionary for easy migration."""

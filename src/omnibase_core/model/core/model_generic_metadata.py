@@ -51,9 +51,7 @@ class ModelGenericMetadata(BaseModel):
         extra="allow",
     )  # Allow additional fields for backward compatibility
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
+
 
     @classmethod
     def from_dict(

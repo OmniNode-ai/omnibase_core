@@ -13,14 +13,15 @@ This replaces:
 
 from datetime import datetime
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
 # Import the existing enum from validation module
 from omnibase_core.model.validation.model_validation_rule import EnumValidationSeverity
 
-T = TypeVar("T")
+# TypeVar with constraints for better type safety
+T = TypeVar("T", bound=object)
 
 
 class ModelValidationIssue(BaseModel):

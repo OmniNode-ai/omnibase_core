@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 class ModelCacheSettings(BaseModel):
     """
     Cache settings with typed fields.
@@ -49,11 +48,6 @@ class ModelCacheSettings(BaseModel):
         60,
         description="Statistics collection interval",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     def get_effective_ttl(self, requested_ttl: int | None = None) -> int:
         """Get effective TTL considering limits."""
         if not self.enabled:

@@ -84,7 +84,7 @@ class ModelNodeActionValidator:
 
     def _get_action_cache_key(self, action: ModelNodeAction) -> str:
         """Generate a cache key for action validation."""
-        return f"{action.action_name}:{action.action_type}:{hash(str(action.dict()))}"
+        return f"{action.action_name}:{action.action_type}:{hash(str(action.model_dump()))}"
 
     def _cache_validation_result(
         self,

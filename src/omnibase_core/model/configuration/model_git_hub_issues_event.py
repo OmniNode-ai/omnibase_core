@@ -11,7 +11,6 @@ from .model_git_hub_label import ModelGitHubLabel
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
 
-
 class ModelGitHubIssuesEvent(BaseModel):
     """
     GitHub issues event with typed fields.
@@ -33,11 +32,6 @@ class ModelGitHubIssuesEvent(BaseModel):
         None,
         description="Assignee data (for assigned/unassigned)",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

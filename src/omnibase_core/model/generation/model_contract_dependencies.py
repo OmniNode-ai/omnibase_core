@@ -183,6 +183,7 @@ class ModelContractDependencies(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
+        # Custom transformation using model_dump() for each protocol
         result = {}
 
         if self.protocols:

@@ -153,9 +153,10 @@ class ModelCliOutputData(BaseModel):
 
     def to_dict(self, include_none: bool = False) -> dict[str, Any]:
         """Convert to dictionary, optionally including None values."""
+        # Use model_dump() as base and filter None values if requested
         data = {}
 
-        # Add all non-None fields
+        # Add all fields, optionally filtering None values
         for field_name, field_value in self.model_dump().items():
             if include_none or field_value is not None:
                 data[field_name] = field_value

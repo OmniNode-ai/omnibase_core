@@ -97,6 +97,7 @@ class ModelWorkflowOutputs(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
+        # Create dictionary with all standard fields and merge custom fields
         result = {
             "result": self.result,
             "status_message": self.status_message,

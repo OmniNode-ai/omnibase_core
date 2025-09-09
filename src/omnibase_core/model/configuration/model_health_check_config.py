@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 class ModelHealthCheckConfig(BaseModel):
     """
     Health check configuration with typed fields.
@@ -65,7 +64,3 @@ class ModelHealthCheckConfig(BaseModel):
     # Retry behavior
     retry_on_failure: bool = Field(True, description="Retry on failure")
     max_retries: int = Field(2, description="Maximum retry attempts")
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)

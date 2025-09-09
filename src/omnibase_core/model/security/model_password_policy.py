@@ -7,7 +7,6 @@ replacing Dict[str, Any] with structured fields.
 
 from pydantic import BaseModel, Field
 
-
 class ModelPasswordPolicy(BaseModel):
     """
     Structured password policy configuration.
@@ -147,9 +146,6 @@ class ModelPasswordPolicy(BaseModel):
         ge=1,
     )
 
-    def to_dict(self) -> dict:
-        """Convert to dictionary for backward compatibility."""
-        return self.model_dump(exclude_none=True)
 
     @classmethod
     def create_minimal(cls) -> "ModelPasswordPolicy":

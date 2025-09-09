@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-
 class ModelNodeConfiguration(BaseModel):
     """Configuration for a node."""
 
@@ -47,7 +46,6 @@ class ModelNodeConfiguration(BaseModel):
         None,
         description="Custom numeric limits",
     )
-
 
 class ModelNodeInformation(BaseModel):
     """
@@ -98,11 +96,6 @@ class ModelNodeInformation(BaseModel):
         default_factory=list,
         description="Node dependencies",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

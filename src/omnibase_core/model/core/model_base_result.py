@@ -38,12 +38,16 @@ class ModelBaseResult(BaseModel):
         None  # Typed metadata with backward compatibility
     )
 
-    def dict(self, **kwargs) -> dict[str, Any]:
-        """Override dict to maintain backward compatibility for metadata field."""
-        result = super().dict(**kwargs)
+    def model_dump(self, **kwargs) -> dict[str, Any]:
+        """Override model_dump to maintain backward compatibility for metadata field."""
+        result = super().model_dump(**kwargs)
         if self.metadata and isinstance(self.metadata, ModelGenericMetadata):
-            result["metadata"] = self.metadata.to_dict()
+            result["metadata"] = self.metadata.model_dump(exclude_none=True)
         return result
+
+    def dict(self, **kwargs) -> dict[str, Any]:
+        """Backward compatibility method that calls model_dump."""
+        return self.model_dump(**kwargs)
 
     @classmethod
     def parse_obj(cls, obj: Any) -> "ModelBaseResult":

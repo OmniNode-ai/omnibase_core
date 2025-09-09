@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 class ModelMaskedConnectionProperties(BaseModel):
     """
     Masked connection properties with typed fields.
@@ -32,7 +31,3 @@ class ModelMaskedConnectionProperties(BaseModel):
         description="List of masked field names",
     )
     masking_algorithm: str = Field("sha256", description="Masking algorithm used")
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)

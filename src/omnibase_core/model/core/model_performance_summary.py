@@ -7,7 +7,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-
 class ModelPerformanceSummary(BaseModel):
     """
     Performance summary with typed fields.
@@ -61,11 +60,6 @@ class ModelPerformanceSummary(BaseModel):
     measurement_end: datetime = Field(..., description="Measurement end time")
     measurement_duration_seconds: float = Field(..., description="Measurement duration")
     model_config = ConfigDict()
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     def calculate_success_rate(self) -> float:
         """Calculate success rate percentage."""
         if self.total_requests == 0:

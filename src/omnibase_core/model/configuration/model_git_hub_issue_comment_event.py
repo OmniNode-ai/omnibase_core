@@ -11,7 +11,6 @@ from .model_git_hub_issue_comment import ModelGitHubIssueComment
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
 
-
 class ModelGitHubIssueCommentEvent(BaseModel):
     """
     GitHub issue comment event with typed fields.
@@ -27,11 +26,6 @@ class ModelGitHubIssueCommentEvent(BaseModel):
         None,
         description="Changes made (for edited action)",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

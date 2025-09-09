@@ -6,7 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 class ModelPoolRecommendations(BaseModel):
     """
     Connection pool recommendations with typed fields.
@@ -61,7 +60,3 @@ class ModelPoolRecommendations(BaseModel):
         None,
         description="Additional database connections",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)

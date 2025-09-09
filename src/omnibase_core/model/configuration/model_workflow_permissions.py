@@ -44,8 +44,9 @@ class ModelWorkflowPermissions(BaseModel):
 
     def to_dict(self) -> dict[str, str]:
         """Convert to dictionary for backward compatibility."""
+        # Use model_dump() as base and apply field name transformations
         result = {}
-        for field_name, field_value in self.dict(exclude_none=True).items():
+        for field_name, field_value in self.model_dump(exclude_none=True).items():
             if field_name == "custom_permissions":
                 result.update(field_value)
             elif field_name == "id_token":

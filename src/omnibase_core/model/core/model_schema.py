@@ -280,6 +280,7 @@ class ModelSchema(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert to JSON Schema format."""
+        # Custom JSON Schema format construction
         schema = {
             "type": self.schema_type,
         }

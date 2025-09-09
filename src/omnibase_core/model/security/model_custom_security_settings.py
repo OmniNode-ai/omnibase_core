@@ -64,6 +64,7 @@ class ModelCustomSecuritySettings(BaseModel):
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for backwards compatibility."""
+        # Custom flattening logic for security settings
         result = {}
         result.update(self.string_settings)
         result.update(self.integer_settings)
