@@ -108,14 +108,16 @@ class ModelNodeInformation(BaseModel):
         if data is None:
             return None
 
-        # Ensure required fields
-        if "node_id" not in data:
-            data["node_id"] = data.get("id", "unknown")
-        if "node_name" not in data:
-            data["node_name"] = data.get("name", "unknown")
-        if "node_type" not in data:
-            data["node_type"] = data.get("type", "generic")
-        if "node_version" not in data:
-            data["node_version"] = data.get("version", "1.0.0")
+        # Create a copy to avoid mutating original data
+        normalized_data = data.copy()
 
-        return cls(**data)
+        # Apply field mappings for backward compatibility
+        normalized_data.setdefault("node_id", normalized_data.get("id", "unknown"))
+        normalized_data.setdefault("node_name", normalized_data.get("name", "unknown"))
+        normalized_data.setdefault("node_type", normalized_data.get("type", "generic"))
+        normalized_data.setdefault(
+            "node_version", normalized_data.get("version", "1.0.0")
+        )
+
+        # Use Pydantic validation instead of manual validation
+        return cls.model_validate(normalized_data)
