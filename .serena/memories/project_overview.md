@@ -1,7 +1,7 @@
 # ONEX Core Framework Project Overview
 
 ## Purpose
-ONEX Core Framework (omnibase_core) provides foundational implementations for the ONEX framework, including base classes, dependency injection, and essential models. It implements the contracts defined in omnibase-spi and provides the foundational architecture for the 4-node ONEX pattern.
+ONEX Core Framework (omnibase_core) provides foundational implementations for the ONEX framework, including base classes, dependency injection, and essential models. It implements the contracts defined in omnibase_spi and provides the foundational architecture for the 4-node ONEX pattern.
 
 ## Tech Stack
 - **Python**: 3.11+
@@ -11,7 +11,7 @@ ONEX Core Framework (omnibase_core) provides foundational implementations for th
 - **Linting**: ruff with comprehensive rule set
 - **Formatting**: black, isort
 - **Dependencies**:
-  - omnibase-spi (via git SSH)
+  - omnibase_spi (via git SSH)
   - pydantic 2.0+
   - llama-index 0.10+
   - fastapi 0.100+

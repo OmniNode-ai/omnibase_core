@@ -7,7 +7,7 @@ via ModelONEXContainer following our architecture patterns.
 
 import os
 
-from omnibase.protocols.types.core_types import ContextValue
+from omnibase_spi.protocols.types.core_types import ContextValue
 from pydantic import BaseModel, Field
 
 

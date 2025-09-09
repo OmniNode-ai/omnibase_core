@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Any
 
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import NodeType
+from omnibase_spi.protocols.types.core_types import NodeType
 from pydantic import BaseModel, Field
 
 

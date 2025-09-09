@@ -4,7 +4,7 @@
 
 ### Environment Setup
 - **Python Version**: Fixed compatibility (^3.11 instead of ^3.12)
-- **Poetry Dependencies**: Successfully installed all dependencies including omnibase-spi v0.0.2
+- **Poetry Dependencies**: Successfully installed all dependencies including omnibase_spi v0.0.2
 - **Package Structure**: Migrated from `src/omnibase/` to `src/omnibase_core/`
 - **Pre-commit Hooks**: Installed and configured with ONEX standards
 

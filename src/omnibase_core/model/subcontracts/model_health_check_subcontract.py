@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Import existing health models from omnibase_3
 # Import existing enums instead of duplicating
-from omnibase.protocols.types.core_types import HealthStatus
+from omnibase_spi.protocols.types.core_types import HealthStatus
 from pydantic import BaseModel, Field
 
 # Use HealthStatus from omnibase_core.enums.node instead

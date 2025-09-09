@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 try:
-    from omnibase.protocols.types.core_types import ProtocolLogContext
+    from omnibase_spi.protocols.types.core_types import ProtocolLogContext
 except ImportError:
     # Fallback for when omnibase-spi is not available
     from typing import Protocol

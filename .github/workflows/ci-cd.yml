@@ -50,7 +50,7 @@ jobs:
           ONEX_DATABASE__URL: postgresql://test:test@localhost:5432/onex_test
           ONEX_ENVIRONMENT: test
         run: |
-          # Run integration tests without requiring omnibase-spi dependency
+          # Run integration tests without requiring omnibase_spi dependency
           echo "Integration tests would run here with external services"
           echo "PostgreSQL: $(pg_isready -h localhost -p 5432 && echo 'Ready' || echo 'Not ready')"
           echo "Redis: $(redis-cli -h localhost -p 6379 ping || echo 'Not ready')"

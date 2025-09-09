@@ -1,5 +1,5 @@
 # Re-export SPI ProtocolWorkflowReducer
-from omnibase.protocols.core.protocol_workflow_reducer import (
+from omnibase_spi.protocols.core.protocol_workflow_reducer import (
     ProtocolWorkflow,
     ProtocolWorkflowReducer,
 )

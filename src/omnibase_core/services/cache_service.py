@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from omnibase.protocols.core import ProtocolCacheService, ProtocolCacheServiceProvider
-from omnibase.protocols.types.core_types import ContextValue, ProtocolCacheStatistics
+from omnibase_spi.protocols.core import ProtocolCacheService, ProtocolCacheServiceProvider
+from omnibase_spi.protocols.types.core_types import ContextValue, ProtocolCacheStatistics
 
 
 @dataclass

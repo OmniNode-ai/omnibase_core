@@ -4,7 +4,7 @@ Foundational implementations for the ONEX framework, providing base classes, dep
 
 ## Overview
 
-This repository contains the core building blocks that all ONEX tools and services inherit from. It implements the contracts defined in `omnibase-spi` and provides the foundational architecture for the 4-node ONEX pattern.
+This repository contains the core building blocks that all ONEX tools and services inherit from. It implements the contracts defined in `omnibase_spi` and provides the foundational architecture for the 4-node ONEX pattern.
 
 ## Architecture Principles
 
@@ -74,7 +74,7 @@ authors = [{name = "OmniNode Team", email = "team@omninode.ai"}]
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
-    "omnibase-spi>=0.1.0",
+    "omnibase_spi>=0.1.0",
     "pydantic>=2.0.0",
     "llama-index>=0.10.0",
     "fastapi>=0.100.0",
@@ -144,8 +144,8 @@ find src/omnibase -type d -exec touch {}/__init__.py \;
 python -m venv venv
 source venv/bin/activate
 
-# Install dependencies (after omnibase-spi is packaged)
-pip install -e ../omnibase-spi
+# Install dependencies (after omnibase_spi is packaged)
+pip install -e ../omnibase_spi
 pip install -e .[dev]
 ```
 
@@ -259,12 +259,12 @@ class YourTool(NodeTypeService):  # EFFECT/COMPUTE/REDUCER/ORCHESTRATOR
 - **No isinstance checks**: Use duck typing through protocols
 - **No registry dependencies**: Pure protocol-based resolution
 
-## Integration with omnibase-spi
+## Integration with omnibase_spi
 
-This repository implements the protocols defined in omnibase-spi:
+This repository implements the protocols defined in omnibase_spi:
 
 ```python
-# Protocol definition (in omnibase-spi)
+# Protocol definition (in omnibase_spi)
 class ProtocolEventBus(Protocol):
     def publish(self, event: ModelEvent) -> None: ...
 
