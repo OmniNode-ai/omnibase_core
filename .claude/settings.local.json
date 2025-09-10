@@ -21,7 +21,8 @@
       "mcp__archon__get_quality_patterns",
       "Bash(yamllint:*)",
       "mcp__serena__replace_symbol_body",
-      "mcp__archon__establish_performance_baseline"
+      "mcp__archon__establish_performance_baseline",
+      "mcp__serena__insert_after_symbol"
     ],
     "deny": [],
     "ask": []
