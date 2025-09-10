@@ -23,7 +23,8 @@
       "mcp__serena__replace_symbol_body",
       "mcp__archon__establish_performance_baseline",
       "mcp__serena__insert_after_symbol",
-      "WebSearch"
+      "WebSearch",
+      "mcp__archon__get_project"
     ],
     "deny": [],
     "ask": []

@@ -385,6 +385,22 @@ class InMemorySnapshotStore:
 
         return True
 
+    # === Context Manager Support ===
+
+    def __enter__(self) -> "InMemorySnapshotStore":
+        """Enter synchronous context manager."""
+        logger.debug("📥 Entered InMemorySnapshotStore context manager")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit synchronous context manager with cleanup."""
+        try:
+            self._snapshots.clear()
+            self._workflow_metadata.clear()
+            logger.info("🧹 InMemorySnapshotStore context manager cleanup complete")
+        except Exception as e:
+            logger.error(f"Error during context manager cleanup: {e}")
+
 
 # Global instance for development/testing
 _global_dev_snapshot_store: InMemorySnapshotStore | None = None

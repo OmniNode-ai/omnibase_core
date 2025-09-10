@@ -315,6 +315,21 @@ class InMemoryEventStore:
 
         logger.info("🗑️  Cleared all events from event store")
 
+    # === Context Manager Support ===
+
+    def __enter__(self) -> "InMemoryEventStore":
+        """Enter synchronous context manager."""
+        logger.debug("📥 Entered InMemoryEventStore context manager")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit synchronous context manager with cleanup."""
+        try:
+            self.clear_all()
+            logger.info("🧹 InMemoryEventStore context manager cleanup complete")
+        except Exception as e:
+            logger.error(f"Error during context manager cleanup: {e}")
+
     # === File-backed option for demos (JSONL format) ===
 
     def save_to_jsonl(self, filepath: str | Path) -> None:

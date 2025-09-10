@@ -9,12 +9,13 @@ for workflow isolation, following the ProtocolEventBus interface.
 
 import asyncio
 import logging
-from collections import defaultdict
+import threading
+from collections import OrderedDict, defaultdict
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from omnibase_core.model.core.model_onex_event import OnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
@@ -31,13 +32,12 @@ class WorkflowPartition(BaseModel):
 
     partition_id: str = Field(..., description="Unique partition identifier")
     workflow_instance_id: str = Field(..., description="Workflow instance ID")
-    subscribers: list[Callable[[OnexEvent], None]] = Field(
-        default_factory=list,
-        description="Synchronous event subscribers for this partition",
+    # Store callback registry as private attributes to avoid Pydantic serialization issues
+    _sync_callbacks: list[Callable[[OnexEvent], None]] = PrivateAttr(
+        default_factory=list
     )
-    async_subscribers: list[Callable[[OnexEvent], None]] = Field(
-        default_factory=list,
-        description="Asynchronous event subscribers for this partition",
+    _async_callbacks: list[Callable[[OnexEvent], None]] = PrivateAttr(
+        default_factory=list
     )
     event_history: list[OnexEvent] = Field(
         default_factory=list, description="Event history for this partition"
@@ -45,6 +45,16 @@ class WorkflowPartition(BaseModel):
     max_history: int = Field(
         default=1000, description="Maximum events to keep in history"
     )
+
+    @property
+    def subscribers(self) -> list[Callable[[OnexEvent], None]]:
+        """Get synchronous event subscribers for this partition."""
+        return self._sync_callbacks
+
+    @property
+    def async_subscribers(self) -> list[Callable[[OnexEvent], None]]:
+        """Get asynchronous event subscribers for this partition."""
+        return self._async_callbacks
 
     def add_event(self, event: OnexEvent) -> None:
         """Add event to partition history."""
@@ -84,6 +94,7 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
     - Event history tracking per partition
     - Deterministic ordering and idempotency guarantees
     - Comprehensive cleanup and resource management
+    - Context manager support for automatic cleanup
     """
 
     def __init__(self, credentials: EventBusCredentialsModel | None = None, **kwargs):
@@ -99,8 +110,8 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
             "🚨 InMemoryEventBus: DEV/TEST ONLY - NEVER USE IN PRODUCTION 🚨"
         )
 
-        # Partitioned storage by workflow instance
-        self._partitions: dict[str, WorkflowPartition] = {}
+        # Partitioned storage by workflow instance (OrderedDict for LRU)
+        self._partitions: OrderedDict[str, WorkflowPartition] = OrderedDict()
 
         # Global subscribers (not partitioned)
         self._global_subscribers: list[Callable[[OnexEvent], None]] = []
@@ -108,6 +119,7 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
 
         # Threading/async safety
         self._lock = asyncio.Lock()
+        self._sync_lock = threading.RLock()  # For synchronous operations
 
         # Configuration
         self._max_partitions = kwargs.get("max_partitions", 1000)
@@ -141,23 +153,29 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         return f"node_{event.node_id}"
 
     def _get_or_create_partition(self, partition_id: str) -> WorkflowPartition:
-        """Get or create a workflow partition."""
-        if partition_id not in self._partitions:
-            # Enforce partition limit
+        """Get or create a workflow partition with proper LRU management."""
+        with self._sync_lock:
+            if partition_id in self._partitions:
+                # Move to end for LRU (most recently used)
+                self._partitions.move_to_end(partition_id)
+                return self._partitions[partition_id]
+
+            # Enforce partition limit with proper LRU eviction
             if len(self._partitions) >= self._max_partitions:
-                # Remove oldest partition (simple LRU)
-                oldest_partition_id = next(iter(self._partitions))
-                del self._partitions[oldest_partition_id]
+                # Remove least recently used partition (first in OrderedDict)
+                lru_partition_id, lru_partition = self._partitions.popitem(last=False)
                 logger.warning(
-                    f"Removed oldest partition {oldest_partition_id} due to limit"
+                    f"Evicted LRU partition {lru_partition_id} due to limit ({self._max_partitions})"
                 )
 
-            self._partitions[partition_id] = WorkflowPartition(
+            # Create new partition
+            new_partition = WorkflowPartition(
                 partition_id=partition_id, workflow_instance_id=partition_id
             )
+            self._partitions[partition_id] = new_partition
             logger.debug(f"Created new partition: {partition_id}")
 
-        return self._partitions[partition_id]
+            return new_partition
 
     # === Synchronous ProtocolEventBus Interface ===
 
@@ -172,22 +190,39 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         partition_id = self._get_partition_id(event)
         partition = self._get_or_create_partition(partition_id)
 
-        # Add to partition history
-        partition.add_event(event)
+        # Add to partition history (thread-safe)
+        with self._sync_lock:
+            partition.add_event(event)
 
         # Notify partition-specific subscribers
         for callback in partition.subscribers:
             try:
                 callback(event)
             except Exception as e:
-                logger.error(f"Error in partition subscriber {callback}: {e}")
+                logger.error(
+                    f"Error in partition subscriber {callback}: {e}",
+                    extra={
+                        "partition_id": partition_id,
+                        "event_id": str(event.event_id),
+                        "event_type": str(event.event_type),
+                        "callback": str(callback),
+                    },
+                )
 
         # Notify global subscribers
         for callback in self._global_subscribers:
             try:
                 callback(event)
             except Exception as e:
-                logger.error(f"Error in global subscriber {callback}: {e}")
+                logger.error(
+                    f"Error in global subscriber {callback}: {e}",
+                    extra={
+                        "partition_id": partition_id,
+                        "event_id": str(event.event_id),
+                        "event_type": str(event.event_type),
+                        "callback": str(callback),
+                    },
+                )
 
         logger.debug(f"📤 Published event {event.event_id} to partition {partition_id}")
 
@@ -198,10 +233,11 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         Args:
             callback: Callable invoked with each OnexEvent
         """
-        self._global_subscribers.append(callback)
-        logger.info(
-            f"📥 Added global sync subscriber (total: {len(self._global_subscribers)})"
-        )
+        with self._sync_lock:
+            self._global_subscribers.append(callback)
+            logger.info(
+                f"📥 Added global sync subscriber (total: {len(self._global_subscribers)})"
+            )
 
     def unsubscribe(self, callback: Callable[[OnexEvent], None]) -> None:
         """
@@ -210,11 +246,12 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         Args:
             callback: Callable to remove
         """
-        if callback in self._global_subscribers:
-            self._global_subscribers.remove(callback)
-            logger.info(
-                f"📤 Removed global sync subscriber (total: {len(self._global_subscribers)})"
-            )
+        with self._sync_lock:
+            if callback in self._global_subscribers:
+                self._global_subscribers.remove(callback)
+                logger.info(
+                    f"📤 Removed global sync subscriber (total: {len(self._global_subscribers)})"
+                )
 
     def clear(self) -> None:
         """Remove all subscribers from the event bus."""
@@ -444,6 +481,35 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
             self._partitions.clear()
 
             logger.info("🛑 InMemoryEventBus shutdown complete")
+
+    # === Context Manager Support ===
+
+    def __enter__(self) -> "InMemoryEventBus":
+        """Enter synchronous context manager."""
+        logger.debug("📥 Entered InMemoryEventBus context manager")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit synchronous context manager with cleanup."""
+        try:
+            # Synchronous cleanup
+            self.clear()
+            self._partitions.clear()
+            logger.info("🧹 InMemoryEventBus context manager cleanup complete")
+        except Exception as e:
+            logger.error(f"Error during context manager cleanup: {e}")
+
+    async def __aenter__(self) -> "InMemoryEventBus":
+        """Enter asynchronous context manager."""
+        logger.debug("📥 Entered InMemoryEventBus async context manager")
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit asynchronous context manager with cleanup."""
+        try:
+            await self.shutdown()
+        except Exception as e:
+            logger.error(f"Error during async context manager cleanup: {e}")
 
     # === Development/Testing Utilities ===
 

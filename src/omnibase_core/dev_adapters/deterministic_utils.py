@@ -10,7 +10,7 @@ for reproducible testing and debugging of workflow orchestration systems.
 import logging
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
 logger = logging.getLogger(__name__)
 
@@ -179,21 +179,16 @@ class FakeIdGenerator:
 
     def next_uuid(self) -> UUID:
         """
-        Generate next sequential UUID.
+        Generate next deterministic UUID using UUID5 for realistic format.
 
         Returns:
-            Sequential UUID based on counter
+            Deterministic UUID5 based on namespace and counter
         """
-        # Create deterministic UUID from counter
-        uuid_string = f"{self._counter:032d}"
-        # Format as UUID: 8-4-4-4-12
-        formatted = (
-            f"{uuid_string[:8]}-{uuid_string[8:12]}-{uuid_string[12:16]}-"
-            f"{uuid_string[16:20]}-{uuid_string[20:32]}"
-        )
+        # Use UUID5 with DNS namespace for realistic, deterministic UUIDs
+        name = f"{self._prefix}-{self._counter:06d}.test.local"
 
         self._counter += 1
-        return UUID(formatted)
+        return uuid5(NAMESPACE_DNS, name)
 
     def peek_next_id(self) -> str:
         """Peek at next ID without incrementing counter."""
