@@ -339,7 +339,7 @@ class InMemoryEventStore:
                     "stream_sequence": stored_event.stream_sequence,
                     "stored_at": stored_event.stored_at.isoformat(),
                     "checksum": stored_event.checksum,
-                    "event": stored_event.event.model_dump(),
+                    "event": stored_event.event.model_dump(mode="json"),
                 }
                 f.write(json.dumps(record) + "\n")
 
@@ -378,13 +378,24 @@ class InMemoryEventStore:
                         from uuid import UUID
 
                         event_data["event_id"] = UUID(event_data["event_id"])
-                    if "correlation_id" in event_data and isinstance(
-                        event_data["correlation_id"], str
+                    if (
+                        "correlation_id" in event_data
+                        and event_data["correlation_id"] is not None
+                        and isinstance(event_data["correlation_id"], str)
                     ):
                         from uuid import UUID
 
                         event_data["correlation_id"] = UUID(
                             event_data["correlation_id"]
+                        )
+                    # Handle timestamp reconstruction
+                    if "timestamp" in event_data and isinstance(
+                        event_data["timestamp"], str
+                    ):
+                        from datetime import datetime
+
+                        event_data["timestamp"] = datetime.fromisoformat(
+                            event_data["timestamp"]
                         )
 
                     event = OnexEvent(**event_data)

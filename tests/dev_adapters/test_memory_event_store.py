@@ -507,17 +507,29 @@ class TestInMemoryEventStore:
 
     def test_checksum_consistency(self):
         """Test checksum consistency across identical events."""
-        # Create identical events with same content
+        from datetime import datetime
+
+        # Create a fixed timestamp for consistency
+        fixed_timestamp = datetime(2024, 1, 1, 12, 0, 0)
+
+        # Create identical events with same content and timestamp
         event1 = OnexEvent(
-            event_type="test.event", node_id="test-node", data={"consistent": "data"}
+            event_type="test.event",
+            node_id="test-node",
+            data={"consistent": "data"},
+            timestamp=fixed_timestamp,
         )
 
         event2 = OnexEvent(
-            event_type="test.event", node_id="test-node", data={"consistent": "data"}
+            event_type="test.event",
+            node_id="test-node",
+            data={"consistent": "data"},
+            timestamp=fixed_timestamp,
         )
 
-        # Force same event ID for testing
+        # Force same event ID and correlation ID for identical checksums
         event2.event_id = event1.event_id
+        event2.correlation_id = event1.correlation_id
 
         stored1 = self.event_store.store_event(event1)
 
