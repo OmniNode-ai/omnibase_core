@@ -5,6 +5,8 @@ Utility functions for working with node configuration that follow
 our architecture patterns and can be used by nodes via container injection.
 """
 
+from typing import Optional
+
 from omnibase_spi.protocols.core import ProtocolUtilsNodeConfiguration
 from omnibase_spi.protocols.types.core_types import ContextValue
 
@@ -24,7 +26,7 @@ class UtilsNodeConfiguration(ProtocolUtilsNodeConfiguration):
     def __init__(self, container: ModelONEXContainer):
         """Initialize with container for dependency injection."""
         self.container = container
-        self._config: ModelNodeConfiguration | None = None
+        self._config: Optional[ModelNodeConfiguration] = None
 
     def get_configuration(self) -> ModelNodeConfiguration:
         """Get node configuration from container."""
@@ -44,27 +46,21 @@ class UtilsNodeConfiguration(ProtocolUtilsNodeConfiguration):
         return config.get_timeout_ms(timeout_type, default_ms)
 
     def get_security_config(
-        self,
-        key: str,
-        default: ContextValue | None = None,
+        self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get security configuration value."""
         config = self.get_configuration()
         return config.get_security_config(key, default)
 
     def get_performance_config(
-        self,
-        key: str,
-        default: ContextValue | None = None,
+        self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get performance configuration value."""
         config = self.get_configuration()
         return config.get_performance_config(key, default)
 
     def get_business_logic_config(
-        self,
-        key: str,
-        default: ContextValue | None = None,
+        self, key: str, default: Optional[ContextValue] = None
     ) -> ContextValue:
         """Get business logic configuration value."""
         config = self.get_configuration()

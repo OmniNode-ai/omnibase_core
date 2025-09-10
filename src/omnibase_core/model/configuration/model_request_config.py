@@ -71,8 +71,9 @@ class ModelRequestConfig(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        data = self.dict(exclude_none=True)
-        # Flatten auth if present
+        # Use model_dump() as base and apply auth masking/flattening
+        data = self.model_dump(exclude_none=True)
+        # Flatten auth if present and mask sensitive data
         if "auth" in data and isinstance(data["auth"], dict):
             auth_data = data.pop("auth")
             if auth_data.get("auth_type") == "basic":

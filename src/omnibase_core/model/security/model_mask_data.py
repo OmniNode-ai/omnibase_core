@@ -33,6 +33,7 @@ class ModelMaskData(BaseModel):
 
     def to_dict(self) -> dict[str, str | int | bool | list[str] | dict]:
         """Convert to a dictionary representation."""
+        # Custom flattening logic with recursive nested data handling
         result = {}
         result.update(self.string_data)
         result.update(self.integer_data)

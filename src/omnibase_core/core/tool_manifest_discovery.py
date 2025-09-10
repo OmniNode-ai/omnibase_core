@@ -55,13 +55,13 @@ class ToolManifestDiscovery:
         Initialize tool manifest discovery.
 
         Args:
-            base_path: Base path to search for tools (defaults to src/omnibase/tools)
+            base_path: Base path to search for tools (defaults to src/omnibase_core/tools)
         """
         if base_path is None:
-            # Try to find src/omnibase/tools from current working directory
+            # Try to find src/omnibase_core/tools from current working directory
             cwd = Path.cwd()
 
-            # Look for src/omnibase/tools relative to current directory
+            # Look for src/omnibase_core/tools relative to current directory
             possible_paths = [
                 cwd / "src" / "omnibase" / "tools",
                 cwd / "omnibase" / "tools",

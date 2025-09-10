@@ -261,7 +261,7 @@ class MixinNodeService(MixinEventDrivenNode):
             # Remove from active invocations
             self._active_invocations.discard(correlation_id)
 
-    def get_service_health(self) -> dict[str, Any]:
+    def get_service_health(self) -> dict[str, str]:
         """
         Get current service health status.
 
@@ -416,7 +416,7 @@ class MixinNodeService(MixinEventDrivenNode):
         msg = "Node does not have a 'run' method for tool execution"
         raise RuntimeError(msg)
 
-    def _serialize_result(self, result: Any) -> dict[str, Any]:
+    def _serialize_result(self, result: Any) -> dict[str, str]:
         """Serialize the execution result to a dictionary."""
         if hasattr(result, "dict"):
             # Pydantic model

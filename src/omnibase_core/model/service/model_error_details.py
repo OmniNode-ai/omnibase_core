@@ -55,10 +55,6 @@ class ModelErrorDetails(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorDetails"]:
         """Create from dictionary for easy migration."""

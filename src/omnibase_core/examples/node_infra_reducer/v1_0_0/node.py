@@ -29,7 +29,7 @@ from omnibase_core.model.registry.model_registry_event import (
     RegistryOperations,
     get_operation_for_endpoint,
 )
-from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class ModelComponentMetadata(BaseModel):
@@ -451,11 +451,11 @@ class ToolInfrastructureReducer(NodeReducerService):
         """
         # Convert metadata path to actual file path
         # e.g., "omnibase.tools.infrastructure.tool_infrastructure_consul_adapter_effect.tool.manifest"
-        # -> "src/omnibase/tools/infrastructure/tool_infrastructure_consul_adapter_effect/tool.manifest.yaml"
+        # -> "src/omnibase_core/tools/infrastructure/tool_infrastructure_consul_adapter_effect/tool.manifest.yaml"
         base_path = metadata_path.replace(".tool.manifest", "")
         path_parts = base_path.split(".")
-        # Build path from current location - we're at src/omnibase/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/
-        # Go up 2 levels to get to src/omnibase/tools/infrastructure/
+        # Build path from current location - we're at src/omnibase_core/tools/infrastructure/tool_infrastructure_reducer/v1_0_0/
+        # Go up 2 levels to get to src/omnibase_core/tools/infrastructure/
         infrastructure_root = Path(
             __file__,
         ).parent.parent.parent  # Go up to infrastructure/

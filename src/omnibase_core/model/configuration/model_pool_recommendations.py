@@ -61,7 +61,3 @@ class ModelPoolRecommendations(BaseModel):
         None,
         description="Additional database connections",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)

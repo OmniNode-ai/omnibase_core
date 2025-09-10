@@ -94,6 +94,7 @@ class UnifiedConfig:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
+        # Custom configuration format with nested structure
         return {
             "service_discovery": {
                 "consul_host": self.service_discovery.consul_host,

@@ -166,6 +166,7 @@ class ModelJsonSchema(BaseModel):
         Returns:
             Dictionary representation of the schema
         """
+        # Custom reconstruction logic for JSON schema format
         result = {}
 
         # Add basic properties

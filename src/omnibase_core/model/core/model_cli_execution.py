@@ -294,7 +294,7 @@ class ModelCliExecution(BaseModel):
         execution_dict.update(self.execution_context.to_environment_dict())
 
         # Add execution metadata (excluding None values)
-        metadata_dict = self.execution_metadata.dict(exclude_none=True)
+        metadata_dict = self.execution_metadata.model_dump(exclude_none=True)
         execution_dict.update(metadata_dict)
 
         return execution_dict

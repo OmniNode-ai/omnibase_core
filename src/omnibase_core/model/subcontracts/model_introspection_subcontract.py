@@ -8,10 +8,11 @@ Generated from introspection subcontract following ONEX patterns.
 """
 
 from datetime import datetime
-from typing import Any
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 # Import existing enums instead of duplicating
-from omnibase_spi.protocols.types.core_types import NodeType
+from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 # Use HealthStatus from omnibase_core.enums.node instead
@@ -27,7 +28,7 @@ class ModelNodeVersion(BaseModel):
 
     patch: int = Field(..., description="Patch version number", ge=0)
 
-    build: str | None = Field(default=None, description="Build identifier")
+    build: Optional[str] = Field(default=None, description="Build identifier")
 
 
 class ModelNodeInfo(BaseModel):
@@ -40,8 +41,7 @@ class ModelNodeInfo(BaseModel):
     node_name: str = Field(..., description="Human-readable name of the node")
 
     version: ModelNodeVersion = Field(
-        ...,
-        description="Version information for the node",
+        ..., description="Version information for the node"
     )
 
     status: NodeStatus = Field(..., description="Current health status of the node")
@@ -49,8 +49,7 @@ class ModelNodeInfo(BaseModel):
     uptime_ms: int = Field(..., description="Node uptime in milliseconds", ge=0)
 
     last_updated: datetime = Field(
-        ...,
-        description="Last time node information was updated",
+        ..., description="Last time node information was updated"
     )
 
 
@@ -62,48 +61,39 @@ class ModelActionDefinition(BaseModel):
     description: str = Field(..., description="Description of what the action does")
 
     required: bool = Field(
-        ...,
-        description="Whether this action is required for the node type",
+        ..., description="Whether this action is required for the node type"
     )
 
     timeout_ms: int = Field(
-        ...,
-        description="Timeout for the action in milliseconds",
-        ge=100,
+        ..., description="Timeout for the action in milliseconds", ge=100
     )
 
-    input_parameters: list[str] = Field(
-        default_factory=list,
-        description="List of input parameter names",
+    input_parameters: List[str] = Field(
+        default_factory=list, description="List of input parameter names"
     )
 
-    output_parameters: list[str] = Field(
-        default_factory=list,
-        description="List of output parameter names",
+    output_parameters: List[str] = Field(
+        default_factory=list, description="List of output parameter names"
     )
 
 
 class ModelCapabilities(BaseModel):
     """Node capabilities information."""
 
-    actions: list[ModelActionDefinition] = Field(
-        default_factory=list,
-        description="List of actions available on this node",
+    actions: List[ModelActionDefinition] = Field(
+        default_factory=list, description="List of actions available on this node"
     )
 
-    supported_protocols: list[str] = Field(
-        default_factory=list,
-        description="List of protocols supported by this node",
+    supported_protocols: List[str] = Field(
+        default_factory=list, description="List of protocols supported by this node"
     )
 
-    resource_limits: dict[str, int] = Field(
-        default_factory=dict,
-        description="Resource limits for this node",
+    resource_limits: Dict[str, int] = Field(
+        default_factory=dict, description="Resource limits for this node"
     )
 
-    configuration_parameters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Configurable parameters for this node",
+    configuration_parameters: Dict[str, Any] = Field(
+        default_factory=dict, description="Configurable parameters for this node"
     )
 
 
@@ -111,9 +101,7 @@ class ModelCapabilitySummary(BaseModel):
     """Summary of node capabilities."""
 
     total_actions: int = Field(
-        ...,
-        description="Total number of actions available",
-        ge=0,
+        ..., description="Total number of actions available", ge=0
     )
 
     required_actions: int = Field(..., description="Number of required actions", ge=0)
@@ -121,9 +109,7 @@ class ModelCapabilitySummary(BaseModel):
     optional_actions: int = Field(..., description="Number of optional actions", ge=0)
 
     supported_protocols_count: int = Field(
-        ...,
-        description="Number of supported protocols",
-        ge=0,
+        ..., description="Number of supported protocols", ge=0
     )
 
 
@@ -131,45 +117,31 @@ class ModelRuntimeStats(BaseModel):
     """Runtime statistics for a node."""
 
     requests_processed: int = Field(
-        ...,
-        description="Total number of requests processed",
-        ge=0,
+        ..., description="Total number of requests processed", ge=0
     )
 
     average_response_time_ms: float = Field(
-        ...,
-        description="Average response time in milliseconds",
-        ge=0.0,
+        ..., description="Average response time in milliseconds", ge=0.0
     )
 
     error_count: int = Field(
-        ...,
-        description="Total number of errors encountered",
-        ge=0,
+        ..., description="Total number of errors encountered", ge=0
     )
 
     memory_usage_mb: float = Field(
-        ...,
-        description="Current memory usage in megabytes",
-        ge=0.0,
+        ..., description="Current memory usage in megabytes", ge=0.0
     )
 
     cpu_usage_percent: float = Field(
-        ...,
-        description="Current CPU usage percentage",
-        ge=0.0,
-        le=100.0,
+        ..., description="Current CPU usage percentage", ge=0.0, le=100.0
     )
 
     active_connections: int = Field(
-        default=0,
-        description="Number of active connections",
-        ge=0,
+        default=0, description="Number of active connections", ge=0
     )
 
-    last_activity: datetime | None = Field(
-        default=None,
-        description="Timestamp of last activity",
+    last_activity: Optional[datetime] = Field(
+        default=None, description="Timestamp of last activity"
     )
 
 
@@ -177,26 +149,19 @@ class ModelPerformanceMetrics(BaseModel):
     """Performance metrics for a node."""
 
     throughput_rps: float = Field(
-        ...,
-        description="Throughput in requests per second",
-        ge=0.0,
+        ..., description="Throughput in requests per second", ge=0.0
     )
 
-    latency_percentiles: dict[str, float] = Field(
-        default_factory=dict,
-        description="Latency percentiles (p50, p95, p99)",
+    latency_percentiles: Dict[str, float] = Field(
+        default_factory=dict, description="Latency percentiles (p50, p95, p99)"
     )
 
     error_rate_percent: float = Field(
-        ...,
-        description="Error rate as percentage",
-        ge=0.0,
-        le=100.0,
+        ..., description="Error rate as percentage", ge=0.0, le=100.0
     )
 
-    resource_utilization: dict[str, float] = Field(
-        default_factory=dict,
-        description="Resource utilization metrics",
+    resource_utilization: Dict[str, float] = Field(
+        default_factory=dict, description="Resource utilization metrics"
     )
 
 
@@ -213,15 +178,12 @@ class ModelPeerNode(BaseModel):
 
     last_seen: datetime = Field(..., description="Last time this peer was seen")
 
-    capabilities_hash: str | None = Field(
-        default=None,
-        description="Hash of the peer's capabilities for change detection",
+    capabilities_hash: Optional[str] = Field(
+        default=None, description="Hash of the peer's capabilities for change detection"
     )
 
-    response_time_ms: int | None = Field(
-        default=None,
-        description="Last measured response time in milliseconds",
-        ge=0,
+    response_time_ms: Optional[int] = Field(
+        default=None, description="Last measured response time in milliseconds", ge=0
     )
 
 
@@ -229,50 +191,41 @@ class ModelNetworkTopology(BaseModel):
     """Network topology information."""
 
     total_nodes: int = Field(
-        ...,
-        description="Total number of nodes in the network",
-        ge=0,
+        ..., description="Total number of nodes in the network", ge=0
     )
 
-    nodes_by_type: dict[str, int] = Field(
-        default_factory=dict,
-        description="Count of nodes by type",
+    nodes_by_type: Dict[str, int] = Field(
+        default_factory=dict, description="Count of nodes by type"
     )
 
     healthy_nodes: int = Field(..., description="Number of healthy nodes", ge=0)
 
     discovery_timestamp: datetime = Field(
-        ...,
-        description="When this topology snapshot was created",
+        ..., description="When this topology snapshot was created"
     )
 
-    network_partitions: list[list[str]] | None = Field(
-        default=None,
-        description="List of network partitions (if any detected)",
+    network_partitions: Optional[List[List[str]]] = Field(
+        default=None, description="List of network partitions (if any detected)"
     )
 
 
 class ModelDependencyInfo(BaseModel):
     """Information about node dependencies."""
 
-    required_dependencies: list[str] = Field(
-        default_factory=list,
-        description="List of required dependencies",
+    required_dependencies: List[str] = Field(
+        default_factory=list, description="List of required dependencies"
     )
 
-    optional_dependencies: list[str] = Field(
-        default_factory=list,
-        description="List of optional dependencies",
+    optional_dependencies: List[str] = Field(
+        default_factory=list, description="List of optional dependencies"
     )
 
-    dependency_health: dict[str, str] = Field(
-        default_factory=dict,
-        description="Health status of each dependency",
+    dependency_health: Dict[str, str] = Field(
+        default_factory=dict, description="Health status of each dependency"
     )
 
-    missing_dependencies: list[str] = Field(
-        default_factory=list,
-        description="List of missing required dependencies",
+    missing_dependencies: List[str] = Field(
+        default_factory=list, description="List of missing required dependencies"
     )
 
 
@@ -282,38 +235,31 @@ class ModelIntrospectionResult(BaseModel):
     node_info: ModelNodeInfo = Field(..., description="Basic node information")
 
     capability_summary: ModelCapabilitySummary = Field(
-        ...,
-        description="Summary of node capabilities",
+        ..., description="Summary of node capabilities"
     )
 
-    capabilities: ModelCapabilities | None = Field(
-        default=None,
-        description="Detailed capabilities (if requested)",
+    capabilities: Optional[ModelCapabilities] = Field(
+        default=None, description="Detailed capabilities (if requested)"
     )
 
-    runtime_stats: ModelRuntimeStats | None = Field(
-        default=None,
-        description="Runtime statistics (if requested)",
+    runtime_stats: Optional[ModelRuntimeStats] = Field(
+        default=None, description="Runtime statistics (if requested)"
     )
 
-    performance_metrics: ModelPerformanceMetrics | None = Field(
-        default=None,
-        description="Performance metrics (if requested)",
+    performance_metrics: Optional[ModelPerformanceMetrics] = Field(
+        default=None, description="Performance metrics (if requested)"
     )
 
-    peer_nodes: list[ModelPeerNode] | None = Field(
-        default=None,
-        description="Discovered peer nodes (if requested)",
+    peer_nodes: Optional[List[ModelPeerNode]] = Field(
+        default=None, description="Discovered peer nodes (if requested)"
     )
 
-    network_topology: ModelNetworkTopology | None = Field(
-        default=None,
-        description="Network topology information (if requested)",
+    network_topology: Optional[ModelNetworkTopology] = Field(
+        default=None, description="Network topology information (if requested)"
     )
 
-    dependency_info: ModelDependencyInfo | None = Field(
-        default=None,
-        description="Dependency information (if requested)",
+    dependency_info: Optional[ModelDependencyInfo] = Field(
+        default=None, description="Dependency information (if requested)"
     )
 
 
@@ -327,16 +273,14 @@ class ModelIntrospectionSubcontract(BaseModel):
     """
 
     subcontract_name: str = Field(
-        default="introspection_subcontract",
-        description="Name of the subcontract",
+        default="introspection_subcontract", description="Name of the subcontract"
     )
 
     subcontract_version: str = Field(
-        default="1.0.0",
-        description="Version of the subcontract",
+        default="1.0.0", description="Version of the subcontract"
     )
 
-    applicable_node_types: list[str] = Field(
+    applicable_node_types: List[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"],
         description="Node types this subcontract applies to",
     )
@@ -367,21 +311,16 @@ class ModelIntrospectionSubcontract(BaseModel):
     )
 
     include_dependency_health: bool = Field(
-        default=True,
-        description="Whether to include dependency health information",
+        default=True, description="Whether to include dependency health information"
     )
 
     peer_discovery_enabled: bool = Field(
-        default=True,
-        description="Whether peer discovery is enabled",
+        default=True, description="Whether peer discovery is enabled"
     )
 
     # Discovery configuration
     max_peers_to_track: int = Field(
-        default=100,
-        description="Maximum number of peer nodes to track",
-        ge=10,
-        le=1000,
+        default=100, description="Maximum number of peer nodes to track", ge=10, le=1000
     )
 
     peer_timeout_ms: int = Field(
@@ -435,5 +374,5 @@ class ModelIntrospectionSubcontract(BaseModel):
                 "peer_health_check_interval_ms": 120000,
                 "performance_history_size": 100,
                 "metrics_collection_interval_ms": 10000,
-            },
+            }
         }

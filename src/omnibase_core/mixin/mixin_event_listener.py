@@ -720,7 +720,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     )
                     return result
                 if hasattr(data, "dict"):
-                    dict_data = data.dict()
+                    dict_data = data.model_dump()
                     result = input_state_class(**dict_data)
                     emit_log_event(
                         LogLevel.DEBUG,
@@ -879,7 +879,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     {"node_name": self.get_node_name()},
                 )
             elif hasattr(output_state, "dict"):
-                completion_data["result"] = output_state.dict()
+                completion_data["result"] = output_state.model_dump()
                 emit_log_event(
                     LogLevel.DEBUG,
                     "✅ PUBLISH_COMPLETION: Added output state via dict method",

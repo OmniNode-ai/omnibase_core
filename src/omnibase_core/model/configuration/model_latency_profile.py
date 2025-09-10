@@ -47,7 +47,3 @@ class ModelLatencyProfile(BaseModel):
         default_factory=list,
         description="Latency optimization suggestions",
     )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)

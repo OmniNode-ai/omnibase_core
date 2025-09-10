@@ -121,7 +121,7 @@ class ModelReducerOutput(Generic[T_Output]):
         conflicts_resolved: int = 0,
         streaming_mode: StreamingMode = StreamingMode.BATCH,
         batches_processed: int = 1,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
     ):
         self.result = result
         self.operation_id = operation_id

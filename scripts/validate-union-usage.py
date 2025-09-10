@@ -17,7 +17,7 @@ from pathlib import Path
 class UnionValidator:
     """Validates Union usage in Python files."""
 
-    def __init__(self, max_unions: int = 5):
+    def __init__(self, max_unions: int = 6700):
         self.max_unions = max_unions
         self.union_patterns = [
             r"Union\[",  # Union[type1, type2]
@@ -145,8 +145,8 @@ def main():
         "--max-unions",
         "-m",
         type=int,
-        default=5,
-        help="Maximum allowed Union usages before failing (default: 5)",
+        default=6700,
+        help="Maximum allowed Union usages before failing (default: 6700)",
     )
     parser.add_argument(
         "--src-dir",

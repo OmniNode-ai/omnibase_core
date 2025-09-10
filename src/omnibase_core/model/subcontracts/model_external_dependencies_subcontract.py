@@ -9,9 +9,10 @@ Generated from external_dependencies subcontract following ONEX patterns.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, Optional
 
 # Import existing enums instead of duplicating
+from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 # Import existing models instead of duplicating
@@ -34,35 +35,27 @@ class ModelCallResult(BaseModel):
 
     success: bool = Field(..., description="Whether the external call was successful")
 
-    response_data: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Response data from external service",
+    response_data: Dict[str, Any] = Field(
+        default_factory=dict, description="Response data from external service"
     )
 
     http_status: int = Field(
-        ...,
-        description="HTTP status code from external service",
-        ge=100,
-        le=599,
+        ..., description="HTTP status code from external service", ge=100, le=599
     )
 
     response_time_ms: int = Field(
-        ...,
-        description="Response time in milliseconds",
-        ge=0,
+        ..., description="Response time in milliseconds", ge=0
     )
 
     service_endpoint: str = Field(
-        ...,
-        description="External service endpoint that was called",
+        ..., description="External service endpoint that was called"
     )
 
-    headers: dict[str, str] = Field(
-        default_factory=dict,
-        description="Response headers from external service",
+    headers: Dict[str, str] = Field(
+        default_factory=dict, description="Response headers from external service"
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional call metadata including retry count and circuit breaker state",
     )
@@ -87,17 +80,13 @@ class ModelExecutionMetadata(BaseModel):
     end_time: datetime = Field(..., description="When the operation completed")
 
     total_time_ms: int = Field(
-        ...,
-        description="Total execution time in milliseconds",
-        ge=0,
+        ..., description="Total execution time in milliseconds", ge=0
     )
 
     network_time_ms: int = Field(..., description="Network time in milliseconds", ge=0)
 
     processing_time_ms: int = Field(
-        ...,
-        description="Processing time in milliseconds",
-        ge=0,
+        ..., description="Processing time in milliseconds", ge=0
     )
 
     bytes_sent: int = Field(default=0, description="Number of bytes sent", ge=0)
@@ -111,33 +100,23 @@ class ModelHealthStatus(BaseModel):
     service_name: str = Field(..., description="Name of the external service")
 
     status: ServiceHealthStatus = Field(
-        ...,
-        description="Current health status of the service",
+        ..., description="Current health status of the service"
     )
 
     last_check: datetime = Field(
-        ...,
-        description="When the health check was last performed",
+        ..., description="When the health check was last performed"
     )
 
     response_time_ms: int = Field(
-        ...,
-        description="Response time of last health check in milliseconds",
-        ge=0,
+        ..., description="Response time of last health check in milliseconds", ge=0
     )
 
     error_rate_percent: float = Field(
-        ...,
-        description="Error rate percentage over recent window",
-        ge=0.0,
-        le=100.0,
+        ..., description="Error rate percentage over recent window", ge=0.0, le=100.0
     )
 
     availability_percent: float = Field(
-        ...,
-        description="Availability percentage over recent window",
-        ge=0.0,
-        le=100.0,
+        ..., description="Availability percentage over recent window", ge=0.0, le=100.0
     )
 
     circuit_breaker_state: str = Field(..., description="Current circuit breaker state")
@@ -147,28 +126,23 @@ class ModelFallbackResult(BaseModel):
     """Result of fallback strategy execution."""
 
     fallback_strategy_used: str = Field(
-        ...,
-        description="Name of the fallback strategy that was used",
+        ..., description="Name of the fallback strategy that was used"
     )
 
     fallback_success: bool = Field(
-        ...,
-        description="Whether the fallback strategy was successful",
+        ..., description="Whether the fallback strategy was successful"
     )
 
-    fallback_data: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Data returned by the fallback strategy",
+    fallback_data: Dict[str, Any] = Field(
+        default_factory=dict, description="Data returned by the fallback strategy"
     )
 
     original_error: str = Field(
-        ...,
-        description="Original error that triggered the fallback",
+        ..., description="Original error that triggered the fallback"
     )
 
     degradation_level: DegradationLevel = Field(
-        ...,
-        description="Level of service degradation applied",
+        ..., description="Level of service degradation applied"
     )
 
 
@@ -176,18 +150,15 @@ class ModelValidationResult(BaseModel):
     """Result of external service response validation."""
 
     validation_success: bool = Field(
-        ...,
-        description="Whether validation was successful",
+        ..., description="Whether validation was successful"
     )
 
     validation_errors: list[str] = Field(
-        default_factory=list,
-        description="List of validation errors if any",
+        default_factory=list, description="List of validation errors if any"
     )
 
-    normalized_response: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Response data normalized to internal format",
+    normalized_response: Dict[str, Any] = Field(
+        default_factory=dict, description="Response data normalized to internal format"
     )
 
 
@@ -199,20 +170,15 @@ class ModelTransformationMetadata(BaseModel):
     target_format: str = Field(..., description="Target data format")
 
     transformation_type: str = Field(
-        ...,
-        description="Type of transformation performed",
+        ..., description="Type of transformation performed"
     )
 
     transformation_time_ms: int = Field(
-        ...,
-        description="Time taken for transformation in milliseconds",
-        ge=0,
+        ..., description="Time taken for transformation in milliseconds", ge=0
     )
 
     records_processed: int = Field(
-        default=0,
-        description="Number of records processed",
-        ge=0,
+        default=0, description="Number of records processed", ge=0
     )
 
 
@@ -231,13 +197,11 @@ class ModelExternalDependenciesSubcontract(BaseModel):
     )
 
     subcontract_version: str = Field(
-        default="1.0.0",
-        description="Version of the subcontract",
+        default="1.0.0", description="Version of the subcontract"
     )
 
     applicable_node_types: list[str] = Field(
-        default=["EFFECT"],
-        description="Node types this subcontract applies to",
+        default=["EFFECT"], description="Node types this subcontract applies to"
     )
 
     # Configuration
@@ -256,15 +220,11 @@ class ModelExternalDependenciesSubcontract(BaseModel):
     )
 
     max_concurrent_calls: int = Field(
-        default=50,
-        description="Maximum concurrent external calls",
-        ge=1,
-        le=1000,
+        default=50, description="Maximum concurrent external calls", ge=1, le=1000
     )
 
     circuit_breaker_enabled: bool = Field(
-        default=True,
-        description="Whether circuit breaker is enabled",
+        default=True, description="Whether circuit breaker is enabled"
     )
 
     # Circuit breaker configuration
@@ -294,5 +254,5 @@ class ModelExternalDependenciesSubcontract(BaseModel):
                 "circuit_breaker_enabled": True,
                 "failure_threshold": 10,
                 "timeout_duration_ms": 60000,
-            },
+            }
         }

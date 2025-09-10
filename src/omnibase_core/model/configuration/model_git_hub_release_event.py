@@ -25,10 +25,6 @@ class ModelGitHubReleaseEvent(BaseModel):
     repository: ModelGitHubRepository = Field(..., description="Repository data")
     sender: ModelGitHubUser = Field(..., description="User who triggered the event")
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

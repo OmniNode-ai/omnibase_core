@@ -22,7 +22,8 @@ class ModelWorkflowServices(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
+        # Custom transformation using model_dump() for each service
         return {
-            name: service.dict(exclude_none=True)
+            name: service.model_dump(exclude_none=True)
             for name, service in self.services.items()
         }

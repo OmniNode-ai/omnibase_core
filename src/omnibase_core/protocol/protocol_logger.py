@@ -1,5 +1,5 @@
 # Re-export SPI ProtocolLogger
-from omnibase_spi.protocols.core.protocol_logger import ProtocolLogger
+from omnibase_spi import ProtocolLogger
 
 # Re-export SPI types
 __all__ = ["ProtocolLogger"]

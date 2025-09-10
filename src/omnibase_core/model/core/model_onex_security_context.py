@@ -277,20 +277,20 @@ class ModelOnexSecurityContext(BaseModel):
         )
 
         new_audit_events = [*self.audit_events, audit_event]
-        return self.copy(update={"audit_events": new_audit_events})
+        return self.model_copy(update={"audit_events": new_audit_events})
 
     def add_role(self, role: str) -> "ModelOnexSecurityContext":
         """Add authorization role."""
         if role not in self.authorization_roles:
             new_roles = [*self.authorization_roles, role]
-            return self.copy(update={"authorization_roles": new_roles})
+            return self.model_copy(update={"authorization_roles": new_roles})
         return self
 
     def add_permission(self, permission: str) -> "ModelOnexSecurityContext":
         """Add permission."""
         if permission not in self.permissions:
             new_permissions = [*self.permissions, permission]
-            return self.copy(update={"permissions": new_permissions})
+            return self.model_copy(update={"permissions": new_permissions})
         return self
 
     def add_resource_access(
@@ -308,7 +308,7 @@ class ModelOnexSecurityContext(BaseModel):
         else:
             new_resource_access[resource] = access_types
 
-        return self.copy(update={"resource_access": new_resource_access})
+        return self.model_copy(update={"resource_access": new_resource_access})
 
     def validate_context(self) -> bool:
         """Validate security context for completeness."""

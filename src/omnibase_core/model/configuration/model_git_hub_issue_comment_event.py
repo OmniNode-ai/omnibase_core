@@ -28,10 +28,6 @@ class ModelGitHubIssueCommentEvent(BaseModel):
         description="Changes made (for edited action)",
     )
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

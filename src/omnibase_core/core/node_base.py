@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase_spi.protocols.core.protocol_workflow_reducer import ProtocolWorkflowReducer
+from omnibase_spi import ProtocolWorkflowReducer
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,

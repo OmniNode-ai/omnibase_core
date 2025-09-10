@@ -110,14 +110,14 @@ class ModelCliCommandRegistry(BaseModel):
         Discover CLI commands from node contracts.
 
         Args:
-            base_path: Base path to search for nodes (defaults to src/omnibase/nodes)
+            base_path: Base path to search for nodes (defaults to src/omnibase_core/nodes)
 
         Returns:
             Number of commands discovered
         """
         if base_path is None:
             # Default to standard ONEX nodes directory
-            base_path = Path("src/omnibase/nodes")
+            base_path = Path("src/omnibase_core/nodes")
 
         if not base_path.exists():
             return 0

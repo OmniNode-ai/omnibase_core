@@ -63,10 +63,6 @@ class ModelConnectionProperties(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelConnectionProperties":
         """Create from dictionary for easy migration."""
@@ -97,11 +93,6 @@ class ModelConnectionProperties(BaseModel):
         description="List of masked field names",
     )
     masking_algorithm: str = Field("sha256", description="Masking algorithm used")
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     """
     Performance summary with typed fields.
     Replaces Dict[str, Any] for get_performance_summary() returns.
@@ -166,10 +157,6 @@ class ModelConnectionProperties(BaseModel):
     measurement_start: datetime = Field(..., description="Measurement start time")
     measurement_end: datetime = Field(..., description="Measurement end time")
     measurement_duration_seconds: float = Field(..., description="Measurement duration")
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
 
     def calculate_success_rate(self) -> float:
         """Calculate success rate percentage."""

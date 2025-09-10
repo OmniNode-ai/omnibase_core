@@ -328,6 +328,131 @@ tests/integration/patterns/                  # Integration tests
 └── test_reducer_pattern_integration.py
 ```
 
+## ONEX Type Safety Architecture Patterns
+
+### Generic Container Pattern (PREFERRED)
+
+**Use generic containers with protocol constraints instead of discriminated unions:**
+
+```python
+from typing import Protocol, TypeVar, Generic, runtime_checkable
+from pathlib import Path
+
+# Protocol naming: MUST start with "Protocol"
+@runtime_checkable
+class ProtocolJsonSerializable(Protocol):
+    """Protocol for values that can be JSON serialized."""
+    # Built-ins: str, int, float, bool, list, dict, None implement this
+
+# Constrained TypeVar for type safety
+SerializableValue = TypeVar('SerializableValue',
+    str, int, float, bool, list, dict, type(None)
+)
+
+class ModelValueContainer(BaseModel, Generic[SerializableValue]):
+    """Generic container preserving exact type information."""
+    value: SerializableValue
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def python_type(self) -> type:
+        return type(self.value)
+
+    def is_type(self, expected_type: type[SerializableValue]) -> bool:
+        return isinstance(self.value, expected_type)
+```
+
+### Validation Result Pattern
+
+**Use generics for validation results, not Optional types:**
+
+```python
+class ModelValidationResult(BaseModel, Generic[T]):
+    """Generic validation result preserving exact input type."""
+    is_valid: bool
+    value: T | None = None  # Only None when validation fails
+    errors: list[str] = Field(default_factory=list)
+    file_path: Path | None = None  # Use Path, not str
+
+    @classmethod
+    def success(cls, value: T) -> "ModelValidationResult[T]":
+        return cls(is_valid=True, value=value)
+
+    @classmethod
+    def failure(cls, errors: list[str]) -> "ModelValidationResult[T]":
+        return cls(is_valid=False, errors=errors)
+```
+
+### Anti-Patterns to Avoid
+
+❌ **DON'T: Discriminated unions for basic types**
+```python
+# WRONG - over-engineering basic types
+class ModelStringValue(BaseModel):
+    type: Literal["string"] = "string"
+    value: str
+
+ModelTypedValue = Union[ModelStringValue, ModelIntegerValue, ...]
+```
+
+❌ **DON'T: String paths instead of Path objects**
+```python
+# WRONG
+file_path: str | None = Field(...)
+
+# CORRECT
+file_path: Path | None = Field(...)
+```
+
+❌ **DON'T: Optional values in success cases**
+```python
+# WRONG - why is value optional when validation succeeded?
+validated_value: T | None = Field(...)
+
+# CORRECT - separate success/failure or conditional typing
+value: T  # Not optional when is_valid=True
+```
+
+❌ **DON'T: Any types or loose fallbacks**
+```python
+# WRONG - Any defeats the purpose of type safety
+context: dict[str, Any] | None = Field(...)
+**kwargs: Any
+
+# WRONG - Union fallbacks create ambiguity  
+file_path: str | Path
+version: str | ModelSemVer
+
+# CORRECT - Strong typing only
+context: dict[str, str] | None = Field(...)
+**kwargs: str
+file_path: Path  # Always Path, never string
+version: ModelSemVer  # Always typed, never string
+```
+
+### Protocol Constraints
+
+Use protocols to constrain generic types:
+
+```python
+@runtime_checkable
+class ProtocolValidatable(Protocol):
+    def is_valid(self) -> bool: ...
+    def get_errors(self) -> list[str]: ...
+
+@runtime_checkable  
+class ProtocolConfigurable(Protocol):
+    def get_default(self) -> Any: ...
+    def from_string(self, s: str) -> Any: ...
+
+# Generic container with protocol constraints
+class ModelProtocolContainer(BaseModel, Generic[T]):
+    value: T
+
+    def validate_protocol(self, protocol: type) -> bool:
+        return isinstance(self.value, protocol)
+```
+
 ## Implementation Guidelines
 
 ### 1. ONEX Architecture Compliance

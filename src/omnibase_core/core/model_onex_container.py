@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, TypeVar
 from uuid import uuid4
 
 from dependency_injector import containers, providers
-from omnibase_spi.protocols.core.protocol_logger import ProtocolLogger
+from omnibase_spi import ProtocolLogger
 
 from omnibase_core.core.common_types import ModelStateValue
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError

@@ -15,7 +15,7 @@ from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.utils import metrics_registry as metrics
 
 if TYPE_CHECKING:
-    from omnibase_spi.protocols.core.protocol_logger import ProtocolLogger
+    from omnibase_spi import ProtocolLogger
 
 
 class DistributedLockManager:

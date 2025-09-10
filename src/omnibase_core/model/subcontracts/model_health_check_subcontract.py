@@ -8,10 +8,14 @@ Generated from health_check subcontract following ONEX patterns.
 """
 
 from datetime import datetime
+from enum import Enum
+from typing import List, Optional
 
 # Import existing health models from omnibase_3
+from omnibase_spi.model.health.model_health_status import ModelHealthStatus
+
 # Import existing enums instead of duplicating
-from omnibase_spi.protocols.types.core_types import HealthStatus
+from omnibase_spi.protocols.types.core_types import HealthStatus, NodeType
 from pydantic import BaseModel, Field
 
 # Use HealthStatus from omnibase_core.enums.node instead
@@ -25,24 +29,21 @@ class ModelComponentHealth(BaseModel):
     status: HealthStatus = Field(..., description="Health status of the component")
 
     message: str = Field(
-        ...,
-        description="Descriptive message about the component health",
+        ..., description="Descriptive message about the component health"
     )
 
     last_check: datetime = Field(
-        ...,
-        description="When this component was last checked",
+        ..., description="When this component was last checked"
     )
 
-    check_duration_ms: int | None = Field(
+    check_duration_ms: Optional[int] = Field(
         default=None,
         description="Time taken for component health check in milliseconds",
         ge=0,
     )
 
     details: dict = Field(
-        default_factory=dict,
-        description="Additional component-specific health details",
+        default_factory=dict, description="Additional component-specific health details"
     )
 
 
@@ -56,52 +57,39 @@ class ModelNodeHealthStatus(BaseModel):
     timestamp: datetime = Field(..., description="When this health check was performed")
 
     check_duration_ms: int = Field(
-        ...,
-        description="Total duration of health check in milliseconds",
-        ge=0,
+        ..., description="Total duration of health check in milliseconds", ge=0
     )
 
     node_type: str = Field(
-        ...,
-        description="Type of ONEX node (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)",
+        ..., description="Type of ONEX node (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)"
     )
 
-    node_id: str | None = Field(
-        default=None,
-        description="Unique identifier for this node instance",
+    node_id: Optional[str] = Field(
+        default=None, description="Unique identifier for this node instance"
     )
 
 
 class ModelComponentHealthCollection(BaseModel):
     """Collection of component health statuses."""
 
-    components: list[ModelComponentHealth] = Field(
-        default_factory=list,
-        description="List of component health statuses",
+    components: List[ModelComponentHealth] = Field(
+        default_factory=list, description="List of component health statuses"
     )
 
     healthy_count: int = Field(
-        default=0,
-        description="Number of healthy components",
-        ge=0,
+        default=0, description="Number of healthy components", ge=0
     )
 
     degraded_count: int = Field(
-        default=0,
-        description="Number of degraded components",
-        ge=0,
+        default=0, description="Number of degraded components", ge=0
     )
 
     unhealthy_count: int = Field(
-        default=0,
-        description="Number of unhealthy components",
-        ge=0,
+        default=0, description="Number of unhealthy components", ge=0
     )
 
     total_components: int = Field(
-        default=0,
-        description="Total number of components checked",
-        ge=0,
+        default=0, description="Total number of components checked", ge=0
     )
 
 
@@ -111,31 +99,27 @@ class ModelDependencyHealth(BaseModel):
     dependency_name: str = Field(..., description="Name of the external dependency")
 
     dependency_type: str = Field(
-        ...,
-        description="Type of dependency (database, service, protocol, etc.)",
+        ..., description="Type of dependency (database, service, protocol, etc.)"
     )
 
     status: HealthStatus = Field(..., description="Health status of the dependency")
 
-    endpoint: str | None = Field(
-        default=None,
-        description="Endpoint or connection string for the dependency",
+    endpoint: Optional[str] = Field(
+        default=None, description="Endpoint or connection string for the dependency"
     )
 
     last_check: datetime = Field(
-        ...,
-        description="When this dependency was last checked",
+        ..., description="When this dependency was last checked"
     )
 
-    response_time_ms: int | None = Field(
+    response_time_ms: Optional[int] = Field(
         default=None,
         description="Response time for dependency check in milliseconds",
         ge=0,
     )
 
-    error_message: str | None = Field(
-        default=None,
-        description="Error message if dependency is unhealthy",
+    error_message: Optional[str] = Field(
+        default=None, description="Error message if dependency is unhealthy"
     )
 
 
@@ -143,30 +127,23 @@ class ModelHealthCheckResult(BaseModel):
     """Complete result of a node health check operation."""
 
     node_health: ModelNodeHealthStatus = Field(
-        ...,
-        description="Overall node health status",
+        ..., description="Overall node health status"
     )
 
     component_health: ModelComponentHealthCollection = Field(
-        ...,
-        description="Health status of individual components",
+        ..., description="Health status of individual components"
     )
 
-    dependency_health: list[ModelDependencyHealth] = Field(
-        default_factory=list,
-        description="Health status of external dependencies",
+    dependency_health: List[ModelDependencyHealth] = Field(
+        default_factory=list, description="Health status of external dependencies"
     )
 
     health_score: float = Field(
-        ...,
-        description="Calculated health score (0.0-1.0)",
-        ge=0.0,
-        le=1.0,
+        ..., description="Calculated health score (0.0-1.0)", ge=0.0, le=1.0
     )
 
-    recommendations: list[str] = Field(
-        default_factory=list,
-        description="Health improvement recommendations",
+    recommendations: List[str] = Field(
+        default_factory=list, description="Health improvement recommendations"
     )
 
 
@@ -180,16 +157,14 @@ class ModelHealthCheckSubcontract(BaseModel):
     """
 
     subcontract_name: str = Field(
-        default="health_check_subcontract",
-        description="Name of the subcontract",
+        default="health_check_subcontract", description="Name of the subcontract"
     )
 
     subcontract_version: str = Field(
-        default="1.0.0",
-        description="Version of the subcontract",
+        default="1.0.0", description="Version of the subcontract"
     )
 
-    applicable_node_types: list[str] = Field(
+    applicable_node_types: List[str] = Field(
         default=["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"],
         description="Node types this subcontract applies to",
     )
@@ -224,8 +199,7 @@ class ModelHealthCheckSubcontract(BaseModel):
     )
 
     include_dependency_checks: bool = Field(
-        default=True,
-        description="Whether to include external dependency health checks",
+        default=True, description="Whether to include external dependency health checks"
     )
 
     include_component_checks: bool = Field(
@@ -234,8 +208,7 @@ class ModelHealthCheckSubcontract(BaseModel):
     )
 
     enable_health_score_calculation: bool = Field(
-        default=True,
-        description="Whether to calculate overall health scores",
+        default=True, description="Whether to calculate overall health scores"
     )
 
     class Config:
@@ -256,5 +229,5 @@ class ModelHealthCheckSubcontract(BaseModel):
                 "include_dependency_checks": True,
                 "include_component_checks": True,
                 "enable_health_score_calculation": True,
-            },
+            }
         }

@@ -47,10 +47,6 @@ class ModelParsedConnectionInfo(BaseModel):
     )
     pool_size: int | None = Field(None, description="Connection pool size")
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelParsedConnectionInfo":
         """Create from dictionary for easy migration."""

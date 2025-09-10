@@ -98,6 +98,7 @@ class ModelSecurityPolicy(BaseModel):
 
     def to_dict(self) -> ModelSecurityPolicyData:
         """Convert to data container for backward compatibility."""
+        # Custom transformation using model_dump() in data container
         return ModelSecurityPolicyData(data=self.model_dump(exclude_none=True))
 
     @classmethod

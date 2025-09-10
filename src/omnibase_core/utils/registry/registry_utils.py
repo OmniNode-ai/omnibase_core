@@ -21,8 +21,8 @@ def get_default_node_dir(calling_file: str) -> Path:
         Path to the tool's v1_0_0 directory (parent.parent of registry file)
 
     Example:
-        # In registry file: src/omnibase/tools/canary/canary_pure_tool/v1_0_0/registry/registry_canary_pure_tool.py
-        # Returns: src/omnibase/tools/canary/canary_pure_tool/v1_0_0/
+        # In registry file: src/omnibase_core/tools/canary/canary_pure_tool/v1_0_0/registry/registry_canary_pure_tool.py
+        # Returns: src/omnibase_core/tools/canary/canary_pure_tool/v1_0_0/
         node_dir = get_default_node_dir(__file__)
     """
     return Path(calling_file).parent.parent

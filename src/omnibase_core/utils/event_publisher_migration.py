@@ -759,7 +759,7 @@ class EventPublisherMigrationUtility:
             raise OnexError(msg)
 
         with open(file_path, "w") as f:
-            json.dump(migration.dict(), f, indent=2, default=str)
+            json.dump(migration.model_dump(), f, indent=2, default=str)
 
     def import_migration_plan(self, file_path: Path) -> ModelServiceMigration:
         """Import migration plan from file."""

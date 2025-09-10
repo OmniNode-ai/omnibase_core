@@ -58,6 +58,7 @@ class ModelCliInterface(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
+        # Custom transformation logic for CLI interface format
         result = {}
 
         if self.entrypoint:

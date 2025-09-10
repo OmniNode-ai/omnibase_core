@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from typing import Any
 
-from omnibase_spi.protocols.core.protocol_logger import ProtocolLogger
+from omnibase_spi import ProtocolLogger
 
 from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError

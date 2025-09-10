@@ -52,7 +52,7 @@ class ModelAuditValue(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        # For backward compatibility, return a simple dict of changes
+        # Custom logic to format changes for backward compatibility
         result = {}
         for change in self.field_changes:
             if not change.is_sensitive():

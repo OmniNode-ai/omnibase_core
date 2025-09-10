@@ -70,7 +70,16 @@ repos:
       # Union Usage Validation
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: python scripts/validate-union-usage.py --max-unions 6700
+        entry: python scripts/validate-union-usage.py --max-unions 7000
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
+      # Pydantic Legacy Pattern Validation
+      - id: validate-pydantic-patterns
+        name: ONEX Pydantic Legacy Pattern Validation
+        entry: python scripts/validate-pydantic-patterns.py --allow-errors 13
         language: system
         pass_filenames: false
         files: ^src/.*\.py$

@@ -122,10 +122,6 @@ class ModelContractDocument(BaseModel):
             sort_keys=False,
         )
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary format."""
-        return self.model_dump(exclude_none=True)
-
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractDocument":
         """Create from YAML content."""

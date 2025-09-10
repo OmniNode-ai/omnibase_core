@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from .config import CLIConfig
+from .config import ModelCLIConfig as CLIConfig
 from .handlers import ConfigHandler, ProcessHandler, StatusHandler, TypeQualityHandler
 
 # Global console for error output

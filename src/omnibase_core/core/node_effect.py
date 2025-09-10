@@ -40,7 +40,7 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 # Import utilities for contract loading
 
