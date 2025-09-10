@@ -26,11 +26,13 @@ class ModelSecurityPolicyData(BaseModel):
 
     # Backwards compatibility property
     @property
-    def data(self) -> dict[str, Any]:
+    def data(self) -> dict[str, str | int | float | bool | list | dict | None]:
         """Get policy data as a regular dictionary for backwards compatibility."""
-        return self.typed_data.to_dict()
+        return self.typed_data.to_python_dict()
 
-    def set_policy_value(self, key: str, value: Any) -> None:
+    def set_policy_value(
+        self, key: str, value: str | int | float | bool | list | dict | None
+    ) -> None:
         """
         Set a policy value with automatic type conversion.
 
@@ -40,7 +42,9 @@ class ModelSecurityPolicyData(BaseModel):
         """
         self.typed_data.set_value(key, value)
 
-    def get_policy_value(self, key: str, default: Any = None) -> Any:
+    def get_policy_value(
+        self, key: str, default: str | int | float | bool | list | dict | None = None
+    ) -> str | int | float | bool | list | dict | None:
         """
         Get a policy value.
 
@@ -54,7 +58,9 @@ class ModelSecurityPolicyData(BaseModel):
         return self.typed_data.get_value(key, default)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelSecurityPolicyData":
+    def from_dict(
+        cls, data: dict[str, str | int | float | bool | list | dict | None]
+    ) -> "ModelSecurityPolicyData":
         """
         Create from a regular dictionary for backwards compatibility.
 
@@ -64,7 +70,7 @@ class ModelSecurityPolicyData(BaseModel):
         Returns:
             ModelSecurityPolicyData with typed values
         """
-        typed_mapping = ModelTypedMapping.from_dict(data)
+        typed_mapping = ModelTypedMapping.from_python_dict(data)
         return cls(typed_data=typed_mapping)
 
     class Config:

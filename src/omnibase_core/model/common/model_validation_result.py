@@ -11,11 +11,12 @@ This replaces:
 - omnibase_core.model.validation.model_validation_result
 """
 
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # Import the existing enum from validation module
 from omnibase_core.model.validation.model_validation_rule import EnumValidationSeverity
@@ -62,6 +63,61 @@ class ModelValidationIssue(BaseModel):
         None,
         description="Additional string context data for the issue (no Any types)",
     )
+
+    @field_validator("context")
+    @classmethod
+    def sanitize_context(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        """
+        Sanitize context data to prevent sensitive information exposure.
+
+        Removes or masks potentially sensitive data patterns like:
+        - API keys, tokens, passwords
+        - Email addresses
+        - URLs with query parameters
+        - File paths containing usernames
+        """
+        if v is None:
+            return v
+
+        sanitized = {}
+
+        # Patterns to detect sensitive data
+        sensitive_patterns = [
+            (
+                r"(?i)(api[_-]?key|token|password|secret|auth)",
+                r"[REDACTED]",
+            ),  # API keys, passwords
+            (
+                r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+                r"[EMAIL_REDACTED]",
+            ),  # Email addresses
+            (
+                r"https?://[^\s]*\?[^\s]*",
+                r"[URL_WITH_PARAMS_REDACTED]",
+            ),  # URLs with query params
+            (r"/Users/[^/\s]+", r"/Users/[USERNAME]"),  # User paths on macOS
+            (r"C:\\Users\\[^\\]+", r"C:\\Users\\[USERNAME]"),  # User paths on Windows
+        ]
+
+        for key, value in v.items():
+            if not isinstance(value, str):
+                # Skip non-string values
+                sanitized[key] = str(value)[:100]  # Truncate to prevent DoS
+                continue
+
+            sanitized_value = value
+
+            # Apply sanitization patterns
+            for pattern, replacement in sensitive_patterns:
+                sanitized_value = re.sub(pattern, replacement, sanitized_value)
+
+            # Truncate very long values to prevent DoS
+            if len(sanitized_value) > 500:
+                sanitized_value = sanitized_value[:497] + "..."
+
+            sanitized[key] = sanitized_value
+
+        return sanitized
 
 
 class ModelValidationMetadata(BaseModel):
@@ -312,3 +368,26 @@ class ModelValidationResult(BaseModel, Generic[T]):
         # Update summary
         if not self.is_valid:
             self.summary = f"Validation failed with {self.issues_found} total issues"
+        else:
+            self.summary = f"Validation completed with {self.issues_found} issues"
+
+        # Update metadata if available
+        if other.metadata and self.metadata:
+            # Merge metadata by summing counts where applicable
+            if other.metadata.files_processed is not None:
+                self.metadata.files_processed = (
+                    self.metadata.files_processed or 0
+                ) + other.metadata.files_processed
+
+            if other.metadata.rules_applied is not None:
+                self.metadata.rules_applied = (
+                    self.metadata.rules_applied or 0
+                ) + other.metadata.rules_applied
+
+            if other.metadata.duration_ms is not None:
+                self.metadata.duration_ms = (
+                    self.metadata.duration_ms or 0
+                ) + other.metadata.duration_ms
+        elif other.metadata and not self.metadata:
+            # Copy other's metadata if we don't have any
+            self.metadata = other.metadata

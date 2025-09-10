@@ -12,7 +12,7 @@ type-safe generic containers that preserve exact type information.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import ClassVar, Generic, Protocol, TypeVar, runtime_checkable
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -131,11 +131,24 @@ class ModelTypedMapping(BaseModel):
 
     This model provides a type-safe alternative to generic dictionaries,
     where each value is properly typed and validated.
+
+    Security Features:
+    - Maximum depth limit to prevent DoS attacks via deep nesting
+    - Automatic type validation to prevent data injection
     """
+
+    # Security constant - prevent DoS via deep nesting
+    MAX_DEPTH: ClassVar[int] = 10
 
     data: dict[str, ModelValueContainer[SerializableValue]] = Field(
         default_factory=dict,
         description="Mapping of keys to typed value containers",
+    )
+
+    current_depth: int = Field(
+        default=0,
+        description="Current nesting depth for DoS prevention",
+        exclude=True,  # Don't include in serialization
     )
 
     def set_string(self, key: str, value: str) -> None:
@@ -159,8 +172,38 @@ class ModelTypedMapping(BaseModel):
         self.data[key] = ModelValueContainer.create_list(value)
 
     def set_dict(self, key: str, value: dict) -> None:
-        """Set a dict value."""
+        """Set a dict value with depth checking for security."""
+        if self.current_depth > self.MAX_DEPTH:
+            raise ValueError(
+                f"Maximum nesting depth ({self.MAX_DEPTH}) exceeded to prevent DoS attacks"
+            )
         self.data[key] = ModelValueContainer.create_dict(value)
+
+    def set_value(self, key: str, value: SerializableValue) -> None:
+        """
+        Set a value with automatic type detection.
+
+        Args:
+            key: The key to set
+            value: The value to set (automatically typed)
+        """
+        if isinstance(value, str):
+            self.set_string(key, value)
+        elif isinstance(value, bool):  # Check bool before int
+            self.set_bool(key, value)
+        elif isinstance(value, int):
+            self.set_int(key, value)
+        elif isinstance(value, float):
+            self.set_float(key, value)
+        elif isinstance(value, list):
+            self.set_list(key, value)
+        elif isinstance(value, dict):
+            self.set_dict(key, value)
+        elif value is None:
+            # Skip None values for now - could add explicit None handling later
+            pass
+        else:
+            raise ValueError(f"Unsupported type for key '{key}': {type(value)}")
 
     def get_value(
         self, key: str, default: SerializableValue | None = None
@@ -192,6 +235,17 @@ class ModelTypedMapping(BaseModel):
             )
         return container.value  # Type checker knows this is int
 
+    def get_bool(self, key: str, default: bool | None = None) -> bool | None:
+        """Get a boolean value with type safety."""
+        container = self.data.get(key)
+        if container is None:
+            return default
+        if not container.is_type(bool):
+            raise ValueError(
+                f"Value for key '{key}' is not a bool, got {container.type_name}"
+            )
+        return container.value  # Type checker knows this is bool
+
     def has_key(self, key: str) -> bool:
         """Check if a key exists in the mapping."""
         return key in self.data
@@ -206,18 +260,27 @@ class ModelTypedMapping(BaseModel):
 
     @classmethod
     def from_python_dict(
-        cls, data: dict[str, SerializableValue]
+        cls, data: dict[str, SerializableValue], depth: int = 0
     ) -> "ModelTypedMapping":
         """
         Create a typed mapping from a regular Python dictionary.
 
         Args:
             data: Dictionary with JSON-serializable values
+            depth: Current nesting depth (for DoS prevention)
 
         Returns:
             ModelTypedMapping with typed containers
+
+        Raises:
+            ValueError: If maximum depth exceeded or unsupported type found
         """
-        instance = cls()
+        if depth > cls.MAX_DEPTH:
+            raise ValueError(
+                f"Maximum nesting depth ({cls.MAX_DEPTH}) exceeded to prevent DoS attacks"
+            )
+
+        instance = cls(current_depth=depth)
         for key, value in data.items():
             # Type-safe assignment based on Python type
             if isinstance(value, str):
@@ -231,7 +294,11 @@ class ModelTypedMapping(BaseModel):
             elif isinstance(value, list):
                 instance.set_list(key, value)
             elif isinstance(value, dict):
-                instance.set_dict(key, value)
+                # Recursively create nested mapping with depth + 1
+                nested_mapping = cls.from_python_dict(value, depth + 1)
+                instance.data[key] = ModelValueContainer.create_dict(
+                    nested_mapping.to_python_dict()
+                )
             elif value is None:
                 # For None values, we'll store as a special case
                 # This is the only legitimate use of a "null" representation
