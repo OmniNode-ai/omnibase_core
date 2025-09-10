@@ -14,7 +14,7 @@ cd your-repo-name
 
 # Add omnibase_core dependency
 poetry add omnibase_core --path ../omnibase_core --editable
-poetry add omnibase-spi --git git@github.com:YourOrg/omnibase-spi.git
+poetry add omnibase_spi --git https://github.com/YourOrg/omnibase_spi.git
 
 # Install development dependencies  
 poetry add --group dev pytest mypy ruff pre-commit
@@ -214,10 +214,10 @@ except Exception as e:
 **Solution:**
 ```bash
 # Ensure omnibase-spi is properly installed
-poetry add omnibase-spi --git git@github.com:YourOrg/omnibase-spi.git
+poetry add omnibase_spi --git https://github.com/YourOrg/omnibase_spi.git
 
 # Or if using SSH keys:
-poetry run pip install git+ssh://git@github.com/YourOrg/omnibase-spi.git
+poetry run pip install git+https://github.com/YourOrg/omnibase_spi.git
 ```
 
 ### Issue: Union Type Validation Failures  
