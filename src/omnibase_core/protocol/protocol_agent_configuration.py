@@ -7,8 +7,8 @@ including validation, persistence, versioning, and security.
 
 from abc import ABC, abstractmethod
 
-from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
 from omnibase_core.model.common.model_validation_result import ModelValidationResult
+from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
 
 
 class ProtocolAgentConfiguration(ABC):

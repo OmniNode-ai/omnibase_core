@@ -8,7 +8,7 @@ via ModelONEXContainer following our architecture patterns.
 import os
 from typing import Dict, Optional
 
-from omnibase_spi import ProtocolNodeConfiguration
+from omnibase_spi.protocols.core import ProtocolNodeConfiguration
 from omnibase_spi.protocols.types.core_types import ContextValue
 from pydantic import BaseModel, Field
 

@@ -110,7 +110,7 @@ result.add_error("Error message")
 
 # New usage with typed values
 result = ModelValidationResult.create_valid(value=processed_data)
-result.add_issue(EnumValidationSeverity.error, "Error message", 
+result.add_issue(EnumValidationSeverity.error, "Error message",
                 file_path="file.py", line_number=42)
 ```
 

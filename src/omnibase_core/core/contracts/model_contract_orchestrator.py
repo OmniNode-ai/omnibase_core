@@ -519,17 +519,17 @@ class ModelContractOrchestrator(ModelContractBase):  # type: ignore[misc]
     )
 
     # Infrastructure-specific fields for backward compatibility
-    tool_specification: dict[str, str] | None = Field(
+    tool_specification: dict[str, Any] | None = Field(
         default=None,
         description="Tool specification for infrastructure patterns",
     )
 
-    service_configuration: dict[str, str] | None = Field(
+    service_configuration: dict[str, Any] | None = Field(
         default=None,
         description="Service configuration for infrastructure patterns",
     )
 
-    input_state: dict[str, str] | None = Field(
+    input_state: dict[str, Any] | None = Field(
         default=None,
         description="Input state specification",
     )

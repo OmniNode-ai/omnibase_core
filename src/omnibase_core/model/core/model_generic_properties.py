@@ -2,9 +2,11 @@
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.types import PropertyValue
 
 
 class ModelGenericProperties(BaseModel):
@@ -45,7 +47,7 @@ class ModelGenericProperties(BaseModel):
 
     model_config = ConfigDict(extra="forbid")  # Strict validation
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, PropertyValue]:
         """Convert to flat dictionary for backward compatibility."""
         # Custom flattening logic for backward compatibility
         result = {}
@@ -59,7 +61,7 @@ class ModelGenericProperties(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any] | None,
+        data: dict[str, PropertyValue] | None,
     ) -> Optional["ModelGenericProperties"]:
         """Create from dictionary with type inference."""
         if data is None:
@@ -82,7 +84,9 @@ class ModelGenericProperties(BaseModel):
 
         return obj
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(
+        self, key: str, default: PropertyValue | None = None
+    ) -> PropertyValue | None:
         """Get property value by key."""
         for prop_dict in [
             self.string_properties,
