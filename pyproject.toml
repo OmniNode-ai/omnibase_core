@@ -23,8 +23,8 @@ full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 [tool.poetry.dependencies]
 python = "^3.12"
 # ONEX SPI dependency - HTTPS format for improved CI/CD compatibility
-# Authentication via git config with GitHub token or PAT
-# Example: git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+# Authentication via git config with GitHub token or Personal Access Token
+# Setup: git config --global url."https://TOKEN@github.com/".insteadOf "https://github.com/"
 omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"

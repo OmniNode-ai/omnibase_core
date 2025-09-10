@@ -71,25 +71,25 @@ This document defines the allowed import relationships between model domains to 
 ### ❌ Circular Dependencies
 ```python
 # FORBIDDEN: Core importing from other domains
-from omnibase.model.service.model_service_config import ServiceConfig  # ❌
+from omnibase_spi.model.service.model_service_config import ServiceConfig  # ❌
 
 # FORBIDDEN: Domain A and B importing from each other
-from omnibase.model.health.model_health_check import HealthCheck       # In security/
-from omnibase.model.security.model_secret_config import SecretConfig   # In health/
+from omnibase_spi.model.health.model_health_check import HealthCheck       # In security/
+from omnibase_spi.model.security.model_secret_config import SecretConfig   # In health/
 ```
 
 ### ❌ Horizontal Dependencies (Same Level)
 ```python
 # FORBIDDEN: Same-level domain imports (unless explicitly allowed)
-from omnibase.model.health.model_health_check import HealthCheck       # In security/
-from omnibase.model.security.model_fallback_strategy import Fallback   # In health/
+from omnibase_spi.model.health.model_health_check import HealthCheck       # In security/
+from omnibase_spi.model.security.model_fallback_strategy import Fallback   # In health/
 ```
 
 ### ❌ Upward Dependencies
 ```python
 # FORBIDDEN: Lower-level importing from higher-level
-from omnibase.model.scenario.model_scenario import Scenario            # In core/
-from omnibase.model.registry.model_registry_config import RegistryConfig # In service/
+from omnibase_spi.model.scenario.model_scenario import Scenario            # In core/
+from omnibase_spi.model.registry.model_registry_config import RegistryConfig # In service/
 ```
 
 ## ✅ Allowed Import Patterns
@@ -97,22 +97,22 @@ from omnibase.model.registry.model_registry_config import RegistryConfig # In se
 ### ✅ Foundation Imports
 ```python
 # ALLOWED: Any domain importing from core
-from omnibase.model.core.model_base_error import BaseError             # ✅
-from omnibase.model.core.model_shared_types import SharedTypes         # ✅
+from omnibase_spi.model.core.model_base_error import BaseError             # ✅
+from omnibase_spi.model.core.model_shared_types import SharedTypes         # ✅
 ```
 
 ### ✅ Service Layer Imports
 ```python
 # ALLOWED: Service importing from infrastructure domains
-from omnibase.model.configuration.model_handler_config import HandlerConfig  # ✅
-from omnibase.model.security.model_fallback_strategy import FallbackStrategy  # ✅
-from omnibase.model.health.model_health_check import HealthCheck              # ✅
+from omnibase_spi.model.configuration.model_handler_config import HandlerConfig  # ✅
+from omnibase_spi.model.security.model_fallback_strategy import FallbackStrategy  # ✅
+from omnibase_spi.model.health.model_health_check import HealthCheck              # ✅
 ```
 
 ### ✅ Cross-Domain Interface Usage
 ```python
 # ALLOWED: Using __exposed__ interface for approved cross-domain access
-from omnibase.model.__exposed__ import (
+from omnibase_spi.model.__exposed__ import (
     BaseError,      # From core
     HealthCheck,    # From health  
     HandlerConfig   # From configuration
@@ -157,16 +157,16 @@ from omnibase.model.__exposed__ import (
 
 ```bash
 # Check all model imports
-python scripts/import_boundary_linter.py src/omnibase/model/
+python scripts/import_boundary_linter.py src/omnibase_spi/model/
 
 # Check specific domain
-python scripts/import_boundary_linter.py src/omnibase/model/service/
+python scripts/import_boundary_linter.py src/omnibase_spi/model/service/
 
 # Dry run (show violations without failing)
-python scripts/import_boundary_linter.py --dry-run src/omnibase/model/
+python scripts/import_boundary_linter.py --dry-run src/omnibase_spi/model/
 
 # Fix auto-fixable violations
-python scripts/import_boundary_linter.py --fix src/omnibase/model/
+python scripts/import_boundary_linter.py --fix src/omnibase_spi/model/
 ```
 
 ## 📚 Implementation Guidelines
@@ -214,23 +214,23 @@ python scripts/import_boundary_linter.py --fix src/omnibase/model/
 ### Good Import Structure
 ```python
 # service/model_service_config.py
-from omnibase.model.core.model_base_result import BaseResult           # ✅ Foundation
-from omnibase.model.configuration.model_handler_config import Config  # ✅ Infrastructure
-from omnibase.model.security.model_secret_config import SecretConfig  # ✅ Allowed dependency
+from omnibase_spi.model.core.model_base_result import BaseResult           # ✅ Foundation
+from omnibase_spi.model.configuration.model_handler_config import Config  # ✅ Infrastructure
+from omnibase_spi.model.security.model_secret_config import SecretConfig  # ✅ Allowed dependency
 ```
 
 ### Bad Import Structure
 ```python
 # security/model_secret_config.py
-from omnibase.model.service.model_service_config import ServiceConfig  # ❌ Upward dependency
-from omnibase.model.registry.model_registry_config import RegConfig    # ❌ Horizontal import
+from omnibase_spi.model.service.model_service_config import ServiceConfig  # ❌ Upward dependency
+from omnibase_spi.model.registry.model_registry_config import RegConfig    # ❌ Horizontal import
 ```
 
 ### Refactored Structure
 ```python
 # security/model_secret_config.py
-from omnibase.model.core.model_shared_types import ConfigurationType   # ✅ Foundation
-from omnibase.model.__exposed__ import HandlerConfig                   # ✅ Cross-domain interface
+from omnibase_spi.model.core.model_shared_types import ConfigurationType   # ✅ Foundation
+from omnibase_spi.model.__exposed__ import HandlerConfig                   # ✅ Cross-domain interface
 ```
 
 ## 📞 Contact and Support
