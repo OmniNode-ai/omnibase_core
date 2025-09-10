@@ -7,12 +7,10 @@ and state machine models with audit trails and recovery mechanisms.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Set
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
 
 class WorkflowState(str, Enum):
@@ -32,7 +30,8 @@ class ModelTransitionReason(BaseModel):
     description: str = Field(..., description="Human-readable transition reason")
     category: str = Field(default="manual", description="Reason category")
     automated: bool = Field(
-        default=False, description="Whether transition was automated"
+        default=False,
+        description="Whether transition was automated",
     )
 
 
@@ -43,9 +42,9 @@ class ModelStateTransition(BaseModel):
     to_state: WorkflowState
     transition_time: datetime = Field(default_factory=datetime.now)
     reason: ModelTransitionReason = Field(
-        default_factory=lambda: ModelTransitionReason(description="State transition")
+        default_factory=lambda: ModelTransitionReason(description="State transition"),
     )
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ModelWorkflowIdentity(BaseModel):
@@ -54,7 +53,8 @@ class ModelWorkflowIdentity(BaseModel):
     workflow_id: UUID
     workflow_type: str
     instance_id: str = Field(
-        default="default", description="Workflow instance identifier"
+        default="default",
+        description="Workflow instance identifier",
     )
     correlation_id: UUID
 
@@ -67,7 +67,8 @@ class ModelWorkflowTiming(BaseModel):
     started_at: datetime = Field(default_factory=datetime.now)
     completed_at: datetime = Field(default_factory=datetime.now)
     processing_time_ms: float = Field(
-        default=0.0, description="Processing time in milliseconds"
+        default=0.0,
+        description="Processing time in milliseconds",
     )
 
 
@@ -75,7 +76,7 @@ class ModelWorkflowError(BaseModel):
     """Strongly typed workflow error model."""
 
     error_message: str = Field(default="", description="Error message if any")
-    error_details: Dict[str, Any] = Field(default_factory=dict)
+    error_details: dict[str, Any] = Field(default_factory=dict)
     has_error: bool = Field(default=False, description="Whether workflow has error")
 
 
@@ -100,15 +101,15 @@ class ModelWorkflowStateModel(BaseModel):
     error_info: ModelWorkflowError = Field(default_factory=ModelWorkflowError)
 
     # Metadata and context
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    transition_history: List[ModelStateTransition] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    transition_history: list[ModelStateTransition] = Field(default_factory=list)
 
     # Validation
     @field_validator("identity", mode="before")
     @classmethod
     def validate_identity(cls, v):
         if isinstance(v, dict):
-            if "workflow_type" in v and v["workflow_type"]:
+            if v.get("workflow_type"):
                 v["workflow_type"] = v["workflow_type"].lower()
         elif hasattr(v, "workflow_type") and v.workflow_type:
             v.workflow_type = v.workflow_type.lower()
@@ -158,7 +159,7 @@ class ModelWorkflowStateModel(BaseModel):
         self,
         new_state: WorkflowState,
         reason: ModelTransitionReason = None,
-        metadata: Dict[str, Any] = None,
+        metadata: dict[str, Any] = None,
     ) -> "ModelWorkflowStateModel":
         """
         Transition to a new state with validation and history tracking.
@@ -177,7 +178,7 @@ class ModelWorkflowStateModel(BaseModel):
         # Validate transition
         if not self.can_transition_to(new_state):
             raise ValueError(
-                f"Invalid state transition from {self.current_state} to {new_state}"
+                f"Invalid state transition from {self.current_state} to {new_state}",
             )
 
         # Create default reason if not provided
@@ -238,7 +239,8 @@ class ModelWorkflowStateModel(BaseModel):
             True if transition is valid, False otherwise
         """
         return StateTransitionValidator.is_valid_transition(
-            self.current_state, target_state
+            self.current_state,
+            target_state,
         )
 
     def is_terminal_state(self) -> bool:
@@ -276,7 +278,9 @@ class ModelWorkflowStateModel(BaseModel):
         )
 
     def set_error(
-        self, error_message: str, error_details: Dict[str, Any] = None
+        self,
+        error_message: str,
+        error_details: dict[str, Any] = None,
     ) -> None:
         """
         Set error information and transition to failed state.
@@ -291,7 +295,9 @@ class ModelWorkflowStateModel(BaseModel):
 
         if self.current_state != WorkflowState.FAILED:
             reason = ModelTransitionReason(
-                description=f"Error: {error_message}", category="error", automated=True
+                description=f"Error: {error_message}",
+                category="error",
+                automated=True,
             )
             self.transition_to(
                 WorkflowState.FAILED,
@@ -332,7 +338,7 @@ class ModelWorkflowStateModel(BaseModel):
         current_time = datetime.now()
         return (current_time - start_time).total_seconds() * 1000
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """
         Get a summary dictionary of the workflow state.
 
@@ -366,7 +372,7 @@ class StateTransitionValidator:
     """Validator for state transitions with business rules."""
 
     # Valid state transitions mapping
-    VALID_TRANSITIONS: Dict[WorkflowState, Set[WorkflowState]] = {
+    VALID_TRANSITIONS: dict[WorkflowState, set[WorkflowState]] = {
         WorkflowState.PENDING: {WorkflowState.PROCESSING, WorkflowState.CANCELLED},
         WorkflowState.PROCESSING: {
             WorkflowState.COMPLETED,
@@ -385,7 +391,9 @@ class StateTransitionValidator:
 
     @classmethod
     def is_valid_transition(
-        cls, from_state: WorkflowState, to_state: WorkflowState
+        cls,
+        from_state: WorkflowState,
+        to_state: WorkflowState,
     ) -> bool:
         """
         Check if a state transition is valid.
@@ -400,7 +408,7 @@ class StateTransitionValidator:
         return to_state in cls.VALID_TRANSITIONS.get(from_state, set())
 
     @classmethod
-    def get_valid_transitions(cls, from_state: WorkflowState) -> Set[WorkflowState]:
+    def get_valid_transitions(cls, from_state: WorkflowState) -> set[WorkflowState]:
         """
         Get all valid transition states from a given state.
 
@@ -426,7 +434,7 @@ class StateTransitionValidator:
         return len(cls.VALID_TRANSITIONS.get(state, set())) == 0
 
     @classmethod
-    def validate_transition_path(cls, states: List[WorkflowState]) -> bool:
+    def validate_transition_path(cls, states: list[WorkflowState]) -> bool:
         """
         Validate a sequence of state transitions.
 

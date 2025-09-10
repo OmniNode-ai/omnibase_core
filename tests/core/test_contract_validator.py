@@ -6,7 +6,6 @@ in the PR fixes.
 """
 
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -32,8 +31,8 @@ class TestEnhancedContractValidator:
                 "properties": {
                     "name": {"type": "string", "description": "User name"},
                     "age": {"type": "integer", "description": "User age"},
-                }
-            }
+                },
+            },
         }
 
         fields = validator._generate_pydantic_fields(contract_data)
@@ -61,8 +60,8 @@ class TestEnhancedContractValidator:
                         "description": "Count field",
                         "default": 0,
                     },
-                }
-            }
+                },
+            },
         }
 
         fields = validator._generate_pydantic_fields(contract_data)
@@ -101,7 +100,7 @@ class TestEnhancedContractValidator:
                     "output_type": "bool",
                     "description": "Validate input",
                 },
-            ]
+            ],
         }
 
         methods = validator._generate_protocol_methods(contract_data)
@@ -142,7 +141,7 @@ class TestEnhancedContractValidator:
             "enum_values": [
                 {"name": "High Priority", "value": "high"},
                 {"name": "Low Priority", "value": "low"},
-            ]
+            ],
         }
 
         values = validator._generate_enum_values(contract_data)
@@ -184,7 +183,7 @@ class TestEnhancedContractValidator:
             "node_name": "test_node",
             "description": "Test contract",
             "schema": {
-                "properties": {"data": {"type": "string", "description": "Test data"}}
+                "properties": {"data": {"type": "string", "description": "Test data"}},
             },
         }
 

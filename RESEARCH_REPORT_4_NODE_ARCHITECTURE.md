@@ -2,12 +2,12 @@
 
 **Research Date**: January 30, 2025  
 **Research Scope**: Comprehensive analysis of proper 4-node architecture implementation  
-**Target Systems**: omnibase-core vs omnibase_3 reference implementation  
+**Target Systems**: omnibase_core vs omnibase_3 reference implementation  
 **Status**: Complete  
 
 ## Executive Summary
 
-This research provides a comprehensive analysis of the proper 4-node architecture pattern by examining both the reference implementation (omnibase_3) and the current implementation (omnibase-core). The analysis covers node patterns, service architecture, contract systems, and mixin composition to understand the complete architectural framework.
+This research provides a comprehensive analysis of the proper 4-node architecture pattern by examining both the reference implementation (omnibase_3) and the current implementation (omnibase_core). The analysis covers node patterns, service architecture, contract systems, and mixin composition to understand the complete architectural framework.
 
 **Key Findings:**
 - Current implementation successfully implements all 4 specialized node types
@@ -46,9 +46,9 @@ The reference documentation defines a clear 4-node classification system:
    - **Characteristics**: Thunk emission, dependency management
    - **Examples**: Workflow engines, conditional branching, load balancing
 
-### 1.2 Current Implementation Analysis (omnibase-core)
+### 1.2 Current Implementation Analysis (omnibase_core)
 
-**Location**: `/Volumes/PRO-G40/Code/omnibase-core/src/omnibase_core/core/`
+**Location**: `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/core/`
 
 #### NodeCoreBase Foundation
 All specialized nodes inherit from `NodeCoreBase` providing:
@@ -380,7 +380,7 @@ metadata_loader = container.get_service("ProtocolSchemaLoader")
 
 ### 8.1 Current Implementation Assessment
 
-The current omnibase-core implementation demonstrates **excellent alignment** with the reference architecture standards. All 4 node types are properly implemented with:
+The current omnibase_core implementation demonstrates **excellent alignment** with the reference architecture standards. All 4 node types are properly implemented with:
 
 - Clear separation of responsibilities matching reference classification
 - Robust contract system for configuration management  

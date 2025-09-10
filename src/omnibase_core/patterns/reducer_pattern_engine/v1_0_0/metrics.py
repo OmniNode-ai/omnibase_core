@@ -10,7 +10,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 try:
@@ -111,10 +111,10 @@ class ReducerMetricsCollector:
             max_workflow_history: Maximum number of individual workflow metrics to keep
         """
         self._workflow_metrics: deque = deque(maxlen=max_workflow_history)
-        self._aggregate_metrics: Dict[str, AggregateMetrics] = defaultdict(
-            lambda: AggregateMetrics(workflow_type="unknown")
+        self._aggregate_metrics: dict[str, AggregateMetrics] = defaultdict(
+            lambda: AggregateMetrics(workflow_type="unknown"),
         )
-        self._system_metrics: Dict[str, Any] = {}
+        self._system_metrics: dict[str, Any] = {}
         self._lock = threading.RLock()
         self._logger = logging.getLogger(__name__)
         self._start_time = time.time()
@@ -218,10 +218,12 @@ class ReducerMetricsCollector:
             aggregate.workflow_type = workflow_type
             aggregate.total_processing_time_ms += duration_ms
             aggregate.min_processing_time_ms = min(
-                aggregate.min_processing_time_ms, duration_ms
+                aggregate.min_processing_time_ms,
+                duration_ms,
             )
             aggregate.max_processing_time_ms = max(
-                aggregate.max_processing_time_ms, duration_ms
+                aggregate.max_processing_time_ms,
+                duration_ms,
             )
             aggregate.recent_processing_times.append(duration_ms)
 
@@ -271,7 +273,7 @@ class ReducerMetricsCollector:
             aggregate.workflow_type = workflow_type
             aggregate.total_memory_usage_mb += memory_mb
 
-    def get_metrics_summary(self) -> Dict[str, Any]:
+    def get_metrics_summary(self) -> dict[str, Any]:
         """
         Get comprehensive metrics summary.
 
@@ -314,7 +316,7 @@ class ReducerMetricsCollector:
 
             return summary
 
-    def get_workflow_type_metrics(self, workflow_type: str) -> Dict[str, Any]:
+    def get_workflow_type_metrics(self, workflow_type: str) -> dict[str, Any]:
         """
         Get metrics for a specific workflow type.
 
@@ -359,7 +361,7 @@ class ReducerMetricsCollector:
                 "recent_processing_times": list(aggregate.recent_processing_times),
             }
 
-    def get_recent_workflows(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_workflows(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get recent workflow metrics.
 
@@ -415,10 +417,12 @@ class ReducerMetricsCollector:
 
         # Update min/max processing times
         aggregate.min_processing_time_ms = min(
-            aggregate.min_processing_time_ms, workflow_metrics.processing_time_ms
+            aggregate.min_processing_time_ms,
+            workflow_metrics.processing_time_ms,
         )
         aggregate.max_processing_time_ms = max(
-            aggregate.max_processing_time_ms, workflow_metrics.processing_time_ms
+            aggregate.max_processing_time_ms,
+            workflow_metrics.processing_time_ms,
         )
 
         # Add to recent processing times
@@ -437,7 +441,7 @@ class ReducerMetricsCollector:
                         "num_fds": 0,
                         "create_time": 0.0,
                         "status": "unknown",
-                    }
+                    },
                 )
                 return
 
@@ -451,13 +455,13 @@ class ReducerMetricsCollector:
                     "num_fds": process.num_fds() if hasattr(process, "num_fds") else 0,
                     "create_time": process.create_time(),
                     "status": process.status(),
-                }
+                },
             )
         except Exception as e:
             emit_log_event(
                 logger=self._logger,
                 level="WARNING",
-                message=f"Failed to update system metrics: {str(e)}",
+                message=f"Failed to update system metrics: {e!s}",
             )
 
     def _get_memory_usage_mb(self) -> float:

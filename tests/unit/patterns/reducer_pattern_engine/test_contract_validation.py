@@ -50,7 +50,7 @@ class TestContractValidation:
                     "class_name": "ProtocolEventBus",
                     "module": "omnibase.protocol.protocol_event_bus",
                 },
-            ]
+            ],
         }
 
         contract = ModelContractReducerPatternEngine(**contract_data)
@@ -68,8 +68,8 @@ class TestContractValidation:
                     "name": "container",
                     # Missing "type" and "class_name" fields
                     "module": "omnibase.protocol.protocol_container",
-                }
-            ]
+                },
+            ],
         }
 
         with pytest.raises(ValueError, match="missing required fields"):
@@ -84,8 +84,8 @@ class TestContractValidation:
                     "type": "invalid_type",  # Invalid type
                     "class_name": "ProtocolContainer",
                     "module": "omnibase.protocol.protocol_container",
-                }
-            ]
+                },
+            ],
         }
 
         with pytest.raises(ValueError, match="invalid type"):
@@ -100,8 +100,8 @@ class TestContractValidation:
                     "type": "protocol",
                     "class_name": "InvalidContainer",  # Should start with "Protocol"
                     "module": "omnibase.protocol.protocol_container",
-                }
-            ]
+                },
+            ],
         }
 
         with pytest.raises(ValueError, match="must start with 'Protocol'"):
@@ -116,8 +116,8 @@ class TestContractValidation:
                     "type": "protocol",
                     "class_name": "",  # Empty class name
                     "module": "omnibase.protocol.protocol_container",
-                }
-            ]
+                },
+            ],
         }
 
         with pytest.raises(ValueError, match="invalid class_name"):
@@ -130,7 +130,7 @@ class TestContractValidation:
                 "ProtocolContainer",
                 "ProtocolEventBus",
                 "ProtocolSchemaLoader",
-            ]
+            ],
         }
 
         contract = ModelContractReducerPatternEngine(**contract_data)

@@ -16,7 +16,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 try:
     from omnibase_spi.protocols.types.core_types import ProtocolLogContext
 except ImportError:
-    # Fallback for when omnibase-spi is not available
+    # Fallback for when omnibase_spi is not available
     from typing import Protocol
 
     class ProtocolLogContext(Protocol):
@@ -29,7 +29,7 @@ class PydanticJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, BaseModel):
             return obj.model_dump()
-        elif hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
+        if hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
             return obj.to_dict()
         return super().default(obj)
 

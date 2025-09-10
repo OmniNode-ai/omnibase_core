@@ -50,7 +50,8 @@ class ModelIntrospectionData(BaseModel):
     metadata: dict[str, str] = Field(..., description="Node metadata")
     tags: list[str] = Field(..., description="Discovery tags")
     infrastructure_tools: dict[str, list] = Field(
-        default_factory=dict, description="Infrastructure tools info"
+        default_factory=dict,
+        description="Infrastructure tools info",
     )
     # Allow additional fields for flexibility
     model_config = {"extra": "allow"}
@@ -106,7 +107,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
@@ -129,7 +130,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
@@ -151,7 +152,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(
                 ToolInfrastructureReducer,
@@ -171,7 +172,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(
                 ToolInfrastructureReducer,
@@ -197,7 +198,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(
@@ -220,7 +221,7 @@ class TestInfrastructureReducerInitialization:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch.object(ToolInfrastructureReducer, "_load_infrastructure_adapters"),
             patch.object(
@@ -273,7 +274,7 @@ class TestInfrastructureReducerAdapterLoading:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
@@ -302,7 +303,7 @@ class TestInfrastructureReducerAdapterLoading:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),
@@ -327,7 +328,7 @@ class TestInfrastructureReducerAdapterLoading:
         with (
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch(
                 "importlib.import_module",
@@ -2270,7 +2271,7 @@ class TestInfrastructureReducerComprehensiveCoverage:
             patch.object(ToolInfrastructureReducer, "_load_specialized_components"),
             patch("builtins.open"),
             patch(
-                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml"
+                "omnibase_core.model.core.model_generic_yaml.ModelGenericYaml.from_yaml",
             ),
             patch("importlib.import_module"),
             patch("getattr", return_value=mock_adapter_class),

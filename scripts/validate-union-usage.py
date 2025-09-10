@@ -12,7 +12,6 @@ Usage:
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 class UnionValidator:
@@ -25,7 +24,7 @@ class UnionValidator:
             r"\|\s*\w+",  # type1 | type2 (Python 3.10+ syntax)
         ]
 
-    def find_unions_in_file(self, file_path: Path) -> List[Tuple[int, str]]:
+    def find_unions_in_file(self, file_path: Path) -> list[tuple[int, str]]:
         """
         Find all Union usages in a Python file.
 
@@ -38,7 +37,7 @@ class UnionValidator:
         unions = []
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 for line_num, line in enumerate(f, 1):
                     for pattern in self.union_patterns:
                         if re.search(pattern, line):
@@ -85,12 +84,12 @@ class UnionValidator:
                 total_unions += len(unions)
 
         print(
-            f"📊 Found {total_unions} Union usages across {len(files_with_unions)} files"
+            f"📊 Found {total_unions} Union usages across {len(files_with_unions)} files",
         )
 
         # Report findings
         if files_with_unions:
-            print(f"\n⚠️  FILES WITH UNION USAGE:")
+            print("\n⚠️  FILES WITH UNION USAGE:")
             for file_path, unions in files_with_unions.items():
                 print(f"\n   📄 {file_path} ({len(unions)} unions):")
                 for line_num, line in unions[:3]:  # Show first 3 unions per file
@@ -103,7 +102,7 @@ class UnionValidator:
 
         if total_unions > self.max_unions:
             print(
-                f"\n❌ ERROR: Too many Union usages ({total_unions} > {self.max_unions})"
+                f"\n❌ ERROR: Too many Union usages ({total_unions} > {self.max_unions})",
             )
             print("   ONEX Architecture promotes strong typing over loose unions.")
             print("   Consider using:")
@@ -119,9 +118,9 @@ class UnionValidator:
             print("   • Use specific types instead of Union[str, int, float, bool]")
             print("   • Use Pydantic models for complex data structures")
         else:
-            print(f"\n✅ EXCELLENT: No Union types found!")
+            print("\n✅ EXCELLENT: No Union types found!")
 
-        print(f"\n📊 UNION VALIDATION SUMMARY")
+        print("\n📊 UNION VALIDATION SUMMARY")
         print("=" * 50)
         print(f"Total Union usages: {total_unions}")
         print(f"Files with unions: {len(files_with_unions)}")

@@ -16,16 +16,16 @@ from .circuit_breaker import (
 )
 
 __all__ = [
-    "CircuitBreakerState",
     "CircuitBreakerEvent",
-    "CircuitBreakerMetrics",
-    "ModelCircuitBreakerConfig",
     "CircuitBreakerException",
+    "CircuitBreakerFactory",
+    "CircuitBreakerMetrics",
     "CircuitBreakerOpenException",
+    "CircuitBreakerState",
     "CircuitBreakerTimeoutException",
     "ExternalDependencyCircuitBreaker",
-    "CircuitBreakerFactory",
+    "ModelCircuitBreakerConfig",
     "get_circuit_breaker",
-    "register_circuit_breaker",
     "list_circuit_breakers",
+    "register_circuit_breaker",
 ]

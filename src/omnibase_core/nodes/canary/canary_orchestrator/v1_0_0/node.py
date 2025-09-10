@@ -6,7 +6,6 @@ This node orchestrates workflows in a controlled canary environment, providing
 event-driven coordination and workflow management for testing new deployments.
 """
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime
@@ -45,10 +44,14 @@ class ModelCanaryOrchestratorInput(BaseModel):
     )
     correlation_id: str | None = Field(None, description="Request correlation ID")
     timeout_ms: int | None = Field(
-        None, description="Operation timeout in milliseconds"
+        None,
+        description="Operation timeout in milliseconds",
     )
     priority: int = Field(
-        default=5, ge=1, le=10, description="Workflow priority (1-10)"
+        default=5,
+        ge=1,
+        le=10,
+        description="Workflow priority (1-10)",
     )
 
     @field_validator("workflow_type")
@@ -114,7 +117,8 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
             timeout_seconds=timeout_ms / 1000,
         )
         self.workflow_circuit_breaker = get_circuit_breaker(
-            "workflow_execution", cb_config
+            "workflow_execution",
+            cb_config,
         )
         self.health_circuit_breaker = get_circuit_breaker("health_check", cb_config)
 
@@ -147,7 +151,7 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
                     list(orchestrator_input.data.keys())
                     if orchestrator_input.data
                     else []
-                )
+                ),
             },
             correlation_id,
         )
@@ -202,7 +206,10 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
 
             # Handle error with secure error handler
             error_details = self.error_handler.handle_error(
-                e, context, correlation_id, "orchestrate"
+                e,
+                context,
+                correlation_id,
+                "orchestrate",
             )
 
             output = ModelCanaryOrchestratorOutput(
@@ -403,10 +410,10 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
 
         # Mark as degraded if error rate is high (using configurable thresholds)
         min_operations = int(
-            self.config_utils.get_performance_config("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10),
         )
         error_rate_threshold = float(
-            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1),
         )
         if (
             self.operation_count > min_operations

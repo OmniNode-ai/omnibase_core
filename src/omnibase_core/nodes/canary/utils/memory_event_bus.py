@@ -7,7 +7,8 @@ for testing and fallback scenarios when Kafka is unavailable.
 
 import logging
 from collections import defaultdict, deque
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.model.core.model_onex_event import ModelOnexEvent
@@ -32,7 +33,7 @@ class MemoryEventBus:
                              Older events are automatically removed when limit is exceeded.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-        self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
+        self._subscribers: dict[str, list[Callable]] = defaultdict(list)
         self._event_history: deque = deque(maxlen=max_history_size)
         self._max_history_size = max_history_size
         self._is_connected = True
@@ -70,19 +71,22 @@ class MemoryEventBus:
 
             if isinstance(event_or_envelope, ModelEventEnvelope):
                 if hasattr(event_or_envelope, "payload") and hasattr(
-                    event_or_envelope.payload, "event_type"
+                    event_or_envelope.payload,
+                    "event_type",
                 ):
                     event_type = event_or_envelope.payload.event_type
                 # Try to extract correlation_id from envelope if not provided
                 if not extracted_correlation_id and hasattr(
-                    event_or_envelope, "correlation_id"
+                    event_or_envelope,
+                    "correlation_id",
                 ):
                     extracted_correlation_id = event_or_envelope.correlation_id
             elif isinstance(event_or_envelope, ModelOnexEvent):
                 event_type = event_or_envelope.event_type
                 # Try to extract correlation_id from event if not provided
                 if not extracted_correlation_id and hasattr(
-                    event_or_envelope, "correlation_id"
+                    event_or_envelope,
+                    "correlation_id",
                 ):
                     extracted_correlation_id = event_or_envelope.correlation_id
             elif isinstance(event_or_envelope, dict):
@@ -105,7 +109,7 @@ class MemoryEventBus:
                                     else ""
                                 )
                                 self.logger.error(
-                                    f"Error in subscriber: {e} [event_bus=memory]{correlation_context}"
+                                    f"Error in subscriber: {e} [event_bus=memory]{correlation_context}",
                                 )
 
             correlation_context = (
@@ -114,7 +118,7 @@ class MemoryEventBus:
                 else ""
             )
             self.logger.debug(
-                f"Published event: {event_type} [event_bus=memory]{correlation_context}"
+                f"Published event: {event_type} [event_bus=memory]{correlation_context}",
             )
             return True
 
@@ -125,7 +129,7 @@ class MemoryEventBus:
                 else ""
             )
             self.logger.error(
-                f"Failed to publish event: {e} [event_bus=memory]{correlation_context}"
+                f"Failed to publish event: {e} [event_bus=memory]{correlation_context}",
             )
             return False
 
@@ -146,7 +150,7 @@ class MemoryEventBus:
             return True
         except Exception as e:
             self.logger.error(
-                f"Failed to subscribe to {pattern}: {e} [event_bus=memory]"
+                f"Failed to subscribe to {pattern}: {e} [event_bus=memory]",
             )
             return False
 
@@ -166,13 +170,13 @@ class MemoryEventBus:
                 if callback in self._subscribers[pattern]:
                     self._subscribers[pattern].remove(callback)
                     self.logger.debug(
-                        f"Unsubscribed from pattern: {pattern} [event_bus=memory]"
+                        f"Unsubscribed from pattern: {pattern} [event_bus=memory]",
                     )
                     return True
             return False
         except Exception as e:
             self.logger.error(
-                f"Failed to unsubscribe from {pattern}: {e} [event_bus=memory]"
+                f"Failed to unsubscribe from {pattern}: {e} [event_bus=memory]",
             )
             return False
 
@@ -186,7 +190,7 @@ class MemoryEventBus:
         self._subscribers.clear()
         self.logger.info("Memory event bus disconnected")
 
-    def get_event_history(self) -> List[Any]:
+    def get_event_history(self) -> list[Any]:
         """Get the history of events processed by this in-memory event bus."""
         return list(self._event_history)
 
@@ -195,14 +199,14 @@ class MemoryEventBus:
         events_cleared = len(self._event_history)
         self._event_history.clear()
         self.logger.info(
-            f"Cleared {events_cleared} events from history [event_bus=memory]"
+            f"Cleared {events_cleared} events from history [event_bus=memory]",
         )
 
     def get_subscriber_count(self) -> int:
         """Get the number of active subscribers."""
         return sum(len(subscribers) for subscribers in self._subscribers.values())
 
-    def get_memory_stats(self) -> Dict[str, Any]:
+    def get_memory_stats(self) -> dict[str, Any]:
         """
         Get memory usage statistics for the event bus.
 
@@ -251,7 +255,7 @@ class MemoryEventBus:
         self.logger.info(
             f"Resized event history: {old_size} -> {new_max_size}, "
             f"retained {len(self._event_history)} events, "
-            f"discarded {events_lost} events [event_bus=memory]"
+            f"discarded {events_lost} events [event_bus=memory]",
         )
 
         return True

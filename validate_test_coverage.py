@@ -6,15 +6,13 @@ Analyzes the created test files to validate comprehensive coverage
 of Phase 2 functionality without running the tests (to avoid import issues).
 """
 
-import os
 import re
 from pathlib import Path
-from typing import Dict, List, Set
 
 
-def analyze_test_file(file_path: Path) -> Dict[str, any]:
+def analyze_test_file(file_path: Path) -> dict[str, any]:
     """Analyze a single test file for coverage metrics."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         content = f.read()
 
     # Count test methods
@@ -34,24 +32,26 @@ def analyze_test_file(file_path: Path) -> Dict[str, any]:
     phase2_features = {
         "multi_workflow": len(
             re.findall(
-                r"DATA_ANALYSIS|REPORT_GENERATION|DOCUMENT_REGENERATION", content
-            )
+                r"DATA_ANALYSIS|REPORT_GENERATION|DOCUMENT_REGENERATION",
+                content,
+            ),
         ),
         "instance_isolation": len(re.findall(r"instance_id|isolation", content)),
         "enhanced_metrics": len(
             re.findall(
-                r"ReducerMetricsCollector|AggregateMetrics|WorkflowMetrics", content
-            )
+                r"ReducerMetricsCollector|AggregateMetrics|WorkflowMetrics",
+                content,
+            ),
         ),
         "registry": len(re.findall(r"ReducerSubreducerRegistry|registry", content)),
         "state_management": len(
-            re.findall(r"StateTransition|WorkflowState|state", content)
+            re.findall(r"StateTransition|WorkflowState|state", content),
         ),
         "concurrent_processing": len(
-            re.findall(r"concurrent|parallel|asyncio", content)
+            re.findall(r"concurrent|parallel|asyncio", content),
         ),
         "error_handling": len(
-            re.findall(r"pytest\.raises|OnexError|exception|error", content)
+            re.findall(r"pytest\.raises|OnexError|exception|error", content),
         ),
     }
 
@@ -68,7 +68,7 @@ def analyze_test_file(file_path: Path) -> Dict[str, any]:
     }
 
 
-def validate_phase2_coverage() -> Dict[str, any]:
+def validate_phase2_coverage() -> dict[str, any]:
     """Validate comprehensive coverage of Phase 2 features."""
 
     test_dir = Path("tests/reducer_pattern_engine")
@@ -149,9 +149,9 @@ def generate_coverage_report() -> str:
     report.append("=" * 80)
 
     # File Status
-    report.append(f"\n📁 TEST FILE STATUS:")
+    report.append("\n📁 TEST FILE STATUS:")
     report.append(
-        f"   ✅ Found Files: {len(analysis['found_files'])}/{len(analysis['expected_files'])}"
+        f"   ✅ Found Files: {len(analysis['found_files'])}/{len(analysis['expected_files'])}",
     )
     for file in analysis["found_files"]:
         report.append(f"      ✓ {file}")
@@ -163,7 +163,7 @@ def generate_coverage_report() -> str:
 
     # Overall Metrics
     metrics = analysis["total_metrics"]
-    report.append(f"\n📊 OVERALL TEST METRICS:")
+    report.append("\n📊 OVERALL TEST METRICS:")
     report.append(f"   Total Test Methods: {metrics['total_test_methods']}")
     report.append(f"   Total Test Classes: {metrics['total_test_classes']}")
     report.append(f"   Total Async Tests: {metrics['total_async_tests']}")
@@ -172,16 +172,16 @@ def generate_coverage_report() -> str:
     report.append(f"   Total Lines of Test Code: {metrics['total_lines']}")
 
     # Phase 2 Feature Coverage
-    report.append(f"\n🚀 PHASE 2 FEATURE COVERAGE:")
+    report.append("\n🚀 PHASE 2 FEATURE COVERAGE:")
     phase2_coverage = analysis["phase2_coverage"]
     for feature, count in phase2_coverage.items():
         status = "✅" if count > 0 else "❌"
         report.append(
-            f"   {status} {feature.replace('_', ' ').title()}: {count} references"
+            f"   {status} {feature.replace('_', ' ').title()}: {count} references",
         )
 
     # File-by-File Analysis
-    report.append(f"\n📋 DETAILED FILE ANALYSIS:")
+    report.append("\n📋 DETAILED FILE ANALYSIS:")
     for file_name, file_data in analysis["file_analysis"].items():
         report.append(f"\n   📄 {file_name}:")
         report.append(f"      Test Methods: {file_data['test_methods']}")
@@ -193,11 +193,11 @@ def generate_coverage_report() -> str:
 
         if file_data["method_names"]:
             report.append(
-                f"      Test Methods: {', '.join(file_data['method_names'][:5])}{'...' if len(file_data['method_names']) > 5 else ''}"
+                f"      Test Methods: {', '.join(file_data['method_names'][:5])}{'...' if len(file_data['method_names']) > 5 else ''}",
             )
 
     # Coverage Assessment
-    report.append(f"\n🎯 COVERAGE ASSESSMENT:")
+    report.append("\n🎯 COVERAGE ASSESSMENT:")
 
     # Check if we meet the >90% coverage requirement (estimated)
     total_methods = metrics["total_test_methods"]
@@ -205,11 +205,11 @@ def generate_coverage_report() -> str:
 
     if total_methods >= expected_min_methods:
         report.append(
-            f"   ✅ Test Method Count: {total_methods} >= {expected_min_methods} (PASS)"
+            f"   ✅ Test Method Count: {total_methods} >= {expected_min_methods} (PASS)",
         )
     else:
         report.append(
-            f"   ❌ Test Method Count: {total_methods} < {expected_min_methods} (NEEDS MORE)"
+            f"   ❌ Test Method Count: {total_methods} < {expected_min_methods} (NEEDS MORE)",
         )
 
     # Check Phase 2 feature coverage
@@ -225,11 +225,11 @@ def generate_coverage_report() -> str:
 
     if covered_critical == len(critical_features):
         report.append(
-            f"   ✅ Critical Phase 2 Features: {covered_critical}/{len(critical_features)} covered (PASS)"
+            f"   ✅ Critical Phase 2 Features: {covered_critical}/{len(critical_features)} covered (PASS)",
         )
     else:
         report.append(
-            f"   ❌ Critical Phase 2 Features: {covered_critical}/{len(critical_features)} covered (NEEDS WORK)"
+            f"   ❌ Critical Phase 2 Features: {covered_critical}/{len(critical_features)} covered (NEEDS WORK)",
         )
 
     # Overall Assessment
@@ -238,20 +238,20 @@ def generate_coverage_report() -> str:
     critical_covered = covered_critical == len(critical_features)
 
     if all_files_found and adequate_methods and critical_covered:
-        report.append(f"\n🎉 OVERALL ASSESSMENT: ✅ COMPREHENSIVE COVERAGE ACHIEVED")
+        report.append("\n🎉 OVERALL ASSESSMENT: ✅ COMPREHENSIVE COVERAGE ACHIEVED")
         report.append(
-            f"   All 8 required test files created with extensive test coverage"
+            "   All 8 required test files created with extensive test coverage",
         )
-        report.append(f"   Phase 2 functionality comprehensively tested")
-        report.append(f"   Ready for production validation")
+        report.append("   Phase 2 functionality comprehensively tested")
+        report.append("   Ready for production validation")
     else:
-        report.append(f"\n⚠️  OVERALL ASSESSMENT: ❌ COVERAGE NEEDS IMPROVEMENT")
+        report.append("\n⚠️  OVERALL ASSESSMENT: ❌ COVERAGE NEEDS IMPROVEMENT")
         if not all_files_found:
-            report.append(f"   Missing required test files")
+            report.append("   Missing required test files")
         if not adequate_methods:
-            report.append(f"   Insufficient test method coverage")
+            report.append("   Insufficient test method coverage")
         if not critical_covered:
-            report.append(f"   Missing critical Phase 2 feature tests")
+            report.append("   Missing critical Phase 2 feature tests")
 
     return "\n".join(report)
 

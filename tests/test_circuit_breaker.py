@@ -8,14 +8,11 @@ metrics collection, configuration, and integration patterns.
 
 import asyncio
 import os
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from omnibase_core.core.resilience import (
     CircuitBreakerEvent,
-    CircuitBreakerException,
     CircuitBreakerFactory,
     CircuitBreakerMetrics,
     CircuitBreakerOpenException,
@@ -49,7 +46,9 @@ class TestModelCircuitBreakerConfig:
         """Test configuration validation."""
         # Valid configuration
         config = ModelCircuitBreakerConfig(
-            failure_threshold=3, failure_rate_threshold=0.3, recovery_timeout_seconds=30
+            failure_threshold=3,
+            failure_rate_threshold=0.3,
+            recovery_timeout_seconds=30,
         )
         assert config.failure_threshold == 3
 
@@ -143,7 +142,8 @@ class TestExternalDependencyCircuitBreaker:
             request_timeout_seconds=1.0,
         )
         self.circuit_breaker = ExternalDependencyCircuitBreaker(
-            "test-service", self.config
+            "test-service",
+            self.config,
         )
 
     @pytest.mark.asyncio
@@ -360,13 +360,16 @@ class TestExternalDependencyCircuitBreaker:
 
         # Add event listeners
         self.circuit_breaker.add_event_listener(
-            CircuitBreakerEvent.SUCCESS, event_handler
+            CircuitBreakerEvent.SUCCESS,
+            event_handler,
         )
         self.circuit_breaker.add_event_listener(
-            CircuitBreakerEvent.FAILURE, event_handler
+            CircuitBreakerEvent.FAILURE,
+            event_handler,
         )
         self.circuit_breaker.add_event_listener(
-            CircuitBreakerEvent.STATE_CHANGE, event_handler
+            CircuitBreakerEvent.STATE_CHANGE,
+            event_handler,
         )
 
         # Generate events
@@ -423,7 +426,8 @@ class TestCircuitBreakerFactory:
 
         try:
             cb = CircuitBreakerFactory.create_from_environment(
-                "test-service", prefix="CB_TEST_SERVICE"
+                "test-service",
+                prefix="CB_TEST_SERVICE",
             )
 
             assert cb.config.failure_threshold == 5
@@ -579,7 +583,7 @@ class TestCircuitBreakerIntegration:
 
         try:
             await cb.call(
-                failing_service
+                failing_service,
             )  # This should transition to half-open then back to open
         except Exception:
             pass

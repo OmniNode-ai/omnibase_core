@@ -5,20 +5,15 @@ Tests comprehensive report generation functionality including template processin
 output formatting, data aggregation, and validation capabilities.
 """
 
-import json
-from datetime import datetime
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation import (
     ReducerReportGenerationSubreducer,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
-    ModelSubreducerResult,
     ModelWorkflowRequest,
     WorkflowType,
 )
@@ -209,7 +204,7 @@ class TestReducerReportGenerationSubreducer:
                     "sections": [
                         {"title": "Sales Overview", "type": "summary"},
                         {"title": "Regional Performance", "type": "regional"},
-                    ]
+                    ],
                 },
             },
         )
@@ -382,8 +377,8 @@ class TestReducerReportGenerationSubreducer:
                     "level2": {
                         "values": [1, 2, 3, 4, 5],
                         "metadata": {"type": "test", "created": "2023-01-01"},
-                    }
-                }
+                    },
+                },
             },
             "mixed_list": [
                 {"id": 1, "name": "Item 1"},
@@ -678,7 +673,7 @@ class TestReducerReportGenerationSubreducer:
                     "output_format": "json",
                     "report_title": f"Concurrent Report {i}",
                     "data": {
-                        f"data_{i}": list(range(i + 1, i + 6))
+                        f"data_{i}": list(range(i + 1, i + 6)),
                     },  # Different data for each
                 },
             )

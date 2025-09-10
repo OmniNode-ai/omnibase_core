@@ -11,9 +11,7 @@ Tests the full end-to-end canary architecture including:
 This test uses only contract-driven models - no legacy ModelScalarValue conversions.
 """
 
-import asyncio
 import uuid
-from datetime import datetime
 
 import pytest
 
@@ -123,7 +121,8 @@ class TestCanarySystemIntegration:
         )
 
         result = await effect_node.perform_canary_effect(
-            canary_input, EffectType.API_CALL
+            canary_input,
+            EffectType.API_CALL,
         )
 
         assert result is not None
@@ -145,7 +144,8 @@ class TestCanarySystemIntegration:
         )
 
         result = await effect_node.perform_canary_effect(
-            canary_input, EffectType.API_CALL
+            canary_input,
+            EffectType.API_CALL,
         )
 
         assert result is not None
@@ -167,7 +167,8 @@ class TestCanarySystemIntegration:
         )
 
         result = await effect_node.perform_canary_effect(
-            canary_input, EffectType.FILE_OPERATION
+            canary_input,
+            EffectType.FILE_OPERATION,
         )
 
         assert result is not None
@@ -185,7 +186,7 @@ class TestCanarySystemIntegration:
         canary_input = ModelCanaryEffectInput(
             operation_type=EnumCanaryOperationType.HEALTH_CHECK,
             parameters={
-                "force_internal_error": True
+                "force_internal_error": True,
             },  # This will trigger error in _perform_health_check
             correlation_id=str(uuid.uuid4()),
         )
@@ -202,7 +203,8 @@ class TestCanarySystemIntegration:
 
         try:
             result = await effect_node.perform_canary_effect(
-                canary_input, EffectType.API_CALL
+                canary_input,
+                EffectType.API_CALL,
             )
 
             assert result is not None
@@ -303,7 +305,8 @@ class TestCanarySystemIntegration:
                     correlation_id=str(uuid.uuid4()),
                 )
                 await effect_node.perform_canary_effect(
-                    error_input, EffectType.API_CALL
+                    error_input,
+                    EffectType.API_CALL,
                 )
         finally:
             effect_node._perform_health_check = original_method
@@ -313,7 +316,7 @@ class TestCanarySystemIntegration:
         # With high error rate, should be degraded
         error_rate = effect_node.error_count / effect_node.operation_count
         threshold = effect_node.config_utils.get_performance_config(
-            "error_rate_threshold"
+            "error_rate_threshold",
         )
 
         if error_rate > threshold:
@@ -356,7 +359,8 @@ class TestCanarySystemIntegration:
                 correlation_id=str(uuid.uuid4()),
             )
             result = await effect_node.perform_canary_effect(
-                canary_input, EffectType.API_CALL
+                canary_input,
+                EffectType.API_CALL,
             )
             results.append(result)
 

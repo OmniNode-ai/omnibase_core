@@ -10,7 +10,7 @@ import asyncio
 import time
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -43,11 +43,12 @@ class ModelWorkflowRequest(BaseModel):
     workflow_id: UUID = Field(default_factory=uuid4)
     workflow_type: WorkflowType
     instance_id: str = Field(
-        ..., description="Unique instance identifier for isolation"
+        ...,
+        description="Unique instance identifier for isolation",
     )
     correlation_id: UUID = Field(default_factory=uuid4)
-    payload: Dict[str, Any] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -68,11 +69,11 @@ class ModelWorkflowResponse(BaseModel):
     instance_id: str
     correlation_id: UUID
     status: WorkflowStatus
-    result: Optional[Dict[str, Any]] = None
-    error_message: Optional[str] = None
-    error_details: Optional[Dict[str, Any]] = None
-    processing_time_ms: Optional[float] = None
-    subreducer_name: Optional[str] = None
+    result: dict[str, Any] | None = None
+    error_message: str | None = None
+    error_details: dict[str, Any] | None = None
+    processing_time_ms: float | None = None
+    subreducer_name: str | None = None
     completed_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -104,8 +105,8 @@ class ModelWorkflowStateModel(BaseModel):
     instance_id: str
     correlation_id: UUID
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    state_history: List[WorkflowState] = Field(default_factory=list)
+    completed_at: datetime | None = None
+    state_history: list[WorkflowState] = Field(default_factory=list)
 
 
 # ====== Mock Integration Components ======
@@ -115,7 +116,10 @@ class MockSubreducer:
     """Mock subreducer for integration testing."""
 
     def __init__(
-        self, name: str, supported_type: WorkflowType, success_rate: float = 0.9
+        self,
+        name: str,
+        supported_type: WorkflowType,
+        success_rate: float = 0.9,
     ):
         self.name = name
         self.supported_type = supported_type
@@ -136,7 +140,7 @@ class MockSubreducer:
         )
         return actual_type == expected_type
 
-    async def process(self, request: ModelWorkflowRequest) -> Dict[str, Any]:
+    async def process(self, request: ModelWorkflowRequest) -> dict[str, Any]:
         """Process workflow request."""
         self.processed_count += 1
         processing_start = time.time()
@@ -152,7 +156,7 @@ class MockSubreducer:
                 "workflow_id": request.workflow_id,
                 "processing_time": processing_time,
                 "timestamp": datetime.utcnow(),
-            }
+            },
         )
 
         # Determine success
@@ -173,13 +177,12 @@ class MockSubreducer:
                 },
                 "processing_time_ms": processing_time,
             }
-        else:
-            return {
-                "success": False,
-                "error_message": f"Mock failure in {self.name}",
-                "error_details": {"failure_simulation": True},
-                "processing_time_ms": processing_time,
-            }
+        return {
+            "success": False,
+            "error_message": f"Mock failure in {self.name}",
+            "error_details": {"failure_simulation": True},
+            "processing_time_ms": processing_time,
+        }
 
 
 class MockRouter:
@@ -189,8 +192,10 @@ class MockRouter:
         self.routing_decisions = []
 
     def route_workflow(
-        self, request: ModelWorkflowRequest, subreducers: List[MockSubreducer]
-    ) -> Optional[MockSubreducer]:
+        self,
+        request: ModelWorkflowRequest,
+        subreducers: list[MockSubreducer],
+    ) -> MockSubreducer | None:
         """Route workflow to appropriate subreducer."""
         for subreducer in subreducers:
             if subreducer.supports_workflow_type(request.workflow_type):
@@ -200,7 +205,7 @@ class MockRouter:
                         "workflow_type": request.workflow_type,
                         "selected_subreducer": subreducer.name,
                         "timestamp": datetime.utcnow(),
-                    }
+                    },
                 )
                 return subreducer
 
@@ -212,7 +217,7 @@ class MockRouter:
                 "selected_subreducer": None,
                 "error": "no_subreducer_found",
                 "timestamp": datetime.utcnow(),
-            }
+            },
         )
         return None
 
@@ -253,7 +258,7 @@ class MockMetricsCollector:
         if response.processing_time_ms is not None:
             self.metrics["processing_times"].append(response.processing_time_ms)
             self.metrics["average_processing_time"] = sum(
-                self.metrics["processing_times"]
+                self.metrics["processing_times"],
             ) / len(self.metrics["processing_times"])
 
 
@@ -264,13 +269,19 @@ class MockIntegrationEngine:
         # Initialize components
         self.subreducers = [
             MockSubreducer(
-                "data_analysis_subreducer", WorkflowType.DATA_ANALYSIS, 0.95
+                "data_analysis_subreducer",
+                WorkflowType.DATA_ANALYSIS,
+                0.95,
             ),
             MockSubreducer(
-                "document_regen_subreducer", WorkflowType.DOCUMENT_REGENERATION, 0.90
+                "document_regen_subreducer",
+                WorkflowType.DOCUMENT_REGENERATION,
+                0.90,
             ),
             MockSubreducer(
-                "report_gen_subreducer", WorkflowType.REPORT_GENERATION, 0.85
+                "report_gen_subreducer",
+                WorkflowType.REPORT_GENERATION,
+                0.85,
             ),
         ]
         self.router = MockRouter()
@@ -282,7 +293,8 @@ class MockIntegrationEngine:
         self.completed_workflows = []
 
     async def process_workflow(
-        self, request: ModelWorkflowRequest
+        self,
+        request: ModelWorkflowRequest,
     ) -> ModelWorkflowResponse:
         """Process workflow through complete integration pipeline."""
         # Record workflow start
@@ -323,7 +335,7 @@ class MockIntegrationEngine:
                             request.workflow_type.value
                             if hasattr(request.workflow_type, "value")
                             else request.workflow_type
-                        )
+                        ),
                     },
                 )
 
@@ -389,7 +401,7 @@ class MockIntegrationEngine:
                 instance_id=request.instance_id,
                 correlation_id=request.correlation_id,
                 status=WorkflowStatus.FAILED,
-                error_message=f"Unexpected error: {str(e)}",
+                error_message=f"Unexpected error: {e!s}",
                 error_details={"exception_type": type(e).__name__},
             )
 
@@ -402,12 +414,13 @@ class MockIntegrationEngine:
             return response
 
     def get_workflow_state(
-        self, workflow_id: UUID
-    ) -> Optional[ModelWorkflowStateModel]:
+        self,
+        workflow_id: UUID,
+    ) -> ModelWorkflowStateModel | None:
         """Get workflow state."""
         return self.workflow_states.get(workflow_id)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get current metrics."""
         return self.metrics.metrics.copy()
 
@@ -499,7 +512,8 @@ class TestStandaloneIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_complete_document_regeneration_workflow_end_to_end(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test complete document regeneration workflow."""
         request = ModelWorkflowRequest(
@@ -523,7 +537,8 @@ class TestStandaloneIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_complete_report_generation_workflow_end_to_end(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test complete report generation workflow."""
         request = ModelWorkflowRequest(
@@ -561,7 +576,7 @@ class TestStandaloneIntegrationWorkflows:
 
         # Process all workflows
         responses = await asyncio.gather(
-            *[integration_engine.process_workflow(req) for req in requests]
+            *[integration_engine.process_workflow(req) for req in requests],
         )
 
         # Verify router made correct decisions
@@ -615,7 +630,7 @@ class TestStandaloneIntegrationWorkflows:
         # Process concurrently
         start_time = time.time()
         responses = await asyncio.gather(
-            *[integration_engine.process_workflow(req) for req in requests]
+            *[integration_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -662,7 +677,7 @@ class TestStandaloneIntegrationWorkflows:
 
         # Process all workflows
         responses = await asyncio.gather(
-            *[integration_engine.process_workflow(req) for req in requests]
+            *[integration_engine.process_workflow(req) for req in requests],
         )
 
         # Verify mixed outcomes - handle enum/string comparison
@@ -721,7 +736,7 @@ class TestStandaloneIntegrationWorkflows:
         # But since metrics are mocked, just verify basic metrics integrity
         assert metrics["total_workflows"] == len(responses)
         assert metrics["successful_workflows"] + metrics["failed_workflows"] <= len(
-            responses
+            responses,
         )
 
     @pytest.mark.asyncio
@@ -762,7 +777,8 @@ class TestStandaloneIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_state_management_throughout_workflow_lifecycle(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test state management across complete workflow lifecycle."""
         request = ModelWorkflowRequest(
@@ -825,7 +841,7 @@ class TestStandaloneIntegrationWorkflows:
         # Process with performance tracking
         start_time = time.time()
         responses = await asyncio.gather(
-            *[integration_engine.process_workflow(req) for req in requests]
+            *[integration_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -928,7 +944,7 @@ class TestStandaloneIntegrationWorkflows:
         metrics = integration_engine.get_metrics()
         assert metrics["total_workflows"] == len(test_scenarios)
         assert metrics["successful_workflows"] + metrics["failed_workflows"] == len(
-            test_scenarios
+            test_scenarios,
         )
 
         # Verify all workflow types processed
@@ -991,7 +1007,7 @@ class TestStandaloneIntegrationWorkflows:
 
             # Process batch concurrently
             batch_responses = await asyncio.gather(
-                *[integration_engine.process_workflow(req) for req in batch_requests]
+                *[integration_engine.process_workflow(req) for req in batch_requests],
             )
             all_responses.extend(batch_responses)
 

@@ -4,8 +4,6 @@ Common types for ONEX core modules.
 Strong typing patterns for ONEX architecture compliance.
 """
 
-from typing import Dict, Optional
-
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -36,16 +34,18 @@ class ModelBoolValue(BaseModel):
 class ModelMetadata(BaseModel):
     """Strongly typed metadata container."""
 
-    entries: Dict[str, "ModelScalarValue"] = Field(
-        default_factory=dict, description="Metadata entries"
+    entries: dict[str, "ModelScalarValue"] = Field(
+        default_factory=dict,
+        description="Metadata entries",
     )
 
 
 class ModelConfiguration(BaseModel):
     """Strongly typed configuration container."""
 
-    settings: Dict[str, "ModelScalarValue"] = Field(
-        default_factory=dict, description="Configuration settings"
+    settings: dict[str, "ModelScalarValue"] = Field(
+        default_factory=dict,
+        description="Configuration settings",
     )
 
 
@@ -58,16 +58,24 @@ class ModelNullValue(BaseModel):
 class ModelScalarValue(BaseModel):
     """Strongly typed scalar value container using discriminated approach."""
 
-    string_value: Optional[str] = Field(
-        None, description="String scalar value", max_length=65536
+    string_value: str | None = Field(
+        None,
+        description="String scalar value",
+        max_length=65536,
     )
-    int_value: Optional[int] = Field(
-        None, description="Integer scalar value", ge=-(2**63), le=2**63 - 1
+    int_value: int | None = Field(
+        None,
+        description="Integer scalar value",
+        ge=-(2**63),
+        le=2**63 - 1,
     )
-    float_value: Optional[float] = Field(
-        None, description="Float scalar value", ge=-1e308, le=1e308
+    float_value: float | None = Field(
+        None,
+        description="Float scalar value",
+        ge=-1e308,
+        le=1e308,
     )
-    bool_value: Optional[bool] = Field(None, description="Boolean scalar value")
+    bool_value: bool | None = Field(None, description="Boolean scalar value")
 
     @model_validator(mode="after")
     def validate_exactly_one_value(self) -> "ModelScalarValue":
@@ -84,7 +92,7 @@ class ModelScalarValue(BaseModel):
         if len(active_values) != 1:
             raise ValueError(
                 f"ModelScalarValue must have exactly one value set. "
-                f"Active values: {active_values}, Expected: exactly 1"
+                f"Active values: {active_values}, Expected: exactly 1",
             )
 
         return self
@@ -157,7 +165,7 @@ class ModelScalarValue(BaseModel):
             return self.string_value
         raise ValueError(
             f"No string value set in ModelScalarValue. "
-            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}",
         )
 
     def to_int_primitive(self) -> int:
@@ -166,7 +174,7 @@ class ModelScalarValue(BaseModel):
             return self.int_value
         raise ValueError(
             f"No int value set in ModelScalarValue. "
-            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}",
         )
 
     def to_float_primitive(self) -> float:
@@ -175,7 +183,7 @@ class ModelScalarValue(BaseModel):
             return self.float_value
         raise ValueError(
             f"No float value set in ModelScalarValue. "
-            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}",
         )
 
     def to_bool_primitive(self) -> bool:
@@ -184,21 +192,24 @@ class ModelScalarValue(BaseModel):
             return self.bool_value
         raise ValueError(
             f"No bool value set in ModelScalarValue. "
-            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}"
+            f"Current type: {self.type_hint}, Available values: {self._get_available_values()}",
         )
 
 
 class ModelStateValue(BaseModel):
     """Strongly typed state value with discriminated value types."""
 
-    scalar_value: Optional[ModelScalarValue] = Field(
-        None, description="Scalar value container"
+    scalar_value: ModelScalarValue | None = Field(
+        None,
+        description="Scalar value container",
     )
-    metadata_value: Optional[ModelMetadata] = Field(
-        None, description="Metadata container"
+    metadata_value: ModelMetadata | None = Field(
+        None,
+        description="Metadata container",
     )
-    config_value: Optional[ModelConfiguration] = Field(
-        None, description="Configuration container"
+    config_value: ModelConfiguration | None = Field(
+        None,
+        description="Configuration container",
     )
     is_null: bool = Field(False, description="Whether this represents a null value")
 
@@ -225,7 +236,7 @@ class ModelStateValue(BaseModel):
 
             raise ValueError(
                 f"ModelStateValue can only have one of: scalar_value, metadata_value, config_value, or is_null=True. "
-                f"Currently active: {active_fields}, Count: {value_count}"
+                f"Currently active: {active_fields}, Count: {value_count}",
             )
 
         if value_count == 0:
@@ -255,12 +266,12 @@ class ModelStateValue(BaseModel):
         return cls(scalar_value=ModelScalarValue.create_bool(value))
 
     @classmethod
-    def create_metadata(cls, entries: Dict[str, ModelScalarValue]) -> "ModelStateValue":
+    def create_metadata(cls, entries: dict[str, ModelScalarValue]) -> "ModelStateValue":
         """Create a state value from metadata entries."""
         return cls(metadata_value=ModelMetadata(entries=entries))
 
     @classmethod
-    def create_config(cls, settings: Dict[str, ModelScalarValue]) -> "ModelStateValue":
+    def create_config(cls, settings: dict[str, ModelScalarValue]) -> "ModelStateValue":
         """Create a state value from configuration settings."""
         return cls(config_value=ModelConfiguration(settings=settings))
 
@@ -269,15 +280,15 @@ class ModelStateValue(BaseModel):
         """Create a null state value."""
         return cls(is_null=True)
 
-    def get_scalar_value(self) -> Optional[ModelScalarValue]:
+    def get_scalar_value(self) -> ModelScalarValue | None:
         """Get scalar value container if present."""
         return self.scalar_value
 
-    def get_metadata_value(self) -> Optional[ModelMetadata]:
+    def get_metadata_value(self) -> ModelMetadata | None:
         """Get metadata value if present."""
         return self.metadata_value
 
-    def get_config_value(self) -> Optional[ModelConfiguration]:
+    def get_config_value(self) -> ModelConfiguration | None:
         """Get configuration value if present."""
         return self.config_value
 

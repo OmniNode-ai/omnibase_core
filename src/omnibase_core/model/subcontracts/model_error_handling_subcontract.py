@@ -7,13 +7,9 @@ including secure error handling, circuit breakers, metrics collection, and
 configuration management capabilities.
 """
 
-import asyncio
-import logging
-import time
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -51,17 +47,19 @@ class HandleErrorInput(BaseModel):
     """Input model for handle_error action."""
 
     error: Any = Field(..., description="Exception instance to handle")
-    context: Dict[str, Any] = Field(
-        ..., description="Operation context (will be sanitized)"
+    context: dict[str, Any] = Field(
+        ...,
+        description="Operation context (will be sanitized)",
     )
-    correlation_id: Optional[str] = Field(
-        None, description="Request correlation ID for tracing"
+    correlation_id: str | None = Field(
+        None,
+        description="Request correlation ID for tracing",
     )
     operation_name: str = Field(..., description="Name of the operation that failed")
 
     @field_validator("correlation_id")
     @classmethod
-    def validate_correlation_id(cls, v: Optional[str]) -> Optional[str]:
+    def validate_correlation_id(cls, v: str | None) -> str | None:
         """Validate correlation ID format."""
         if v is not None and (len(v) < 8 or len(v) > 128):
             raise ValueError("correlation_id must be between 8-128 characters")
@@ -82,13 +80,19 @@ class ModelCircuitBreakerConfig(BaseModel):
     """Circuit breaker configuration model."""
 
     failure_threshold: int = Field(
-        ..., ge=1, description="Number of failures before opening circuit"
+        ...,
+        ge=1,
+        description="Number of failures before opening circuit",
     )
     recovery_timeout_seconds: float = Field(
-        ..., ge=0.1, description="Time to wait before attempting recovery"
+        ...,
+        ge=0.1,
+        description="Time to wait before attempting recovery",
     )
     timeout_seconds: float = Field(
-        ..., ge=0.1, description="Operation timeout threshold"
+        ...,
+        ge=0.1,
+        description="Operation timeout threshold",
     )
 
     @field_validator("failure_threshold")
@@ -105,7 +109,8 @@ class CreateCircuitBreakerInput(BaseModel):
 
     name: str = Field(..., description="Unique circuit breaker identifier")
     config: ModelCircuitBreakerConfig = Field(
-        ..., description="Circuit breaker configuration"
+        ...,
+        description="Circuit breaker configuration",
     )
 
     @field_validator("name")
@@ -125,10 +130,13 @@ class RecordMetricsInput(BaseModel):
     operation_name: str = Field(..., description="Name of the operation being measured")
     success: bool = Field(..., description="Whether the operation succeeded")
     duration_ms: float = Field(
-        ..., ge=0, description="Operation duration in milliseconds"
+        ...,
+        ge=0,
+        description="Operation duration in milliseconds",
     )
-    metadata: Optional[Dict[str, Any]] = Field(
-        None, description="Additional operation metadata"
+    metadata: dict[str, Any] | None = Field(
+        None,
+        description="Additional operation metadata",
     )
 
     @field_validator("operation_name")
@@ -145,7 +153,7 @@ class RecordMetricsInput(BaseModel):
         """Validate duration is reasonable."""
         if v > 300000:  # 5 minutes
             raise ValueError(
-                "duration_ms should be <= 300000ms for practical monitoring"
+                "duration_ms should be <= 300000ms for practical monitoring",
             )
         return v
 
@@ -154,7 +162,8 @@ class GetConfigurationInput(BaseModel):
     """Input model for get_configuration action."""
 
     config_section: ConfigurationSection = Field(
-        ..., description="Configuration section to retrieve"
+        ...,
+        description="Configuration section to retrieve",
     )
 
 
@@ -165,13 +174,15 @@ class HandleErrorOutput(BaseModel):
     """Output model for handle_error action."""
 
     message: str = Field(
-        ..., description="Safe error message without sensitive information"
+        ...,
+        description="Safe error message without sensitive information",
     )
-    safe_context: Dict[str, Any] = Field(
-        ..., description="Sanitized context safe for logging"
+    safe_context: dict[str, Any] = Field(
+        ...,
+        description="Sanitized context safe for logging",
     )
     error_id: str = Field(..., description="Unique identifier for error tracking")
-    correlation_id: Optional[str] = Field(None, description="Request correlation ID")
+    correlation_id: str | None = Field(None, description="Request correlation ID")
 
     @field_validator("error_id")
     @classmethod
@@ -193,20 +204,26 @@ class RecordMetricsOutput(BaseModel):
     """Output model for record_metrics action."""
 
     recorded: bool = Field(
-        ..., description="Whether metrics were successfully recorded"
+        ...,
+        description="Whether metrics were successfully recorded",
     )
     operation_count: int = Field(
-        ..., ge=0, description="Total operations recorded for this operation type"
+        ...,
+        ge=0,
+        description="Total operations recorded for this operation type",
     )
     error_rate: float = Field(
-        ..., ge=0, le=1, description="Current error rate for this operation type"
+        ...,
+        ge=0,
+        le=1,
+        description="Current error rate for this operation type",
     )
 
 
 class GetConfigurationOutput(BaseModel):
     """Output model for get_configuration action."""
 
-    config_data: Dict[str, Any] = Field(..., description="Type-safe configuration data")
+    config_data: dict[str, Any] = Field(..., description="Type-safe configuration data")
     source: ConfigurationSource = Field(..., description="Configuration data source")
 
 
@@ -218,12 +235,13 @@ class ErrorHandlingResult(BaseModel):
 
     message: str = Field(..., description="Safe error message")
     error_id: str = Field(..., description="Unique error identifier")
-    safe_context: Optional[Dict[str, Any]] = Field(
-        None, description="Sanitized operation context"
+    safe_context: dict[str, Any] | None = Field(
+        None,
+        description="Sanitized operation context",
     )
-    correlation_id: Optional[str] = Field(None, description="Request correlation ID")
+    correlation_id: str | None = Field(None, description="Request correlation ID")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Error occurrence timestamp",
     )
 
@@ -231,7 +249,7 @@ class ErrorHandlingResult(BaseModel):
     @classmethod
     def validate_timestamp(cls, v: datetime) -> datetime:
         """Ensure timestamp is reasonable."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if v > now:
             # Future timestamps not allowed
             return now
@@ -244,10 +262,13 @@ class CircuitBreakerStateInfo(BaseModel):
     name: str = Field(..., description="Circuit breaker identifier")
     state: CircuitBreakerState = Field(..., description="Current circuit breaker state")
     failure_count: int = Field(
-        ..., ge=0, description="Current consecutive failure count"
+        ...,
+        ge=0,
+        description="Current consecutive failure count",
     )
-    last_failure_time: Optional[datetime] = Field(
-        None, description="Timestamp of last failure"
+    last_failure_time: datetime | None = Field(
+        None,
+        description="Timestamp of last failure",
     )
     success_count: int = Field(..., ge=0, description="Total successful operations")
 
@@ -268,14 +289,18 @@ class MetricsSnapshot(BaseModel):
     success_count: int = Field(..., ge=0, description="Successful operation count")
     error_count: int = Field(..., ge=0, description="Failed operation count")
     success_rate: float = Field(
-        ..., ge=0, le=1, description="Success rate (0.0 to 1.0)"
+        ...,
+        ge=0,
+        le=1,
+        description="Success rate (0.0 to 1.0)",
     )
     avg_duration_ms: float = Field(..., ge=0, description="Average operation duration")
-    percentiles: Dict[str, float] = Field(
-        default_factory=dict, description="Performance percentile calculations"
+    percentiles: dict[str, float] = Field(
+        default_factory=dict,
+        description="Performance percentile calculations",
     )
     last_updated: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Last metrics update timestamp",
     )
 
@@ -308,13 +333,17 @@ class ErrorHandlingConfig(BaseModel):
     """Error handling configuration section."""
 
     sanitize_production_errors: bool = Field(
-        True, description="Enable sensitive data sanitization in production"
+        True,
+        description="Enable sensitive data sanitization in production",
     )
     max_context_fields: int = Field(
-        20, ge=1, description="Maximum context fields to include in error details"
+        20,
+        ge=1,
+        description="Maximum context fields to include in error details",
     )
     correlation_id_required: bool = Field(
-        False, description="Whether correlation ID is required for all operations"
+        False,
+        description="Whether correlation ID is required for all operations",
     )
 
 
@@ -322,13 +351,19 @@ class CircuitBreakersConfig(BaseModel):
     """Circuit breakers configuration section."""
 
     default_failure_threshold: int = Field(
-        5, ge=1, description="Default failure threshold for circuit breakers"
+        5,
+        ge=1,
+        description="Default failure threshold for circuit breakers",
     )
     default_recovery_timeout: float = Field(
-        30.0, ge=0.1, description="Default recovery timeout in seconds"
+        30.0,
+        ge=0.1,
+        description="Default recovery timeout in seconds",
     )
     default_operation_timeout: float = Field(
-        10.0, ge=0.1, description="Default operation timeout in seconds"
+        10.0,
+        ge=0.1,
+        description="Default operation timeout in seconds",
     )
 
 
@@ -336,19 +371,22 @@ class MetricsConfig(BaseModel):
     """Metrics configuration section."""
 
     enable_detailed_metrics: bool = Field(
-        True, description="Enable detailed performance metrics collection"
+        True,
+        description="Enable detailed performance metrics collection",
     )
     metrics_retention_count: int = Field(
-        1000, ge=100, description="Number of metric entries to retain in memory"
+        1000,
+        ge=100,
+        description="Number of metric entries to retain in memory",
     )
-    percentile_calculations: List[float] = Field(
+    percentile_calculations: list[float] = Field(
         default=[50, 95, 99],
         description="Percentiles to calculate for performance metrics",
     )
 
     @field_validator("percentile_calculations")
     @classmethod
-    def validate_percentiles(cls, v: List[float]) -> List[float]:
+    def validate_percentiles(cls, v: list[float]) -> list[float]:
         """Validate percentile values are between 0 and 100."""
         for percentile in v:
             if not (0 <= percentile <= 100):
@@ -369,30 +407,36 @@ class ModelErrorHandlingSubcontract(BaseModel):
     # Configuration sections
     error_handling: ErrorHandlingConfig = Field(default_factory=ErrorHandlingConfig)
     circuit_breakers: CircuitBreakersConfig = Field(
-        default_factory=CircuitBreakersConfig
+        default_factory=CircuitBreakersConfig,
     )
     metrics: MetricsConfig = Field(default_factory=MetricsConfig)
 
     # Capability flags
     secure_error_handling_enabled: bool = Field(
-        True, description="Enable secure error handling capability"
+        True,
+        description="Enable secure error handling capability",
     )
     circuit_breaker_management_enabled: bool = Field(
-        True, description="Enable circuit breaker management capability"
+        True,
+        description="Enable circuit breaker management capability",
     )
     metrics_collection_enabled: bool = Field(
-        True, description="Enable metrics collection capability"
+        True,
+        description="Enable metrics collection capability",
     )
     configuration_management_enabled: bool = Field(
-        True, description="Enable configuration management capability"
+        True,
+        description="Enable configuration management capability",
     )
 
     # Operational state
     initialized: bool = Field(
-        False, description="Whether the error handling mixin has been initialized"
+        False,
+        description="Whether the error handling mixin has been initialized",
     )
-    initialization_timestamp: Optional[datetime] = Field(
-        None, description="When initialization completed"
+    initialization_timestamp: datetime | None = Field(
+        None,
+        description="When initialization completed",
     )
 
     class Config:
@@ -411,17 +455,19 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 self.circuit_breaker_management_enabled,
                 self.metrics_collection_enabled,
                 self.configuration_management_enabled,
-            ]
+            ],
         ):
             raise ValueError("At least one error handling capability must be enabled")
 
         # Set initialization timestamp if not already set
         if self.initialized and self.initialization_timestamp is None:
             object.__setattr__(
-                self, "initialization_timestamp", datetime.now(timezone.utc)
+                self,
+                "initialization_timestamp",
+                datetime.now(UTC),
             )
 
-    def get_enabled_capabilities(self) -> List[str]:
+    def get_enabled_capabilities(self) -> list[str]:
         """Get list of enabled capabilities."""
         capabilities = []
         if self.secure_error_handling_enabled:
@@ -435,7 +481,9 @@ class ModelErrorHandlingSubcontract(BaseModel):
         return capabilities
 
     def validate_action_input(
-        self, action: str, input_data: Dict[str, Any]
+        self,
+        action: str,
+        input_data: dict[str, Any],
     ) -> BaseModel:
         """Validate and parse action input data."""
         action_input_models = {
@@ -452,7 +500,9 @@ class ModelErrorHandlingSubcontract(BaseModel):
         return model_class.model_validate(input_data)
 
     def create_action_output(
-        self, action: str, output_data: Dict[str, Any]
+        self,
+        action: str,
+        output_data: dict[str, Any],
     ) -> BaseModel:
         """Create and validate action output data."""
         action_output_models = {
@@ -477,7 +527,7 @@ def create_error_handling_subcontract(**kwargs) -> ModelErrorHandlingSubcontract
     return ModelErrorHandlingSubcontract(**kwargs)
 
 
-def get_default_error_handling_config() -> Dict[str, Any]:
+def get_default_error_handling_config() -> dict[str, Any]:
     """Get default configuration for error handling mixin."""
     return {
         "error_handling": ErrorHandlingConfig().model_dump(),

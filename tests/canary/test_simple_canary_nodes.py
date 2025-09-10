@@ -8,8 +8,7 @@ to validate functionality without complex infrastructure dependencies.
 
 import asyncio
 import time
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,8 +19,9 @@ class ModelCanaryComputeInput(BaseModel):
     """Input model for Canary Compute operations."""
 
     operation_type: str = Field(..., description="Type of computation to perform")
-    data: Dict[str, Any] = Field(
-        default_factory=dict, description="Input data for computation"
+    data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Input data for computation",
     )
     correlation_id: str = Field(default="", description="Request correlation ID")
 
@@ -29,15 +29,18 @@ class ModelCanaryComputeInput(BaseModel):
 class ModelCanaryComputeOutput(BaseModel):
     """Output model for Canary Compute operations."""
 
-    result: Dict[str, Any] = Field(
-        default_factory=dict, description="Computation result"
+    result: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Computation result",
     )
     success: bool = Field(default=True, description="Whether operation succeeded")
     error_message: str = Field(
-        default="", description="Error message if operation failed"
+        default="",
+        description="Error message if operation failed",
     )
     execution_time_ms: int = Field(
-        default=0, description="Execution time in milliseconds"
+        default=0,
+        description="Execution time in milliseconds",
     )
     correlation_id: str = Field(default="", description="Request correlation ID")
 
@@ -46,32 +49,39 @@ class ModelCanaryEffectInput(BaseModel):
     """Input model for Canary Effect operations."""
 
     operation_type: str = Field(..., description="Type of effect operation to perform")
-    target_system: Optional[str] = Field(
-        default=None, description="Target system for effect operation"
+    target_system: str | None = Field(
+        default=None,
+        description="Target system for effect operation",
     )
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Operation-specific parameters"
+    parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Operation-specific parameters",
     )
-    correlation_id: Optional[str] = Field(
-        default=None, description="Request correlation ID"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Request correlation ID",
     )
 
 
 class ModelCanaryEffectOutput(BaseModel):
     """Output model for Canary Effect operations."""
 
-    operation_result: Dict[str, Any] = Field(
-        default_factory=dict, description="Result data from the effect operation"
+    operation_result: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Result data from the effect operation",
     )
     success: bool = Field(default=True, description="Whether operation succeeded")
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if operation failed",
     )
     execution_time_ms: int = Field(
-        default=0, description="Execution time in milliseconds"
+        default=0,
+        description="Execution time in milliseconds",
     )
-    correlation_id: Optional[str] = Field(
-        default=None, description="Request correlation ID"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Request correlation ID",
     )
 
 
@@ -80,11 +90,13 @@ class ModelCanaryOrchestratorInput(BaseModel):
 
     operation_type: str = Field(..., description="Type of orchestration operation")
     workflow_id: str = Field(..., description="Unique workflow identifier")
-    correlation_id: Optional[str] = Field(
-        default=None, description="Request correlation ID"
+    correlation_id: str | None = Field(
+        default=None,
+        description="Request correlation ID",
     )
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Operation-specific parameters"
+    parameters: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Operation-specific parameters",
     )
 
 
@@ -92,25 +104,30 @@ class ModelCanaryOrchestratorOutput(BaseModel):
     """Output model for Canary Orchestrator operations."""
 
     status: str = Field(..., description="Operation status")
-    workflow_result: Dict[str, Any] = Field(
-        default_factory=dict, description="Workflow execution result"
+    workflow_result: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Workflow execution result",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if operation failed",
     )
-    execution_metrics: Dict[str, Any] = Field(
-        default_factory=dict, description="Execution metrics and timing"
+    execution_metrics: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Execution metrics and timing",
     )
 
 
 class ModelCanaryReducerInput(BaseModel):
     """Input model for Canary Reducer operations."""
 
-    adapter_results: List[Dict[str, Any]] = Field(
-        ..., description="Results from infrastructure adapters to aggregate"
+    adapter_results: list[dict[str, Any]] = Field(
+        ...,
+        description="Results from infrastructure adapters to aggregate",
     )
-    operation_type: Optional[str] = Field(
-        default="aggregate", description="Type of aggregation operation to perform"
+    operation_type: str | None = Field(
+        default="aggregate",
+        description="Type of aggregation operation to perform",
     )
 
 
@@ -118,12 +135,13 @@ class ModelCanaryReducerOutput(BaseModel):
     """Output model for Canary Reducer operations."""
 
     status: str = Field(..., description="Operation status")
-    aggregated_result: Dict[str, Any] = Field(
+    aggregated_result: dict[str, Any] = Field(
         default_factory=dict,
         description="Aggregated results from infrastructure adapters",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if operation failed",
     )
 
 
@@ -131,18 +149,22 @@ class ModelGroupGatewayInput(BaseModel):
     """Input model for Group Gateway operations."""
 
     operation_type: str = Field(..., description="Type of gateway operation to perform")
-    target_tools: List[str] = Field(
-        ..., description="List of target tools for message routing"
+    target_tools: list[str] = Field(
+        ...,
+        description="List of target tools for message routing",
     )
-    message_data: Dict[str, Any] = Field(..., description="Message payload data")
-    correlation_id: Optional[str] = Field(
-        default=None, description="Request correlation ID"
+    message_data: dict[str, Any] = Field(..., description="Message payload data")
+    correlation_id: str | None = Field(
+        default=None,
+        description="Request correlation ID",
     )
-    timeout_ms: Optional[int] = Field(
-        default=10000, description="Request timeout in milliseconds"
+    timeout_ms: int | None = Field(
+        default=10000,
+        description="Request timeout in milliseconds",
     )
-    cache_strategy: Optional[str] = Field(
-        default="default", description="Caching strategy to use"
+    cache_strategy: str | None = Field(
+        default="default",
+        description="Caching strategy to use",
     )
 
 
@@ -150,17 +172,21 @@ class ModelGroupGatewayOutput(BaseModel):
     """Output model for Group Gateway operations."""
 
     status: str = Field(..., description="Operation status")
-    aggregated_response: Dict[str, Any] = Field(
-        default_factory=dict, description="Aggregated response from target tools"
+    aggregated_response: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated response from target tools",
     )
-    error_message: Optional[str] = Field(
-        default=None, description="Error message if operation failed"
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if operation failed",
     )
-    cache_hit: Optional[bool] = Field(
-        default=None, description="Whether response was served from cache"
+    cache_hit: bool | None = Field(
+        default=None,
+        description="Whether response was served from cache",
     )
-    routing_metrics: Dict[str, Any] = Field(
-        default_factory=dict, description="Routing performance metrics"
+    routing_metrics: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Routing performance metrics",
     )
 
 
@@ -174,7 +200,8 @@ class SimpleNodeCanaryCompute:
         self._processed_count = 0
 
     async def process_computation(
-        self, input_data: ModelCanaryComputeInput
+        self,
+        input_data: ModelCanaryComputeInput,
     ) -> ModelCanaryComputeOutput:
         """Process a computation request."""
         start_time = time.time()
@@ -212,7 +239,7 @@ class SimpleNodeCanaryCompute:
                 correlation_id=input_data.correlation_id,
             )
 
-    def _perform_addition(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_addition(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform addition operation."""
         values = data.get("values", [])
         if not values:
@@ -221,7 +248,7 @@ class SimpleNodeCanaryCompute:
         result = sum(values)
         return {"operation": "addition", "values": values, "result": result}
 
-    def _perform_multiplication(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_multiplication(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform multiplication operation."""
         values = data.get("values", [])
         if not values:
@@ -233,7 +260,7 @@ class SimpleNodeCanaryCompute:
 
         return {"operation": "multiplication", "values": values, "result": result}
 
-    def _perform_aggregation(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _perform_aggregation(self, data: dict[str, Any]) -> dict[str, Any]:
         """Perform data aggregation."""
         items = data.get("items", [])
         if not items:
@@ -260,7 +287,8 @@ class SimpleNodeCanaryEffect:
         self._mock_data = {}
 
     async def perform_effect(
-        self, input_data: ModelCanaryEffectInput
+        self,
+        input_data: ModelCanaryEffectInput,
     ) -> ModelCanaryEffectOutput:
         """Perform an effect operation."""
         start_time = time.time()
@@ -301,7 +329,7 @@ class SimpleNodeCanaryEffect:
                 correlation_id=input_data.correlation_id,
             )
 
-    async def _simulate_health_check(self) -> Dict[str, Any]:
+    async def _simulate_health_check(self) -> dict[str, Any]:
         """Simulate a health check operation."""
         await asyncio.sleep(0.1)  # Simulate network delay
         return {
@@ -315,7 +343,7 @@ class SimpleNodeCanaryEffect:
             "timestamp": time.time(),
         }
 
-    async def _simulate_api_call(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def _simulate_api_call(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Simulate an external API call."""
         endpoint = parameters.get("endpoint", "/default")
         method = parameters.get("method", "GET")
@@ -332,8 +360,9 @@ class SimpleNodeCanaryEffect:
         }
 
     async def _simulate_file_operation(
-        self, parameters: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
         """Simulate a file system operation."""
         operation = parameters.get("operation", "read")
         file_path = parameters.get("file_path", "/tmp/test.txt")
@@ -349,8 +378,9 @@ class SimpleNodeCanaryEffect:
         }
 
     async def _simulate_database_operation(
-        self, parameters: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
         """Simulate a database operation."""
         operation = parameters.get("operation", "select")
         table = parameters.get("table", "users")
@@ -366,8 +396,9 @@ class SimpleNodeCanaryEffect:
         }
 
     async def _simulate_queue_operation(
-        self, parameters: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
         """Simulate a message queue operation."""
         operation = parameters.get("operation", "publish")
         queue = parameters.get("queue", "default")
@@ -391,7 +422,8 @@ class SimpleNodeCanaryOrchestrator:
         self._workflow_count = 0
 
     async def start_workflow(
-        self, input_data: ModelCanaryOrchestratorInput
+        self,
+        input_data: ModelCanaryOrchestratorInput,
     ) -> ModelCanaryOrchestratorOutput:
         """Start infrastructure workflow."""
         start_time = time.time()
@@ -402,7 +434,8 @@ class SimpleNodeCanaryOrchestrator:
 
             if operation_type == "start_workflow":
                 workflow_type = input_data.parameters.get(
-                    "workflow_type", "infrastructure_startup"
+                    "workflow_type",
+                    "infrastructure_startup",
                 )
                 result = await self._execute_workflow(workflow_id, workflow_type)
             elif operation_type == "stop_workflow":
@@ -434,8 +467,10 @@ class SimpleNodeCanaryOrchestrator:
             )
 
     async def _execute_workflow(
-        self, workflow_id: str, workflow_type: str
-    ) -> Dict[str, Any]:
+        self,
+        workflow_id: str,
+        workflow_type: str,
+    ) -> dict[str, Any]:
         """Execute a workflow based on type."""
         self._active_workflows[workflow_id] = {
             "workflow_id": workflow_id,
@@ -448,14 +483,13 @@ class SimpleNodeCanaryOrchestrator:
 
         if workflow_type == "infrastructure_startup":
             return await self._execute_infrastructure_startup(workflow_id)
-        elif workflow_type == "infrastructure_shutdown":
+        if workflow_type == "infrastructure_shutdown":
             return await self._execute_infrastructure_shutdown(workflow_id)
-        elif workflow_type == "canary_deployment":
+        if workflow_type == "canary_deployment":
             return await self._execute_canary_deployment(workflow_id)
-        else:
-            raise ValueError(f"Unknown workflow type: {workflow_type}")
+        raise ValueError(f"Unknown workflow type: {workflow_type}")
 
-    async def _execute_infrastructure_startup(self, workflow_id: str) -> Dict[str, Any]:
+    async def _execute_infrastructure_startup(self, workflow_id: str) -> dict[str, Any]:
         """Execute infrastructure startup workflow."""
         steps = [
             ("consul_health_check", 0.1),
@@ -485,8 +519,9 @@ class SimpleNodeCanaryOrchestrator:
         }
 
     async def _execute_infrastructure_shutdown(
-        self, workflow_id: str
-    ) -> Dict[str, Any]:
+        self,
+        workflow_id: str,
+    ) -> dict[str, Any]:
         """Execute infrastructure shutdown workflow."""
         steps = [
             ("drain_kafka_queues", 0.2),
@@ -515,7 +550,7 @@ class SimpleNodeCanaryOrchestrator:
             "duration_ms": int((workflow["end_time"] - workflow["start_time"]) * 1000),
         }
 
-    async def _execute_canary_deployment(self, workflow_id: str) -> Dict[str, Any]:
+    async def _execute_canary_deployment(self, workflow_id: str) -> dict[str, Any]:
         """Execute canary deployment workflow."""
         steps = [
             ("deploy_canary", 0.25),
@@ -544,7 +579,7 @@ class SimpleNodeCanaryOrchestrator:
             "duration_ms": int((workflow["end_time"] - workflow["start_time"]) * 1000),
         }
 
-    async def _stop_workflow(self, workflow_id: str) -> Dict[str, Any]:
+    async def _stop_workflow(self, workflow_id: str) -> dict[str, Any]:
         """Stop a running workflow."""
         if workflow_id in self._active_workflows:
             workflow = self._active_workflows.pop(workflow_id)
@@ -557,10 +592,9 @@ class SimpleNodeCanaryOrchestrator:
                 "status": "cancelled",
                 "message": "Workflow stopped successfully",
             }
-        else:
-            raise ValueError(f"Workflow {workflow_id} not found or not active")
+        raise ValueError(f"Workflow {workflow_id} not found or not active")
 
-    def _get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
+    def _get_workflow_status(self, workflow_id: str) -> dict[str, Any]:
         """Get workflow status."""
         if workflow_id in self._active_workflows:
             workflow = self._active_workflows[workflow_id]
@@ -588,7 +622,8 @@ class SimpleNodeCanaryReducer:
         self._infrastructure_status = "unknown"
 
     async def aggregate_results(
-        self, input_data: ModelCanaryReducerInput
+        self,
+        input_data: ModelCanaryReducerInput,
     ) -> ModelCanaryReducerOutput:
         """Aggregate results from infrastructure adapters."""
         start_time = time.time()
@@ -615,12 +650,15 @@ class SimpleNodeCanaryReducer:
 
         except Exception as e:
             return ModelCanaryReducerOutput(
-                status="error", aggregated_result={}, error_message=str(e)
+                status="error",
+                aggregated_result={},
+                error_message=str(e),
             )
 
     def _aggregate_bootstrap_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate bootstrap initialization results."""
         total_adapters = len(results)
         successful_bootstraps = sum(
@@ -641,8 +679,9 @@ class SimpleNodeCanaryReducer:
         }
 
     def _aggregate_health_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate health check results."""
         total_adapters = len(results)
         healthy_adapters = sum(1 for r in results if r.get("status") == "healthy")
@@ -668,8 +707,9 @@ class SimpleNodeCanaryReducer:
         }
 
     def _aggregate_failover_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate failover operation results."""
         total_adapters = len(results)
         successful_failovers = sum(
@@ -695,8 +735,9 @@ class SimpleNodeCanaryReducer:
         }
 
     def _aggregate_status_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate general status results."""
         total_adapters = len(results)
 
@@ -730,8 +771,9 @@ class SimpleNodeCanaryReducer:
         }
 
     def _aggregate_general_results(
-        self, results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Aggregate general results when operation type is not specified."""
         return {
             "operation": "general_aggregation",
@@ -758,7 +800,8 @@ class SimpleNodeCanaryGateway:
         self._response_times = []
 
     async def route_message(
-        self, input_data: ModelGroupGatewayInput
+        self,
+        input_data: ModelGroupGatewayInput,
     ) -> ModelGroupGatewayOutput:
         """Route message to target tools and aggregate responses."""
         start_time = time.time()
@@ -800,7 +843,7 @@ class SimpleNodeCanaryGateway:
             self._routing_metrics["total_routes"] += 1
             self._routing_metrics["successful_routes"] += 1
             self._routing_metrics["avg_response_time_ms"] = sum(
-                self._response_times
+                self._response_times,
             ) / len(self._response_times)
 
             # Cache the result
@@ -827,8 +870,10 @@ class SimpleNodeCanaryGateway:
             )
 
     async def _route_round_robin(
-        self, target_tools: List[str], message_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        target_tools: list[str],
+        message_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Route message using round-robin strategy."""
         selected_tool = target_tools[self._routing_count % len(target_tools)]
 
@@ -845,8 +890,10 @@ class SimpleNodeCanaryGateway:
         }
 
     async def _route_broadcast(
-        self, target_tools: List[str], message_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        target_tools: list[str],
+        message_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Route message to all tools (broadcast)."""
         responses = []
 
@@ -858,7 +905,7 @@ class SimpleNodeCanaryGateway:
                     "tool": tool,
                     "status": "processed",
                     "response": f"Broadcast processed by {tool}",
-                }
+                },
             )
 
         return {
@@ -871,8 +918,10 @@ class SimpleNodeCanaryGateway:
         }
 
     async def _route_and_aggregate(
-        self, target_tools: List[str], message_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        target_tools: list[str],
+        message_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Route message to all tools and aggregate responses."""
         individual_responses = []
         aggregated_data = {"total_responses": 0, "combined_data": {}}
@@ -927,7 +976,7 @@ async def test_simple_compute_node():
             print(f"  ❌ Addition test failed: {result.error_message}")
         else:
             print(
-                f"  ✅ Addition: {result.result['values']} = {result.result['result']}"
+                f"  ✅ Addition: {result.result['values']} = {result.result['result']}",
             )
     except Exception as e:
         test_results.append(("Addition", False))
@@ -947,7 +996,7 @@ async def test_simple_compute_node():
             print(f"  ❌ Multiplication test failed: {result.error_message}")
         else:
             print(
-                f"  ✅ Multiplication: {result.result['values']} = {result.result['result']}"
+                f"  ✅ Multiplication: {result.result['values']} = {result.result['result']}",
             )
     except Exception as e:
         test_results.append(("Multiplication", False))
@@ -985,7 +1034,8 @@ async def test_simple_effect_node():
     # Test 1: Health Check
     try:
         input_data = ModelCanaryEffectInput(
-            operation_type="health_check", correlation_id="test-health-001"
+            operation_type="health_check",
+            correlation_id="test-health-001",
         )
         result = await node.perform_effect(input_data)
         success = result.success and result.operation_result.get("status") == "healthy"
@@ -1012,7 +1062,7 @@ async def test_simple_effect_node():
             print(f"  ❌ API call failed: {result.error_message}")
         else:
             print(
-                f"  ✅ API Call: {result.operation_result['method']} {result.operation_result['endpoint']} -> {result.operation_result['status_code']}"
+                f"  ✅ API Call: {result.operation_result['method']} {result.operation_result['endpoint']} -> {result.operation_result['status_code']}",
             )
     except Exception as e:
         test_results.append(("API Call", False))
@@ -1032,7 +1082,7 @@ async def test_simple_effect_node():
             print(f"  ❌ File operation failed: {result.error_message}")
         else:
             print(
-                f"  ✅ File Operation: {result.operation_result['operation']} -> {result.operation_result['file_path']}"
+                f"  ✅ File Operation: {result.operation_result['operation']} -> {result.operation_result['file_path']}",
             )
     except Exception as e:
         test_results.append(("File Operation", False))
@@ -1068,7 +1118,7 @@ async def test_simple_orchestrator_node():
         else:
             steps = result.workflow_result.get("steps", [])
             print(
-                f"  ✅ Infrastructure Startup: {len(steps)} steps completed in {result.workflow_result.get('duration_ms')}ms"
+                f"  ✅ Infrastructure Startup: {len(steps)} steps completed in {result.workflow_result.get('duration_ms')}ms",
             )
     except Exception as e:
         test_results.append(("Infrastructure Startup", False))
@@ -1093,7 +1143,7 @@ async def test_simple_orchestrator_node():
         else:
             steps = result.workflow_result.get("steps", [])
             print(
-                f"  ✅ Canary Deployment: {len(steps)} steps completed in {result.workflow_result.get('duration_ms')}ms"
+                f"  ✅ Canary Deployment: {len(steps)} steps completed in {result.workflow_result.get('duration_ms')}ms",
             )
     except Exception as e:
         test_results.append(("Canary Deployment", False))
@@ -1117,7 +1167,7 @@ async def test_simple_orchestrator_node():
             print(f"  ❌ Workflow status failed: {result.error_message}")
         else:
             print(
-                f"  ✅ Workflow Status: {result.workflow_result['workflow_id']} -> {result.workflow_result['status']}"
+                f"  ✅ Workflow Status: {result.workflow_result['workflow_id']} -> {result.workflow_result['status']}",
             )
     except Exception as e:
         test_results.append(("Workflow Status", False))
@@ -1142,7 +1192,8 @@ async def test_simple_reducer_node():
             {"adapter": "kafka", "status": "degraded"},
         ]
         input_data = ModelCanaryReducerInput(
-            adapter_results=adapter_results, operation_type="health_check"
+            adapter_results=adapter_results,
+            operation_type="health_check",
         )
         result = await node.aggregate_results(input_data)
         success = (
@@ -1155,7 +1206,7 @@ async def test_simple_reducer_node():
         else:
             agg_result = result.aggregated_result
             print(
-                f"  ✅ Health Aggregation: {agg_result['healthy_adapters']}/{agg_result['total_adapters']} healthy -> {agg_result['overall_status']}"
+                f"  ✅ Health Aggregation: {agg_result['healthy_adapters']}/{agg_result['total_adapters']} healthy -> {agg_result['overall_status']}",
             )
     except Exception as e:
         test_results.append(("Health Aggregation", False))
@@ -1169,7 +1220,8 @@ async def test_simple_reducer_node():
             {"adapter": "kafka", "bootstrap_successful": False},
         ]
         input_data = ModelCanaryReducerInput(
-            adapter_results=adapter_results, operation_type="bootstrap"
+            adapter_results=adapter_results,
+            operation_type="bootstrap",
         )
         result = await node.aggregate_results(input_data)
         success = (
@@ -1182,7 +1234,7 @@ async def test_simple_reducer_node():
         else:
             agg_result = result.aggregated_result
             print(
-                f"  ✅ Bootstrap Aggregation: {agg_result['successful_bootstraps']}/{agg_result['total_adapters']} successful -> {agg_result['overall_status']}"
+                f"  ✅ Bootstrap Aggregation: {agg_result['successful_bootstraps']}/{agg_result['total_adapters']} successful -> {agg_result['overall_status']}",
             )
     except Exception as e:
         test_results.append(("Bootstrap Aggregation", False))
@@ -1196,7 +1248,8 @@ async def test_simple_reducer_node():
             {"adapter": "kafka", "status": "healthy"},
         ]
         input_data = ModelCanaryReducerInput(
-            adapter_results=adapter_results, operation_type="status_aggregation"
+            adapter_results=adapter_results,
+            operation_type="status_aggregation",
         )
         result = await node.aggregate_results(input_data)
         success = (
@@ -1209,7 +1262,7 @@ async def test_simple_reducer_node():
         else:
             agg_result = result.aggregated_result
             print(
-                f"  ✅ Status Aggregation: {agg_result['total_adapters']} adapters -> {agg_result['overall_status']}"
+                f"  ✅ Status Aggregation: {agg_result['total_adapters']} adapters -> {agg_result['overall_status']}",
             )
     except Exception as e:
         test_results.append(("Status Aggregation", False))
@@ -1245,7 +1298,7 @@ async def test_simple_gateway_node():
         else:
             selected = result.aggregated_response.get("selected_tool")
             print(
-                f"  ✅ Round Robin: Routed to {selected} from {result.aggregated_response.get('total_targets')} targets"
+                f"  ✅ Round Robin: Routed to {selected} from {result.aggregated_response.get('total_targets')} targets",
             )
     except Exception as e:
         test_results.append(("Round Robin", False))
@@ -1270,7 +1323,7 @@ async def test_simple_gateway_node():
         else:
             responses = result.aggregated_response.get("responses", [])
             print(
-                f"  ✅ Broadcast: Sent to {len(responses)} targets, all successful: {result.aggregated_response.get('all_successful')}"
+                f"  ✅ Broadcast: Sent to {len(responses)} targets, all successful: {result.aggregated_response.get('all_successful')}",
             )
     except Exception as e:
         test_results.append(("Broadcast", False))
@@ -1295,7 +1348,7 @@ async def test_simple_gateway_node():
         else:
             aggregated = result.aggregated_response.get("aggregated_data", {})
             print(
-                f"  ✅ Aggregate: Combined {aggregated.get('total_responses')} responses from {result.aggregated_response.get('total_targets')} targets"
+                f"  ✅ Aggregate: Combined {aggregated.get('total_responses')} responses from {result.aggregated_response.get('total_targets')} targets",
             )
     except Exception as e:
         test_results.append(("Aggregate", False))
@@ -1317,7 +1370,7 @@ async def test_simple_gateway_node():
             print(f"  ❌ Cache test failed: {result.error_message}")
         else:
             print(
-                f"  ✅ Cache Hit: Response served from cache, cache hits: {result.routing_metrics.get('cache_hits')}"
+                f"  ✅ Cache Hit: Response served from cache, cache hits: {result.routing_metrics.get('cache_hits')}",
             )
     except Exception as e:
         test_results.append(("Cache Hit", False))

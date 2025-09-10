@@ -8,8 +8,7 @@ health checks, and runtime lookup capabilities.
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Type
-from uuid import UUID
+from typing import Any
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -23,8 +22,6 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
 
 class RegistryError(OnexError):
     """Registry-specific errors."""
-
-    pass
 
 
 class DefaultSubreducer(BaseSubreducer):
@@ -62,17 +59,17 @@ class ReducerSubreducerRegistry:
 
     def __init__(self):
         """Initialize empty registry."""
-        self._subreducers: Dict[str, Type[BaseSubreducer]] = {}
-        self._subreducer_instances: Dict[str, BaseSubreducer] = {}
-        self._registration_metadata: Dict[str, Dict[str, Any]] = {}
+        self._subreducers: dict[str, type[BaseSubreducer]] = {}
+        self._subreducer_instances: dict[str, BaseSubreducer] = {}
+        self._registration_metadata: dict[str, dict[str, Any]] = {}
         self._logger = logging.getLogger(__name__)
         self._lock = threading.RLock()  # Thread-safe registry operations
 
     def register_subreducer(
         self,
         workflow_type: WorkflowType,
-        subreducer_class: Type[BaseSubreducer],
-        metadata: Dict[str, Any] = None,
+        subreducer_class: type[BaseSubreducer],
+        metadata: dict[str, Any] = None,
     ) -> None:
         """
         Register a subreducer for a specific workflow type.
@@ -96,7 +93,7 @@ class ReducerSubreducerRegistry:
             # Validate subreducer class
             if not issubclass(subreducer_class, BaseSubreducer):
                 raise RegistryError(
-                    f"Subreducer class must inherit from BaseSubreducer",
+                    "Subreducer class must inherit from BaseSubreducer",
                     CoreErrorCode.VALIDATION_FAILED,
                 )
 
@@ -118,7 +115,7 @@ class ReducerSubreducerRegistry:
                     )
             except (TypeError, ValueError, AttributeError, NotImplementedError) as e:
                 raise RegistryError(
-                    f"Failed to instantiate subreducer {subreducer_class.__name__}: {str(e)}",
+                    f"Failed to instantiate subreducer {subreducer_class.__name__}: {e!s}",
                     CoreErrorCode.VALIDATION_FAILED,
                 ) from e
 
@@ -140,7 +137,7 @@ class ReducerSubreducerRegistry:
             message=f"Registered subreducer {subreducer_class.__name__} for workflow type {workflow_type_str}",
         )
 
-    def get_subreducer(self, workflow_type: WorkflowType) -> Type[BaseSubreducer]:
+    def get_subreducer(self, workflow_type: WorkflowType) -> type[BaseSubreducer]:
         """
         Get the registered subreducer class for a workflow type.
 
@@ -190,11 +187,11 @@ class ReducerSubreducerRegistry:
                 emit_log_event(
                     logger=self._logger,
                     level="ERROR",
-                    message=f"Failed to create subreducer instance for {workflow_type_str}: {str(e)}",
+                    message=f"Failed to create subreducer instance for {workflow_type_str}: {e!s}",
                 )
                 # Return default fallback instance
                 default_instance = DefaultSubreducer(
-                    f"default_{workflow_type_str}_subreducer"
+                    f"default_{workflow_type_str}_subreducer",
                 )
                 self._subreducer_instances[workflow_type_str] = default_instance
                 return default_instance
@@ -263,11 +260,11 @@ class ReducerSubreducerRegistry:
             emit_log_event(
                 logger=self._logger,
                 level="WARNING",
-                message=f"Validation failed for subreducer {subreducer_class.__name__}: {str(e)}",
+                message=f"Validation failed for subreducer {subreducer_class.__name__}: {e!s}",
             )
             return False
 
-    def list_registered_workflows(self) -> List[str]:
+    def list_registered_workflows(self) -> list[str]:
         """
         Get a list of all registered workflow types.
 
@@ -276,7 +273,7 @@ class ReducerSubreducerRegistry:
         """
         return list(self._subreducers.keys())
 
-    def health_check_subreducers(self) -> Dict[str, bool]:
+    def health_check_subreducers(self) -> dict[str, bool]:
         """
         Perform health checks on all registered subreducers.
 
@@ -296,19 +293,19 @@ class ReducerSubreducerRegistry:
                 else:
                     # Check if instance supports its workflow type
                     health_status[workflow_type_str] = instance.supports_workflow_type(
-                        workflow_type
+                        workflow_type,
                     )
             except (AttributeError, TypeError, NotImplementedError) as e:
                 emit_log_event(
                     logger=self._logger,
                     level="WARNING",
-                    message=f"Health check failed for {workflow_type_str}: {str(e)}",
+                    message=f"Health check failed for {workflow_type_str}: {e!s}",
                 )
                 health_status[workflow_type_str] = False
 
         return health_status
 
-    def get_registration_metadata(self, workflow_type: WorkflowType) -> Dict[str, Any]:
+    def get_registration_metadata(self, workflow_type: WorkflowType) -> dict[str, Any]:
         """
         Get registration metadata for a workflow type.
 
@@ -333,7 +330,7 @@ class ReducerSubreducerRegistry:
             },
         )
 
-    def get_registry_summary(self) -> Dict[str, Any]:
+    def get_registry_summary(self) -> dict[str, Any]:
         """
         Get a summary of the current registry state.
 

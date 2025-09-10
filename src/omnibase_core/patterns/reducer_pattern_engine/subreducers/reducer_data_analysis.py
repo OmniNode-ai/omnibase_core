@@ -7,7 +7,7 @@ transformation, statistical processing, and result aggregation.
 
 import statistics
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -120,13 +120,15 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
 
                     analysis_func = self._supported_analyses[analysis_type]
                     analysis_results[analysis_type] = analysis_func(
-                        cleaned_data, analysis_config
+                        cleaned_data,
+                        analysis_config,
                     )
 
                     # Track analysis type usage
                     self._processing_metrics["analysis_types_used"][analysis_type] = (
                         self._processing_metrics["analysis_types_used"].get(
-                            analysis_type, 0
+                            analysis_type,
+                            0,
                         )
                         + 1
                     )
@@ -139,7 +141,9 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
 
             # Generate comprehensive analysis summary
             analysis_summary = self._generate_analysis_summary(
-                analysis_results, cleaned_data, analysis_config
+                analysis_results,
+                cleaned_data,
+                analysis_config,
             )
 
             # Calculate processing metrics
@@ -166,7 +170,8 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
                         "cleaned_data_points": len(cleaned_data),
                         "analysis_types_performed": analysis_types,
                         "data_quality_score": self._calculate_data_quality_score(
-                            data, cleaned_data
+                            data,
+                            cleaned_data,
                         ),
                     },
                 },
@@ -175,7 +180,7 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
 
         except Exception as e:
             processing_time = (time.time() - start_time) * 1000
-            error_message = f"Data analysis failed: {str(e)}"
+            error_message = f"Data analysis failed: {e!s}"
 
             self._update_failure_metrics(processing_time, str(type(e).__name__))
 
@@ -202,7 +207,8 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
         """Validate the analysis request payload."""
         if not request.payload:
             raise OnexError(
-                "Analysis request payload is required", CoreErrorCode.VALIDATION_FAILED
+                "Analysis request payload is required",
+                CoreErrorCode.VALIDATION_FAILED,
             )
 
         if "data" not in request.payload:
@@ -214,19 +220,22 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
         data = request.payload["data"]
         if not isinstance(data, list) or len(data) == 0:
             raise OnexError(
-                "Data must be a non-empty list", CoreErrorCode.VALIDATION_FAILED
+                "Data must be a non-empty list",
+                CoreErrorCode.VALIDATION_FAILED,
             )
 
-    def _extract_analysis_config(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_analysis_config(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Extract and validate analysis configuration from payload."""
         config = {
             "data": payload["data"],
             "analysis_types": payload.get("analysis_types", ["descriptive"]),
             "data_validation": payload.get(
-                "data_validation", {"remove_outliers": True, "handle_missing": True}
+                "data_validation",
+                {"remove_outliers": True, "handle_missing": True},
             ),
             "statistical_config": payload.get(
-                "statistical_config", {"confidence_level": 0.95}
+                "statistical_config",
+                {"confidence_level": 0.95},
             ),
             "output_format": payload.get("output_format", "detailed"),
         }
@@ -251,8 +260,10 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
         return config
 
     def _validate_and_clean_data(
-        self, data: List[Any], config: Dict[str, Any]
-    ) -> List[float]:
+        self,
+        data: list[Any],
+        config: dict[str, Any],
+    ) -> list[float]:
         """Validate and clean input data for analysis."""
         cleaned_data = []
         validation_config = config.get("data_validation", {})
@@ -264,7 +275,7 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
                     continue  # Skip missing values
 
                 numeric_value = float(item)
-                if not (numeric_value != numeric_value):  # Check for NaN
+                if numeric_value == numeric_value:  # Check for NaN
                     cleaned_data.append(numeric_value)
 
             except (ValueError, TypeError):
@@ -277,7 +288,8 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
 
         if len(cleaned_data) == 0:
             raise OnexError(
-                "No valid numeric data points found", CoreErrorCode.VALIDATION_FAILED
+                "No valid numeric data points found",
+                CoreErrorCode.VALIDATION_FAILED,
             )
 
         # Remove outliers if configured
@@ -286,7 +298,7 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
 
         return cleaned_data
 
-    def _remove_outliers(self, data: List[float]) -> List[float]:
+    def _remove_outliers(self, data: list[float]) -> list[float]:
         """Remove statistical outliers using IQR method."""
         if len(data) < 4:
             return data  # Need at least 4 points for meaningful outlier detection
@@ -305,8 +317,10 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
         return [x for x in data if lower_bound <= x <= upper_bound]
 
     def _perform_descriptive_analysis(
-        self, data: List[float], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: list[float],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Perform descriptive statistical analysis."""
         if len(data) == 0:
             return {"error": "No data available for descriptive analysis"}
@@ -333,11 +347,13 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
                 },
             }
         except statistics.StatisticsError as e:
-            return {"error": f"Statistical analysis error: {str(e)}"}
+            return {"error": f"Statistical analysis error: {e!s}"}
 
     def _perform_correlation_analysis(
-        self, data: List[float], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: list[float],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Perform correlation analysis (simplified version for single dataset)."""
         if len(data) < 2:
             return {"error": "Insufficient data for correlation analysis"}
@@ -364,8 +380,10 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
             return {"error": "Could not calculate correlation - insufficient variance"}
 
     def _perform_trend_analysis(
-        self, data: List[float], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: list[float],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Perform trend analysis using simple linear regression."""
         if len(data) < 3:
             return {"error": "Insufficient data for trend analysis"}
@@ -405,17 +423,20 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
                     "increasing" if slope > 0 else "decreasing" if slope < 0 else "flat"
                 ),
                 "trend_strength": self._classify_trend_strength(
-                    abs(slope), max(data) - min(data)
+                    abs(slope),
+                    max(data) - min(data),
                 ),
                 "data_points": n,
             }
 
         except Exception as e:
-            return {"error": f"Trend analysis failed: {str(e)}"}
+            return {"error": f"Trend analysis failed: {e!s}"}
 
     def _perform_distribution_analysis(
-        self, data: List[float], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        data: list[float],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Analyze data distribution characteristics."""
         if len(data) < 2:
             return {"error": "Insufficient data for distribution analysis"}
@@ -449,11 +470,14 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
             }
 
         except Exception as e:
-            return {"error": f"Distribution analysis failed: {str(e)}"}
+            return {"error": f"Distribution analysis failed: {e!s}"}
 
     def _generate_analysis_summary(
-        self, results: Dict[str, Any], data: List[float], config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        results: dict[str, Any],
+        data: list[float],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
         """Generate comprehensive analysis summary."""
         summary = {
             "total_data_points": len(data),
@@ -472,14 +496,14 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
                     else float("inf")
                 )
                 summary["key_insights"].append(
-                    f"Coefficient of variation: {cv:.3f} ({'high' if cv > 0.5 else 'moderate' if cv > 0.2 else 'low'} variability)"
+                    f"Coefficient of variation: {cv:.3f} ({'high' if cv > 0.5 else 'moderate' if cv > 0.2 else 'low'} variability)",
                 )
 
         if "trend" in results:
             trend = results["trend"]
             if "trend_direction" in trend and "r_squared" in trend:
                 summary["key_insights"].append(
-                    f"Trend: {trend['trend_direction']} with R² = {trend['r_squared']:.3f}"
+                    f"Trend: {trend['trend_direction']} with R² = {trend['r_squared']:.3f}",
                 )
 
         return summary
@@ -507,30 +531,30 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
         normalized_slope = abs(slope) / data_range
         if normalized_slope > 0.1:
             return "strong"
-        elif normalized_slope > 0.05:
+        if normalized_slope > 0.05:
             return "moderate"
-        elif normalized_slope > 0.01:
+        if normalized_slope > 0.01:
             return "weak"
-        else:
-            return "very weak"
+        return "very weak"
 
     def _classify_distribution(self, skewness: float, kurtosis: float) -> str:
         """Classify distribution type based on skewness and kurtosis."""
         if abs(skewness) < 0.5 and abs(kurtosis) < 0.5:
             return "approximately normal"
-        elif skewness > 1:
+        if skewness > 1:
             return "right-skewed"
-        elif skewness < -1:
+        if skewness < -1:
             return "left-skewed"
-        elif kurtosis > 3:
+        if kurtosis > 3:
             return "heavy-tailed"
-        elif kurtosis < -1:
+        if kurtosis < -1:
             return "light-tailed"
-        else:
-            return "moderately non-normal"
+        return "moderately non-normal"
 
     def _calculate_data_quality_score(
-        self, original_data: List[Any], cleaned_data: List[float]
+        self,
+        original_data: list[Any],
+        cleaned_data: list[float],
     ) -> float:
         """Calculate data quality score based on cleaning results."""
         if len(original_data) == 0:
@@ -579,6 +603,6 @@ class ReducerDataAnalysisSubreducer(BaseSubreducer):
             total_time / self._processing_metrics["total_processed"]
         )
 
-    def get_processing_metrics(self) -> Dict[str, Any]:
+    def get_processing_metrics(self) -> dict[str, Any]:
         """Get current processing metrics."""
         return self._processing_metrics.copy()

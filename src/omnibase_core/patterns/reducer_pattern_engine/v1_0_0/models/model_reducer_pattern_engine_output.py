@@ -1,7 +1,7 @@
 """ONEX-compliant output model for Reducer Pattern Engine with envelope support."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -22,17 +22,20 @@ class ModelReducerPatternEngineOutput(BaseModel):
 
     # Core response data
     workflow_response: ModelWorkflowResponse = Field(
-        ..., description="The workflow processing response"
+        ...,
+        description="The workflow processing response",
     )
 
     # ONEX envelope for protocol compliance (optional for backward compatibility)
-    envelope: Optional[ModelEventEnvelope] = Field(
-        None, description="ONEX event envelope for protocol-compliant routing"
+    envelope: ModelEventEnvelope | None = Field(
+        None,
+        description="ONEX event envelope for protocol-compliant routing",
     )
 
     # Protocol metadata
     protocol_version: str = Field(
-        default="1.0.0", description="Protocol version for compatibility"
+        default="1.0.0",
+        description="Protocol version for compatibility",
     )
 
     source_node_id: str = Field(
@@ -40,38 +43,46 @@ class ModelReducerPatternEngineOutput(BaseModel):
         description="Source node ID for distributed processing",
     )
 
-    target_node_id: Optional[str] = Field(
-        None, description="Target node ID for response routing"
+    target_node_id: str | None = Field(
+        None,
+        description="Target node ID for response routing",
     )
 
     # Processing metadata
-    processing_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional processing metadata and metrics"
+    processing_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional processing metadata and metrics",
     )
 
     # Tracing and correlation
     correlation_id: UUID = Field(..., description="Correlation ID for request tracking")
 
     response_id: UUID = Field(
-        default_factory=uuid4, description="Unique response identifier"
+        default_factory=uuid4,
+        description="Unique response identifier",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Response creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Response creation timestamp",
     )
 
     # ONEX compliance metadata
     onex_compliance_version: str = Field(
-        default="1.0.0", description="ONEX compliance version"
+        default="1.0.0",
+        description="ONEX compliance version",
     )
 
     node_type: str = Field(
-        default="COMPUTE", description="ONEX node type classification"
+        default="COMPUTE",
+        description="ONEX node type classification",
     )
 
     @classmethod
     def from_workflow_response(
-        cls, workflow_response: ModelWorkflowResponse, **kwargs
+        cls,
+        workflow_response: ModelWorkflowResponse,
+        **kwargs,
     ) -> "ModelReducerPatternEngineOutput":
         """
         Create output from a workflow response for backward compatibility.
@@ -100,7 +111,9 @@ class ModelReducerPatternEngineOutput(BaseModel):
 
     @classmethod
     def from_envelope(
-        cls, envelope: ModelEventEnvelope, **kwargs
+        cls,
+        envelope: ModelEventEnvelope,
+        **kwargs,
     ) -> "ModelReducerPatternEngineOutput":
         """
         Create output from ONEX event envelope for protocol compliance.
@@ -218,7 +231,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
         """Get the source node ID for response routing."""
         return self.source_node_id
 
-    def get_target_node_id(self) -> Optional[str]:
+    def get_target_node_id(self) -> str | None:
         """Get the target node ID for response routing."""
         if self.envelope:
             return self.envelope.source_node_id  # Response goes back to source
@@ -233,7 +246,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
         )
         return status_value in ["completed", "success"]
 
-    def get_error_info(self) -> Optional[Dict[str, Any]]:
+    def get_error_info(self) -> dict[str, Any] | None:
         """Get error information if processing failed."""
         if self.is_success():
             return None

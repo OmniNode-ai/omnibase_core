@@ -9,8 +9,6 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.model.core.model_tool_manifest import EnumBusinessLogicPattern
-
 
 class ModelToolSpecification(BaseModel):
     """Model representing tool specification for NodeBase tool resolution."""

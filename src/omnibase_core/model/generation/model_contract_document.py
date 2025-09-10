@@ -116,7 +116,10 @@ class ModelContractDocument(BaseModel):
         )
 
         return serialize_pydantic_model_to_yaml(
-            self, exclude_none=True, default_flow_style=False, sort_keys=False
+            self,
+            exclude_none=True,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     @classmethod

@@ -77,7 +77,7 @@ def mock_container():
 def engine(mock_container):
     """Create a ReducerPatternEngine instance for testing."""
     with patch(
-        "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+        "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
     ):
         return ReducerPatternEngine(mock_container)
 
@@ -105,7 +105,7 @@ class TestReducerPatternEngineInitialization:
     def test_engine_initialization(self, mock_container):
         """Test that engine initializes correctly."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -117,7 +117,7 @@ class TestReducerPatternEngineInitialization:
     def test_engine_inherits_from_node_reducer(self, mock_container):
         """Test that engine properly inherits from NodeReducer."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -135,7 +135,7 @@ class TestSubreducerRegistration:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -150,11 +150,11 @@ class TestSubreducerRegistration:
 
         # Mock router to raise exception
         engine._router.register_subreducer = MagicMock(
-            side_effect=OnexError("test error")
+            side_effect=OnexError("test error"),
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             with pytest.raises(OnexError):
                 engine.register_subreducer(subreducer, workflow_types)
@@ -165,7 +165,9 @@ class TestWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_successful_workflow_processing(
-        self, engine, sample_workflow_request
+        self,
+        engine,
+        sample_workflow_request,
     ):
         """Test successful end-to-end workflow processing."""
         # Register a mock subreducer
@@ -173,7 +175,7 @@ class TestWorkflowProcessing:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -206,7 +208,7 @@ class TestWorkflowProcessing:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -230,11 +232,13 @@ class TestWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_workflow_processing_no_subreducer(
-        self, engine, sample_workflow_request
+        self,
+        engine,
+        sample_workflow_request,
     ):
         """Test workflow processing when no subreducer is registered."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             # Process without registering any subreducers
             response = await engine.process_workflow(sample_workflow_request)
@@ -257,7 +261,7 @@ class TestWorkflowProcessing:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -299,7 +303,7 @@ class TestActiveWorkflowTracking:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -325,7 +329,7 @@ class TestMetrics:
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -365,7 +369,7 @@ class TestBackgroundCleanup:
     async def test_background_cleanup_thread_initialization(self, mock_container):
         """Test that background cleanup thread starts during engine initialization."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -383,7 +387,7 @@ class TestBackgroundCleanup:
     async def test_shutdown_cleanup_thread(self, mock_container):
         """Test graceful shutdown of background cleanup thread."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -401,7 +405,7 @@ class TestBackgroundCleanup:
     async def test_background_cleanup_worker_error_handling(self, mock_container):
         """Test that background cleanup continues despite errors."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ) as mock_log:
             engine = ReducerPatternEngine(mock_container)
 
@@ -503,7 +507,8 @@ class TestInstanceIdValidation:
 
         # Whitespace should be trimmed
         request = ModelWorkflowRequest(
-            workflow_type=WorkflowType.DOCUMENT_REGENERATION, instance_id="  test123  "
+            workflow_type=WorkflowType.DOCUMENT_REGENERATION,
+            instance_id="  test123  ",
         )
         assert request.instance_id == "test123"
 
@@ -514,15 +519,13 @@ class TestMetricsLockingPatterns:
     @pytest.mark.asyncio
     async def test_concurrent_metrics_updates(self, engine):
         """Test that metrics updates are thread-safe under concurrent access."""
-        import concurrent.futures
-        import threading
 
         # Register a subreducer
         subreducer = MockSubreducer("concurrent_test")
         workflow_types = [WorkflowType.DOCUMENT_REGENERATION]
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine.register_subreducer(subreducer, workflow_types)
 
@@ -591,11 +594,13 @@ class TestEndToEndWorkflowIntegration:
     async def test_complete_document_workflow_success(self, mock_container):
         """Test complete successful document workflow from start to finish."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             # Initialize engine with realistic configuration
             engine = ReducerPatternEngine(
-                mock_container, max_workflow_states=100, state_retention_hours=1
+                mock_container,
+                max_workflow_states=100,
+                state_retention_hours=1,
             )
 
             # Register document regeneration subreducer
@@ -669,7 +674,7 @@ class TestEndToEndWorkflowIntegration:
     async def test_complete_workflow_failure_handling(self, mock_container):
         """Test complete workflow failure handling from start to finish."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -710,7 +715,7 @@ class TestEndToEndWorkflowIntegration:
     async def test_multiple_concurrent_workflows_e2e(self, mock_container):
         """Test multiple concurrent workflows processing end-to-end."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container, max_workflow_states=50)
 
@@ -764,10 +769,11 @@ class TestEndToEndWorkflowIntegration:
     async def test_workflow_state_lifecycle_e2e(self, mock_container):
         """Test complete workflow state lifecycle from creation to cleanup."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(
-                mock_container, state_retention_hours=0
+                mock_container,
+                state_retention_hours=0,
             )  # Immediate cleanup
 
             # Create a custom subreducer that allows us to inspect state during processing
@@ -780,7 +786,8 @@ class TestEndToEndWorkflowIntegration:
                     return workflow_type == WorkflowType.DOCUMENT_REGENERATION
 
                 async def process(
-                    self, request: ModelWorkflowRequest
+                    self,
+                    request: ModelWorkflowRequest,
                 ) -> ModelSubreducerResult:
                     # Check that workflow is active during processing
                     if self.engine_ref:
@@ -789,7 +796,7 @@ class TestEndToEndWorkflowIntegration:
 
                         # Check workflow state exists
                         state = self.engine_ref._get_workflow_state(
-                            str(request.workflow_id)
+                            str(request.workflow_id),
                         )
                         assert state is not None
 

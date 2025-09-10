@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document outlines a comprehensive plan to eliminate type safety anti-patterns throughout the omnibase-core codebase, following the **Strong Typing Only - No Fallbacks** architectural principle.
+This document outlines a comprehensive plan to eliminate type safety anti-patterns throughout the omnibase_core codebase, following the **Strong Typing Only - No Fallbacks** architectural principle.
 
 ## Anti-Pattern Categories Found
 

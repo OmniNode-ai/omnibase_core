@@ -13,7 +13,6 @@ from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import (
-    load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
 

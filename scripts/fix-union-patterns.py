@@ -13,7 +13,6 @@ Priority is on reducing Union count by fixing the most common patterns.
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 class UnionPatternFixer:
@@ -42,7 +41,7 @@ class UnionPatternFixer:
             ),  # Keep numeric unions for now
         ]
 
-    def fix_file(self, file_path: Path) -> Tuple[bool, int]:
+    def fix_file(self, file_path: Path) -> tuple[bool, int]:
         """
         Fix Union patterns in a single file.
 
@@ -53,7 +52,7 @@ class UnionPatternFixer:
             (was_modified, replacement_count)
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             original_content = content
@@ -81,7 +80,8 @@ class UnionPatternFixer:
                         content,
                     )
                 elif "Optional[" in content and not re.search(
-                    r"from typing import.*Optional", content
+                    r"from typing import.*Optional",
+                    content,
                 ):
                     # Add typing import if needed
                     if "from typing import" not in content:
@@ -131,7 +131,7 @@ class UnionPatternFixer:
                 relative_path = py_file.relative_to(src_dir.parent)
                 print(f"✅ Fixed {relative_path}: {replacements} patterns replaced")
 
-        print(f"\n📊 UNION PATTERN FIXING SUMMARY")
+        print("\n📊 UNION PATTERN FIXING SUMMARY")
         print("=" * 50)
         print(f"Total files processed: {len(python_files)}")
         print(f"Files modified: {files_modified}")
@@ -139,12 +139,11 @@ class UnionPatternFixer:
 
         if total_replacements > 0:
             print(
-                f"🎉 Successfully reduced Union usage by {total_replacements} patterns!"
+                f"🎉 Successfully reduced Union usage by {total_replacements} patterns!",
             )
             return True
-        else:
-            print("ℹ️  No Union patterns needed fixing.")
-            return False
+        print("ℹ️  No Union patterns needed fixing.")
+        return False
 
 
 def main():

@@ -13,11 +13,9 @@ This ensures architectural compliance and prevents runtime issues.
 
 import importlib
 import inspect
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Union, get_args, get_origin, get_type_hints
 
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -33,15 +31,15 @@ class ContractValidationResult:
     node_name: str
     contract_type: str
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
 
 
 class ContractValidator:
     """Validates ONEX node contracts."""
 
     def __init__(self):
-        self.results: List[ContractValidationResult] = []
+        self.results: list[ContractValidationResult] = []
         self.total_nodes = 0
         self.valid_nodes = 0
 
@@ -171,7 +169,7 @@ class ContractValidator:
 
         return success
 
-    def _validate_yaml_contract(self, contract_info: Dict) -> ContractValidationResult:
+    def _validate_yaml_contract(self, contract_info: dict) -> ContractValidationResult:
         """Validate a single YAML contract file against its Pydantic model."""
         self.total_nodes += 1
         errors = []
@@ -185,7 +183,11 @@ class ContractValidator:
                 errors.append(f"YAML contract file not found: {yaml_path}")
                 print(f"   ❌ {name}: YAML file missing")
                 return ContractValidationResult(
-                    name, "yaml_contract", False, errors, warnings
+                    name,
+                    "yaml_contract",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             # Load and validate YAML using Pydantic model
@@ -196,7 +198,11 @@ class ContractValidator:
                 errors.append("YAML file is empty or invalid")
                 print(f"   ❌ {name}: Empty YAML")
                 return ContractValidationResult(
-                    name, "yaml_contract", False, errors, warnings
+                    name,
+                    "yaml_contract",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             # Import the backing Pydantic model
@@ -207,13 +213,21 @@ class ContractValidator:
                 errors.append(f"Failed to import backing model: {e}")
                 print(f"   ❌ {name}: Model import failed")
                 return ContractValidationResult(
-                    name, "yaml_contract", False, errors, warnings
+                    name,
+                    "yaml_contract",
+                    False,
+                    errors,
+                    warnings,
                 )
             except AttributeError as e:
                 errors.append(f"Model class not found: {e}")
                 print(f"   ❌ {name}: Model class missing")
                 return ContractValidationResult(
-                    name, "yaml_contract", False, errors, warnings
+                    name,
+                    "yaml_contract",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             # Test YAML → Model deserialization
@@ -222,11 +236,15 @@ class ContractValidator:
                 print(f"   ✅ {name}: YAML→Model deserialization successful")
             except Exception as e:
                 errors.append(
-                    f"YAML deserialization failed: {type(e).__name__}: {str(e)}"
+                    f"YAML deserialization failed: {type(e).__name__}: {e!s}",
                 )
                 print(f"   ❌ {name}: Deserialization failed - {type(e).__name__}")
                 return ContractValidationResult(
-                    name, "yaml_contract", False, errors, warnings
+                    name,
+                    "yaml_contract",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             # Test Model → dict serialization (round-trip)
@@ -235,7 +253,7 @@ class ContractValidator:
                 if not isinstance(serialized, dict):
                     warnings.append("Model serialization doesn't return dict")
             except Exception as e:
-                warnings.append(f"Model serialization warning: {str(e)}")
+                warnings.append(f"Model serialization warning: {e!s}")
 
             # REMOVED: Manual essential fields validation
             # This was bypassing Pydantic validation and causing inconsistencies.
@@ -251,7 +269,7 @@ class ContractValidator:
 
             if missing_modern:
                 warnings.append(
-                    f"Missing modern ONEX fields: {', '.join(missing_modern)}"
+                    f"Missing modern ONEX fields: {', '.join(missing_modern)}",
                 )
 
             is_valid = len(errors) == 0
@@ -259,14 +277,22 @@ class ContractValidator:
                 self.valid_nodes += 1
 
             return ContractValidationResult(
-                name, "yaml_contract", is_valid, errors, warnings
+                name,
+                "yaml_contract",
+                is_valid,
+                errors,
+                warnings,
             )
 
         except Exception as e:
-            errors.append(f"Unexpected error during YAML validation: {str(e)}")
+            errors.append(f"Unexpected error during YAML validation: {e!s}")
             print(f"   ❌ {name}: Validation error")
             return ContractValidationResult(
-                name, "yaml_contract", False, errors, warnings
+                name,
+                "yaml_contract",
+                False,
+                errors,
+                warnings,
             )
 
     def _validate_core_services(self) -> bool:
@@ -294,7 +320,9 @@ class ContractValidator:
         return success
 
     def _validate_node_contract(
-        self, node_name: str, module_path: str
+        self,
+        node_name: str,
+        module_path: str,
     ) -> ContractValidationResult:
         """Validate a specific node contract."""
         self.total_nodes += 1
@@ -310,7 +338,11 @@ class ContractValidator:
             if not inspect.isclass(node_class):
                 errors.append(f"{node_name} is not a class")
                 return ContractValidationResult(
-                    node_name, "node", False, errors, warnings
+                    node_name,
+                    "node",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             # Validate required methods based on node type
@@ -350,7 +382,7 @@ class ContractValidator:
             # Check for health status method return type
             if hasattr(node_class, "get_health_status"):
                 try:
-                    health_method = getattr(node_class, "get_health_status")
+                    health_method = node_class.get_health_status
                     if inspect.iscoroutinefunction(health_method):
                         # It's async, which is expected
                         pass
@@ -376,7 +408,11 @@ class ContractValidator:
                 print(f"   ❌ {node_name}: {len(errors)} errors")
 
             return ContractValidationResult(
-                node_name, "node", is_valid, errors, warnings
+                node_name,
+                "node",
+                is_valid,
+                errors,
+                warnings,
             )
 
         except ImportError as e:
@@ -390,7 +426,9 @@ class ContractValidator:
             return ContractValidationResult(node_name, "node", False, errors, warnings)
 
     def _validate_protocol_contract(
-        self, protocol_name: str, module_path: str
+        self,
+        protocol_name: str,
+        module_path: str,
     ) -> ContractValidationResult:
         """Validate a protocol contract."""
         self.total_nodes += 1
@@ -437,21 +475,33 @@ class ContractValidator:
                 print(f"   ❌ {protocol_name}: {len(errors)} errors")
 
             return ContractValidationResult(
-                protocol_name, "protocol", is_valid, errors, warnings
+                protocol_name,
+                "protocol",
+                is_valid,
+                errors,
+                warnings,
             )
 
         except ImportError as e:
             errors.append(f"Failed to import module: {e}")
             print(f"   ❌ {protocol_name}: Import failed")
             return ContractValidationResult(
-                protocol_name, "protocol", False, errors, warnings
+                protocol_name,
+                "protocol",
+                False,
+                errors,
+                warnings,
             )
 
         except Exception as e:
             errors.append(f"Unexpected error: {e}")
             print(f"   ❌ {protocol_name}: Validation failed")
             return ContractValidationResult(
-                protocol_name, "protocol", False, errors, warnings
+                protocol_name,
+                "protocol",
+                False,
+                errors,
+                warnings,
             )
 
     def _validate_contract_models(self) -> bool:
@@ -512,7 +562,9 @@ class ContractValidator:
         return success
 
     def _validate_pydantic_model(
-        self, model_name: str, module_path: str
+        self,
+        model_name: str,
+        module_path: str,
     ) -> ContractValidationResult:
         """Validate a Pydantic model for contract compliance."""
         self.total_nodes += 1
@@ -528,7 +580,11 @@ class ContractValidator:
                 errors.append(f"Model {model_name} not found in {module_path}")
                 print(f"   ⚠️  {model_name}: Not found")
                 return ContractValidationResult(
-                    model_name, "model", False, errors, warnings
+                    model_name,
+                    "model",
+                    False,
+                    errors,
+                    warnings,
                 )
 
             model_class = getattr(module, model_name)
@@ -547,15 +603,14 @@ class ContractValidator:
                 fields = model_class.model_fields
                 if not fields:
                     warnings.append(f"{model_name} has no defined fields")
-                else:
-                    # Check for common contract fields
-                    if "Contract" in model_name:
-                        required_contract_fields = ["version", "name"]
-                        for field in required_contract_fields:
-                            if field not in fields:
-                                warnings.append(
-                                    f"Contract model missing recommended field: {field}"
-                                )
+                # Check for common contract fields
+                elif "Contract" in model_name:
+                    required_contract_fields = ["version", "name"]
+                    for field in required_contract_fields:
+                        if field not in fields:
+                            warnings.append(
+                                f"Contract model missing recommended field: {field}",
+                            )
 
             # Check for serialization methods
             if not hasattr(model_class, "model_dump"):
@@ -567,7 +622,8 @@ class ContractValidator:
             # Check read/write capabilities for contracts
             if "Contract" in model_name:
                 read_write_warnings = self._check_contract_read_write_capability(
-                    model_class, model_name
+                    model_class,
+                    model_name,
                 )
                 warnings.extend(read_write_warnings)
 
@@ -596,7 +652,7 @@ class ContractValidator:
                         errors.append(f"{model_name} deserialization failed")
 
             except Exception as e:
-                warnings.append(f"Could not test {model_name} instantiation: {str(e)}")
+                warnings.append(f"Could not test {model_name} instantiation: {e!s}")
 
             is_valid = len(errors) == 0
             if is_valid:
@@ -606,26 +662,40 @@ class ContractValidator:
                 print(f"   ❌ {model_name}: {len(errors)} errors")
 
             return ContractValidationResult(
-                model_name, "model", is_valid, errors, warnings
+                model_name,
+                "model",
+                is_valid,
+                errors,
+                warnings,
             )
 
         except ImportError as e:
             errors.append(f"Failed to import module: {e}")
             print(f"   ⚠️  {model_name}: Import failed")
             return ContractValidationResult(
-                model_name, "model", False, errors, warnings
+                model_name,
+                "model",
+                False,
+                errors,
+                warnings,
             )
 
         except Exception as e:
             errors.append(f"Unexpected error: {e}")
             print(f"   ❌ {model_name}: Validation failed")
             return ContractValidationResult(
-                model_name, "model", False, errors, warnings
+                model_name,
+                "model",
+                False,
+                errors,
+                warnings,
             )
 
     def _check_contract_read_write_capability(
-        self, model_class, model_name: str
-    ) -> List[str]:
+        self,
+        model_class,
+        model_name: str,
+    ) -> list[str]:
         """Check if contract model supports read/write operations."""
         warnings = []
 
@@ -675,9 +745,9 @@ class ContractValidator:
                     print(f"      • {warning}")
 
         if self.valid_nodes == self.total_nodes:
-            print(f"\n🎉 ALL CONTRACTS VALID!")
+            print("\n🎉 ALL CONTRACTS VALID!")
         else:
-            print(f"\n🚫 CONTRACT VALIDATION FAILED")
+            print("\n🚫 CONTRACT VALIDATION FAILED")
 
 
 def main():

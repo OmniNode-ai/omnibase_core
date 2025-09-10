@@ -12,7 +12,6 @@ from importlib import import_module
 from pathlib import Path
 from uuid import UUID, uuid4
 
-import yaml
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
@@ -30,7 +29,7 @@ from omnibase_core.model.registry.model_registry_event import (
     RegistryOperations,
     get_operation_for_endpoint,
 )
-from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class ModelComponentMetadata(BaseModel):
@@ -391,7 +390,8 @@ class ToolInfrastructureReducer(NodeReducerService):
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
             # Load and validate contract using utility function
             validated_contract = load_and_validate_yaml_model(
-                contract_path, ModelContractReducer
+                contract_path,
+                ModelContractReducer,
             )
             contract = validated_contract.model_dump()
 
@@ -468,7 +468,8 @@ class ToolInfrastructureReducer(NodeReducerService):
 
         # Load and validate metadata using utility function
         validated_metadata = load_and_validate_yaml_model(
-            metadata_file_path, ModelToolManifest
+            metadata_file_path,
+            ModelToolManifest,
         )
         metadata = validated_metadata.model_dump()
 
@@ -512,7 +513,8 @@ class ToolInfrastructureReducer(NodeReducerService):
             contract_path = Path(__file__).parent / CONTRACT_FILENAME
             # Load and validate contract using utility function
             validated_contract = load_and_validate_yaml_model(
-                contract_path, ModelContractReducer
+                contract_path,
+                ModelContractReducer,
             )
             contract = validated_contract.model_dump()
 

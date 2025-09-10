@@ -6,9 +6,8 @@ Resolves external dependencies through protocol abstractions with
 automatic fallback strategies and unified configuration management.
 """
 
-import asyncio
 import logging
-from typing import Any, Dict, Optional, TypeVar, get_type_hints
+from typing import Any, TypeVar
 
 from omnibase_core.config.unified_config_manager import get_config
 from omnibase_core.protocol.protocol_database_connection import (
@@ -34,10 +33,10 @@ class ProtocolServiceResolver:
     """
 
     def __init__(self):
-        self._service_cache: Dict[str, Any] = {}
-        self._fallback_cache: Dict[str, Any] = {}
+        self._service_cache: dict[str, Any] = {}
+        self._fallback_cache: dict[str, Any] = {}
         self._config = get_config()
-        self._initialized_services: Dict[str, bool] = {}
+        self._initialized_services: dict[str, bool] = {}
 
     async def resolve_service(self, protocol_type: type[T]) -> T:
         """
@@ -66,66 +65,67 @@ class ProtocolServiceResolver:
                 if await self._test_service_connectivity(service):
                     self._service_cache[protocol_name] = service
                     logger.info(
-                        f"Successfully resolved {protocol_name} with primary implementation"
+                        f"Successfully resolved {protocol_name} with primary implementation",
                     )
                     return service
-                else:
-                    logger.warning(
-                        f"Primary {protocol_name} implementation failed connectivity test"
-                    )
+                logger.warning(
+                    f"Primary {protocol_name} implementation failed connectivity test",
+                )
         except Exception as e:
             logger.warning(
-                f"Failed to resolve primary {protocol_name} implementation: {e}"
+                f"Failed to resolve primary {protocol_name} implementation: {e}",
             )
 
         # Fallback to in-memory implementation
         try:
             fallback_service = await self._resolve_fallback_implementation(
-                protocol_type
+                protocol_type,
             )
             if fallback_service:
                 self._service_cache[protocol_name] = fallback_service
                 self._fallback_cache[protocol_name] = fallback_service
                 logger.info(
-                    f"Successfully resolved {protocol_name} with fallback implementation"
+                    f"Successfully resolved {protocol_name} with fallback implementation",
                 )
                 return fallback_service
         except Exception as e:
             logger.error(
-                f"Failed to resolve fallback {protocol_name} implementation: {e}"
+                f"Failed to resolve fallback {protocol_name} implementation: {e}",
             )
 
         raise RuntimeError(f"Unable to resolve any implementation for {protocol_name}")
 
     async def _resolve_primary_implementation(
-        self, protocol_type: type[T]
-    ) -> Optional[T]:
+        self,
+        protocol_type: type[T],
+    ) -> T | None:
         """Resolve primary implementation based on protocol type."""
         protocol_name = protocol_type.__name__
 
         if protocol_name == "ProtocolServiceDiscovery":
             return await self._create_consul_service_discovery()
-        elif protocol_name == "ProtocolDatabaseConnection":
+        if protocol_name == "ProtocolDatabaseConnection":
             return await self._create_postgresql_database()
 
         return None
 
     async def _resolve_fallback_implementation(
-        self, protocol_type: type[T]
-    ) -> Optional[T]:
+        self,
+        protocol_type: type[T],
+    ) -> T | None:
         """Resolve fallback implementation based on protocol type."""
         protocol_name = protocol_type.__name__
 
         if protocol_name == "ProtocolServiceDiscovery":
             return await self._create_memory_service_discovery()
-        elif protocol_name == "ProtocolDatabaseConnection":
+        if protocol_name == "ProtocolDatabaseConnection":
             return await self._create_memory_database()
 
         return None
 
     async def _create_consul_service_discovery(
         self,
-    ) -> Optional[ConsulServiceDiscovery]:
+    ) -> ConsulServiceDiscovery | None:
         """Create Consul service discovery instance."""
         try:
             service = ConsulServiceDiscovery()
@@ -142,15 +142,14 @@ class ProtocolServiceResolver:
             # Initialize the service
             if await service.connect():
                 return service
-            else:
-                logger.warning("Failed to connect to Consul service discovery")
-                return None
+            logger.warning("Failed to connect to Consul service discovery")
+            return None
 
         except Exception as e:
             logger.error(f"Error creating Consul service discovery: {e}")
             return None
 
-    async def _create_postgresql_database(self) -> Optional[PostgreSQLDatabase]:
+    async def _create_postgresql_database(self) -> PostgreSQLDatabase | None:
         """Create PostgreSQL database instance."""
         try:
             service = PostgreSQLDatabase()
@@ -168,9 +167,8 @@ class ProtocolServiceResolver:
             # Initialize the service
             if await service.connect():
                 return service
-            else:
-                logger.warning("Failed to connect to PostgreSQL database")
-                return None
+            logger.warning("Failed to connect to PostgreSQL database")
+            return None
 
         except Exception as e:
             logger.error(f"Error creating PostgreSQL database: {e}")
@@ -194,12 +192,11 @@ class ProtocolServiceResolver:
             if hasattr(service, "health_check"):
                 health = await service.health_check()
                 return health.status == "healthy"
-            elif hasattr(service, "connect"):
+            if hasattr(service, "connect"):
                 # If service has connect method, test it
                 return await service.connect()
-            else:
-                # Assume service is healthy if no health check available
-                return True
+            # Assume service is healthy if no health check available
+            return True
         except Exception as e:
             logger.warning(f"Service connectivity test failed: {e}")
             return False
@@ -209,7 +206,7 @@ class ProtocolServiceResolver:
         protocol_name = protocol_type.__name__
         return protocol_name in self._fallback_cache
 
-    async def get_service_health(self, protocol_type: type[T]) -> Dict[str, Any]:
+    async def get_service_health(self, protocol_type: type[T]) -> dict[str, Any]:
         """Get health status for service."""
         try:
             service = await self.resolve_service(protocol_type)
@@ -222,14 +219,13 @@ class ProtocolServiceResolver:
                     "error_message": health.error_message,
                     "using_fallback": self.is_using_fallback(protocol_type),
                 }
-            else:
-                return {
-                    "service_id": protocol_type.__name__,
-                    "status": "unknown",
-                    "last_check": None,
-                    "error_message": "Health check not available",
-                    "using_fallback": self.is_using_fallback(protocol_type),
-                }
+            return {
+                "service_id": protocol_type.__name__,
+                "status": "unknown",
+                "last_check": None,
+                "error_message": "Health check not available",
+                "using_fallback": self.is_using_fallback(protocol_type),
+            }
         except Exception as e:
             return {
                 "service_id": protocol_type.__name__,
@@ -239,20 +235,20 @@ class ProtocolServiceResolver:
                 "using_fallback": False,
             }
 
-    async def get_all_service_health(self) -> Dict[str, Any]:
+    async def get_all_service_health(self) -> dict[str, Any]:
         """Get health status for all resolved services."""
         health_status = {}
 
         # Check service discovery
         if "ProtocolServiceDiscovery" in self._service_cache:
             health_status["service_discovery"] = await self.get_service_health(
-                ProtocolServiceDiscovery
+                ProtocolServiceDiscovery,
             )
 
         # Check database
         if "ProtocolDatabaseConnection" in self._service_cache:
             health_status["database"] = await self.get_service_health(
-                ProtocolDatabaseConnection
+                ProtocolDatabaseConnection,
             )
 
         return {
@@ -290,7 +286,7 @@ class ProtocolServiceResolver:
         self._service_cache.clear()
         self._fallback_cache.clear()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "cached_services": len(self._service_cache),
@@ -301,7 +297,7 @@ class ProtocolServiceResolver:
 
 
 # Global service resolver instance
-_service_resolver: Optional[ProtocolServiceResolver] = None
+_service_resolver: ProtocolServiceResolver | None = None
 
 
 def get_service_resolver() -> ProtocolServiceResolver:

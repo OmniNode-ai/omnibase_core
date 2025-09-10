@@ -6,9 +6,8 @@ including workflow processing, parameter validation, error handling,
 metrics collection, and ONEX standards compliance.
 """
 
-import asyncio
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -28,7 +27,7 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
 def subreducer():
     """Create a ReducerDocumentRegenerationSubreducer instance for testing."""
     with patch(
-        "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+        "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
     ):
         return ReducerDocumentRegenerationSubreducer()
 
@@ -70,7 +69,7 @@ class TestReducerDocumentRegenerationSubreducerInitialization:
     def test_subreducer_initialization(self):
         """Test that subreducer initializes correctly."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             subreducer = ReducerDocumentRegenerationSubreducer()
 
@@ -140,11 +139,13 @@ class TestSuccessfulWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_successful_document_regeneration(
-        self, subreducer, valid_workflow_request
+        self,
+        subreducer,
+        valid_workflow_request,
     ):
         """Test successful document regeneration processing."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             # Process the workflow
             result = await subreducer.process(valid_workflow_request)
@@ -211,11 +212,13 @@ class TestSuccessfulWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_successful_minimal_request(
-        self, subreducer, minimal_workflow_request
+        self,
+        subreducer,
+        minimal_workflow_request,
     ):
         """Test successful processing with minimal required parameters."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             result = await subreducer.process(minimal_workflow_request)
 
@@ -235,11 +238,13 @@ class TestSuccessfulWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_processing_time_measurement(
-        self, subreducer, valid_workflow_request
+        self,
+        subreducer,
+        valid_workflow_request,
     ):
         """Test that processing time is accurately measured."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             start_time = time.perf_counter()
             result = await subreducer.process(valid_workflow_request)
@@ -276,7 +281,7 @@ class TestFailedWorkflowProcessing:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             result = await subreducer.process(request)
 
@@ -304,13 +309,13 @@ class TestFailedWorkflowProcessing:
             workflow_type=WorkflowType.DOCUMENT_REGENERATION,
             instance_id="test_instance",
             payload={
-                "content_type": "markdown"
+                "content_type": "markdown",
                 # Missing document_id
             },
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             result = await subreducer.process(request)
 
@@ -340,7 +345,7 @@ class TestFailedWorkflowProcessing:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             result = await subreducer.process(request)
 
@@ -352,11 +357,13 @@ class TestFailedWorkflowProcessing:
 
     @pytest.mark.asyncio
     async def test_exception_during_processing(
-        self, subreducer, valid_workflow_request
+        self,
+        subreducer,
+        valid_workflow_request,
     ):
         """Test handling of unexpected exceptions during processing."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             # Mock the document regeneration processing to raise an exception
             with patch.object(
@@ -387,7 +394,7 @@ class TestParameterExtraction:
     def test_extract_valid_parameters(self, subreducer, valid_workflow_request):
         """Test extraction of valid parameters."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             params = subreducer._extract_document_params(valid_workflow_request)
 
@@ -407,7 +414,7 @@ class TestParameterExtraction:
     def test_extract_minimal_parameters(self, subreducer, minimal_workflow_request):
         """Test extraction with minimal parameters and defaults."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             params = subreducer._extract_document_params(minimal_workflow_request)
 
@@ -430,7 +437,7 @@ class TestParameterExtraction:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             with pytest.raises(OnexError) as exc_info:
                 subreducer._extract_document_params(request)
@@ -453,7 +460,7 @@ class TestMetrics:
         assert initial_metrics["success_rate_percent"] == 0.0
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             # Process successful workflow
             result = await subreducer.process(valid_workflow_request)
@@ -480,7 +487,7 @@ class TestMetrics:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             result = await subreducer.process(request)
 
@@ -496,7 +503,9 @@ class TestMetrics:
 
     @pytest.mark.asyncio
     async def test_mixed_success_failure_metrics(
-        self, subreducer, valid_workflow_request
+        self,
+        subreducer,
+        valid_workflow_request,
     ):
         """Test metrics with both successful and failed workflows."""
         # Create invalid request
@@ -508,7 +517,7 @@ class TestMetrics:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             # Process one successful and one failed
             success_result = await subreducer.process(valid_workflow_request)
@@ -547,7 +556,9 @@ class TestMetrics:
 
     @pytest.mark.asyncio
     async def test_average_processing_time_calculation(
-        self, subreducer, valid_workflow_request
+        self,
+        subreducer,
+        valid_workflow_request,
     ):
         """Test that average processing time is calculated correctly."""
         requests = []
@@ -563,7 +574,7 @@ class TestMetrics:
             requests.append(req)
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             # Process all requests
             for request in requests:
@@ -592,7 +603,7 @@ class TestEdgeCases:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             result = await subreducer.process(request)
 
@@ -610,7 +621,7 @@ class TestEdgeCases:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             # This should still process since None is a valid value, just extract it
             params = subreducer._extract_document_params(request)
@@ -622,7 +633,7 @@ class TestEdgeCases:
         correlation_id = valid_workflow_request.correlation_id
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             result = await subreducer.process(valid_workflow_request)
 
@@ -657,7 +668,7 @@ class TestEdgeCases:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ):
             result = await subreducer.process(request)
 
@@ -676,7 +687,7 @@ class TestLoggingCompliance:
     async def test_structured_logging_events(self, subreducer, valid_workflow_request):
         """Test that all required structured logging events are emitted."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             await subreducer.process(valid_workflow_request)
 
@@ -704,7 +715,7 @@ class TestLoggingCompliance:
         )
 
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             await subreducer.process(request)
 
@@ -721,7 +732,7 @@ class TestLoggingCompliance:
     async def test_log_context_completeness(self, subreducer, valid_workflow_request):
         """Test that log contexts contain required information."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
         ) as mock_log:
             await subreducer.process(valid_workflow_request)
 

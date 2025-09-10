@@ -10,7 +10,7 @@ import asyncio
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,8 +22,8 @@ class MetricPoint:
     """Individual metric measurement point."""
 
     timestamp: float
-    value: Union[int, float]
-    labels: Dict[str, str]
+    value: int | float
+    labels: dict[str, str]
 
 
 class ModelMetricSummary(BaseModel):
@@ -66,7 +66,7 @@ class ModelNodeMetrics(BaseModel):
     degraded_periods: int = 0
 
     # Business metrics (operation-specific)
-    custom_metrics: Dict[str, float] = Field(default_factory=dict)
+    custom_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 class MetricsCollector:
@@ -84,17 +84,19 @@ class MetricsCollector:
         self.metrics_retention_count = 1000
 
         # Metric storage
-        self._metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=max_points))
-        self._counters: Dict[str, int] = defaultdict(int)
-        self._gauges: Dict[str, float] = defaultdict(float)
-        self._histograms: Dict[str, List[float]] = defaultdict(list)
+        self._metrics: dict[str, deque] = defaultdict(lambda: deque(maxlen=max_points))
+        self._counters: dict[str, int] = defaultdict(int)
+        self._gauges: dict[str, float] = defaultdict(float)
+        self._histograms: dict[str, list[float]] = defaultdict(list)
 
         # Operation tracking
-        self._operation_start_times: Dict[str, float] = {}
+        self._operation_start_times: dict[str, float] = {}
         self._lock = asyncio.Lock()
 
     async def record_operation_start(
-        self, operation_id: str, operation_type: str
+        self,
+        operation_id: str,
+        operation_type: str,
     ) -> None:
         """Record the start of an operation for latency tracking."""
         async with self._lock:
@@ -106,7 +108,7 @@ class MetricsCollector:
         operation_id: str,
         operation_type: str,
         success: bool,
-        error_type: Optional[str] = None,
+        error_type: str | None = None,
     ) -> float:
         """
         Record the end of an operation and calculate latency.
@@ -138,7 +140,9 @@ class MetricsCollector:
             return duration_ms
 
     def increment_counter(
-        self, metric_name: str, labels: Optional[Dict[str, str]] = None
+        self,
+        metric_name: str,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Increment a counter metric."""
         labels = labels or {}
@@ -146,7 +150,10 @@ class MetricsCollector:
         self._counters[key] += 1
 
     def set_gauge(
-        self, metric_name: str, value: float, labels: Optional[Dict[str, str]] = None
+        self,
+        metric_name: str,
+        value: float,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Set a gauge metric value."""
         labels = labels or {}
@@ -154,7 +161,10 @@ class MetricsCollector:
         self._gauges[key] = value
 
     async def record_histogram(
-        self, metric_name: str, value: float, labels: Optional[Dict[str, str]] = None
+        self,
+        metric_name: str,
+        value: float,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Record a value in a histogram."""
         labels = labels or {}
@@ -170,15 +180,15 @@ class MetricsCollector:
 
             # Also add to time series
             self._metrics[key].append(
-                MetricPoint(timestamp=time.time(), value=value, labels=labels)
+                MetricPoint(timestamp=time.time(), value=value, labels=labels),
             )
 
     def record_custom_metric(
         self,
         metric_name: str,
-        value: Union[int, float],
+        value: int | float,
         metric_type: str = "gauge",
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Record a custom business metric."""
         labels = labels or {}
@@ -190,7 +200,7 @@ class MetricsCollector:
             self.set_gauge(metric_name, float(value), labels)
         elif metric_type == "histogram":
             asyncio.create_task(
-                self.record_histogram(metric_name, float(value), labels)
+                self.record_histogram(metric_name, float(value), labels),
             )
 
     def get_node_metrics(self) -> ModelNodeMetrics:
@@ -281,7 +291,7 @@ class MetricsCollector:
             custom_metrics=custom_metrics,
         )
 
-    def get_metric_summary(self, metric_name: str) -> Optional[ModelMetricSummary]:
+    def get_metric_summary(self, metric_name: str) -> ModelMetricSummary | None:
         """Get summary statistics for a specific metric."""
         values = []
 
@@ -311,7 +321,7 @@ class MetricsCollector:
             p99=self._percentile(sorted_values, 0.99),
         )
 
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         """Get all collected metrics in a structured format."""
         return {
             "node_name": self.node_name,
@@ -337,7 +347,7 @@ class MetricsCollector:
         self._histograms.clear()
         self._operation_start_times.clear()
 
-    def _serialize_labels(self, labels: Dict[str, str]) -> str:
+    def _serialize_labels(self, labels: dict[str, str]) -> str:
         """Serialize labels to a consistent string format."""
         return ",".join(f"{k}={v}" for k, v in sorted(labels.items()))
 
@@ -345,7 +355,7 @@ class MetricsCollector:
         """Extract clean metric name from internal key."""
         return key.split("#")[0]
 
-    def _percentile(self, values: List[float], percentile: float) -> float:
+    def _percentile(self, values: list[float], percentile: float) -> float:
         """Calculate percentile from sorted values."""
         if not values:
             return 0.0
@@ -353,7 +363,9 @@ class MetricsCollector:
         return values[min(index, len(values) - 1)]
 
     def _calculate_health_score(
-        self, error_rate: float, avg_response_time: float
+        self,
+        error_rate: float,
+        avg_response_time: float,
     ) -> float:
         """Calculate overall health score based on key metrics."""
         # Start with perfect score
@@ -373,7 +385,7 @@ class MetricsCollector:
 
 
 # Global metrics collectors by node
-_metrics_collectors: Dict[str, MetricsCollector] = {}
+_metrics_collectors: dict[str, MetricsCollector] = {}
 
 
 def get_metrics_collector(node_name: str) -> MetricsCollector:
@@ -383,7 +395,7 @@ def get_metrics_collector(node_name: str) -> MetricsCollector:
     return _metrics_collectors[node_name]
 
 
-def get_all_node_metrics() -> Dict[str, Dict[str, Any]]:
+def get_all_node_metrics() -> dict[str, dict[str, Any]]:
     """Get metrics from all registered nodes."""
     return {
         node_name: collector.get_all_metrics()

@@ -9,7 +9,7 @@ import logging
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 
 class SecurityError(Exception):
@@ -52,8 +52,9 @@ class CredentialMasker:
 
     @staticmethod
     def mask_credentials(
-        data: Union[str, Dict[str, Any]], mask_char: str = "*"
-    ) -> Union[str, Dict[str, Any]]:
+        data: str | dict[str, Any],
+        mask_char: str = "*",
+    ) -> str | dict[str, Any]:
         """
         Mask credentials in strings or dictionaries.
 
@@ -66,10 +67,9 @@ class CredentialMasker:
         """
         if isinstance(data, dict):
             return CredentialMasker._mask_dict_credentials(data, mask_char)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             return CredentialMasker._mask_string_credentials(data, mask_char)
-        else:
-            return data
+        return data
 
     @staticmethod
     def _mask_string_credentials(text: str, mask_char: str = "*") -> str:
@@ -80,20 +80,27 @@ class CredentialMasker:
             if pattern_name == "url_creds":
                 # Special handling for URL credentials
                 masked_text = re.sub(
-                    pattern, rf"\1{mask_char * 3}\2", masked_text, flags=re.IGNORECASE
+                    pattern,
+                    rf"\1{mask_char * 3}\2",
+                    masked_text,
+                    flags=re.IGNORECASE,
                 )
             else:
                 # Generic pattern handling
                 masked_text = re.sub(
-                    pattern, rf"\1{mask_char * 3}", masked_text, flags=re.IGNORECASE
+                    pattern,
+                    rf"\1{mask_char * 3}",
+                    masked_text,
+                    flags=re.IGNORECASE,
                 )
 
         return masked_text
 
     @staticmethod
     def _mask_dict_credentials(
-        data: Dict[str, Any], mask_char: str = "*"
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        mask_char: str = "*",
+    ) -> dict[str, Any]:
         """Mask credentials in a dictionary."""
         masked_dict = {}
 
@@ -108,11 +115,13 @@ class CredentialMasker:
                 masked_dict[key] = mask_char * 3
             elif isinstance(value, dict):
                 masked_dict[key] = CredentialMasker._mask_dict_credentials(
-                    value, mask_char
+                    value,
+                    mask_char,
                 )
             elif isinstance(value, str):
                 masked_dict[key] = CredentialMasker._mask_string_credentials(
-                    value, mask_char
+                    value,
+                    mask_char,
                 )
             else:
                 masked_dict[key] = value

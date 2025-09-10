@@ -135,14 +135,14 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                     )
                     from omnibase_core.utils.safe_yaml_loader import (
                         load_and_validate_yaml_model,
-                        load_yaml_content_as_model,
                     )
 
                     with open(contract_path) as f:
                         # Load and validate YAML using Pydantic model
 
                         yaml_model = load_and_validate_yaml_model(
-                            file_path, ModelGenericYaml
+                            file_path,
+                            ModelGenericYaml,
                         )
 
                         contract = yaml_model.model_dump()

@@ -14,21 +14,24 @@ from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
 class ModelJsonSchema(BaseModel):
     """Pydantic model for JSON Schema validation."""
 
     type: str = Field(
-        default="object", description="Schema type (object, string, etc.)"
+        default="object",
+        description="Schema type (object, string, etc.)",
     )
     properties: dict[str, Any] = Field(
-        default_factory=dict, description="Schema properties"
+        default_factory=dict,
+        description="Schema properties",
     )
     required: list[str] = Field(default_factory=list, description="Required fields")
     definitions: dict[str, Any] = Field(
-        default_factory=dict, description="Schema definitions"
+        default_factory=dict,
+        description="Schema definitions",
     )
     description: str = Field(default="", description="Schema description")
     title: str = Field(default="", description="Schema title")

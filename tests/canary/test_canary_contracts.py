@@ -4,9 +4,6 @@ Simple contract structure checker for canary nodes.
 Tests basic YAML structure and required fields without full Pydantic validation.
 """
 
-import json
-import os
-import sys
 from pathlib import Path
 
 
@@ -14,7 +11,7 @@ def check_yaml_structure_simple(file_path: Path) -> dict:
     """Simple YAML structure check without external dependencies."""
     try:
         # Try to read as plain text and look for key indicators
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         # Check for required fields
@@ -92,7 +89,7 @@ def main():
     # Summary
     valid_contracts = sum(1 for r in results if r["is_valid"])
     print(
-        f"📊 SUMMARY: {valid_contracts}/{len(results)} contracts passed structure checks"
+        f"📊 SUMMARY: {valid_contracts}/{len(results)} contracts passed structure checks",
     )
 
     if valid_contracts == len(results):

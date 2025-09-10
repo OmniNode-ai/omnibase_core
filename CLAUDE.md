@@ -665,7 +665,7 @@ class TestReducerPatternIntegration:
 
 ```bash
 # Clone and setup project
-cd /Volumes/PRO-G40/Code/omnibase-core
+cd /Volumes/PRO-G40/Code/omnibase_core
 poetry install
 
 # Create feature branch  

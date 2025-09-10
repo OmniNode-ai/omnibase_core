@@ -19,11 +19,11 @@ Author: ONEX Framework Team
 
 import time
 from collections import defaultdict, deque
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, Generic, TypeVar
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -87,14 +87,14 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
     with streaming and conflict resolution configuration.
     """
 
-    data: List[T_Input]  # Strongly typed data list
+    data: list[T_Input]  # Strongly typed data list
     reduction_type: ReductionType
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     conflict_resolution: ConflictResolution = ConflictResolution.LAST_WINS
     streaming_mode: StreamingMode = StreamingMode.BATCH
     batch_size: int = 1000
     window_size_ms: int = 5000
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -395,7 +395,8 @@ class NodeReducer(NodeCoreBase):
 
                             # Load and validate YAML using Pydantic model
                             yaml_model = load_and_validate_yaml_model(
-                                ref_full_path, ModelGenericYaml
+                                ref_full_path,
+                                ModelGenericYaml,
                             )
                             ref_data = yaml_model.model_dump()
 

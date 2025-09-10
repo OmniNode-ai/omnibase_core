@@ -291,7 +291,8 @@ class TestBaseSubreducer:
                 return workflow_type == WorkflowType.DOCUMENT_REGENERATION
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(
                     workflow_id=request.workflow_id,
@@ -316,7 +317,8 @@ class TestBaseSubreducer:
                 return True
 
             async def process(
-                self, request: ModelWorkflowRequest
+                self,
+                request: ModelWorkflowRequest,
             ) -> ModelSubreducerResult:
                 return ModelSubreducerResult(
                     workflow_id=request.workflow_id,
@@ -367,7 +369,7 @@ class TestModelValidation:
         # Test that the model can be converted to dict
         response_dict = response.model_dump()
         assert response_dict["workflow_id"] == str(
-            workflow_id
+            workflow_id,
         )  # UUID converted to string
         assert response_dict["status"] == "completed"
         assert response_dict["processing_time_ms"] == 100.0

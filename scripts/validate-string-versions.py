@@ -9,10 +9,9 @@ Uses AST parsing for reliable detection of semantic version patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
 
-import ast
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -25,13 +24,13 @@ class StringVersionValidator:
     """Validates that YAML contract files don't use string versions using AST parsing."""
 
     def __init__(self):
-        self.errors: List[str] = []
+        self.errors: list[str] = []
         self.checked_files = 0
 
     def validate_yaml_file(self, yaml_path: Path) -> bool:
         """Validate a single YAML file for string version usage."""
         try:
-            with open(yaml_path, "r", encoding="utf-8") as f:
+            with open(yaml_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Parse YAML using safe loader
@@ -59,11 +58,14 @@ class StringVersionValidator:
             return True
 
         except Exception as e:
-            self.errors.append(f"{yaml_path}: Failed to parse YAML - {str(e)}")
+            self.errors.append(f"{yaml_path}: Failed to parse YAML - {e!s}")
             return False
 
     def _validate_yaml_content_ast(
-        self, content: str, yaml_path: Path, errors: List[str]
+        self,
+        content: str,
+        yaml_path: Path,
+        errors: list[str],
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
         lines = content.split("\n")
@@ -97,11 +99,13 @@ class StringVersionValidator:
                         if self._is_semantic_version_ast(clean_value):
                             errors.append(
                                 f"Line {line_num}: Field '{field_name}' uses string version '{clean_value}' - "
-                                f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}"
+                                f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                             )
 
     def _validate_parsed_yaml(
-        self, yaml_data: Dict[str, Any], errors: List[str]
+        self,
+        yaml_data: dict[str, Any],
+        errors: list[str],
     ) -> None:
         """Validate the parsed YAML structure for string versions."""
         version_fields = [
@@ -119,14 +123,17 @@ class StringVersionValidator:
                 if isinstance(value, str) and self._is_semantic_version_ast(value):
                     errors.append(
                         f"Field '{field}' uses string version '{value}' - "
-                        f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}"
+                        f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                     )
 
         # Check nested version fields
         self._check_nested_versions(yaml_data, errors, [])
 
     def _check_nested_versions(
-        self, data: Any, errors: List[str], path: List[str]
+        self,
+        data: Any,
+        errors: list[str],
+        path: list[str],
     ) -> None:
         """Recursively check for version strings in nested structures."""
         if isinstance(data, dict):
@@ -139,7 +146,7 @@ class StringVersionValidator:
                         path_str = ".".join(current_path)
                         errors.append(
                             f"Field '{path_str}' uses string version '{value}' - "
-                            f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}"
+                            f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                         )
 
                 # Recurse into nested structures
@@ -161,7 +168,7 @@ class StringVersionValidator:
             return False
 
         # Handle the most common patterns
-        if not ("." in value):
+        if "." not in value:
             return False
 
         # Split on dots and validate each part
@@ -183,7 +190,7 @@ class StringVersionValidator:
         except (ValueError, TypeError):
             return False
 
-    def validate_all_yaml_files(self, file_paths: List[Path]) -> bool:
+    def validate_all_yaml_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided YAML files."""
         success = True
 
@@ -199,7 +206,7 @@ class StringVersionValidator:
             print("❌ String Version Validation FAILED")
             print("=" * 50)
             print(
-                f"Found {len(self.errors)} string version errors in {self.checked_files} files:\n"
+                f"Found {len(self.errors)} string version errors in {self.checked_files} files:\n",
             )
 
             for error in self.errors:
@@ -209,12 +216,12 @@ class StringVersionValidator:
             print('   Replace string versions like "1.0.0" with ModelSemVer format:')
             print('   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}')
             print(
-                '   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}'
+                '   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}',
             )
 
         else:
             print(
-                f"✅ String Version Validation PASSED ({self.checked_files} files checked)"
+                f"✅ String Version Validation PASSED ({self.checked_files} files checked)",
             )
 
 

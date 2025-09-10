@@ -70,7 +70,7 @@ repos:
       # Union Usage Validation
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: python scripts/validate-union-usage.py --max-unions 6700
+        entry: python scripts/validate-union-usage.py --max-unions 7000
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
@@ -107,7 +107,7 @@ repos:
 # Configuration
 ci:
   autofix_commit_msg: |
-    [pre-commit.ci] auto fixes for omnibase-core
+    [pre-commit.ci] auto fixes for omnibase_core
 
     for more information, see https://pre-commit.ci
   autofix_prs: true

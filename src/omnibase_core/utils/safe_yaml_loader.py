@@ -7,7 +7,6 @@ to ensure proper structure and security without relying on yaml.safe_load.
 Author: ONEX Framework Team
 """
 
-import io
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -296,5 +295,6 @@ def extract_example_from_schema(
         raise
     except Exception as e:
         raise YamlLoadingError(
-            f"Failed to extract example from schema: {schema_path}: {e}", e
+            f"Failed to extract example from schema: {schema_path}: {e}",
+            e,
         )

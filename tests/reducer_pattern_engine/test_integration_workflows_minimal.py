@@ -8,9 +8,6 @@ and minimal mocking to address PR review feedback.
 
 import asyncio
 import time
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
 
 import pytest
 
@@ -34,7 +31,8 @@ class MockMinimalEngine:
         }
 
     async def process_workflow(
-        self, request: ModelWorkflowRequest
+        self,
+        request: ModelWorkflowRequest,
     ) -> ModelWorkflowResponse:
         """Process workflow with minimal simulation."""
         start_time = time.time()
@@ -67,18 +65,17 @@ class MockMinimalEngine:
                 processing_time_ms=processing_time,
                 subreducer_name=f"mock_{request.workflow_type.value}",
             )
-        else:
-            self.metrics["failed"] += 1
-            return ModelWorkflowResponse(
-                workflow_id=request.workflow_id,
-                workflow_type=request.workflow_type,
-                instance_id=request.instance_id,
-                correlation_id=request.correlation_id,
-                status=WorkflowStatus.FAILED,
-                error_message="Mock processing failure",
-                processing_time_ms=processing_time,
-                subreducer_name=f"mock_{request.workflow_type.value}",
-            )
+        self.metrics["failed"] += 1
+        return ModelWorkflowResponse(
+            workflow_id=request.workflow_id,
+            workflow_type=request.workflow_type,
+            instance_id=request.instance_id,
+            correlation_id=request.correlation_id,
+            status=WorkflowStatus.FAILED,
+            error_message="Mock processing failure",
+            processing_time_ms=processing_time,
+            subreducer_name=f"mock_{request.workflow_type.value}",
+        )
 
 
 class TestMinimalIntegrationWorkflows:
@@ -169,7 +166,7 @@ class TestMinimalIntegrationWorkflows:
         # Process all concurrently
         start_time = time.time()
         responses = await asyncio.gather(
-            *[mock_engine.process_workflow(req) for req in requests]
+            *[mock_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -202,7 +199,7 @@ class TestMinimalIntegrationWorkflows:
             requests.append(request)
 
         responses = await asyncio.gather(
-            *[mock_engine.process_workflow(req) for req in requests]
+            *[mock_engine.process_workflow(req) for req in requests],
         )
 
         # Verify mixed results
@@ -296,7 +293,7 @@ class TestMinimalIntegrationWorkflows:
         # Process with timing
         start_time = time.time()
         responses = await asyncio.gather(
-            *[mock_engine.process_workflow(req) for req in requests]
+            *[mock_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -419,5 +416,5 @@ class TestMinimalIntegrationWorkflows:
         # Verify comprehensive metrics
         assert mock_engine.metrics["total_processed"] == len(test_scenarios)
         assert mock_engine.metrics["successful"] + mock_engine.metrics["failed"] == len(
-            test_scenarios
+            test_scenarios,
         )

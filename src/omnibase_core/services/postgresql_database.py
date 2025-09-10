@@ -9,7 +9,7 @@ to in-memory implementation when PostgreSQL is unavailable.
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_database_connection import (
@@ -42,7 +42,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
         self._pool = None
         self._fallback_database = None
         self._is_using_fallback = False
-        self._held_locks: Dict[str, int] = {}  # lock_token -> lock_id mapping
+        self._held_locks: dict[str, int] = {}  # lock_token -> lock_id mapping
 
     def _sanitize_connection_string(self, connection_string: str) -> str:
         """Sanitize database connection string to hide credentials for logging."""
@@ -79,7 +79,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             # Test connection
             await self._test_connection()
             self.logger.info(
-                f"Successfully connected to PostgreSQL: {self.sanitized_url}"
+                f"Successfully connected to PostgreSQL: {self.sanitized_url}",
             )
             return True
 
@@ -90,7 +90,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
         except Exception as e:
             # Use sanitized URL in error messages - never expose credentials
             self.logger.warning(
-                f"Failed to connect to PostgreSQL ({self.sanitized_url}): {e}"
+                f"Failed to connect to PostgreSQL ({self.sanitized_url}): {e}",
             )
             if self.enable_fallback:
                 await self._initialize_fallback()
@@ -123,8 +123,10 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             self._pool = None
 
     async def execute_query(
-        self, query: str, parameters: Optional[tuple] = None
-    ) -> List[Dict[str, Any]]:
+        self,
+        query: str,
+        parameters: tuple | None = None,
+    ) -> list[dict[str, Any]]:
         """Execute SELECT query with PostgreSQL or fallback."""
         try:
             if self._is_using_fallback:
@@ -147,13 +149,16 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             raise
 
     async def execute_command(
-        self, command: str, parameters: Optional[tuple] = None
+        self,
+        command: str,
+        parameters: tuple | None = None,
     ) -> int:
         """Execute INSERT/UPDATE/DELETE command with PostgreSQL or fallback."""
         try:
             if self._is_using_fallback:
                 return await self._fallback_database.execute_command(
-                    command, parameters
+                    command,
+                    parameters,
                 )
 
             async with self._pool.acquire() as conn:
@@ -174,7 +179,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             raise
 
     async def execute_transaction(
-        self, commands: List[tuple[str, Optional[tuple]]]
+        self,
+        commands: list[tuple[str, tuple | None]],
     ) -> bool:
         """Execute commands in transaction with PostgreSQL or fallback."""
         try:
@@ -193,7 +199,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
         except Exception as e:
             # Never expose connection details in error messages
             self.logger.error(
-                f"Transaction execution failed on {self.sanitized_url}: {e}"
+                f"Transaction execution failed on {self.sanitized_url}: {e}",
             )
             if self.enable_fallback and not self._is_using_fallback:
                 await self._initialize_fallback()
@@ -201,13 +207,16 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
             return False
 
     async def acquire_lock(
-        self, lock_name: str, timeout_seconds: int = 30
-    ) -> Optional[str]:
+        self,
+        lock_name: str,
+        timeout_seconds: int = 30,
+    ) -> str | None:
         """Acquire PostgreSQL advisory lock with fallback."""
         try:
             if self._is_using_fallback:
                 return await self._fallback_database.acquire_lock(
-                    lock_name, timeout_seconds
+                    lock_name,
+                    timeout_seconds,
                 )
 
             # Generate lock ID from lock name (simple hash)
@@ -220,7 +229,8 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 while time.time() < end_time:
                     # Try to acquire lock (non-blocking)
                     result = await conn.fetchval(
-                        "SELECT pg_try_advisory_lock($1)", lock_id
+                        "SELECT pg_try_advisory_lock($1)",
+                        lock_id,
                     )
 
                     if result:
@@ -297,7 +307,7 @@ class PostgreSQLDatabase(ProtocolDatabaseConnection):
                 last_check=time.time(),
             )
 
-    async def get_connection_info(self) -> Dict[str, Any]:
+    async def get_connection_info(self) -> dict[str, Any]:
         """Get PostgreSQL connection information with fallback."""
         try:
             if self._is_using_fallback:

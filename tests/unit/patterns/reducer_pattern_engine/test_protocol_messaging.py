@@ -1,9 +1,5 @@
 """Tests for protocol messaging in Reducer Pattern Engine Phase 3."""
 
-from datetime import datetime
-from unittest.mock import Mock, patch
-from uuid import uuid4
-
 import pytest
 
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
@@ -13,11 +9,7 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models import (
     ModelWorkflowResponse,
     ModelWorkflowResult,
     ModelWorkflowResultData,
-    WorkflowStatus,
     WorkflowType,
-)
-from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.model_workflow_error import (
-    ModelWorkflowError,
 )
 from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.models.model_workflow_metadata import (
     ModelWorkflowMetadata,
@@ -46,7 +38,8 @@ class MockReducerPatternEngineImplementation(BaseReducerPatternEngine):
         self.is_healthy = True
 
     async def process_workflow(
-        self, engine_input: ModelReducerPatternEngineInput
+        self,
+        engine_input: ModelReducerPatternEngineInput,
     ) -> ModelReducerPatternEngineOutput:
         """Mock workflow processing."""
         # Handle both enum and string values for workflow_type
@@ -70,14 +63,16 @@ class MockReducerPatternEngineImplementation(BaseReducerPatternEngine):
             correlation_id=engine_input.workflow_request.correlation_id,
             status="completed",
             result=ModelWorkflowResult(
-                success=True, data=ModelWorkflowResultData(validation_passed=True)
+                success=True,
+                data=ModelWorkflowResultData(validation_passed=True),
             ),
             processing_time_ms=100.0,
             subreducer_name="mock_subreducer",
         )
 
         return ModelReducerPatternEngineOutput.from_workflow_response(
-            workflow_response=workflow_response, source_node_id="mock_engine"
+            workflow_response=workflow_response,
+            source_node_id="mock_engine",
         )
 
     async def health_check(self) -> bool:
@@ -105,7 +100,9 @@ class TestProtocolMessaging:
             instance_id="test-instance-123",
             payload=ModelWorkflowPayload(data={"analysis_type": "descriptive"}),
             metadata=ModelWorkflowMetadata(
-                priority=5, timeout_seconds=300, tags=["test", "analysis"]
+                priority=5,
+                timeout_seconds=300,
+                tags=["test", "analysis"],
             ),
         )
 
@@ -205,13 +202,15 @@ class TestProtocolMessaging:
 
         # Invalid input type should fail
         with pytest.raises(
-            ValueError, match="Input must be ModelReducerPatternEngineInput"
+            ValueError,
+            match="Input must be ModelReducerPatternEngineInput",
         ):
             await mock_engine.validate_input("invalid_input")
 
         # Missing workflow request should fail
         invalid_input = ModelReducerPatternEngineInput(
-            workflow_request=None, protocol_version="1.0.0"
+            workflow_request=None,
+            protocol_version="1.0.0",
         )
 
         with pytest.raises(ValueError, match="Workflow request is required"):

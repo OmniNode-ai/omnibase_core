@@ -29,7 +29,7 @@ schema:
     name:
       type: string
       description: Name field
-"""
+""",
             )
             f.flush()
             temp_path = Path(f.name)
@@ -134,7 +134,7 @@ output_schema:
     result:
       type: string
       description: Output result
-"""
+""",
             )
             f.flush()
             temp_path = Path(f.name)

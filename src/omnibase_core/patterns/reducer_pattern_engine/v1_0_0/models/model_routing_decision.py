@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -20,7 +20,8 @@ class ModelRoutingDecision(BaseModel):
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
     workflow_type: WorkflowType = Field(
-        ..., description="Type of workflow being routed"
+        ...,
+        description="Type of workflow being routed",
     )
     instance_id: str = Field(
         ...,
@@ -31,11 +32,13 @@ class ModelRoutingDecision(BaseModel):
     )
     subreducer_name: str = Field(..., description="Name of the selected subreducer")
     routing_hash: str = Field(..., description="Hash used for routing decision")
-    routing_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional routing metadata"
+    routing_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional routing metadata",
     )
     routed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Routing timestamp"
+        default_factory=datetime.utcnow,
+        description="Routing timestamp",
     )
 
     @field_validator("instance_id")
@@ -72,7 +75,7 @@ class ModelRoutingDecision(BaseModel):
         if not pattern.match(v):
             raise ValueError(
                 "instance_id must contain only alphanumeric characters, hyphens, and underscores. "
-                "Must start and end with alphanumeric characters."
+                "Must start and end with alphanumeric characters.",
             )
 
         return v

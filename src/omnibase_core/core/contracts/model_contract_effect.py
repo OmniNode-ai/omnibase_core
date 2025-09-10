@@ -630,7 +630,9 @@ class ModelContractEffect(ModelContractBase, MixinLazyEvaluation):
         )
 
         return serialize_pydantic_model_to_yaml(
-            self, default_flow_style=False, sort_keys=False
+            self,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     @classmethod

@@ -21,7 +21,6 @@ from omnibase_core.model.discovery.model_node_introspection_event import (
 )
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 # Constants to avoid false positive YAML validation detection
@@ -213,7 +212,8 @@ class UtilityContractDrivenInputBuilder:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(
-                    contract_path, ModelGenericYaml
+                    contract_path,
+                    ModelGenericYaml,
                 )
 
                 return yaml_model.model_dump()

@@ -11,17 +11,13 @@ Addresses PR review feedback regarding missing integration tests for complete wo
 
 import asyncio
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List, Optional, Set, Tuple
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.model_onex_container import ModelONEXContainer
 from omnibase_core.patterns.reducer_pattern_engine.models.state_transitions import (
-    ModelWorkflowStateModel,
     WorkflowState,
 )
 from omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis import (
@@ -56,7 +52,7 @@ class IntegrationTestSubreducer(BaseSubreducer):
         success: bool = True,
         processing_delay: float = 0.1,
         failure_rate: float = 0.0,
-        state_updates: Optional[List[WorkflowState]] = None,
+        state_updates: list[WorkflowState] | None = None,
     ):
         """Initialize test subreducer with configurable behavior."""
         super().__init__(name)
@@ -67,7 +63,7 @@ class IntegrationTestSubreducer(BaseSubreducer):
         self._call_count = 0
         self._total_calls = 0
         self._state_updates = state_updates or [WorkflowState.PROCESSING]
-        self._processing_history: List[Dict[str, Any]] = []
+        self._processing_history: list[dict[str, Any]] = []
 
     def supports_workflow_type(self, workflow_type: WorkflowType) -> bool:
         """Check if this subreducer supports the workflow type."""
@@ -114,22 +110,21 @@ class IntegrationTestSubreducer(BaseSubreducer):
                 },
                 processing_time_ms=processing_time,
             )
-        else:
-            self._call_count += 1
-            return ModelSubreducerResult(
-                workflow_id=request.workflow_id,
-                subreducer_name=self.name,
-                success=True,
-                result={
-                    "integration_test_result": f"Successfully processed {request.workflow_type.value}",
-                    "call_count": self._call_count,
-                    "instance_id": request.instance_id,
-                    "payload_processed": bool(request.payload),
-                    "metadata_processed": bool(request.metadata),
-                    "state_updates": [state.value for state in self._state_updates],
-                },
-                processing_time_ms=processing_time,
-            )
+        self._call_count += 1
+        return ModelSubreducerResult(
+            workflow_id=request.workflow_id,
+            subreducer_name=self.name,
+            success=True,
+            result={
+                "integration_test_result": f"Successfully processed {request.workflow_type.value}",
+                "call_count": self._call_count,
+                "instance_id": request.instance_id,
+                "payload_processed": bool(request.payload),
+                "metadata_processed": bool(request.metadata),
+                "state_updates": [state.value for state in self._state_updates],
+            },
+            processing_time_ms=processing_time,
+        )
 
     @property
     def call_count(self) -> int:
@@ -142,7 +137,7 @@ class IntegrationTestSubreducer(BaseSubreducer):
         return self._total_calls
 
     @property
-    def processing_history(self) -> List[Dict[str, Any]]:
+    def processing_history(self) -> list[dict[str, Any]]:
         """Get complete processing history."""
         return self._processing_history.copy()
 
@@ -161,16 +156,16 @@ class TestIntegrationWorkflows:
         """Create engine with real subreducers for integration testing."""
         with (
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_data_analysis.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_document_regeneration.emit_log_event",
             ),
             patch(
-                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation.emit_log_event"
+                "omnibase_core.patterns.reducer_pattern_engine.subreducers.reducer_report_generation.emit_log_event",
             ),
         ):
             engine = ReducerPatternEngine(mock_container)
@@ -190,7 +185,7 @@ class TestIntegrationWorkflows:
     def test_engine(self, mock_container) -> ReducerPatternEngine:
         """Create engine with test subreducers for controlled integration testing."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
@@ -198,10 +193,12 @@ class TestIntegrationWorkflows:
             test_subreducers = [
                 IntegrationTestSubreducer("data_test", WorkflowType.DATA_ANALYSIS),
                 IntegrationTestSubreducer(
-                    "doc_test", WorkflowType.DOCUMENT_REGENERATION
+                    "doc_test",
+                    WorkflowType.DOCUMENT_REGENERATION,
                 ),
                 IntegrationTestSubreducer(
-                    "report_test", WorkflowType.REPORT_GENERATION
+                    "report_test",
+                    WorkflowType.REPORT_GENERATION,
                 ),
             ]
 
@@ -214,7 +211,8 @@ class TestIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_complete_data_analysis_workflow_integration(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test complete data analysis workflow from request to response."""
         # Create realistic data analysis request
@@ -270,7 +268,8 @@ class TestIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_complete_document_regeneration_workflow_integration(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test complete document regeneration workflow from request to response."""
         request = ModelWorkflowRequest(
@@ -307,7 +306,8 @@ class TestIntegrationWorkflows:
 
     @pytest.mark.asyncio
     async def test_complete_report_generation_workflow_integration(
-        self, integration_engine
+        self,
+        integration_engine,
     ):
         """Test complete report generation workflow from request to response."""
         request = ModelWorkflowRequest(
@@ -359,7 +359,8 @@ class TestIntegrationWorkflows:
 
             # Verify routing decision
             routing_decision = test_engine._router.route_workflow(
-                request, test_engine._registry
+                request,
+                test_engine._registry,
             )
             assert routing_decision.selected_subreducer == expected_subreducer.name
             assert routing_decision.routing_success is True
@@ -521,16 +522,19 @@ class TestIntegrationWorkflows:
     async def test_error_recovery_integration_single_failure(self, mock_container):
         """Test error recovery integration when single subreducer fails."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
             # Register subreducers with one that fails
             successful_subreducer = IntegrationTestSubreducer(
-                "success_test", WorkflowType.DATA_ANALYSIS
+                "success_test",
+                WorkflowType.DATA_ANALYSIS,
             )
             failing_subreducer = IntegrationTestSubreducer(
-                "fail_test", WorkflowType.DOCUMENT_REGENERATION, success=False
+                "fail_test",
+                WorkflowType.DOCUMENT_REGENERATION,
+                success=False,
             )
 
             engine.register_subreducer(successful_subreducer)
@@ -572,19 +576,24 @@ class TestIntegrationWorkflows:
     async def test_error_recovery_with_partial_failures(self, mock_container):
         """Test error recovery when some workflows fail in concurrent processing."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
             # Register subreducers with different failure rates
             data_subreducer = IntegrationTestSubreducer(
-                "data_test", WorkflowType.DATA_ANALYSIS
+                "data_test",
+                WorkflowType.DATA_ANALYSIS,
             )
             doc_subreducer = IntegrationTestSubreducer(
-                "doc_test", WorkflowType.DOCUMENT_REGENERATION, failure_rate=0.5
+                "doc_test",
+                WorkflowType.DOCUMENT_REGENERATION,
+                failure_rate=0.5,
             )
             report_subreducer = IntegrationTestSubreducer(
-                "report_test", WorkflowType.REPORT_GENERATION, failure_rate=0.3
+                "report_test",
+                WorkflowType.REPORT_GENERATION,
+                failure_rate=0.3,
             )
 
             engine.register_subreducer(data_subreducer)
@@ -603,12 +612,12 @@ class TestIntegrationWorkflows:
                 ModelWorkflowRequest(
                     workflow_type=workflow_type,
                     instance_id=f"mixed_test_{i}",
-                )
+                ),
             )
 
         # Process all workflows
         responses = await asyncio.gather(
-            *[engine.process_workflow(req) for req in requests]
+            *[engine.process_workflow(req) for req in requests],
         )
 
         # Verify we got both successes and failures
@@ -628,13 +637,13 @@ class TestIntegrationWorkflows:
     async def test_routing_failure_recovery(self, mock_container):
         """Test recovery from routing failures (unsupported workflow types)."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
             # Register only one subreducer
             engine.register_subreducer(
-                IntegrationTestSubreducer("limited_test", WorkflowType.DATA_ANALYSIS)
+                IntegrationTestSubreducer("limited_test", WorkflowType.DATA_ANALYSIS),
             )
 
         # Test supported workflow type
@@ -703,7 +712,7 @@ class TestIntegrationWorkflows:
 
         # Process all workflows
         responses = await asyncio.gather(
-            *[test_engine.process_workflow(req) for req in requests]
+            *[test_engine.process_workflow(req) for req in requests],
         )
 
         # Verify all processed successfully
@@ -753,7 +762,7 @@ class TestIntegrationWorkflows:
         # Process with timing
         start_time = time.time()
         responses = await asyncio.gather(
-            *[test_engine.process_workflow(req) for req in requests]
+            *[test_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -793,7 +802,7 @@ class TestIntegrationWorkflows:
 
             # Process batch
             responses = await asyncio.gather(
-                *[test_engine.process_workflow(req) for req in requests]
+                *[test_engine.process_workflow(req) for req in requests],
             )
             assert all(r.status == WorkflowStatus.COMPLETED for r in responses)
 
@@ -899,13 +908,14 @@ class TestIntegrationWorkflows:
     async def test_comprehensive_error_scenarios_integration(self, mock_container):
         """Test comprehensive error scenarios in integrated environment."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
 
             # Register subreducers with various failure modes
             success_subreducer = IntegrationTestSubreducer(
-                "success", WorkflowType.DATA_ANALYSIS
+                "success",
+                WorkflowType.DATA_ANALYSIS,
             )
             slow_failing_subreducer = IntegrationTestSubreducer(
                 "slow_fail",
@@ -914,7 +924,9 @@ class TestIntegrationWorkflows:
                 processing_delay=0.2,
             )
             intermittent_subreducer = IntegrationTestSubreducer(
-                "intermittent", WorkflowType.REPORT_GENERATION, failure_rate=0.5
+                "intermittent",
+                WorkflowType.REPORT_GENERATION,
+                failure_rate=0.5,
             )
 
             engine.register_subreducer(success_subreducer)
@@ -931,7 +943,7 @@ class TestIntegrationWorkflows:
                 ModelWorkflowRequest(
                     workflow_type=WorkflowType.DATA_ANALYSIS,
                     instance_id=f"success_{i}",
-                )
+                ),
             )
             expected_outcomes.append("success")
 
@@ -941,7 +953,7 @@ class TestIntegrationWorkflows:
                 ModelWorkflowRequest(
                     workflow_type=WorkflowType.DOCUMENT_REGENERATION,
                     instance_id=f"fail_{i}",
-                )
+                ),
             )
             expected_outcomes.append("failure")
 
@@ -951,18 +963,18 @@ class TestIntegrationWorkflows:
                 ModelWorkflowRequest(
                     workflow_type=WorkflowType.REPORT_GENERATION,
                     instance_id=f"intermittent_{i}",
-                )
+                ),
             )
             expected_outcomes.append("intermittent")
 
         # Process all concurrently
         responses = await asyncio.gather(
-            *[engine.process_workflow(req) for req in requests]
+            *[engine.process_workflow(req) for req in requests],
         )
 
         # Verify expected outcomes
         success_count = len(
-            [r for r in responses if r.status == WorkflowStatus.COMPLETED]
+            [r for r in responses if r.status == WorkflowStatus.COMPLETED],
         )
         failure_count = len([r for r in responses if r.status == WorkflowStatus.FAILED])
 
@@ -994,11 +1006,11 @@ class TestResourceCleanupIntegration:
     def cleanup_engine(self, mock_container) -> ReducerPatternEngine:
         """Create engine for cleanup testing."""
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.engine.emit_log_event",
         ):
             engine = ReducerPatternEngine(mock_container)
             engine.register_subreducer(
-                IntegrationTestSubreducer("cleanup_test", WorkflowType.DATA_ANALYSIS)
+                IntegrationTestSubreducer("cleanup_test", WorkflowType.DATA_ANALYSIS),
             )
             return engine
 
@@ -1019,7 +1031,7 @@ class TestResourceCleanupIntegration:
         ]
 
         responses = await asyncio.gather(
-            *[cleanup_engine.process_workflow(req) for req in requests]
+            *[cleanup_engine.process_workflow(req) for req in requests],
         )
 
         # Verify all succeeded
@@ -1055,7 +1067,7 @@ class TestResourceCleanupIntegration:
         # Process all concurrently
         start_time = time.time()
         responses = await asyncio.gather(
-            *[cleanup_engine.process_workflow(req) for req in requests]
+            *[cleanup_engine.process_workflow(req) for req in requests],
         )
         end_time = time.time()
 
@@ -1080,7 +1092,7 @@ class TestResourceCleanupIntegration:
 # ====== Integration Test Utilities ======
 
 
-def create_realistic_data_analysis_payload() -> Dict[str, Any]:
+def create_realistic_data_analysis_payload() -> dict[str, Any]:
     """Create realistic payload for data analysis testing."""
     return {
         "analysis_type": "comprehensive",
@@ -1098,7 +1110,7 @@ def create_realistic_data_analysis_payload() -> Dict[str, Any]:
     }
 
 
-def create_realistic_document_payload() -> Dict[str, Any]:
+def create_realistic_document_payload() -> dict[str, Any]:
     """Create realistic payload for document regeneration testing."""
     return {
         "document_type": "technical_specification",
@@ -1129,7 +1141,7 @@ The architecture follows ONEX patterns with four-node design.
     }
 
 
-def create_realistic_report_payload() -> Dict[str, Any]:
+def create_realistic_report_payload() -> dict[str, Any]:
     """Create realistic payload for report generation testing."""
     return {
         "report_type": "system_performance_analysis",

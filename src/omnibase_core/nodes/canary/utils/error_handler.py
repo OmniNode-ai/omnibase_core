@@ -9,7 +9,7 @@ maintaining debugging capabilities in appropriate environments.
 import logging
 import traceback
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Remove canary config dependency - use secure defaults
 
@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 class SecureErrorHandler:
     """Secure error handling with information disclosure protection."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
         # Use secure defaults instead of config
         self.sanitize_stack_traces = True
@@ -28,10 +28,10 @@ class SecureErrorHandler:
     def handle_error(
         self,
         error: Exception,
-        context: Dict[str, Any],
-        correlation_id: Optional[str] = None,
+        context: dict[str, Any],
+        correlation_id: str | None = None,
         operation_name: str = "unknown",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Handle error with appropriate logging and sanitized user response.
 
@@ -88,7 +88,7 @@ class SecureErrorHandler:
 
         return sanitized_error
 
-    def _sanitize_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_context(self, context: dict[str, Any]) -> dict[str, Any]:
         """Remove sensitive information from context."""
 
         sanitized = {}
@@ -153,7 +153,7 @@ class SecureErrorHandler:
 
         return safe_message
 
-    def validate_correlation_id(self, correlation_id: Optional[str]) -> bool:
+    def validate_correlation_id(self, correlation_id: str | None) -> bool:
         """Validate correlation ID format if validation is enabled."""
 
         if not self.correlation_id_validation:
@@ -175,9 +175,9 @@ class SecureErrorHandler:
     def create_operation_context(
         self,
         operation_name: str,
-        input_data: Dict[str, Any],
-        correlation_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        input_data: dict[str, Any],
+        correlation_id: str | None = None,
+    ) -> dict[str, Any]:
         """Create standardized operation context for error handling."""
 
         from datetime import datetime
@@ -211,7 +211,7 @@ class SecureErrorHandler:
 _error_handler_instance: SecureErrorHandler | None = None
 
 
-def get_error_handler(logger: Optional[logging.Logger] = None) -> SecureErrorHandler:
+def get_error_handler(logger: logging.Logger | None = None) -> SecureErrorHandler:
     """Get the global error handler instance."""
     global _error_handler_instance
     if _error_handler_instance is None:

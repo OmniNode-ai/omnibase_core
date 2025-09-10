@@ -47,15 +47,18 @@ def run_canary_unit_tests():
         print()
 
         result = subprocess.run(
-            cmd, env={**env, **dict(os.environ)}, cwd=project_root, capture_output=False
+            cmd,
+            env={**env, **dict(os.environ)},
+            cwd=project_root,
+            capture_output=False,
+            check=False,
         )
 
         if result.returncode == 0:
             print("\n✅ All canary node unit tests passed!")
             return True
-        else:
-            print(f"\n❌ Some tests failed (exit code: {result.returncode})")
-            return False
+        print(f"\n❌ Some tests failed (exit code: {result.returncode})")
+        return False
 
     except subprocess.CalledProcessError as e:
         print(f"❌ Test execution failed: {e}")
@@ -121,7 +124,6 @@ def run_canary_test_validation():
 
 def main():
     """Main entry point."""
-    import os
 
     success = True
 

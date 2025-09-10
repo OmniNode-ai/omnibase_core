@@ -8,7 +8,7 @@ with proper fallback strategies and environment variable support.
 
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
@@ -21,7 +21,7 @@ class ServiceDiscoveryConfig:
     consul_port: int = 8500
     consul_datacenter: str = "dc1"
     consul_timeout: int = 10
-    consul_token: Optional[str] = None
+    consul_token: str | None = None
     consul_scheme: str = "http"
 
     # Fallback configuration
@@ -43,7 +43,7 @@ class DatabaseConfig:
     postgres_port: int = 5432
     postgres_database: str = "omnibase"
     postgres_user: str = "omnibase"
-    postgres_password: Optional[str] = None
+    postgres_password: str | None = None
     postgres_ssl_mode: str = "prefer"
     postgres_connection_timeout: int = 30
     postgres_command_timeout: int = 60
@@ -73,7 +73,7 @@ class LoggingConfig:
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     enable_console: bool = True
     enable_file: bool = False
-    file_path: Optional[str] = None
+    file_path: str | None = None
     max_file_size: int = 10_000_000  # 10MB
     backup_count: int = 5
 
@@ -92,7 +92,7 @@ class UnifiedConfig:
     enable_metrics: bool = True
     enable_health_checks: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         # Custom configuration format with nested structure
         return {
@@ -145,7 +145,7 @@ class UnifiedConfigManager:
     """
 
     def __init__(self):
-        self._config: Optional[UnifiedConfig] = None
+        self._config: UnifiedConfig | None = None
 
     def load_config(self) -> UnifiedConfig:
         """
@@ -179,7 +179,7 @@ class UnifiedConfigManager:
             postgres_password=os.getenv("POSTGRES_PASSWORD"),
             postgres_ssl_mode=os.getenv("POSTGRES_SSL_MODE", "prefer"),
             postgres_connection_timeout=int(
-                os.getenv("POSTGRES_CONNECTION_TIMEOUT", "30")
+                os.getenv("POSTGRES_CONNECTION_TIMEOUT", "30"),
             ),
             postgres_command_timeout=int(os.getenv("POSTGRES_COMMAND_TIMEOUT", "60")),
             postgres_max_connections=int(os.getenv("POSTGRES_MAX_CONNECTIONS", "10")),
@@ -196,7 +196,8 @@ class UnifiedConfigManager:
         logging = LoggingConfig(
             level=log_level,
             format=os.getenv(
-                "LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                "LOG_FORMAT",
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             ),
             enable_console=os.getenv("LOG_ENABLE_CONSOLE", "true").lower() == "true",
             enable_file=os.getenv("LOG_ENABLE_FILE", "false").lower() == "true",
@@ -244,7 +245,7 @@ class UnifiedConfigManager:
         self._config = None
         return self.load_config()
 
-    def validate_config(self) -> Dict[str, Any]:
+    def validate_config(self) -> dict[str, Any]:
         """
         Validate current configuration.
 
@@ -302,7 +303,7 @@ class UnifiedConfigManager:
 
 
 # Global configuration manager instance
-_config_manager: Optional[UnifiedConfigManager] = None
+_config_manager: UnifiedConfigManager | None = None
 
 
 def get_config_manager() -> UnifiedConfigManager:

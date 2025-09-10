@@ -17,7 +17,8 @@ class ProtocolReducerPatternEngine(Protocol):
     """
 
     async def process_workflow(
-        self, engine_input: ModelReducerPatternEngineInput
+        self,
+        engine_input: ModelReducerPatternEngineInput,
     ) -> ModelReducerPatternEngineOutput:
         """
         Process a workflow through the Reducer Pattern Engine.
@@ -62,7 +63,8 @@ class BaseReducerPatternEngine(ABC):
 
     @abstractmethod
     async def process_workflow(
-        self, engine_input: ModelReducerPatternEngineInput
+        self,
+        engine_input: ModelReducerPatternEngineInput,
     ) -> ModelReducerPatternEngineOutput:
         """
         Process a workflow through the Reducer Pattern Engine.
@@ -76,7 +78,6 @@ class BaseReducerPatternEngine(ABC):
         Raises:
             OnexError: If processing fails
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -86,7 +87,6 @@ class BaseReducerPatternEngine(ABC):
         Returns:
             bool: True if engine is healthy, False otherwise
         """
-        pass
 
     @abstractmethod
     def get_supported_workflow_types(self) -> list[str]:
@@ -96,10 +96,10 @@ class BaseReducerPatternEngine(ABC):
         Returns:
             list[str]: List of workflow type strings
         """
-        pass
 
     async def validate_input(
-        self, engine_input: ModelReducerPatternEngineInput
+        self,
+        engine_input: ModelReducerPatternEngineInput,
     ) -> None:
         """
         Validate engine input for protocol compliance.
@@ -132,7 +132,7 @@ class BaseReducerPatternEngine(ABC):
         if workflow_type_str not in supported_types:
             raise ValueError(
                 f"Unsupported workflow type: {workflow_type_str}. "
-                f"Supported types: {supported_types}"
+                f"Supported types: {supported_types}",
             )
 
     def create_error_output(

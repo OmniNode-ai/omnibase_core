@@ -257,4 +257,4 @@ For implementing an error handling mixin, follow the established patterns docume
 ---
 *Research conducted on: 2025-01-02*  
 *Research scope: Complete ONEX mixin architecture investigation*  
-*Codebase: omnibase-core (canary implementation)*
+*Codebase: omnibase_core (canary implementation)*

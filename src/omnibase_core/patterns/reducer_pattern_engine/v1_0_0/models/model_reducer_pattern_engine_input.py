@@ -1,7 +1,7 @@
 """ONEX-compliant input model for Reducer Pattern Engine with envelope support."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -22,49 +22,59 @@ class ModelReducerPatternEngineInput(BaseModel):
 
     # Core request data
     workflow_request: ModelWorkflowRequest = Field(
-        ..., description="The workflow request to process"
+        ...,
+        description="The workflow request to process",
     )
 
     # ONEX envelope for protocol compliance (optional for backward compatibility)
-    envelope: Optional[ModelEventEnvelope] = Field(
-        None, description="ONEX event envelope for protocol-compliant routing"
+    envelope: ModelEventEnvelope | None = Field(
+        None,
+        description="ONEX event envelope for protocol-compliant routing",
     )
 
     # Protocol metadata
     protocol_version: str = Field(
-        default="1.0.0", description="Protocol version for compatibility"
+        default="1.0.0",
+        description="Protocol version for compatibility",
     )
 
-    source_node_id: Optional[str] = Field(
-        None, description="Source node ID for distributed processing"
+    source_node_id: str | None = Field(
+        None,
+        description="Source node ID for distributed processing",
     )
 
-    target_node_id: Optional[str] = Field(
-        None, description="Target node ID for routing"
+    target_node_id: str | None = Field(
+        None,
+        description="Target node ID for routing",
     )
 
     # Processing options
-    processing_options: Dict[str, Any] = Field(
+    processing_options: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional processing options and configurations",
     )
 
     # Tracing and correlation
     correlation_id: UUID = Field(
-        default_factory=uuid4, description="Correlation ID for request tracking"
+        default_factory=uuid4,
+        description="Correlation ID for request tracking",
     )
 
     request_id: UUID = Field(
-        default_factory=uuid4, description="Unique request identifier"
+        default_factory=uuid4,
+        description="Unique request identifier",
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Request creation timestamp"
+        default_factory=datetime.utcnow,
+        description="Request creation timestamp",
     )
 
     @classmethod
     def from_workflow_request(
-        cls, workflow_request: ModelWorkflowRequest, **kwargs
+        cls,
+        workflow_request: ModelWorkflowRequest,
+        **kwargs,
     ) -> "ModelReducerPatternEngineInput":
         """
         Create input from a workflow request for backward compatibility.
@@ -84,7 +94,9 @@ class ModelReducerPatternEngineInput(BaseModel):
 
     @classmethod
     def from_envelope(
-        cls, envelope: ModelEventEnvelope, **kwargs
+        cls,
+        envelope: ModelEventEnvelope,
+        **kwargs,
     ) -> "ModelReducerPatternEngineInput":
         """
         Create input from ONEX event envelope for protocol compliance.
@@ -166,7 +178,7 @@ class ModelReducerPatternEngineInput(BaseModel):
             return self.envelope.correlation_id
         return self.correlation_id
 
-    def get_source_node_id(self) -> Optional[str]:
+    def get_source_node_id(self) -> str | None:
         """Get the source node ID, preferring envelope if available."""
         if self.envelope:
             return self.envelope.source_node_id

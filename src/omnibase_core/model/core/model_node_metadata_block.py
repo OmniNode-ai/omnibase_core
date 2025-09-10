@@ -26,7 +26,6 @@ from omnibase_core.model.core.model_serializable_dict import ModelSerializableDi
 from omnibase_core.model.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.model.core.model_tool_collection import ModelToolCollection
 from omnibase_core.utils.safe_yaml_loader import (
-    load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
 

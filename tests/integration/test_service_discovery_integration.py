@@ -6,13 +6,11 @@ Tests protocol compliance, backward compatibility, and cross-implementation scen
 """
 
 import asyncio
-from typing import Dict, List
 from unittest.mock import Mock, patch
 
 import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.consul_service_discovery import ConsulServiceDiscovery
 from omnibase_core.services.memory_service_discovery import InMemoryServiceDiscovery
@@ -26,7 +24,7 @@ class TestServiceDiscoveryProtocolCompliance:
         """Parametrized fixture providing different service discovery implementations."""
         if request.param == "memory":
             return InMemoryServiceDiscovery()
-        elif request.param == "consul_with_fallback":
+        if request.param == "consul_with_fallback":
             # Mock successful Consul connection
             mock_client = Mock()
             mock_client.agent.self.return_value = {}
@@ -49,7 +47,8 @@ class TestServiceDiscoveryProtocolCompliance:
 
     @pytest.mark.asyncio
     async def test_protocol_compliance_basic_operations(
-        self, service_discovery: ProtocolServiceDiscovery
+        self,
+        service_discovery: ProtocolServiceDiscovery,
     ):
         """Test basic protocol compliance across all implementations."""
         # Verify protocol compliance at runtime
@@ -77,7 +76,8 @@ class TestServiceDiscoveryProtocolCompliance:
             # Verify all values are ModelScalarValue instances
             for key, value in service.items():
                 assert isinstance(
-                    value, ModelScalarValue
+                    value,
+                    ModelScalarValue,
                 ), f"Key '{key}' has value type {type(value)}"
 
         # Test health check
@@ -94,7 +94,8 @@ class TestServiceDiscoveryProtocolCompliance:
 
     @pytest.mark.asyncio
     async def test_protocol_compliance_kv_operations(
-        self, service_discovery: ProtocolServiceDiscovery
+        self,
+        service_discovery: ProtocolServiceDiscovery,
     ):
         """Test key-value operations protocol compliance."""
         # Set key-value
@@ -116,7 +117,8 @@ class TestServiceDiscoveryProtocolCompliance:
 
     @pytest.mark.asyncio
     async def test_protocol_compliance_health_and_cleanup(
-        self, service_discovery: ProtocolServiceDiscovery
+        self,
+        service_discovery: ProtocolServiceDiscovery,
     ):
         """Test health check and cleanup protocol compliance."""
         # Health check
@@ -128,7 +130,8 @@ class TestServiceDiscoveryProtocolCompliance:
 
     @pytest.mark.asyncio
     async def test_model_scalar_value_type_consistency(
-        self, service_discovery: ProtocolServiceDiscovery
+        self,
+        service_discovery: ProtocolServiceDiscovery,
     ):
         """Test that ModelScalarValue types are consistent across implementations."""
         metadata = {
@@ -497,7 +500,7 @@ class TestServiceDiscoveryEdgeCases:
         metadata = {
             "empty_string": ModelScalarValue.create_string(""),
             "special_chars": ModelScalarValue.create_string(
-                "!@#$%^&*(){}[]|\\:;\"'<>?,./-_+=~`"
+                "!@#$%^&*(){}[]|\\:;\"'<>?,./-_+=~`",
             ),
             "unicode": ModelScalarValue.create_string("Hello 世界 🌍"),
             "zero_values": ModelScalarValue.create_int(0),

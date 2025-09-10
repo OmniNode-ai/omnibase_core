@@ -76,7 +76,7 @@ class RealServiceCanaryDemo:
                 user="canary_user",
                 password="canary_pass",
             )
-            print(f"   ✅ PostgreSQL connected to canary_test database")
+            print("   ✅ PostgreSQL connected to canary_test database")
             postgres_healthy = True
         except Exception as e:
             print(f"   ❌ PostgreSQL connection failed: {e}")
@@ -111,7 +111,7 @@ class RealServiceCanaryDemo:
             if service_id in services:
                 service_info = services[service_id]
                 print(
-                    f"   ✅ Service verified: {service_info['Service']} at {service_info['Address']}:{service_info['Port']}"
+                    f"   ✅ Service verified: {service_info['Service']} at {service_info['Address']}:{service_info['Port']}",
                 )
 
             # Store test data in Consul KV
@@ -123,7 +123,7 @@ class RealServiceCanaryDemo:
             # Retrieve and verify
             _, stored_data = self.consul_client.kv.get(test_key)
             if stored_data and stored_data["Value"].decode() == test_data:
-                print(f"   ✅ Data verified from Consul KV")
+                print("   ✅ Data verified from Consul KV")
 
             return True
 
@@ -153,7 +153,7 @@ class RealServiceCanaryDemo:
                     result_data JSONB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+            """,
             )
             self.postgres_conn.commit()
             print("   ✅ Test table created/verified")
@@ -191,9 +191,8 @@ class RealServiceCanaryDemo:
             if record:
                 print(f"   ✅ Record verified: {record[1]} - {record[3]}")
                 return True
-            else:
-                print("   ❌ Record not found after insert")
-                return False
+            print("   ❌ Record not found after insert")
+            return False
 
         except Exception as e:
             print(f"   ❌ Database operations failed: {e}")
@@ -216,20 +215,21 @@ class RealServiceCanaryDemo:
                         "correlation_id": str(uuid.uuid4()),
                     },
                     "correlation_id": str(uuid.uuid4()),
-                }
+                },
             ),
         )
 
         # Execute through canary effect node
         result = await self.effect_node.perform_effect(
-            effect_input, EffectType.API_CALL
+            effect_input,
+            EffectType.API_CALL,
         )
 
         print(f"   ✅ Canary effect executed: {result.metadata['node_type']}")
         print(f"   ✅ Operation count: {self.effect_node.operation_count}")
         print(f"   ✅ Success count: {self.effect_node.success_count}")
         print(
-            f"   ✅ Success rate: {(self.effect_node.success_count / max(1, self.effect_node.operation_count)) * 100:.1f}%"
+            f"   ✅ Success rate: {(self.effect_node.success_count / max(1, self.effect_node.operation_count)) * 100:.1f}%",
         )
 
         return result.result.get("success", True)
@@ -256,7 +256,7 @@ class RealServiceCanaryDemo:
             }
             health_data.append(consul_status)
             print(
-                f"   ✅ Consul health collected: {consul_health['Config']['NodeName']}"
+                f"   ✅ Consul health collected: {consul_health['Config']['NodeName']}",
             )
         except Exception as e:
             print(f"   ❌ Consul health collection failed: {e}")
@@ -266,7 +266,7 @@ class RealServiceCanaryDemo:
             try:
                 cursor = self.postgres_conn.cursor()
                 cursor.execute(
-                    "SELECT version(), current_database(), current_timestamp;"
+                    "SELECT version(), current_database(), current_timestamp;",
                 )
                 pg_info = cursor.fetchone()
 
@@ -293,7 +293,8 @@ class RealServiceCanaryDemo:
         from omnibase_core.core.node_reducer import ModelReducerInput, ReductionType
 
         reducer_input = ModelReducerInput(
-            data=health_data, reduction_type=ReductionType.AGGREGATE
+            data=health_data,
+            reduction_type=ReductionType.AGGREGATE,
         )
 
         result = await self.reducer_node.reduce(reducer_input)
@@ -301,16 +302,15 @@ class RealServiceCanaryDemo:
         # Display real aggregation results
         if result.data.get("success"):
             agg_result = result.data["aggregation_result"]
-            print(f"   ✅ Health aggregation completed:")
+            print("   ✅ Health aggregation completed:")
             print(f"      Overall Status: {agg_result['overall_status']}")
             print(
-                f"      Healthy Services: {agg_result['healthy_services']}/{agg_result['total_services']}"
+                f"      Healthy Services: {agg_result['healthy_services']}/{agg_result['total_services']}",
             )
             print(f"      Health Score: {agg_result['health_score']:.2f}")
             return True
-        else:
-            print(f"   ❌ Health aggregation failed")
-            return False
+        print("   ❌ Health aggregation failed")
+        return False
 
     async def cleanup_real_services(self):
         """Clean up real service resources."""
@@ -370,12 +370,12 @@ class RealServiceCanaryDemo:
                     successful_tests += 1
 
             print(
-                f"\n🎯 Overall Success Rate: {successful_tests}/{total_tests} ({(successful_tests/total_tests)*100:.1f}%)"
+                f"\n🎯 Overall Success Rate: {successful_tests}/{total_tests} ({(successful_tests/total_tests)*100:.1f}%)",
             )
 
             if successful_tests == total_tests:
                 print(
-                    "🎉 ALL TESTS PASSED - Canary nodes work with real external services!"
+                    "🎉 ALL TESTS PASSED - Canary nodes work with real external services!",
                 )
             elif successful_tests > 0:
                 print("⚠️  PARTIAL SUCCESS - Some real service integrations working")

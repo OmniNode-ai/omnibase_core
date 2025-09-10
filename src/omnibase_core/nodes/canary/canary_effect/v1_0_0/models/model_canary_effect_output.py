@@ -6,7 +6,7 @@ Strongly typed Pydantic model generated from ONEX contract output_state schema.
 Eliminates JSON/YAML parsing architecture violations by using proper contract-driven models.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -26,28 +26,30 @@ class ModelCanaryEffectOutput(BaseModel):
         - Zero Any Types: All fields use specific types with proper validation
     """
 
-    operation_result: Dict[str, Any] = Field(
+    operation_result: dict[str, Any] = Field(
         default_factory=dict,
         description="Result data from the effect operation - object type from contract",
     )
 
     success: bool = Field(
-        True, description="Whether operation succeeded - boolean type from contract"
+        True,
+        description="Whether operation succeeded - boolean type from contract",
     )
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         None,
         description="Error message if operation failed - string type from contract",
     )
 
-    execution_time_ms: Optional[int] = Field(
+    execution_time_ms: int | None = Field(
         None,
         description="Execution time in milliseconds - integer type from contract",
         ge=0,  # Must be non-negative
     )
 
-    correlation_id: Optional[str] = Field(
-        None, description="Request correlation ID - string type from contract"
+    correlation_id: str | None = Field(
+        None,
+        description="Request correlation ID - string type from contract",
     )
 
     # Pydantic v2 configuration using ConfigDict
@@ -62,7 +64,7 @@ class ModelCanaryEffectOutput(BaseModel):
 
     @field_validator("execution_time_ms")
     @classmethod
-    def validate_execution_time(cls, v: Optional[int]) -> Optional[int]:
+    def validate_execution_time(cls, v: int | None) -> int | None:
         """Validate execution time is non-negative when provided."""
         if v is not None and v < 0:
             raise ValueError("execution_time_ms must be non-negative")
@@ -86,7 +88,7 @@ class ModelCanaryEffectOutput(BaseModel):
         """
         return self.execution_time_ms is not None
 
-    def get_result_summary(self) -> Dict[str, Any]:
+    def get_result_summary(self) -> dict[str, Any]:
         """
         Get a summary of the operation result for logging/monitoring.
 

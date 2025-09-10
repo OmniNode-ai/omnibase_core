@@ -8,9 +8,9 @@ and routing decision consistency for Phase 2 implementation.
 
 import asyncio
 import hashlib
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from typing import Any
+from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
 
@@ -28,7 +28,7 @@ from omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router import Workflow
 class MockRouterSubreducer(BaseSubreducer):
     """Mock subreducer for router testing with enhanced functionality."""
 
-    def __init__(self, name: str, supported_types: List[WorkflowType]):
+    def __init__(self, name: str, supported_types: list[WorkflowType]):
         super().__init__(name)
         self._supported_types = supported_types
         self._process_call_count = 0
@@ -46,7 +46,7 @@ class MockRouterSubreducer(BaseSubreducer):
                 "workflow_type": request.workflow_type,
                 "instance_id": request.instance_id,
                 "correlation_id": request.correlation_id,
-            }
+            },
         )
 
         return ModelSubreducerResult(
@@ -60,7 +60,7 @@ class MockRouterSubreducer(BaseSubreducer):
         )
 
     @property
-    def routing_calls(self) -> List[Dict[str, Any]]:
+    def routing_calls(self) -> list[dict[str, Any]]:
         return self._routing_calls.copy()
 
     @property
@@ -77,17 +77,20 @@ class TestWorkflowRouterEnhanced:
         return WorkflowRouter()
 
     @pytest.fixture
-    def mock_subreducers(self) -> Dict[str, MockRouterSubreducer]:
+    def mock_subreducers(self) -> dict[str, MockRouterSubreducer]:
         """Create mock subreducers for different workflow types."""
         return {
             "data_analysis": MockRouterSubreducer(
-                "data_analysis_subreducer", [WorkflowType.DATA_ANALYSIS]
+                "data_analysis_subreducer",
+                [WorkflowType.DATA_ANALYSIS],
             ),
             "report_generation": MockRouterSubreducer(
-                "report_generation_subreducer", [WorkflowType.REPORT_GENERATION]
+                "report_generation_subreducer",
+                [WorkflowType.REPORT_GENERATION],
             ),
             "document_regeneration": MockRouterSubreducer(
-                "document_regeneration_subreducer", [WorkflowType.DOCUMENT_REGENERATION]
+                "document_regeneration_subreducer",
+                [WorkflowType.DOCUMENT_REGENERATION],
             ),
             "multi_type": MockRouterSubreducer(
                 "multi_type_subreducer",
@@ -96,7 +99,7 @@ class TestWorkflowRouterEnhanced:
         }
 
     @pytest.fixture
-    def sample_requests(self) -> Dict[str, ModelWorkflowRequest]:
+    def sample_requests(self) -> dict[str, ModelWorkflowRequest]:
         """Create sample workflow requests for different types."""
         base_correlation_id = uuid4()
 
@@ -158,7 +161,9 @@ class TestWorkflowRouterEnhanced:
         assert retrieved == subreducer
 
     def test_register_multiple_workflow_type_subreducers(
-        self, router, mock_subreducers
+        self,
+        router,
+        mock_subreducers,
     ):
         """Test registering multiple subreducers for different workflow types."""
         subreducers_to_register = [
@@ -250,7 +255,10 @@ class TestWorkflowRouterEnhanced:
 
     @pytest.mark.asyncio
     async def test_route_single_workflow_type(
-        self, router, mock_subreducers, sample_requests
+        self,
+        router,
+        mock_subreducers,
+        sample_requests,
     ):
         """Test routing single workflow type."""
         subreducer = mock_subreducers["data_analysis"]
@@ -281,7 +289,10 @@ class TestWorkflowRouterEnhanced:
 
     @pytest.mark.asyncio
     async def test_route_multiple_workflow_types(
-        self, router, mock_subreducers, sample_requests
+        self,
+        router,
+        mock_subreducers,
+        sample_requests,
     ):
         """Test routing across multiple workflow types."""
         # Register subreducers for all workflow types
@@ -331,7 +342,8 @@ class TestWorkflowRouterEnhanced:
         """Test routing unsupported workflow type raises error."""
         # Register only one subreducer
         router.register_subreducer(
-            mock_subreducers["data_analysis"], [WorkflowType.DATA_ANALYSIS]
+            mock_subreducers["data_analysis"],
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Try to route unsupported workflow type
@@ -358,7 +370,8 @@ class TestWorkflowRouterEnhanced:
     async def test_routing_hash_consistency(self, router, mock_subreducers):
         """Test that routing hash is consistent for same workflow type and instance ID."""
         router.register_subreducer(
-            mock_subreducers["data_analysis"], [WorkflowType.DATA_ANALYSIS]
+            mock_subreducers["data_analysis"],
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Create multiple requests with same workflow type and instance ID
@@ -397,7 +410,8 @@ class TestWorkflowRouterEnhanced:
     async def test_routing_hash_variation(self, router, mock_subreducers):
         """Test that routing hash varies with different instance IDs."""
         router.register_subreducer(
-            mock_subreducers["data_analysis"], [WorkflowType.DATA_ANALYSIS]
+            mock_subreducers["data_analysis"],
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Create requests with different instance IDs
@@ -458,7 +472,10 @@ class TestWorkflowRouterEnhanced:
 
     @pytest.mark.asyncio
     async def test_routing_metrics_tracking(
-        self, router, mock_subreducers, sample_requests
+        self,
+        router,
+        mock_subreducers,
+        sample_requests,
     ):
         """Test comprehensive routing metrics tracking."""
         # Register subreducers
@@ -484,7 +501,8 @@ class TestWorkflowRouterEnhanced:
         # First, unregister data analysis to make it unsupported
         router._workflow_type_mappings.clear()
         router.register_subreducer(
-            mock_subreducers["report_generation"], [WorkflowType.REPORT_GENERATION]
+            mock_subreducers["report_generation"],
+            [WorkflowType.REPORT_GENERATION],
         )
 
         try:
@@ -562,13 +580,16 @@ class TestWorkflowRouterEnhanced:
         assert metrics["average_routing_time_ms"] > 0
 
         print(
-            f"Routed {len(concurrent_requests)} requests concurrently in {total_time:.3f}s"
+            f"Routed {len(concurrent_requests)} requests concurrently in {total_time:.3f}s",
         )
         print(f"Average routing time: {metrics['average_routing_time_ms']:.3f}ms")
 
     @pytest.mark.asyncio
     async def test_routing_decision_structure(
-        self, router, mock_subreducers, sample_requests
+        self,
+        router,
+        mock_subreducers,
+        sample_requests,
     ):
         """Test comprehensive routing decision structure and metadata."""
         subreducer = mock_subreducers["data_analysis"]
@@ -607,12 +628,13 @@ class TestWorkflowRouterEnhanced:
     async def test_error_handling_and_logging(self, router, mock_subreducers):
         """Test error handling and structured logging."""
         router.register_subreducer(
-            mock_subreducers["data_analysis"], [WorkflowType.DATA_ANALYSIS]
+            mock_subreducers["data_analysis"],
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Test with structured logging capture
         with patch(
-            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event"
+            "omnibase_core.patterns.reducer_pattern_engine.v1_0_0.router.emit_log_event",
         ) as mock_log:
             # Successful routing
             request = ModelWorkflowRequest(
@@ -659,7 +681,8 @@ class TestWorkflowRouterEnhanced:
     async def test_routing_with_complex_payloads(self, router, mock_subreducers):
         """Test routing with complex payload structures."""
         router.register_subreducer(
-            mock_subreducers["data_analysis"], [WorkflowType.DATA_ANALYSIS]
+            mock_subreducers["data_analysis"],
+            [WorkflowType.DATA_ANALYSIS],
         )
 
         # Create request with complex payload

@@ -6,7 +6,6 @@ This file demonstrates how to migrate from the old architecture violations
 to the new contract-driven models that eliminate JSON/YAML parsing issues.
 """
 
-from typing import Any, Dict
 
 from .model_canary_effect_input import EnumCanaryOperationType, ModelCanaryEffectInput
 from .model_canary_effect_output import ModelCanaryEffectOutput
@@ -108,7 +107,7 @@ def demonstrate_validation_benefits():
     print("1. Type Safety - Invalid operation type:")
     try:
         invalid_input = ModelCanaryEffectInput(
-            operation_type="invalid_operation"  # This will fail validation
+            operation_type="invalid_operation",  # This will fail validation
         )
     except Exception as e:
         print(f"   ✅ Caught at compile time: {type(e).__name__}")
@@ -116,7 +115,7 @@ def demonstrate_validation_benefits():
     print("\n2. Field Validation - Negative execution time:")
     try:
         invalid_output = ModelCanaryEffectOutput(
-            execution_time_ms=-100  # This will fail validation
+            execution_time_ms=-100,  # This will fail validation
         )
     except Exception as e:
         print(f"   ✅ Caught at runtime: {type(e).__name__}")

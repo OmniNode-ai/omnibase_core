@@ -45,13 +45,15 @@ class NodeCanaryEffect(NodeEffectService):
         # Setup circuit breakers using configuration utils
         failure_threshold = int(
             self.config_utils.get_security_config(
-                "circuit_breaker_failure_threshold", 3
-            )
+                "circuit_breaker_failure_threshold",
+                3,
+            ),
         )
         recovery_timeout = int(
             self.config_utils.get_security_config(
-                "circuit_breaker_recovery_timeout", 30
-            )
+                "circuit_breaker_recovery_timeout",
+                30,
+            ),
         )
         api_timeout_ms = self.config_utils.get_timeout_ms("api_call", 5000)
 
@@ -74,13 +76,16 @@ class NodeCanaryEffect(NodeEffectService):
         self._setup_event_subscriptions()
 
     def _publish_canary_event(
-        self, event_type: str, data: dict[str, Any], correlation_id: str
+        self,
+        event_type: str,
+        data: dict[str, Any],
+        correlation_id: str,
     ) -> None:
         """Publish canary effect event using envelope wrapping."""
         try:
             if not self.event_bus:
                 self.logger.warning(
-                    f"No event bus available for publishing {event_type}"
+                    f"No event bus available for publishing {event_type}",
                 )
                 return
 
@@ -104,7 +109,7 @@ class NodeCanaryEffect(NodeEffectService):
 
             self.logger.debug(
                 f"Published canary effect event: {event_type} "
-                f"[correlation_id={correlation_id}, envelope_id={envelope.envelope_id}]"
+                f"[correlation_id={correlation_id}, envelope_id={envelope.envelope_id}]",
             )
 
         except Exception as e:
@@ -146,7 +151,8 @@ class NodeCanaryEffect(NodeEffectService):
 
         except Exception as e:
             self.logger.error(
-                f"Failed to setup event subscriptions: {e!s} [node_id=%s]", self.node_id
+                f"Failed to setup event subscriptions: {e!s} [node_id=%s]",
+                self.node_id,
             )
 
     def _handle_incoming_event(self, envelope: ModelEventEnvelope) -> None:
@@ -158,7 +164,7 @@ class NodeCanaryEffect(NodeEffectService):
 
             self.logger.info(
                 f"Received canary event: {event_type} "
-                f"[correlation_id={correlation_id}, source={envelope.source_node_id}]"
+                f"[correlation_id={correlation_id}, source={envelope.source_node_id}]",
             )
 
             # Route event based on type
@@ -183,7 +189,9 @@ class NodeCanaryEffect(NodeEffectService):
             )
 
     def _handle_effect_execution_request(
-        self, event: ModelOnexEvent, correlation_id: str
+        self,
+        event: ModelOnexEvent,
+        correlation_id: str,
     ) -> None:
         """Handle effect execution request from orchestrator using contract-driven models."""
         try:
@@ -200,28 +208,32 @@ class NodeCanaryEffect(NodeEffectService):
 
             # Schedule async effect execution (fire-and-forget pattern)
             task = asyncio.create_task(
-                self.perform_canary_effect(canary_input, EffectType.API_CALL)
+                self.perform_canary_effect(canary_input, EffectType.API_CALL),
             )
 
             # Add callback to publish result when complete
             task.add_done_callback(
-                lambda t: self._publish_effect_result(t.result(), correlation_id)
+                lambda t: self._publish_effect_result(t.result(), correlation_id),
             )
 
         except Exception as e:
             self.logger.error(
-                f"Failed to handle effect execution request: {e!s} [correlation_id={correlation_id}]"
+                f"Failed to handle effect execution request: {e!s} [correlation_id={correlation_id}]",
             )
 
     def _handle_effect_request(
-        self, event: ModelOnexEvent, correlation_id: str
+        self,
+        event: ModelOnexEvent,
+        correlation_id: str,
     ) -> None:
         """Handle effect request from compute nodes."""
         # Similar to execution request but may have different priority/handling
         self._handle_effect_execution_request(event, correlation_id)
 
     def _handle_effect_needed_notification(
-        self, event: ModelOnexEvent, correlation_id: str
+        self,
+        event: ModelOnexEvent,
+        correlation_id: str,
     ) -> None:
         """Handle effect needed notification from reducer."""
         try:
@@ -247,11 +259,13 @@ class NodeCanaryEffect(NodeEffectService):
 
         except Exception as e:
             self.logger.error(
-                f"Failed to handle effect needed notification: {e!s} [correlation_id={correlation_id}]"
+                f"Failed to handle effect needed notification: {e!s} [correlation_id={correlation_id}]",
             )
 
     def _handle_coordination_event(
-        self, event: ModelOnexEvent, correlation_id: str
+        self,
+        event: ModelOnexEvent,
+        correlation_id: str,
     ) -> None:
         """Handle general coordination events."""
         try:
@@ -271,11 +285,13 @@ class NodeCanaryEffect(NodeEffectService):
 
         except Exception as e:
             self.logger.error(
-                f"Failed to handle coordination event: {e!s} [correlation_id={correlation_id}]"
+                f"Failed to handle coordination event: {e!s} [correlation_id={correlation_id}]",
             )
 
     def _publish_effect_result(
-        self, result: ModelCanaryEffectOutput, correlation_id: str
+        self,
+        result: ModelCanaryEffectOutput,
+        correlation_id: str,
     ) -> None:
         """Publish effect operation result to other nodes."""
         try:
@@ -290,7 +306,7 @@ class NodeCanaryEffect(NodeEffectService):
             )
         except Exception as e:
             self.logger.error(
-                f"Failed to publish effect result: {e!s} [correlation_id={correlation_id}]"
+                f"Failed to publish effect result: {e!s} [correlation_id={correlation_id}]",
             )
 
     async def perform_canary_effect(
@@ -377,7 +393,10 @@ class NodeCanaryEffect(NodeEffectService):
                 "error_type": type(e).__name__,
             }
             error_details = self.error_handler.handle_error(
-                e, safe_context, canary_input.correlation_id, "effect_operation"
+                e,
+                safe_context,
+                canary_input.correlation_id,
+                "effect_operation",
             )
 
             # Publish operation failure event with sanitized error
@@ -395,7 +414,7 @@ class NodeCanaryEffect(NodeEffectService):
 
             self.logger.error(
                 f"Canary effect operation failed: {error_details['message']} "
-                f"[correlation_id={canary_input.correlation_id}, duration={execution_time}ms]"
+                f"[correlation_id={canary_input.correlation_id}, duration={execution_time}ms]",
             )
 
             return ModelCanaryEffectOutput(
@@ -447,7 +466,7 @@ class NodeCanaryEffect(NodeEffectService):
                 "success_count": self.success_count,
                 "error_count": self.error_count,
                 "success_rate": self.success_count / max(1, self.operation_count),
-            }
+            },
         }
 
     async def _perform_external_api_call(
@@ -460,8 +479,9 @@ class NodeCanaryEffect(NodeEffectService):
         if debug_mode:
             delay_ms = int(
                 self.config_utils.get_business_logic_config(
-                    "api_simulation_delay_ms", 100
-                )
+                    "api_simulation_delay_ms",
+                    100,
+                ),
             )
             await asyncio.sleep(delay_ms / 1000)
 
@@ -532,10 +552,10 @@ class NodeCanaryEffect(NodeEffectService):
 
         # Mark as degraded if error rate is high
         min_ops = int(
-            self.config_utils.get_performance_config("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10),
         )
         error_threshold = float(
-            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1),
         )
 
         if (

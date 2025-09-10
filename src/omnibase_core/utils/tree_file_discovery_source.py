@@ -41,7 +41,6 @@ from omnibase_core.protocol.protocol_file_discovery_source import (
 )
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 

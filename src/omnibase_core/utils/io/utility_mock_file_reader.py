@@ -45,7 +45,6 @@ class UtilityMockFileReader:
         )
         from omnibase_core.utils.safe_yaml_loader import (
             load_and_validate_yaml_model,
-            load_yaml_content_as_model,
         )
 
         # Load the test contract data and create a proper model
@@ -55,7 +54,8 @@ class UtilityMockFileReader:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(
-                    test_data_path, ModelGenericYaml
+                    test_data_path,
+                    ModelGenericYaml,
                 )
 
                 contract_data = yaml_model.model_dump()
@@ -101,10 +101,7 @@ class UtilityMockFileReader:
         model = self._models[path_str]
 
         # Convert model to YAML string for text reading
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
-            load_and_validate_yaml_model,
-            load_yaml_content_as_model,
             serialize_pydantic_model_to_yaml,
         )
 

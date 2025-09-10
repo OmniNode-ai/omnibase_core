@@ -121,10 +121,10 @@ class CustomNodeService(NodeComputeService, MixinHealthCheck, MixinMetrics):
 ## Implementation Examples
 
 ### Reference Locations
-- **Current Implementation**: `/Volumes/PRO-G40/Code/omnibase-core`
+- **Current Implementation**: `/Volumes/PRO-G40/Code/omnibase_core`
 - **Reference Architecture**: `/Volumes/PRO-G40/Code/omnibase_3/tools/infrastructure`  
 - **Example Implementations**: `src/omnibase_core/examples/tool_infrastructure_*/`
-- **Developer Guide**: `/Volumes/PRO-G40/Code/omnibase-core/docs/ONEX_4_Node_System_Developer_Guide.md`
+- **Developer Guide**: `/Volumes/PRO-G40/Code/omnibase_core/docs/ONEX_4_Node_System_Developer_Guide.md`
 
 ### Usage Patterns
 ```python

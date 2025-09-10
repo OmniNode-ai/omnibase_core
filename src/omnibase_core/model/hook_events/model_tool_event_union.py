@@ -1,8 +1,6 @@
 """Strongly typed discriminated union for different tool events."""
 
-from typing import Annotated, Optional
-
-from pydantic import BaseModel, Discriminator, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.model.hook_events.model_read_tool_event import (
     ModelBashToolEvent,
@@ -24,20 +22,25 @@ def get_tool_discriminator(v) -> str:
 class ModelToolEventContainer(BaseModel):
     """Container for different tool event types with proper discrimination."""
 
-    read_event: Optional[ModelReadToolEvent] = Field(
-        None, description="Read tool event"
+    read_event: ModelReadToolEvent | None = Field(
+        None,
+        description="Read tool event",
     )
-    write_event: Optional[ModelWriteToolEvent] = Field(
-        None, description="Write tool event"
+    write_event: ModelWriteToolEvent | None = Field(
+        None,
+        description="Write tool event",
     )
-    edit_event: Optional[ModelEditToolEvent] = Field(
-        None, description="Edit tool event"
+    edit_event: ModelEditToolEvent | None = Field(
+        None,
+        description="Edit tool event",
     )
-    bash_event: Optional[ModelBashToolEvent] = Field(
-        None, description="Bash tool event"
+    bash_event: ModelBashToolEvent | None = Field(
+        None,
+        description="Bash tool event",
     )
-    grep_event: Optional[ModelGrepToolEvent] = Field(
-        None, description="Grep tool event"
+    grep_event: ModelGrepToolEvent | None = Field(
+        None,
+        description="Grep tool event",
     )
 
     @model_validator(mode="after")
@@ -56,23 +59,23 @@ class ModelToolEventContainer(BaseModel):
 
         return self
 
-    def get_read_event(self) -> Optional[ModelReadToolEvent]:
+    def get_read_event(self) -> ModelReadToolEvent | None:
         """Get read tool event if set."""
         return self.read_event
 
-    def get_write_event(self) -> Optional[ModelWriteToolEvent]:
+    def get_write_event(self) -> ModelWriteToolEvent | None:
         """Get write tool event if set."""
         return self.write_event
 
-    def get_edit_event(self) -> Optional[ModelEditToolEvent]:
+    def get_edit_event(self) -> ModelEditToolEvent | None:
         """Get edit tool event if set."""
         return self.edit_event
 
-    def get_bash_event(self) -> Optional[ModelBashToolEvent]:
+    def get_bash_event(self) -> ModelBashToolEvent | None:
         """Get bash tool event if set."""
         return self.bash_event
 
-    def get_grep_event(self) -> Optional[ModelGrepToolEvent]:
+    def get_grep_event(self) -> ModelGrepToolEvent | None:
         """Get grep tool event if set."""
         return self.grep_event
 
@@ -86,7 +89,8 @@ class ModelToolPreExecutionEvent(BaseModel):
 
     event_type: str = Field("pre-execution", description="Event type")
     tool_event: ModelToolEventContainer = Field(
-        ..., description="Tool-specific event data"
+        ...,
+        description="Tool-specific event data",
     )
 
 
@@ -98,10 +102,11 @@ class ModelToolPostExecutionEvent(BaseModel):
     result: str = Field(..., description="Tool execution result")
     success: bool = Field(..., description="Whether execution succeeded")
     duration_ms: int = Field(..., description="Execution duration in milliseconds")
-    error_message: Optional[str] = Field(None, description="Error message if failed")
+    error_message: str | None = Field(None, description="Error message if failed")
     session_id: str = Field(..., description="Claude session identifier")
-    conversation_id: Optional[str] = Field(
-        None, description="Correlated conversation ID"
+    conversation_id: str | None = Field(
+        None,
+        description="Correlated conversation ID",
     )
     timestamp: str = Field(..., description="Execution completion timestamp")
     hook_version: str = Field("1.0.0", description="Hook system version")

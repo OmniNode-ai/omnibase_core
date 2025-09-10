@@ -11,7 +11,7 @@ The ONEX model system is organized into **10 functional domains** with strict im
 ### Domain Structure
 
 ```
-src/omnibase/model/
+src/omnibase_spi/model/
 ├── __init__.py              # Main package exports (backward compatibility)
 ├── __exposed__.py           # Cross-domain interface definitions
 ├── DOMAIN_DEPENDENCIES.md  # Import boundary rules (📖 READ THIS)
@@ -63,20 +63,20 @@ src/omnibase/model/
 ### Enforcement
 ```bash
 # Check import boundaries before committing
-python scripts/import_boundary_linter.py src/omnibase/model/
+python scripts/import_boundary_linter.py src/omnibase_spi/model/
 
 # Dry run (show violations without failing)  
-python scripts/import_boundary_linter.py src/omnibase/model/ --dry-run
+python scripts/import_boundary_linter.py src/omnibase_spi/model/ --dry-run
 ```
 
 ### Cross-Domain Access
 Use the `__exposed__.py` interface for approved cross-domain imports:
 ```python
 # ✅ GOOD: Use cross-domain interface
-from omnibase.model.__exposed__ import BaseError, HealthCheck
+from omnibase_spi.model.__exposed__ import BaseError, HealthCheck
 
 # ❌ BAD: Direct cross-domain import  
-from omnibase.model.health.model_health_check import HealthCheck
+from omnibase_spi.model.health.model_health_check import HealthCheck
 ```
 
 ## 📦 Usage Patterns
@@ -84,24 +84,24 @@ from omnibase.model.health.model_health_check import HealthCheck
 ### Import All Models (Backward Compatibility)
 ```python
 # Import everything (maintains backward compatibility)
-from omnibase.model import *
+from omnibase_spi.model import *
 
 # Specific model classes
-from omnibase.model import ModelServiceConfiguration, BaseError
+from omnibase_spi.model import ModelServiceConfiguration, BaseError
 ```
 
 ### Domain-Specific Imports
 ```python
 # Import from specific domains
-from omnibase.model.core import *
-from omnibase.model.service import ModelServiceConfiguration
-from omnibase.model.registry import ModelRegistryConfig
+from omnibase_spi.model.core import *
+from omnibase_spi.model.service import ModelServiceConfiguration
+from omnibase_spi.model.registry import ModelRegistryConfig
 ```
 
 ### Cross-Domain Safe Imports  
 ```python
 # Use exposed interface for cross-domain access
-from omnibase.model.__exposed__ import (
+from omnibase_spi.model.__exposed__ import (
     BaseError,      # From core
     HealthCheck,    # From health
     HandlerConfig   # From configuration
@@ -113,19 +113,19 @@ from omnibase.model.__exposed__ import (
 ### Find Models by Domain
 ```python
 # Core foundational models
-from omnibase.model.core import (
+from omnibase_spi.model.core import (
     BaseError, BaseResult, Context, SharedTypes,
     OnexEvent, OnexMessage, StateContract
 )
 
 # Service configuration models
-from omnibase.model.service import (
+from omnibase_spi.model.service import (
     ModelServiceConfiguration, ModelEventBusConfig,
     ModelKafkaBroker, ModelOrchestrator
 )
 
 # Registry operation models  
-from omnibase.model.registry import (
+from omnibase_spi.model.registry import (
     ModelRegistryConfig, ModelRegistryHealth,
     ModelRegistryResolution, ModelRegistryValidation
 )
@@ -134,7 +134,7 @@ from omnibase.model.registry import (
 ### Enhanced Tool Models (nm_arch_009)
 ```python
 # Enterprise tool collection models
-from omnibase.model.core import (
+from omnibase_spi.model.core import (
     ModelToolCollection,           # 18x enhanced enterprise tool management
     ModelMetadataToolCollection,   # Enhanced metadata tool analytics
     ToolRegistrationStatus,        # Tool lifecycle management
@@ -149,8 +149,8 @@ The domain structure integrates with ONEX testing standards:
 
 ```python
 # Test with domain-specific models
-from omnibase.model.validation import ModelFixtureData
-from omnibase.model.scenario import ModelScenario, ModelTemplateVariables
+from omnibase_spi.model.validation import ModelFixtureData
+from omnibase_spi.model.scenario import ModelScenario, ModelTemplateVariables
 
 def test_with_domain_models(fixture_registry):
     fixture = ModelFixtureData(...)
@@ -186,21 +186,21 @@ def test_with_domain_models(fixture_registry):
 ### Import Errors
 ```bash
 # Check for import boundary violations
-python scripts/import_boundary_linter.py src/omnibase/model/
+python scripts/import_boundary_linter.py src/omnibase_spi/model/
 
 # Check specific file
-python scripts/import_boundary_linter.py src/omnibase/model/service/model_service_config.py
+python scripts/import_boundary_linter.py src/omnibase_spi/model/service/model_service_config.py
 ```
 
 ### Missing Models
 ```python
 # Check if model is in the right domain
-from omnibase.model.core import ModelName        # Try core first
-from omnibase.model.service import ModelName     # Then service
+from omnibase_spi.model.core import ModelName        # Try core first
+from omnibase_spi.model.service import ModelName     # Then service
 # etc.
 
 # Use main package import as fallback
-from omnibase.model import ModelName             # Backward compatibility
+from omnibase_spi.model import ModelName             # Backward compatibility
 ```
 
 ### Circular Dependency Errors

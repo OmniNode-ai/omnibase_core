@@ -8,8 +8,9 @@ with configurable thresholds and recovery mechanisms.
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -30,13 +31,16 @@ class ModelCircuitBreakerConfig(BaseModel):
     """Configuration for circuit breaker behavior."""
 
     failure_threshold: int = Field(
-        default=5, description="Number of failures before opening"
+        default=5,
+        description="Number of failures before opening",
     )
     recovery_timeout_seconds: int = Field(
-        default=60, description="Time before trying recovery"
+        default=60,
+        description="Time before trying recovery",
     )
     success_threshold: int = Field(
-        default=3, description="Successes needed to close from half-open"
+        default=3,
+        description="Successes needed to close from half-open",
     )
     timeout_seconds: float = Field(default=10.0, description="Request timeout")
 
@@ -48,8 +52,8 @@ class ModelCircuitBreakerStats(BaseModel):
     failure_count: int = 0
     success_count: int = 0
     total_requests: int = 0
-    last_failure_time: Optional[float] = None
-    last_success_time: Optional[float] = None
+    last_failure_time: float | None = None
+    last_success_time: float | None = None
 
 
 class CircuitBreakerException(Exception):
@@ -59,7 +63,7 @@ class CircuitBreakerException(Exception):
         self.service_name = service_name
         self.state = state
         super().__init__(
-            f"Circuit breaker is {state.value} for service: {service_name}"
+            f"Circuit breaker is {state.value} for service: {service_name}",
         )
 
 
@@ -72,7 +76,9 @@ class CircuitBreaker:
     """
 
     def __init__(
-        self, service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
+        self,
+        service_name: str,
+        config: ModelCircuitBreakerConfig | None = None,
     ):
         self.service_name = service_name
         self.config = config or ModelCircuitBreakerConfig()
@@ -82,7 +88,7 @@ class CircuitBreaker:
     async def call(
         self,
         func: Callable[[], Awaitable[T]],
-        fallback: Optional[Callable[[], Awaitable[T]]] = None,
+        fallback: Callable[[], Awaitable[T]] | None = None,
     ) -> T:
         """
         Execute a function through the circuit breaker.
@@ -113,13 +119,14 @@ class CircuitBreaker:
             try:
                 # Apply timeout to the function call
                 result = await asyncio.wait_for(
-                    func(), timeout=self.config.timeout_seconds
+                    func(),
+                    timeout=self.config.timeout_seconds,
                 )
 
                 await self._on_success()
                 return result
 
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 await self._on_failure()
                 # For timeouts, try fallback if available
                 if fallback:
@@ -177,7 +184,7 @@ class CircuitBreaker:
         if self.stats.state == CircuitBreakerState.HALF_OPEN:
             self.stats.state = CircuitBreakerState.OPEN
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get current circuit breaker statistics."""
         return {
             "service_name": self.service_name,
@@ -202,20 +209,23 @@ class CircuitBreakerManager:
     """Manages multiple circuit breakers for different services."""
 
     def __init__(self):
-        self._breakers: Dict[str, CircuitBreaker] = {}
+        self._breakers: dict[str, CircuitBreaker] = {}
         self._default_config = ModelCircuitBreakerConfig()
 
     def get_breaker(
-        self, service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
+        self,
+        service_name: str,
+        config: ModelCircuitBreakerConfig | None = None,
     ) -> CircuitBreaker:
         """Get or create a circuit breaker for a service."""
         if service_name not in self._breakers:
             self._breakers[service_name] = CircuitBreaker(
-                service_name=service_name, config=config or self._default_config
+                service_name=service_name,
+                config=config or self._default_config,
             )
         return self._breakers[service_name]
 
-    def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_stats(self) -> dict[str, dict[str, Any]]:
         """Get statistics for all circuit breakers."""
         return {name: breaker.get_stats() for name, breaker in self._breakers.items()}
 
@@ -245,7 +255,8 @@ def get_circuit_breaker_manager() -> CircuitBreakerManager:
 
 
 def get_circuit_breaker(
-    service_name: str, config: Optional[ModelCircuitBreakerConfig] = None
+    service_name: str,
+    config: ModelCircuitBreakerConfig | None = None,
 ) -> CircuitBreaker:
     """Get a circuit breaker for a specific service."""
     return get_circuit_breaker_manager().get_breaker(service_name, config)

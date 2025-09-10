@@ -8,7 +8,7 @@ using in-memory storage when external databases are unavailable.
 
 import asyncio
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 from omnibase_core.model.service.model_service_health import ModelServiceHealth
@@ -27,8 +27,8 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
     """
 
     def __init__(self):
-        self._tables: Dict[str, List[Dict[str, Any]]] = {}
-        self._locks: Dict[str, Dict[str, Any]] = {}  # lock_token -> lock_info
+        self._tables: dict[str, list[dict[str, Any]]] = {}
+        self._locks: dict[str, dict[str, Any]] = {}  # lock_token -> lock_info
         self._lock = asyncio.Lock()
         self._connected = False
 
@@ -46,8 +46,10 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
             self._connected = False
 
     async def execute_query(
-        self, query: str, parameters: Optional[tuple] = None
-    ) -> List[Dict[str, Any]]:
+        self,
+        query: str,
+        parameters: tuple | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Execute SELECT query in memory.
 
@@ -80,7 +82,9 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
             return []
 
     async def execute_command(
-        self, command: str, parameters: Optional[tuple] = None
+        self,
+        command: str,
+        parameters: tuple | None = None,
     ) -> int:
         """
         Execute INSERT/UPDATE/DELETE command in memory.
@@ -101,7 +105,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
                 return 1
 
             # Handle INSERT
-            elif command_lower.startswith("insert into"):
+            if command_lower.startswith("insert into"):
                 table_name = self._extract_table_name(command_lower, "insert into")
                 if table_name:
                     # Simplified insert - create a dummy record
@@ -137,7 +141,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
 
             return 0
 
-    def _extract_table_name(self, command: str, prefix: str) -> Optional[str]:
+    def _extract_table_name(self, command: str, prefix: str) -> str | None:
         """Extract table name from SQL command (simplified)."""
         try:
             # Remove prefix and get table name
@@ -150,7 +154,8 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
             return None
 
     async def execute_transaction(
-        self, commands: List[tuple[str, Optional[tuple]]]
+        self,
+        commands: list[tuple[str, tuple | None]],
     ) -> bool:
         """Execute commands in transaction (atomic operation)."""
         if not self._connected:
@@ -174,8 +179,10 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
                 return False
 
     async def acquire_lock(
-        self, lock_name: str, timeout_seconds: int = 30
-    ) -> Optional[str]:
+        self,
+        lock_name: str,
+        timeout_seconds: int = 30,
+    ) -> str | None:
         """Acquire a named advisory lock."""
         if not self._connected:
             return None
@@ -235,7 +242,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
             error_message=None,
         )
 
-    async def get_connection_info(self) -> Dict[str, Any]:
+    async def get_connection_info(self) -> dict[str, Any]:
         """Get in-memory database connection information."""
         async with self._lock:
             return {
@@ -248,7 +255,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
                         lock
                         for lock in self._locks.values()
                         if lock["expires_at"] > time.time()
-                    ]
+                    ],
                 ),
                 "memory_usage": "not_tracked",
             }
@@ -261,12 +268,12 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
             self._tables.clear()
             self._locks.clear()
 
-    async def get_table_data(self, table_name: str) -> List[Dict[str, Any]]:
+    async def get_table_data(self, table_name: str) -> list[dict[str, Any]]:
         """Get all data from a specific table (for debugging)."""
         async with self._lock:
             return self._tables.get(table_name, []).copy()
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Get database statistics."""
         async with self._lock:
             total_records = sum(len(records) for records in self._tables.values())
@@ -275,7 +282,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
                     lock
                     for lock in self._locks.values()
                     if lock["expires_at"] > time.time()
-                ]
+                ],
             )
 
             return {
@@ -284,6 +291,7 @@ class InMemoryDatabase(ProtocolDatabaseConnection):
                 "active_locks": active_locks,
                 "expired_locks": len(self._locks) - active_locks,
                 "largest_table": max(
-                    (len(records) for records in self._tables.values()), default=0
+                    (len(records) for records in self._tables.values()),
+                    default=0,
                 ),
             }

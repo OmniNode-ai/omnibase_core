@@ -6,14 +6,10 @@ Tests strong typing, ModelScalarValue conversion, and all service discovery func
 """
 
 import asyncio
-import time
-from typing import Any, Dict, List
-from unittest.mock import Mock, patch
 
 import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
 from omnibase_core.services.memory_service_discovery import InMemoryServiceDiscovery
 
 
@@ -26,7 +22,7 @@ class TestInMemoryServiceDiscovery:
         return InMemoryServiceDiscovery()
 
     @pytest.fixture
-    def sample_metadata(self) -> Dict[str, ModelScalarValue]:
+    def sample_metadata(self) -> dict[str, ModelScalarValue]:
         """Sample metadata using ModelScalarValue objects."""
         return {
             "environment": ModelScalarValue.create_string("production"),
@@ -41,7 +37,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_register_service_basic(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test basic service registration functionality."""
         result = await service_discovery.register_service(
@@ -67,7 +64,7 @@ class TestInMemoryServiceDiscovery:
     async def test_register_service_with_metadata(
         self,
         service_discovery: InMemoryServiceDiscovery,
-        sample_metadata: Dict[str, ModelScalarValue],
+        sample_metadata: dict[str, ModelScalarValue],
     ):
         """Test service registration with strongly typed metadata."""
         result = await service_discovery.register_service(
@@ -93,7 +90,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_register_service_initializes_health(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test that service registration initializes health status."""
         await service_discovery.register_service(
@@ -115,7 +113,7 @@ class TestInMemoryServiceDiscovery:
     async def test_discover_services_returns_model_scalar_values(
         self,
         service_discovery: InMemoryServiceDiscovery,
-        sample_metadata: Dict[str, ModelScalarValue],
+        sample_metadata: dict[str, ModelScalarValue],
     ):
         """Test that discover_services returns properly typed ModelScalarValue objects."""
         # Register multiple services
@@ -162,7 +160,7 @@ class TestInMemoryServiceDiscovery:
     async def test_discover_services_includes_metadata(
         self,
         service_discovery: InMemoryServiceDiscovery,
-        sample_metadata: Dict[str, ModelScalarValue],
+        sample_metadata: dict[str, ModelScalarValue],
     ):
         """Test that discover_services includes metadata in ModelScalarValue format."""
         await service_discovery.register_service(
@@ -197,7 +195,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_discover_services_healthy_only_filter(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test that healthy_only parameter filters unhealthy services."""
         # Register services
@@ -219,25 +218,30 @@ class TestInMemoryServiceDiscovery:
 
         # Mark one service as unhealthy
         await service_discovery.update_service_health(
-            "unhealthy-001", "critical", "Service down"
+            "unhealthy-001",
+            "critical",
+            "Service down",
         )
 
         # Test healthy_only=True (default)
         healthy_services = await service_discovery.discover_services(
-            "filter-test", healthy_only=True
+            "filter-test",
+            healthy_only=True,
         )
         assert len(healthy_services) == 1
         assert healthy_services[0]["service_id"].string_value == "healthy-001"
 
         # Test healthy_only=False
         all_services = await service_discovery.discover_services(
-            "filter-test", healthy_only=False
+            "filter-test",
+            healthy_only=False,
         )
         assert len(all_services) == 2
 
     @pytest.mark.asyncio
     async def test_discover_services_empty_result(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test discover_services with non-existent service name."""
         services = await service_discovery.discover_services("non-existent-service")
@@ -249,7 +253,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_registered(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test get_service_health for registered service."""
         await service_discovery.register_service(
@@ -273,7 +278,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_get_service_health_unregistered(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test get_service_health for unregistered service."""
         health = await service_discovery.get_service_health("non-existent-001")
@@ -288,7 +294,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_update_service_health(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test updating service health status."""
         await service_discovery.register_service(
@@ -301,7 +308,9 @@ class TestInMemoryServiceDiscovery:
 
         # Update to warning status
         await service_discovery.update_service_health(
-            "update-001", "warning", "High latency detected"
+            "update-001",
+            "warning",
+            "High latency detected",
         )
 
         health = await service_discovery.get_service_health("update-001")
@@ -312,7 +321,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_deregister_service(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test service deregistration."""
         # Register service
@@ -343,7 +353,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_deregister_nonexistent_service(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test deregistering a non-existent service."""
         result = await service_discovery.deregister_service("non-existent-001")
@@ -353,12 +364,14 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_key_value_operations(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test key-value store functionality."""
         # Set key-value
         result = await service_discovery.set_key_value(
-            "config/database_url", "postgresql://localhost:5432/mydb"
+            "config/database_url",
+            "postgresql://localhost:5432/mydb",
         )
         assert result is True
 
@@ -441,7 +454,9 @@ class TestInMemoryServiceDiscovery:
 
         # Mark one service as unhealthy
         await service_discovery.update_service_health(
-            "stats-002", "critical", "Test error"
+            "stats-002",
+            "critical",
+            "Test error",
         )
 
         stats = await service_discovery.get_stats()
@@ -488,7 +503,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_concurrent_operations(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test concurrent service operations."""
 
@@ -520,7 +536,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_invalid_metadata_types(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test handling of invalid metadata types."""
         # This test ensures metadata must be ModelScalarValue objects
@@ -547,7 +564,8 @@ class TestInMemoryServiceDiscovery:
 
     @pytest.mark.asyncio
     async def test_service_id_uniqueness(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test that service IDs must be unique."""
         # Register first service
@@ -593,7 +611,8 @@ class TestModelScalarValueIntegration:
 
     @pytest.mark.asyncio
     async def test_scalar_value_type_preservation(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test that ModelScalarValue types are preserved through the discovery process."""
         metadata = {
@@ -628,7 +647,8 @@ class TestModelScalarValueIntegration:
 
     @pytest.mark.asyncio
     async def test_scalar_value_validation(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test ModelScalarValue validation in service discovery context."""
         # Test that only one value type can be set
@@ -650,7 +670,8 @@ class TestModelScalarValueIntegration:
 
     @pytest.mark.asyncio
     async def test_primitive_conversion_edge_cases(
-        self, service_discovery: InMemoryServiceDiscovery
+        self,
+        service_discovery: InMemoryServiceDiscovery,
     ):
         """Test edge cases in primitive value conversion."""
         # Test conversion errors

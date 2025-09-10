@@ -8,8 +8,7 @@ and failure scenarios to ensure robust fault tolerance in production.
 
 import asyncio
 import time
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -135,7 +134,8 @@ class TestRetryStrategies:
         # Should not retry these
         assert not strategy.should_retry(ValueError("test"), 1)
         assert not strategy.should_retry(
-            ConnectionError("test"), 5
+            ConnectionError("test"),
+            5,
         )  # Max attempts exceeded
 
 
@@ -193,7 +193,9 @@ class TestRetryExecutor:
     async def test_max_attempts_reached_failure(self):
         """Test failure when max attempts are reached."""
         config = ModelRetryConfig(
-            max_attempts=2, base_delay_ms=10, jitter_enabled=False
+            max_attempts=2,
+            base_delay_ms=10,
+            jitter_enabled=False,
         )
         executor = RetryExecutor(config)
 
@@ -250,10 +252,9 @@ class TestRetryExecutor:
                 # First attempt should succeed to ensure we get to retry logic
                 await asyncio.sleep(0.01)  # 10ms
                 raise ConnectionError("Fail first attempt")
-            else:
-                # Subsequent attempts will hit timeout during delay
-                await asyncio.sleep(0.1)  # 100ms - longer than remaining timeout
-                return "should_not_reach"
+            # Subsequent attempts will hit timeout during delay
+            await asyncio.sleep(0.1)  # 100ms - longer than remaining timeout
+            return "should_not_reach"
 
         start_time = time.time()
         result = await executor.execute_with_retry(operation_that_times_out, "test_op")
@@ -401,7 +402,7 @@ class TestRetryStrategyMetrics:
         config = ModelRetryConfig(max_attempts=2, base_delay_ms=10)
 
         with patch(
-            "omnibase_core.nodes.canary.utils.retry_strategy.get_metrics_collector"
+            "omnibase_core.nodes.canary.utils.retry_strategy.get_metrics_collector",
         ) as mock_metrics:
             mock_collector = MagicMock()
             mock_metrics.return_value = mock_collector
@@ -439,7 +440,7 @@ class TestRetryStrategyMetrics:
         )
 
         with patch(
-            "omnibase_core.nodes.canary.utils.retry_strategy.get_metrics_collector"
+            "omnibase_core.nodes.canary.utils.retry_strategy.get_metrics_collector",
         ) as mock_metrics:
             mock_collector = MagicMock()
             mock_metrics.return_value = mock_collector
@@ -532,13 +533,13 @@ class TestRetryStrategyEdgeCases:
                 # First attempt fails quickly
                 await asyncio.sleep(0.005)  # 5ms
                 raise ConnectionError("First attempt fails")
-            else:
-                # This should not execute due to timeout during delay
-                await asyncio.sleep(0.01)  # 10ms
-                return "result"
+            # This should not execute due to timeout during delay
+            await asyncio.sleep(0.01)  # 10ms
+            return "result"
 
         result = await executor.execute_with_retry(
-            operation_with_retry_needed, "test_op"
+            operation_with_retry_needed,
+            "test_op",
         )
 
         # Should fail due to timeout before reaching max attempts

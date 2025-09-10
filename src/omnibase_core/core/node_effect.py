@@ -24,7 +24,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -40,14 +40,14 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.node_core_base import NodeCoreBase
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.yaml_extractor import load_and_validate_yaml_model
+from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 # Import utilities for contract loading
 
 T = TypeVar("T")
 
 
-def _convert_to_scalar_dict(data: Dict[str, Any]) -> Dict[str, ModelScalarValue]:
+def _convert_to_scalar_dict(data: dict[str, Any]) -> dict[str, ModelScalarValue]:
     """
     Convert a dictionary of primitive values to ModelScalarValue objects.
 
@@ -121,15 +121,15 @@ class ModelEffectInput(BaseModel):
     """
 
     effect_type: EffectType
-    operation_data: Dict[str, ModelScalarValue]
-    operation_id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
+    operation_data: dict[str, ModelScalarValue]
+    operation_id: str | None = Field(default_factory=lambda: str(uuid4()))
     transaction_enabled: bool = True
     retry_enabled: bool = True
     max_retries: int = 3
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -146,15 +146,15 @@ class ModelEffectOutput(BaseModel):
     and side effect execution metadata.
     """
 
-    result: Union[str, int, float, bool, Dict, list]
+    result: str | int | float | bool | dict | list
     operation_id: str
     effect_type: EffectType
     transaction_state: TransactionState
     processing_time_ms: float
     retry_count: int = 0
-    side_effects_applied: Optional[list[str]] = Field(default_factory=list)
-    rollback_operations: Optional[list[str]] = Field(default_factory=list)
-    metadata: Optional[Dict[str, ModelScalarValue]] = Field(default_factory=dict)
+    side_effects_applied: list[str] | None = Field(default_factory=list)
+    rollback_operations: list[str] | None = Field(default_factory=list)
+    metadata: dict[str, ModelScalarValue] | None = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     class Config:
@@ -362,8 +362,6 @@ class NodeEffect(NodeCoreBase):
         try:
             # Load actual contract from file with subcontract resolution
 
-            import yaml
-
             from omnibase_core.utils.generation.utility_reference_resolver import (
                 UtilityReferenceResolver,
             )
@@ -380,7 +378,8 @@ class NodeEffect(NodeCoreBase):
 
             # Load and validate contract using utility function
             validated_contract = load_and_validate_yaml_model(
-                contract_path, ModelContractEffect
+                contract_path,
+                ModelContractEffect,
             )
             contract_data = validated_contract.model_dump()
 
@@ -756,7 +755,7 @@ class NodeEffect(NodeCoreBase):
                     "file_path": str(file_path),
                     "data": data,
                     "atomic": atomic,
-                }
+                },
             ),
             transaction_enabled=atomic,
             retry_enabled=True,
@@ -793,7 +792,7 @@ class NodeEffect(NodeCoreBase):
                     "event_type": event_type,
                     "payload": payload,
                     "correlation_id": str(correlation_id) if correlation_id else None,
-                }
+                },
             ),
             transaction_enabled=False,  # Events don't need transactions
             retry_enabled=True,

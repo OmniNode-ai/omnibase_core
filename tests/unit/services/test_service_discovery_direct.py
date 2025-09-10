@@ -9,8 +9,7 @@ import asyncio
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import Mock, patch
+from typing import Any
 
 import pytest
 
@@ -24,16 +23,24 @@ from pydantic import BaseModel, Field, model_validator
 class ModelScalarValue(BaseModel):
     """Strongly typed scalar value container using discriminated approach."""
 
-    string_value: Optional[str] = Field(
-        None, description="String scalar value", max_length=65536
+    string_value: str | None = Field(
+        None,
+        description="String scalar value",
+        max_length=65536,
     )
-    int_value: Optional[int] = Field(
-        None, description="Integer scalar value", ge=-(2**63), le=2**63 - 1
+    int_value: int | None = Field(
+        None,
+        description="Integer scalar value",
+        ge=-(2**63),
+        le=2**63 - 1,
     )
-    float_value: Optional[float] = Field(
-        None, description="Float scalar value", ge=-1e308, le=1e308
+    float_value: float | None = Field(
+        None,
+        description="Float scalar value",
+        ge=-1e308,
+        le=1e308,
     )
-    bool_value: Optional[bool] = Field(None, description="Boolean scalar value")
+    bool_value: bool | None = Field(None, description="Boolean scalar value")
 
     @model_validator(mode="after")
     def validate_exactly_one_value(self) -> "ModelScalarValue":
@@ -113,17 +120,17 @@ class ModelServiceHealth(BaseModel):
 
     service_id: str = Field(..., description="Service identifier")
     status: str = Field(..., description="Health status")
-    last_check: Optional[float] = Field(None, description="Last check timestamp")
-    error_message: Optional[str] = Field(None, description="Error message if unhealthy")
+    last_check: float | None = Field(None, description="Last check timestamp")
+    error_message: str | None = Field(None, description="Error message if unhealthy")
 
 
 class SimpleInMemoryServiceDiscovery:
     """Simplified in-memory service discovery for direct testing."""
 
     def __init__(self):
-        self._services: Dict[str, Dict[str, Any]] = {}
-        self._kv_store: Dict[str, str] = {}
-        self._service_health: Dict[str, ModelServiceHealth] = {}
+        self._services: dict[str, dict[str, Any]] = {}
+        self._kv_store: dict[str, str] = {}
+        self._service_health: dict[str, ModelServiceHealth] = {}
         self._lock = asyncio.Lock()
 
     async def register_service(
@@ -132,9 +139,9 @@ class SimpleInMemoryServiceDiscovery:
         service_id: str,
         host: str,
         port: int,
-        metadata: Dict[str, ModelScalarValue],
-        health_check_url: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        metadata: dict[str, ModelScalarValue],
+        health_check_url: str | None = None,
+        tags: list[str] | None = None,
     ) -> bool:
         """Register a service in memory."""
         async with self._lock:
@@ -160,8 +167,10 @@ class SimpleInMemoryServiceDiscovery:
         return True
 
     async def discover_services(
-        self, service_name: str, healthy_only: bool = True
-    ) -> List[Dict[str, ModelScalarValue]]:
+        self,
+        service_name: str,
+        healthy_only: bool = True,
+    ) -> list[dict[str, ModelScalarValue]]:
         """Discover services from memory."""
         async with self._lock:
             matching_services = []
@@ -175,38 +184,38 @@ class SimpleInMemoryServiceDiscovery:
                             continue
 
                     # Convert primitive service data to ModelScalarValue format
-                    service_data: Dict[str, ModelScalarValue] = {}
+                    service_data: dict[str, ModelScalarValue] = {}
 
                     # Convert primitive values to ModelScalarValue
                     service_data["service_name"] = ModelScalarValue.create_string(
-                        service_info["service_name"]
+                        service_info["service_name"],
                     )
                     service_data["service_id"] = ModelScalarValue.create_string(
-                        service_info["service_id"]
+                        service_info["service_id"],
                     )
                     service_data["host"] = ModelScalarValue.create_string(
-                        service_info["host"]
+                        service_info["host"],
                     )
                     service_data["port"] = ModelScalarValue.create_int(
-                        service_info["port"]
+                        service_info["port"],
                     )
 
                     if service_info["health_check_url"]:
                         service_data["health_check_url"] = (
                             ModelScalarValue.create_string(
-                                service_info["health_check_url"]
+                                service_info["health_check_url"],
                             )
                         )
 
                     service_data["registered_at"] = ModelScalarValue.create_float(
-                        service_info["registered_at"]
+                        service_info["registered_at"],
                     )
 
                     # Add health status
                     health_obj = self._service_health.get(service_id)
                     health_status = health_obj.status if health_obj else "unknown"
                     service_data["health_status"] = ModelScalarValue.create_string(
-                        health_status
+                        health_status,
                     )
 
                     # Add existing metadata (already ModelScalarValue format)
@@ -248,7 +257,10 @@ class SimpleInMemoryServiceDiscovery:
         return True
 
     async def update_service_health(
-        self, service_id: str, status: str, error_message: Optional[str] = None
+        self,
+        service_id: str,
+        status: str,
+        error_message: str | None = None,
     ) -> None:
         """Update service health status (for testing/simulation)."""
         async with self._lock:
@@ -362,7 +374,7 @@ class TestSimpleServiceDiscoveryTyping:
         return SimpleInMemoryServiceDiscovery()
 
     @pytest.fixture
-    def sample_metadata(self) -> Dict[str, ModelScalarValue]:
+    def sample_metadata(self) -> dict[str, ModelScalarValue]:
         """Sample metadata using ModelScalarValue objects."""
         return {
             "environment": ModelScalarValue.create_string("production"),
@@ -376,7 +388,7 @@ class TestSimpleServiceDiscoveryTyping:
     async def test_service_registration_and_discovery_types(
         self,
         service_discovery: SimpleInMemoryServiceDiscovery,
-        sample_metadata: Dict[str, ModelScalarValue],
+        sample_metadata: dict[str, ModelScalarValue],
     ):
         """Test that service discovery returns proper ModelScalarValue types."""
         # Register service with metadata
@@ -407,7 +419,8 @@ class TestSimpleServiceDiscoveryTyping:
         for field in required_fields:
             assert field in service
             assert isinstance(
-                service[field], ModelScalarValue
+                service[field],
+                ModelScalarValue,
             ), f"Field '{field}' is not ModelScalarValue"
 
         # Verify field values and types
@@ -433,7 +446,7 @@ class TestSimpleServiceDiscoveryTyping:
     async def test_metadata_type_preservation(
         self,
         service_discovery: SimpleInMemoryServiceDiscovery,
-        sample_metadata: Dict[str, ModelScalarValue],
+        sample_metadata: dict[str, ModelScalarValue],
     ):
         """Test that metadata types are preserved through discovery."""
         await service_discovery.register_service(
@@ -459,7 +472,8 @@ class TestSimpleServiceDiscoveryTyping:
         for field in metadata_fields:
             assert field in service, f"Metadata field '{field}' missing"
             assert isinstance(
-                service[field], ModelScalarValue
+                service[field],
+                ModelScalarValue,
             ), f"Metadata field '{field}' is not ModelScalarValue"
 
         # Verify specific metadata values and types
@@ -480,7 +494,8 @@ class TestSimpleServiceDiscoveryTyping:
 
     @pytest.mark.asyncio
     async def test_health_status_integration(
-        self, service_discovery: SimpleInMemoryServiceDiscovery
+        self,
+        service_discovery: SimpleInMemoryServiceDiscovery,
     ):
         """Test health status integration with typed discovery."""
         # Register service
@@ -494,25 +509,30 @@ class TestSimpleServiceDiscoveryTyping:
 
         # Service should be healthy initially
         services = await service_discovery.discover_services(
-            "health-test", healthy_only=True
+            "health-test",
+            healthy_only=True,
         )
         assert len(services) == 1
         assert services[0]["health_status"].to_string_primitive() == "healthy"
 
         # Update health to critical
         await service_discovery.update_service_health(
-            "health-001", "critical", "Service failed"
+            "health-001",
+            "critical",
+            "Service failed",
         )
 
         # Should not appear in healthy-only discovery
         healthy_services = await service_discovery.discover_services(
-            "health-test", healthy_only=True
+            "health-test",
+            healthy_only=True,
         )
         assert len(healthy_services) == 0
 
         # Should appear in all services discovery
         all_services = await service_discovery.discover_services(
-            "health-test", healthy_only=False
+            "health-test",
+            healthy_only=False,
         )
         assert len(all_services) == 1
         assert all_services[0]["health_status"].to_string_primitive() == "critical"
@@ -525,7 +545,8 @@ class TestSimpleServiceDiscoveryTyping:
 
     @pytest.mark.asyncio
     async def test_type_conversion_edge_cases(
-        self, service_discovery: SimpleInMemoryServiceDiscovery
+        self,
+        service_discovery: SimpleInMemoryServiceDiscovery,
     ):
         """Test type conversion edge cases."""
         edge_case_metadata = {
@@ -540,7 +561,11 @@ class TestSimpleServiceDiscoveryTyping:
         }
 
         await service_discovery.register_service(
-            "edge-case-test", "edge-001", "localhost", 8080, metadata=edge_case_metadata
+            "edge-case-test",
+            "edge-001",
+            "localhost",
+            8080,
+            metadata=edge_case_metadata,
         )
 
         services = await service_discovery.discover_services("edge-case-test")
@@ -558,7 +583,8 @@ class TestSimpleServiceDiscoveryTyping:
 
     @pytest.mark.asyncio
     async def test_concurrent_operations_type_safety(
-        self, service_discovery: SimpleInMemoryServiceDiscovery
+        self,
+        service_discovery: SimpleInMemoryServiceDiscovery,
     ):
         """Test that concurrent operations maintain type safety."""
 

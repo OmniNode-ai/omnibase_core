@@ -46,14 +46,14 @@
   - YAML formatting with yamlfmt
   - File formatting (trailing whitespace, EOF, merge conflicts)
   - Python formatting (Black + isort) with exact same versions/args
-  - Ruff linting for omnibase-core specific needs
+  - Ruff linting for omnibase_core specific needs
   - MyPy type checking focused on core framework files
 - ✅ Ready for development environment setup
 
-## Pending Tasks (Blocked by omnibase-spi)
+## Pending Tasks (Blocked by omnibase_spi)
 
 ### 1. Development Environment Setup
-- ⏳ Install dependencies (requires omnibase-spi to be packaged first)
+- ⏳ Install dependencies (requires omnibase_spi to be packaged first)
 - ⏳ Virtual environment setup with `pip install -e .[dev]`
 
 ### 2. Code Quality Validation
@@ -63,7 +63,7 @@
 - ⏳ Run tests: `make test`
 
 ### 3. Node Service Base Classes
-- ⏳ Complete implementation depends on omnibase-spi protocols
+- ⏳ Complete implementation depends on omnibase_spi protocols
 - ⏳ Current base classes may need updates once SPI contracts are available
 
 ## Current Architecture Benefits
@@ -77,7 +77,7 @@
 
 ## Next Steps
 
-1. **Wait for omnibase-spi packaging** to become available
+1. **Wait for omnibase_spi packaging** to become available
 2. **Install development dependencies**: `make install-dev`
 3. **Run quality checks**: `make quality`
 4. **Validate example implementations** against new architecture
@@ -85,7 +85,7 @@
 
 ## Development Workflow
 
-Once omnibase-spi is available:
+Once omnibase_spi is available:
 
 ```bash
 # Setup development environment

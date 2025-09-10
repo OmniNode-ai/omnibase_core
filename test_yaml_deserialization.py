@@ -9,8 +9,6 @@ Can the YAML contract files actually deserialize to their backing Pydantic model
 import sys
 from pathlib import Path
 
-import yaml
-
 # Add src to Python path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
@@ -64,13 +62,13 @@ def test_canary_contract_deserialization():
             yaml_path = Path(contract["yaml_path"])
             if not yaml_path.exists():
                 print(f"   ❌ YAML file not found: {yaml_path}")
-                results.append((contract["name"], False, f"YAML file not found"))
+                results.append((contract["name"], False, "YAML file not found"))
                 continue
 
-            with open(yaml_path, "r") as f:
+            with open(yaml_path) as f:
                 yaml_content = f.read()
 
-            print(f"   ✅ YAML file read successfully")
+            print("   ✅ YAML file read successfully")
 
             # Import the model class using static imports for security
             try:
@@ -94,19 +92,19 @@ def test_canary_contract_deserialization():
                 # Mapping of module names to actual model classes
                 allowed_models = {
                     "omnibase_core.core.contracts.model_contract_compute": {
-                        "ModelContractCompute": ModelContractCompute
+                        "ModelContractCompute": ModelContractCompute,
                     },
                     "omnibase_core.core.contracts.model_contract_effect": {
-                        "ModelContractEffect": ModelContractEffect
+                        "ModelContractEffect": ModelContractEffect,
                     },
                     "omnibase_core.core.contracts.model_contract_gateway": {
-                        "ModelContractGateway": ModelContractGateway
+                        "ModelContractGateway": ModelContractGateway,
                     },
                     "omnibase_core.core.contracts.model_contract_orchestrator": {
-                        "ModelContractOrchestrator": ModelContractOrchestrator
+                        "ModelContractOrchestrator": ModelContractOrchestrator,
                     },
                     "omnibase_core.core.contracts.model_contract_reducer": {
-                        "ModelContractReducer": ModelContractReducer
+                        "ModelContractReducer": ModelContractReducer,
                     },
                 }
 
@@ -118,7 +116,7 @@ def test_canary_contract_deserialization():
 
                 if model_class_name not in allowed_models[module_name]:
                     raise ValueError(
-                        f"Model class {model_class_name} not found in {module_name}"
+                        f"Model class {model_class_name} not found in {module_name}",
                     )
 
                 model_class = allowed_models[module_name][model_class_name]
@@ -141,11 +139,11 @@ def test_canary_contract_deserialization():
                     generic_model = ModelGenericYaml.from_yaml(yaml_content)
                     yaml_data = generic_model.model_dump()
                     model_instance = model_class.model_validate(yaml_data)
-                print(f"   ✅ YAML → Model deserialization SUCCESS!")
+                print("   ✅ YAML → Model deserialization SUCCESS!")
 
                 # Test serialization back
                 serialized = model_instance.model_dump()
-                print(f"   ✅ Model → dict serialization SUCCESS!")
+                print("   ✅ Model → dict serialization SUCCESS!")
 
                 results.append((contract["name"], True, "Full round-trip successful"))
 
@@ -153,7 +151,7 @@ def test_canary_contract_deserialization():
                 print(f"   ❌ YAML → Model deserialization FAILED: {e}")
                 print(f"      Error type: {type(e).__name__}")
                 results.append(
-                    (contract["name"], False, f"Deserialization failed: {e}")
+                    (contract["name"], False, f"Deserialization failed: {e}"),
                 )
 
         except Exception as e:

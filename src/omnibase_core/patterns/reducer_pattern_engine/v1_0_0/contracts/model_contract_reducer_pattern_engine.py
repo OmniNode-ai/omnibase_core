@@ -121,7 +121,7 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
                     if missing_fields:
                         raise ValueError(
                             f"Dependency {i} missing required fields: {missing_fields}. "
-                            f"Required: {required_fields}"
+                            f"Required: {required_fields}",
                         )
 
                     # Validate dependency type
@@ -130,21 +130,21 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
                     if dep_type not in valid_types:
                         raise ValueError(
                             f"Dependency {i} has invalid type '{dep_type}'. "
-                            f"Valid types: {valid_types}"
+                            f"Valid types: {valid_types}",
                         )
 
                     # Extract class_name with validation
                     class_name = dep.get("class_name")
                     if not class_name or not isinstance(class_name, str):
                         raise ValueError(
-                            f"Dependency {i} has invalid class_name: {class_name}"
+                            f"Dependency {i} has invalid class_name: {class_name}",
                         )
 
                     # Validate protocol dependency naming convention
                     if dep_type == "protocol" and not class_name.startswith("Protocol"):
                         raise ValueError(
                             f"Protocol dependency {i} class_name must start with 'Protocol', "
-                            f"got: {class_name}"
+                            f"got: {class_name}",
                         )
 
                     result.append(class_name)
@@ -159,7 +159,7 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
                     str_dep = str(dep).strip()
                     if not str_dep:
                         raise ValueError(
-                            f"Dependency {i} converts to empty string: {dep}"
+                            f"Dependency {i} converts to empty string: {dep}",
                         )
                     result.append(str_dep)
 
@@ -185,7 +185,9 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
         )
 
         return serialize_pydantic_model_to_yaml(
-            self, default_flow_style=False, sort_keys=False
+            self,
+            default_flow_style=False,
+            sort_keys=False,
         )
 
     @classmethod
@@ -201,7 +203,6 @@ class ModelContractReducerPatternEngine(ModelContractReducer):
         """
         from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
-            load_and_validate_yaml_model,
             load_yaml_content_as_model,
         )
 

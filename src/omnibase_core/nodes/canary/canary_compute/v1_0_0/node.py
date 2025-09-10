@@ -55,7 +55,7 @@ class ModelCanaryComputeInput(BaseModel):
         }
         if v not in allowed_operations:
             raise ValueError(
-                f"Invalid operation_type: {v}. Must be one of {allowed_operations}"
+                f"Invalid operation_type: {v}. Must be one of {allowed_operations}",
             )
         return v
 
@@ -72,11 +72,11 @@ class ModelCanaryComputeInput(BaseModel):
 
             if len(v) < min_len or len(v) > max_len:
                 raise ValueError(
-                    f"correlation_id must be between {min_len} and {max_len} characters"
+                    f"correlation_id must be between {min_len} and {max_len} characters",
                 )
             if not v.replace("-", "").replace("_", "").isalnum():
                 raise ValueError(
-                    "correlation_id must contain only alphanumeric characters, hyphens, and underscores"
+                    "correlation_id must contain only alphanumeric characters, hyphens, and underscores",
                 )
         return v
 
@@ -117,13 +117,15 @@ class NodeCanaryCompute(NodeComputeService):
         cb_config = ModelCircuitBreakerConfig(
             failure_threshold=int(
                 self.config_utils.get_security_config(
-                    "circuit_breaker_failure_threshold", 3
-                )
+                    "circuit_breaker_failure_threshold",
+                    3,
+                ),
             ),
             recovery_timeout_seconds=int(
                 self.config_utils.get_security_config(
-                    "circuit_breaker_recovery_timeout", 30
-                )
+                    "circuit_breaker_recovery_timeout",
+                    30,
+                ),
             ),
             timeout_seconds=api_timeout_ms / 1000,
         )
@@ -323,38 +325,45 @@ class NodeCanaryCompute(NodeComputeService):
             # Get configuration values using config utils
             purchase_threshold = float(
                 self.config_utils.get_business_logic_config(
-                    "customer_purchase_threshold", 1000
-                )
+                    "customer_purchase_threshold",
+                    1000,
+                ),
             )
             purchase_points = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_purchase_score_points", 10
-                )
+                    "customer_purchase_score_points",
+                    10,
+                ),
             )
             loyalty_threshold = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_loyalty_years_threshold", 2
-                )
+                    "customer_loyalty_years_threshold",
+                    2,
+                ),
             )
             loyalty_points = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_loyalty_score_points", 15
-                )
+                    "customer_loyalty_score_points",
+                    15,
+                ),
             )
             support_threshold = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_support_tickets_threshold", 5
-                )
+                    "customer_support_tickets_threshold",
+                    5,
+                ),
             )
             support_points = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_support_score_points", 5
-                )
+                    "customer_support_score_points",
+                    5,
+                ),
             )
             premium_threshold = int(
                 self.config_utils.get_business_logic_config(
-                    "customer_premium_score_threshold", 20
-                )
+                    "customer_premium_score_threshold",
+                    20,
+                ),
             )
 
             if data.get("purchase_history", 0) > purchase_threshold:
@@ -489,10 +498,10 @@ class NodeCanaryCompute(NodeComputeService):
 
         # Mark as degraded if error rate is high (using configurable thresholds)
         min_ops = int(
-            self.config_utils.get_performance_config("min_operations_for_health", 10)
+            self.config_utils.get_performance_config("min_operations_for_health", 10),
         )
         error_threshold = float(
-            self.config_utils.get_performance_config("error_rate_threshold", 0.1)
+            self.config_utils.get_performance_config("error_rate_threshold", 0.1),
         )
 
         if (

@@ -8,7 +8,6 @@ type quality analysis, processing operations, system monitoring, and configurati
 import asyncio
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 import click
 from rich.console import Console
@@ -45,7 +44,7 @@ def async_command(f):
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--debug", is_flag=True, help="Enable debug mode")
 @click.pass_context
-def cli(ctx, config: Optional[Path], verbose: bool, debug: bool):
+def cli(ctx, config: Path | None, verbose: bool, debug: bool):
     """
     ONEX Smart Responder Chain - Production CLI Interface.
 
@@ -100,7 +99,11 @@ def cli(ctx, config: Optional[Path], verbose: bool, debug: bool):
 @click.pass_context
 @async_command
 async def type_quality(
-    ctx, path: Path, output: Optional[Path], include: tuple, exclude: tuple
+    ctx,
+    path: Path,
+    output: Path | None,
+    include: tuple,
+    exclude: tuple,
 ):
     """
     Analyze type quality for Python code.
@@ -133,7 +136,7 @@ async def type_quality(
             "local-huge",
             "cloud-gpt",
             "cloud-claude",
-        ]
+        ],
     ),
     default="local-large",
     help="Maximum processing tier to use",
@@ -146,8 +149,8 @@ async def process(
     ctx,
     request: str,
     max_tier: str,
-    timeout: Optional[int],
-    retry_attempts: Optional[int],
+    timeout: int | None,
+    retry_attempts: int | None,
 ):
     """
     Process a request using Smart Responder Chain.
@@ -194,7 +197,6 @@ async def status(ctx, detailed: bool):
 @cli.group()
 def config():
     """Configuration management commands."""
-    pass
 
 
 @config.command("init")
@@ -224,7 +226,7 @@ def config_init(ctx, force: bool):
     help="Show specific configuration section",
 )
 @click.pass_context
-def config_show(ctx, section: Optional[str]):
+def config_show(ctx, section: str | None):
     """
     Show current configuration.
 
@@ -264,7 +266,11 @@ def config_validate(ctx):
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development")
 @click.pass_context
 def serve(
-    ctx, host: Optional[str], port: Optional[int], workers: Optional[int], reload: bool
+    ctx,
+    host: str | None,
+    port: int | None,
+    workers: int | None,
+    reload: bool,
 ):
     """
     Start the ONEX API server.
@@ -314,7 +320,8 @@ def serve(
 
     except ImportError:
         console.print(
-            "❌ uvicorn not installed. Install with: pip install uvicorn", style="red"
+            "❌ uvicorn not installed. Install with: pip install uvicorn",
+            style="red",
         )
         sys.exit(1)
     except Exception as e:
@@ -362,7 +369,8 @@ def deploy(ctx, environment: str, namespace: str, replicas: int):
             console.print(f"🌐 Service URL: {deployment_result.service_url}")
         else:
             console.print(
-                f"❌ Deployment failed: {deployment_result.error}", style="red"
+                f"❌ Deployment failed: {deployment_result.error}",
+                style="red",
             )
             sys.exit(1)
 

@@ -23,7 +23,6 @@ from omnibase_core.model.policy.model_debug_logging_policy import (
 from omnibase_core.model.policy.model_logging_policy import ModelLoggingPolicyWrapper
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
-    load_yaml_content_as_model,
 )
 
 T = TypeVar("T", bound=BaseModel)

@@ -5,9 +5,7 @@ Provides centralized configuration models with environment variable support,
 validation, and default value management for production CLI operations.
 """
 
-import os
 from pathlib import Path
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,7 +19,8 @@ class ModelTierConfig(BaseModel):
     local_huge: str = Field(default="llama3.2:70b", description="Huge local model")
     cloud_gpt: str = Field(default="gpt-4o", description="Cloud GPT model")
     cloud_claude: str = Field(
-        default="claude-3-5-sonnet-20241022", description="Cloud Claude model"
+        default="claude-3-5-sonnet-20241022",
+        description="Cloud Claude model",
     )
 
     timeout_seconds: int = Field(default=300, description="Processing timeout")
@@ -62,14 +61,16 @@ class ModelAPIConfig(BaseModel):
     reload: bool = Field(default=False, description="Enable auto-reload")
 
     # Security
-    api_key: Optional[str] = Field(
-        default=None, description="API key for authentication"
+    api_key: str | None = Field(
+        default=None,
+        description="API key for authentication",
     )
-    cors_origins: List[str] = Field(default=["*"], description="CORS allowed origins")
+    cors_origins: list[str] = Field(default=["*"], description="CORS allowed origins")
 
     # Performance
     max_concurrent_requests: int = Field(
-        default=100, description="Max concurrent requests"
+        default=100,
+        description="Max concurrent requests",
     )
     request_timeout: int = Field(default=300, description="Request timeout seconds")
 
@@ -87,17 +88,19 @@ class ModelMonitoringConfig(BaseModel):
     """Monitoring and observability configuration."""
 
     prometheus_enabled: bool = Field(
-        default=True, description="Enable Prometheus metrics"
+        default=True,
+        description="Enable Prometheus metrics",
     )
     prometheus_port: int = Field(default=9090, description="Prometheus metrics port")
 
     jaeger_enabled: bool = Field(default=False, description="Enable Jaeger tracing")
-    jaeger_endpoint: Optional[str] = Field(default=None, description="Jaeger endpoint")
+    jaeger_endpoint: str | None = Field(default=None, description="Jaeger endpoint")
 
     sentry_enabled: bool = Field(
-        default=False, description="Enable Sentry error tracking"
+        default=False,
+        description="Enable Sentry error tracking",
     )
-    sentry_dsn: Optional[str] = Field(default=None, description="Sentry DSN")
+    sentry_dsn: str | None = Field(default=None, description="Sentry DSN")
 
 
 class ModelCLIConfig(BaseModel):
@@ -117,13 +120,16 @@ class ModelCLIConfig(BaseModel):
 
     # Global settings
     config_dir: Path = Field(
-        default=Path.home() / ".onex", description="Config directory"
+        default=Path.home() / ".onex",
+        description="Config directory",
     )
     data_dir: Path = Field(
-        default=Path.home() / ".onex" / "data", description="Data directory"
+        default=Path.home() / ".onex" / "data",
+        description="Data directory",
     )
     cache_dir: Path = Field(
-        default=Path.home() / ".onex" / "cache", description="Cache directory"
+        default=Path.home() / ".onex" / "cache",
+        description="Cache directory",
     )
 
     # Environment overrides
@@ -155,7 +161,6 @@ class ModelCLIConfig(BaseModel):
 
         # In a real implementation, you would save to YAML/JSON here
         # This is a placeholder for the actual serialization logic
-        pass
 
     @classmethod
     def get_default_config_path(cls) -> Path:
