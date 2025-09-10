@@ -37,10 +37,10 @@ class ModelExamples(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        # Return just the examples list for backward compatibility
+        # Special backward compatibility logic for examples
         if len(self.examples) == 1:
-            return self.examples[0].dict(exclude_none=True)
-        return {"examples": [ex.dict(exclude_none=True) for ex in self.examples]}
+            return self.examples[0].model_dump(exclude_none=True)
+        return {"examples": [ex.model_dump(exclude_none=True) for ex in self.examples]}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelExamples"]:

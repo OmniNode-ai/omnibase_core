@@ -46,7 +46,7 @@ class ModelCustomSettings(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        # Merge all settings for backward compatibility
+        # Custom flattening logic for backward compatibility
         result = {}
         result.update(self.general_settings)
         result.update(self.advanced_settings)

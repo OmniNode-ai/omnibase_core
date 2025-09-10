@@ -10,9 +10,11 @@ import logging
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, get_type_hints
+from typing import Dict, List, Optional, Type, TypeVar, Union, get_type_hints
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
+
+from omnibase_core.types import EnvValue
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -23,7 +25,7 @@ class ModelEnvironmentVariable(BaseModel):
     """Metadata for environment variable configuration."""
 
     key: str = Field(..., description="Environment variable key")
-    default_value: Any = Field(None, description="Default value if not set")
+    default_value: EnvValue = Field(None, description="Default value if not set")
     required: bool = Field(False, description="Whether variable is required")
     description: str = Field("", description="Description of the variable")
     sensitive: bool = Field(False, description="Whether to mask in logs")
@@ -72,7 +74,7 @@ class ModelEnvironmentConfig(BaseModel):
         prefix: Optional[str] = None,
         env_file: Optional[Path] = None,
         strict: bool = True,
-        **overrides: Any,
+        **overrides: EnvValue,
     ) -> T:
         """
         Create configuration from environment variables.

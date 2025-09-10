@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-from omnibase.protocols.core import ProtocolCacheService
+from omnibase_spi import ProtocolCacheService
 
 from omnibase_core.core.errors import OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeEffectService
@@ -163,7 +163,7 @@ class ResponseAggregator:
         key_components = {
             "operation": operation_type,
             "tools": sorted(target_tools),
-            "data": message_data.dict(),
+            "data": message_data.model_dump(),
         }
 
         key_string = json.dumps(key_components, sort_keys=True)

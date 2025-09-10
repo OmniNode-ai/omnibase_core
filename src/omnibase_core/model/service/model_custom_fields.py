@@ -85,7 +85,7 @@ class ModelCustomFields(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        # For backward compatibility, return just the field values
+        # Custom backward compatibility logic - return just the field values
         return self.field_values.copy()
 
     @classmethod

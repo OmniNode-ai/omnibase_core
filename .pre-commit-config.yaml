@@ -76,6 +76,15 @@ repos:
         files: ^src/.*\.py$
         stages: [commit]
 
+      # Pydantic Legacy Pattern Validation
+      - id: validate-pydantic-patterns
+        name: ONEX Pydantic Legacy Pattern Validation
+        entry: python scripts/validate-pydantic-patterns.py --allow-errors 13
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
       # String Version Validation
       - id: validate-string-versions
         name: ONEX String Version Validation

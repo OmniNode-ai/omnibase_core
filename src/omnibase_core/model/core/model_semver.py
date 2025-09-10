@@ -35,12 +35,10 @@ class ModelSemVer(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dictionary."""
-        return {
-            "major": self.major,
-            "minor": self.minor,
-            "patch": self.patch,
-            "version_string": str(self),
-        }
+        # Use model_dump() and add custom version_string field
+        result = self.model_dump()
+        result["version_string"] = str(self)
+        return result
 
     @classmethod
     def from_string(cls, version_str: str) -> "ModelSemVer":

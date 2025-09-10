@@ -185,7 +185,7 @@ class StateManager:
                     request_id,
                     correlation_id or state_key,
                     "persist_state",
-                    json.dumps(state_data.dict()),
+                    json.dumps(state_data.model_dump()),
                     "completed",
                 )
 
@@ -202,7 +202,7 @@ class StateManager:
                     """,
                     str(uuid.uuid4()),
                     correlation_id or state_key,
-                    json.dumps(state_data.dict()),
+                    json.dumps(state_data.model_dump()),
                     1,
                 )
 
@@ -630,7 +630,7 @@ class ToolMessageAggregator(NodeComputeService):
                     strategy_used=aggregation_strategy,
                     total_messages=len(group_messages),
                     result_data=(
-                        aggregated_result.dict()
+                        aggregated_result.model_dump()
                         if hasattr(aggregated_result, "dict")
                         else {}
                     ),

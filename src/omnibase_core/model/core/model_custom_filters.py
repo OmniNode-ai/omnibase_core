@@ -70,6 +70,7 @@ class ModelCustomFilters(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (for backward compatibility)."""
+        # Custom transformation logic for filters dictionary
         return {name: filter_obj.to_dict() for name, filter_obj in self.filters.items()}
 
     @classmethod

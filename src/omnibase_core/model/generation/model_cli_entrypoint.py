@@ -106,6 +106,7 @@ class ModelCliEntrypoint(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format."""
+        # Custom dictionary format with computed entrypoint field
         return {
             "command": self.command,
             "subcommand": self.subcommand,

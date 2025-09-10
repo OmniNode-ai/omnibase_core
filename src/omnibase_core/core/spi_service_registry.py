@@ -15,15 +15,15 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional, TypeVar
 
-from omnibase.protocols.container import (
+from omnibase_spi.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolServiceInstance,
     ProtocolServiceRegistration,
 )
-from omnibase.protocols.container import (
+from omnibase_spi.protocols.container import (
     ProtocolServiceRegistry as ProtocolServiceRegistryConfig,
 )
-from omnibase.protocols.container import (
+from omnibase_spi.protocols.container import (
     ProtocolServiceRegistryStatus,
 )
 
@@ -34,7 +34,7 @@ from omnibase_core.protocol.protocol_database_connection import (
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 from omnibase_core.services.protocol_service_resolver import get_service_resolver
 
-# Real protocols imported from omnibase.protocols.container
+# Real protocols imported from omnibase_spi
 
 
 T = TypeVar("T")

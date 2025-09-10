@@ -822,7 +822,7 @@ class ConfigHandler(BaseHandler):
     def show_config(self, section: Optional[str] = None) -> None:
         """Show current configuration."""
         try:
-            config_dict = self.config.dict()
+            config_dict = self.config.model_dump()
 
             if section:
                 if section not in config_dict:

@@ -16,7 +16,3 @@ class ModelCustomFilterBase(BaseModel, ABC):
     filter_type: str = Field(..., description="Type of custom filter")
     enabled: bool = Field(True, description="Whether filter is active")
     priority: int = Field(0, description="Filter priority (higher = applied first)")
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
-        return self.model_dump(exclude_none=True)

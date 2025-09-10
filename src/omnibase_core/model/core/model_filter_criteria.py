@@ -73,6 +73,7 @@ class ModelFilterCriteria(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
+        # Use model_dump() as base and transform custom filters
         data = self.model_dump(exclude_none=True)
         # Convert custom filters to dict if present
         if self.custom_filters and self.custom_filters.filters:

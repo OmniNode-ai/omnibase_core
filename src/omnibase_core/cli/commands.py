@@ -13,7 +13,7 @@ from typing import List, Optional
 import click
 from rich.console import Console
 
-from .config import CLIConfig
+from .config import ModelCLIConfig as CLIConfig
 from .handlers import ConfigHandler, ProcessHandler, StatusHandler, TypeQualityHandler
 
 # Global console for error output
@@ -445,7 +445,7 @@ def version():
         # Get version from package metadata
         import importlib.metadata
 
-        version = importlib.metadata.version("omnibase-core")
+        version = importlib.metadata.version("omnibase_core")
     except Exception:
         version = "unknown"
 

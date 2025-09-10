@@ -174,10 +174,6 @@ class ModelNetworkRestrictions(BaseModel):
         description="Access tokens that bypass restrictions",
     )
 
-    def to_dict(self) -> dict:
-        """Convert to dictionary for backward compatibility."""
-        return self.model_dump(exclude_none=True)
-
     def is_ip_allowed(self, ip: str) -> bool:
         """Check if an IP address is allowed (simplified logic)."""
         # Note: Simplified IP check - production version would use ipaddress module for proper validation

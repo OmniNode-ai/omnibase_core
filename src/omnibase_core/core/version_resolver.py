@@ -43,7 +43,7 @@ class NodeVersionResolver:
     and simplified CLI interfaces without requiring explicit version numbers.
     """
 
-    def __init__(self, nodes_directory: str = "src/omnibase/nodes"):
+    def __init__(self, nodes_directory: str = "src/omnibase_core/nodes"):
         """Initialize the version resolver with nodes directory."""
         self.nodes_directory = Path(nodes_directory)
 

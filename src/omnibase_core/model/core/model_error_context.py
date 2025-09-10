@@ -79,6 +79,7 @@ class ModelErrorContext(BaseModel):
         Returns:
             Dictionary representation of the context
         """
+        # Custom reconstruction logic for error context format
         result = {}
 
         # Add known fields if present

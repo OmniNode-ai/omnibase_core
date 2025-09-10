@@ -145,8 +145,10 @@ class ModelConnectionInfo(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        data = self.dict(exclude_none=True)
-        # Mask sensitive fields
+        # Use model_dump() as base and apply transformations
+        data = self.model_dump(exclude_none=True)
+
+        # Mask sensitive fields for security
         if "password" in data:
             data["password"] = "***MASKED***"
         if "api_key" in data:

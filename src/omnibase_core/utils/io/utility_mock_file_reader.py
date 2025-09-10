@@ -64,7 +64,7 @@ class UtilityMockFileReader:
 
             # Store the model directly - no dict conversion needed
             self._models = {
-                "src/omnibase/tools/generation/tool_contract_driven_generator/v1_0_0/contract.yaml": contract_model,
+                "src/omnibase_core/tools/generation/tool_contract_driven_generator/v1_0_0/contract.yaml": contract_model,
             }
 
     def add_model(self, path: str, model: BaseModel):

@@ -61,6 +61,7 @@ class OnexError(Exception):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for serialization."""
+        # Custom error serialization format
         result = {
             "code": self.code.value,
             "message": self.message,

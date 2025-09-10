@@ -196,6 +196,7 @@ class DocumentFreshnessError(OnexError):
 
     def to_dict(self) -> dict[str, str | int | bool | None]:
         """Convert error to dictionary for serialization."""
+        # Custom error serialization with correlation and file path
         return {
             "error_code": self.error_code.value,
             "core_error_code": self.code.value,  # Include core error code for better categorization

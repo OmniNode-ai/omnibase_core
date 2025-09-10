@@ -453,7 +453,9 @@ class KubernetesTemplateGenerator:
                 "name": f"{app_name}-config",
                 "namespace": self.config.kubernetes_namespace,
             },
-            "data": {"service-config.json": json.dumps(self.config.dict(), indent=2)},
+            "data": {
+                "service-config.json": json.dumps(self.config.model_dump(), indent=2)
+            },
         }
 
     def generate_all_manifests(self) -> str:

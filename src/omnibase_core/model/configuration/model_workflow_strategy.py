@@ -24,9 +24,16 @@ class ModelWorkflowStrategy(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
-        result = {"fail-fast": self.fail_fast}
+        # Use model_dump() as base and apply field name transformations
+        base_result = self.model_dump(exclude_none=True)
+
+        # Apply custom field name transformations and conditional logic
+        result = {"fail-fast": base_result["fail_fast"]}
+
         if self.matrix:
-            result["matrix"] = self.matrix.dict(exclude_none=True)
+            result["matrix"] = self.matrix.model_dump(exclude_none=True)
+
         if self.max_parallel is not None:
-            result["max-parallel"] = self.max_parallel
+            result["max-parallel"] = base_result["max_parallel"]
+
         return result

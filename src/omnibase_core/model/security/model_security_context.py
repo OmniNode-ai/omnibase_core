@@ -60,10 +60,6 @@ class ModelSecurityContext(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, str | int | bool | list[str] | datetime | None]:
-        """Convert to dictionary for backward compatibility."""
-        return self.dict(exclude_none=True)
-
     @classmethod
     def from_dict(
         cls,

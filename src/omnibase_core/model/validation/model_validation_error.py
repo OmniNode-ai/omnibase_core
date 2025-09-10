@@ -5,11 +5,10 @@ Structured validation error model for argument parsing and validation
 with severity levels and detailed error information.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.model.core.model_severity import ModelSeverity
+from omnibase_core.types import ValidationValue
 
 
 class ModelValidationError(BaseModel):
@@ -33,7 +32,9 @@ class ModelValidationError(BaseModel):
         description="Name of the field that failed validation",
     )
 
-    field_value: Any | None = Field(None, description="Value that failed validation")
+    field_value: ValidationValue = Field(
+        None, description="Value that failed validation"
+    )
 
     severity: ModelSeverity = Field(
         default_factory=ModelSeverity.ERROR,
@@ -127,7 +128,7 @@ class ModelValidationError(BaseModel):
         cls,
         field_name: str,
         expected_type: str,
-        actual_value: Any,
+        actual_value: ValidationValue,
         location: str | None = None,
     ) -> "ModelValidationError":
         """Create a type validation error."""
@@ -164,7 +165,7 @@ class ModelValidationError(BaseModel):
     def create_choice_error(
         cls,
         field_name: str,
-        actual_value: Any,
+        actual_value: ValidationValue,
         valid_choices: list[str],
         location: str | None = None,
     ) -> "ModelValidationError":
@@ -183,7 +184,7 @@ class ModelValidationError(BaseModel):
     def create_pattern_error(
         cls,
         field_name: str,
-        actual_value: Any,
+        actual_value: ValidationValue,
         pattern: str,
         location: str | None = None,
     ) -> "ModelValidationError":

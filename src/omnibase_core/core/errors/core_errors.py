@@ -20,7 +20,6 @@
 # meta_type: tool
 # === /OmniNode:Metadata ===
 
-
 """
 Shared error codes and exit code mapping for all ONEX nodes.
 
@@ -678,10 +677,6 @@ class OnexError(Exception):
     def model_dump_json(self) -> str:
         """Convert error to JSON string for logging/telemetry."""
         return self.model.model_dump_json()
-
-    def to_dict(self) -> dict[str, str | int | bool | float]:
-        """Convert error to dictionary for serialization (alias for model_dump)."""
-        return self.model_dump()
 
     def to_json(self) -> str:
         """Convert error to JSON string for logging/telemetry (alias for model_dump_json)."""

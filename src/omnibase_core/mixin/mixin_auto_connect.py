@@ -7,7 +7,7 @@ import json
 import time
 from typing import TYPE_CHECKING, Any
 
-from omnibase.protocols.core.protocol_logger import ProtocolLogger
+from omnibase_spi import ProtocolLogger
 
 from omnibase_core.model.configuration.model_event_bus_config import (
     ModelModelEventBusConfig,

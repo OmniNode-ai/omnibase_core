@@ -581,14 +581,13 @@ class OnexError(Exception):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert OnexError to dictionary."""
-        return {
-            "message": self.message,
-            "error_code": self.error_code.value if self.error_code else None,
-            "status": self.status.value,
-            "correlation_id": self.correlation_id,
-            "timestamp": self.timestamp.isoformat(),
-            "context": self.context,
-        }
+        # Use model_dump() as base and add computed fields
+        result = self.model_dump()
+        # Add computed fields that require special formatting
+        result["error_code"] = self.error_code.value if self.error_code else None
+        result["status"] = self.status.value
+        result["timestamp"] = self.timestamp.isoformat()
+        return result
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "OnexError":

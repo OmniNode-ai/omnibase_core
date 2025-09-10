@@ -301,11 +301,11 @@ class ModelCodebaseGraph(BaseModel):
 
         # Add nodes
         for node_id, node in self.nodes.items():
-            G.add_node(node_id, **node.dict())
+            G.add_node(node_id, **node.model_dump())
 
         # Add edges
         for edge in self.edges.values():
-            G.add_edge(edge.source_node_id, edge.target_node_id, **edge.dict())
+            G.add_edge(edge.source_node_id, edge.target_node_id, **edge.model_dump())
 
         return G
 

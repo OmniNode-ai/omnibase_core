@@ -116,6 +116,7 @@ class ModelConversationFilter(BaseModel):
 
     def to_dict(self) -> dict:
         """Convert to dictionary format for backwards compatibility."""
+        # Custom conditional formatting for conversation filter
         result = {}
 
         if self.session_id:

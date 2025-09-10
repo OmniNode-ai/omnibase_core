@@ -142,6 +142,7 @@ class ModelSchemaDict(BaseModel):
         Returns:
             Dictionary representation
         """
+        # Custom reconstruction logic for schema dictionary format
         result = {}
 
         # Add core fields

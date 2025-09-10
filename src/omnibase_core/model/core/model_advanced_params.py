@@ -97,6 +97,7 @@ class ModelAdvancedParams(BaseModel):
         Returns:
             Dictionary representation of advanced parameters
         """
+        # Custom reconstruction logic for advanced parameters format
         result = {}
 
         # Add non-None simple fields

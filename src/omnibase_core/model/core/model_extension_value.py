@@ -2,9 +2,9 @@
 Extension value model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
+
+from omnibase_core.types import JsonSerializable
 
 
 class ModelExtensionValue(BaseModel):
@@ -13,7 +13,7 @@ class ModelExtensionValue(BaseModel):
     Accepts any type for value (str, int, float, bool, dict, list, etc.) for protocol and legacy compatibility.
     """
 
-    value: Any | None = None
+    value: JsonSerializable = None
     description: str | None = None
     # Add more fields as needed for extension use cases
 

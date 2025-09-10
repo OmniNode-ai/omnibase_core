@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel
+
+from omnibase_core.types import MetadataValue
 
 
 class ModelUnifiedSummaryDetails(BaseModel):
@@ -11,7 +11,7 @@ class ModelUnifiedSummaryDetails(BaseModel):
     """
 
     key: str | None = None
-    value: Any | None = None
+    value: MetadataValue = None
     # Add more fields as needed for protocol
 
     model_config = {"arbitrary_types_allowed": True}

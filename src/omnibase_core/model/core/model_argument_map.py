@@ -158,6 +158,7 @@ class ModelArgumentMap(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for easy serialization."""
+        # Custom serialization logic for argument map format
         result = {}
 
         # Add positional args
