@@ -32,12 +32,8 @@ class ModelEnvironmentVariable(BaseModel):
     validation_pattern: Optional[str] = Field(
         None, description="Regex pattern for validation"
     )
-    min_value: Optional[Union[int, float]] = Field(
-        None, description="Minimum numeric value"
-    )
-    max_value: Optional[Union[int, float]] = Field(
-        None, description="Maximum numeric value"
-    )
+    min_value: float | None = Field(None, description="Minimum numeric value")
+    max_value: float | None = Field(None, description="Maximum numeric value")
     allowed_values: Optional[List[str]] = Field(
         None, description="List of allowed values"
     )
@@ -132,7 +128,7 @@ class ModelEnvironmentConfig(BaseModel):
             logger.warning(f"Failed to load env file {env_file}: {e}")
 
     @classmethod
-    def _extract_env_values(cls) -> Dict[str, Any]:
+    def _extract_env_values(cls) -> Dict[str, EnvValue]:
         """Extract configuration values from environment variables."""
         values = {}
         type_hints = get_type_hints(cls)
@@ -179,7 +175,7 @@ class ModelEnvironmentConfig(BaseModel):
         return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
     @staticmethod
-    def _convert_env_value(value: str, target_type: Optional[Type]) -> Any:
+    def _convert_env_value(value: str, target_type: Optional[Type]) -> EnvValue:
         """Convert string environment value to target type."""
         if target_type is None:
             return value
@@ -216,7 +212,7 @@ class ModelEnvironmentConfig(BaseModel):
         else:
             return value
 
-    def get_env_summary(self, mask_sensitive: bool = True) -> Dict[str, Any]:
+    def get_env_summary(self, mask_sensitive: bool = True) -> Dict[str, EnvValue]:
         """Get summary of environment configuration."""
         summary = {}
 
@@ -231,7 +227,7 @@ class ModelEnvironmentConfig(BaseModel):
         return summary
 
     @classmethod
-    def get_env_documentation(cls) -> List[Dict[str, Any]]:
+    def get_env_documentation(cls) -> List[Dict[str, str | int | bool | None]]:
         """Get documentation for all environment variables."""
         docs = []
 
