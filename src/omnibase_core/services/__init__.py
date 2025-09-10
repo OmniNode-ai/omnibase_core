@@ -1,7 +1,7 @@
 """
 Service implementations for ONEX architecture.
 
-Provides concrete implementations of protocol services defined in omnibase-spi.
+Provides concrete implementations of protocol services defined in omnibase_spi.
 """
 
 from omnibase_core.services.cache_service import (

@@ -15,7 +15,7 @@ class TestNodeServices:
         container = ONEXContainer()
 
         # Note: Actual node service tests would require importing the base classes
-        # These tests will be expanded once omnibase-spi dependency is available
+        # These tests will be expanded once omnibase_spi dependency is available
         assert container is not None
 
     def test_container_dependency_injection(self):
