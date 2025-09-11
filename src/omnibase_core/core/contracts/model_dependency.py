@@ -252,23 +252,9 @@ class ModelDependency(BaseModel):
 
     @classmethod
     def _parse_version_input(cls, version_input: Any) -> ModelSemVer:
-        """Parse version input to ModelSemVer object."""
+        """Parse version input to ModelSemVer object - only accepts ModelSemVer or dict."""
         if isinstance(version_input, ModelSemVer):
             return version_input
-
-        if isinstance(version_input, str):
-            # Parse semantic version string like "1.0.0"
-            parts = version_input.strip().split(".")
-            if len(parts) == 3:
-                try:
-                    major, minor, patch = [int(part) for part in parts]
-                    return ModelSemVer(major=major, minor=minor, patch=patch)
-                except ValueError:
-                    msg = f"Invalid semantic version string: {version_input}"
-                    raise ValueError(msg)
-            else:
-                msg = f"Version string must be in format 'X.Y.Z', got: {version_input}"
-                raise ValueError(msg)
 
         if isinstance(version_input, dict):
             # Handle dict format like {"major": 1, "minor": 0, "patch": 0}
@@ -278,7 +264,12 @@ class ModelDependency(BaseModel):
                 msg = f"Invalid version dict format: {version_input}, error: {e}"
                 raise ValueError(msg)
 
-        msg = f"Unsupported version input type: {type(version_input)}, value: {version_input}"
+        # Reject string versions - forces proper ModelSemVer usage
+        if isinstance(version_input, str):
+            msg = f"String versions not allowed: '{version_input}'. Use ModelSemVer(major=X, minor=Y, patch=Z) or dict format."
+            raise TypeError(msg)
+
+        msg = f"Unsupported version input type: {type(version_input)}, value: {version_input}. Use ModelSemVer or dict format only."
         raise TypeError(msg)
 
     @field_validator("name")

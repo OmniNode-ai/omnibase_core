@@ -50,7 +50,11 @@ class TestModelDependencyYamlValidation:
             "name": "event_bus",  # Use name that matches module pattern
             "module": "omnibase.protocol.protocol_event_bus",
             "type": "protocol",
-            "version": "1.0.0",  # String will be converted to ModelSemVer
+            "version": {
+                "major": 1,
+                "minor": 0,
+                "patch": 0,
+            },  # Proper ModelSemVer format
             "required": True,
         }
 
@@ -69,7 +73,11 @@ class TestModelDependencyYamlValidation:
                 self.name = "logger"  # Use name that matches module pattern
                 self.type = "protocol"
                 self.module = "omnibase.protocol.protocol_logger"
-                self.version = "2.0.0"  # String will be converted to ModelSemVer
+                self.version = {
+                    "major": 2,
+                    "minor": 0,
+                    "patch": 0,
+                }  # Proper ModelSemVer format
 
         structured_dep = MockStructuredDep()
         dep = create_dependency(structured_dep)
@@ -214,6 +222,23 @@ class TestModelDependencyYamlValidation:
 
         with pytest.raises(ValueError, match="Structured dependency must have 'name'"):
             create_dependency(InvalidStructuredDep())
+
+    def test_string_versions_rejected(self):
+        """Test that string versions are properly rejected."""
+        # String version in dict format should be rejected
+        with pytest.raises(TypeError, match="String versions not allowed: '1.0.0'"):
+            create_dependency(
+                {"name": "test_dep", "version": "1.0.0"}  # This should be rejected
+            )
+
+        # String version in structured object should be rejected
+        class StructuredDepWithStringVersion:
+            def __init__(self):
+                self.name = "test_dep"
+                self.version = "2.0.0"  # This should be rejected
+
+        with pytest.raises(TypeError, match="String versions not allowed: '2.0.0'"):
+            create_dependency(StructuredDepWithStringVersion())
 
     def test_onex_pattern_validation(self):
         """Test ONEX naming pattern validation."""
