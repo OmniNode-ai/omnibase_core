@@ -16,6 +16,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.contracts.model_contract_base import ModelContractBase
+from omnibase_core.core.contracts.model_dependency import ModelDependency
 from omnibase_core.core.subcontracts import (
     ModelAggregationSubcontract,
     ModelCachingSubcontract,
@@ -25,31 +26,6 @@ from omnibase_core.core.subcontracts import (
 )
 from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
-
-
-class ModelDependencySpec(BaseModel):
-    """
-    Structured dependency specification for reducer contracts.
-
-    Defines protocol dependencies with full specification including
-    name, type, class name, and module path.
-    """
-
-    name: str = Field(..., description="Dependency identifier name", min_length=1)
-
-    type: str = Field(
-        ...,
-        description="Dependency type (protocol, service, utility)",
-        min_length=1,
-    )
-
-    class_name: str = Field(..., description="Implementation class name", min_length=1)
-
-    module: str = Field(
-        ...,
-        description="Full module path for the implementation",
-        min_length=1,
-    )
 
 
 class ModelReductionConfig(BaseModel):
@@ -231,12 +207,6 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
 
     # === INFRASTRUCTURE PATTERN SUPPORT ===
     # These fields support infrastructure patterns and YAML variations
-
-    # Flexible dependency field supporting multiple formats
-    dependencies: list[str | dict[str, str] | ModelDependencySpec] | None = Field(
-        default=None,
-        description="Dependencies supporting string, dict, and object formats",
-    )
 
     # Infrastructure-specific fields for backward compatibility
     node_name: str | None = Field(
@@ -504,34 +474,6 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
                     raise ValueError(
                         msg,
                     )
-
-    @field_validator("dependencies", mode="before")
-    @classmethod
-    def parse_flexible_dependencies(
-        cls,
-        v: list[str | dict[str, str] | ModelDependencySpec] | None,
-    ) -> list[str | dict[str, str] | ModelDependencySpec] | None:
-        """Parse dependencies in flexible formats (string, dict, object)."""
-        if not v:
-            return v
-
-        parsed_deps = []
-        for dep in v:
-            if isinstance(dep, str):
-                # String format: just pass through
-                parsed_deps.append(dep)
-            elif isinstance(dep, dict):
-                if "name" in dep and "type" in dep and "class_name" in dep:
-                    # Structured format: convert to ModelDependencySpec
-                    parsed_deps.append(ModelDependencySpec(**dep))
-                else:
-                    # Dict format: pass through
-                    parsed_deps.append(dep)
-            else:
-                # Already parsed or other format
-                parsed_deps.append(dep)
-
-        return parsed_deps
 
     class Config:
         """Pydantic model configuration for ONEX compliance."""

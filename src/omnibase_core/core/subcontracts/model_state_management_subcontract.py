@@ -169,7 +169,7 @@ class ModelStateVersioning(BaseModel):
     State versioning and migration configuration.
 
     Defines versioning policies, migration strategies,
-    and backward compatibility handling.
+    and state transition handling.
     """
 
     versioning_enabled: bool = Field(
@@ -189,9 +189,9 @@ class ModelStateVersioning(BaseModel):
         description="Available migration strategies",
     )
 
-    backward_compatibility: bool = Field(
+    forward_compatibility: bool = Field(
         default=True,
-        description="Maintain backward compatibility",
+        description="Maintain forward state compatibility",
     )
 
     version_retention: int = Field(

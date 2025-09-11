@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.core.contracts.model_dependency import ModelDependency
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 if TYPE_CHECKING:
@@ -36,31 +37,6 @@ else:
         ModelStateManagementSubcontract,
     )
     from omnibase_core.enums.node import EnumNodeType
-
-
-class ModelDependencySpec(BaseModel):
-    """
-    Structured dependency specification for orchestrator contracts.
-
-    Defines protocol dependencies with full specification including
-    name, type, class name, and module path.
-    """
-
-    name: str = Field(..., description="Dependency identifier name", min_length=1)
-
-    type: str = Field(
-        ...,
-        description="Dependency type (protocol, service, utility)",
-        min_length=1,
-    )
-
-    class_name: str = Field(..., description="Implementation class name", min_length=1)
-
-    module: str = Field(
-        ...,
-        description="Full module path for the implementation",
-        min_length=1,
-    )
 
 
 class ModelThunkEmissionConfig(BaseModel):
@@ -528,11 +504,8 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         min_length=1,
     )
 
-    # Flexible dependency field supporting multiple formats
-    dependencies: list[str | dict[str, str] | ModelDependencySpec] | None = Field(
-        default=None,
-        description="Dependencies supporting string, dict, and object formats",
-    )
+    # Dependencies now use unified ModelDependency from base class
+    # Removed union type override - base class handles all formats
 
     # Infrastructure-specific fields for backward compatibility
     tool_specification: dict[str, Any] | None = Field(
@@ -815,34 +788,6 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
 
         if violations:
             raise ValueError("\n".join(violations))
-
-    @field_validator("dependencies", mode="before")
-    @classmethod
-    def parse_flexible_dependencies(
-        cls,
-        v: list[str | dict[str, str] | ModelDependencySpec] | None,
-    ) -> list[str | dict[str, str] | ModelDependencySpec] | None:
-        """Parse dependencies in flexible formats (string, dict, object)."""
-        if not v:
-            return v
-
-        parsed_deps = []
-        for dep in v:
-            if isinstance(dep, str):
-                # String format: just pass through
-                parsed_deps.append(dep)
-            elif isinstance(dep, dict):
-                if "name" in dep and "type" in dep and "class_name" in dep:
-                    # Structured format: convert to ModelDependencySpec
-                    parsed_deps.append(ModelDependencySpec(**dep))
-                else:
-                    # Dict format: pass through
-                    parsed_deps.append(dep)
-            else:
-                # Already parsed or other format
-                parsed_deps.append(dep)
-
-        return parsed_deps
 
     @field_validator("published_events")
     @classmethod

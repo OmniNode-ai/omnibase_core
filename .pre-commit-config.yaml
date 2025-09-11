@@ -104,6 +104,16 @@ repos:
         exclude: ^scripts/validate-contracts\.py$ # Deprecated script, contains legacy YAML validation
         stages: [commit]
 
+      # Backward Compatibility Anti-Pattern Detection
+      - id: validate-no-backward-compatibility
+        name: ONEX Backward Compatibility Anti-Pattern Detection
+        entry: python scripts/validate-no-backward-compatibility.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.py$
+        exclude: ^scripts/validate-no-backward-compatibility\.py$ # Exclude the validation script itself
+        stages: [commit]
+
 # Configuration
 ci:
   autofix_commit_msg: |

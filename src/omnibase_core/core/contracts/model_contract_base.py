@@ -16,6 +16,10 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.core.contracts.model_dependency import (
+    ModelDependency,
+    create_dependency,
+)
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.model.core.model_semver import ModelSemVer
 
@@ -190,9 +194,9 @@ class ModelContractBase(BaseModel, ABC):
     )
 
     # Dependencies and protocols
-    dependencies: list[str] = Field(
+    dependencies: list[ModelDependency] = Field(
         default_factory=list,
-        description="Required protocol dependencies (fully qualified names)",
+        description="Required protocol dependencies with structured specification",
     )
 
     protocol_interfaces: list[str] = Field(
@@ -260,6 +264,29 @@ class ModelContractBase(BaseModel, ABC):
         msg = f"Invalid node_type value: {v}"
         raise ValueError(msg)
 
+    @field_validator("dependencies", mode="before")
+    @classmethod
+    def convert_dependencies_to_model_dependency(
+        cls, v: object
+    ) -> list[ModelDependency]:
+        """Convert various dependency formats to ModelDependency objects."""
+        if not v:
+            return []
+
+        if not isinstance(v, list):
+            msg = f"Dependencies must be a list, got: {type(v)}"
+            raise ValueError(msg)
+
+        result = []
+        for item in v:
+            if isinstance(item, ModelDependency):
+                result.append(item)
+            else:
+                # Use factory function to handle various formats
+                result.append(create_dependency(item))
+
+        return result
+
     def _validate_node_type_compliance(self) -> None:
         """
         Validate that node_type matches the specialized contract class.
@@ -285,57 +312,27 @@ class ModelContractBase(BaseModel, ABC):
 
     def _validate_protocol_dependencies(self) -> None:
         """
-        Validate that all protocol dependencies are properly formatted.
+        Validate that all protocol dependencies follow ONEX naming conventions.
 
-        Ensures protocol dependencies follow ONEX naming conventions.
-        Accepts both simple names (Protocol*) and fully qualified paths (omnibase.protocol.protocol_*).
-        Also supports structured dependency specifications with separate fields.
+        Uses ModelDependency objects to provide consistent validation
+        through unified format handling.
         """
         for dependency in self.dependencies:
-            # Handle string dependencies (traditional format used by most tools)
-            if isinstance(dependency, str):
-                # Accept fully qualified protocol paths like omnibase.protocol.protocol_consul_client
-                if "protocol" in dependency.lower():
-                    # Valid protocol dependency
-                    continue
-                # Also accept simple Protocol* names for backward compatibility
-                if dependency.startswith("Protocol"):
-                    continue
-                msg = f"Protocol dependency must contain 'protocol' or start with 'Protocol', got: {dependency}"
-                raise ValueError(
-                    msg,
-                )
+            # All dependencies should now be ModelDependency instances
+            if not isinstance(dependency, ModelDependency):
+                msg = f"All dependencies must be ModelDependency instances, got: {type(dependency)}"
+                raise ValueError(msg)
 
-            # Handle structured dependencies (used by infrastructure tools)
-            if (
-                hasattr(dependency, "name")
-                and hasattr(dependency, "type")
-                and hasattr(dependency, "module")
-            ):
-                # This is a structured dependency - validate the module path and type
-                module_path = dependency.module
-                dep_type = dependency.type
-                if "protocol" in module_path.lower() or dep_type.lower() == "protocol":
-                    continue
-                msg = f"Structured dependency must have 'protocol' in module path or type 'protocol', got: {dependency}"
-                raise ValueError(
-                    msg,
-                )
-
-            # Unknown dependency format
-            msg = f"Dependency must be a string or structured specification, got: {type(dependency)}"
-            raise ValueError(
-                msg,
-            )
+            # Validate dependency follows ONEX patterns
+            if not dependency.matches_onex_patterns():
+                msg = f"Dependency does not follow ONEX patterns: {dependency.name}"
+                raise ValueError(msg)
 
         for interface in self.protocol_interfaces:
-            # Accept fully qualified protocol paths
+            # Only accept fully qualified protocol paths - no legacy patterns
             if "protocol" in interface.lower():
                 continue
-            # Also accept simple Protocol* names for backward compatibility
-            if interface.startswith("Protocol"):
-                continue
-            msg = f"Protocol interface must contain 'protocol' or start with 'Protocol', got: {interface}"
+            msg = f"Protocol interface must contain 'protocol' in the name, got: {interface}"
             raise ValueError(
                 msg,
             )

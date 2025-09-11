@@ -33,7 +33,7 @@ class ModelSplitterConfig(BaseModel):
     )
     maintain_compatibility: bool = Field(
         default=True,
-        description="Whether to maintain backward compatibility imports",
+        description="Whether to maintain consistent imports across modules",
     )
     split_mode: EnumSplitMode = Field(
         default=EnumSplitMode.ONE_PER_FILE,
@@ -83,7 +83,7 @@ class ModelExtractionPlan(BaseModel):
     )
     compatibility_imports: dict[str, list[str]] = Field(
         default_factory=dict,
-        description="Imports needed for backward compatibility",
+        description="Imports needed for consistent module references",
     )
 
 
