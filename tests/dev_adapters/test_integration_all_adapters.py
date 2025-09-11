@@ -19,6 +19,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.core.errors.core_errors import OnexError
 from omnibase_core.dev_adapters.deterministic_utils import DeterministicTestContext
 from omnibase_core.dev_adapters.memory_event_bus import InMemoryEventBus
 from omnibase_core.dev_adapters.memory_event_store import InMemoryEventStore
@@ -509,17 +510,17 @@ class TestAllAdaptersIntegration:
         # === Test event store error handling ===
 
         # Test invalid event types
-        with pytest.raises(ValueError, match="event cannot be None"):
+        with pytest.raises(OnexError, match="event cannot be None"):
             self.event_store.store_event(None)
 
         # Test invalid query parameters
-        with pytest.raises(ValueError, match="from_global_sequence must be positive"):
+        with pytest.raises(OnexError, match="from_global_sequence must be positive"):
             self.event_store.get_all_events(from_global_sequence=-1)
 
-        with pytest.raises(ValueError, match="limit must be positive"):
+        with pytest.raises(OnexError, match="limit must be positive"):
             self.event_store.get_events_by_type("workflow.started", limit=0)
 
-        with pytest.raises(ValueError, match="node_id cannot be empty"):
+        with pytest.raises(OnexError, match="node_id cannot be empty"):
             self.event_store.get_events_by_node("")
 
         # === Test event bus error handling ===
@@ -533,7 +534,7 @@ class TestAllAdaptersIntegration:
         # === Test snapshot store error handling ===
 
         # Test invalid workflow IDs
-        with pytest.raises(ValueError):
+        with pytest.raises(OnexError):
             self.snapshot_store.save_snapshot(
                 workflow_instance_id="",  # Empty workflow ID
                 sequence_number=1,
@@ -563,7 +564,7 @@ class TestAllAdaptersIntegration:
         # Test corrupted checksum detection
         self.snapshot_store.simulate_corruption(workflow_id)
 
-        with pytest.raises(ValueError, match="Snapshot corruption detected"):
+        with pytest.raises(OnexError, match="Snapshot corruption detected"):
             self.snapshot_store.get_latest_snapshot(workflow_id)
 
     def test_context_managers_integration(self):

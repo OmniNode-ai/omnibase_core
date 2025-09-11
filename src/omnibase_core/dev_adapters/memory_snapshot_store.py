@@ -14,6 +14,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+
 logger = logging.getLogger(__name__)
 
 
@@ -110,15 +112,36 @@ class InMemorySnapshotStore:
         """
         # Enhanced error handling for edge cases
         if not workflow_instance_id or not workflow_instance_id.strip():
-            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "workflow_instance_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={
+                    "parameter": "workflow_instance_id",
+                    "value": workflow_instance_id,
+                },
+            )
 
         if sequence_number < 0:
-            raise ValueError(
-                f"sequence_number must be non-negative, got {sequence_number}"
+            raise OnexError(
+                f"sequence_number must be non-negative, got {sequence_number}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={
+                    "parameter": "sequence_number",
+                    "value": sequence_number,
+                    "minimum": 0,
+                },
             )
 
         if event_count < 0:
-            raise ValueError(f"event_count must be non-negative, got {event_count}")
+            raise OnexError(
+                f"event_count must be non-negative, got {event_count}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={
+                    "parameter": "event_count",
+                    "value": event_count,
+                    "minimum": 0,
+                },
+            )
 
         if metadata is None:
             metadata = {}
@@ -182,7 +205,14 @@ class InMemorySnapshotStore:
         """
         # Enhanced error handling for edge cases
         if not workflow_instance_id or not workflow_instance_id.strip():
-            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "workflow_instance_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={
+                    "parameter": "workflow_instance_id",
+                    "value": workflow_instance_id,
+                },
+            )
 
         if workflow_instance_id not in self._snapshots:
             return None
@@ -198,8 +228,13 @@ class InMemorySnapshotStore:
             logger.error(
                 f"Checksum validation failed for latest snapshot of workflow {workflow_instance_id}"
             )
-            raise ValueError(
-                f"Snapshot corruption detected for workflow {workflow_instance_id}"
+            raise OnexError(
+                f"Snapshot corruption detected for workflow {workflow_instance_id}",
+                CoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "workflow_instance_id": workflow_instance_id,
+                    "validation_type": "checksum",
+                },
             )
 
         return latest
@@ -222,11 +257,24 @@ class InMemorySnapshotStore:
         """
         # Enhanced error handling for edge cases
         if not workflow_instance_id or not workflow_instance_id.strip():
-            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "workflow_instance_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={
+                    "parameter": "workflow_instance_id",
+                    "value": workflow_instance_id,
+                },
+            )
 
         if sequence_number < 0:
-            raise ValueError(
-                f"sequence_number must be non-negative, got {sequence_number}"
+            raise OnexError(
+                f"sequence_number must be non-negative, got {sequence_number}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={
+                    "parameter": "sequence_number",
+                    "value": sequence_number,
+                    "minimum": 0,
+                },
             )
 
         if workflow_instance_id not in self._snapshots:
@@ -246,8 +294,13 @@ class InMemorySnapshotStore:
                 logger.error(
                     f"Checksum validation failed for snapshot {best_snapshot.snapshot_id}"
                 )
-                raise ValueError(
-                    f"Snapshot corruption detected: {best_snapshot.snapshot_id}"
+                raise OnexError(
+                    f"Snapshot corruption detected: {best_snapshot.snapshot_id}",
+                    CoreErrorCode.VALIDATION_ERROR,
+                    context={
+                        "snapshot_id": str(best_snapshot.snapshot_id),
+                        "validation_type": "checksum",
+                    },
                 )
 
         return best_snapshot
@@ -274,8 +327,13 @@ class InMemorySnapshotStore:
                     logger.error(
                         f"Checksum validation failed for snapshot {snapshot.snapshot_id}"
                     )
-                    raise ValueError(
-                        f"Snapshot corruption detected: {snapshot.snapshot_id}"
+                    raise OnexError(
+                        f"Snapshot corruption detected: {snapshot.snapshot_id}",
+                        CoreErrorCode.VALIDATION_ERROR,
+                        context={
+                            "snapshot_id": str(snapshot.snapshot_id),
+                            "validation_type": "checksum",
+                        },
                     )
 
         return snapshots
@@ -295,7 +353,14 @@ class InMemorySnapshotStore:
         """
         # Enhanced error handling for edge cases
         if not workflow_instance_id or not workflow_instance_id.strip():
-            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "workflow_instance_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={
+                    "parameter": "workflow_instance_id",
+                    "value": workflow_instance_id,
+                },
+            )
 
         if workflow_instance_id not in self._snapshots:
             return 0
@@ -437,7 +502,6 @@ class InMemorySnapshotStore:
         """Exit synchronous context manager with cleanup."""
         try:
             self._snapshots.clear()
-            self._workflow_metadata.clear()
             logger.info("🧹 InMemorySnapshotStore context manager cleanup complete")
         except Exception as e:
             logger.error(f"Error during context manager cleanup: {e}")

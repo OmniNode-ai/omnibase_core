@@ -11,6 +11,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.core.errors.core_errors import OnexError
 from omnibase_core.dev_adapters.memory_event_store import (
     InMemoryEventStore,
     StoredEvent,
@@ -99,7 +100,7 @@ class TestInMemoryEventStore:
         self.event_store.store_event(event)
 
         # Store same event again - should fail
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(OnexError, match="already exists"):
             self.event_store.store_event(event)
 
     def test_event_exists_check(self):

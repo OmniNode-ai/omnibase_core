@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.core.errors.core_errors import OnexError
 from omnibase_core.dev_adapters.memory_snapshot_store import (
     InMemorySnapshotStore,
     WorkflowSnapshot,
@@ -336,7 +337,7 @@ class TestInMemorySnapshotStore:
         self.snapshot_store.simulate_corruption(workflow_id)
 
         # Should raise error on retrieval
-        with pytest.raises(ValueError, match="corruption detected"):
+        with pytest.raises(OnexError, match="corruption detected"):
             self.snapshot_store.get_latest_snapshot(workflow_id)
 
     def test_validate_all_checksums(self):

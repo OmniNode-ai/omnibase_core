@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.model.core.model_onex_event import OnexEvent
 
 logger = logging.getLogger(__name__)
@@ -50,11 +51,17 @@ class StoredEvent(BaseModel):
             # Use Pydantic's JSON serialization which handles UUID objects properly
             event_json = self.event.model_dump_json()
             if not event_json or event_json == "null":
-                raise ValueError("Event serialized to empty or null JSON")
+                raise OnexError(
+                    "Event serialized to empty or null JSON",
+                    CoreErrorCode.VALIDATION_ERROR,
+                    context={"event_id": str(self.event.event_id)},
+                )
             return hashlib.sha256(event_json.encode()).hexdigest()
         except Exception as e:
-            raise ValueError(
-                f"Failed to calculate checksum for event {self.event.event_id}: {e}"
+            raise OnexError(
+                f"Failed to calculate checksum for event {self.event.event_id}: {e}",
+                CoreErrorCode.VALIDATION_ERROR,
+                context={"event_id": str(self.event.event_id)},
             ) from e
 
     def validate_checksum(self) -> bool:
@@ -205,21 +212,39 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if event is None:
-            raise ValueError("event cannot be None")
+            raise OnexError(
+                "event cannot be None",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "event"},
+            )
 
         if not isinstance(event, OnexEvent):
-            raise ValueError(f"event must be an OnexEvent instance, got {type(event)}")
+            raise OnexError(
+                f"event must be an OnexEvent instance, got {type(event)}",
+                CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                context={"expected_type": "OnexEvent", "actual_type": str(type(event))},
+            )
 
         if event.event_id is None:
-            raise ValueError("event.event_id cannot be None")
+            raise OnexError(
+                "event.event_id cannot be None",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "event.event_id"},
+            )
 
         if not event.node_id or not event.node_id.strip():
-            raise ValueError("event.node_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "event.node_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "event.node_id", "value": event.node_id},
+            )
 
         # Check for duplicate event ID (idempotency)
         if event.event_id in self._event_ids:
-            raise ValueError(
-                f"Event ID {event.event_id} already exists (idempotency violation)"
+            raise OnexError(
+                f"Event ID {event.event_id} already exists (idempotency violation)",
+                CoreErrorCode.DUPLICATE_REGISTRATION,
+                context={"event_id": str(event.event_id), "operation": "store_event"},
             )
 
         # Determine stream for this event
@@ -277,10 +302,22 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if from_sequence < 1:
-            raise ValueError(f"from_sequence must be positive, got {from_sequence}")
+            raise OnexError(
+                f"from_sequence must be positive, got {from_sequence}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={
+                    "parameter": "from_sequence",
+                    "value": from_sequence,
+                    "minimum": 1,
+                },
+            )
 
         if limit is not None and limit <= 0:
-            raise ValueError(f"limit must be positive if specified, got {limit}")
+            raise OnexError(
+                f"limit must be positive if specified, got {limit}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={"parameter": "limit", "value": limit, "minimum": 1},
+            )
 
         if stream_id not in self._streams:
             return []
@@ -311,12 +348,22 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if from_global_sequence < 1:
-            raise ValueError(
-                f"from_global_sequence must be positive, got {from_global_sequence}"
+            raise OnexError(
+                f"from_global_sequence must be positive, got {from_global_sequence}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={
+                    "parameter": "from_global_sequence",
+                    "value": from_global_sequence,
+                    "minimum": 1,
+                },
             )
 
         if limit is not None and limit <= 0:
-            raise ValueError(f"limit must be positive if specified, got {limit}")
+            raise OnexError(
+                f"limit must be positive if specified, got {limit}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={"parameter": "limit", "value": limit, "minimum": 1},
+            )
 
         all_events = []
 
@@ -349,10 +396,22 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if event_id is None:
-            raise ValueError("event_id cannot be None")
+            raise OnexError(
+                "event_id cannot be None",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "event_id"},
+            )
 
         if not isinstance(event_id, UUID):
-            raise ValueError(f"event_id must be a UUID instance, got {type(event_id)}")
+            raise OnexError(
+                f"event_id must be a UUID instance, got {type(event_id)}",
+                CoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                context={
+                    "parameter": "event_id",
+                    "expected_type": "UUID",
+                    "actual_type": str(type(event_id)),
+                },
+            )
 
         for stream in self._streams.values():
             for stored_event in stream.events:
@@ -381,10 +440,18 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if not event_type or not event_type.strip():
-            raise ValueError("event_type cannot be empty or whitespace-only")
+            raise OnexError(
+                "event_type cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "event_type", "value": event_type},
+            )
 
         if limit is not None and limit <= 0:
-            raise ValueError(f"limit must be positive if specified, got {limit}")
+            raise OnexError(
+                f"limit must be positive if specified, got {limit}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={"parameter": "limit", "value": limit, "minimum": 1},
+            )
 
         event_ids = self._event_type_index.get(event_type.strip(), [])
         if limit:
@@ -416,10 +483,18 @@ class InMemoryEventStore:
         """
         # Enhanced error handling for edge cases
         if not node_id or not node_id.strip():
-            raise ValueError("node_id cannot be empty or whitespace-only")
+            raise OnexError(
+                "node_id cannot be empty or whitespace-only",
+                CoreErrorCode.INVALID_PARAMETER,
+                context={"parameter": "node_id", "value": node_id},
+            )
 
         if limit is not None and limit <= 0:
-            raise ValueError(f"limit must be positive if specified, got {limit}")
+            raise OnexError(
+                f"limit must be positive if specified, got {limit}",
+                CoreErrorCode.PARAMETER_OUT_OF_RANGE,
+                context={"parameter": "limit", "value": limit, "minimum": 1},
+            )
 
         event_ids = self._node_id_index.get(node_id.strip(), [])
         if limit:
