@@ -104,7 +104,22 @@ class InMemorySnapshotStore:
 
         Returns:
             Created WorkflowSnapshot
+
+        Raises:
+            ValueError: If workflow_instance_id is empty or invalid parameters provided
         """
+        # Enhanced error handling for edge cases
+        if not workflow_instance_id or not workflow_instance_id.strip():
+            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+
+        if sequence_number < 0:
+            raise ValueError(
+                f"sequence_number must be non-negative, got {sequence_number}"
+            )
+
+        if event_count < 0:
+            raise ValueError(f"event_count must be non-negative, got {event_count}")
+
         if metadata is None:
             metadata = {}
 
@@ -161,7 +176,14 @@ class InMemorySnapshotStore:
 
         Returns:
             Latest WorkflowSnapshot or None if not found
+
+        Raises:
+            ValueError: If workflow_instance_id is empty
         """
+        # Enhanced error handling for edge cases
+        if not workflow_instance_id or not workflow_instance_id.strip():
+            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+
         if workflow_instance_id not in self._snapshots:
             return None
 
@@ -194,7 +216,19 @@ class InMemorySnapshotStore:
 
         Returns:
             WorkflowSnapshot at or before sequence number, or None
+
+        Raises:
+            ValueError: If workflow_instance_id is empty or sequence_number is negative
         """
+        # Enhanced error handling for edge cases
+        if not workflow_instance_id or not workflow_instance_id.strip():
+            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+
+        if sequence_number < 0:
+            raise ValueError(
+                f"sequence_number must be non-negative, got {sequence_number}"
+            )
+
         if workflow_instance_id not in self._snapshots:
             return None
 
@@ -255,7 +289,14 @@ class InMemorySnapshotStore:
 
         Returns:
             Number of snapshots deleted
+
+        Raises:
+            ValueError: If workflow_instance_id is empty
         """
+        # Enhanced error handling for edge cases
+        if not workflow_instance_id or not workflow_instance_id.strip():
+            raise ValueError("workflow_instance_id cannot be empty or whitespace-only")
+
         if workflow_instance_id not in self._snapshots:
             return 0
 

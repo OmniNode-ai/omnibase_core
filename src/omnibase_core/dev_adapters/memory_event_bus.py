@@ -153,10 +153,20 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         return f"node_{event.node_id}"
 
     def _get_or_create_partition(self, partition_id: str) -> WorkflowPartition:
-        """Get or create a workflow partition with proper LRU management."""
+        """Get or create a workflow partition with proper LRU management and race condition protection."""
+        # First check without lock (fast path for existing partitions)
+        if partition_id in self._partitions:
+            with self._sync_lock:
+                # Double-checked locking: verify still exists after acquiring lock
+                if partition_id in self._partitions:
+                    # Move to end for LRU (most recently used)
+                    self._partitions.move_to_end(partition_id)
+                    return self._partitions[partition_id]
+
+        # Partition doesn't exist, create it under lock (slow path)
         with self._sync_lock:
+            # Final check - another thread might have created it while we waited for lock
             if partition_id in self._partitions:
-                # Move to end for LRU (most recently used)
                 self._partitions.move_to_end(partition_id)
                 return self._partitions[partition_id]
 
@@ -168,7 +178,7 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
                     f"Evicted LRU partition {lru_partition_id} due to limit ({self._max_partitions})"
                 )
 
-            # Create new partition
+            # Create new partition atomically
             new_partition = WorkflowPartition(
                 partition_id=partition_id, workflow_instance_id=partition_id
             )
@@ -530,6 +540,101 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
         logger.info(
             f"🧪 Simulated partition overflow (created {self._max_partitions + 5} partitions)"
         )
+
+    # === Memory Management for Long-Running Tests ===
+
+    def cleanup_old_partitions(self, max_age_seconds: int = 3600) -> int:
+        """
+        Clean up partitions that haven't been accessed recently.
+
+        Args:
+            max_age_seconds: Maximum age for partitions (default: 1 hour)
+
+        Returns:
+            Number of partitions cleaned up
+        """
+        import time
+
+        current_time = time.time()
+        partitions_to_remove = []
+
+        with self._sync_lock:
+            for partition_id, partition in self._partitions.items():
+                # Check if partition has any recent events
+                if partition.event_history:
+                    latest_event = partition.event_history[-1]
+                    event_age = current_time - latest_event.timestamp.timestamp()
+                    if event_age > max_age_seconds:
+                        partitions_to_remove.append(partition_id)
+                else:
+                    # Empty partitions can be cleaned up immediately
+                    partitions_to_remove.append(partition_id)
+
+            # Remove old partitions
+            for partition_id in partitions_to_remove:
+                del self._partitions[partition_id]
+
+        if partitions_to_remove:
+            logger.info(f"🧹 Cleaned up {len(partitions_to_remove)} old partitions")
+
+        return len(partitions_to_remove)
+
+    def trim_event_histories(self, max_events_per_partition: int = 100) -> int:
+        """
+        Trim event histories to prevent memory growth in long-running tests.
+
+        Args:
+            max_events_per_partition: Maximum events to keep per partition
+
+        Returns:
+            Total number of events trimmed across all partitions
+        """
+        total_trimmed = 0
+
+        with self._sync_lock:
+            for partition in self._partitions.values():
+                current_count = len(partition.event_history)
+                if current_count > max_events_per_partition:
+                    events_to_trim = current_count - max_events_per_partition
+                    partition.event_history = partition.event_history[
+                        -max_events_per_partition:
+                    ]
+                    total_trimmed += events_to_trim
+
+        if total_trimmed > 0:
+            logger.info(f"🧹 Trimmed {total_trimmed} events from partition histories")
+
+        return total_trimmed
+
+    def get_memory_usage_stats(self) -> dict[str, int]:
+        """
+        Get memory usage statistics for monitoring long-running tests.
+
+        Returns:
+            Dictionary with memory usage statistics
+        """
+        total_events = 0
+        total_subscribers = 0
+
+        with self._sync_lock:
+            for partition in self._partitions.values():
+                total_events += len(partition.event_history)
+                total_subscribers += len(partition.subscribers) + len(
+                    partition.async_subscribers
+                )
+
+        total_subscribers += len(self._global_subscribers) + len(
+            self._global_async_subscribers
+        )
+
+        return {
+            "total_partitions": len(self._partitions),
+            "total_events_in_history": total_events,
+            "total_subscribers": total_subscribers,
+            "estimated_memory_kb": (
+                total_events * 1 + total_subscribers * 0.1 + len(self._partitions) * 0.5
+            ),
+        }
 
 
 # Global instance for easy access in development/testing

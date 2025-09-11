@@ -38,12 +38,38 @@ class StoredEvent(BaseModel):
     checksum: str = Field(..., description="Event content checksum")
 
     def calculate_checksum(self) -> str:
-        """Calculate checksum for event content only (excluding sequence numbers)."""
+        """
+        Calculate checksum for event content only (excluding sequence numbers).
+
+        Raises:
+            ValueError: If event data is malformed or cannot be serialized
+        """
         import hashlib
 
-        # Use Pydantic's JSON serialization which handles UUID objects properly
-        event_json = self.event.model_dump_json()
-        return hashlib.sha256(event_json.encode()).hexdigest()
+        try:
+            # Use Pydantic's JSON serialization which handles UUID objects properly
+            event_json = self.event.model_dump_json()
+            if not event_json or event_json == "null":
+                raise ValueError("Event serialized to empty or null JSON")
+            return hashlib.sha256(event_json.encode()).hexdigest()
+        except Exception as e:
+            raise ValueError(
+                f"Failed to calculate checksum for event {self.event.event_id}: {e}"
+            ) from e
+
+    def validate_checksum(self) -> bool:
+        """
+        Validate that the stored checksum matches the calculated checksum.
+
+        Returns:
+            True if checksum is valid, False otherwise
+        """
+        try:
+            calculated = self.calculate_checksum()
+            return calculated == self.checksum
+        except ValueError:
+            # If we can't calculate checksum, assume invalid
+            return False
 
 
 class EventStream(BaseModel):
@@ -112,6 +138,15 @@ class InMemoryEventStore:
         # Event ID deduplication
         self._event_ids: set[UUID] = set()
 
+        # Performance indexes for common queries
+        self._global_sequence_index: dict[int, UUID] = {}  # sequence -> event_id
+        self._event_type_index: dict[str, list[UUID]] = defaultdict(
+            list
+        )  # event_type -> event_ids
+        self._node_id_index: dict[str, list[UUID]] = defaultdict(
+            list
+        )  # node_id -> event_ids
+
         # Configuration
         self._max_events_per_stream = kwargs.get("max_events_per_stream", 10000)
 
@@ -134,6 +169,27 @@ class InMemoryEventStore:
 
         return self._streams[stream_id]
 
+    def _cleanup_indexes_for_event(self, event: OnexEvent) -> None:
+        """Clean up indexes when an event is removed."""
+        # Remove from event type index
+        event_type_list = self._event_type_index[str(event.event_type)]
+        if event.event_id in event_type_list:
+            event_type_list.remove(event.event_id)
+
+        # Remove from node ID index
+        node_id_list = self._node_id_index[event.node_id]
+        if event.event_id in node_id_list:
+            node_id_list.remove(event.event_id)
+
+        # Remove from global sequence index (need to find by event_id)
+        sequence_to_remove = None
+        for seq, eid in self._global_sequence_index.items():
+            if eid == event.event_id:
+                sequence_to_remove = seq
+                break
+        if sequence_to_remove is not None:
+            del self._global_sequence_index[sequence_to_remove]
+
     def store_event(self, event: OnexEvent) -> StoredEvent:
         """
         Store an event with idempotency and ordering guarantees.
@@ -145,8 +201,21 @@ class InMemoryEventStore:
             StoredEvent with storage metadata
 
         Raises:
-            ValueError: If event ID already exists (idempotency violation)
+            ValueError: If event is None, invalid, or event ID already exists (idempotency violation)
         """
+        # Enhanced error handling for edge cases
+        if event is None:
+            raise ValueError("event cannot be None")
+
+        if not isinstance(event, OnexEvent):
+            raise ValueError(f"event must be an OnexEvent instance, got {type(event)}")
+
+        if event.event_id is None:
+            raise ValueError("event.event_id cannot be None")
+
+        if not event.node_id or not event.node_id.strip():
+            raise ValueError("event.node_id cannot be empty or whitespace-only")
+
         # Check for duplicate event ID (idempotency)
         if event.event_id in self._event_ids:
             raise ValueError(
@@ -166,11 +235,20 @@ class InMemoryEventStore:
         # Track event ID for idempotency
         self._event_ids.add(event.event_id)
 
+        # Update performance indexes
+        self._global_sequence_index[self._global_sequence] = event.event_id
+        self._event_type_index[str(event.event_type)].append(event.event_id)
+        self._node_id_index[event.node_id].append(event.event_id)
+
         # Enforce stream size limits
         if len(stream.events) > self._max_events_per_stream:
             # Remove oldest events (simple FIFO cleanup)
             removed_event = stream.events.pop(0)
             self._event_ids.discard(removed_event.event.event_id)
+
+            # Update indexes when removing events
+            self._cleanup_indexes_for_event(removed_event.event)
+
             logger.warning(
                 f"Removed oldest event from stream {stream_id} due to size limit"
             )
@@ -193,7 +271,17 @@ class InMemoryEventStore:
 
         Returns:
             List of StoredEvent objects
+
+        Raises:
+            ValueError: If from_sequence is negative or limit is invalid
         """
+        # Enhanced error handling for edge cases
+        if from_sequence < 1:
+            raise ValueError(f"from_sequence must be positive, got {from_sequence}")
+
+        if limit is not None and limit <= 0:
+            raise ValueError(f"limit must be positive if specified, got {limit}")
+
         if stream_id not in self._streams:
             return []
 
@@ -217,7 +305,19 @@ class InMemoryEventStore:
 
         Returns:
             List of StoredEvent objects ordered by global sequence
+
+        Raises:
+            ValueError: If from_global_sequence is negative or limit is invalid
         """
+        # Enhanced error handling for edge cases
+        if from_global_sequence < 1:
+            raise ValueError(
+                f"from_global_sequence must be positive, got {from_global_sequence}"
+            )
+
+        if limit is not None and limit <= 0:
+            raise ValueError(f"limit must be positive if specified, got {limit}")
+
         all_events = []
 
         for stream in self._streams.values():
@@ -243,13 +343,163 @@ class InMemoryEventStore:
 
         Returns:
             StoredEvent if found, None otherwise
+
+        Raises:
+            ValueError: If event_id is None or invalid UUID
         """
+        # Enhanced error handling for edge cases
+        if event_id is None:
+            raise ValueError("event_id cannot be None")
+
+        if not isinstance(event_id, UUID):
+            raise ValueError(f"event_id must be a UUID instance, got {type(event_id)}")
+
         for stream in self._streams.values():
             for stored_event in stream.events:
                 if stored_event.event.event_id == event_id:
                     return stored_event
 
         return None
+
+    # === Performance-Optimized Queries ===
+
+    def get_events_by_type(
+        self, event_type: str, limit: int | None = None
+    ) -> list[StoredEvent]:
+        """
+        Get events by type using performance index.
+
+        Args:
+            event_type: Event type to search for
+            limit: Maximum events to return
+
+        Returns:
+            List of StoredEvent objects matching the type
+
+        Raises:
+            ValueError: If event_type is empty or limit is invalid
+        """
+        # Enhanced error handling for edge cases
+        if not event_type or not event_type.strip():
+            raise ValueError("event_type cannot be empty or whitespace-only")
+
+        if limit is not None and limit <= 0:
+            raise ValueError(f"limit must be positive if specified, got {limit}")
+
+        event_ids = self._event_type_index.get(event_type.strip(), [])
+        if limit:
+            event_ids = event_ids[:limit]
+
+        results = []
+        for event_id in event_ids:
+            stored_event = self.get_event_by_id(event_id)
+            if stored_event:
+                results.append(stored_event)
+
+        return results
+
+    def get_events_by_node(
+        self, node_id: str, limit: int | None = None
+    ) -> list[StoredEvent]:
+        """
+        Get events by node ID using performance index.
+
+        Args:
+            node_id: Node ID to search for
+            limit: Maximum events to return
+
+        Returns:
+            List of StoredEvent objects from the specified node
+
+        Raises:
+            ValueError: If node_id is empty or limit is invalid
+        """
+        # Enhanced error handling for edge cases
+        if not node_id or not node_id.strip():
+            raise ValueError("node_id cannot be empty or whitespace-only")
+
+        if limit is not None and limit <= 0:
+            raise ValueError(f"limit must be positive if specified, got {limit}")
+
+        event_ids = self._node_id_index.get(node_id.strip(), [])
+        if limit:
+            event_ids = event_ids[:limit]
+
+        results = []
+        for event_id in event_ids:
+            stored_event = self.get_event_by_id(event_id)
+            if stored_event:
+                results.append(stored_event)
+
+        return results
+
+    def get_events_after_sequence_fast(
+        self, from_sequence: int, limit: int | None = None
+    ) -> list[StoredEvent]:
+        """
+        Fast sequence-based lookup using index.
+
+        Args:
+            from_sequence: Starting sequence number
+            limit: Maximum events to return
+
+        Returns:
+            List of StoredEvent objects ordered by sequence
+        """
+        results = []
+        current_sequence = from_sequence
+
+        while len(results) < (limit or 1000):  # Default reasonable limit
+            event_id = self._global_sequence_index.get(current_sequence)
+            if event_id is None:
+                break
+
+            stored_event = self.get_event_by_id(event_id)
+            if stored_event:
+                results.append(stored_event)
+
+            current_sequence += 1
+
+        return results
+
+    def rebuild_indexes(self) -> dict[str, int]:
+        """
+        Rebuild all performance indexes from scratch.
+
+        Returns:
+            Statistics about the rebuild operation
+        """
+        # Clear existing indexes
+        self._global_sequence_index.clear()
+        self._event_type_index.clear()
+        self._node_id_index.clear()
+
+        events_indexed = 0
+
+        # Rebuild from all streams
+        for stream in self._streams.values():
+            for stored_event in stream.events:
+                event = stored_event.event
+
+                # Rebuild indexes
+                self._global_sequence_index[stored_event.sequence_number] = (
+                    event.event_id
+                )
+                self._event_type_index[str(event.event_type)].append(event.event_id)
+                self._node_id_index[event.node_id].append(event.event_id)
+
+                events_indexed += 1
+
+        stats = {
+            "events_indexed": events_indexed,
+            "global_sequences": len(self._global_sequence_index),
+            "event_types": len(self._event_type_index),
+            "node_ids": len(self._node_id_index),
+        }
+
+        logger.info(f"🔍 Rebuilt indexes for {events_indexed} events")
+
+        return stats
 
     def event_exists(self, event_id: UUID) -> bool:
         """Check if an event ID already exists (for idempotency)."""
@@ -424,6 +674,133 @@ class InMemoryEventStore:
                         logger.warning(f"Skipped duplicate event {event.event_id}")
 
         logger.info(f"📁 Loaded {events_loaded} events from {path}")
+
+    # === Memory Management for Long-Running Tests ===
+
+    def reset_global_sequence(self) -> None:
+        """
+        Reset global sequence counter for long-running tests.
+
+        WARNING: Only call this when event store is empty or you understand
+        the implications for event ordering.
+        """
+        if self._streams:
+            logger.warning(
+                "⚠️  Resetting global sequence with existing streams - ordering may be affected"
+            )
+
+        old_sequence = self._global_sequence
+        self._global_sequence = 0
+        logger.info(f"🔄 Reset global sequence from {old_sequence} to 0")
+
+    def cleanup_old_streams(
+        self, max_age_seconds: int = 3600, keep_recent_events: int = 10
+    ) -> int:
+        """
+        Clean up old streams to prevent memory growth in long-running tests.
+
+        Args:
+            max_age_seconds: Maximum age for streams (default: 1 hour)
+            keep_recent_events: Keep this many recent events even in old streams
+
+        Returns:
+            Number of streams cleaned up
+        """
+        import time
+
+        current_time = time.time()
+        streams_cleaned = 0
+
+        for stream_id in list(self._streams.keys()):
+            stream = self._streams[stream_id]
+
+            if stream.events:
+                # Check age of most recent event
+                latest_event = stream.events[-1]
+                event_age = current_time - latest_event.stored_at.timestamp()
+
+                if event_age > max_age_seconds:
+                    if len(stream.events) > keep_recent_events:
+                        # Keep only recent events
+                        events_to_remove = len(stream.events) - keep_recent_events
+                        removed_events = stream.events[:events_to_remove]
+
+                        # Remove event IDs from deduplication set
+                        for stored_event in removed_events:
+                            self._event_ids.discard(stored_event.event.event_id)
+
+                        # Keep only recent events
+                        stream.events = stream.events[-keep_recent_events:]
+
+                        logger.debug(
+                            f"🧹 Trimmed {events_to_remove} old events from stream {stream_id}"
+                        )
+                    else:
+                        # Remove entire stream if it's small and old
+                        for stored_event in stream.events:
+                            self._event_ids.discard(stored_event.event.event_id)
+
+                        del self._streams[stream_id]
+                        streams_cleaned += 1
+                        logger.debug(f"🗑️  Removed old stream {stream_id}")
+            else:
+                # Remove empty streams
+                del self._streams[stream_id]
+                streams_cleaned += 1
+                logger.debug(f"🗑️  Removed empty stream {stream_id}")
+
+        if streams_cleaned > 0:
+            logger.info(f"🧹 Cleaned up {streams_cleaned} old streams")
+
+        return streams_cleaned
+
+    def get_memory_usage_stats(self) -> dict[str, int]:
+        """
+        Get memory usage statistics for monitoring long-running tests.
+
+        Returns:
+            Dictionary with memory usage statistics
+        """
+        total_events = sum(len(stream.events) for stream in self._streams.values())
+
+        return {
+            "total_streams": len(self._streams),
+            "total_events": total_events,
+            "global_sequence": self._global_sequence,
+            "unique_event_ids": len(self._event_ids),
+            "estimated_memory_kb": (
+                total_events * 2 + len(self._streams) * 0.5 + len(self._event_ids) * 0.1
+            ),
+        }
+
+    def force_compact_streams(self) -> dict[str, int]:
+        """
+        Force compaction of all streams by rebuilding them efficiently.
+
+        Returns:
+            Dictionary with compaction statistics
+        """
+        stats = {"streams_compacted": 0, "events_retained": 0, "memory_freed_kb": 0}
+
+        for stream_id, stream in self._streams.items():
+            if stream.events:
+                # Rebuild event list to remove fragmentation
+                original_events = len(stream.events)
+                stream.events = list(stream.events)  # Creates new list
+                stats["streams_compacted"] += 1
+                stats["events_retained"] += len(stream.events)
+
+        # Force garbage collection of old references
+        import gc
+
+        collected = gc.collect()
+        stats["memory_freed_kb"] = collected * 0.1  # Rough estimate
+
+        logger.info(
+            f"🗜️  Compacted {stats['streams_compacted']} streams, retained {stats['events_retained']} events"
+        )
+
+        return stats
 
 
 # Global instance for development/testing
