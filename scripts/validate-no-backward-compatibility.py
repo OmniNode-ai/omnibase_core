@@ -6,8 +6,20 @@ Detects and rejects backward compatibility patterns in code submissions.
 Backward compatibility == tech debt when there are no consumers.
 
 ZERO TOLERANCE: No backward compatibility patterns allowed.
+
+Usage:
+    # Pre-commit mode (staged files only)
+    validate-no-backward-compatibility.py file1.py file2.py ...
+
+    # Directory mode (recursive scan)
+    validate-no-backward-compatibility.py --dir /path/to/directory
+    validate-no-backward-compatibility.py -d src/omnibase_core
+
+    # Mixed mode (files + directories)
+    validate-no-backward-compatibility.py file1.py --dir src/ other_file.py
 """
 
+import argparse
 import ast
 import re
 import sys
@@ -247,6 +259,54 @@ class BackwardCompatibilityDetector:
         visitor = CompatibilityVisitor(errors, file_path)
         visitor.visit(tree)
 
+    def find_python_files_in_directory(self, directory: Path) -> list[Path]:
+        """Recursively find all Python files in a directory."""
+        python_files = []
+
+        if not directory.exists():
+            self.errors.append(f"Directory does not exist: {directory}")
+            return python_files
+
+        if not directory.is_dir():
+            self.errors.append(f"Path is not a directory: {directory}")
+            return python_files
+
+        try:
+            # Recursively find all .py files
+            python_files = list(directory.rglob("*.py"))
+
+            # Filter out common directories to skip
+            skip_patterns = {
+                "__pycache__",
+                ".pytest_cache",
+                ".git",
+                "node_modules",
+                ".venv",
+                "venv",
+                ".tox",
+                "build",
+                "dist",
+                ".mypy_cache",
+            }
+
+            filtered_files = []
+            for py_file in python_files:
+                # Check if any part of the path contains skip patterns
+                skip_file = False
+                for part in py_file.parts:
+                    if part in skip_patterns:
+                        skip_file = True
+                        break
+
+                if not skip_file:
+                    filtered_files.append(py_file)
+
+            return filtered_files
+
+        except Exception as e:
+            self.errors.append(f"Error scanning directory {directory}: {e}")
+            return []
+
     def validate_all_python_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided Python files."""
         success = True
@@ -257,7 +317,40 @@ class BackwardCompatibilityDetector:
 
         return success
 
-    def print_results(self) -> None:
+    def collect_files_from_args(
+        self, files: list[str], directories: list[str]
+    ) -> list[Path]:
+        """Collect Python files from file arguments and directory scans."""
+        all_files = []
+
+        # Add individual files
+        for file_arg in files:
+            file_path = Path(file_arg)
+            if file_path.exists() and file_path.suffix == ".py":
+                all_files.append(file_path)
+            elif file_path.exists():
+                self.errors.append(f"Skipping non-Python file: {file_path}")
+            else:
+                self.errors.append(f"File not found: {file_path}")
+
+        # Add files from directories
+        for dir_arg in directories:
+            dir_path = Path(dir_arg)
+            dir_files = self.find_python_files_in_directory(dir_path)
+            all_files.extend(dir_files)
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_files = []
+        for file_path in all_files:
+            abs_path = file_path.resolve()
+            if abs_path not in seen:
+                seen.add(abs_path)
+                unique_files.append(file_path)
+
+        return unique_files
+
+    def print_results(self, verbose: bool = False) -> None:
         """Print validation results."""
         if self.errors:
             print("❌ Backward Compatibility Detection FAILED")
@@ -295,32 +388,98 @@ class BackwardCompatibilityDetector:
             print("   • Clean code is better than compatible code")
 
         else:
-            print(
-                f"✅ Backward Compatibility Check PASSED ({self.checked_files} files checked)",
+            files_msg = (
+                f"{self.checked_files} file{'s' if self.checked_files != 1 else ''}"
             )
+            print(f"✅ Backward Compatibility Check PASSED ({files_msg} checked)")
+
+            if verbose and self.checked_files > 0:
+                print("   No backward compatibility anti-patterns detected.")
+
+
+def create_argument_parser() -> argparse.ArgumentParser:
+    """Create argument parser for the hook."""
+    parser = argparse.ArgumentParser(
+        description="Backward Compatibility Anti-Pattern Detection Hook",
+        epilog="""
+Examples:
+  # Pre-commit mode (validate specific staged files)
+  %(prog)s file1.py file2.py src/model.py
+
+  # Directory mode (scan entire directory recursively)
+  %(prog)s --dir src/omnibase_core
+  %(prog)s -d src/
+
+  # Mixed mode (files + directories)
+  %(prog)s file1.py --dir src/ other_file.py -d tests/
+
+  # Verbose output
+  %(prog)s --dir src/ --verbose
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "files", nargs="*", help="Python files to validate (for pre-commit hook usage)"
+    )
+
+    parser.add_argument(
+        "-d",
+        "--dir",
+        action="append",
+        dest="directories",
+        help="Directory to scan recursively for Python files (can be used multiple times)",
+    )
+
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output"
+    )
+
+    parser.add_argument("--version", action="version", version="%(prog)s 1.0")
+
+    return parser
 
 
 def main() -> int:
     """Main entry point for the validation hook."""
-    if len(sys.argv) < 2:
-        print("Usage: validate-no-backward-compatibility.py <path1.py> [path2.py] ...")
+    parser = create_argument_parser()
+    args = parser.parse_args()
+
+    # Validate arguments
+    if not args.files and not args.directories:
+        parser.error("Must provide either files or directories to scan")
         return 1
 
     detector = BackwardCompatibilityDetector()
 
-    # Process all provided Python files
-    python_files = []
-    for arg in sys.argv[1:]:
-        path = Path(arg)
-        if path.suffix == ".py" and path.exists():
-            python_files.append(path)
+    # Collect all Python files from arguments
+    python_files = detector.collect_files_from_args(
+        files=args.files or [], directories=args.directories or []
+    )
 
-    if not python_files:
+    # Early exit if no files to process and no collection errors
+    if not python_files and not detector.errors:
         print("✅ Backward Compatibility Check PASSED (no Python files to check)")
         return 0
 
+    # Early exit if there were collection errors
+    if detector.errors:
+        print("❌ File Collection FAILED")
+        for error in detector.errors:
+            print(f"   • {error}")
+        return 1
+
+    if args.verbose:
+        files_msg = f"Checking {len(python_files)} Python file{'s' if len(python_files) != 1 else ''}..."
+        print(files_msg)
+        if len(python_files) <= 10:  # Show file list for small sets
+            for py_file in python_files:
+                print(f"   • {py_file}")
+        print()
+
+    # Validate all collected files
     success = detector.validate_all_python_files(python_files)
-    detector.print_results()
+    detector.print_results(verbose=args.verbose)
 
     return 0 if success else 1
 
