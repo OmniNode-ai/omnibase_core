@@ -315,7 +315,7 @@ class ModelContractBase(BaseModel, ABC):
         Validate that all protocol dependencies follow ONEX naming conventions.
 
         Uses ModelDependency objects to provide consistent validation
-        while supporting backward compatibility through factory methods.
+        through unified format handling.
         """
         for dependency in self.dependencies:
             # All dependencies should now be ModelDependency instances
@@ -329,13 +329,10 @@ class ModelContractBase(BaseModel, ABC):
                 raise ValueError(msg)
 
         for interface in self.protocol_interfaces:
-            # Accept fully qualified protocol paths
+            # Only accept fully qualified protocol paths - no legacy patterns
             if "protocol" in interface.lower():
                 continue
-            # Also accept simple Protocol* names for backward compatibility
-            if interface.startswith("Protocol"):
-                continue
-            msg = f"Protocol interface must contain 'protocol' or start with 'Protocol', got: {interface}"
+            msg = f"Protocol interface must contain 'protocol' in the name, got: {interface}"
             raise ValueError(
                 msg,
             )

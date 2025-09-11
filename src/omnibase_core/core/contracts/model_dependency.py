@@ -398,7 +398,7 @@ class ModelDependency(BaseModel):
     }
 
 
-# Convenience factory function for backward compatibility
+# Factory function for unified dependency creation
 def create_dependency(
     dependency_input: Union[str, Dict[str, Any], Any],
 ) -> ModelDependency:
