@@ -278,10 +278,8 @@ class ModelContractCompute(ModelContractBase, MixinLazyEvaluation):
     # These fields support infrastructure patterns and YAML variations
 
     # Flexible dependency field supporting multiple formats
-    dependencies: list[str | dict[str, str]] | None = Field(
-        default=None,
-        description="Dependencies supporting string and dict formats",
-    )
+    # Dependencies now use unified ModelDependency from base class
+    # Removed union type override - base class handles all formats
 
     # Infrastructure-specific fields for backward compatibility
     node_name: str | None = Field(
