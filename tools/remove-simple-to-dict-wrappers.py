@@ -83,9 +83,9 @@ def remove_simple_to_dict_methods(file_path: Path) -> bool:
         # Pattern for simple wrapper methods
         patterns_to_remove = [
             # Pattern 1: Standard simple wrapper with exclude_none=True
-            r'\s*def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""Convert to dictionary for backward compatibility\."""\s*\n\s*return self\.model_dump\(exclude_none=True\)\s*\n',
+            r'\s*def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""Convert to dictionary using pydantic model_dump\."""\s*\n\s*return self\.model_dump\(exclude_none=True\)\s*\n',
             # Pattern 2: Standard simple wrapper with no parameters
-            r'\s*def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""Convert to dictionary for backward compatibility\."""\s*\n\s*return self\.model_dump\(\)\s*\n',
+            r'\s*def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""Convert to dictionary using pydantic model_dump\."""\s*\n\s*return self\.model_dump\(\)\s*\n',
             # Pattern 3: Simple wrapper with different docstring
             r'\s*def to_dict\(self\) -> dict\[str, Any\]:\s*\n\s*"""[^"]*"""\s*\n\s*return self\.model_dump\([^)]*\)\s*\n',
             # Pattern 4: Variation with exclude_unset

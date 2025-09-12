@@ -283,11 +283,11 @@ class TestModelSecurityPolicyDataIntegration:
         assert policy.get_policy_value("float_val") == 3.14159
 
 
-class TestBackwardsCompatibility:
-    """Test backwards compatibility features."""
+class TestSecurityPolicyDataFeatures:
+    """Test security policy data features."""
 
-    def test_property_accessor_compatibility(self):
-        """Test that property accessors maintain compatibility."""
+    def test_property_accessor_patterns(self):
+        """Test that property accessors work properly."""
         # Create policy using old-style dict
         legacy_data = {"version": "1.0", "debug": False, "max_users": 1000}
 

@@ -31,6 +31,9 @@ from .enum_namespace_strategy import NamespaceStrategyEnum
 # URI-related enums
 from .enum_uri_type import UriTypeEnum
 
+# Workflow-related enums
+from .enum_workflow_dependency_type import EnumWorkflowDependencyType
+
 # Execution-related enums
 from .execution import EnumExecutionMode, EnumOperationStatus
 
@@ -72,4 +75,6 @@ __all__ = [
     "TraversalModeEnum",
     # URI domain
     "UriTypeEnum",
+    # Workflow domain
+    "EnumWorkflowDependencyType",
 ]

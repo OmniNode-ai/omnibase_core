@@ -80,7 +80,7 @@ class ModelDependency(BaseModel):
     }
 
     @classmethod
-    def from_string(cls, dependency_str: str) -> "ModelDependency":
+    def _from_string(cls, dependency_str: str) -> "ModelDependency":
         """
         Create dependency from string format.
 
@@ -91,10 +91,10 @@ class ModelDependency(BaseModel):
             ModelDependency instance with inferred type
 
         Examples:
-            >>> ModelDependency.from_string("ProtocolEventBus")
+            >>> ModelDependency._from_string("ProtocolEventBus")
             ModelDependency(name="ProtocolEventBus", dependency_type=PROTOCOL)
 
-            >>> ModelDependency.from_string("omnibase.protocol.protocol_consul_client")
+            >>> ModelDependency._from_string("omnibase.protocol.protocol_consul_client")
             ModelDependency(
                 name="protocol_consul_client",
                 module="omnibase.protocol.protocol_consul_client",
@@ -128,7 +128,7 @@ class ModelDependency(BaseModel):
         )
 
     @classmethod
-    def from_dict(cls, dependency_dict: dict[str, Any]) -> "ModelDependency":
+    def _from_dict(cls, dependency_dict: dict[str, Any]) -> "ModelDependency":
         """
         Create dependency from dictionary format.
 
@@ -139,7 +139,7 @@ class ModelDependency(BaseModel):
             ModelDependency instance
 
         Examples:
-            >>> ModelDependency.from_dict({
+            >>> ModelDependency._from_dict({
             ...     "name": "ProtocolEventBus",
             ...     "module": "omnibase.protocol.protocol_event_bus",
             ...     "type": "protocol"
@@ -178,7 +178,7 @@ class ModelDependency(BaseModel):
         )
 
     @classmethod
-    def from_structured(cls, structured_dep: Any) -> "ModelDependency":
+    def _from_structured(cls, structured_dep: Any) -> "ModelDependency":
         """
         Create dependency from structured dependency object.
 
@@ -422,25 +422,23 @@ class ModelDependency(BaseModel):
 # Factory function for unified dependency creation
 # NOTE: Union type is acceptable here as a factory function interface
 # Eliminates Union types from data models while handling input conversion
-def create_dependency(
+def _create_dependency_internal(
     dependency_input: str | dict[str, Any] | Any,
 ) -> ModelDependency:
     """
-    Create ModelDependency from various input formats.
+    INTERNAL: Create ModelDependency from various input formats.
+
+    This is an internal function and should not be used in public APIs.
+    All dependencies should be provided in structured dict format only.
 
     Args:
         dependency_input: String, dict, or structured dependency
 
     Returns:
         ModelDependency instance
-
-    Examples:
-        >>> create_dependency("ProtocolEventBus")
-        >>> create_dependency({"name": "ProtocolEventBus", "module": "..."})
-        >>> create_dependency(structured_dependency_object)
     """
     if isinstance(dependency_input, str):
-        return ModelDependency.from_string(dependency_input)
+        return ModelDependency._from_string(dependency_input)
     if isinstance(dependency_input, dict):
-        return ModelDependency.from_dict(dependency_input)
-    return ModelDependency.from_structured(dependency_input)
+        return ModelDependency._from_dict(dependency_input)
+    return ModelDependency._from_structured(dependency_input)

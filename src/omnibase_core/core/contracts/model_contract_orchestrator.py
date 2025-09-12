@@ -19,6 +19,9 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.contracts.model_dependency import ModelDependency
+from omnibase_core.core.contracts.model_workflow_dependency import (
+    ModelWorkflowDependency,
+)
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 if TYPE_CHECKING:
@@ -108,9 +111,9 @@ class ModelWorkflowDefinition(BaseModel):
         description="Ordered list of workflow steps with configuration",
     )
 
-    dependencies: list[str] = Field(
+    dependencies: list[ModelWorkflowDependency] = Field(
         default_factory=list,
-        description="List of workflow IDs this workflow depends on",
+        description="List of workflow dependencies with proper typing and constraints",
     )
 
     conditions: dict[str, str | bool | int] | None = Field(
@@ -723,9 +726,9 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
                 )
 
             # Validate dependencies exist
-            for dep_id in workflow.dependencies:
-                if dep_id not in self.workflow_registry.workflows:
-                    msg = f"Workflow {workflow_id} depends on non-existent workflow {dep_id}"
+            for dependency in workflow.dependencies:
+                if dependency.workflow_id not in self.workflow_registry.workflows:
+                    msg = f"Workflow {workflow_id} depends on non-existent workflow {dependency.workflow_id}"
                     raise ValueError(
                         msg,
                     )

@@ -109,7 +109,10 @@ actions:
 
 # === DEPENDENCIES ===
 dependencies:
-  - "omnibase.protocol.protocol_event_bus"
+  - name: "event_bus"
+    type: "protocol"
+    class_name: "ProtocolEventBus"
+    module: "omnibase.protocol.protocol_event_bus"
 
 # === PERFORMANCE (Required for COMPUTE nodes) ===
 performance:

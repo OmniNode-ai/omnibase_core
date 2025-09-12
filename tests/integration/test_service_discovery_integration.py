@@ -2,7 +2,7 @@
 """
 Integration tests for service discovery implementations.
 
-Tests protocol compliance, backward compatibility, and cross-implementation scenarios.
+Tests protocol compliance, cross-implementation scenarios, and integration patterns.
 """
 
 import asyncio
@@ -174,8 +174,8 @@ class TestServiceDiscoveryProtocolCompliance:
                 assert service["bool_val"].to_bool_primitive() is True
 
 
-class TestServiceDiscoveryBackwardCompatibility:
-    """Test backward compatibility with existing service discovery patterns."""
+class TestServiceDiscoveryCompliancePatterns:
+    """Test protocol compliance with existing service discovery patterns."""
 
     @pytest.mark.asyncio
     async def test_legacy_service_registration_patterns(self):

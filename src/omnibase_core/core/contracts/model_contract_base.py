@@ -16,10 +16,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.contracts.model_dependency import (
-    ModelDependency,
-    create_dependency,
-)
+from omnibase_core.core.contracts.model_dependency import ModelDependency
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.models.core.model_semver import ModelSemVer
 
@@ -253,6 +250,37 @@ class ModelContractBase(BaseModel, ABC):
         # Delegate to node-specific validation
         self.validate_node_specific_config()
 
+    @field_validator("dependencies", mode="before")
+    @classmethod
+    def validate_dependencies_structured_only(cls, v: object) -> list[ModelDependency]:
+        """Convert structured dependency dicts to ModelDependency objects.
+
+        ONLY accepts structured dict format - no legacy string support.
+        This enables YAML loading while maintaining zero tech debt.
+        """
+        if not v:
+            return []
+
+        if not isinstance(v, list):
+            msg = f"dependencies must be a list, got {type(v)}"
+            raise TypeError(msg)
+
+        dependencies = []
+        for i, item in enumerate(v):
+            if isinstance(item, ModelDependency):
+                dependencies.append(item)
+            elif isinstance(item, dict):
+                # Only accept structured dict format
+                if "name" not in item:
+                    msg = f"Dependency {i} missing required 'name' field. Use structured format: {{'name': '...', 'type': '...', 'module': '...'}}"
+                    raise ValueError(msg)
+                dependencies.append(ModelDependency(**item))
+            else:
+                msg = f"Dependency {i} must be dict with structured format, got {type(item)}. No string dependencies allowed."
+                raise TypeError(msg)
+
+        return dependencies
+
     @field_validator("node_type", mode="before")
     @classmethod
     def convert_node_type_string_to_enum(cls, v: object) -> EnumNodeType:
@@ -263,29 +291,6 @@ class ModelContractBase(BaseModel, ABC):
             return v
         msg = f"Invalid node_type value: {v}"
         raise ValueError(msg)
-
-    @field_validator("dependencies", mode="before")
-    @classmethod
-    def convert_dependencies_to_model_dependency(
-        cls, v: object
-    ) -> list[ModelDependency]:
-        """Convert various dependency formats to ModelDependency objects."""
-        if not v:
-            return []
-
-        if not isinstance(v, list):
-            msg = f"Dependencies must be a list, got: {type(v)}"
-            raise ValueError(msg)
-
-        result = []
-        for item in v:
-            if isinstance(item, ModelDependency):
-                result.append(item)
-            else:
-                # Use factory function to handle various formats
-                result.append(create_dependency(item))
-
-        return result
 
     def _validate_node_type_compliance(self) -> None:
         """

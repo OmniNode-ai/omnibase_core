@@ -132,9 +132,18 @@ actions:
     outputs:
       - routing_metrics
 dependencies:
-  - omnibase.protocol.protocol_event_bus
-  - omnibase.protocol.protocol_postgresql
-  - omnibase.protocol.protocol_file_system
+  - name: "event_bus"
+    type: "protocol"
+    class_name: "ProtocolEventBus"
+    module: "omnibase.protocol.protocol_event_bus"
+  - name: "postgresql"
+    type: "protocol"
+    class_name: "ProtocolPostgreSQL"
+    module: "omnibase.protocol.protocol_postgresql"
+  - name: "file_system"
+    type: "protocol"
+    class_name: "ProtocolFileSystem"
+    module: "omnibase.protocol.protocol_file_system"
 event_type:
   primary_events:
     - message_routing

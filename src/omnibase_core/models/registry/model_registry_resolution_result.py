@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
     from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-    from omnibase_core.models.core.model_generic_properties import ModelErrorSummary
+    from omnibase_core.models.core.model_error_summary import ModelErrorSummary
     from omnibase_core.models.core.model_monitoring_metrics import (
         ModelMonitoringMetrics,
     )
@@ -284,7 +284,7 @@ class ModelRegistryResolutionResult(BaseModel):
         if not self.is_failed() and not self.error_message:
             return None
 
-        from omnibase_core.models.core.model_generic_properties import ModelErrorSummary
+        from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 
         return ModelErrorSummary(
             code=self.error_code,

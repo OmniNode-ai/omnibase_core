@@ -93,7 +93,7 @@ class GatewayMessageData(BaseModel):
     )
 
     class Config:
-        extra = "allow"  # Allow unknown fields for backward compatibility
+        extra = "ignore"  # Ignore unknown fields in demo
         validate_assignment = True
 
 
