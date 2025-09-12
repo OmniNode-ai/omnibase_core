@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_uri import ModelOnexUri
+from omnibase_core.models.core.model_uri import ModelOnexUri
 
 
 class ProtocolUriParser(Protocol):

@@ -600,7 +600,16 @@ class NodeCanaryGateway(NodeEffectService):
 
             return ModelGroupGatewayOutput(
                 status="success",
-                aggregated_response={"cleared_entries": deleted_count},
+                aggregated_response=ModelAggregatedResponse(
+                    operation_type="clear_cache",
+                    correlation_id=getattr(context, "correlation_id", None),
+                    timestamp=datetime.now().isoformat(),
+                    total_responses=1,
+                    successful_responses=1,
+                    failed_responses=0,
+                    responses=[{"cleared_entries": str(deleted_count)}],
+                    errors=[],
+                ),
             )
 
         except Exception as e:
@@ -613,7 +622,16 @@ class NodeCanaryGateway(NodeEffectService):
 
             return ModelGroupGatewayOutput(
                 status="error",
-                aggregated_response={},
+                aggregated_response=ModelAggregatedResponse(
+                    operation_type="clear_cache",
+                    correlation_id=getattr(context, "correlation_id", None),
+                    timestamp=datetime.now().isoformat(),
+                    total_responses=0,
+                    successful_responses=0,
+                    failed_responses=1,
+                    responses=[],
+                    errors=[{"error": error_details["message"]}],
+                ),
                 error_message=error_details["message"],
             )
 
@@ -636,7 +654,18 @@ class NodeCanaryGateway(NodeEffectService):
             )
         return ModelGroupGatewayOutput(
             status="error",
-            aggregated_response={},
+            aggregated_response=ModelAggregatedResponse(
+                operation_type=input_data.operation_type,
+                correlation_id=input_data.correlation_id,
+                timestamp=datetime.now().isoformat(),
+                total_responses=0,
+                successful_responses=0,
+                failed_responses=1,
+                responses=[],
+                errors=[
+                    {"error": f"Unknown operation type: {input_data.operation_type}"}
+                ],
+            ),
             error_message=f"Unknown operation type: {input_data.operation_type}",
         )
 
@@ -663,18 +692,25 @@ class NodeCanaryGateway(NodeEffectService):
     async def get_metrics(self) -> dict[str, str | int | float]:
         """Get gateway performance metrics."""
         avg_response_time = 0.0
-        if self.routing_metrics["response_times"]:
-            avg_response_time = sum(self.routing_metrics["response_times"]) / len(
-                self.routing_metrics["response_times"]
-            )
+        response_times = self.routing_metrics["response_times"]
+        if response_times and isinstance(response_times, list):
+            avg_response_time = sum(response_times) / len(response_times)
+
+        total_requests = self.routing_metrics["total_requests"]
+        cache_hits = self.routing_metrics["cache_hits"]
+        cache_hit_rate = (
+            cache_hits / max(1, total_requests)
+            if isinstance(total_requests, (int, float))
+            and isinstance(cache_hits, (int, float))
+            else 0.0
+        )
 
         return {
-            "total_requests": self.routing_metrics["total_requests"],
+            "total_requests": total_requests,
             "successful_requests": self.routing_metrics["successful_requests"],
             "failed_requests": self.routing_metrics["failed_requests"],
             "average_response_time_ms": avg_response_time,
-            "cache_hit_rate": self.routing_metrics["cache_hits"]
-            / max(1, self.routing_metrics["total_requests"]),
+            "cache_hit_rate": cache_hit_rate,
             "timestamp": datetime.now().isoformat(),
         }
 

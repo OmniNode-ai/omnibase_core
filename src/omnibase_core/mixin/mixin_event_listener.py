@@ -22,7 +22,7 @@ from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 # Generic type variables for input and output states
@@ -130,7 +130,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             try:
                 contract_path = Path(self.contract_path)
                 if contract_path.exists():
-                    from omnibase_core.model.core.model_generic_yaml import (
+                    from omnibase_core.models.core.model_generic_yaml import (
                         ModelGenericYaml,
                     )
                     from omnibase_core.utils.safe_yaml_loader import (
@@ -446,7 +446,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         def handler(envelope):
             """Handle incoming event envelope."""
-            # Handle both envelope and direct event for compatibility
+            # Handle both envelope and direct event for current standards
             if hasattr(envelope, "payload"):
                 # This is a ModelEventEnvelope
                 event = envelope.payload

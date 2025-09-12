@@ -38,7 +38,7 @@ class CoreEventTypes:
 def normalize_legacy_event_type(event_type: str | dict | object) -> str:
     """Normalize legacy event types to consistent string format.
 
-    This function handles backward compatibility by converting various
+    This function handles compatibility by converting various
     event type formats (strings, ModelEventType objects, etc.) to
     standardized string values.
 

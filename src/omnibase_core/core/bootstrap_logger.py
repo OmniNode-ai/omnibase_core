@@ -49,15 +49,15 @@ def create_basic_logger(level: LogLevel = LogLevel.INFO) -> ProtocolLogger:
             self.emit_log_event_sync(level, message, event_type, **kwargs)
 
         def info(self, message: str) -> None:
-            """Info level logging for compatibility."""
+            """Info level logging for current standards."""
             self.emit_log_event_sync(LogLevel.INFO, message, "info")
 
         def warning(self, message: str) -> None:
-            """Warning level logging for compatibility."""
+            """Warning level logging for current standards."""
             self.emit_log_event_sync(LogLevel.WARNING, message, "warning")
 
         def error(self, message: str) -> None:
-            """Error level logging for compatibility."""
+            """Error level logging for current standards."""
             self.emit_log_event_sync(LogLevel.ERROR, message, "error")
 
     return BasicLogger(level)

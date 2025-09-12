@@ -16,7 +16,7 @@ from typing import Any
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
 
@@ -33,10 +33,8 @@ class StringVersionValidator:
             with open(yaml_path, encoding="utf-8") as f:
                 content = f.read()
 
-            # Parse YAML using safe loader
+            # Parse YAML using Pydantic model validation
             yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
-
-            # Use model dump for validation purposes - this is acceptable since it's post-validation
             yaml_data = yaml_model.model_dump()
 
             if not yaml_data:

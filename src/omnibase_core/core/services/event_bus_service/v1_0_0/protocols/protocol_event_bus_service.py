@@ -10,8 +10,8 @@ Author: ONEX Framework Team
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 

@@ -483,8 +483,8 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal[EnumNodeType.ORCHESTRATOR] = Field(  # type: ignore[valid-type]
-        default=EnumNodeType.ORCHESTRATOR,
+    node_type: Literal["ORCHESTRATOR"] = Field(
+        default="ORCHESTRATOR",
         description="Node type classification for 4-node architecture",
     )
 
@@ -507,7 +507,7 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
     # Dependencies now use unified ModelDependency from base class
     # Removed union type override - base class handles all formats
 
-    # Infrastructure-specific fields for backward compatibility
+    # Infrastructure-specific fields for current standards
     tool_specification: dict[str, Any] | None = Field(
         default=None,
         description="Tool specification for infrastructure patterns",
@@ -861,9 +861,9 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         )
 
     @classmethod
-    def from_yaml(cls, yaml_content: str) -> ModelContractOrchestrator:
+    def from_yaml(cls, yaml_content: str) -> "ModelContractOrchestrator":
         """
-        Create contract model from YAML content.
+        Create contract model from YAML content with proper enum handling.
 
         Args:
             yaml_content: YAML string representation
@@ -871,10 +871,13 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         Returns:
             ModelContractOrchestrator: Validated contract model instance
         """
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from pydantic import ValidationError
+
         from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
-        # Load and validate YAML using Pydantic model
-        yaml_model = load_yaml_content_as_model(yaml_content, ModelGenericYaml)
-        data = yaml_model.model_dump()
-        return cls.model_validate(data)
+        try:
+            # Use safe YAML loader to parse content and validate as model
+            return load_yaml_content_as_model(yaml_content, cls)
+
+        except ValidationError as e:
+            raise ValueError(f"Contract validation failed: {e}") from e

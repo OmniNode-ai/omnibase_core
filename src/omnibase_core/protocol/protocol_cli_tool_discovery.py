@@ -7,10 +7,10 @@ providing duck-typed tool execution without hardcoded import paths.
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_cli_discovery_stats import ModelCliDiscoveryStats
-from omnibase_core.model.core.model_tool_health_status import ModelToolHealthStatus
-from omnibase_core.model.core.model_tool_implementation import ModelToolImplementation
-from omnibase_core.model.discovery.model_tool_discovery_response import (
+from omnibase_core.models.core.model_cli_discovery_stats import ModelCliDiscoveryStats
+from omnibase_core.models.core.model_tool_health_status import ModelToolHealthStatus
+from omnibase_core.models.core.model_tool_implementation import ModelToolImplementation
+from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
 

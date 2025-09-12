@@ -138,7 +138,7 @@ class SerializationUtils:
         }
 
     @staticmethod
-    def prepare_correlation_id(correlation_id: Any) -> str:
+    def prepare_correlation_id(correlation_id: Any) -> str | None:
         """
         Ensure correlation ID is a string.
 

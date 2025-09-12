@@ -37,14 +37,16 @@ class ONEXPatternExclusion:
 
     def __call__(self, target: Callable | type) -> Callable | type:
         """Apply the exclusion to the target function or class."""
-        # Mark the target with exclusion metadata
+        # Mark the target with exclusion metadata using setattr to avoid type issues
         if not hasattr(target, "_onex_pattern_exclusions"):
-            target._onex_pattern_exclusions = set()
+            setattr(target, "_onex_pattern_exclusions", set())
 
-        target._onex_pattern_exclusions.update(self.excluded_patterns)
-        target._onex_exclusion_reason = self.reason
-        target._onex_exclusion_scope = self.scope
-        target._onex_exclusion_reviewer = self.reviewer
+        existing_exclusions = getattr(target, "_onex_pattern_exclusions", set())
+        existing_exclusions.update(self.excluded_patterns)
+        setattr(target, "_onex_pattern_exclusions", existing_exclusions)
+        setattr(target, "_onex_exclusion_reason", self.reason)
+        setattr(target, "_onex_exclusion_scope", self.scope)
+        setattr(target, "_onex_exclusion_reviewer", self.reviewer)
 
         return target
 
@@ -98,7 +100,7 @@ def allow_mixed_types(reason: str, reviewer: str | None = None):
         reviewer: Optional code reviewer who approved this
 
     Example:
-        @allow_mixed_types("Legacy interface compatibility layer")
+        @allow_mixed_types("Modern interface standards layer")
         def legacy_adapter(self, data: Any) -> Dict[str, Any]:
             ...
     """

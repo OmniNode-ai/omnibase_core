@@ -13,7 +13,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.model.mcp.model_mcp_session import ModelMCPSession
+from omnibase_core.models.mcp.model_mcp_session import ModelMCPSession
 
 logger = logging.getLogger(__name__)
 

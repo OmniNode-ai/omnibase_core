@@ -29,7 +29,7 @@ from omnibase_core.enums import NodeMetadataField
 from .mixin_canonical_serialization import CanonicalYAMLSerializer
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
 
 def canonicalize_metadata_block(

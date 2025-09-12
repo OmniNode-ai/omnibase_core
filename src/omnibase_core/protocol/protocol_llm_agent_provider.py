@@ -9,9 +9,9 @@ from abc import ABC, abstractmethod
 
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
-from omnibase_core.model.agent.model_llm_agent_config import ModelLLMAgentConfig
-from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
-from omnibase_core.model.llm.model_llm_response import ModelLLMResponse
+from omnibase_core.models.agent.model_llm_agent_config import ModelLLMAgentConfig
+from omnibase_core.models.core.model_agent_instance import ModelAgentInstance
+from omnibase_core.models.llm.model_llm_response import ModelLLMResponse
 
 
 class ProtocolLLMAgentProvider(ABC):

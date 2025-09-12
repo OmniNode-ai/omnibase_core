@@ -7,10 +7,10 @@ including configurable chunking, overlap handling, and language-aware processing
 
 from typing import Protocol
 
-from omnibase_core.model.semantic.model_preprocessing_input_state import (
+from omnibase_core.models.semantic.model_preprocessing_input_state import (
     ModelPreprocessingInputState,
 )
-from omnibase_core.model.semantic.model_preprocessing_output_state import (
+from omnibase_core.models.semantic.model_preprocessing_output_state import (
     ModelPreprocessingOutputState,
 )
 

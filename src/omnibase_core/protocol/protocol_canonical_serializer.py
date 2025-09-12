@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Protocol, Union
 from omnibase_core.enums import NodeMetadataField
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
 
 class ProtocolCanonicalSerializer(Protocol):

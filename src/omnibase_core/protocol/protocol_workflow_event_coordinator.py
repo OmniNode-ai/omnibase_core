@@ -7,8 +7,8 @@ workflow execution within Workflow scenarios.
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from omnibase_core.model.core.model_onex_result import ModelOnexResult
-from omnibase_core.model.workflow.model_workflow_event import ModelWorkflowEvent
+from omnibase_core.models.core.model_onex_result import ModelOnexResult
+from omnibase_core.models.workflow.model_workflow_event import ModelWorkflowEvent
 
 if TYPE_CHECKING:
     from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus

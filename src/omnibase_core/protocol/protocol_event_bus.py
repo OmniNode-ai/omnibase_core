@@ -25,7 +25,7 @@
 from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 from omnibase_core.protocol.protocol_event_bus_types import EventBusCredentialsModel
 
 
@@ -42,7 +42,7 @@ class ProtocolEventBus(Protocol):
     # ROADMAP: Future protocol extensions for production scalability
     #
     # Phase 1 - Backend Abstraction:
-    # - Pluggable backend interface (Redis, Kafka, RabbitMQ, NATS)
+    # - Pluggable backend interface (Redis, RabbitMQ, NATS)
     # - Backend selection via configuration
     # - Fallback mechanisms for backend failures
     #

@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any
 
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_database_connection import (
     ProtocolDatabaseConnection,
 )

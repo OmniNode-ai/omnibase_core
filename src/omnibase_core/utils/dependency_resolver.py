@@ -9,7 +9,7 @@ based on mathematical graph algorithms.
 import logging
 from collections import defaultdict, deque
 
-from omnibase_core.model.dependencies.model_dependency_graph import (
+from omnibase_core.models.dependencies.model_dependency_graph import (
     ModelDependencyGraph,
     ModelTopologicalSort,
 )

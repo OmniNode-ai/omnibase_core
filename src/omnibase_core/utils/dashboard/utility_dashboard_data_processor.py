@@ -20,7 +20,7 @@ from omnibase_core.services.postgres_debug_knowledge_base import (
 from omnibase_core.utils.session.utility_session_manager import UtilitySessionManager
 
 if TYPE_CHECKING:
-    from omnibase_core.utils.kafka.utility_kafka_hook_processor import ModelHookEvent
+    pass
 
 
 class UtilityDashboardDataProcessor:

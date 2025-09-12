@@ -29,7 +29,7 @@ from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_node_contract_data import ModelNodeContractData
+from omnibase_core.models.core.model_node_contract_data import ModelNodeContractData
 
 
 class NodeCoreBase(ABC):
@@ -346,9 +346,7 @@ class NodeCoreBase(ABC):
                         contract_data = ModelNodeContractData.from_dict(
                             contract_data_raw
                         )
-                        self.contract_data = (
-                            contract_data_raw  # Keep raw for backward compatibility
-                        )
+                        self.contract_data = contract_data_raw
                         self.version = contract_data.version
                     except Exception as e:
                         raise OnexError(

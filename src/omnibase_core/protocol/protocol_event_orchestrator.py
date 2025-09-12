@@ -9,12 +9,12 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from datetime import datetime
 
-from omnibase_core.model.communication.model_agent_event import ModelAgentEvent
-from omnibase_core.model.communication.model_progress_update import ModelProgressUpdate
-from omnibase_core.model.communication.model_work_result import ModelWorkResult
-from omnibase_core.model.core.model_agent_status import ModelAgentStatus
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
-from omnibase_core.model.work.model_work_ticket import ModelWorkTicket
+from omnibase_core.models.communication.model_agent_event import ModelAgentEvent
+from omnibase_core.models.communication.model_progress_update import ModelProgressUpdate
+from omnibase_core.models.communication.model_work_result import ModelWorkResult
+from omnibase_core.models.core.model_agent_status import ModelAgentStatus
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.work.model_work_ticket import ModelWorkTicket
 
 
 class ProtocolEventOrchestrator(ABC):

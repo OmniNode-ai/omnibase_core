@@ -7,7 +7,7 @@ Used for contract generation and model creation.
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_schema import ModelSchema
+from omnibase_core.models.core.model_schema import ModelSchema
 
 
 class ProtocolTypeMapper(Protocol):

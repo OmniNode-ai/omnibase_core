@@ -19,17 +19,17 @@ from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums import IgnorePatternSourceEnum, LogLevel, TraversalModeEnum
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_directory_processing_result import (
+from omnibase_core.models.core.model_directory_processing_result import (
     ModelDirectoryProcessingResult,
 )
-from omnibase_core.model.core.model_file_filter import FileFilterModel
-from omnibase_core.model.core.model_log_entry import LogModelContext
-from omnibase_core.model.core.model_onex_message_result import (
+from omnibase_core.models.core.model_file_filter import FileFilterModel
+from omnibase_core.models.core.model_log_entry import LogModelContext
+from omnibase_core.models.core.model_onex_message_result import (
     EnumOnexStatus,
     ModelOnexMessage,
     OnexResultModel,
 )
-from omnibase_core.model.core.model_tree_sync_result import ModelTreeSyncResult
+from omnibase_core.models.core.model_tree_sync_result import ModelTreeSyncResult
 from omnibase_core.protocol.protocol_directory_traverser import (
     ProtocolDirectoryTraverser,
 )
@@ -368,7 +368,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 )
                 self.result.skipped_count += 1
                 self.result.skipped_files.add(file_path)
-                from omnibase_core.model.core.model_skipped_file_reason import (
+                from omnibase_core.models.core.model_skipped_file_reason import (
                     ModelSkippedFileReason,
                 )
 
@@ -425,7 +425,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
         Returns:
             List of ignore patterns as strings, with child directory patterns taking precedence.
         """
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
         patterns = []

@@ -12,9 +12,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.model_capture_stats import ModelCaptureStats
-from omnibase_core.models.model_tool_capture import ModelToolCapture
-from omnibase_core.models.model_tool_stats import ModelToolStats
+from omnibase_core.models.capture.model_capture_stats import ModelCaptureStats
+from omnibase_core.models.capture.model_tool_capture import ModelToolCapture
+from omnibase_core.models.capture.model_tool_stats import ModelToolStats
 
 
 class ModelStorageConfig(BaseModel):

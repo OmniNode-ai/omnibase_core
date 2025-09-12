@@ -26,7 +26,7 @@ import uuid
 from collections.abc import Callable
 from typing import Protocol, TypedDict
 
-from omnibase_core.model.core.model_entrypoint import ModelEntrypointBlock
+from omnibase_core.models.core.model_entrypoint import ModelEntrypointBlock
 
 # yaml import removed - using centralized YAML operations from safe_yaml_loader
 
@@ -84,7 +84,7 @@ def canonicalize_for_hash(
     - Serializes metadata (if a serializer is provided).
     Returns the concatenated canonicalized metadata and body as a string.
     """
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
     # Extract key fields from metadata dict, use model defaults for missing fields
     if volatile_fields is None:

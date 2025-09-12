@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_reducer import ActionModel, ModelState
+from omnibase_core.models.core.model_reducer import ActionModel, ModelState
 
 
 class ProtocolReducer(Protocol):

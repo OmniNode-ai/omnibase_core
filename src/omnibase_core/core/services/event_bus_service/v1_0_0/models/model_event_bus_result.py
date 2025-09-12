@@ -10,8 +10,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 

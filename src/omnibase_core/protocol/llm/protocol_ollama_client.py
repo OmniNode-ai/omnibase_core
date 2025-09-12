@@ -9,13 +9,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 
 from omnibase_core.enums.enum_query_type import EnumQueryType
-from omnibase_core.model.llm.model_answer_generation_result import (
+from omnibase_core.models.llm.model_answer_generation_result import (
     ModelAnswerGenerationResult,
 )
-from omnibase_core.model.llm.model_conversation_context import ModelRetrievedDocument
-from omnibase_core.model.llm.model_llm_health_response import ModelLLMHealthResponse
-from omnibase_core.model.llm.model_ollama_capabilities import ModelOllamaCapabilities
-from omnibase_core.model.llm.model_query_enhancement_result import (
+from omnibase_core.models.llm.model_conversation_context import ModelRetrievedDocument
+from omnibase_core.models.llm.model_llm_health_response import ModelLLMHealthResponse
+from omnibase_core.models.llm.model_ollama_capabilities import ModelOllamaCapabilities
+from omnibase_core.models.llm.model_query_enhancement_result import (
     ModelQueryEnhancementResult,
 )
 

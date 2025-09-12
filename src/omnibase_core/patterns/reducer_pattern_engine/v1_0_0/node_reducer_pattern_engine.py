@@ -42,7 +42,7 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
     - Comprehensive error handling with OnexError patterns
 
     Phase 3 Implementation:
-    - Wraps existing ReducerPatternEngine for backward compatibility
+    - Wraps existing ReducerPatternEngine for current standards
     - Adds ONEX envelope support for inter-node communication
     - Implements protocol-based validation and error handling
     - Integrates with ModelOnexContainer service resolution
@@ -551,14 +551,12 @@ class NodeReducerPatternEngine(NodeReducer, BaseReducerPatternEngine):
                 "node_id": self._node_id,
             }
 
-    # Backward Compatibility Methods
-
     async def reduce(
         self,
         workflow_request: ModelWorkflowRequest,
     ) -> ModelWorkflowResponse:
         """
-        Backward compatibility method for direct workflow processing.
+        Modern standards method for direct workflow processing.
 
         Args:
             workflow_request: Workflow request to process

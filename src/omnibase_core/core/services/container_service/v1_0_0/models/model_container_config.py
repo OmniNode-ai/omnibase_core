@@ -35,7 +35,7 @@ class ModelContainerConfig(BaseModel):
 
     enable_registry_wrapper: bool = Field(
         default=True,
-        description="Enable registry wrapper for backward compatibility with Phase 0 pattern",
+        description="Enable registry wrapper for current standards with Phase 0 pattern",
     )
 
     container_metadata: dict | None = Field(

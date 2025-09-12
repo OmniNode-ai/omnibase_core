@@ -16,14 +16,14 @@ import pytest
 from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_core_errors import CoreErrorCode, OnexError
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.discovery.model_tool_invocation_event import (
+from omnibase_core.models.core.model_core_errors import CoreErrorCode, OnexError
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase_core.model.discovery.model_tool_response_event import (
+from omnibase_core.models.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.tools.infrastructure.tool_infrastructure_orchestrator.v1_0_0.node import (

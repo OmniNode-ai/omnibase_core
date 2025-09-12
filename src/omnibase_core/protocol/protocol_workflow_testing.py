@@ -13,28 +13,28 @@ from omnibase_core.enums.enum_workflow_testing import (
     EnumAccommodationStrategy,
     EnumTestContext,
 )
-from omnibase_core.model.core.model_generic_value import ModelGenericValue
-from omnibase_core.model.workflow_testing.model_accommodation_override_map import (
+from omnibase_core.models.core.model_generic_value import ModelGenericValue
+from omnibase_core.models.workflow_testing.model_accommodation_override_map import (
     ModelAccommodationOverrideMap,
 )
-from omnibase_core.model.workflow_testing.model_dependency_accommodation_map import (
+from omnibase_core.models.workflow_testing.model_dependency_accommodation_map import (
     ModelDependencyAccommodationMap,
 )
-from omnibase_core.model.workflow_testing.model_mock_event_bus import (
+from omnibase_core.models.workflow_testing.model_mock_event_bus import (
     ModelMockEventBusConfig,
 )
-from omnibase_core.model.workflow_testing.model_mock_registry import (
+from omnibase_core.models.workflow_testing.model_mock_registry import (
     ModelMockRegistryConfig,
 )
-from omnibase_core.model.workflow_testing.model_service_availability_map import (
+from omnibase_core.models.workflow_testing.model_service_availability_map import (
     ModelServiceAvailabilityMap,
 )
-from omnibase_core.model.workflow_testing.model_workflow_testing_configuration import (
+from omnibase_core.models.workflow_testing.model_workflow_testing_configuration import (
     ModelMockDependencyConfig,
     ModelTestWorkflow,
     ModelWorkflowTestingConfiguration,
 )
-from omnibase_core.model.workflow_testing.model_workflow_testing_results import (
+from omnibase_core.models.workflow_testing.model_workflow_testing_results import (
     ModelAccommodationResult,
     ModelTestWorkflowResult,
     ModelWorkflowTestingResults,

@@ -8,7 +8,7 @@ with proper fallback strategies and error handling.
 from typing import Protocol, runtime_checkable
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.service.model_service_health import ModelServiceHealth
 
 
 @runtime_checkable

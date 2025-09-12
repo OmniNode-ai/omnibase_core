@@ -15,8 +15,8 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.model.discovery.model_node_introspection_event import (
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
 from omnibase_core.utils.safe_yaml_loader import (
@@ -97,7 +97,7 @@ class UtilityContractDrivenInputBuilder:
 
             # Add required base model fields
             if VERSION_FIELD not in input_data:
-                from omnibase_core.model.core.model_semver import ModelSemVer
+                from omnibase_core.models.core.model_semver import ModelSemVer
 
                 input_data[VERSION_FIELD] = ModelSemVer(major=1, minor=0, patch=0)
 

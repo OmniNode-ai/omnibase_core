@@ -18,7 +18,6 @@ class EnumExecutionMode(Enum):
 
     DIRECT = "direct"
     INMEMORY = "inmemory"
-    KAFKA = "kafka"
 
 
 class EnumOperationStatus(str, Enum):

@@ -163,8 +163,6 @@ def _build_registry_map(
         "tree_sitter_analyzer": container.tree_sitter_analyzer,
         "unified_file_processor": container.unified_file_processor,
         "onextree_regeneration_service": container.onextree_regeneration_service,
-        # Kafka services
-        "kafka_topic_manager": container.kafka_topic_manager,
         # AI Orchestrator services
         "ai_orchestrator_cli_adapter": container.ai_orchestrator_cli_adapter,
         "ai_orchestrator_node": container.ai_orchestrator_node,

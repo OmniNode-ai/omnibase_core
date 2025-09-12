@@ -31,7 +31,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol, TypeVar
 
-from omnibase_core.model.core.model_directory_processing_result import (
+from omnibase_core.models.core.model_directory_processing_result import (
     ModelDirectoryProcessingResult,
 )
 

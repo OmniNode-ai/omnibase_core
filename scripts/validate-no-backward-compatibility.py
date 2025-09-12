@@ -134,19 +134,29 @@ class BackwardCompatibilityDetector:
                 )
 
         # Pattern 4: Protocol* backward compatibility patterns
+        # Only match actual backward compatibility code patterns, not imports
         protocol_compat_patterns = [
             r'startswith\s*\(\s*["\']Protocol["\'].*compatibility',
-            r"Protocol.*backward.*compatibility",
-            r"Protocol.*legacy.*support",
-            r"simple.*Protocol.*names.*compatibility",
+            r"#.*Protocol.*backward.*compatibility",  # Comments only
+            r"#.*Protocol.*legacy.*support",  # Comments only
+            r"#.*simple.*Protocol.*names.*compatibility",  # Comments only
+            r'if.*startswith\s*\(\s*["\']Protocol["\']',  # Conditional checks
         ]
 
         for pattern in protocol_compat_patterns:
-            matches = re.finditer(
-                pattern, content, re.MULTILINE | re.IGNORECASE | re.DOTALL
-            )
+            matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
+                # Skip legitimate imports and assignments
+                line_content = content.splitlines()[line_num - 1].strip()
+                if (
+                    line_content.startswith("from ")
+                    or line_content.startswith("import ")
+                    or "=" in line_content
+                    and "import" not in line_content
+                ):
+                    continue
+
                 errors.append(
                     f"Line {line_num}: Protocol backward compatibility pattern detected - "
                     f"remove Protocol* legacy support"

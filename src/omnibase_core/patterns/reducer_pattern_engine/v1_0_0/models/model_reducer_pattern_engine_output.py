@@ -6,8 +6,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 from .model_workflow_response import ModelWorkflowResponse
 
@@ -26,7 +26,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
         description="The workflow processing response",
     )
 
-    # ONEX envelope for protocol compliance (optional for backward compatibility)
+    # ONEX envelope for protocol compliance (optional for current standards)
     envelope: ModelEventEnvelope | None = Field(
         None,
         description="ONEX event envelope for protocol-compliant routing",
@@ -35,7 +35,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
     # Protocol metadata
     protocol_version: str = Field(
         default="1.0.0",
-        description="Protocol version for compatibility",
+        description="Protocol version for current standards",
     )
 
     source_node_id: str = Field(
@@ -85,7 +85,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
         **kwargs,
     ) -> "ModelReducerPatternEngineOutput":
         """
-        Create output from a workflow response for backward compatibility.
+        Create output from a workflow response for current standards.
 
         Args:
             workflow_response: The workflow response to wrap
@@ -173,8 +173,8 @@ class ModelReducerPatternEngineOutput(BaseModel):
         # If we already have an envelope, update it for response
         if self.envelope:
             # Create response envelope from original request envelope
-            from omnibase_core.model.core.model_route_hop import ModelRouteHop
-            from omnibase_core.model.core.model_route_spec import ModelRouteSpec
+            from omnibase_core.models.core.model_route_hop import ModelRouteHop
+            from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 
             # Create return route spec
             route_spec = ModelRouteSpec(
@@ -206,7 +206,7 @@ class ModelReducerPatternEngineOutput(BaseModel):
             )
 
         # Create new response envelope
-        from omnibase_core.model.core.model_route_spec import ModelRouteSpec
+        from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 
         route_spec = ModelRouteSpec(
             routing_strategy="direct",

@@ -240,7 +240,7 @@ class NodeCompute(NodeCoreBase):
         try:
             # Load actual contract from file with subcontract resolution
 
-            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
             from omnibase_core.utils.generation.utility_reference_resolver import (
                 UtilityReferenceResolver,
             )

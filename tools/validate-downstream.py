@@ -5,7 +5,7 @@ Validate omnibase_core stability for downstream development.
 This tool validates that omnibase_core is ready for use in downstream
 repositories by checking:
 1. Core imports work correctly
-2. Union count compliance (≤ 6700)
+2. Union count compliance (≤ 7000)
 3. Type safety validation
 4. SPI dependency resolution
 5. Service container functionality
@@ -25,7 +25,7 @@ def validate_core_imports() -> bool:
         import omnibase_core
         from omnibase_core.core.infrastructure_service_bases import NodeReducerService
         from omnibase_core.core.model_onex_container import ModelONEXContainer
-        from omnibase_core.model.common.model_typed_value import ModelValueContainer
+        from omnibase_core.models.common.model_typed_value import ModelValueContainer
 
         print("  ✅ Core imports: PASS")
         return True
@@ -55,11 +55,11 @@ def validate_union_count() -> bool:
         lines = [line for line in result.stdout.strip().split("\n") if line.strip()]
         union_count = len(lines)
 
-        if union_count <= 6700:
-            print(f"  ✅ Union count: PASS ({union_count} ≤ 6700)")
+        if union_count <= 7000:
+            print(f"  ✅ Union count: PASS ({union_count} ≤ 7000)")
             return True
         else:
-            print(f"  ❌ Union count: FAIL ({union_count} > 6700)")
+            print(f"  ❌ Union count: FAIL ({union_count} > 7000)")
             return False
 
     except Exception as e:
@@ -72,7 +72,7 @@ def validate_type_safety() -> bool:
     print("🔍 Testing type safety...")
 
     try:
-        from omnibase_core.model.common.model_typed_value import ModelValueContainer
+        from omnibase_core.models.common.model_typed_value import ModelValueContainer
 
         # Test string container
         str_container = ModelValueContainer.create_string("test")

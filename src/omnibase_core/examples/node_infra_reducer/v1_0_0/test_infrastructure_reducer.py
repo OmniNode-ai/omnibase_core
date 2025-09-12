@@ -25,8 +25,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.registry.model_registry_event import (
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.registry.model_registry_event import (
     ModelRegistryResponseEvent,
     RegistryOperations,
 )
@@ -46,7 +46,7 @@ class ModelIntrospectionData(BaseModel):
     node_name: str = Field(..., description="Node name identifier")
     version: str = Field(..., description="Node version")
     actions: list[str] = Field(..., description="Available actions")
-    protocols: list[str] = Field(..., description="Supported protocols")
+    supported_interfaces: list[str] = Field(..., description="Supported interfaces")
     metadata: dict[str, str] = Field(..., description="Node metadata")
     tags: list[str] = Field(..., description="Discovery tags")
     infrastructure_tools: dict[str, list] = Field(
@@ -728,7 +728,7 @@ class TestInfrastructureReducerHealthCheck:
 
 
 class TestInfrastructureReducerLegacyHealthCheck:
-    """Test the legacy aggregate_health_status method for backward compatibility."""
+    """Test the legacy aggregate_health_status method for current standards."""
 
     @pytest.fixture
     def mock_container(self):

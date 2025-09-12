@@ -11,30 +11,32 @@ import time
 from omnibase_core.core.constants.event_types import CoreEventTypes
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_semver import ModelSemVer
-from omnibase_core.model.discovery.enum_node_current_status import NodeCurrentStatusEnum
-from omnibase_core.model.discovery.model_current_tool_availability import (
+from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.discovery.enum_node_current_status import (
+    NodeCurrentStatusEnum,
+)
+from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
-from omnibase_core.model.discovery.model_introspection_additional_info import (
+from omnibase_core.models.discovery.model_introspection_additional_info import (
     ModelIntrospectionAdditionalInfo,
 )
-from omnibase_core.model.discovery.model_introspection_filters import (
+from omnibase_core.models.discovery.model_introspection_filters import (
     ModelIntrospectionFilters,
 )
-from omnibase_core.model.discovery.model_introspection_response_event import (
+from omnibase_core.models.discovery.model_introspection_response_event import (
     ModelIntrospectionResponseEvent,
 )
-from omnibase_core.model.discovery.model_node_introspection_event import (
+from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
-from omnibase_core.model.discovery.model_performance_metrics import (
+from omnibase_core.models.discovery.model_performance_metrics import (
     ModelPerformanceMetrics,
 )
-from omnibase_core.model.discovery.model_request_introspection_event import (
+from omnibase_core.models.discovery.model_request_introspection_event import (
     ModelRequestIntrospectionEvent,
 )
-from omnibase_core.model.discovery.model_resource_usage import ModelResourceUsage
+from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsage
 
 
 class MixinRequestResponseIntrospection:
@@ -315,7 +317,7 @@ class MixinRequestResponseIntrospection:
                 )
 
                 # Create envelope for the response
-                from omnibase_core.model.core.model_event_envelope import (
+                from omnibase_core.models.core.model_event_envelope import (
                     ModelEventEnvelope,
                 )
 
@@ -411,7 +413,7 @@ class MixinRequestResponseIntrospection:
 
                 if hasattr(self, "_event_bus") and self._event_bus:
                     # Create envelope for the error response
-                    from omnibase_core.model.core.model_event_envelope import (
+                    from omnibase_core.models.core.model_event_envelope import (
                         ModelEventEnvelope,
                     )
 

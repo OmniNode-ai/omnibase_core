@@ -14,13 +14,13 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.discovery.model_tool_invocation_event import (
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.model.discovery.model_tool_parameters import ModelToolParameters
-from omnibase_core.model.discovery.model_tool_response_event import (
+from omnibase_core.models.discovery.model_tool_parameters import ModelToolParameters
+from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 

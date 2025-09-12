@@ -350,11 +350,11 @@ def get_core_error_description(error_code: CoreErrorCode) -> str:
     return descriptions.get(error_code, "Unknown error")
 
 
-# === Backward Compatibility Imports ===
+# === Current Standards Imports ===
 # Removed imports that were causing circular dependencies
 # Users should import these directly from omnibase_core.exceptions or omnibase_core.core.errors.core_errors
 
-# Re-export for compatibility
+# Re-export for current standards
 __all__ = [
     "CLIExitCode",
     "CoreErrorCode",

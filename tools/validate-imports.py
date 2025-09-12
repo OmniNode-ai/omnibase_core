@@ -27,13 +27,13 @@ class ImportValidator:
             "omnibase_core.core.model_onex_container",
             "omnibase_core.core.infrastructure_service_bases",
             # Model imports
-            "omnibase_core.model.common.model_typed_value",
+            "omnibase_core.models.common.model_typed_value",
             # Enum imports
             "omnibase_core.enums.enum_log_level",
             # Error handling imports
             "omnibase_core.core.errors.core_errors",
             # Event system imports
-            "omnibase_core.model.core.model_event_envelope",
+            "omnibase_core.models.core.model_event_envelope",
             # CLI imports
             "omnibase_core.cli.config",
             # SPI integration imports
@@ -78,8 +78,8 @@ class ImportValidator:
             from omnibase_core.core import infrastructure_service_bases
 
             return infrastructure_service_bases
-        elif import_path == "omnibase_core.model.common.model_typed_value":
-            from omnibase_core.model.common import model_typed_value
+        elif import_path == "omnibase_core.models.common.model_typed_value":
+            from omnibase_core.models.common import model_typed_value
 
             return model_typed_value
         elif import_path == "omnibase_core.enums.enum_log_level":
@@ -90,8 +90,8 @@ class ImportValidator:
             from omnibase_core.core.errors import core_errors
 
             return core_errors
-        elif import_path == "omnibase_core.model.core.model_event_envelope":
-            from omnibase_core.model.core import model_event_envelope
+        elif import_path == "omnibase_core.models.core.model_event_envelope":
+            from omnibase_core.models.core import model_event_envelope
 
             return model_event_envelope
         elif import_path == "omnibase_core.cli.config":
@@ -186,7 +186,7 @@ class ImportValidator:
 
         # Model imports
         success &= self.test_from_import(
-            "omnibase_core.model.common.model_typed_value",
+            "omnibase_core.models.common.model_typed_value",
             "ModelValueContainer, StringContainer",
             "Typed Value Models",
         )
@@ -205,7 +205,7 @@ class ImportValidator:
 
         # Event system imports
         success &= self.test_from_import(
-            "omnibase_core.model.core.model_event_envelope",
+            "omnibase_core.models.core.model_event_envelope",
             "ModelEventEnvelope",
             "Event Envelope",
         )

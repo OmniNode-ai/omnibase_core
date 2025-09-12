@@ -11,7 +11,7 @@ from omnibase_spi.protocols.core import ProtocolUtilsNodeConfiguration
 from omnibase_spi.protocols.types.core_types import ContextValue
 
 from omnibase_core.core.onex_container import ModelONEXContainer
-from omnibase_core.model.config.model_node_configuration import ModelNodeConfiguration
+from omnibase_core.models.config.model_node_configuration import ModelNodeConfiguration
 
 
 class UtilsNodeConfiguration(ProtocolUtilsNodeConfiguration):

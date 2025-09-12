@@ -17,7 +17,7 @@ from omnibase_core.core.node_compute import ModelComputeInput, ModelComputeOutpu
 from omnibase_core.core.node_compute_service import NodeComputeService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,

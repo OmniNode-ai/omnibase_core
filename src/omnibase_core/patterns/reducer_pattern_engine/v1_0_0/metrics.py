@@ -24,6 +24,7 @@ except ImportError:
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 
 @dataclass
@@ -141,12 +142,10 @@ class ReducerMetricsCollector:
                 processing_time_ms=0.0,
                 memory_usage_mb=current_memory,
                 success=False,
-                started_at=time.time(),
             )
 
             emit_log_event(
-                logger=self._logger,
-                level="DEBUG",
+                level=LogLevel.DEBUG,
                 message=f"Started tracking workflow {workflow_id} of type {workflow_type}",
             )
 
@@ -199,8 +198,7 @@ class ReducerMetricsCollector:
             self._update_aggregate_metrics(workflow_metrics)
 
             emit_log_event(
-                logger=self._logger,
-                level="DEBUG",
+                level=LogLevel.DEBUG,
                 message=f"Recorded completion for workflow {workflow_id}: "
                 f"success={success}, time={processing_time_ms:.2f}ms",
             )
@@ -283,7 +281,7 @@ class ReducerMetricsCollector:
         with self._lock:
             self._update_system_metrics()
 
-            summary = {
+            summary: dict[str, Any] = {
                 "system_metrics": self._system_metrics.copy(),
                 "aggregate_metrics": {},
                 "workflow_types": list(self._aggregate_metrics.keys()),
@@ -399,7 +397,7 @@ class ReducerMetricsCollector:
             self._start_time = time.time()
             self._update_system_metrics()
 
-            emit_log_event(logger=self._logger, level="INFO", message="Metrics reset")
+            emit_log_event(level=LogLevel.INFO, message="Metrics reset")
 
     def _update_aggregate_metrics(self, workflow_metrics: WorkflowMetrics) -> None:
         """Update aggregate metrics with new workflow data."""
@@ -459,8 +457,7 @@ class ReducerMetricsCollector:
             )
         except Exception as e:
             emit_log_event(
-                logger=self._logger,
-                level="WARNING",
+                level=LogLevel.WARNING,
                 message=f"Failed to update system metrics: {e!s}",
             )
 

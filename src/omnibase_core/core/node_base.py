@@ -15,7 +15,9 @@ from pathlib import Path
 from typing import Generic, TypeVar
 from uuid import uuid4
 
-from omnibase_spi import ProtocolWorkflowReducer
+from omnibase_spi.protocols.core import protocol_workflow_reducer
+
+WorkflowReducerInterface = protocol_workflow_reducer.ProtocolWorkflowReducer
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -41,8 +43,8 @@ from omnibase_core.mixin.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
 from omnibase_core.mixin.mixin_tool_execution import MixinToolExecution
-from omnibase_core.model.core.model_node_base import ModelNodeBase
-from omnibase_core.model.core.model_reducer import ActionModel, ModelState
+from omnibase_core.models.core.model_node_base import ModelNodeBase
+from omnibase_core.models.core.model_reducer import ActionModel, ModelState
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -54,7 +56,7 @@ class ModelNodeBase(
     MixinRequestResponseIntrospection,
     MixinNodeIdFromContract,
     MixinToolExecution,
-    ProtocolWorkflowReducer,
+    WorkflowReducerInterface,
     Generic[T, U],
 ):
     """
@@ -536,13 +538,13 @@ class ModelNodeBase(
                 correlation_id=self.correlation_id,
             ) from e
 
-    # ===== BACKWARD COMPATIBILITY =====
+    # ===== MODERN STANDARDS =====
 
     def run(self, input_state: T) -> U:
         """
-        Synchronous run method for backward compatibility.
+        Synchronous run method for current standards.
 
-        This method provides backward compatibility with existing code
+        This method provides compatibility with existing code
         that expects synchronous execution patterns.
 
         Args:
@@ -573,7 +575,7 @@ class ModelNodeBase(
 
     def process(self, input_state: T) -> U:
         """
-        Synchronous process method for backward compatibility.
+        Synchronous process method for current standards.
 
         Args:
             input_state: Tool-specific input state
@@ -592,7 +594,7 @@ class ModelNodeBase(
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
-        from omnibase_core.model.core.model_reducer import ModelState
+        from omnibase_core.models.core.model_reducer import ModelState
 
         return ModelState()
 

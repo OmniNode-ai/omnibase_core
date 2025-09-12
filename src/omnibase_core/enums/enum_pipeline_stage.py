@@ -2,7 +2,7 @@
 Pipeline Stage Enumeration for the metadata processing pipeline.
 
 Defines the stages in the metadata processing pipeline that integrates
-Kafka, Postgres, Qdrant, file stamps, and LangExtract processing.
+Postgres, Qdrant, file stamps, and LangExtract processing.
 """
 
 from enum import Enum

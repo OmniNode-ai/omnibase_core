@@ -38,7 +38,7 @@ from pydantic import BaseModel
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_node_introspection import (
+from omnibase_core.models.core.model_node_introspection import (
     CLIArgumentModel,
     CLIInterfaceModel,
     ContractModel,
@@ -53,7 +53,7 @@ from omnibase_core.model.core.model_node_introspection import (
     StateFieldModel,
     create_node_introspection_response,
 )
-from omnibase_core.model.core.model_node_introspection_response import (
+from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
 
@@ -416,7 +416,7 @@ class NodeIntrospectionMixin(ABC):
         """
         import os
 
-        from omnibase_core.model.core.model_event_type import (
+        from omnibase_core.models.core.model_event_type import (
             create_event_type_from_string,
         )
 

@@ -7,10 +7,10 @@ including spawning, monitoring, lifecycle management, and resource tracking.
 
 from abc import ABC, abstractmethod
 
-from omnibase_core.model.configuration.model_agent_config import ModelAgentConfig
-from omnibase_core.model.core.model_agent_health_status import ModelAgentHealthStatus
-from omnibase_core.model.core.model_agent_instance import ModelAgentInstance
-from omnibase_core.model.core.model_agent_status import ModelAgentStatus
+from omnibase_core.models.configuration.model_agent_config import ModelAgentConfig
+from omnibase_core.models.core.model_agent_health_status import ModelAgentHealthStatus
+from omnibase_core.models.core.model_agent_instance import ModelAgentInstance
+from omnibase_core.models.core.model_agent_status import ModelAgentStatus
 
 
 class ProtocolAgentManager(ABC):

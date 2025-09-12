@@ -282,7 +282,7 @@ class UnifiedConfigManager:
         if not config.database.postgres_user:
             issues.append("postgres_user cannot be empty")
 
-        if not config.database.postgres_password and config.is_production():
+        if not config.database.postgres_password and self.is_production():
             warnings.append("postgres_password not set in production environment")
 
         # Validate logging

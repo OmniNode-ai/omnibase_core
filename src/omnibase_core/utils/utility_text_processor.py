@@ -165,7 +165,9 @@ class UtilityTextProcessor:
         return text[:truncate_length] + suffix
 
     @staticmethod
-    def analyze_text_metrics(text: str) -> dict[str, int | float | list[str]]:
+    def analyze_text_metrics(
+        text: str,
+    ) -> dict[str, int | float | list[str] | dict[str, bool | str | list[str]]]:
         """
         Analyze text and return comprehensive metrics.
 

@@ -9,7 +9,7 @@ from omnibase_core.core.errors.onex_error import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_document_freshness_errors import (
     EnumDocumentFreshnessErrorCodes,
 )
-from omnibase_core.model.docs.model_error_details import ModelErrorDetails
+from omnibase_core.models.docs.model_error_details import ModelErrorDetails
 
 
 class DocumentFreshnessError(OnexError):

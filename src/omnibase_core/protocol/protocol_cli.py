@@ -27,7 +27,7 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
-from omnibase_core.model.core.model_result_cli import ModelResultCLI
+from omnibase_core.models.core.model_result_cli import ModelResultCLI
 
 
 class CLIFlagDescriptionModel(BaseModel):

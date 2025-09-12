@@ -50,6 +50,7 @@ class EnumAgentHealth(str, Enum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
+    CRITICAL = "critical"
     STARTING = "starting"
     STOPPING = "stopping"
     ERROR = "error"

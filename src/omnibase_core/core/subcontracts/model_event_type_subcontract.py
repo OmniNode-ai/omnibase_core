@@ -186,7 +186,7 @@ class ModelEventPersistence(BaseModel):
     )
 
     storage_backend: str = Field(
-        default="kafka",
+        default="memory",
         description="Backend storage system for events",
     )
 

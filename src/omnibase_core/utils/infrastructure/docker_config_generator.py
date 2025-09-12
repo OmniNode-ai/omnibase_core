@@ -260,7 +260,7 @@ class DockerConfigGenerator:
     @staticmethod
     def create_tool_group_service(
         tools: list[str],
-        kafka_enabled: bool = True,
+        memory_event_bus_enabled: bool = True,
         consul_enabled: bool = True,
     ) -> ModelDockerService:
         """
@@ -268,7 +268,7 @@ class DockerConfigGenerator:
 
         Args:
             tools: List of tool names to include
-            kafka_enabled: Whether to enable Kafka integration
+            memory_event_bus_enabled: Whether to enable in-memory event bus integration
             consul_enabled: Whether to enable Consul integration
 
         Returns:
@@ -294,15 +294,15 @@ class DockerConfigGenerator:
 
         depends_on = ["onex-event-bus"]
 
-        if kafka_enabled:
+        if memory_event_bus_enabled:
             environment.append(
                 ModelDockerEnvironment(
-                    name="KAFKA_BOOTSTRAP_SERVERS",
-                    from_env="KAFKA_BOOTSTRAP_SERVERS",
-                    default="kafka:29092",
+                    name="EVENT_BUS_TYPE",
+                    from_env="EVENT_BUS_TYPE",
+                    default="memory",
                 ),
             )
-            depends_on.append("kafka")
+            depends_on.append("onex-event-bus")
 
         if consul_enabled:
             environment.extend(
@@ -399,7 +399,7 @@ class DockerConfigGenerator:
         volumes = [
             ModelDockerVolume(name="postgres_data"),
             ModelDockerVolume(name="redis_data"),
-            ModelDockerVolume(name="kafka_data"),
+            ModelDockerVolume(name="eventbus_data"),
             ModelDockerVolume(name="consul_data"),
             ModelDockerVolume(name="onex_logs"),
             ModelDockerVolume(name="onex_data"),

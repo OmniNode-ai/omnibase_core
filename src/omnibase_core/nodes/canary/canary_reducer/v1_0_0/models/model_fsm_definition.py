@@ -76,15 +76,13 @@ class ModelFSMDefinition(BaseModel):
 
     # FSM components
     states: list["ModelFSMState"] = Field(
-        ...,
         description="Complete list of state definitions",
-        min_items=1,
+        min_length=1,
     )
 
     transitions: list["ModelFSMTransition"] = Field(
-        ...,
         description="Complete list of transition definitions",
-        min_items=1,
+        min_length=1,
     )
 
     operations: list["ModelFSMOperation"] = Field(

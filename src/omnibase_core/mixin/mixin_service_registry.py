@@ -188,8 +188,10 @@ class MixinServiceRegistry:
 
         try:
             # Import the required models
-            from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-            from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+            from omnibase_core.models.core.model_event_envelope import (
+                ModelEventEnvelope,
+            )
+            from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
             # Create the discovery event
             discovery_event = ModelOnexEvent(
@@ -338,8 +340,10 @@ class MixinServiceRegistry:
 
         try:
             # Import the required models
-            from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-            from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+            from omnibase_core.models.core.model_event_envelope import (
+                ModelEventEnvelope,
+            )
+            from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
             # Create the introspection event
             introspection_event = ModelOnexEvent(

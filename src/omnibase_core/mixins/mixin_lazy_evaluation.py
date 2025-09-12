@@ -8,7 +8,7 @@ for expensive operations like model serialization and type conversions.
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
 
 from pydantic import BaseModel
 
@@ -20,7 +20,7 @@ PropertyValue = JsonSerializable
 T = TypeVar("T")
 
 
-class LazyValue:
+class LazyValue(Generic[T]):
     """Lazy evaluation wrapper for expensive operations."""
 
     def __init__(self, func: Callable[[], T], cache: bool = True):
@@ -36,12 +36,16 @@ class LazyValue:
         self._cached_value: Optional[T] = None
         self._computed = False
 
-    def __call__(self) -> T:
+    def get(self) -> T:
         """Compute and return the value."""
         if not self._computed or not self._cache:
             self._cached_value = self._func()
             self._computed = True
         return cast(T, self._cached_value)
+
+    def __call__(self) -> Any:
+        """Allow LazyValue to be called directly."""
+        return self.get()
 
     def is_computed(self) -> bool:
         """Check if value has been computed."""
@@ -63,11 +67,11 @@ class MixinLazyEvaluation:
 
     def __init__(self) -> None:
         super().__init__()
-        self._lazy_cache: Dict[str, LazyValue] = {}
+        self._lazy_cache: Dict[str, LazyValue[Any]] = {}
 
     def lazy_property(
         self, key: str, func: Callable[[], T], cache: bool = True
-    ) -> LazyValue:
+    ) -> LazyValue[T]:
         """
         Create or get a lazy property.
 
@@ -81,11 +85,11 @@ class MixinLazyEvaluation:
         """
         if key not in self._lazy_cache:
             self._lazy_cache[key] = LazyValue(func, cache)
-        return cast(LazyValue, self._lazy_cache[key])
+        return cast(LazyValue[T], self._lazy_cache[key])
 
     def lazy_model_dump(
         self, exclude: Optional[set[str]] = None, by_alias: bool = False
-    ) -> LazyValue:
+    ) -> LazyValue[Dict[str, JsonSerializable]]:
         """
         Create lazy model dump for Pydantic models.
 
@@ -105,7 +109,9 @@ class MixinLazyEvaluation:
         cache_key = f"model_dump_{hash((tuple(exclude or set()), by_alias))}"
         return self.lazy_property(cache_key, _compute_dump)
 
-    def lazy_serialize_nested(self, obj: Optional[BaseModel], key: str) -> LazyValue:
+    def lazy_serialize_nested(
+        self, obj: Optional[BaseModel], key: str
+    ) -> LazyValue[Optional[Dict[str, JsonSerializable]]]:
         """
         Create lazy serialization for nested objects.
 
@@ -122,7 +128,9 @@ class MixinLazyEvaluation:
 
         return self.lazy_property(f"serialize_{key}", _serialize)
 
-    def lazy_string_conversion(self, obj: Optional[BaseModel], key: str) -> LazyValue:
+    def lazy_string_conversion(
+        self, obj: Optional[BaseModel], key: str
+    ) -> LazyValue[str]:
         """
         Create lazy string conversion for nested objects.
 
@@ -193,9 +201,9 @@ def lazy_cached(cache_key: Optional[str] = None):
         cache_key: Custom cache key (defaults to method name)
     """
 
-    def decorator(func: Callable[..., T]) -> Callable[..., LazyValue]:
+    def decorator(func: Callable[..., T]) -> Callable[..., LazyValue[T]]:
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> LazyValue:
+        def wrapper(self, *args, **kwargs) -> LazyValue[T]:
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 
@@ -208,7 +216,7 @@ def lazy_cached(cache_key: Optional[str] = None):
 
                 self._lazy_cache[key] = LazyValue(compute)
 
-            return cast(LazyValue, self._lazy_cache[key])
+            return cast(LazyValue[T], self._lazy_cache[key])
 
         return wrapper
 

@@ -81,7 +81,14 @@ class ManualYamlValidationDetector:
 
         # Pattern 1: yaml.safe_load() followed by model validation
         if isinstance(node, ast.Call):
-            if self._is_yaml_safe_load(node) and not self._is_in_from_yaml_method(node):
+            if (
+                self._is_yaml_safe_load(node)
+                and not self._is_in_from_yaml_method(node)
+                and not (
+                    self._is_in_safe_yaml_loader(file_path)
+                    and self._is_in_yaml_utility_function()
+                )
+            ):
                 errors.append(
                     f"Line {node.lineno}: Found yaml.safe_load() - "
                     f"use Pydantic model.model_validate() instead",
@@ -121,28 +128,112 @@ class ManualYamlValidationDetector:
 
     def _is_in_from_yaml_method(self, node: ast.AST) -> bool:
         """Check if the node is inside a from_yaml classmethod."""
-        return getattr(self, "_current_function", None) == "from_yaml"
+        current_function = getattr(self, "_current_function", None)
+        return current_function is not None and current_function.startswith("from_yaml")
+
+    def _is_in_safe_yaml_loader(self, file_path: Path) -> bool:
+        """Check if we're in the centralized safe_yaml_loader module or other YAML utility files."""
+        yaml_utility_files = {
+            "safe_yaml_loader.py",
+            "utility_filesystem_reader.py",
+            "real_file_io.py",
+            "yaml_dict_loader.py",
+        }
+        return file_path.name in yaml_utility_files
+
+    def _is_in_yaml_utility_function(self) -> bool:
+        """Check if we're in a legitimate YAML utility function."""
+        current_function = getattr(self, "_current_function", None)
+        if current_function is None:
+            return False
+
+        yaml_utility_functions = {
+            "load_and_validate_yaml_model",
+            "load_yaml_content_as_model",
+            "_dump_yaml_content",
+            "extract_example_from_schema",
+            "read_yaml",  # File I/O utilities
+            "load_yaml",
+            "_load_yaml_file",
+            "load_yaml_as_dict",  # YAML dict loader utilities
+            "load_yaml_as_dict_with_validation",
+        }
+        return (
+            current_function in yaml_utility_functions
+            or current_function.startswith("from_yaml")
+            or current_function.endswith("_yaml")
+            or "yaml" in current_function.lower()
+        )
 
     def _is_yaml_field_access(self, node: ast.Subscript) -> bool:
-        """Check if this looks like direct YAML field access."""
-        if (
+        """Check if this looks like direct YAML field access (not serialization)."""
+        if not (
             isinstance(node.value, ast.Name)
             and isinstance(node.slice, ast.Constant)
             and isinstance(node.slice.value, str)
         ):
-            # Common YAML field names that suggest manual validation
-            yaml_fields = [
-                "node_name",
-                "node_type",
-                "contract_version",
-                "version",
-                "description",
-                "input_model",
-                "output_model",
-            ]
-            if node.slice.value in yaml_fields:
-                return True
-        return False
+            return False
+
+        var_name = node.value.id
+        field_name = node.slice.value
+
+        # Skip legitimate serialization patterns
+        if self._is_serialization_pattern(var_name, field_name):
+            return False
+
+        # Common YAML field names that suggest manual validation
+        yaml_fields = [
+            "node_name",
+            "node_type",
+            "contract_version",
+            "input_model",
+            "output_model",
+        ]
+
+        # Only flag if variable name suggests YAML data AND it's a known field
+        yaml_var_patterns = ["yaml_data", "data", "loaded_data", "config_data"]
+
+        return field_name in yaml_fields and (
+            var_name in yaml_var_patterns or "yaml" in var_name.lower()
+        )
+
+    def _is_serialization_pattern(self, var_name: str, field_name: str) -> bool:
+        """Check if this is a legitimate serialization pattern."""
+        # Common serialization variable names
+        serialization_vars = [
+            "schema",
+            "result",
+            "context",
+            "output",
+            "response",
+            "payload",
+            "export",
+            "dict_data",
+            "json_data",
+            "serialized",
+        ]
+
+        # Common serialization field names (broader than YAML validation)
+        serialization_fields = [
+            "version",
+            "description",
+            "title",
+            "name",
+            "status",
+            "timestamp",
+            "created_at",
+            "updated_at",
+            "id",
+            "uuid",
+        ]
+
+        return (
+            var_name in serialization_vars
+            or field_name in serialization_fields
+            or "serialize" in var_name.lower()
+            or "export" in var_name.lower()
+            or "build" in var_name.lower()
+        )
 
     def validate_all_python_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided Python files."""

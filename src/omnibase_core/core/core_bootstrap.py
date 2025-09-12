@@ -167,7 +167,7 @@ def _get_registry_node() -> Any | None:
         return ToolNodeDiscoveryNode(registry=registry)
 
     except ImportError:
-        # Fallback to legacy if modern tools not available
+        # Fallback to alternative implementation if primary tools not available
         try:
             from omnibase_core.nodes.node_registry.v1_0_0.node import NodeRegistry
 

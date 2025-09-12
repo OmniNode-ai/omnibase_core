@@ -4,7 +4,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Protocol
 
-from omnibase_core.model.precommit.model_check_result import ModelCheckResult
+from omnibase_core.models.precommit.model_check_result import ModelCheckResult
 
 
 class ProtocolPrecommitChecker(Protocol):

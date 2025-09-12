@@ -6,7 +6,7 @@ Verifies type mapping functionality for ONEX contract generation.
 
 import pytest
 
-from omnibase_core.model.core.model_schema import ModelSchema
+from omnibase_core.models.core.model_schema import ModelSchema
 from omnibase_core.utils.generation.utility_type_mapper import UtilityTypeMapper
 
 
@@ -110,7 +110,7 @@ class TestUtilityTypeMapper:
         # Model imports
         assert (
             mapper.get_import_for_type("ModelObjectData")
-            == "from omnibase_core.model.core.model_object_data import ModelObjectData"
+            == "from omnibase_core.models.core.model_object_data import ModelObjectData"
         )
 
         # No import needed

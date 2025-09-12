@@ -28,8 +28,8 @@ from .enum_metadata import (
 # Namespace-related enums
 from .enum_namespace_strategy import NamespaceStrategyEnum
 
-# Event and logging enums
-from .events import EnumLogLevel
+# URI-related enums
+from .enum_uri_type import UriTypeEnum
 
 # Execution-related enums
 from .execution import EnumExecutionMode, EnumOperationStatus
@@ -39,6 +39,10 @@ from .node import EnumHealthStatus, EnumNodeStatus, EnumNodeType
 
 # Validation-related enums
 from .validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+
+# Event and logging enums
+# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
+
 
 __all__ = [
     # Artifact domain
@@ -66,4 +70,6 @@ __all__ = [
     # Namespace domain
     "NamespaceStrategyEnum",
     "TraversalModeEnum",
+    # URI domain
+    "UriTypeEnum",
 ]

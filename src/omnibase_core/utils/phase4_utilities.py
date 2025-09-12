@@ -9,17 +9,17 @@ import hashlib
 import statistics
 from datetime import datetime, time, timedelta
 
-from omnibase_core.model.automation.model_operational_window import (
+from omnibase_core.models.automation.model_operational_window import (
     ModelOperationalWindow,
 )
-from omnibase_core.model.automation.model_work_item_validation import (
+from omnibase_core.models.automation.model_work_item_validation import (
     ModelWorkItemValidation,
 )
-from omnibase_core.model.classification.enum_work_complexity import EnumWorkComplexity
-from omnibase_core.model.classification.enum_work_priority import EnumWorkPriority
-from omnibase_core.model.classification.enum_work_type import EnumWorkType
-from omnibase_core.model.monitoring.enum_alert_severity import EnumAlertSeverity
-from omnibase_core.model.monitoring.enum_incident_severity import EnumIncidentSeverity
+from omnibase_core.models.classification.enum_work_complexity import EnumWorkComplexity
+from omnibase_core.models.classification.enum_work_priority import EnumWorkPriority
+from omnibase_core.models.classification.enum_work_type import EnumWorkType
+from omnibase_core.models.monitoring.enum_alert_severity import EnumAlertSeverity
+from omnibase_core.models.monitoring.enum_incident_severity import EnumIncidentSeverity
 
 
 class Phase4TimeUtilities:

@@ -123,7 +123,7 @@ class ModelContractGateway(ModelContractBase):
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractGateway":
         """
-        Create contract model from YAML content.
+        Create contract model from YAML content with proper enum handling.
 
         Args:
             yaml_content: YAML string representation
@@ -131,14 +131,13 @@ class ModelContractGateway(ModelContractBase):
         Returns:
             ModelContractGateway: Validated contract model instance
         """
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
-        from omnibase_core.utils.safe_yaml_loader import (
-            load_yaml_content_as_model,
-        )
+        from pydantic import ValidationError
 
-        # Load and validate YAML using Pydantic model
+        from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
-        yaml_model = load_yaml_content_as_model(yaml_content, ModelGenericYaml)
+        try:
+            # Use safe YAML loader to parse content and validate as model
+            return load_yaml_content_as_model(yaml_content, cls)
 
-        data = yaml_model.model_dump()
-        return cls.model_validate(data)
+        except ValidationError as e:
+            raise ValueError(f"Contract validation failed: {e}") from e

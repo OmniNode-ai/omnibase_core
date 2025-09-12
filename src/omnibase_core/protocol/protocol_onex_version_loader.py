@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_onex_version import ModelOnexVersionInfo
+from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 
 
 class ProtocolToolToolOnexVersionLoader(Protocol):

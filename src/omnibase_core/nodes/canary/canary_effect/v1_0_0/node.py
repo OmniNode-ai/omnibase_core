@@ -10,10 +10,10 @@ from omnibase_core.core.node_effect import EffectType
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_health_details import ModelHealthDetails
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_health_details import ModelHealthDetails
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,

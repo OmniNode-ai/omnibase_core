@@ -211,7 +211,7 @@ class ServiceDiscoveryManager:
 
             return create_basic_logger()
 
-        # Hybrid EventBus resolution - check Kafka first, fallback to EventBus
+        # EventBus resolution using memory-based event bus
         if "EventBus" in protocol_name or protocol_name == "event_bus":
             from typing import cast
 

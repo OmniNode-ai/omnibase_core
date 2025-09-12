@@ -8,11 +8,11 @@ for seamless provider switching and intelligent routing.
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Iterator
 
-from omnibase_core.model.llm.model_llm_health_response import ModelLLMHealthResponse
-from omnibase_core.model.llm.model_llm_request import ModelLLMRequest
-from omnibase_core.model.llm.model_llm_response import ModelLLMResponse
-from omnibase_core.model.llm.model_model_capabilities import ModelModelCapabilities
-from omnibase_core.model.llm.model_provider_config import ModelProviderConfig
+from omnibase_core.models.llm.model_llm_health_response import ModelLLMHealthResponse
+from omnibase_core.models.llm.model_llm_request import ModelLLMRequest
+from omnibase_core.models.llm.model_llm_response import ModelLLMResponse
+from omnibase_core.models.llm.model_model_capabilities import ModelModelCapabilities
+from omnibase_core.models.llm.model_provider_config import ModelProviderConfig
 
 
 class ProtocolLLMProvider(ABC):

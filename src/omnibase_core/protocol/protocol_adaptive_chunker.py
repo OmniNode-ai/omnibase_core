@@ -10,8 +10,8 @@ from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.intelligence.services.langextract_intelligence_service import (
     ModelIntelligenceResult,
 )
-from omnibase_core.model.advanced.model_adaptive_chunk import ModelModelAdaptiveChunk
-from omnibase_core.model.advanced.model_chunking_quality_metrics import (
+from omnibase_core.models.advanced.model_adaptive_chunk import ModelModelAdaptiveChunk
+from omnibase_core.models.advanced.model_chunking_quality_metrics import (
     ModelModelChunkingQualityMetrics,
 )
 from omnibase_core.tools.discovery.advanced.tool_multi_vector_indexer.v1_0_0.models.model_tool_multi_vector_indexer_input_state import (

@@ -182,7 +182,7 @@ class SecureErrorHandler:
 
         from datetime import datetime
 
-        context = {
+        context: dict[str, Any] = {
             "operation": operation_name,
             "timestamp": datetime.utcnow().isoformat(),
             "input_keys": list(input_data.keys()) if input_data else [],

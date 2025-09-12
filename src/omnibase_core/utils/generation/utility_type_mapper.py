@@ -13,7 +13,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_schema import ModelSchema
+from omnibase_core.models.core.model_schema import ModelSchema
 
 
 class UtilityTypeMapper:
@@ -288,9 +288,7 @@ class UtilityTypeMapper:
         if type_string.startswith("Union["):
             return "from typing import Union"
         if type_string == "ModelObjectData":
-            return (
-                "from omnibase_core.model.core.model_object_data import ModelObjectData"
-            )
+            return "from omnibase_core.models.core.model_object_data import ModelObjectData"
         if type_string == "datetime":
             return "from datetime import datetime"
         if type_string == "date":

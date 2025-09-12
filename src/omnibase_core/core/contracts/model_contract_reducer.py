@@ -200,15 +200,15 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
         # Call parent post-init validation
         super().model_post_init(__context)
 
-    node_type: Literal[EnumNodeType.REDUCER] = Field(
-        default=EnumNodeType.REDUCER,
+    node_type: Literal["REDUCER"] = Field(
+        default="REDUCER",
         description="Node type classification for 4-node architecture",
     )
 
     # === INFRASTRUCTURE PATTERN SUPPORT ===
     # These fields support infrastructure patterns and YAML variations
 
-    # Infrastructure-specific fields for backward compatibility
+    # Infrastructure-specific fields for current standards
     node_name: str | None = Field(
         default=None,
         description="Node name for infrastructure patterns",
@@ -502,7 +502,7 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractReducer":
         """
-        Create contract model from YAML content.
+        Create contract model from YAML content with proper enum handling.
 
         Args:
             yaml_content: YAML string representation
@@ -510,10 +510,13 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
         Returns:
             ModelContractReducer: Validated contract model instance
         """
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from pydantic import ValidationError
+
         from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
 
-        # Load and validate YAML using Pydantic model
-        yaml_model = load_yaml_content_as_model(yaml_content, ModelGenericYaml)
-        data = yaml_model.model_dump()
-        return cls.model_validate(data)
+        try:
+            # Use safe YAML loader to parse content and validate as model
+            return load_yaml_content_as_model(yaml_content, cls)
+
+        except ValidationError as e:
+            raise ValueError(f"Contract validation failed: {e}") from e

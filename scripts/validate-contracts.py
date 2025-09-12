@@ -6,7 +6,7 @@ Validates that all nodes and services properly implement their contracts with:
 1. Required methods and signatures
 2. Proper Pydantic model backing for all contracts
 3. Subcontract compliance for complex operations
-4. Protocol implementation compliance
+4. Interface implementation compliance
 
 This ensures architectural compliance and prevents runtime issues.
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 
@@ -110,11 +110,10 @@ class ContractValidator:
 
     def _validate_yaml_contracts(self) -> bool:
         """
-        DEPRECATED: Manual YAML validation bypasses real Pydantic validation.
+        Validate YAML contracts using modern Pydantic validation.
 
-        All validation should go through Node classes which use the actual
-        Pydantic models with proper validation. This method is kept for
-        backward compatibility but should be removed.
+        All validation goes through Node classes which use the actual
+        Pydantic models with proper validation.
         """
         print("\n📄 Validating YAML Contract Deserialization...")
         print("   ⚠️  WARNING: Using deprecated manual YAML validation")

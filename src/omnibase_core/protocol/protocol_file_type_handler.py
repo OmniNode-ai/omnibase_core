@@ -29,17 +29,17 @@ from typing import TYPE_CHECKING, Protocol
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from omnibase_core.model.configuration.model_can_handle_result import (
+    from omnibase_core.models.configuration.model_can_handle_result import (
         ModelCanHandleResult,
     )
-    from omnibase_core.model.configuration.model_handler_protocol import (
+    from omnibase_core.models.configuration.model_handler_protocol import (
         ModelHandlerMetadata,
     )
-    from omnibase_core.model.configuration.model_serialized_block import (
+    from omnibase_core.models.configuration.model_serialized_block import (
         ModelSerializedBlock,
     )
-    from omnibase_core.model.core.model_extracted_block import ModelExtractedBlock
-    from omnibase_core.model.core.model_onex_message_result import OnexResultModel
+    from omnibase_core.models.core.model_extracted_block import ModelExtractedBlock
+    from omnibase_core.models.core.model_onex_message_result import OnexResultModel
 
 
 class ProtocolFileTypeHandler(Protocol):

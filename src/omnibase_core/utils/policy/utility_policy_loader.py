@@ -13,14 +13,14 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.model.policy.model_coding_standards_policy import (
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.policy.model_coding_standards_policy import (
     ModelCodingStandardsPolicyWrapper,
 )
-from omnibase_core.model.policy.model_debug_logging_policy import (
+from omnibase_core.models.policy.model_debug_logging_policy import (
     ModelDebugLoggingPolicyWrapper,
 )
-from omnibase_core.model.policy.model_logging_policy import ModelLoggingPolicyWrapper
+from omnibase_core.models.policy.model_logging_policy import ModelLoggingPolicyWrapper
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
 )
