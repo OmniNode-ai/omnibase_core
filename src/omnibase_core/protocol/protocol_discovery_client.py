@@ -6,7 +6,7 @@ Defines the protocol interface for discovery client implementations.
 
 from typing import Any, Protocol
 
-from omnibase_core.model.discovery.model_tool_discovery_response import (
+from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
 

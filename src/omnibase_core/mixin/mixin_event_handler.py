@@ -35,9 +35,9 @@ from pathlib import Path
 
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_event_type import is_event_equal
-from omnibase_core.model.core.model_log_context import ModelLogContext
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_event_type import is_event_equal
+from omnibase_core.models.core.model_log_context import ModelLogContext
+from omnibase_core.models.core.model_onex_event import OnexEvent
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -120,7 +120,7 @@ class MixinEventHandler:
         """
         # Check if this event is an introspection request
         try:
-            from omnibase_core.model.core.model_event_type import (
+            from omnibase_core.models.core.model_event_type import (
                 create_event_type_from_string,
             )
 
@@ -203,7 +203,7 @@ class MixinEventHandler:
         """
         # Check if this event is a discovery request
         try:
-            from omnibase_core.model.core.model_event_type import (
+            from omnibase_core.models.core.model_event_type import (
                 create_event_type_from_string,
             )
 

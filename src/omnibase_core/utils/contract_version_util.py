@@ -13,7 +13,7 @@ from pathlib import Path
 from omnibase_core.core.contract_loader import ContractLoader
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ContractVersionUtil:

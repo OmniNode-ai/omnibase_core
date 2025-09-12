@@ -7,7 +7,7 @@ operations within workflows, such as model generation and bootstrap validation.
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from omnibase_core.model.core.model_onex_result import ModelOnexResult
+from omnibase_core.models.core.model_onex_result import ModelOnexResult
 
 if TYPE_CHECKING:
     from omnibase_core.protocol.protocol_node_registry import ProtocolNodeRegistry

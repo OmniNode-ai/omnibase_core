@@ -8,14 +8,16 @@ and agent actions using strong typing throughout.
 
 from typing import Protocol
 
-from omnibase_core.model.agent.model_agent_action import ModelAgentAction
-from omnibase_core.model.ai_workflows.model_ai_execution_metrics import ModelMetricValue
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.intelligence.model_agent_debug_intelligence import (
+from omnibase_core.models.agent.model_agent_action import ModelAgentAction
+from omnibase_core.models.ai_workflows.model_ai_execution_metrics import (
+    ModelMetricValue,
+)
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.intelligence.model_agent_debug_intelligence import (
     ModelAgentDebugIntelligence,
 )
-from omnibase_core.model.pr.model_pr_ticket import ModelPrTicket
-from omnibase_core.model.velocity.model_velocity_log import ModelVelocityLog
+from omnibase_core.models.pr.model_pr_ticket import ModelPrTicket
+from omnibase_core.models.velocity.model_velocity_log import ModelVelocityLog
 
 
 class ProtocolDirectKnowledgePipeline(Protocol):

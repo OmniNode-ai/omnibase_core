@@ -355,7 +355,7 @@ class ModelONEXContainer:
 
     @property
     def base_container(self):
-        """Access to base ModelONEXContainer for compatibility."""
+        """Access to base ModelONEXContainer for current standards."""
         return self._base_container
 
     @property
@@ -424,7 +424,7 @@ class ModelONEXContainer:
         service_name: str | None = None,
     ) -> T:
         """
-        Synchronous service resolution for backward compatibility.
+        Synchronous service resolution for current standards.
 
         Args:
             protocol_type: Protocol interface to resolve
@@ -435,13 +435,13 @@ class ModelONEXContainer:
         """
         return asyncio.run(self.get_service_async(protocol_type, service_name))
 
-    # Backward compatibility alias
+    # Compatibility alias
     def get_service(
         self,
         protocol_type: type[T],
         service_name: str | None = None,
     ) -> T:
-        """Backward compatibility method."""
+        """Modern standards method."""
         return self.get_service_sync(protocol_type, service_name)
 
     async def create_enhanced_nodebase(

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from omnibase_core.model.core.model_state_contract import load_state_contract_from_file
+from omnibase_core.models.core.model_state_contract import load_state_contract_from_file
 
 
 class MixinNodeSetup:

@@ -24,7 +24,7 @@ from omnibase_core.core.monadic.monadic_composition_utils import (
     monadic_operation,
     with_timeout,
 )
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 

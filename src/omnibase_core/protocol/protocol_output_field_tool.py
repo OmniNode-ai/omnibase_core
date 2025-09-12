@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from omnibase_core.model.core.model_output_field import ModelOnexField
+from omnibase_core.models.core.model_output_field import ModelOnexField
 
 
 class OutputFieldTool(Protocol):

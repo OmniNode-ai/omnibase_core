@@ -10,7 +10,7 @@ Author: ONEX Framework Team
 from typing import Any, Protocol
 
 from omnibase_core.decorators import allow_any_type
-from omnibase_core.model.core.model_contract_content import ModelContractContent
+from omnibase_core.models.core.model_contract_content import ModelContractContent
 
 
 @allow_any_type(
@@ -79,7 +79,7 @@ class ProtocolContainerService(Protocol):
         nodebase_ref: Any | None = None,
     ) -> Any:
         """
-        Create registry wrapper around container for backward compatibility.
+        Create registry wrapper around container for current standards.
 
         Args:
             container: ModelONEXContainer instance

@@ -9,7 +9,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from omnibase_core.core.common_types import ModelScalarValue
-from omnibase_core.model.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.service.model_service_health import ModelServiceHealth
 from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDiscovery
 
 if TYPE_CHECKING:

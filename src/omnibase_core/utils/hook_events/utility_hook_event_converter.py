@@ -4,17 +4,17 @@ Converts between different hook event models while maintaining
 strong typing throughout the pipeline.
 """
 
-from omnibase_core.model.hook_events.model_claude_code_post_execution_hook_input import (
+from omnibase_core.models.hook_events.model_claude_code_post_execution_hook_input import (
     ModelClaudeCodePostExecutionHookInput,
 )
-from omnibase_core.model.hook_events.model_claude_code_pre_execution_hook_input import (
+from omnibase_core.models.hook_events.model_claude_code_pre_execution_hook_input import (
     ModelClaudeCodePreExecutionHookInput,
 )
-from omnibase_core.model.hook_events.model_onex_hook_event import ModelOnexHookEvent
-from omnibase_core.model.hook_events.model_tool_post_execution_event import (
+from omnibase_core.models.hook_events.model_onex_hook_event import ModelOnexHookEvent
+from omnibase_core.models.hook_events.model_tool_post_execution_event import (
     ModelToolPostExecutionEvent,
 )
-from omnibase_core.model.hook_events.model_tool_pre_execution_event import (
+from omnibase_core.models.hook_events.model_tool_pre_execution_event import (
     ModelToolPreExecutionEvent,
 )
 
@@ -112,11 +112,11 @@ class UtilityHookEventConverter:
 
         Args:
             tool_event: Pre-execution tool event
-            topic: Kafka topic for the event
+            topic: Event topic for the event
             working_directory: Working directory context
 
         Returns:
-            ModelOnexHookEvent for dashboard and Kafka
+            ModelOnexHookEvent for dashboard and event bus
         """
         return ModelOnexHookEvent(
             event_type=tool_event.event_type,
@@ -141,17 +141,17 @@ class UtilityHookEventConverter:
 
         Args:
             tool_event: Post-execution tool event
-            topic: Kafka topic for the event
+            topic: Event topic for the event
             working_directory: Working directory context
 
         Returns:
-            ModelOnexHookEvent for dashboard and Kafka
+            ModelOnexHookEvent for dashboard and event bus
         """
         # Convert error message to proper error model if present
         error = None
         if tool_event.error_message:
             from omnibase_core.core.core_error_codes import CoreErrorCode
-            from omnibase_core.model.core.model_onex_error import ModelOnexError
+            from omnibase_core.models.core.model_onex_error import ModelOnexError
 
             error = ModelOnexError(
                 message=tool_event.error_message,

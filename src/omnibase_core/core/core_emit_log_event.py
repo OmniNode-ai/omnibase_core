@@ -15,7 +15,7 @@ from uuid import UUID
 
 from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_log_entry import LogModelContext
+from omnibase_core.models.core.model_log_entry import LogModelContext
 from omnibase_core.protocol.protocol_event_bus_types import ProtocolEventBus
 
 
@@ -119,7 +119,7 @@ def emit_log_event_sync(
     event_bus: ProtocolEventBus | None = None,
 ) -> None:
     """
-    Synchronous version of emit_log_event for compatibility.
+    Synchronous version of emit_log_event for current standards.
 
     Args:
         level: Log level

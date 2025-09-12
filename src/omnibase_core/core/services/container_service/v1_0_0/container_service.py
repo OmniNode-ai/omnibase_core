@@ -8,7 +8,7 @@ management, service registration, and registry lifecycle operations.
 Key Features:
 - ModelONEXContainer creation and configuration from contracts
 - Dynamic service registration from dependency specifications
-- Registry wrapper for backward compatibility
+- Registry wrapper for current standards
 - Container lifecycle and ModelNodeBase reference management
 - Comprehensive validation and error handling
 
@@ -24,7 +24,7 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_contract_content import ModelContractContent
+from omnibase_core.models.core.model_contract_content import ModelContractContent
 
 from .models.model_container_config import ModelContainerConfig
 from .models.model_container_result import ModelContainerResult
@@ -40,7 +40,7 @@ class ContainerService:
     Provides centralized operations for:
     - Creating ModelONEXContainer from contract dependencies
     - Registering services from dependency specifications
-    - Managing registry wrapper for backward compatibility
+    - Managing registry wrapper for current standards
     - Handling container lifecycle with ModelNodeBase references
     - Validating dependencies and service availability
 
@@ -394,7 +394,7 @@ class ContainerService:
         nodebase_ref: Any | None = None,
     ) -> Any:
         """
-        Create registry wrapper around container for backward compatibility.
+        Create registry wrapper around container for current standards.
 
         This method extracts the ContainerAsRegistry pattern from ModelNodeBase,
         providing a consistent registry interface over the container.

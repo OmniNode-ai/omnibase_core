@@ -7,7 +7,7 @@ providing abstracted hub operations without direct tool imports.
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_cli_execution_result import ModelCliExecutionResult
+from omnibase_core.models.core.model_cli_execution_result import ModelCliExecutionResult
 
 
 class ProtocolHubExecution(Protocol):

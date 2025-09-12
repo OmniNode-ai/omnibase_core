@@ -51,7 +51,7 @@ def validate_registry_config_type(
         # Handle complex models that require sub-models
         if expected_type.__name__ == "ModelRegistryConfig":
             # Create default ModelRegistryConfig with required service_config
-            from omnibase_core.model.service.model_service_registry_config import (
+            from omnibase_core.models.service.model_service_registry_config import (
                 ModelServiceRegistryConfig,
             )
 

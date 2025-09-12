@@ -386,7 +386,7 @@ class NodeReducer(NodeCoreBase):
                         # Build full path to referenced file
                         ref_full_path = base_path / ref_file
                         if ref_full_path.exists():
-                            from omnibase_core.model.core.model_generic_yaml import (
+                            from omnibase_core.models.core.model_generic_yaml import (
                                 ModelGenericYaml,
                             )
                             from omnibase_core.utils.safe_yaml_loader import (
@@ -589,7 +589,7 @@ class NodeReducer(NodeCoreBase):
         try:
             # Load actual contract from file with subcontract resolution
 
-            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
             from omnibase_core.utils.generation.utility_reference_resolver import (
                 UtilityReferenceResolver,
             )

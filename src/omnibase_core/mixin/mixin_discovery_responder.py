@@ -11,7 +11,7 @@ from omnibase_spi import ProtocolLogger
 
 from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.model.core.model_onex_event import (
+from omnibase_core.models.core.model_onex_event import (
     DiscoveryRequestModelMetadata,
     DiscoveryResponseModelMetadata,
     OnexEvent,

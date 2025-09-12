@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 
 
 class ProtocolEventStore(Protocol):

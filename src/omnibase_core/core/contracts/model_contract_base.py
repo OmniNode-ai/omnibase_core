@@ -21,7 +21,7 @@ from omnibase_core.core.contracts.model_dependency import (
     create_dependency,
 )
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class ModelPerformanceRequirements(BaseModel):
@@ -293,22 +293,22 @@ class ModelContractBase(BaseModel, ABC):
 
         This is enforced in specialized contract models using Literal types.
         """
-        # Try to convert string to enum if needed (fallback validation)
-        if isinstance(self.node_type, str):
+        # Base validation - specialized contracts use Literal types that preserve strings
+        # Accept either EnumNodeType instances or valid enum value strings
+        if isinstance(self.node_type, EnumNodeType):
+            # Already an enum instance - valid
+            return
+        elif isinstance(self.node_type, str):
+            # Check if it's a valid enum value string
             try:
-                self.node_type = EnumNodeType(self.node_type)
+                EnumNodeType(self.node_type)
+                return
             except ValueError:
-                msg = f"Invalid node_type string: {self.node_type}. Must be one of: {list(EnumNodeType)}"
-                raise ValueError(
-                    msg,
-                )
-
-        # Base validation - specialized contracts override with Literal types
-        if not isinstance(self.node_type, EnumNodeType):
-            msg = f"node_type must be a valid EnumNodeType, got {type(self.node_type)}"
-            raise ValueError(
-                msg,
-            )
+                msg = f"node_type string value '{self.node_type}' is not a valid EnumNodeType value"
+                raise ValueError(msg)
+        else:
+            msg = f"node_type must be a valid EnumNodeType or enum value string, got {self.node_type!r} ({type(self.node_type)})"
+            raise ValueError(msg)
 
     def _validate_protocol_dependencies(self) -> None:
         """

@@ -34,7 +34,7 @@ from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_tree_sync_result import (
+from omnibase_core.models.core.model_tree_sync_result import (
     ModelTreeSyncResult,
     TreeSyncStatusEnum,
 )

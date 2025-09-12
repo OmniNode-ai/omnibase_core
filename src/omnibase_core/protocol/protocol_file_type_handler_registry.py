@@ -25,7 +25,7 @@
 from pathlib import Path
 from typing import Any, Protocol
 
-from omnibase_core.model.configuration.model_handler_protocol import (
+from omnibase_core.models.configuration.model_handler_protocol import (
     HandlerModelMetadata,
 )
 from omnibase_core.protocol.protocol_file_type_handler import ProtocolFileTypeHandler

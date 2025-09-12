@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from omnibase_core.model.core.model_schema import ModelSchema
-from omnibase_core.model.generation.model_contract_document import ModelContractDocument
+from omnibase_core.models.core.model_schema import ModelSchema
+from omnibase_core.models.generation.model_contract_document import (
+    ModelContractDocument,
+)
 
 
 @dataclass

@@ -9,7 +9,7 @@ import ast
 from typing import Protocol
 
 from omnibase_core.decorators import allow_any_type
-from omnibase_core.model.core.model_schema import ModelSchema
+from omnibase_core.models.core.model_schema import ModelSchema
 
 
 class ProtocolASTBuilder(Protocol):

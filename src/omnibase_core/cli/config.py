@@ -7,7 +7,7 @@ validation, and default value management for production CLI operations.
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelTierConfig(BaseModel):
@@ -35,14 +35,16 @@ class ModelOutputConfig(BaseModel):
     progress_bars: bool = Field(default=True, description="Show progress bars")
     log_level: str = Field(default="INFO", description="Logging level")
 
-    @validator("format")
+    @field_validator("format")
+    @classmethod
     def validate_format(cls, v):
         allowed = {"json", "yaml", "text"}
         if v not in allowed:
             raise ValueError(f"format must be one of {allowed}")
         return v
 
-    @validator("log_level")
+    @field_validator("log_level")
+    @classmethod
     def validate_log_level(cls, v):
         allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if v not in allowed:
@@ -140,7 +142,8 @@ class ModelCLIConfig(BaseModel):
         env_prefix = "ONEX_"
         env_nested_delimiter = "__"
 
-    @validator("environment")
+    @field_validator("environment")
+    @classmethod
     def validate_environment(cls, v):
         allowed = {"development", "staging", "production"}
         if v not in allowed:
@@ -158,7 +161,7 @@ class ModelCLIConfig(BaseModel):
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
             load_and_validate_yaml_model,
         )

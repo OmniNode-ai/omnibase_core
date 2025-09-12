@@ -760,7 +760,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
     def _generate_html_output(
         self,
-        content: dict[str, Any],
+        content: ModelReportContent,
         config: dict[str, Any],
     ) -> str:
         """Generate HTML formatted output."""
@@ -768,7 +768,7 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             "<!DOCTYPE html>",
             "<html>",
             "<head>",
-            f"<title>{content['title']}</title>",
+            f"<title>{content.title}</title>",
             "<style>",
             "body { font-family: Arial, sans-serif; margin: 40px; }",
             ".section { margin-bottom: 30px; }",
@@ -777,25 +777,25 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
             "</style>",
             "</head>",
             "<body>",
-            f"<h1>{content['title']}</h1>",
+            f"<h1>{content.title}</h1>",
         ]
 
-        if content.get("description"):
-            html_parts.append(f"<p>{content['description']}</p>")
+        if content.description:
+            html_parts.append(f"<p>{content.description}</p>")
 
-        for section in content.get("sections", []):
+        for section in content.sections:
             html_parts.extend(
                 [
                     '<div class="section">',
-                    f"<h2>{section['title']}</h2>",
-                    f"<div>{self._format_content_for_html(section['content'])}</div>",
+                    f"<h2>{section.title}</h2>",
+                    f"<div>{self._format_content_for_html(section.content)}</div>",
                     "</div>",
                 ],
             )
 
         html_parts.extend(
             [
-                f"<footer><small>Generated at {content['generation_timestamp']}</small></footer>",
+                f"<footer><small>Generated at {content.generation_timestamp}</small></footer>",
                 "</body>",
                 "</html>",
             ],
@@ -824,51 +824,51 @@ class ReducerReportGenerationSubreducer(BaseSubreducer):
 
     def _generate_text_output(
         self,
-        content: dict[str, Any],
+        content: ModelReportContent,
         config: dict[str, Any],
     ) -> str:
         """Generate plain text formatted output."""
-        text_lines = ["=" * 50, content["title"].center(50), "=" * 50, ""]
+        text_lines = ["=" * 50, content.title.center(50), "=" * 50, ""]
 
-        if content.get("description"):
-            text_lines.extend([content["description"], ""])
+        if content.description:
+            text_lines.extend([content.description, ""])
 
-        for section in content.get("sections", []):
+        for section in content.sections:
             text_lines.extend(
                 [
                     "-" * 30,
-                    section["title"],
+                    section.title,
                     "-" * 30,
-                    self._format_content_for_text(section["content"]),
+                    self._format_content_for_text(section.content),
                     "",
                 ],
             )
 
-        text_lines.append(f"Generated at: {content['generation_timestamp']}")
+        text_lines.append(f"Generated at: {content.generation_timestamp}")
         return "\n".join(text_lines)
 
     def _generate_markdown_output(
         self,
-        content: dict[str, Any],
+        content: ModelReportContent,
         config: dict[str, Any],
     ) -> str:
         """Generate Markdown formatted output."""
-        md_lines = [f"# {content['title']}", ""]
+        md_lines = [f"# {content.title}", ""]
 
-        if content.get("description"):
-            md_lines.extend([content["description"], ""])
+        if content.description:
+            md_lines.extend([content.description, ""])
 
-        for section in content.get("sections", []):
+        for section in content.sections:
             md_lines.extend(
                 [
-                    f"## {section['title']}",
+                    f"## {section.title}",
                     "",
-                    self._format_content_for_markdown(section["content"]),
+                    self._format_content_for_markdown(section.content),
                     "",
                 ],
             )
 
-        md_lines.append(f"*Generated at: {content['generation_timestamp']}*")
+        md_lines.append(f"*Generated at: {content.generation_timestamp}*")
         return "\n".join(md_lines)
 
     # Helper methods for content formatting, metadata generation, etc.

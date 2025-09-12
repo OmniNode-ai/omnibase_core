@@ -7,8 +7,8 @@ complex workflows with event-driven coordination.
 
 from typing import TYPE_CHECKING, Protocol
 
-from omnibase_core.model.core.model_onex_result import ModelOnexResult
-from omnibase_core.model.workflow.model_workflow_execution_state import (
+from omnibase_core.models.core.model_onex_result import ModelOnexResult
+from omnibase_core.models.workflow.model_workflow_execution_state import (
     ModelWorkflowExecutionState,
 )
 from omnibase_core.protocol.models.model_health_check_result import (

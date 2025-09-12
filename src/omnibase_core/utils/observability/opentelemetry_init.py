@@ -51,7 +51,6 @@ instrumentor_modules = {
     "asyncpg": "opentelemetry.instrumentation.asyncpg.AsyncPGInstrumentor",
     "psycopg2": "opentelemetry.instrumentation.psycopg2.Psycopg2Instrumentor",
     "sqlalchemy": "opentelemetry.instrumentation.sqlalchemy.SQLAlchemyInstrumentor",
-    "kafka": "opentelemetry.instrumentation.kafka.KafkaInstrumentor",
     "aiohttp_client": "opentelemetry.instrumentation.aiohttp_client.AioHttpClientInstrumentor",
     "httpx": "opentelemetry.instrumentation.httpx.HTTPXClientInstrumentor",
     "requests": "opentelemetry.instrumentation.requests.RequestsInstrumentor",
@@ -395,12 +394,7 @@ def setup_auto_instrumentation(config: ONEXOpenTelemetryConfig):
             logger.debug(f"Requests instrumentation failed: {e}")
 
     # Messaging instrumentation
-    if instrumentor_imports.get("kafka"):
-        try:
-            instrumentor_imports["kafka"]().instrument()
-            instrumentors.append("kafka")
-        except Exception as e:
-            logger.debug(f"Kafka instrumentation failed: {e}")
+    # Kafka instrumentation removed - belongs in infrastructure
 
     # Async instrumentation
     if instrumentor_imports.get("asyncio"):

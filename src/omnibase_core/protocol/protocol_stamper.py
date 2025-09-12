@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Protocol
 
 from omnibase_core.enums.enum_template_type import TemplateTypeEnum
-from omnibase_core.model.core.model_onex_message_result import OnexResultModel
+from omnibase_core.models.core.model_onex_message_result import OnexResultModel
 
 
 class ProtocolStamper(Protocol):

@@ -16,7 +16,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 class EnumDependencyType(Enum):
@@ -221,7 +221,7 @@ class ModelDependency(BaseModel):
         """Infer dependency type from name patterns."""
         name_lower = name.lower()
 
-        if name.startswith("Protocol") or "protocol" in name_lower:
+        if "protocol" in name_lower:
             return EnumDependencyType.PROTOCOL
         if "service" in name_lower:
             return EnumDependencyType.SERVICE
@@ -329,21 +329,6 @@ class ModelDependency(BaseModel):
         """Validate consistency between name, module, and type."""
         # If module is specified, validate name-module consistency
         if self.module and self.name not in self.module:
-            # Handle Protocol prefixed names (e.g., ProtocolEventBus)
-            if (
-                self.dependency_type == EnumDependencyType.PROTOCOL
-                and self.name.startswith("Protocol")
-            ):
-                # Extract base name from Protocol prefix and check variants
-                base_name = self.name[8:].lower()  # Remove "Protocol" prefix
-                if base_name in self.module.lower():
-                    return self
-
-                # Check snake_case variant (e.g., ProtocolEventBus -> event_bus)
-                snake_case_name = self._camel_to_snake_case(base_name)
-                if snake_case_name in self.module.lower():
-                    return self
-
             # Allow flexibility for service and module types with different conventions
             if self.dependency_type in (
                 EnumDependencyType.SERVICE,
@@ -351,6 +336,13 @@ class ModelDependency(BaseModel):
             ):
                 # These types often have flexible naming patterns
                 return self
+
+            # For protocol types, require protocol name match for consistency
+            if self.dependency_type == EnumDependencyType.PROTOCOL:
+                # Check snake_case variant (e.g., event_bus)
+                snake_case_name = self._camel_to_snake_case(self.name)
+                if snake_case_name in self.module.lower():
+                    return self
 
             # For other types, require some form of name match for consistency
             # This ensures dependencies are properly named and discoverable
@@ -411,11 +403,9 @@ class ModelDependency(BaseModel):
     def matches_onex_patterns(self) -> bool:
         """Validate dependency follows ONEX naming patterns."""
         if self.dependency_type == EnumDependencyType.PROTOCOL:
-            # Protocol dependencies should start with Protocol or contain 'protocol'
-            return (
-                self.name.startswith("Protocol")
-                or "protocol" in self.name.lower()
-                or (self.module and "protocol" in self.module.lower())
+            # Protocol dependencies should contain 'protocol' in name or module
+            return "protocol" in self.name.lower() or (
+                self.module and "protocol" in self.module.lower()
             )
 
         # Other types have more flexible patterns

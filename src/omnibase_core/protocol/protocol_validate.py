@@ -26,14 +26,14 @@ from typing import TYPE_CHECKING, Optional, Protocol
 
 if TYPE_CHECKING:
     from omnibase_core.core.core_structured_logging import ProtocolLogger
-    from omnibase_core.model.configuration.model_metadata_config import (
+    from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
-    from omnibase_core.model.core.model_result_cli import CLIArgsModel
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_result_cli import CLIArgsModel
 
-from omnibase_core.model.core.model_onex_message_result import OnexResultModel
-from omnibase_core.model.validation.model_validate_error import (
+from omnibase_core.models.core.model_onex_message_result import OnexResultModel
+from omnibase_core.models.validation.model_validate_error import (
     ValidateMessageModel,
     ValidateResultModel,
 )

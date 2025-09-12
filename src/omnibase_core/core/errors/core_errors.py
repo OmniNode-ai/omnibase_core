@@ -513,7 +513,7 @@ class OnexError(Exception):
         # Check if ModelOnexError expects ModelErrorContext (newer version) or dict (older version)
         try:
             # Try to import ModelErrorContext to detect if we're using the newer ModelOnexError
-            from omnibase_core.model.core.model_error_context import ModelErrorContext
+            from omnibase_core.models.core.model_error_context import ModelErrorContext
 
             # Convert dictionary context to ModelErrorContext for new ModelOnexError
             if isinstance(context, dict):
@@ -522,7 +522,7 @@ class OnexError(Exception):
                 context_model = context or ModelErrorContext()
 
             # Use newer ModelOnexError from model package
-            from omnibase_core.model.core.model_onex_error import (
+            from omnibase_core.models.core.model_onex_error import (
                 ModelOnexError as NewModelOnexError,
             )
 

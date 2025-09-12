@@ -37,13 +37,13 @@ from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
 from omnibase_core.enums.node import EnumNodeStatus
-from omnibase_core.model.core.model_event_type import create_event_type_from_string
-from omnibase_core.model.core.model_log_context import ModelLogContext
-from omnibase_core.model.core.model_node_announce_metadata import (
+from omnibase_core.models.core.model_event_type import create_event_type_from_string
+from omnibase_core.models.core.model_log_context import ModelLogContext
+from omnibase_core.models.core.model_node_announce_metadata import (
     ModelNodeAnnounceMetadata,
 )
-from omnibase_core.model.core.model_onex_event import OnexEvent
-from omnibase_core.model.discovery.model_node_shutdown_event import (
+from omnibase_core.models.core.model_onex_event import OnexEvent
+from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
 
@@ -74,7 +74,7 @@ class MixinNodeLifecycle:
                 metadata_block = metadata_loader.metadata
             else:
                 # Create minimal metadata block
-                from omnibase_core.model.core.model_node_metadata import (
+                from omnibase_core.models.core.model_node_metadata import (
                     NodeMetadataBlock,
                 )
 

@@ -41,18 +41,26 @@ class EnumPriorityLevel(str, Enum):
         """Check if this priority requires immediate action."""
         return self == self.CRITICAL
 
-    def __lt__(self, other: "EnumPriorityLevel") -> bool:
+    def __lt__(self, other: str) -> bool:
         """Enable priority comparison."""
-        return self.get_numeric_value() < other.get_numeric_value()
+        if isinstance(other, EnumPriorityLevel):
+            return self.get_numeric_value() < other.get_numeric_value()
+        return super().__lt__(other)
 
-    def __le__(self, other: "EnumPriorityLevel") -> bool:
+    def __le__(self, other: str) -> bool:
         """Enable priority comparison."""
-        return self.get_numeric_value() <= other.get_numeric_value()
+        if isinstance(other, EnumPriorityLevel):
+            return self.get_numeric_value() <= other.get_numeric_value()
+        return super().__le__(other)
 
-    def __gt__(self, other: "EnumPriorityLevel") -> bool:
+    def __gt__(self, other: str) -> bool:
         """Enable priority comparison."""
-        return self.get_numeric_value() > other.get_numeric_value()
+        if isinstance(other, EnumPriorityLevel):
+            return self.get_numeric_value() > other.get_numeric_value()
+        return super().__gt__(other)
 
-    def __ge__(self, other: "EnumPriorityLevel") -> bool:
+    def __ge__(self, other: str) -> bool:
         """Enable priority comparison."""
-        return self.get_numeric_value() >= other.get_numeric_value()
+        if isinstance(other, EnumPriorityLevel):
+            return self.get_numeric_value() >= other.get_numeric_value()
+        return super().__ge__(other)

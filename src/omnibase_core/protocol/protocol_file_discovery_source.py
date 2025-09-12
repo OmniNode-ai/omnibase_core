@@ -30,7 +30,7 @@ Defines a standardized interface for discovering and validating files for stampi
 from pathlib import Path
 from typing import Protocol
 
-from omnibase_core.model.core.model_tree_sync_result import ModelTreeSyncResult
+from omnibase_core.models.core.model_tree_sync_result import ModelTreeSyncResult
 
 
 class ProtocolFileDiscoverySource(Protocol):

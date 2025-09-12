@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.nodes.node_kafka_event_bus.v1_0_0.models.state import (
     KafkaEventBusInputState,
     KafkaEventBusOutputState,

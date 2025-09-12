@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_get(obj: Any, key: str, default: T = None) -> T | Any:
+def safe_get(obj: Any, key: str, default: T | None = None) -> T | Any:
     """Safely get a value from an object using duck typing.
 
     Tries multiple access patterns:
@@ -46,7 +46,7 @@ def safe_get(obj: Any, key: str, default: T = None) -> T | Any:
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_get_nested(obj: Any, *keys: str, default: T = None) -> T | Any:
+def safe_get_nested(obj: Any, *keys: str, default: T | None = None) -> T | Any:
     """Safely get a nested value from an object using duck typing.
 
     Args:
@@ -139,7 +139,7 @@ def safe_iterate(obj: Any, default_empty: bool = True) -> list:
 
 
 @allow_any_type("duck_typing_requires_flexible_object_handling")
-def safe_cast(obj: Any, target_type: type, default: T = None) -> T | Any:
+def safe_cast(obj: Any, target_type: type, default: T | None = None) -> T | Any:
     """Safely cast object to target type with fallback.
 
     Args:
@@ -174,7 +174,7 @@ class DuckTypingHelper:
         """
         self.obj = obj
 
-    def get(self, key: str, default: T = None) -> T | Any:
+    def get(self, key: str, default: T | None = None) -> T | Any:
         """Get value using duck typing.
 
         Args:
@@ -186,7 +186,7 @@ class DuckTypingHelper:
         """
         return safe_get(self.obj, key, default)
 
-    def get_nested(self, *keys: str, default: T = None) -> T | Any:
+    def get_nested(self, *keys: str, default: T | None = None) -> T | Any:
         """Get nested value using duck typing.
 
         Args:
@@ -209,7 +209,7 @@ class DuckTypingHelper:
         """
         return safe_iterate(self.obj, default_empty)
 
-    def cast(self, target_type: type, default: T = None) -> T | Any:
+    def cast(self, target_type: type, default: T | None = None) -> T | Any:
         """Cast object to target type.
 
         Args:

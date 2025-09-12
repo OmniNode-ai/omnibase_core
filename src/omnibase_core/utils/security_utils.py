@@ -102,7 +102,7 @@ class CredentialMasker:
         mask_char: str = "*",
     ) -> dict[str, Any]:
         """Mask credentials in a dictionary."""
-        masked_dict = {}
+        masked_dict: dict[str, Any] = {}
 
         for key, value in data.items():
             lower_key = key.lower()

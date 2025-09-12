@@ -11,7 +11,8 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+
+# ModelGenericYaml import removed - anti-pattern eliminated
 from omnibase_core.utils.safe_yaml_loader import (
     load_yaml_content_as_model,
 )
@@ -79,12 +80,18 @@ class UtilityFileSystemReader:
             )
 
         try:
-            # Load and validate YAML using Pydantic model
+            # Parse YAML using Pydantic model validation
+            from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.utils.safe_yaml_loader import (
+                load_and_validate_yaml_model,
+            )
 
-            yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
-
-            data = yaml_model.model_dump()
-        except yaml.YAMLError as e:
+            # Load as generic YAML model first, then convert to target model
+            generic_model = load_and_validate_yaml_model(path, ModelGenericYaml)
+            data = generic_model.model_dump()
+            if data is None:
+                data = {}
+        except Exception as e:
             raise OnexError(
                 CoreErrorCode.CONFIGURATION_PARSE_ERROR,
                 f"Failed to parse YAML from {path}: {e}",

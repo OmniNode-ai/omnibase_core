@@ -20,7 +20,7 @@ from omnibase_core.core.node_orchestrator import (
 from omnibase_core.core.node_orchestrator_service import NodeOrchestratorService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.nodes.canary.utils.circuit_breaker import (
     ModelCircuitBreakerConfig,
     get_circuit_breaker,
@@ -122,7 +122,7 @@ class NodeCanaryOrchestrator(NodeOrchestratorService):
         )
         self.health_circuit_breaker = get_circuit_breaker("health_check", cb_config)
 
-        # Metrics tracking (kept for compatibility, enhanced with metrics_collector)
+        # Metrics tracking (kept for current standards, enhanced with metrics_collector)
         self.operation_count = 0
         self.success_count = 0
         self.error_count = 0

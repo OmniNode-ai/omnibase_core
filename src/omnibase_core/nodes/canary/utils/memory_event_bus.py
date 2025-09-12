@@ -2,7 +2,7 @@
 Simple in-memory event bus implementation for canary testing.
 
 Provides a minimal event bus that implements ProtocolEventBus
-for testing and fallback scenarios when Kafka is unavailable.
+for testing and development scenarios.
 """
 
 import logging
@@ -10,8 +10,8 @@ from collections import defaultdict, deque
 from collections.abc import Callable
 from typing import Any
 
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 
 class MemoryEventBus:

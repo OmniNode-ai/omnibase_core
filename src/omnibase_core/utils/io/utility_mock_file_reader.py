@@ -39,8 +39,8 @@ class UtilityMockFileReader:
 
     def _setup_default_test_models(self):
         """Set up default test models for common test scenarios."""
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
-        from omnibase_core.model.generation.model_contract_document import (
+        from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.models.generation.model_contract_document import (
             ModelContractDocument,
         )
         from omnibase_core.utils.safe_yaml_loader import (

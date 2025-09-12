@@ -19,13 +19,13 @@ from rich.table import Table
 from omnibase_core.core.core_structured_logging import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
-from .config import CLIConfig
+from .config import ModelCLIConfig
 
 
 class BaseHandler:
     """Base handler with common functionality for all CLI handlers."""
 
-    def __init__(self, config: CLIConfig):
+    def __init__(self, config: ModelCLIConfig):
         self.config = config
         self.console = Console(force_terminal=config.output.colored)
 
@@ -814,7 +814,7 @@ class ConfigHandler(BaseHandler):
 
     def init_config(self, force: bool = False) -> None:
         """Initialize default configuration."""
-        config_path = CLIConfig.get_default_config_path()
+        config_path = ModelCLIConfig.get_default_config_path()
 
         if config_path.exists() and not force:
             self._output_result(
@@ -824,7 +824,7 @@ class ConfigHandler(BaseHandler):
             return
 
         try:
-            config = CLIConfig()
+            config = ModelCLIConfig()
             config.create_directories()
             config.to_file(config_path)
 
@@ -910,7 +910,7 @@ class ConfigHandler(BaseHandler):
                 "valid": len(errors) == 0,
                 "errors": errors,
                 "warnings": warnings,
-                "config_path": str(CLIConfig.get_default_config_path()),
+                "config_path": str(ModelCLIConfig.get_default_config_path()),
             }
 
             if self.config.output.format == "text":

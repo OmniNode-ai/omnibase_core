@@ -8,7 +8,7 @@ replacing the monolithic enum approach.
 from pathlib import Path
 from typing import Protocol
 
-from omnibase_core.model.core.model_tool_info import ModelToolInfo
+from omnibase_core.models.core.model_tool_info import ModelToolInfo
 
 
 class ProtocolToolNameResolver(Protocol):

@@ -2,7 +2,7 @@
 SPI-Compliant Service Registry Implementation.
 
 Implements omnibase.protocols.container.ProtocolServiceRegistry to provide
-standardized dependency injection while maintaining backward compatibility
+standardized dependency injection while maintaining compatibility
 with existing ModelONEXContainer usage patterns.
 
 Enhanced with protocol-based external dependencies and proper error handling.
@@ -247,7 +247,7 @@ class SPIServiceRegistry:
         """Get dependency graph."""
         return self._dependency_graph.copy()
 
-    # Backward compatibility methods (ModelONEXContainer interface)
+    # Compatibility methods (ModelONEXContainer interface)
     def configure(self, config: dict[str, Any]) -> None:
         """Configure the container with settings."""
         if not isinstance(config, dict):
@@ -291,7 +291,7 @@ class SPIServiceRegistry:
         """
         Register a service instance for a protocol (ModelONEXContainer compatibility).
 
-        This maintains backward compatibility with existing ModelONEXContainer usage
+        This maintains compatibility with existing ModelONEXContainer usage
         while also creating the necessary SPI registration metadata.
         """
         # Store service for ModelONEXContainer compatibility
@@ -366,7 +366,7 @@ class SPIServiceRegistry:
         """
         Get service by protocol name (ModelONEXContainer compatibility).
 
-        Maintains existing ModelONEXContainer behavior for backward compatibility.
+        Maintains existing ModelONEXContainer behavior for current standards.
         """
         # Handle direct protocol name resolution
         if protocol_name in self._services:
@@ -473,7 +473,7 @@ def create_spi_service_registry() -> SPIServiceRegistry:
         return registry
 
 
-# Global registry instance for backward compatibility
+# Global registry instance for current standards
 _spi_registry: SPIServiceRegistry | None = None
 _registry_lock = threading.Lock()
 

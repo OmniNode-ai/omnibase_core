@@ -197,7 +197,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         content = path.read_text()
 
         if path.suffix in [".yaml", ".yml"]:
-            from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+            from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
             from omnibase_core.utils.safe_yaml_loader import (
                 load_yaml_content_as_model,
             )

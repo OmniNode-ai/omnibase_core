@@ -24,8 +24,8 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
-from omnibase_core.model.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 from .models.model_event_bus_config import ModelEventBusConfig
@@ -445,8 +445,8 @@ class EventBusService(ProtocolEventBusService):
 
         try:
             # Create introspection event
-            from omnibase_core.model.core.model_semver import ModelSemVer
-            from omnibase_core.model.discovery.model_node_introspection_event import (
+            from omnibase_core.models.core.model_semver import ModelSemVer
+            from omnibase_core.models.discovery.model_node_introspection_event import (
                 ModelNodeIntrospectionEvent,
             )
 
@@ -708,7 +708,7 @@ class EventBusService(ProtocolEventBusService):
             # Generate a UUID-compatible destination for node addressing
             import hashlib
 
-            from omnibase_core.model.core.model_route_spec import ModelRouteSpec
+            from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 
             if not source_node_id.startswith("node://"):
                 # Generate a proper UUID from the source_node_id

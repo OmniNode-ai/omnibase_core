@@ -31,7 +31,7 @@ discover and load test fixtures from various sources (central, node-local).
 
 from typing import Protocol
 
-from omnibase_core.model.validation.model_fixture_data import ModelFixtureData
+from omnibase_core.models.validation.model_fixture_data import ModelFixtureData
 
 
 class ProtocolFixtureLoader(Protocol):

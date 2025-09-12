@@ -24,8 +24,8 @@ from omnibase_core.core.model_contract_orchestrator import ModelContractOrchestr
 from omnibase_core.core.model_contract_reducer import ModelContractReducer
 
 # Import for node type validation
-from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.enums.node import EnumNodeType
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
 )
@@ -1003,7 +1003,7 @@ def main():
             return
 
         # Load the contract YAML
-        from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
         from omnibase_core.utils.safe_yaml_loader import (
             load_and_validate_yaml_model,
         )

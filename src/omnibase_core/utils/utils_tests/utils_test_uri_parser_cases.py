@@ -28,7 +28,7 @@ import pytest
 
 from omnibase_core.enums import UriTypeEnum  # type: ignore[import-untyped]
 from omnibase_core.exceptions import OmniBaseError  # type: ignore[import-untyped]
-from omnibase_core.model.core.model_uri import (  # type: ignore[import-untyped]
+from omnibase_core.models.core.model_uri import (  # type: ignore[import-untyped]
     ModelOnexUri,
 )
 

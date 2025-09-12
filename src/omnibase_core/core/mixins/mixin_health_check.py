@@ -15,7 +15,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
 
 
 class MixinHealthCheck:

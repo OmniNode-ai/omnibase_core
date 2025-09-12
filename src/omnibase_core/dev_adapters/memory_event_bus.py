@@ -17,7 +17,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 from omnibase_core.protocol.protocol_event_bus_in_memory import ProtocolEventBusInMemory
 from omnibase_core.protocol.protocol_event_bus_types import EventBusCredentialsModel

@@ -13,7 +13,7 @@ from omnibase_core.core.node_effect import (
 from omnibase_core.core.node_effect_service import NodeEffectService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.tools.infrastructure.tool_infrastructure_consul_adapter_effect.v1_0_0.models import (
     ModelConsulAdapterInput,
     ModelConsulHealthCheckNode,

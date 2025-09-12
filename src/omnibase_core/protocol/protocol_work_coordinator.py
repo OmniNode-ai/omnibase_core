@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
 
-from omnibase_core.model.work.model_work_ticket import ModelWorkTicket
+from omnibase_core.models.work.model_work_ticket import ModelWorkTicket
 
 
 class CoordinationStrategy(str, Enum):

@@ -24,7 +24,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 
 # Generic type variables for input and output states
 InputStateT = TypeVar("InputStateT")

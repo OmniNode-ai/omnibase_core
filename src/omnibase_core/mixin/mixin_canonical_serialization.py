@@ -25,13 +25,13 @@
 from typing import TYPE_CHECKING, Union
 
 from omnibase_core.enums import NodeMetadataField
-from omnibase_core.model.core.model_project_metadata import get_canonical_versions
+from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.protocol.protocol_canonical_serializer import (
     ProtocolCanonicalSerializer,
 )
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
 
 def _strip_comment_prefix(
@@ -107,12 +107,12 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         import pydantic
 
-        from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+        from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
         if isinstance(block, dict):
             # Convert dict to NodeMetadataBlock, handling type conversions
             if "entrypoint" in block and isinstance(block["entrypoint"], str):
-                from omnibase_core.model.core.model_entrypoint import EntrypointBlock
+                from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 
                 if "://" in block["entrypoint"]:
                     type_, target = block["entrypoint"].split("://", 1)
@@ -212,7 +212,7 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten entrypoint to URI string
             if k == "entrypoint":
-                from omnibase_core.model.core.model_entrypoint import EntrypointBlock
+                from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
@@ -231,7 +231,7 @@ class CanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten namespace to URI string
             if k == "namespace":
-                from omnibase_core.model.core.model_node_metadata import Namespace
+                from omnibase_core.models.core.model_node_metadata import Namespace
 
                 if isinstance(v, Namespace):
                     filtered_dict[k] = str(v)

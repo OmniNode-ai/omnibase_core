@@ -7,7 +7,7 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 import hashlib
 import socket
 
-from omnibase_core.model.hook_events.model_onex_hook_event import ModelOnexHookEvent
+from omnibase_core.models.hook_events.model_onex_hook_event import ModelOnexHookEvent
 from omnibase_core.utils.session.model_session_info import ModelSessionInfo
 
 

@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 
 logger = logging.getLogger(__name__)
 

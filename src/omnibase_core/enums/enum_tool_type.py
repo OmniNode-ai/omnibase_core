@@ -58,10 +58,10 @@ class EnumToolType(str, Enum):
 
     # Logging and utilities
     LOGGER_EMIT_LOG_EVENT = (
-        "tool_logger_emit_log_event"  # Keep original name for compatibility
+        "tool_logger_emit_log_event"  # Keep original name for current standards
     )
     LOGGING_UTILS = "LOGGING_UTILS"
-    SCENARIO_RUNNER = "scenario_runner"  # Keep original name for compatibility
+    SCENARIO_RUNNER = "scenario_runner"  # Keep original name for current standards
 
     @property
     def description(self) -> str:

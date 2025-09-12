@@ -33,9 +33,6 @@ class ModelInfrastructureBootstrapResults(BaseModel):
     vault_adapter: ModelInfrastructureNodeResult = Field(
         description="Vault adapter bootstrap result",
     )
-    kafka_wrapper: ModelInfrastructureNodeResult = Field(
-        description="Kafka wrapper bootstrap result",
-    )
 
 
 class ModelInfrastructureBootstrapResponse(BaseModel):
@@ -68,9 +65,6 @@ class ModelInfrastructureHealthCheckResults(BaseModel):
     )
     vault_adapter: ModelInfrastructureAdapterHealth = Field(
         description="Vault adapter health",
-    )
-    kafka_wrapper: ModelInfrastructureAdapterHealth = Field(
-        description="Kafka wrapper health",
     )
 
 

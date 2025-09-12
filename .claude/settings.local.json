@@ -24,7 +24,9 @@
       "mcp__archon__establish_performance_baseline",
       "mcp__serena__insert_after_symbol",
       "WebSearch",
-      "mcp__archon__get_project"
+      "mcp__archon__get_project",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__activate_project"
     ],
     "deny": [],
     "ask": []

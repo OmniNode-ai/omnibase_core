@@ -7,10 +7,10 @@ document indexing with passage-level granularity and document context.
 
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.model.advanced.model_multi_vector_document import (
+from omnibase_core.models.advanced.model_multi_vector_document import (
     ModelMultiVectorDocument,
 )
-from omnibase_core.model.semantic.model_input_document import ModelInputDocument
+from omnibase_core.models.semantic.model_input_document import ModelInputDocument
 
 
 @runtime_checkable

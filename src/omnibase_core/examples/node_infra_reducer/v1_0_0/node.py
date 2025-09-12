@@ -20,10 +20,10 @@ from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.core.infrastructure_service_bases import NodeReducerService
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.model.core.model_onex_event import OnexEvent
-from omnibase_core.model.core.model_tool_manifest import ModelToolManifest
-from omnibase_core.model.registry.model_registry_event import (
+from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_tool_manifest import ModelToolManifest
+from omnibase_core.models.registry.model_registry_event import (
     ModelRegistryRequestEvent,
     ModelRegistryResponseEvent,
     RegistryOperations,
@@ -103,7 +103,11 @@ class ToolInfrastructureReducer(NodeReducerService):
                             "node_name": introspection_obj.node_name,
                             "version": str(introspection_obj.version),
                             "actions": introspection_obj.capabilities.actions,
-                            "protocols": introspection_obj.capabilities.protocols,
+                            "supported_interfaces": getattr(
+                                introspection_obj.capabilities,
+                                "supported_interfaces",
+                                [],
+                            ),
                             "metadata": introspection_obj.capabilities.metadata,
                             "tags": introspection_obj.tags,
                         }
@@ -119,7 +123,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                     "node_name": "tool_infrastructure_reducer",
                     "version": "v1_0_0",
                     "actions": ["health_check", "aggregate_health_status"],
-                    "protocols": ["event_bus", "http"],
+                    "interfaces": ["event_bus", "http"],
                     "metadata": {
                         "description": "Infrastructure reducer with adapter orchestration",
                     },
@@ -180,7 +184,7 @@ class ToolInfrastructureReducer(NodeReducerService):
                 "node_name": "tool_infrastructure_reducer",
                 "version": "v1_0_0",
                 "actions": ["health_check"],
-                "protocols": ["event_bus"],
+                "interfaces": ["event_bus"],
                 "metadata": {
                     "description": f"Infrastructure reducer (introspection error: {e})",
                 },
@@ -301,13 +305,13 @@ class ToolInfrastructureReducer(NodeReducerService):
         try:
             from uuid import uuid4
 
-            from omnibase_core.model.discovery.enum_node_current_status import (
+            from omnibase_core.models.discovery.enum_node_current_status import (
                 NodeCurrentStatusEnum,
             )
-            from omnibase_core.model.discovery.model_current_tool_availability import (
+            from omnibase_core.models.discovery.model_current_tool_availability import (
                 ModelCurrentToolAvailability,
             )
-            from omnibase_core.model.discovery.model_introspection_response_event import (
+            from omnibase_core.models.discovery.model_introspection_response_event import (
                 ModelIntrospectionResponseEvent,
             )
 
@@ -582,7 +586,7 @@ class ToolInfrastructureReducer(NodeReducerService):
         """
         Legacy health aggregation method - replaced by modernized health_check().
 
-        Maintained for backward compatibility with existing code that calls this method.
+        Maintained for current standards with existing code that calls this method.
 
         Args:
             adapter_health_statuses: Health status from consul, vault, kafka adapters

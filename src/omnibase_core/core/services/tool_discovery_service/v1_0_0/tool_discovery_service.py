@@ -9,7 +9,7 @@ Key Features:
 - Tool class discovery from module paths and contracts
 - Dynamic module import with security validation
 - Tool instantiation with DI containers
-- Legacy registry pattern support for backward compatibility
+- Legacy registry pattern support for current standards
 - Module caching for performance
 - Comprehensive error handling and logging
 
@@ -28,7 +28,7 @@ from omnibase_core.core.core_structured_logging import (
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.model.core.model_contract_content import ModelContractContent
+from omnibase_core.models.core.model_contract_content import ModelContractContent
 
 from .models.model_tool_discovery_config import ModelToolDiscoveryConfig
 from .models.model_tool_discovery_result import ModelToolDiscoveryResult

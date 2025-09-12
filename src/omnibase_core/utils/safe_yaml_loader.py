@@ -13,10 +13,7 @@ from typing import Any, TypeVar
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.model.core.model_generic_yaml import (
-    ModelGenericYaml,
-    ModelYamlWithExamples,
-)
+# ModelYamlWithExamples import removed - using direct YAML parsing
 
 
 class YamlLoadingError(Exception):
@@ -57,39 +54,27 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
         if hasattr(model_cls, "from_yaml"):
             return model_cls.from_yaml(content)
 
-        # Fallback: Use ModelGenericYaml to load, then convert to target model
-        generic_model = ModelGenericYaml.from_yaml(content)
-        data = generic_model.model_dump()
+        # Direct YAML parsing with Pydantic validation - no fallback
+        import yaml
 
-        # Handle case where YAML root is a list
-        if isinstance(data.get("root_list"), list):
-            # Try to pass list to model constructor
-            return model_cls(data["root_list"])
+        data = yaml.safe_load(content)
+        if data is None:
+            data = {}
 
-        # Validate with Pydantic model
-        return model_cls(**data)
+        # Validate with Pydantic model - let field validators handle enum conversions
+        return model_cls.model_validate(data)
 
     except ValidationError as ve:
         raise YamlLoadingError(f"YAML validation error for {path}: {ve}", ve)
     except FileNotFoundError as e:
         raise YamlLoadingError(f"YAML file not found: {path}", e)
+    except yaml.YAMLError as e:
+        raise YamlLoadingError(f"YAML parsing error for {path}: {e}", e)
     except Exception as e:
         raise YamlLoadingError(f"Failed to load or validate YAML: {path}: {e}", e)
 
 
-def load_yaml_as_generic(path: Path) -> ModelGenericYaml:
-    """
-    Load a YAML file using the generic YAML model.
-
-    This is useful for YAML files with unknown or flexible structure.
-
-    Args:
-        path: Path to the YAML file
-
-    Returns:
-        ModelGenericYaml instance containing the YAML data
-    """
-    return load_and_validate_yaml_model(path, ModelGenericYaml)
+# load_yaml_as_generic function removed - ModelGenericYaml anti-pattern eliminated
 
 
 def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
@@ -111,18 +96,20 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
         if hasattr(model_cls, "from_yaml"):
             return model_cls.from_yaml(content)
 
-        # Fallback: Use ModelGenericYaml to load, then convert to target model
-        generic_model = ModelGenericYaml.from_yaml(content)
-        data = generic_model.model_dump()
+        # Direct YAML parsing with Pydantic validation - no fallback
+        import yaml
 
-        # Handle case where YAML root is a list
-        if isinstance(data.get("root_list"), list):
-            return model_cls(data["root_list"])
+        data = yaml.safe_load(content)
+        if data is None:
+            data = {}
 
-        return model_cls(**data)
+        # Validate with Pydantic model - let field validators handle enum conversions
+        return model_cls.model_validate(data)
 
     except ValidationError as ve:
         raise YamlLoadingError(f"YAML validation error: {ve}", ve)
+    except yaml.YAMLError as e:
+        raise YamlLoadingError(f"YAML parsing error: {e}", e)
     except Exception as e:
         raise YamlLoadingError(f"Failed to load or validate YAML content: {e}", e)
 
@@ -269,10 +256,11 @@ def extract_example_from_schema(
     """
     try:
         # Load the schema using Pydantic model
-        schema_model = load_and_validate_yaml_model(schema_path, ModelYamlWithExamples)
+        with schema_path.open("r", encoding="utf-8") as f:
+            schema_data = yaml.safe_load(f)
 
-        # Extract examples
-        examples = schema_model.examples
+        # Extract examples directly from YAML data
+        examples = schema_data.get("examples") if schema_data else None
         if not examples:
             raise YamlLoadingError(
                 f"No 'examples' section found in schema: {schema_path}",

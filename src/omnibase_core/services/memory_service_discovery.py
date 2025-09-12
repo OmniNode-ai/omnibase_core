@@ -14,7 +14,7 @@ from omnibase_core.protocol.protocol_service_discovery import ProtocolServiceDis
 
 # Import ModelServiceHealth but handle the complex model gracefully
 try:
-    from omnibase_core.model.service.model_service_health import ModelServiceHealth
+    from omnibase_core.models.service.model_service_health import ModelServiceHealth
 
     USE_COMPLEX_MODEL = True
 except Exception:

@@ -44,7 +44,7 @@ import pytest
 from omnibase_core.core.error_codes import CoreErrorCode, OnexError
 from omnibase_core.enums import IgnorePatternSourceEnum  # type: ignore[import-untyped]
 from omnibase_core.enums import TraversalModeEnum  # type: ignore[import-untyped]
-from omnibase_core.model.core.model_file_filter import (  # type: ignore[import-untyped]
+from omnibase_core.models.core.model_file_filter import (  # type: ignore[import-untyped]
     FileFilterModel,
 )
 from omnibase_core.utils.directory_traverser import (  # type: ignore[import-untyped]

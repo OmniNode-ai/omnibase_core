@@ -7,7 +7,7 @@ This eliminates the need for separate introspection.py files in each tool.
 import sys
 
 from omnibase_core.core.introspection import GenericIntrospection
-from omnibase_core.model.core.model_usage_example import ModelUsageExample
+from omnibase_core.models.core.model_usage_example import ModelUsageExample
 
 
 class MixinGenericIntrospection:

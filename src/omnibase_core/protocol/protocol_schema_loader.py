@@ -31,9 +31,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from omnibase_core.model.core.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 
-from omnibase_core.model.validation.model_schema import SchemaModel
+from omnibase_core.models.validation.model_schema import SchemaModel
 
 
 class ProtocolSchemaLoader(Protocol):

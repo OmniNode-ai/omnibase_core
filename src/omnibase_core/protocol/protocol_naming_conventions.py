@@ -7,7 +7,7 @@ consistent naming across all code generation tools.
 
 from typing import Protocol
 
-from omnibase_core.model.core.model_onex_base_state import (
+from omnibase_core.models.core.model_onex_base_state import (
     ModelOnexInputState,
     ModelOnexOutputState,
 )

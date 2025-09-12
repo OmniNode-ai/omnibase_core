@@ -12,7 +12,6 @@ class EnumDataSourceType(str, Enum):
     """Types of data sources in the pipeline."""
 
     FILE_SYSTEM = "FILE_SYSTEM"
-    KAFKA_EVENT = "KAFKA_EVENT"
     DATABASE_RECORD = "DATABASE_RECORD"
     API_REQUEST = "API_REQUEST"
     SCHEDULED_JOB = "SCHEDULED_JOB"

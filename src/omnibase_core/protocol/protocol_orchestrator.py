@@ -24,7 +24,7 @@
 
 from typing import Protocol
 
-from omnibase_core.model.service.model_orchestrator import (
+from omnibase_core.models.service.model_orchestrator import (
     GraphModel,
     OrchestratorResultModel,
     PlanModel,

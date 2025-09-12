@@ -7,10 +7,10 @@ strategies such as BM25 and dense vector search.
 
 from typing import Protocol
 
-from omnibase_core.model.semantic.model_retrieval_input_state import (
+from omnibase_core.models.semantic.model_retrieval_input_state import (
     ModelRetrievalInputState,
 )
-from omnibase_core.model.semantic.model_retrieval_output_state import (
+from omnibase_core.models.semantic.model_retrieval_output_state import (
     ModelRetrievalOutputState,
 )
 

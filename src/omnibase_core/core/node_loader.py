@@ -14,12 +14,16 @@ from typing import Any, TypeVar
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.exceptions import OnexError
-from omnibase_core.model.generation.model_contract_document import ModelContractDocument
-from omnibase_core.protocol.protocol_onex_node import ProtocolOnexNode
+from omnibase_core.models.generation.model_contract_document import (
+    ModelContractDocument,
+)
+from omnibase_core.models.protocol import model_protocol_onex_node
+
+NodeInterface = model_protocol_onex_node.ProtocolOnexNode
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T", bound=ProtocolOnexNode)
+T = TypeVar("T", bound=NodeInterface)
 
 
 class NodeLoadError(OnexError):
@@ -53,7 +57,7 @@ class NodeLoader:
         self,
         contract_path: str,
         node_path: str | None = None,
-    ) -> ProtocolOnexNode:
+    ) -> NodeInterface:
         """
         Load a node from its contract specification.
 
@@ -105,7 +109,7 @@ class NodeLoader:
                 details={"error": str(e), "contract_path": contract_path},
             )
 
-    def load_node_from_spec(self, node_spec: dict[str, Any]) -> ProtocolOnexNode:
+    def load_node_from_spec(self, node_spec: dict[str, Any]) -> NodeInterface:
         """
         Load a tool from a specification dictionary.
 
@@ -348,7 +352,7 @@ class NodeLoader:
         node_class: type,
         dependencies: dict[str, Any],
         contract: ModelContractDocument,
-    ) -> ProtocolOnexNode:
+    ) -> NodeInterface:
         """
         Instantiate tool with resolved dependencies.
 
@@ -417,7 +421,7 @@ class NodeLoader:
         Raises:
             NodeLoadError: If validation fails
         """
-        # Check basic ProtocolOnexNode compliance
+        # Check basic OnexNodeProtocol compliance
         required_methods = [
             "run",
             "get_node_config",
@@ -443,7 +447,7 @@ class NodeLoader:
         node_path: str,
         node_name: str,
         node_spec: dict[str, Any],
-    ) -> ProtocolOnexNode:
+    ) -> NodeInterface:
         """
         Load tool directly without contract.
 

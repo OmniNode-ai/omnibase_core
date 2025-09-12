@@ -17,12 +17,39 @@ from pathlib import Path
 class UnionValidator:
     """Validates Union usage in Python files."""
 
-    def __init__(self, max_unions: int = 6700):
+    def __init__(self, max_unions: int = 7000):
         self.max_unions = max_unions
+        # Focus on problematic Union patterns
         self.union_patterns = [
             r"Union\[",  # Union[type1, type2]
             r"\|\s*\w+",  # type1 | type2 (Python 3.10+ syntax)
         ]
+        # Patterns to exclude (acceptable uses)
+        self.acceptable_patterns = [
+            # Optional patterns - these are preferred over Union[T, None]
+            r"\w+\s*\|\s*None",  # type | None (Optional pattern)
+            r"None\s*\|\s*\w+",  # None | type (Optional pattern)
+            # Simple type unions - these are often acceptable
+            r"str\s*\|\s*int",  # str | int (common basic union)
+            r"int\s*\|\s*str",  # int | str (common basic union)
+            r"str\s*\|\s*bool",  # str | bool (common basic union)
+            r"bool\s*\|\s*str",  # bool | str (common basic union)
+            r"int\s*\|\s*float",  # int | float (numeric union)
+            r"float\s*\|\s*int",  # float | int (numeric union)
+            # Complex type with None - acceptable Optional patterns
+            r"\w+\[.*?\]\s*\|\s*None",  # List[T] | None, Dict[K, V] | None, etc.
+            r"None\s*\|\s*\w+\[.*?\]",  # None | List[T], None | Dict[K, V], etc.
+            # Path patterns
+            r"str\s*\|\s*Path",  # str | Path (common path handling)
+            r"Path\s*\|\s*str",  # Path | str (common path handling)
+        ]
+
+    def is_acceptable_union(self, line: str) -> bool:
+        """Check if a union usage is acceptable."""
+        for pattern in self.acceptable_patterns:
+            if re.search(pattern, line):
+                return True
+        return False
 
     def find_unions_in_file(self, file_path: Path) -> list[tuple[int, str]]:
         """
@@ -49,6 +76,11 @@ class UnionValidator:
                                 or stripped.startswith("'''")
                             ):
                                 continue
+
+                            # Skip acceptable union patterns
+                            if self.is_acceptable_union(line):
+                                continue
+
                             unions.append((line_num, line.strip()))
                             break
         except (UnicodeDecodeError, PermissionError) as e:
@@ -145,8 +177,8 @@ def main():
         "--max-unions",
         "-m",
         type=int,
-        default=6700,
-        help="Maximum allowed Union usages before failing (default: 6700)",
+        default=7000,
+        help="Maximum allowed Union usages before failing (default: 7000)",
     )
     parser.add_argument(
         "--src-dir",

@@ -16,4 +16,3 @@ class EnumDeliveryMode(str, Enum):
 
     DIRECT = "direct"
     INMEMORY = "inmemory"
-    KAFKA = "kafka"

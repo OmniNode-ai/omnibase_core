@@ -14,7 +14,7 @@ from omnibase_core.core.core_structured_logging import (
 )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.model.core.model_workflow_metrics import ModelWorkflowMetrics
+from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 
 # Type variables for input/output states
 InputStateT = TypeVar("InputStateT")

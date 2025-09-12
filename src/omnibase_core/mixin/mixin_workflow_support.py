@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
-from omnibase_core.model.core.model_onex_event import OnexEvent
+from omnibase_core.models.core.model_onex_event import OnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 

@@ -26,21 +26,24 @@ import builtins
 import json
 from pathlib import Path
 
-from omnibase_core.model.core.model_generic_yaml import ModelGenericYaml
+# ModelGenericYaml import removed - anti-pattern eliminated
 from omnibase_core.protocol.protocol_file_io import ProtocolFileIO
-from omnibase_core.utils.safe_yaml_loader import (
-    load_and_validate_yaml_model,
-)
+
+# load_and_validate_yaml_model import removed - not needed for direct YAML parsing
 
 
 class RealFileIO(ProtocolFileIO):
     def read_yaml(self, path: str | Path) -> object:
-        with builtins.open(path) as f:
-            # Load and validate YAML using Pydantic model
+        """Read YAML file and return parsed data."""
+        from pathlib import Path
 
-            yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
+        from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
-            return yaml_model.model_dump()
+        file_path = Path(path)
+        # Load YAML content using Pydantic model validation
+        yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
+        return yaml_model.model_dump() or {}
 
     def read_json(self, path: str | Path) -> object:
         with builtins.open(path) as f:

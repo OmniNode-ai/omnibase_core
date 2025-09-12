@@ -72,16 +72,13 @@ class ModelCanaryEffectInput(BaseModel):
 
     def to_operation_data(self) -> dict[str, Any]:
         """
-        Convert to operation data dictionary for backward compatibility.
-
-        This method provides a migration path from the old architecture
-        while maintaining strong typing principles.
+        Convert to operation data dictionary for current standards.
 
         Returns:
             Dict[str, Any]: Operation data with all required fields
         """
         return {
-            "operation_type": self.operation_type,  # Already string value in Pydantic v2
+            "operation_type": self.operation_type,
             "target_system": self.target_system,
             "parameters": self.parameters,
             "correlation_id": self.correlation_id,

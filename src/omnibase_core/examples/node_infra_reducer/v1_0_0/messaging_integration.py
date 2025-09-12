@@ -2,7 +2,7 @@
 ONEX Messaging Architecture v0.2 - Infrastructure Reducer Integration
 
 Integration layer for Infrastructure Reducer with the new messaging architecture.
-Provides backward compatibility while enabling modern messaging patterns.
+Provides compatibility while enabling modern messaging patterns.
 """
 
 import asyncio
@@ -93,7 +93,7 @@ class MessagingIntegration:
     Provides:
     - Command routing through Group Gateway
     - Tool registration with Local Tool Registry
-    - Backward compatibility with existing registry patterns
+    - Modern standards with existing registry patterns
     - Health tracking and heartbeat management
     """
 
@@ -130,7 +130,6 @@ class MessagingIntegration:
             capabilities=[
                 "consul_operations",
                 "vault_operations",
-                "kafka_operations",
                 "infrastructure_coordination",
                 "registry_management",
             ],
@@ -362,7 +361,7 @@ class MessagingIntegration:
         """
         Delegate registry request through the messaging architecture
 
-        This provides backward compatibility for existing registry operations
+        This provides compatibility for existing registry operations
         while routing through the new messaging infrastructure.
         """
         try:
@@ -409,8 +408,6 @@ class MessagingIntegration:
             ("/consul/health", "GET"): "consul_health_check",
             ("/vault/secrets", "GET"): "vault_list_secrets",
             ("/vault/health", "GET"): "vault_health_check",
-            ("/kafka/topics", "GET"): "kafka_list_topics",
-            ("/kafka/health", "GET"): "kafka_health_check",
         }
 
         key = (endpoint_path, http_method)
