@@ -1,225 +1,169 @@
 """
-Severity Model
+ONEX-Compliant Severity Model
 
-Unified severity model replacing duplicate EnumErrorSeverity and
-EnumValidationSeverity enums with a single structured model.
+Unified severity model with strong typing and immutable constructor patterns.
+Phase 3I remediation: Eliminated all factory methods and conversion anti-patterns.
 """
 
+from pathlib import Path
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class ModelSeverity(BaseModel):
     """
-    Unified severity model for errors, validation issues, and logging.
+    ONEX-compliant severity model with strong typing and validation.
 
-    Consolidates EnumErrorSeverity and EnumValidationSeverity into a
-    single model with structured fields.
+    Provides structured severity handling with proper constructor patterns
+    and immutable design following ONEX standards.
     """
 
-    # Core fields (required)
+    # Core required fields with strong typing
     name: str = Field(
         ...,
         description="Severity identifier (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL)",
-        pattern="^[A-Z]+$",
+        pattern="^[A-Z][A-Z_]*$",
+        min_length=3,
+        max_length=10,
     )
 
-    value: str = Field(..., description="Lowercase value for current standards")
+    value: str = Field(
+        ...,
+        description="Lowercase canonical value",
+        pattern="^[a-z][a-z_]*$",
+        min_length=3,
+        max_length=10,
+    )
 
     numeric_value: int = Field(
         ...,
-        description="Numeric value for comparison (higher = more severe)",
+        description="Numeric severity level for comparison (higher = more severe)",
         ge=0,
         le=100,
     )
 
-    # Properties as fields
+    # Behavioral properties
     is_blocking: bool = Field(
         ...,
-        description="Whether this severity level should block execution",
+        description="Whether this severity blocks execution flow",
     )
 
     is_critical: bool = Field(
-        default=False,
-        description="Whether this is critical or fatal severity",
+        ...,
+        description="Whether this represents critical or fatal severity",
     )
 
-    # Optional metadata
+    # Optional descriptive metadata
     description: str = Field(
         default="",
-        description="Human-readable description of the severity level",
+        description="Human-readable severity description",
+        max_length=100,
     )
 
     color_code: str = Field(
         default="",
-        description="Terminal color code for this severity",
+        description="ANSI color code for terminal display",
+        pattern="^(\033\\[\\d+m|)$",
     )
 
-    emoji: str = Field(default="", description="Emoji representation for this severity")
+    emoji: str = Field(
+        default="",
+        description="Unicode emoji representation",
+        max_length=4,
+    )
 
-    # Class variable for ordering
-    _severity_order: ClassVar[dict[str, int]] = {
-        "DEBUG": 10,
-        "INFO": 20,
-        "WARNING": 30,
-        "ERROR": 40,
-        "CRITICAL": 50,
-        "FATAL": 60,
-    }
+    # ONEX validation constraints
+    @validator("name")
+    def validate_name_consistency(cls, v, values):
+        """Ensure name and value are consistent."""
+        if "value" in values and v.lower() != values["value"]:
+            raise ValueError(f"Name '{v}' must match value '{values.get('value', '')}'")
+        return v
 
-    # Factory methods for standard severities
-    @classmethod
-    def DEBUG(cls) -> "ModelSeverity":
-        """Debug severity - lowest level, for development."""
-        return cls(
-            name="DEBUG",
-            value="debug",
-            numeric_value=10,
-            is_blocking=False,
-            is_critical=False,
-            description="Debug information for development",
-            color_code="\033[36m",  # Cyan
-            emoji="🐛",
-        )
-
-    @classmethod
-    def INFO(cls) -> "ModelSeverity":
-        """Info severity - informational messages."""
-        return cls(
-            name="INFO",
-            value="info",
-            numeric_value=20,
-            is_blocking=False,
-            is_critical=False,
-            description="Informational messages",
-            color_code="\033[34m",  # Blue
-            emoji="ℹ️",
-        )
-
-    @classmethod
-    def WARNING(cls) -> "ModelSeverity":
-        """Warning severity - potential issues."""
-        return cls(
-            name="WARNING",
-            value="warning",
-            numeric_value=30,
-            is_blocking=False,
-            is_critical=False,
-            description="Warning about potential issues",
-            color_code="\033[33m",  # Yellow
-            emoji="⚠️",
-        )
-
-    @classmethod
-    def ERROR(cls) -> "ModelSeverity":
-        """Error severity - errors that block normal operation."""
-        return cls(
-            name="ERROR",
-            value="error",
-            numeric_value=40,
-            is_blocking=True,
-            is_critical=False,
-            description="Errors that prevent normal operation",
-            color_code="\033[31m",  # Red
-            emoji="❌",
-        )
-
-    @classmethod
-    def CRITICAL(cls) -> "ModelSeverity":
-        """Critical severity - critical errors requiring immediate attention."""
-        return cls(
-            name="CRITICAL",
-            value="critical",
-            numeric_value=50,
-            is_blocking=True,
-            is_critical=True,
-            description="Critical errors requiring immediate attention",
-            color_code="\033[91m",  # Bright Red
-            emoji="🚨",
-        )
-
-    @classmethod
-    def FATAL(cls) -> "ModelSeverity":
-        """Fatal severity - unrecoverable errors."""
-        return cls(
-            name="FATAL",
-            value="fatal",
-            numeric_value=60,
-            is_blocking=True,
-            is_critical=True,
-            description="Fatal errors that cannot be recovered",
-            color_code="\033[35m",  # Magenta
-            emoji="💀",
-        )
-
-    @classmethod
-    def from_string(cls, severity: str) -> "ModelSeverity":
-        """Create ModelSeverity from string for current standards."""
-        severity_upper = severity.upper()
-        factory_map = {
-            "DEBUG": cls.DEBUG,
-            "INFO": cls.INFO,
-            "WARNING": cls.WARNING,
-            "ERROR": cls.ERROR,
-            "CRITICAL": cls.CRITICAL,
-            "FATAL": cls.FATAL,
+    @validator("numeric_value")
+    def validate_severity_ranges(cls, v, values):
+        """Validate numeric values align with severity expectations."""
+        name = values.get("name", "")
+        expected_ranges = {
+            "DEBUG": (0, 15),
+            "INFO": (15, 25),
+            "WARNING": (25, 35),
+            "ERROR": (35, 45),
+            "CRITICAL": (45, 55),
+            "FATAL": (55, 100),
         }
 
-        factory = factory_map.get(severity_upper)
-        if factory:
-            return factory()
-        # Unknown severity - default to INFO
-        return cls(
-            name=severity_upper,
-            value=severity.lower(),
-            numeric_value=20,
-            is_blocking=False,
-            is_critical=False,
-            description=f"Custom severity: {severity}",
-        )
+        if name in expected_ranges:
+            min_val, max_val = expected_ranges[name]
+            if not (min_val <= v <= max_val):
+                raise ValueError(
+                    f"Numeric value {v} for {name} must be in range [{min_val}, {max_val}]"
+                )
+        return v
+
+    @validator("is_critical")
+    def validate_critical_consistency(cls, v, values):
+        """Ensure critical flag aligns with severity level."""
+        name = values.get("name", "")
+        numeric = values.get("numeric_value", 0)
+
+        if name in ["CRITICAL", "FATAL"] and not v:
+            raise ValueError(f"Severity {name} must have is_critical=True")
+        if name in ["DEBUG", "INFO", "WARNING"] and v:
+            raise ValueError(f"Severity {name} cannot have is_critical=True")
+        if numeric >= 45 and not v:
+            raise ValueError(f"Numeric value {numeric} requires is_critical=True")
+
+        return v
 
     def __str__(self) -> str:
-        """String representation for current standards."""
+        """ONEX-compliant string representation."""
         return self.value
 
     def __eq__(self, other) -> bool:
-        """Equality comparison for current standards."""
-        if isinstance(other, str):
-            return self.value == other or self.name == other.upper()
+        """ONEX-compliant equality comparison - type-safe only."""
         if isinstance(other, ModelSeverity):
-            return self.name == other.name
+            return self.name == other.name and self.numeric_value == other.numeric_value
         return False
 
     def __lt__(self, other: "ModelSeverity") -> bool:
-        """Enable severity comparison."""
-        if isinstance(other, ModelSeverity):
-            return self.numeric_value < other.numeric_value
-        return NotImplemented
+        """ONEX-compliant severity comparison by numeric value."""
+        if not isinstance(other, ModelSeverity):
+            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+        return self.numeric_value < other.numeric_value
 
     def __le__(self, other: "ModelSeverity") -> bool:
-        """Enable severity comparison."""
-        if isinstance(other, ModelSeverity):
-            return self.numeric_value <= other.numeric_value
-        return NotImplemented
+        """ONEX-compliant severity comparison by numeric value."""
+        if not isinstance(other, ModelSeverity):
+            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+        return self.numeric_value <= other.numeric_value
 
     def __gt__(self, other: "ModelSeverity") -> bool:
-        """Enable severity comparison."""
-        if isinstance(other, ModelSeverity):
-            return self.numeric_value > other.numeric_value
-        return NotImplemented
+        """ONEX-compliant severity comparison by numeric value."""
+        if not isinstance(other, ModelSeverity):
+            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+        return self.numeric_value > other.numeric_value
 
     def __ge__(self, other: "ModelSeverity") -> bool:
-        """Enable severity comparison."""
-        if isinstance(other, ModelSeverity):
-            return self.numeric_value >= other.numeric_value
-        return NotImplemented
+        """ONEX-compliant severity comparison by numeric value."""
+        if not isinstance(other, ModelSeverity):
+            raise TypeError(f"Cannot compare ModelSeverity with {type(other)}")
+        return self.numeric_value >= other.numeric_value
 
-    # Compatibility methods
-    def get_numeric_value(self) -> int:
-        """Get numeric value for comparison (higher = more severe)."""
+    def __hash__(self) -> int:
+        """ONEX-compliant hash for set/dict usage."""
+        return hash((self.name, self.numeric_value))
+
+    # ONEX-compliant property methods
+    def get_severity_level(self) -> int:
+        """Get numeric severity level for comparison."""
         return self.numeric_value
 
-    def is_critical_or_above(self) -> bool:
-        """Check if this is critical or fatal severity."""
+    def is_critical_severity(self) -> bool:
+        """Check if this represents critical or fatal severity."""
         return self.is_critical
+
+    def is_blocking_severity(self) -> bool:
+        """Check if this severity blocks execution."""
+        return self.is_blocking
