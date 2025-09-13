@@ -11,8 +11,8 @@ from typing import get_type_hints
 
 import pytest
 
-from omnibase_core.model.common.model_typed_value import ModelTypedMapping
-from omnibase_core.model.security.model_security_policy_data import (
+from omnibase_core.models.common.model_typed_value import ModelTypedMapping
+from omnibase_core.models.security.model_security_policy_data import (
     ModelSecurityPolicyData,
 )
 

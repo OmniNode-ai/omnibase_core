@@ -9,7 +9,7 @@ from typing import runtime_checkable
 
 import pytest
 
-from omnibase_core.model.common.model_typed_value import (
+from omnibase_core.models.common.model_typed_value import (
     BoolContainer,
     DictContainer,
     FloatContainer,
@@ -27,7 +27,8 @@ class TestProtocolValidatableCompliance:
 
     def test_modelvaluecontainer_implements_protocol(self):
         """Test that ModelValueContainer implements ProtocolValidatable."""
-        container = ModelValueContainer.create_string("test")
+        # ONEX-compliant pattern: Direct __init__ calls instead of factory methods
+        container = ModelValueContainer(value="test")
 
         # Runtime protocol check
         assert isinstance(container, ProtocolValidatable)
@@ -160,11 +161,9 @@ class TestModelValueContainerValidation:
         errors = large_dict.get_errors()
         assert any("exceeds maximum size" in error for error in errors)
 
-        # Non-string keys
-        bad_dict = DictContainer(value={42: "numeric_key", "string_key": "value"})
-        assert not bad_dict.is_valid()
-        errors = bad_dict.get_errors()
-        assert any("non-string keys" in error for error in errors)
+        # Non-string keys - this now fails at Pydantic validation time (fail-fast!)
+        with pytest.raises(Exception):  # Pydantic validation error
+            bad_dict = DictContainer(value={42: "numeric_key", "string_key": "value"})
 
     def test_metadata_validation(self):
         """Test validation of container metadata."""
