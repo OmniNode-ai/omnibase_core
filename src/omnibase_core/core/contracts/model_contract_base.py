@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.contracts.model_dependency import ModelDependency
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.models.core.model_semver import ModelSemVer
 
@@ -262,8 +263,11 @@ class ModelContractBase(BaseModel, ABC):
             return []
 
         if not isinstance(v, list):
-            msg = f"dependencies must be a list, got {type(v)}"
-            raise TypeError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Contract dependencies must be a list, got {type(v)}",
+                context={"input_type": str(type(v))},
+            )
 
         dependencies = []
         for i, item in enumerate(v):
@@ -272,12 +276,45 @@ class ModelContractBase(BaseModel, ABC):
             elif isinstance(item, dict):
                 # Only accept structured dict format
                 if "name" not in item:
-                    msg = f"Dependency {i} missing required 'name' field. Use structured format: {{'name': '...', 'type': '...', 'module': '...'}}"
-                    raise ValueError(msg)
-                dependencies.append(ModelDependency(**item))
+                    raise OnexError(
+                        error_code=CoreErrorCode.VALIDATION_FAILED,
+                        message=f"Dependency {i} missing required 'name' field",
+                        context={
+                            "dependency_index": i,
+                            "expected_format": {
+                                "name": "...",
+                                "type": "...",
+                                "module": "...",
+                            },
+                            "received_keys": (
+                                list(item.keys()) if isinstance(item, dict) else None
+                            ),
+                        },
+                    )
+
+                # Enhanced error handling for ModelDependency creation
+                try:
+                    dependencies.append(ModelDependency(**item))
+                except Exception as e:
+                    raise OnexError(
+                        error_code=CoreErrorCode.VALIDATION_FAILED,
+                        message=f"Dependency {i} has invalid format: {str(e)}",
+                        context={
+                            "dependency_index": i,
+                            "dependency_data": item,
+                            "validation_error": str(e),
+                        },
+                    ) from e
             else:
-                msg = f"Dependency {i} must be dict with structured format, got {type(item)}. No string dependencies allowed."
-                raise TypeError(msg)
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Dependency {i} must be dict with structured format. No string dependencies allowed.",
+                    context={
+                        "dependency_index": i,
+                        "received_type": str(type(item)),
+                        "expected_type": "dict",
+                    },
+                )
 
         return dependencies
 

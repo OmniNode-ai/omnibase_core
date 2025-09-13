@@ -16,6 +16,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
@@ -312,15 +313,30 @@ class ModelDependency(BaseModel):
         if not v:
             return None
 
-        # Module path validation - allow dots, underscores, hyphens, and alphanumeric
-        # Common patterns: omnibase.protocol.protocol_event_bus, my-package.sub_module
-        clean_path = v.replace(".", "").replace("_", "").replace("-", "")
-        if not clean_path.isalnum():
-            msg = (
-                f"Invalid module path format: {v}. Only alphanumeric, "
-                "dots, underscores, and hyphens allowed."
+        # Secure module path validation to prevent path traversal attacks
+        import re
+        
+        # Prevent path traversal attempts
+        if ".." in v or "/" in v or "\\" in v:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Invalid module path: {v}. Path traversal sequences not allowed.",
+                context={"module_path": v, "security_violation": "path_traversal_attempt"}
             )
-            raise ValueError(msg)
+        
+        # Validate proper module path format: alphanumeric segments separated by dots
+        # Allow underscores and hyphens within segments, but not at start/end
+        module_pattern = r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
+        if not re.match(module_pattern, v):
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Invalid module path format: {v}. Must be valid Python module path.",
+                context={
+                    "module_path": v,
+                    "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
+                    "pattern": module_pattern
+                }
+            )
 
         return v
 

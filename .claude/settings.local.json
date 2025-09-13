@@ -29,7 +29,8 @@
       "mcp__serena__activate_project",
       "mcp__archon__list_projects",
       "mcp__serena__read_file",
-      "mcp__serena__replace_regex"
+      "mcp__serena__replace_regex",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

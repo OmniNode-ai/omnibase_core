@@ -7,7 +7,7 @@ performance analytics, and operational insights for ONEX registry resolution sys
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,6 +21,19 @@ if TYPE_CHECKING:
     )
 
 from .model_registry_resolution_context import ModelRegistryResolutionContext
+
+
+@runtime_checkable
+class ProtocolRegistry(Protocol):
+    """Protocol for registry instances that can be resolved."""
+    
+    def get_name(self) -> str:
+        """Get registry name."""
+        ...
+    
+    def is_available(self) -> bool:
+        """Check if registry is available."""
+        ...
 
 
 class ResolutionStatus(str, Enum):
@@ -59,7 +72,7 @@ class ModelRegistryResolutionResult(BaseModel):
     - Factory methods for common scenarios
     """
 
-    registry: Any = Field(..., description="The resolved registry instance")
+    registry: ProtocolRegistry | None = Field(..., description="The resolved registry instance")
 
     resolution_context: ModelRegistryResolutionContext = Field(
         ...,
