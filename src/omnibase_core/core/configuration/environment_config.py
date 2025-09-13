@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Type, TypeVar, Union, get_type_hints
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-from omnibase_core.types import EnvValue
+from omnibase_core.models.types import EnvValue
 
 T = TypeVar("T", bound=BaseModel)
 

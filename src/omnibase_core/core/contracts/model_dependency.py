@@ -31,12 +31,11 @@ class EnumDependencyType(Enum):
 
 class ModelDependency(BaseModel):
     """
-    Unified dependency specification with internal format handling.
+    ONEX dependency specification with strong typing enforcement.
 
-    Provides clean interface while supporting multiple input formats:
-    - String dependencies: "ProtocolEventBus"
-    - Dict dependencies: {"name": "ProtocolEventBus", "module": "..."}
-    - Structured dependencies: ModelDependencySpec instances
+    Provides structured dependency model for contract dependencies.
+    STRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.
+    No string or dict fallbacks - use structured initialization only.
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
@@ -80,28 +79,51 @@ class ModelDependency(BaseModel):
         "external": EnumDependencyType.EXTERNAL,
     }
 
+    # Compiled regex patterns for performance optimization (Phase 3L performance fix)
+    _MODULE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
+        r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
+    )
+    _CAMEL_TO_SNAKE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
+        r"(?<!^)(?<=[a-z0-9])(?=[A-Z])"
+    )
+
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
         """Validate dependency name follows ONEX conventions."""
         if not v or not v.strip():
-            msg = "Dependency name cannot be empty or whitespace-only"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="Dependency name cannot be empty or whitespace-only",
+                context={
+                    "provided_value": v,
+                    "field": "name",
+                    "requirement": "non_empty_string",
+                },
+            )
 
         v = v.strip()
 
         # Basic validation - allow protocols, services, modules
         min_name_length = 2
         if len(v) < min_name_length:
-            msg = f"Dependency name too short: {v}"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Dependency name too short: {v}",
+                context={
+                    "name": v,
+                    "length": len(v),
+                    "min_length": min_name_length,
+                    "field": "name",
+                },
+            )
 
         return v
 
     @field_validator("module")
     @classmethod
     def validate_module(cls, v: str | None) -> str | None:
-        """Validate module path format."""
+        """Validate module path format with security checks and performance optimization."""
         if v is None:
             return v
 
@@ -109,35 +131,56 @@ class ModelDependency(BaseModel):
         if not v:
             return None
 
-        # Secure module path validation to prevent path traversal attacks
-        import re
-
-        # Prevent path traversal attempts
-        if ".." in v or "/" in v or "\\" in v:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid module path: {v}. Path traversal sequences not allowed.",
-                context={
-                    "module_path": v,
-                    "security_violation": "path_traversal_attempt",
-                },
-            )
-
-        # Validate proper module path format: alphanumeric segments separated by dots
-        # Allow underscores and hyphens within segments, but not at start/end
-        module_pattern = r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
-        if not re.match(module_pattern, v):
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid module path format: {v}. Must be valid Python module path.",
-                context={
-                    "module_path": v,
-                    "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
-                    "pattern": module_pattern,
-                },
-            )
+        # Refactored validation: security checks + format validation
+        cls._validate_module_security(v)
+        cls._validate_module_format(v)
 
         return v
+
+    @classmethod
+    def _validate_module_security(cls, module_path: str) -> None:
+        """Validate module path security to prevent path traversal attacks."""
+        security_violations = []
+
+        # Check for path traversal sequences
+        if ".." in module_path:
+            security_violations.append("parent_directory_traversal")
+        if "/" in module_path or "\\" in module_path:
+            security_violations.append("directory_separator_found")
+
+        # Check for other dangerous patterns
+        if module_path.startswith("."):
+            security_violations.append("relative_path_start")
+        if any(char in module_path for char in ["<", ">", "|", "&", ";", "`", "$"]):
+            security_violations.append("shell_injection_characters")
+        if len(module_path) > 200:  # Prevent excessively long module paths
+            security_violations.append("excessive_length")
+
+        if security_violations:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Invalid module path: {module_path}. Security violations detected: {', '.join(security_violations)}",
+                context={
+                    "module_path": module_path,
+                    "security_violations": security_violations,
+                    "recommendation": "Use only alphanumeric characters, underscores, hyphens, and dots",
+                },
+            )
+
+    @classmethod
+    def _validate_module_format(cls, module_path: str) -> None:
+        """Validate module path format using pre-compiled pattern for performance."""
+        if not cls._MODULE_PATTERN.match(module_path):
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
+                context={
+                    "module_path": module_path,
+                    "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
+                    "pattern": cls._MODULE_PATTERN.pattern,
+                    "example": "omnibase_core.models.example",
+                },
+            )
 
     @model_validator(mode="after")
     def validate_consistency(self) -> "ModelDependency":
@@ -165,10 +208,11 @@ class ModelDependency(BaseModel):
         return self
 
     def _camel_to_snake_case(self, camel_str: str) -> str:
-        """Convert camelCase to snake_case using regex."""
+        """Convert camelCase to snake_case using pre-compiled regex for performance."""
         # Insert underscore before uppercase letters that follow lowercase letters
         # or digits. This handles camelCase patterns while avoiding consecutive caps.
-        return re.sub(r"(?<!^)(?<=[a-z0-9])(?=[A-Z])", "_", camel_str).lower()
+        # Uses pre-compiled class-level pattern for optimal performance
+        return self._CAMEL_TO_SNAKE_PATTERN.sub("_", camel_str).lower()
 
     def to_string(self) -> str:
         """Convert to simple string representation."""

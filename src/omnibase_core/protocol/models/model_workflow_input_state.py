@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.tools.workflow.models.model_workflow_parameters import (
+from omnibase_core.models.service.model_workflow_parameters import (
     ModelWorkflowParameters,
 )
 

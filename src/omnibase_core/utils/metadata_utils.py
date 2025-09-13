@@ -111,10 +111,10 @@ def canonicalize_for_hash(
     from datetime import datetime
     from uuid import uuid4
 
-    from omnibase_core.metadata.metadata_constants import get_namespace_prefix
     from omnibase_core.models.core.model_entrypoint import EntrypointBlock
     from omnibase_core.models.core.model_namespace import Namespace
     from omnibase_core.models.core.model_project_metadata import get_canonical_versions
+    from omnibase_core.models.metadata.metadata_constants import get_namespace_prefix
 
     now = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     canonical_versions = get_canonical_versions()

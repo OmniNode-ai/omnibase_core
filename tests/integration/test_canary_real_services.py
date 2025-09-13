@@ -18,8 +18,12 @@ import pytest
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
-from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
-from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
+    NodeCanaryEffect,
+)
+from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node_canary_reducer import (
+    NodeCanaryReducer,
+)
 
 
 def _convert_to_scalar_dict(data: dict[str, any]) -> dict[str, ModelScalarValue]:

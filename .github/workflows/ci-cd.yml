@@ -17,6 +17,76 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+  # Phase 3L: 7-Gate Validation for ONEX Model Remediation
+  seven-gate-validation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run 7-Gate Validation on Modified Models
+        run: |
+          # Find all modified model files in current PR/push
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            MODIFIED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E "src/.*model.*\.py$" || true)
+          else
+            MODIFIED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "src/.*model.*\.py$" || true)
+          fi
+
+          echo "Modified model files: $MODIFIED_FILES"
+
+          if [ -z "$MODIFIED_FILES" ]; then
+            echo "No model files modified, skipping 7-gate validation"
+            exit 0
+          fi
+
+          # Run 7-gate validation on each modified model
+          VALIDATION_FAILED=0
+          for model_file in $MODIFIED_FILES; do
+            echo "Running 7-gate validation on: $model_file"
+            poetry run python scripts/run_7_gate_validation.py "$model_file" || VALIDATION_FAILED=1
+          done
+
+          if [ $VALIDATION_FAILED -eq 1 ]; then
+            echo "❌ 7-Gate validation failed for one or more models"
+            exit 1
+          else
+            echo "✅ All 7-Gate validations passed"
+          fi
+
+      - name: Upload Validation Reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: 7-gate-validation-reports
+          path: validation_reports/
+          retention-days: 30
+
   # Integration tests with external services
   integration-test:
     runs-on: ubuntu-latest

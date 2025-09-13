@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from omnibase_core.types import MetadataValue
+from omnibase_core.models.types import MetadataValue
 
 
 class ModelOnexResultMetadata(BaseModel):

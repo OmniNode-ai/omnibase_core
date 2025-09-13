@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.types import PropertyValue
+from omnibase_core.models.types import PropertyValue
 
 
 class ModelGenericProperties(BaseModel):

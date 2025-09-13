@@ -9,7 +9,6 @@ from typing import Annotated, ClassVar, Optional, TypeAlias, cast
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import Lifecycle, MetaTypeEnum
-from omnibase_core.metadata.metadata_constants import get_namespace_prefix
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
@@ -25,6 +24,7 @@ from omnibase_core.models.core.model_project_metadata import get_canonical_versi
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
+from omnibase_core.models.metadata.metadata_constants import get_namespace_prefix
 from omnibase_core.utils.safe_yaml_loader import (
     load_yaml_content_as_model,
 )

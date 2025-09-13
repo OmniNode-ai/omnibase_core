@@ -28,6 +28,10 @@ METADATA_ERROR_KEY = "metadata_error"
 # Configuration file names
 PROJECT_ONEX_YAML_FILENAME = "project.onex.yaml"
 
+# Markdown metadata delimiters
+MD_META_OPEN = "<!--"
+MD_META_CLOSE = "-->"
+
 
 def get_namespace_prefix() -> str:
     """

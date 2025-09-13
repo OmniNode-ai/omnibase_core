@@ -24,7 +24,7 @@ class ValidationResult:
     success: bool
     message: str
     execution_time: float
-    metrics: Dict[str, any] = None
+    metrics: Dict[str, Any] = None
     rollback_triggered: bool = False
 
 

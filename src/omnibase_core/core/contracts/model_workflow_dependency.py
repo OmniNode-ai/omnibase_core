@@ -7,7 +7,9 @@ legacy string-based dependency support and enforces architectural consistency.
 ZERO TOLERANCE: No Any types or legacy string support allowed.
 """
 
-from pydantic import BaseModel, Field, field_serializer, field_validator
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
@@ -25,7 +27,7 @@ class ModelWorkflowDependency(BaseModel):
     ZERO TOLERANCE: No Any types or string fallbacks allowed.
     """
 
-    workflow_id: str = Field(
+    workflow_id: UUID = Field(
         ...,
         description="Unique identifier of the workflow this dependency references",
     )
@@ -61,66 +63,7 @@ class ModelWorkflowDependency(BaseModel):
         description="Human-readable description of the dependency",
     )
 
-    @field_validator("workflow_id", mode="before")
-    @classmethod
-    def validate_workflow_id(cls, v: str | None) -> str:
-        """
-        Validate workflow ID follows proper naming conventions.
-
-        Enforces lowercase, alphanumeric with hyphens format for consistency.
-        """
-        if v is None or not str(v) or not str(v).strip():
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message="Workflow ID cannot be empty or whitespace-only",
-                context={"workflow_id": v},
-            )
-
-        v = str(v)
-
-        v = v.strip()
-
-        # Length validation
-        min_id_length = 2
-        max_id_length = 64
-        if len(v) < min_id_length:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Workflow ID too short: '{v}' (minimum {min_id_length} characters)",
-                context={
-                    "workflow_id": v,
-                    "length": len(v),
-                    "min_length": min_id_length,
-                },
-            )
-
-        if len(v) > max_id_length:
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Workflow ID too long: '{v}' (maximum {max_id_length} characters)",
-                context={
-                    "workflow_id": v,
-                    "length": len(v),
-                    "max_length": max_id_length,
-                },
-            )
-
-        # Format validation: lowercase alphanumeric with hyphens, no consecutive hyphens
-        import re
-
-        pattern = r"^[a-z0-9]+(-[a-z0-9]+)*$"
-        if not re.match(pattern, v):
-            raise OnexError(
-                error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid workflow ID format: '{v}'",
-                context={
-                    "workflow_id": v,
-                    "expected_format": "lowercase alphanumeric with hyphens (no consecutive hyphens, no leading/trailing hyphens)",
-                    "pattern": pattern,
-                },
-            )
-
-        return v
+    # ONEX STRONG TYPES: UUID validation handled automatically by Pydantic
 
     @field_validator("condition", mode="before")
     @classmethod

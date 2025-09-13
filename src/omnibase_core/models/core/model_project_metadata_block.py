@@ -5,7 +5,10 @@ Project metadata block model.
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
-from omnibase_core.metadata.metadata_constants import (
+from omnibase_core.models.core.model_entrypoint import EntrypointBlock
+from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
+from omnibase_core.models.core.model_tool_collection import ModelToolCollection
+from omnibase_core.models.metadata.metadata_constants import (
     COPYRIGHT_KEY,
     ENTRYPOINT_KEY,
     METADATA_VERSION_KEY,
@@ -14,9 +17,6 @@ from omnibase_core.metadata.metadata_constants import (
     SCHEMA_VERSION_KEY,
     TOOLS_KEY,
 )
-from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
-from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 
 from .model_tree_generator_config import ModelTreeGeneratorConfig
 
