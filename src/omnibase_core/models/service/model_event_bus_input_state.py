@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.models.core.model_onex_error import ModelOnexError
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.models.service.model_retry_strategy import ModelRetryStrategy
 
@@ -85,7 +85,7 @@ class ModelEventBusInputState(BaseModel):
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.from_string(v)
+            return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict, or ModelSemVer"
@@ -263,7 +263,7 @@ class ModelEventBusInputState(BaseModel):
     @classmethod
     def create_basic(cls, version: str, input_field: str) -> "ModelEventBusInputState":
         """Create basic input state for simple operations."""
-        return cls(version=ModelSemVer.from_string(version), input_field=input_field)
+        return cls(version=parse_semver_from_string(version), input_field=input_field)
 
     @classmethod
     def create_with_tracking(
@@ -275,7 +275,7 @@ class ModelEventBusInputState(BaseModel):
     ) -> "ModelEventBusInputState":
         """Create input state with tracking information."""
         return cls(
-            version=ModelSemVer.from_string(version),
+            version=parse_semver_from_string(version),
             input_field=input_field,
             correlation_id=correlation_id,
             event_id=event_id or f"evt_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
@@ -290,7 +290,7 @@ class ModelEventBusInputState(BaseModel):
     ) -> "ModelEventBusInputState":
         """Create high priority input state with extended timeout."""
         return cls(
-            version=ModelSemVer.from_string(version),
+            version=parse_semver_from_string(version),
             input_field=input_field,
             priority="high",
             timeout_seconds=timeout_seconds,
@@ -313,7 +313,7 @@ class ModelEventBusInputState(BaseModel):
             )
 
         config_data: dict[str, str | int | ModelSemVer | None] = {
-            "version": ModelSemVer.from_string(version),
+            "version": parse_semver_from_string(version),
             "input_field": input_field,
         }
 
