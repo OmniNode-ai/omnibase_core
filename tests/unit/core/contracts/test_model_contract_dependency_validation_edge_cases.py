@@ -16,7 +16,7 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
-# Create a concrete test implementation  
+# Create a concrete test implementation
 class _TestContract(ModelContractBase):
     """Concrete contract implementation for testing."""
 
@@ -250,16 +250,18 @@ class TestModelContractDependencyValidation:
     def test_very_large_dependency_list_performance(self):
         """Test validation performance with very large dependency list (1000+ dependencies)."""
         import time
-        
+
         # Create 1000 valid dependencies
         dependencies = []
         for i in range(1000):
-            dependencies.append({
-                "name": f"protocol-dep-{i:04d}",
-                "type": "protocol",
-                "module": f"protocol.module.dep{i:04d}"
-            })
-        
+            dependencies.append(
+                {
+                    "name": f"protocol-dep-{i:04d}",
+                    "type": "protocol",
+                    "module": f"protocol.module.dep{i:04d}",
+                }
+            )
+
         start_time = time.time()
         contract = create_test_contract(
             node_id="performance-test-node",
@@ -268,17 +270,19 @@ class TestModelContractDependencyValidation:
             dependencies=dependencies,
         )
         end_time = time.time()
-        
+
         validation_time = end_time - start_time
-        
+
         # Assertions
         assert len(contract.dependencies) == 1000
         assert all(isinstance(dep, ModelDependency) for dep in contract.dependencies)
-        
+
         # Performance assertion - should complete within reasonable time
         # Allow up to 5 seconds for 1000 dependencies (quite generous)
-        assert validation_time < 5.0, f"Validation took {validation_time:.3f}s, expected < 5.0s"
-        
+        assert (
+            validation_time < 5.0
+        ), f"Validation took {validation_time:.3f}s, expected < 5.0s"
+
         # Verify first and last dependencies for correctness
         assert contract.dependencies[0].name == "protocol-dep-0000"
         assert contract.dependencies[999].name == "protocol-dep-0999"
@@ -288,26 +292,28 @@ class TestModelContractDependencyValidation:
     def test_dependency_validation_performance_with_mixed_types(self):
         """Test performance with mixed dependency types and complex validation."""
         import time
-        
+
         # Create a smaller set of dependencies that are definitely ONEX compliant
         dependencies = []
-        
+
         # Create 100 of each type for better performance testing
         for i in range(400):  # 100 * 4 = 400 total
             dep_type = ["protocol", "service", "module", "external"][i % 4]
-            
+
             # All dependencies use protocol naming to pass ONEX validation
             # This tests performance, not validation logic
             name = f"ProtocolEventBus{i:03d}"
             module = f"protocol.complex.module.path.dep{i:03d}"
-                
-            dependencies.append({
-                "name": name,
-                "type": dep_type,
-                "module": module,
-                "version": {"major": 1, "minor": i % 10, "patch": (i * 7) % 5}
-            })
-        
+
+            dependencies.append(
+                {
+                    "name": name,
+                    "type": dep_type,
+                    "module": module,
+                    "version": {"major": 1, "minor": i % 10, "patch": (i * 7) % 5},
+                }
+            )
+
         start_time = time.time()
         contract = create_test_contract(
             node_id="mixed-performance-test",
@@ -316,22 +322,30 @@ class TestModelContractDependencyValidation:
             dependencies=dependencies,
         )
         end_time = time.time()
-        
+
         validation_time = end_time - start_time
-        
+
         # Assertions
         assert len(contract.dependencies) == 400
         assert all(isinstance(dep, ModelDependency) for dep in contract.dependencies)
-        
+
         # Performance assertion - more complex validation, allow up to 3 seconds
-        assert validation_time < 3.0, f"Mixed validation took {validation_time:.3f}s, expected < 3.0s"
-        
+        assert (
+            validation_time < 3.0
+        ), f"Mixed validation took {validation_time:.3f}s, expected < 3.0s"
+
         # Verify dependency creation success - all should be ProtocolEventBus due to type inference
         # This test focuses on performance, not type distribution logic
-        protocol_count = sum(1 for dep in contract.dependencies if dep.dependency_type.value == "protocol")
-        
+        protocol_count = sum(
+            1
+            for dep in contract.dependencies
+            if dep.dependency_type.value == "protocol"
+        )
+
         # All dependencies should be inferred as PROTOCOL due to name pattern
-        assert protocol_count == 400, f"Expected all 400 dependencies to be protocol type, got {protocol_count}"
+        assert (
+            protocol_count == 400
+        ), f"Expected all 400 dependencies to be protocol type, got {protocol_count}"
 
     def test_dependency_with_special_characters_in_name(self):
         """Test dependencies with edge case names."""
@@ -396,50 +410,48 @@ class TestModelContractDependencyValidation:
         malformed_scenarios = [
             # Scenario 1: Extremely long strings (potential DoS)
             {"name": "x" * 1000, "type": "protocol", "module": "test.module"},
-            
             # Scenario 2: Nested objects where simple values expected
             {"name": {"nested": "object"}, "type": "protocol", "module": "test.module"},
-            
             # Scenario 3: Boolean values where strings expected
             {"name": True, "type": False, "module": "test.module"},
-            
             # Scenario 4: Arrays where objects expected
             ["array", "instead", "of", "object"],
-            
             # Scenario 5: Empty strings after YAML processing
             {"name": "", "type": "protocol", "module": ""},
-            
             # Scenario 6: Whitespace-only strings
             {"name": "   ", "type": "\t\t", "module": "\n\n"},
-            
             # Scenario 7: Very deeply nested version structures
             {
                 "name": "deep-version",
-                "type": "protocol", 
+                "type": "protocol",
                 "module": "test.module",
-                "version": {"nested": {"very": {"deep": {"version": {"structure": "invalid"}}}}}
+                "version": {
+                    "nested": {"very": {"deep": {"version": {"structure": "invalid"}}}}
+                },
             },
-            
             # Scenario 8: None values where strings expected
             {"name": None, "type": "protocol", "module": "test.module"},
-            
             # Scenario 9: Numeric strings that could cause confusion
             {"name": "123456", "type": "456", "module": "789.module"},
-            
             # Scenario 10: Mixed valid/invalid fields
-            {"name": "valid-name", "type": "protocol", "module": "test.module", "invalid_extra": 42}
+            {
+                "name": "valid-name",
+                "type": "protocol",
+                "module": "test.module",
+                "invalid_extra": 42,
+            },
         ]
-        
+
         for i, malformed_dep in enumerate(malformed_scenarios):
-            with pytest.raises((OnexError, ValueError, TypeError, AttributeError)) as exc_info:
-                create_test_contract(
-                    dependencies=[malformed_dep]
-                )
-            
+            with pytest.raises(
+                (OnexError, ValueError, TypeError, AttributeError)
+            ) as exc_info:
+                create_test_contract(dependencies=[malformed_dep])
+
             # Verify we get appropriate error (OnexError preferred, but built-in exceptions acceptable)
             if isinstance(exc_info.value, OnexError):
                 assert exc_info.value.error_code == CoreErrorCode.VALIDATION_FAILED
-            
+
             # All should fail validation in some way
             assert exc_info.value is not None
 
@@ -450,7 +462,7 @@ class TestModelDependencySecurityValidation:
     def test_module_path_traversal_prevention(self):
         """Test that path traversal attempts are blocked."""
         from omnibase_core.core.contracts.model_dependency import ModelDependency
-        
+
         malicious_paths = [
             "../../../etc/passwd",
             "..\\..\\windows\\system32",
@@ -462,24 +474,25 @@ class TestModelDependencySecurityValidation:
             "module/../other",
             "a..b.module",  # .. in middle
         ]
-        
+
         for malicious_path in malicious_paths:
             with pytest.raises(OnexError) as exc_info:
                 ModelDependency(
-                    name="test-dep",
-                    dependency_type="module",
-                    module=malicious_path
+                    name="test-dep", dependency_type="module", module=malicious_path
                 )
-            
+
             error = exc_info.value
             assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-            assert "path traversal" in error.message.lower() or "invalid module path" in error.message.lower()
+            assert (
+                "path traversal" in error.message.lower()
+                or "invalid module path" in error.message.lower()
+            )
             assert error.context["context"]["module_path"] == malicious_path
 
     def test_valid_module_paths_allowed(self):
         """Test that valid module paths are still allowed."""
         from omnibase_core.core.contracts.model_dependency import ModelDependency
-        
+
         valid_paths = [
             "omnibase.protocol.event_bus",
             "my_package.sub_module",
@@ -490,20 +503,18 @@ class TestModelDependencySecurityValidation:
             "module_with_underscores",
             "module-with-hyphens",
         ]
-        
+
         for valid_path in valid_paths:
             # Should not raise an exception
             dependency = ModelDependency(
-                name="test-dep",
-                dependency_type="module",
-                module=valid_path
+                name="test-dep", dependency_type="module", module=valid_path
             )
             assert dependency.module == valid_path
 
     def test_invalid_module_format_patterns(self):
         """Test that invalid module format patterns are rejected."""
         from omnibase_core.core.contracts.model_dependency import ModelDependency
-        
+
         invalid_patterns = [
             "123starts_with_number",
             ".starts_with_dot",
@@ -513,15 +524,13 @@ class TestModelDependencySecurityValidation:
             "spaces in module",
             "tabs\tin\tmodule",
         ]
-        
+
         for invalid_pattern in invalid_patterns:
             with pytest.raises(OnexError) as exc_info:
                 ModelDependency(
-                    name="test-dep",
-                    dependency_type="module",
-                    module=invalid_pattern
+                    name="test-dep", dependency_type="module", module=invalid_pattern
                 )
-            
+
             error = exc_info.value
             assert error.error_code == CoreErrorCode.VALIDATION_FAILED
             assert "invalid module path" in error.message.lower()
@@ -538,13 +547,13 @@ class TestModelContractDependencyStructuredValidation:
             {
                 "name": "test-protocol-dep",
                 "type": "protocol",
-                "module": "test.protocol.module"
+                "module": "test.protocol.module",
             },
             {
                 "name": "another-protocol-dep",
                 "type": "protocol",
-                "module": "another.protocol.module"
-            }
+                "module": "another.protocol.module",
+            },
         ]
 
         # Test contract creation with proper model validation
@@ -584,7 +593,7 @@ class TestModelContractDependencyStructuredValidation:
                 "name": "test-protocol-dep",
                 "type": "protocol",
                 "module": "test.protocol.module",
-                "version": {"invalid": "structure"}  # Invalid version structure
+                "version": {"invalid": "structure"},  # Invalid version structure
             }
         ]
 
@@ -602,7 +611,10 @@ class TestModelContractDependencyStructuredValidation:
         # Test case 3: Multiple malformed dependencies - should report first error
         malformed_dependencies_case3 = [
             "string_dependency",  # Invalid string
-            {"name": "incomplete-protocol-dep", "module": "test.module"}  # Missing type
+            {
+                "name": "incomplete-protocol-dep",
+                "module": "test.module",
+            },  # Missing type
         ]
 
         with pytest.raises(OnexError) as exc_info:

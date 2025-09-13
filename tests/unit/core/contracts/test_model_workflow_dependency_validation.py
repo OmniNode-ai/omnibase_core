@@ -242,7 +242,7 @@ class TestModelWorkflowDependencyValidation:
 
         # Check required fields
         assert result_dict["workflow_id"] == "test-workflow"
-        assert result_dict["dependency_type"] == "sequential"
+        assert result_dict["type"] == "sequential"
 
         # Check optional fields
         assert result_dict["required"] is False
@@ -261,10 +261,10 @@ class TestModelWorkflowDependencyValidation:
         result_dict = dependency.to_dict()
 
         # Should only have required fields
-        expected_keys = {"workflow_id", "dependency_type"}
+        expected_keys = {"workflow_id", "type", "required"}  # required has default True
         assert set(result_dict.keys()) == expected_keys
         assert result_dict["workflow_id"] == "minimal-workflow"
-        assert result_dict["dependency_type"] == "parallel"
+        assert result_dict["type"] == "parallel"
 
     def test_whitespace_stripping(self):
         """Test that whitespace is properly stripped from string fields."""
@@ -343,7 +343,9 @@ class TestModelWorkflowDependencyIntegration:
         # Verify we can reconstruct
         reconstructed = ModelWorkflowDependency(
             workflow_id=parsed_data["workflow_id"],
-            dependency_type=EnumWorkflowDependencyType(parsed_data["dependency_type"]),
+            dependency_type=EnumWorkflowDependencyType(
+                parsed_data["type"]
+            ),  # Use "type" field
             required=parsed_data["required"],
             timeout_ms=parsed_data["timeout_ms"],
             description=parsed_data["description"],

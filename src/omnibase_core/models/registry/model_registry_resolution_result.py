@@ -26,11 +26,11 @@ from .model_registry_resolution_context import ModelRegistryResolutionContext
 @runtime_checkable
 class ProtocolRegistry(Protocol):
     """Protocol for registry instances that can be resolved."""
-    
+
     def get_name(self) -> str:
         """Get registry name."""
         ...
-    
+
     def is_available(self) -> bool:
         """Check if registry is available."""
         ...
@@ -72,7 +72,9 @@ class ModelRegistryResolutionResult(BaseModel):
     - Factory methods for common scenarios
     """
 
-    registry: ProtocolRegistry | None = Field(..., description="The resolved registry instance")
+    registry: ProtocolRegistry | None = Field(
+        ..., description="The resolved registry instance"
+    )
 
     resolution_context: ModelRegistryResolutionContext = Field(
         ...,
@@ -586,7 +588,7 @@ class ModelRegistryResolutionResult(BaseModel):
     @classmethod
     def create_success(
         cls,
-        registry: Any,
+        registry: ProtocolRegistry,
         context: ModelRegistryResolutionContext,
         duration_ms: int | None = None,
         cached: bool = False,
@@ -663,7 +665,7 @@ class ModelRegistryResolutionResult(BaseModel):
     @classmethod
     def create_partial_success(
         cls,
-        registry: Any,
+        registry: ProtocolRegistry,
         context: ModelRegistryResolutionContext,
         warnings: list[str],
         duration_ms: int | None = None,

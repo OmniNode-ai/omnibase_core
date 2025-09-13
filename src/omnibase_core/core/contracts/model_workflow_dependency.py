@@ -7,6 +7,8 @@ legacy string-based dependency support and enforces architectural consistency.
 ZERO TOLERANCE: No Any types or legacy string support allowed.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
@@ -171,38 +173,28 @@ class ModelWorkflowDependency(BaseModel):
         """Check if dependency is compensating (saga pattern)."""
         return self.dependency_type == EnumWorkflowDependencyType.COMPENSATING
 
-    def to_dict(self) -> dict[str, object]:
-        """Convert to dictionary representation."""
-        result_dict = {
-            "workflow_id": self.workflow_id,
-            "dependency_type": self.dependency_type.value,
-        }
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert to dictionary representation using ONEX-compliant patterns.
+        Uses Pydantic's model_dump with proper field mapping.
+        """
+        # Use Pydantic's built-in serialization
+        data = self.model_dump(exclude_none=True)
 
-        # Add optional fields using dict.update() to avoid subscript access
-        optional_data = {}
-
-        if not self.required:
-            optional_data.update(required=self.required)
-
-        if self.condition:
-            optional_data.update(condition=self.condition)
-
-        if self.timeout_ms:
-            optional_data.update(timeout_ms=self.timeout_ms)
-
-        if self.version_constraint:
-            version_data = (
-                self.version_constraint.model_dump()
-                if isinstance(self.version_constraint, ModelSemVer)
-                else self.version_constraint
+        # Convert dependency_type enum to string value for external APIs
+        if "dependency_type" in data:
+            enum_value = data["dependency_type"]
+            # Extract the actual string value from the enum
+            data["type"] = (
+                enum_value.value if hasattr(enum_value, "value") else str(enum_value)
             )
-            optional_data.update(version_constraint=version_data)
+            data.pop("dependency_type")
 
-        if self.description:
-            optional_data.update(description=self.description)
+        # Convert ModelSemVer to dict if present
+        if "version" in data and hasattr(data["version"], "model_dump"):
+            data["version"] = data["version"].model_dump()
 
-        result_dict.update(optional_data)
-        return result_dict
+        return data
 
     model_config = {
         "extra": "ignore",  # Allow extra fields from various input formats

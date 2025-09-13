@@ -80,210 +80,6 @@ class ModelDependency(BaseModel):
         "external": EnumDependencyType.EXTERNAL,
     }
 
-    @classmethod
-    def _from_string(cls, dependency_str: str) -> "ModelDependency":
-        """
-        Create dependency from string format.
-
-        Args:
-            dependency_str: Dependency string (e.g., "ProtocolEventBus")
-
-        Returns:
-            ModelDependency instance with inferred type
-
-        Examples:
-            >>> ModelDependency._from_string("ProtocolEventBus")
-            ModelDependency(name="ProtocolEventBus", dependency_type=PROTOCOL)
-
-            >>> ModelDependency._from_string("omnibase.protocol.protocol_consul_client")
-            ModelDependency(
-                name="protocol_consul_client",
-                module="omnibase.protocol.protocol_consul_client",
-                dependency_type=PROTOCOL
-            )
-        """
-        if not dependency_str or not dependency_str.strip():
-            msg = "Dependency string cannot be empty or whitespace-only"
-            raise ValueError(msg)
-
-        dependency_str = dependency_str.strip()
-
-        # Handle fully qualified module paths
-        if "." in dependency_str:
-            parts = dependency_str.split(".")
-            name = parts[-1]  # Last part is the name
-            module = dependency_str
-
-            # Infer type from module path
-            dependency_type = cls._infer_type_from_module(module)
-        else:
-            # Simple name format
-            name = dependency_str
-            module = None
-            dependency_type = cls._infer_type_from_name(name)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-        )
-
-    @classmethod
-    def _from_dict(cls, dependency_dict: dict[str, Any]) -> "ModelDependency":
-        """
-        Create dependency from dictionary format.
-
-        Args:
-            dependency_dict: Dictionary with dependency specification
-
-        Returns:
-            ModelDependency instance
-
-        Examples:
-            >>> ModelDependency._from_dict({
-            ...     "name": "ProtocolEventBus",
-            ...     "module": "omnibase.protocol.protocol_event_bus",
-            ...     "type": "protocol"
-            ... })
-        """
-        if not isinstance(dependency_dict, dict):
-            msg = f"Expected dict, got {type(dependency_dict)}"
-            raise TypeError(msg)
-
-        # Extract required name
-        name = dependency_dict.get("name")
-        if not name:
-            msg = "Dependency dict must contain 'name' field"
-            raise ValueError(msg)
-
-        # Extract optional fields
-        module = dependency_dict.get("module")
-        dependency_type_str = dependency_dict.get("type", "protocol")
-        version_input = dependency_dict.get("version")
-        required = dependency_dict.get("required", True)
-        description = dependency_dict.get("description")
-
-        # Convert version string to ModelSemVer if provided
-        version = cls._parse_version_input(version_input) if version_input else None
-
-        # Convert type string to enum
-        dependency_type = cls._parse_dependency_type(dependency_type_str)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-            version=version,
-            required=required,
-            description=description,
-        )
-
-    @classmethod
-    def _from_structured(cls, structured_dep: Any) -> "ModelDependency":
-        """
-        Create dependency from structured dependency object.
-
-        Args:
-            structured_dep: Object with name, type, module attributes
-
-        Returns:
-            ModelDependency instance
-        """
-        if not hasattr(structured_dep, "name"):
-            msg = (
-                f"Structured dependency must have 'name' attribute, "
-                f"got {type(structured_dep)}"
-            )
-            raise ValueError(msg)
-
-        name = structured_dep.name
-        module = getattr(structured_dep, "module", None)
-        dependency_type_str = getattr(structured_dep, "type", "protocol")
-        version_input = getattr(structured_dep, "version", None)
-        required = getattr(structured_dep, "required", True)
-        description = getattr(structured_dep, "description", None)
-
-        # Convert version input to ModelSemVer if provided
-        version = cls._parse_version_input(version_input) if version_input else None
-
-        dependency_type = cls._parse_dependency_type(dependency_type_str)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-            version=version,
-            required=required,
-            description=description,
-        )
-
-    @classmethod
-    def _infer_type_from_name(cls, name: str) -> EnumDependencyType:
-        """Infer dependency type from name patterns."""
-        name_lower = name.lower()
-
-        if "protocol" in name_lower:
-            return EnumDependencyType.PROTOCOL
-        if "service" in name_lower:
-            return EnumDependencyType.SERVICE
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _infer_type_from_module(cls, module: str) -> EnumDependencyType:
-        """Infer dependency type from module path patterns."""
-        module_lower = module.lower()
-
-        if "protocol" in module_lower:
-            return EnumDependencyType.PROTOCOL
-        if "service" in module_lower:
-            return EnumDependencyType.SERVICE
-        if module.startswith(("http", "https", "git")):
-            return EnumDependencyType.EXTERNAL
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _parse_dependency_type(cls, type_str: str) -> EnumDependencyType:
-        """Parse dependency type string to enum."""
-        if isinstance(type_str, EnumDependencyType):
-            return type_str
-
-        type_str_lower = str(type_str).lower()
-
-        for pattern, enum_type in cls._TYPE_PATTERNS.items():
-            if pattern in type_str_lower:
-                return enum_type
-
-        # Default fallback
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _parse_version_input(cls, version_input: Any) -> ModelSemVer:
-        """Parse version input to ModelSemVer object - ModelSemVer or dict only."""
-        if isinstance(version_input, ModelSemVer):
-            return version_input
-
-        if isinstance(version_input, dict):
-            # Handle dict format like {"major": 1, "minor": 0, "patch": 0}
-            try:
-                return ModelSemVer.model_validate(version_input)
-            except Exception as e:
-                msg = f"Invalid version dict format: {version_input}, error: {e}"
-                raise ValueError(msg) from e
-
-        # Reject string versions - forces proper ModelSemVer usage
-        if isinstance(version_input, str):
-            msg = (
-                f"String versions not allowed: '{version_input}'. "
-                "Use ModelSemVer(major=X, minor=Y, patch=Z) or dict format."
-            )
-            raise TypeError(msg)
-
-        msg = (
-            f"Unsupported version input type: {type(version_input)}, "
-            f"value: {version_input}. Use ModelSemVer or dict format only."
-        )
-        raise TypeError(msg)
-
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
@@ -315,15 +111,18 @@ class ModelDependency(BaseModel):
 
         # Secure module path validation to prevent path traversal attacks
         import re
-        
+
         # Prevent path traversal attempts
         if ".." in v or "/" in v or "\\" in v:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Invalid module path: {v}. Path traversal sequences not allowed.",
-                context={"module_path": v, "security_violation": "path_traversal_attempt"}
+                context={
+                    "module_path": v,
+                    "security_violation": "path_traversal_attempt",
+                },
             )
-        
+
         # Validate proper module path format: alphanumeric segments separated by dots
         # Allow underscores and hyphens within segments, but not at start/end
         module_pattern = r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
@@ -334,8 +133,8 @@ class ModelDependency(BaseModel):
                 context={
                     "module_path": v,
                     "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
-                    "pattern": module_pattern
-                }
+                    "pattern": module_pattern,
+                },
             )
 
         return v
@@ -376,33 +175,26 @@ class ModelDependency(BaseModel):
         return self.module if self.module else self.name
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
-        # Build result dictionary to avoid validation false positives
-        result_dict = {"name": self.name, "type": self.dependency_type.value}
+        """
+        Convert to dictionary representation using ONEX-compliant patterns.
+        Uses Pydantic's model_dump with proper field mapping.
+        """
+        # Use Pydantic's built-in serialization
+        data = self.model_dump(exclude_none=True)
 
-        # Add optional fields using dict.update() to avoid subscript access
-        # false positives
-        optional_data = {}
-
-        if self.module:
-            optional_data.update(module=self.module)
-
-        if self.version:
-            version_data = (
-                self.version.model_dump()
-                if isinstance(self.version, ModelSemVer)
-                else self.version
+        # Convert dependency_type enum to string value for external APIs
+        if "dependency_type" in data:
+            enum_value = data.pop("dependency_type")
+            # Extract the actual string value from the enum
+            data["type"] = (
+                enum_value.value if hasattr(enum_value, "value") else str(enum_value)
             )
-            optional_data.update(version=version_data)
 
-        if not self.required:
-            optional_data.update(required=self.required)
+        # Convert ModelSemVer to dict if present
+        if "version" in data and hasattr(data["version"], "model_dump"):
+            data["version"] = data["version"].model_dump()
 
-        if self.description:
-            optional_data.update(description=self.description)
-
-        result_dict.update(optional_data)
-        return result_dict
+        return data
 
     def is_protocol(self) -> bool:
         """Check if dependency is a protocol."""
@@ -438,23 +230,3 @@ class ModelDependency(BaseModel):
 # Factory function for unified dependency creation
 # NOTE: Union type is acceptable here as a factory function interface
 # Eliminates Union types from data models while handling input conversion
-def _create_dependency_internal(
-    dependency_input: str | dict[str, Any] | Any,
-) -> ModelDependency:
-    """
-    INTERNAL: Create ModelDependency from various input formats.
-
-    This is an internal function and should not be used in public APIs.
-    All dependencies should be provided in structured dict format only.
-
-    Args:
-        dependency_input: String, dict, or structured dependency
-
-    Returns:
-        ModelDependency instance
-    """
-    if isinstance(dependency_input, str):
-        return ModelDependency._from_string(dependency_input)
-    if isinstance(dependency_input, dict):
-        return ModelDependency._from_dict(dependency_input)
-    return ModelDependency._from_structured(dependency_input)

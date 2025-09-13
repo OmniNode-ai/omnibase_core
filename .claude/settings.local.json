@@ -30,7 +30,12 @@
       "mcp__archon__list_projects",
       "mcp__serena__read_file",
       "mcp__serena__replace_regex",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__archon__health_check",
+      "mcp__archon__create_project",
+      "mcp__serena__execute_shell_command",
+      "mcp__archon__create_task",
+      "mcp__archon__update_task"
     ],
     "deny": [],
     "ask": []
