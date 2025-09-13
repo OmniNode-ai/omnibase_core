@@ -238,11 +238,13 @@ class TestModelWorkflowDependencyValidation:
             description="Test dependency",
         )
 
-        result_dict = dependency.to_dict()
+        result_dict = dependency.model_dump(mode="json", exclude_none=True)
 
         # Check required fields
         assert result_dict["workflow_id"] == "test-workflow"
-        assert result_dict["type"] == "sequential"
+        assert (
+            result_dict["dependency_type"] == "sequential"
+        )  # Enum serialized as string
 
         # Check optional fields
         assert result_dict["required"] is False
@@ -258,13 +260,17 @@ class TestModelWorkflowDependencyValidation:
             dependency_type=EnumWorkflowDependencyType.PARALLEL,
         )
 
-        result_dict = dependency.to_dict()
+        result_dict = dependency.model_dump(mode="json", exclude_none=True)
 
         # Should only have required fields
-        expected_keys = {"workflow_id", "type", "required"}  # required has default True
+        expected_keys = {
+            "workflow_id",
+            "dependency_type",
+            "required",
+        }  # required has default True
         assert set(result_dict.keys()) == expected_keys
         assert result_dict["workflow_id"] == "minimal-workflow"
-        assert result_dict["type"] == "parallel"
+        assert result_dict["dependency_type"] == "parallel"
 
     def test_whitespace_stripping(self):
         """Test that whitespace is properly stripped from string fields."""
@@ -309,7 +315,7 @@ class TestModelWorkflowDependencyValidation:
         # Ensure we can create a dependency chain representation
         chain_info = {
             "current_workflow": dependency.workflow_id,
-            "dependency_type": dependency.dependency_type.value,
+            "dependency_type": dependency.dependency_type.value,  # Access enum value properly
             "is_required": dependency.required,
         }
 
@@ -334,7 +340,7 @@ class TestModelWorkflowDependencyIntegration:
         )
 
         # Convert to dict (YAML-compatible)
-        data = dependency.to_dict()
+        data = dependency.model_dump(mode="json", exclude_none=True)
 
         # Simulate JSON serialization (similar to YAML)
         json_str = json.dumps(data)
@@ -344,8 +350,8 @@ class TestModelWorkflowDependencyIntegration:
         reconstructed = ModelWorkflowDependency(
             workflow_id=parsed_data["workflow_id"],
             dependency_type=EnumWorkflowDependencyType(
-                parsed_data["type"]
-            ),  # Use "type" field
+                parsed_data["dependency_type"]
+            ),  # Use proper Pydantic field name
             required=parsed_data["required"],
             timeout_ms=parsed_data["timeout_ms"],
             description=parsed_data["description"],

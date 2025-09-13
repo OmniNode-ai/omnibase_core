@@ -7,9 +7,7 @@ legacy string-based dependency support and enforces architectural consistency.
 ZERO TOLERANCE: No Any types or legacy string support allowed.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
@@ -173,32 +171,9 @@ class ModelWorkflowDependency(BaseModel):
         """Check if dependency is compensating (saga pattern)."""
         return self.dependency_type == EnumWorkflowDependencyType.COMPENSATING
 
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert to dictionary representation using ONEX-compliant patterns.
-        Uses Pydantic's model_dump with proper field mapping.
-        """
-        # Use Pydantic's built-in serialization
-        data = self.model_dump(exclude_none=True)
-
-        # Convert dependency_type enum to string value for external APIs
-        if "dependency_type" in data:
-            enum_value = data["dependency_type"]
-            # Extract the actual string value from the enum
-            data["type"] = (
-                enum_value.value if hasattr(enum_value, "value") else str(enum_value)
-            )
-            data.pop("dependency_type")
-
-        # Convert ModelSemVer to dict if present
-        if "version" in data and hasattr(data["version"], "model_dump"):
-            data["version"] = data["version"].model_dump()
-
-        return data
-
     model_config = {
         "extra": "ignore",  # Allow extra fields from various input formats
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
+        "use_enum_values": False,  # Keep enum objects internally, serialize via alias
         "validate_assignment": True,
         "str_strip_whitespace": True,
     }
