@@ -220,11 +220,34 @@ class ModelEnvironment(BaseModel):
         )
 
         if is_production:
-            resource_limits = ModelResourceLimits.create_high_performance()
+            resource_limits = ModelResourceLimits(
+                cpu_cores=8.0,
+                memory_mb=16384,
+                storage_gb=100.0,
+                max_connections=10000,
+                max_requests_per_second=1000.0,
+                max_processes=1000,
+                max_threads=10000,
+                network_bandwidth_mbps=1000.0,
+            )
         elif name in ["staging", "stage", "test", "testing"]:
-            resource_limits = ModelResourceLimits.create_standard()
+            resource_limits = ModelResourceLimits(
+                cpu_cores=2.0,
+                memory_mb=2048,
+                storage_gb=10.0,
+                max_connections=1000,
+                max_requests_per_second=100.0,
+                max_processes=100,
+                max_threads=1000,
+            )
         else:
-            resource_limits = ModelResourceLimits.create_minimal()
+            resource_limits = ModelResourceLimits(
+                cpu_cores=1.0,
+                memory_mb=512,
+                storage_gb=1.0,
+                max_connections=100,
+                max_requests_per_second=10.0,
+            )
 
         return cls(
             name=name,
@@ -249,7 +272,13 @@ class ModelEnvironment(BaseModel):
         env.feature_flags.enable("debug_mode")
         env.feature_flags.enable("verbose_logging")
         env.logging_level = "DEBUG"
-        env.resource_limits = ModelResourceLimits.create_minimal()
+        env.resource_limits = ModelResourceLimits(
+            cpu_cores=1.0,
+            memory_mb=512,
+            storage_gb=1.0,
+            max_connections=100,
+            max_requests_per_second=10.0,
+        )
         return env
 
     @classmethod
@@ -262,7 +291,15 @@ class ModelEnvironment(BaseModel):
         env = cls.create_default("staging")
         env.monitoring_enabled = True
         env.auto_scaling_enabled = True
-        env.resource_limits = ModelResourceLimits.create_standard()
+        env.resource_limits = ModelResourceLimits(
+            cpu_cores=2.0,
+            memory_mb=2048,
+            storage_gb=10.0,
+            max_connections=1000,
+            max_requests_per_second=100.0,
+            max_processes=100,
+            max_threads=1000,
+        )
         return env
 
     @classmethod
@@ -280,5 +317,14 @@ class ModelEnvironment(BaseModel):
         env.monitoring_enabled = True
         env.auto_scaling_enabled = True
         env.logging_level = "INFO"
-        env.resource_limits = ModelResourceLimits.create_high_performance()
+        env.resource_limits = ModelResourceLimits(
+            cpu_cores=8.0,
+            memory_mb=16384,
+            storage_gb=100.0,
+            max_connections=10000,
+            max_requests_per_second=1000.0,
+            max_processes=1000,
+            max_threads=10000,
+            network_bandwidth_mbps=1000.0,
+        )
         return env
