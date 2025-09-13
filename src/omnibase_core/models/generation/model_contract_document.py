@@ -96,9 +96,11 @@ class ModelContractDocument(BaseModel):
         if isinstance(v, ModelSemVer):
             return v
 
-        # If it's a string, parse it
+        # If it's a string, parse it using ONEX-compliant function
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            from omnibase_core.models.core.model_semver import parse_semver_from_string
+
+            return parse_semver_from_string(v)
 
         # If it's a dict with major/minor/patch, create ModelSemVer
         if isinstance(v, dict) and all(key in v for key in ["major", "minor", "patch"]):
@@ -148,40 +150,8 @@ class ModelContractDocument(BaseModel):
 
         return cls.from_yaml(content)
 
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelContractDocument":
-        """Create from dictionary data."""
-        # Convert nested dictionaries to models
-        input_state = ModelSchema.from_dict(data.get("input_state"))
-        output_state = ModelSchema.from_dict(data.get("output_state"))
-        cli_interface = ModelCliInterface.from_dict(data.get("cli_interface"))
-        dependencies = ModelContractDependencies.from_dict(data.get("dependencies"))
-
-        # Convert definitions to ModelSchema objects
-        definitions = None
-        if data.get("definitions"):
-            definitions = {}
-            for name, def_data in data["definitions"].items():
-                schema_def = ModelSchema.from_dict(def_data)
-                if schema_def:
-                    definitions[name] = schema_def
-
-        # Handle version fields with ModelSemVer conversion
-        contract_version = data.get("contract_version", "1.0.0")
-        node_version = data.get("node_version", "1.0.0")
-
-        return cls(
-            contract_version=contract_version,  # Validator will convert to ModelSemVer
-            node_name=data.get("node_name", ""),
-            node_version=node_version,  # Validator will convert to ModelSemVer
-            input_state=input_state,
-            output_state=output_state,
-            definitions=definitions,
-            associated_documents=data.get("associated_documents"),
-            cli_interface=cli_interface,
-            dependencies=dependencies,
-            execution_capabilities=data.get("execution_capabilities"),
-        )
+    # ONEX COMPLIANCE: Removed from_dict() factory method anti-pattern
+    # Use model_validate() for deserialization with proper Pydantic validation
 
     def save_to_file(self, file_path: Path) -> None:
         """Save to contract.yaml file."""
