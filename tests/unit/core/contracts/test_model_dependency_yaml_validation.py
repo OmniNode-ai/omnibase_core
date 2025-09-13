@@ -298,8 +298,21 @@ class TestModelDependencyYamlValidation:
             description="Event bus protocol for async communication",
         )
 
-        # Serialize to dict
-        dep_dict = original_dep.to_dict()
+        # Serialize to dict using ONEX-compliant model_dump()
+        dep_dict = original_dep.model_dump(exclude_none=True)
+
+        # Apply boundary-layer transformations for external API compatibility
+        # Convert dependency_type enum to type field for external APIs
+        if "dependency_type" in dep_dict:
+            dep_dict["type"] = dep_dict.pop("dependency_type").value
+
+        # Convert ModelSemVer to dict representation
+        if "version" in dep_dict and hasattr(dep_dict["version"], "__dict__"):
+            dep_dict["version"] = dep_dict["version"].__dict__
+        elif "version" in dep_dict and isinstance(dep_dict["version"], dict):
+            # Already in dict format from model_dump()
+            pass
+
         assert dep_dict.get("name") == "event_bus"
         assert dep_dict.get("type") == "protocol"
         assert dep_dict.get("version") == {"major": 1, "minor": 0, "patch": 0}

@@ -174,27 +174,10 @@ class ModelDependency(BaseModel):
         """Convert to simple string representation."""
         return self.module if self.module else self.name
 
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert to dictionary representation using ONEX-compliant patterns.
-        Uses Pydantic's model_dump with proper field mapping.
-        """
-        # Use Pydantic's built-in serialization
-        data = self.model_dump(exclude_none=True)
-
-        # Convert dependency_type enum to string value for external APIs
-        if "dependency_type" in data:
-            enum_value = data.pop("dependency_type")
-            # Extract the actual string value from the enum
-            data["type"] = (
-                enum_value.value if hasattr(enum_value, "value") else str(enum_value)
-            )
-
-        # Convert ModelSemVer to dict if present
-        if "version" in data and hasattr(data["version"], "model_dump"):
-            data["version"] = data["version"].model_dump()
-
-        return data
+    # Removed to_dict() anti-pattern - use model_dump() directly for ONEX compliance
+    # The custom transformations here violated ONEX standards by bypassing Pydantic validation
+    # Use model_dump(exclude_none=True) directly, with any custom transformations
+    # applied at the boundary layer, not in the model itself
 
     def is_protocol(self) -> bool:
         """Check if dependency is a protocol."""
@@ -227,6 +210,6 @@ class ModelDependency(BaseModel):
     }
 
 
-# Factory function for unified dependency creation
-# NOTE: Union type is acceptable here as a factory function interface
-# Eliminates Union types from data models while handling input conversion
+# ONEX-compliant dependency model - no factory functions or custom serialization
+# Use direct instantiation: ModelDependency(name="...", module="...")
+# Use model_dump() for serialization, not custom to_dict() methods
