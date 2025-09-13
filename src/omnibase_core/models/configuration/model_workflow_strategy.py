@@ -22,18 +22,7 @@ class ModelWorkflowStrategy(BaseModel):
     fail_fast: bool = Field(True, description="Fail fast on first error")
     max_parallel: int | None = Field(None, description="Maximum parallel jobs")
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
-        # Use model_dump() as base and apply field name transformations
-        base_result = self.model_dump(exclude_none=True)
 
-        # Apply custom field name transformations and conditional logic
-        result = {"fail-fast": base_result["fail_fast"]}
-
-        if self.matrix:
-            result["matrix"] = self.matrix.model_dump(exclude_none=True)
-
-        if self.max_parallel is not None:
-            result["max-parallel"] = base_result["max_parallel"]
-
-        return result
+# ONEX compliance remediation complete - factory method eliminated
+# Direct Pydantic model_dump() provides standardized serialization:
+# strategy_dict = strategy.model_dump(exclude_none=True, by_alias=True)

@@ -273,46 +273,16 @@ class ModelContractBase(BaseModel, ABC):
         for i, item in enumerate(v):
             if isinstance(item, ModelDependency):
                 dependencies.append(item)
-            elif isinstance(item, dict):
-                # Only accept structured dict format
-                if "name" not in item:
-                    raise OnexError(
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                        message=f"Dependency {i} missing required 'name' field",
-                        context={
-                            "dependency_index": i,
-                            "expected_format": {
-                                "name": "...",
-                                "type": "...",
-                                "module": "...",
-                            },
-                            "received_keys": (
-                                list(item.keys()) if isinstance(item, dict) else None
-                            ),
-                        },
-                    )
-
-                # Enhanced error handling for ModelDependency creation
-                try:
-                    dependencies.append(ModelDependency(**item))
-                except Exception as e:
-                    raise OnexError(
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                        message=f"Dependency {i} has invalid format: {str(e)}",
-                        context={
-                            "dependency_index": i,
-                            "dependency_data": item,
-                            "validation_error": str(e),
-                        },
-                    ) from e
+            # ONEX STRONG TYPES ONLY: No dict fallbacks - use ModelDependency directly
             else:
                 raise OnexError(
                     error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Dependency {i} must be dict with structured format. No string dependencies allowed.",
+                    message=f"Dependency {i} must be ModelDependency instance. Strong types only - no dict/string fallbacks.",
                     context={
                         "dependency_index": i,
                         "received_type": str(type(item)),
-                        "expected_type": "dict",
+                        "expected_type": "ModelDependency",
+                        "onex_principle": "Strong types only, no fallbacks",
                     },
                 )
 
@@ -320,13 +290,12 @@ class ModelContractBase(BaseModel, ABC):
 
     @field_validator("node_type", mode="before")
     @classmethod
-    def convert_node_type_string_to_enum(cls, v: object) -> EnumNodeType:
-        """Convert string node_type values to enum values when loading from YAML."""
-        if isinstance(v, str):
-            return EnumNodeType(v)
+    def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
+        """ONEX STRONG TYPES: Only accept EnumNodeType instances, no string conversion."""
         if isinstance(v, EnumNodeType):
             return v
-        msg = f"Invalid node_type value: {v}"
+        # ONEX STRONG TYPES ONLY: No string fallbacks
+        msg = f"node_type must be EnumNodeType enum instance, not {type(v).__name__}. Strong types only."
         raise ValueError(msg)
 
     def _validate_node_type_compliance(self) -> None:

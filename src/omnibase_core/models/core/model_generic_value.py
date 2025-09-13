@@ -9,7 +9,7 @@ different data types in a type-safe manner for validation and testing.
 import json
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class EnumValueType(str, Enum):
@@ -51,80 +51,92 @@ class ModelGenericValue(BaseModel):
         description="Dictionary value stored as JSON string",
     )
 
-    @validator("string_value")
-    def validate_string_value(self, v, values):
+    @field_validator("string_value")
+    @classmethod
+    def validate_string_value(cls, v, info):
         """Validate string value is set when type is STRING"""
-        if values.get("value_type") == EnumValueType.STRING and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.STRING and v is None:
             msg = "string_value must be set when value_type is STRING"
             raise ValueError(msg)
-        if values.get("value_type") != EnumValueType.STRING and v is not None:
+        if data.get("value_type") != EnumValueType.STRING and v is not None:
             msg = "string_value should only be set when value_type is STRING"
             raise ValueError(
                 msg,
             )
         return v
 
-    @validator("integer_value")
-    def validate_integer_value(self, v, values):
+    @field_validator("integer_value")
+    @classmethod
+    def validate_integer_value(cls, v, info):
         """Validate integer value is set when type is INTEGER"""
-        if values.get("value_type") == EnumValueType.INTEGER and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.INTEGER and v is None:
             msg = "integer_value must be set when value_type is INTEGER"
             raise ValueError(msg)
-        if values.get("value_type") != EnumValueType.INTEGER and v is not None:
+        if data.get("value_type") != EnumValueType.INTEGER and v is not None:
             msg = "integer_value should only be set when value_type is INTEGER"
             raise ValueError(
                 msg,
             )
         return v
 
-    @validator("float_value")
-    def validate_float_value(self, v, values):
+    @field_validator("float_value")
+    @classmethod
+    def validate_float_value(cls, v, info):
         """Validate float value is set when type is FLOAT"""
-        if values.get("value_type") == EnumValueType.FLOAT and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.FLOAT and v is None:
             msg = "float_value must be set when value_type is FLOAT"
             raise ValueError(msg)
-        if values.get("value_type") != EnumValueType.FLOAT and v is not None:
+        if data.get("value_type") != EnumValueType.FLOAT and v is not None:
             msg = "float_value should only be set when value_type is FLOAT"
             raise ValueError(msg)
         return v
 
-    @validator("boolean_value")
-    def validate_boolean_value(self, v, values):
+    @field_validator("boolean_value")
+    @classmethod
+    def validate_boolean_value(cls, v, info):
         """Validate boolean value is set when type is BOOLEAN"""
-        if values.get("value_type") == EnumValueType.BOOLEAN and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.BOOLEAN and v is None:
             msg = "boolean_value must be set when value_type is BOOLEAN"
             raise ValueError(msg)
-        if values.get("value_type") != EnumValueType.BOOLEAN and v is not None:
+        if data.get("value_type") != EnumValueType.BOOLEAN and v is not None:
             msg = "boolean_value should only be set when value_type is BOOLEAN"
             raise ValueError(
                 msg,
             )
         return v
 
-    @validator("list_string_value")
-    def validate_list_string_value(self, v, values):
+    @field_validator("list_string_value")
+    @classmethod
+    def validate_list_string_value(cls, v, info):
         """Validate list string value is set when type is LIST_STRING"""
-        if values.get("value_type") == EnumValueType.LIST_STRING and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.LIST_STRING and v is None:
             msg = "list_string_value must be set when value_type is LIST_STRING"
             raise ValueError(
                 msg,
             )
-        if values.get("value_type") != EnumValueType.LIST_STRING and v is not None:
+        if data.get("value_type") != EnumValueType.LIST_STRING and v is not None:
             msg = "list_string_value should only be set when value_type is LIST_STRING"
             raise ValueError(
                 msg,
             )
         return v
 
-    @validator("list_integer_value")
-    def validate_list_integer_value(self, v, values):
+    @field_validator("list_integer_value")
+    @classmethod
+    def validate_list_integer_value(cls, v, info):
         """Validate list integer value is set when type is LIST_INTEGER"""
-        if values.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
             msg = "list_integer_value must be set when value_type is LIST_INTEGER"
             raise ValueError(
                 msg,
             )
-        if values.get("value_type") != EnumValueType.LIST_INTEGER and v is not None:
+        if data.get("value_type") != EnumValueType.LIST_INTEGER and v is not None:
             msg = (
                 "list_integer_value should only be set when value_type is LIST_INTEGER"
             )
@@ -133,13 +145,15 @@ class ModelGenericValue(BaseModel):
             )
         return v
 
-    @validator("dict_value")
-    def validate_dict_value(self, v, values):
+    @field_validator("dict_value")
+    @classmethod
+    def validate_dict_value(cls, v, info):
         """Validate dict value is set when type is DICT"""
-        if values.get("value_type") == EnumValueType.DICT and v is None:
+        data = info.data if info else {}
+        if data.get("value_type") == EnumValueType.DICT and v is None:
             msg = "dict_value must be set when value_type is DICT"
             raise ValueError(msg)
-        if values.get("value_type") != EnumValueType.DICT and v is not None:
+        if data.get("value_type") != EnumValueType.DICT and v is not None:
             msg = "dict_value should only be set when value_type is DICT"
             raise ValueError(msg)
         return v
@@ -198,8 +212,8 @@ class ModelGenericValue(BaseModel):
         msg = f"Unsupported value type: {type(value)}"
         raise ValueError(msg)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "value_type": "string",
@@ -232,3 +246,4 @@ class ModelGenericValue(BaseModel):
                 },
             ],
         }
+    )

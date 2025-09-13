@@ -31,12 +31,11 @@ class EnumDependencyType(Enum):
 
 class ModelDependency(BaseModel):
     """
-    Unified dependency specification with internal format handling.
+    ONEX dependency specification with strong typing enforcement.
 
-    Provides clean interface while supporting multiple input formats:
-    - String dependencies: "ProtocolEventBus"
-    - Dict dependencies: {"name": "ProtocolEventBus", "module": "..."}
-    - Structured dependencies: ModelDependencySpec instances
+    Provides structured dependency model for contract dependencies.
+    STRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.
+    No string or dict fallbacks - use structured initialization only.
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
@@ -109,31 +108,50 @@ class ModelDependency(BaseModel):
         if not v:
             return None
 
-        # Secure module path validation to prevent path traversal attacks
-        import re
+        # Enhanced secure module path validation to prevent path traversal attacks
+        # Compile regex pattern once for better performance (as requested in PR feedback)
+        module_pattern = re.compile(
+            r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
+        )
 
-        # Prevent path traversal attempts
-        if ".." in v or "/" in v or "\\" in v:
+        # Comprehensive security checks for path traversal prevention
+        security_violations = []
+
+        # Check for path traversal sequences
+        if ".." in v:
+            security_violations.append("parent_directory_traversal")
+        if "/" in v or "\\" in v:
+            security_violations.append("directory_separator_found")
+
+        # Check for other dangerous patterns
+        if v.startswith("."):
+            security_violations.append("relative_path_start")
+        if any(char in v for char in ["<", ">", "|", "&", ";", "`", "$"]):
+            security_violations.append("shell_injection_characters")
+        if len(v) > 200:  # Prevent excessively long module paths
+            security_violations.append("excessive_length")
+
+        if security_violations:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Invalid module path: {v}. Path traversal sequences not allowed.",
+                message=f"Invalid module path: {v}. Security violations detected: {', '.join(security_violations)}",
                 context={
                     "module_path": v,
-                    "security_violation": "path_traversal_attempt",
+                    "security_violations": security_violations,
+                    "recommendation": "Use only alphanumeric characters, underscores, hyphens, and dots",
                 },
             )
 
-        # Validate proper module path format: alphanumeric segments separated by dots
-        # Allow underscores and hyphens within segments, but not at start/end
-        module_pattern = r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
-        if not re.match(module_pattern, v):
+        # Validate proper Python module path format
+        if not module_pattern.match(v):
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Invalid module path format: {v}. Must be valid Python module path.",
                 context={
                     "module_path": v,
                     "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
-                    "pattern": module_pattern,
+                    "pattern": module_pattern.pattern,
+                    "example": "omnibase_core.models.example",
                 },
             )
 

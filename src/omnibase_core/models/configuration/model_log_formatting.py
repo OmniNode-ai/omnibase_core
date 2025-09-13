@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
@@ -43,15 +45,15 @@ class ModelLogFormatting(BaseModel):
         default=" | ",
         description="Separator between fields in text format",
     )
-    message_template: str | None = Field(None, description="Custom message template")
-    json_indent: int | None = Field(
-        None,
+    message_template: str = Field(default="", description="Custom message template")
+    json_indent: int = Field(
+        default=0,
         description="JSON indentation for pretty printing",
         ge=0,
         le=8,
     )
-    custom_fields: ModelCustomFields | None = Field(
-        None,
+    custom_fields: ModelCustomFields = Field(
+        default_factory=ModelCustomFields,
         description="Additional custom fields to include",
     )
     truncate_long_messages: bool = Field(
@@ -72,101 +74,129 @@ class ModelLogFormatting(BaseModel):
         **kwargs,
     ) -> str:
         """Format a log message according to configuration."""
-        if self.format_type == "json":
-            return self._format_json(level, logger_name, message, **kwargs)
-        if self.format_type == "structured":
-            return self._format_structured(level, logger_name, message, **kwargs)
-        return self._format_text(level, logger_name, message, **kwargs)
+        truncated_message = self._apply_truncation(message)
 
-    def _format_text(self, level: str, logger_name: str, message: str, **kwargs) -> str:
-        """Format as plain text."""
+        if self.format_type == "json":
+            return self._create_json_output(
+                level, logger_name, truncated_message, **kwargs
+            )
+        if self.format_type == "structured":
+            return self._create_structured_output(
+                level, logger_name, truncated_message, **kwargs
+            )
+        return self._create_text_output(level, logger_name, truncated_message, **kwargs)
+
+    def _apply_truncation(self, message: str) -> str:
+        """Apply message truncation if configured."""
+        if not self.truncate_long_messages or len(message) <= self.max_message_length:
+            return message
+        return message[: self.max_message_length - 3] + "..."
+
+    def _create_text_output(
+        self, level: str, logger_name: str, message: str, **kwargs
+    ) -> str:
+        """Create text format output."""
         import datetime
 
-        parts = []
+        field_map = {
+            "timestamp": (
+                datetime.datetime.now().strftime(self.timestamp_format)
+                if self.include_timestamp
+                else None
+            ),
+            "level": f"[{level}]" if self.include_level else None,
+            "logger": logger_name if self.include_logger_name else None,
+            "message": message,
+        }
 
-        for field in self.field_order:
-            if field == "timestamp" and self.include_timestamp:
-                parts.append(datetime.datetime.now().strftime(self.timestamp_format))
-            elif field == "level" and self.include_level:
-                parts.append(f"[{level}]")
-            elif field == "logger" and self.include_logger_name:
-                parts.append(logger_name)
-            elif field == "message":
-                truncated_message = self._truncate_message(message)
-                parts.append(truncated_message)
-
+        parts = [
+            field_map[field]
+            for field in self.field_order
+            if field_map.get(field) is not None
+        ]
         return self.field_separator.join(parts)
 
-    def _format_json(self, level: str, logger_name: str, message: str, **kwargs) -> str:
-        """Format as JSON."""
+    def _create_json_output(
+        self, level: str, logger_name: str, message: str, **kwargs
+    ) -> str:
+        """Create JSON format output."""
         import datetime
         import json
 
-        log_data = {}
+        base_data = {"message": message}
 
         if self.include_timestamp:
-            log_data["timestamp"] = datetime.datetime.now().isoformat()
+            base_data["timestamp"] = datetime.datetime.now().isoformat()
         if self.include_level:
-            log_data["level"] = level
+            base_data["level"] = level
         if self.include_logger_name:
-            log_data["logger"] = logger_name
+            base_data["logger"] = logger_name
 
-        log_data["message"] = self._truncate_message(message)
-        if self.custom_fields:
-            log_data.update(self.custom_fields.to_dict())
-        log_data.update(kwargs)
+        # Merge all data sources
+        final_data = {**base_data, **kwargs}
+        if self.custom_fields and self.custom_fields.fields:
+            final_data.update(self.custom_fields.model_dump())
 
-        return json.dumps(log_data, indent=self.json_indent)
+        return json.dumps(final_data, indent=self.effective_json_indent)
 
-    def _format_structured(
-        self,
-        level: str,
-        logger_name: str,
-        message: str,
-        **kwargs,
+    def _create_structured_output(
+        self, level: str, logger_name: str, message: str, **kwargs
     ) -> str:
-        """Format as structured key-value pairs."""
+        """Create structured key-value format output."""
         import datetime
 
-        parts = []
-
+        base_parts = []
         if self.include_timestamp:
-            timestamp = datetime.datetime.now().strftime(self.timestamp_format)
-            parts.append(f"timestamp={timestamp}")
+            base_parts.append(
+                f"timestamp={datetime.datetime.now().strftime(self.timestamp_format)}"
+            )
         if self.include_level:
-            parts.append(f"level={level}")
+            base_parts.append(f"level={level}")
         if self.include_logger_name:
-            parts.append(f"logger={logger_name}")
+            base_parts.append(f"logger={logger_name}")
 
-        truncated_message = self._truncate_message(message)
-        parts.append(f'message="{truncated_message}"')
+        base_parts.append(f'message="{message}"')
+        base_parts.extend(f"{key}={value}" for key, value in kwargs.items())
 
-        for key, value in kwargs.items():
-            parts.append(f"{key}={value}")
+        return " ".join(base_parts)
 
-        return " ".join(parts)
+    @property
+    def format_analysis(self) -> dict[str, Any]:
+        """Comprehensive format analysis and configuration."""
+        return {
+            "format_type": self.format_type,
+            "format_checks": {
+                "is_text": self.format_type == "text",
+                "is_json": self.format_type == "json",
+                "is_structured": self.format_type == "structured",
+            },
+            "timestamp_config": {
+                "format": self.timestamp_format,
+                "enabled": self.include_timestamp,
+            },
+            "field_inclusion": {
+                "level": self.include_level,
+                "logger_name": self.include_logger_name,
+                "thread_id": self.include_thread_id,
+                "process_id": self.include_process_id,
+            },
+            "formatting_options": {
+                "field_order": self.field_order,
+                "field_separator": self.field_separator,
+                "message_template": self.message_template,
+                "json_indent": max(0, self.json_indent),
+                "effective_indent": max(0, self.json_indent),
+            },
+            "message_handling": {
+                "truncation_enabled": self.truncate_long_messages,
+                "max_length": self.max_message_length,
+                "has_custom_fields": bool(
+                    self.custom_fields and self.custom_fields.fields
+                ),
+            },
+        }
 
-    def _truncate_message(self, message: str) -> str:
-        """Truncate message if needed."""
-        if not self.truncate_long_messages:
-            return message
-
-        if len(message) <= self.max_message_length:
-            return message
-
-        return message[: self.max_message_length - 3] + "..."
-
-    @classmethod
-    def create_text(cls) -> "ModelLogFormatting":
-        """Factory method for text formatting."""
-        return cls(format_type="text")
-
-    @classmethod
-    def create_json(cls, indent: int | None = None) -> "ModelLogFormatting":
-        """Factory method for JSON formatting."""
-        return cls(format_type="json", json_indent=indent)
-
-    @classmethod
-    def create_structured(cls) -> "ModelLogFormatting":
-        """Factory method for structured formatting."""
-        return cls(format_type="structured")
+    @property
+    def effective_json_indent(self) -> int:
+        """Get effective JSON indentation value."""
+        return max(0, self.json_indent)

@@ -8,7 +8,7 @@ capturing comprehensive test execution outcomes and metrics.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_testing import (
     EnumAccommodationStrategy,
@@ -38,8 +38,8 @@ class ModelValidationResult(BaseModel):
         description="Detailed message about the validation result",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "validation_id": "transformed_text_validation",
@@ -52,6 +52,7 @@ class ModelValidationResult(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelStepOutput(BaseModel):
@@ -152,8 +153,9 @@ class ModelStepOutput(BaseModel):
     )
     error_code: str | None = Field(default=None, description="ONEX error code")
 
-    class Config:
-        extra = "allow"  # Allow additional fields for extensibility
+    model_config = ConfigDict(
+        extra="allow"  # Allow additional fields for extensibility
+    )
 
 
 class ModelErrorDetails(BaseModel):
@@ -173,8 +175,7 @@ class ModelErrorDetails(BaseModel):
         description="List of validation error messages",
     )
 
-    class Config:
-        extra = "allow"  # Allow additional error fields
+    model_config = ConfigDict(extra="allow")  # Allow additional error fields
 
 
 class ModelTestStepResult(BaseModel):
@@ -201,8 +202,8 @@ class ModelTestStepResult(BaseModel):
         description="Error details if the step failed",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "step_id": "execute_pure_transformation",
@@ -218,6 +219,7 @@ class ModelTestStepResult(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelAccommodationResult(BaseModel):
@@ -242,8 +244,8 @@ class ModelAccommodationResult(BaseModel):
         description="Time taken to set up the accommodation in milliseconds",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "dependency_name": "registry_canary_pure_tool",
@@ -255,6 +257,7 @@ class ModelAccommodationResult(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelTestingMetrics(BaseModel):
@@ -279,8 +282,8 @@ class ModelTestingMetrics(BaseModel):
         description="Time spent setting up dependency accommodations",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "total_steps_executed": 5,
@@ -296,6 +299,7 @@ class ModelTestingMetrics(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelTestWorkflowResult(BaseModel):
@@ -327,8 +331,8 @@ class ModelTestWorkflowResult(BaseModel):
         description="Summary of errors if the workflow failed",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "workflow_id": "pure_functional_transformation_with_adaptive_accommodation",
@@ -348,6 +352,7 @@ class ModelTestWorkflowResult(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelWorkflowTestingResults(BaseModel):
@@ -384,8 +389,8 @@ class ModelWorkflowTestingResults(BaseModel):
         description="Human-readable summary of the testing results",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "tool_name": "canary_pure_tool",
@@ -409,3 +414,4 @@ class ModelWorkflowTestingResults(BaseModel):
                 },
             ],
         }
+    )

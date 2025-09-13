@@ -37,7 +37,14 @@ class ModelValidationError(BaseModel):
     )
 
     severity: ModelSeverity = Field(
-        default_factory=ModelSeverity.ERROR,
+        default_factory=lambda: ModelSeverity(
+            name="ERROR",
+            numeric_value=40,
+            description="Standard error severity level",
+            value="ERROR",
+            is_critical=False,
+            is_blocking=True,
+        ),
         description="Severity level of this validation error",
     )
 

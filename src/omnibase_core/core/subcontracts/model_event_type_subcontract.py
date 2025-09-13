@@ -15,9 +15,7 @@ providing clean separation between node logic and event handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class ModelEventDefinition(BaseModel):
@@ -372,9 +370,9 @@ class ModelEventTypeSubcontract(BaseModel):
 
     @field_validator("batch_size")
     @classmethod
-    def validate_batch_size(cls, v: int, values: Any) -> int:
+    def validate_batch_size(cls, v: int, info: ValidationInfo) -> int:
         """Validate batch size when batch processing is enabled."""
-        if hasattr(values, "data") and values.data.get("batch_processing", False):
+        if info.data and info.data.get("batch_processing", False):
             if v < 1:
                 msg = "batch_size must be positive when batch processing is enabled"
                 raise ValueError(
@@ -384,9 +382,9 @@ class ModelEventTypeSubcontract(BaseModel):
 
     @field_validator("deduplication_window_ms")
     @classmethod
-    def validate_deduplication_window(cls, v: int, values: Any) -> int:
+    def validate_deduplication_window(cls, v: int, info: ValidationInfo) -> int:
         """Validate deduplication window when deduplication is enabled."""
-        if hasattr(values, "data") and values.data.get("deduplication_enabled", False):
+        if info.data and info.data.get("deduplication_enabled", False):
             if v < 1000:
                 msg = "deduplication_window_ms must be at least 1000ms when enabled"
                 raise ValueError(

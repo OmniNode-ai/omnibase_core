@@ -11,10 +11,6 @@ from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
 
-# Compatibility aliases
-RequestAuth = ModelRequestAuth
-RequestRetryConfig = ModelRequestRetryConfig
-
 
 class ModelRequestConfig(BaseModel):
     """
@@ -33,14 +29,18 @@ class ModelRequestConfig(BaseModel):
         description="Query parameters",
     )
 
-    # Body data
-    json_data: dict[str, Any] | None = Field(None, description="JSON body data")
-    form_data: dict[str, str] | None = Field(None, description="Form data")
-    files: dict[str, str] | None = Field(None, description="File paths to upload")
+    # Body data - Required explicit None handling
+    json_data: dict[str, Any] = Field(
+        default_factory=dict, description="JSON body data"
+    )
+    form_data: dict[str, str] = Field(default_factory=dict, description="Form data")
+    files: dict[str, str] = Field(
+        default_factory=dict, description="File paths to upload"
+    )
 
-    # Authentication
-    auth: ModelRequestAuth | None = Field(
-        None,
+    # Authentication - Explicit type safety
+    auth: ModelRequestAuth = Field(
+        default_factory=ModelRequestAuth,
         description="Authentication configuration",
     )
 
@@ -48,17 +48,19 @@ class ModelRequestConfig(BaseModel):
     connect_timeout: float = Field(10.0, description="Connection timeout in seconds")
     read_timeout: float = Field(30.0, description="Read timeout in seconds")
 
-    # SSL/TLS
+    # SSL/TLS - Explicit type handling
     verify_ssl: bool = Field(True, description="Verify SSL certificates")
-    ssl_cert: str | None = Field(None, description="SSL client certificate path")
-    ssl_key: str | None = Field(None, description="SSL client key path")
+    ssl_cert: str = Field(default="", description="SSL client certificate path")
+    ssl_key: str = Field(default="", description="SSL client key path")
 
-    # Proxy
-    proxies: dict[str, str] | None = Field(None, description="Proxy configuration")
+    # Proxy - Explicit container type
+    proxies: dict[str, str] = Field(
+        default_factory=dict, description="Proxy configuration"
+    )
 
-    # Retry configuration
-    retry_config: ModelRequestRetryConfig | None = Field(
-        None,
+    # Retry configuration - Explicit type safety
+    retry_config: ModelRequestRetryConfig = Field(
+        default_factory=ModelRequestRetryConfig,
         description="Retry configuration",
     )
 
@@ -69,20 +71,39 @@ class ModelRequestConfig(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
-        # Use model_dump() as base and apply auth masking/flattening
-        data = self.model_dump(exclude_none=True)
-        # Flatten auth if present and mask sensitive data
-        if "auth" in data and isinstance(data["auth"], dict):
-            auth_data = data.pop("auth")
-            if auth_data.get("auth_type") == "basic":
-                data["auth"] = (auth_data.get("username"), "***MASKED***")
-            elif auth_data.get("auth_type") == "bearer":
-                data["headers"]["Authorization"] = "Bearer ***MASKED***"
-        return data
+    @property
+    def masked_auth_summary(self) -> dict[str, Any]:
+        """Get masked authentication summary for logging/debugging."""
+        if not self.auth:
+            return {}
 
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelRequestConfig":
-        """Create from dictionary for easy migration."""
-        return cls(**data)
+        auth_data = self.auth.model_dump(exclude_none=True)
+        if auth_data.get("auth_type") == "basic":
+            return {
+                "auth_type": "basic",
+                "username": auth_data.get("username"),
+                "password": "***MASKED***",
+            }
+        elif auth_data.get("auth_type") == "bearer":
+            return {"auth_type": "bearer", "token": "***MASKED***"}
+        return {"auth_type": auth_data.get("auth_type", "unknown")}
+
+    @property
+    def request_summary(self) -> dict[str, Any]:
+        """Get clean request configuration summary."""
+        return {
+            "method": self.method,
+            "url": self.url,
+            "headers_count": len(self.headers),
+            "params_count": len(self.params),
+            "has_json_data": self.json_data is not None,
+            "has_form_data": self.form_data is not None,
+            "has_files": self.files is not None,
+            "has_auth": self.auth is not None,
+            "connect_timeout": self.connect_timeout,
+            "read_timeout": self.read_timeout,
+            "verify_ssl": self.verify_ssl,
+            "follow_redirects": self.follow_redirects,
+            "max_redirects": self.max_redirects,
+            "stream": self.stream,
+        }

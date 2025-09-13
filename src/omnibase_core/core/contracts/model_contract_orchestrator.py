@@ -22,6 +22,7 @@ from omnibase_core.core.contracts.model_dependency import ModelDependency
 from omnibase_core.core.contracts.model_workflow_dependency import (
     ModelWorkflowDependency,
 )
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 if TYPE_CHECKING:
@@ -728,9 +729,16 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             # Validate dependencies exist
             for dependency in workflow.dependencies:
                 if dependency.workflow_id not in self.workflow_registry.workflows:
-                    msg = f"Workflow {workflow_id} depends on non-existent workflow {dependency.workflow_id}"
-                    raise ValueError(
-                        msg,
+                    raise OnexError(
+                        error_code=CoreErrorCode.VALIDATION_FAILED,
+                        message=f"Workflow {workflow_id} depends on non-existent workflow {dependency.workflow_id}",
+                        context={
+                            "workflow_id": workflow_id,
+                            "missing_dependency": dependency.workflow_id,
+                            "available_workflows": list(
+                                self.workflow_registry.workflows.keys()
+                            ),
+                        },
                     )
 
         # Validate performance requirements for orchestrator nodes
