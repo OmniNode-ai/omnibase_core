@@ -122,7 +122,7 @@ class EventTypeRegistry:
             # 1. Check for explicit event_types section
             event_types_section = contract.get("event_types", {})
             for event_name, event_config in event_types_section.items():
-                event_type = ModelEventType.from_contract_event(
+                event_type = ModelEventType.from_contract_data(
                     event_name=event_name,
                     namespace=event_config.get("namespace", node_name),
                     description=event_config.get(
@@ -141,7 +141,7 @@ class EventTypeRegistry:
             for command in commands:
                 event_type_name = command.get("event_type")
                 if event_type_name and not self.is_valid_event_type(event_type_name):
-                    event_type = ModelEventType.from_contract_event(
+                    event_type = ModelEventType.from_contract_data(
                         event_name=event_type_name,
                         namespace=node_name,
                         description=f"Event type for {command.get('command_name', 'command')}",

@@ -37,7 +37,7 @@ from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
 from omnibase_core.enums.node import EnumNodeStatus
-from omnibase_core.models.core.model_event_type import create_event_type_from_string
+from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_node_announce_metadata import (
     ModelNodeAnnounceMetadata,
@@ -131,7 +131,7 @@ class MixinNodeLifecycle:
             )
 
             event = OnexEvent(
-                event_type=create_event_type_from_string("NODE_ANNOUNCE"),
+                event_type=create_event_type_from_registry("NODE_ANNOUNCE"),
                 node_id=node_id,
                 metadata=announce,
             )
@@ -255,7 +255,7 @@ class MixinNodeLifecycle:
 
         try:
             event = OnexEvent(
-                event_type=create_event_type_from_string("NODE_START"),
+                event_type=create_event_type_from_registry("NODE_START"),
                 node_id=node_id,
                 metadata=metadata,
                 correlation_id=str(final_correlation_id),
@@ -309,7 +309,7 @@ class MixinNodeLifecycle:
 
         try:
             event = OnexEvent(
-                event_type=create_event_type_from_string("NODE_SUCCESS"),
+                event_type=create_event_type_from_registry("NODE_SUCCESS"),
                 node_id=node_id,
                 metadata=metadata,
                 correlation_id=str(final_correlation_id),
@@ -367,7 +367,7 @@ class MixinNodeLifecycle:
 
         try:
             event = OnexEvent(
-                event_type=create_event_type_from_string("NODE_FAILURE"),
+                event_type=create_event_type_from_registry("NODE_FAILURE"),
                 node_id=node_id,
                 metadata=metadata,
                 correlation_id=str(final_correlation_id),

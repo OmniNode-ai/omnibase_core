@@ -417,7 +417,7 @@ class NodeIntrospectionMixin(ABC):
         import os
 
         from omnibase_core.models.core.model_event_type import (
-            create_event_type_from_string,
+            create_event_type_from_registry,
         )
 
         # 1. Try to extract correlation_id from event_bus (if it has one)
@@ -438,7 +438,7 @@ class NodeIntrospectionMixin(ABC):
             emit_log_event_sync(
                 LogLevel.INFO,
                 response.model_dump_json(indent=2),
-                event_type=create_event_type_from_string("INTROSPECTION_RESPONSE"),
+                event_type=create_event_type_from_registry("INTROSPECTION_RESPONSE"),
                 node_id=cls.get_node_name(),
                 event_bus=event_bus,
                 correlation_id=correlation_id,
@@ -455,7 +455,7 @@ class NodeIntrospectionMixin(ABC):
             emit_log_event_sync(
                 LogLevel.ERROR,
                 json.dumps(error_response, indent=2),
-                event_type=create_event_type_from_string("INTROSPECTION_RESPONSE"),
+                event_type=create_event_type_from_registry("INTROSPECTION_RESPONSE"),
                 node_id=cls.get_node_name(),
                 event_bus=event_bus,
                 correlation_id=correlation_id,

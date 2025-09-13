@@ -121,10 +121,10 @@ class MixinEventHandler:
         # Check if this event is an introspection request
         try:
             from omnibase_core.models.core.model_event_type import (
-                create_event_type_from_string,
+                create_event_type_from_registry,
             )
 
-            introspection_request_type = create_event_type_from_string(
+            introspection_request_type = create_event_type_from_registry(
                 "NODE_INTROSPECTION_REQUEST",
             )
 
@@ -204,10 +204,10 @@ class MixinEventHandler:
         # Check if this event is a discovery request
         try:
             from omnibase_core.models.core.model_event_type import (
-                create_event_type_from_string,
+                create_event_type_from_registry,
             )
 
-            discovery_request_type = create_event_type_from_string(
+            discovery_request_type = create_event_type_from_registry(
                 "NODE_DISCOVERY_REQUEST",
             )
 

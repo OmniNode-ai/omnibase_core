@@ -50,20 +50,25 @@ class ModelEventType(BaseModel):
     )
 
     @classmethod
-    def from_contract_event(
+    def from_contract_data(
         cls,
         event_name: str,
         namespace: str = "onex",
         description: str | None = None,
         **kwargs,
     ) -> "ModelEventType":
-        """Factory method for creating event types from contract data."""
-        return cls(
-            event_name=event_name,
-            namespace=namespace,
-            description=description or f"{event_name} event",
+        """
+        ONEX-compliant factory method using Pydantic model_validate.
+
+        Replaces from_contract_event() with proper validation.
+        """
+        validated_data = {
+            "event_name": event_name,
+            "namespace": namespace,
+            "description": description or f"{event_name} event",
             **kwargs,
-        )
+        }
+        return cls.model_validate(validated_data)
 
     @property
     def qualified_name(self) -> str:
@@ -79,7 +84,7 @@ class ModelEventType(BaseModel):
         return (
             self.event_name == other.event_name
             and self.namespace == other.namespace
-            and self.schema_version.is_compatible_with(other.schema_version)
+            and self.schema_version.major == other.schema_version.major
         )
 
     def __str__(self) -> str:
@@ -101,12 +106,17 @@ def get_event_type_value(event_type: str | ModelEventType) -> str:
     return event_type.event_name
 
 
-def create_event_type_from_string(
+def create_event_type_from_registry(
     event_name: str,
     namespace: str = "onex",
     description: str | None = None,
 ) -> ModelEventType:
-    """Create ModelEventType from string for current standards."""
+    """
+    ONEX-compliant event type creation with registry lookup.
+
+    Replaces create_event_type_from_string() with proper validation.
+    Uses Pydantic validation throughout.
+    """
     from .model_event_type_registry import get_event_type_registry
 
     registry = get_event_type_registry()
@@ -114,12 +124,13 @@ def create_event_type_from_string(
     if existing:
         return existing
 
-    # Create temporary event type for unknown events
-    return ModelEventType(
-        event_name=event_name,
-        namespace=namespace,
-        description=description or f"Legacy event type: {event_name}",
-    )
+    # Create event type using ONEX-compliant validation
+    validated_data = {
+        "event_name": event_name,
+        "namespace": namespace,
+        "description": description or f"Registry event type: {event_name}",
+    }
+    return ModelEventType.model_validate(validated_data)
 
 
 def is_event_equal(
