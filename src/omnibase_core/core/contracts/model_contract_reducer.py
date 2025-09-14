@@ -23,6 +23,7 @@ from omnibase_core.core.subcontracts import (
     ModelEventTypeSubcontract,
     ModelFSMSubcontract,
     ModelStateManagementSubcontract,
+    ModelWorkflowCoordinationSubcontract,
 )
 from omnibase_core.enums.node import EnumNodeType
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
@@ -329,6 +330,12 @@ class ModelContractReducer(ModelContractBase, MixinLazyEvaluation):
     caching: ModelCachingSubcontract | None = Field(
         default=None,
         description="Caching subcontract for performance optimization",
+    )
+
+    # Workflow coordination subcontract (CRITICAL for LlamaIndex integration)
+    workflow_coordination: ModelWorkflowCoordinationSubcontract | None = Field(
+        default=None,
+        description="Workflow coordination subcontract for LlamaIndex workflow orchestration",
     )
 
     def validate_node_specific_config(
