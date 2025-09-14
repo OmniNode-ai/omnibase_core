@@ -46,12 +46,51 @@ jobs:
           key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Configure git for private dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+        run: |
+          # Configure git to use GitHub token for private repositories
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
+          # Verify git configuration
+          echo "Git URL rewriting configured for GitHub authentication"
+          git config --get-regexp url\.https://.*github.com/ || echo "No URL rewriting rules found"
+
+          # Test repository access with configured credentials
+          echo "Testing repository access..."
+          if git ls-remote https://github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
+            echo "✅ Successfully authenticated to omnibase_spi repository"
+          else
+            echo "❌ Failed to authenticate to omnibase_spi repository"
+            echo "This may cause Poetry dependency installation to fail"
+            echo "Continuing with installation attempt..."
+          fi
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          echo "Installing Python dependencies via Poetry..."
+          echo "Git configuration status:"
+          git config --list | grep -E "(url\.https|core\.)" || echo "No git URL rewriting found"
+
+          # Install dependencies with verbose output for debugging
+          if ! poetry install --no-interaction --no-ansi --verbose; then
+            echo "❌ Poetry installation failed"
+            echo "Debug information:"
+            echo "Git config:"
+            git config --list | grep url || echo "No git URL config found"
+            echo "Environment:"
+            echo "GITHUB_TOKEN present: $([ -n '${{ secrets.GITHUB_TOKEN }}' ] && echo 'yes' || echo 'no')"
+            exit 1
+          fi
+
+          # Verify omnibase_spi installation
+          if poetry show omnibase_spi; then
+            echo "✅ omnibase_spi installed successfully"
+          else
+            echo "❌ omnibase_spi installation failed"
+            echo "Available packages:"
+            poetry show
+            exit 1
+          fi
 
       - name: Run 7-Gate Validation on Modified Models
         run: |
