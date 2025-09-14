@@ -165,7 +165,7 @@ class TestModelWorkflowDependencyValidation:
         assert dependency.condition is None
 
     def test_timeout_validation(self):
-        """Test timeout validation."""
+        """Test timeout validation including upper limit."""
         # Valid timeout
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.uuid4(),
@@ -175,6 +175,15 @@ class TestModelWorkflowDependencyValidation:
         )
         assert dependency.timeout_ms == 1000
 
+        # Valid timeout at upper limit (5 minutes)
+        dependency_max = ModelWorkflowDependency(
+            workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
+            dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
+            timeout_ms=300000,
+        )
+        assert dependency_max.timeout_ms == 300000
+
         # Invalid timeout (less than 1)
         with pytest.raises(ValidationError):
             ModelWorkflowDependency(
@@ -182,6 +191,15 @@ class TestModelWorkflowDependencyValidation:
                 dependent_workflow_id=uuid.uuid4(),
                 dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
                 timeout_ms=0,
+            )
+
+        # Invalid timeout (exceeds 5 minutes)
+        with pytest.raises(ValidationError):
+            ModelWorkflowDependency(
+                workflow_id=uuid.uuid4(),
+                dependent_workflow_id=uuid.uuid4(),
+                dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
+                timeout_ms=300001,
             )
 
     def test_dependency_type_methods(self):
@@ -310,6 +328,37 @@ class TestModelWorkflowDependencyValidation:
         assert dependency.workflow_id == test_uuid
         assert not hasattr(dependency, "extra_field")
         assert not hasattr(dependency, "another_extra")
+
+    def test_circular_dependency_validation_failure(self):
+        """Test circular dependency detection prevents workflow depending on itself."""
+        circular_uuid = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+        with pytest.raises(OnexError) as exc_info:
+            ModelWorkflowDependency(
+                workflow_id=circular_uuid,
+                dependent_workflow_id=circular_uuid,  # Same as workflow_id
+                dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
+            )
+
+        error = exc_info.value
+        assert "CIRCULAR DEPENDENCY DETECTED" in error.message
+        assert str(circular_uuid) in error.message
+        assert "workflow orchestration" in error.context["context"]["onex_principle"]
+
+    def test_circular_dependency_validation_success(self):
+        """Test that different workflow IDs don't trigger circular dependency error."""
+        workflow_uuid = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        dependent_uuid = uuid.UUID("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+
+        # This should succeed
+        dependency = ModelWorkflowDependency(
+            workflow_id=workflow_uuid,
+            dependent_workflow_id=dependent_uuid,
+            dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
+        )
+
+        assert dependency.workflow_id == workflow_uuid
+        assert dependency.dependent_workflow_id == dependent_uuid
 
     def test_circular_dependency_detection_context(self):
         """Test context information is available for circular dependency detection."""

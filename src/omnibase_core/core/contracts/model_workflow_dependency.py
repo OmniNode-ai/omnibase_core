@@ -7,10 +7,10 @@ legacy string-based dependency support and enforces architectural consistency.
 ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
 """
 
-from typing import Any
+# NO Any imports - ZERO TOLERANCE for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.core.contracts.model_workflow_condition import ModelWorkflowCondition
 from omnibase_core.core.contracts.model_workflow_dependency_config import (
@@ -61,6 +61,7 @@ class ModelWorkflowDependency(BaseModel):
         default=None,
         description="Timeout for dependency resolution in milliseconds",
         ge=1,
+        le=300000,  # Max 5 minutes to prevent configuration errors
     )
 
     version_constraint: ModelSemVer | None = Field(
@@ -78,7 +79,7 @@ class ModelWorkflowDependency(BaseModel):
     @field_validator("condition", mode="before")
     @classmethod
     def validate_condition_structured_only(
-        cls, v: ModelWorkflowCondition | Any | None
+        cls, v: ModelWorkflowCondition | None
     ) -> ModelWorkflowCondition | None:
         """
         Validate condition is ModelWorkflowCondition instance only.
@@ -101,11 +102,39 @@ class ModelWorkflowDependency(BaseModel):
                 context={
                     "context": {
                         "received_type": str(type(v)),
+                        "received_value": str(v)[:100],  # First 100 chars for debugging
                         "expected_type": "ModelWorkflowCondition",
                         "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
+                        "example_usage": {
+                            "correct": "ModelWorkflowCondition(condition_type=EnumConditionType.WORKFLOW_STATE, field_name='status', operator=EnumConditionOperator.EQUALS, expected_value='completed')",
+                            "migration_guide": "See docs/migration/contract-dependency-refactor.md for conversion examples",
+                        },
                     }
                 },
             )
+
+    @model_validator(mode="after")
+    def validate_no_circular_dependency(self) -> "ModelWorkflowDependency":
+        """
+        Prevent circular dependencies where a workflow depends on itself.
+
+        CIRCULAR DEPENDENCY PREVENTION: Enforce that workflow_id ≠ dependent_workflow_id
+        to prevent infinite loops in workflow execution.
+        """
+        if self.workflow_id == self.dependent_workflow_id:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
+                context={
+                    "context": {
+                        "workflow_id": str(self.workflow_id),
+                        "dependent_workflow_id": str(self.dependent_workflow_id),
+                        "onex_principle": "Circular dependency prevention for workflow orchestration",
+                        "suggested_fix": "Ensure workflow_id and dependent_workflow_id are different UUIDs",
+                    }
+                },
+            )
+        return self
 
     def is_sequential(self) -> bool:
         """Check if dependency is sequential."""
