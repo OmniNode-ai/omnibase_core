@@ -74,7 +74,27 @@ class ModelWorkflowDependency(BaseModel):
         description="Human-readable description of the dependency",
     )
 
-    # ONEX STRONG TYPES: UUID and ModelWorkflowCondition validation handled automatically by Pydantic
+    @field_validator("workflow_id", mode="before")
+    @classmethod
+    def validate_workflow_id_uuid_only(cls, v: UUID) -> UUID:
+        """
+        Validate workflow_id is a proper UUID instance.
+
+        ZERO TOLERANCE: Only accepts UUID objects - no string conversion.
+        """
+        if isinstance(v, UUID):
+            return v
+        else:
+            # ZERO TOLERANCE: Reject all non-UUID types including strings
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
+                context={
+                    "received_type": str(type(v)),
+                    "expected_type": "UUID",
+                    "zero_tolerance_policy": "Only UUID instances accepted",
+                },
+            )
 
     @field_validator("condition", mode="before")
     @classmethod

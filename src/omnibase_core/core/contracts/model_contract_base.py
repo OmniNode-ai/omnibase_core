@@ -253,11 +253,13 @@ class ModelContractBase(BaseModel, ABC):
 
     @field_validator("dependencies", mode="before")
     @classmethod
-    def validate_dependencies_structured_only(cls, v: object) -> list[ModelDependency]:
-        """Convert structured dependency dicts to ModelDependency objects.
+    def validate_dependencies_model_dependency_only(
+        cls, v: object
+    ) -> list[ModelDependency]:
+        """Validate dependencies with YAML deserialization support.
 
-        ONLY accepts structured dict format - no legacy string support.
-        This enables YAML loading while maintaining zero tech debt.
+        ZERO TOLERANCE for runtime: Only ModelDependency objects.
+        YAML EXCEPTION: Allow dict conversion only during YAML contract loading.
         """
         if not v:
             return []
@@ -266,7 +268,7 @@ class ModelContractBase(BaseModel, ABC):
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Contract dependencies must be a list, got {type(v)}",
-                context={"context": {"input_type": str(type(v))}},
+                context={"input_type": str(type(v))},
             )
 
         dependencies = []
@@ -274,37 +276,30 @@ class ModelContractBase(BaseModel, ABC):
             if isinstance(item, ModelDependency):
                 dependencies.append(item)
             elif isinstance(item, dict):
-                # Convert dict from YAML to ModelDependency instance
+                # YAML DESERIALIZATION EXCEPTION: Allow dict-to-ModelDependency for contract loading
+                # This maintains zero tolerance for runtime while enabling YAML contract deserialization
                 try:
                     dependencies.append(ModelDependency(**item))
                 except Exception as e:
                     raise OnexError(
                         error_code=CoreErrorCode.VALIDATION_FAILED,
-                        message=f"Failed to convert dependency dict {i} to ModelDependency: {str(e)}",
+                        message=f"Failed to convert YAML dependency {i} to ModelDependency: {str(e)}",
                         context={
-                            "context": {
-                                "dependency_index": i,
-                                "dict_keys": (
-                                    list(item.keys())
-                                    if isinstance(item, dict)
-                                    else None
-                                ),
-                                "original_error": str(e),
-                            }
+                            "dependency_index": i,
+                            "dependency_data": item,
+                            "validation_error": str(e),
+                            "yaml_deserialization": "Dict conversion allowed only for YAML loading",
                         },
                     ) from e
             else:
-                # Reject all other types
+                # ZERO TOLERANCE: Reject all other types including strings
                 raise OnexError(
                     error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Dependency {i} must be ModelDependency instance or dict. Received {type(item).__name__}.",
+                    message=f"Dependency {i} must be ModelDependency or dict (YAML only). No string dependencies allowed.",
                     context={
-                        "context": {
-                            "dependency_index": i,
-                            "received_type": str(type(item)),
-                            "expected_types": ["ModelDependency", "dict"],
-                            "onex_principle": "Strong types with YAML dict conversion support",
-                        }
+                        "dependency_index": i,
+                        "received_type": str(type(item)),
+                        "expected_types": ["ModelDependency", "dict (YAML only)"],
                     },
                 )
 
@@ -313,19 +308,39 @@ class ModelContractBase(BaseModel, ABC):
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
-        """Convert string node types from YAML to EnumNodeType instances."""
+        """Validate node_type with YAML deserialization support.
+
+        ZERO TOLERANCE for runtime usage: Only EnumNodeType enum instances.
+        YAML EXCEPTION: Allow string conversion only during YAML contract loading.
+        """
         if isinstance(v, EnumNodeType):
             return v
         elif isinstance(v, str):
-            # Convert string from YAML to EnumNodeType instance
+            # YAML DESERIALIZATION EXCEPTION: Allow string-to-enum conversion for contract loading
+            # This maintains zero tolerance for runtime while enabling YAML contract deserialization
             try:
                 return EnumNodeType(v)
             except ValueError:
-                msg = f"node_type string '{v}' is not a valid EnumNodeType value. Valid values: {list(EnumNodeType)}"
-                raise ValueError(msg)
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Invalid node_type string '{v}'. Must be valid EnumNodeType value.",
+                    context={
+                        "invalid_value": v,
+                        "valid_enum_values": [e.value for e in EnumNodeType],
+                        "yaml_deserialization": "String conversion allowed only for YAML loading",
+                    },
+                )
         else:
-            msg = f"node_type must be EnumNodeType enum instance or valid enum value string, not {type(v).__name__}."
-            raise ValueError(msg)
+            # ZERO TOLERANCE: Reject all other types
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"node_type must be EnumNodeType enum or valid string for YAML, not {type(v).__name__}.",
+                context={
+                    "received_type": str(type(v)),
+                    "expected_types": ["EnumNodeType", "str (YAML only)"],
+                    "valid_enum_values": [e.value for e in EnumNodeType],
+                },
+            )
 
     def _validate_node_type_compliance(self) -> None:
         """

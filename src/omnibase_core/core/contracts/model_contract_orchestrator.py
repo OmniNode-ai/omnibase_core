@@ -758,9 +758,13 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         # Validate workflow definitions
         for workflow_id, workflow in self.workflow_registry.workflows.items():
             if not workflow.steps:
-                msg = f"Workflow {workflow_id} must define at least one step"
-                raise ValueError(
-                    msg,
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Workflow {workflow_id} must define at least one step",
+                    context={
+                        "workflow_id": workflow_id,
+                        "validation_rule": "minimum_steps_required",
+                    },
                 )
 
             # Validate dependencies exist
