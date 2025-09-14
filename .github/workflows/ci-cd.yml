@@ -56,33 +56,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Set up git authentication in multiple formats to cover all cases
           git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           git config --global user.email "ci@omninode.ai"
           git config --global user.name "CI Bot"
+
+          # Also set up credentials helper for HTTPS
+          echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+          git config --global credential.helper store
+
           # Test git access
           echo "Testing git access to omnibase_spi..."
-          git ls-remote https://github.com/OmniNode-ai/omnibase_spi.git HEAD || echo "Warning: Cannot access omnibase_spi repository"
+          if git ls-remote https://github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
+            echo "✅ Successfully authenticated to omnibase_spi repository"
+          else
+            echo "❌ Warning: Cannot access omnibase_spi repository - will use fallback install"
+          fi
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Alternative approach: Set POETRY_HTTP_BASIC_GITHUB_TOKEN
-          export POETRY_HTTP_BASIC_GITHUB_TOKEN=$GITHUB_TOKEN
+          # Install dependencies without optional SPI dependency first
+          echo "Installing dependencies without optional SPI dependency..."
+          poetry install --no-interaction --no-ansi
 
-          # Try normal install first
-          if ! poetry install --no-interaction --no-ansi; then
-            echo "Full install failed, trying without omnibase_spi dependency..."
-            # Temporarily remove omnibase_spi dependency for CI validation
-            cp pyproject.toml pyproject.toml.backup
-            # Remove the omnibase_spi line from dependencies
-            sed -i '/omnibase_spi.*git.*github.com/d' pyproject.toml
-            poetry lock --no-update
-            poetry install --no-interaction --no-ansi
-            # Restore original pyproject.toml for subsequent steps
-            mv pyproject.toml.backup pyproject.toml
-          fi
+          # Try to install SPI dependency if authentication works
+          echo "Attempting to install SPI dependency with authentication..."
+          export POETRY_HTTP_BASIC_GITHUB_TOKEN=$GITHUB_TOKEN
+          poetry install --no-interaction --no-ansi --extras spi || echo "SPI dependency install failed - proceeding without it"
 
       - name: Run 7-Gate Validation on Modified Models
         run: |
