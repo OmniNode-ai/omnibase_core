@@ -8,9 +8,8 @@ ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 
@@ -71,9 +70,9 @@ class ModelWorkflowCondition(BaseModel):
         description="Operator to use for condition evaluation",
     )
 
-    expected_value: Any = Field(
+    expected_value: str | int | float | bool | list[str | int | float | bool] = Field(
         ...,
-        description="Expected value for comparison",
+        description="Expected value for comparison (strongly typed)",
     )
 
     description: str | None = Field(
@@ -113,13 +112,20 @@ class ModelWorkflowCondition(BaseModel):
 
     @field_validator("expected_value")
     @classmethod
-    def validate_expected_value(cls, v: Any, values: dict[str, Any]) -> Any:
+    def validate_expected_value(
+        cls,
+        v: str | int | float | bool | list[str | int | float | bool],
+        info: ValidationInfo | None = None,
+    ) -> str | int | float | bool | list[str | int | float | bool]:
         """Validate expected value is compatible with operator."""
-        # Note: In Pydantic v2, we get the FieldValidationInfo as second parameter
+        # Pydantic v2 compatible: uses ValidationInfo instead of values dict
+        # Access other field values via info.data if needed for cross-field validation
         # For now, basic validation - can be enhanced based on operator type
         return v
 
-    def evaluate_condition(self, context_data: dict[str, Any]) -> bool:
+    def evaluate_condition(
+        self, context_data: dict[str, str | int | float | bool | list | dict]
+    ) -> bool:
         """
         Evaluate the condition against provided context data.
 
@@ -155,8 +161,10 @@ class ModelWorkflowCondition(BaseModel):
             ) from e
 
     def _extract_field_value(
-        self, context_data: dict[str, Any], field_path: str
-    ) -> Any:
+        self,
+        context_data: dict[str, str | int | float | bool | list | dict],
+        field_path: str,
+    ) -> str | int | float | bool | list | dict:
         """Extract field value supporting nested field paths with dot notation."""
         current_value = context_data
 
@@ -169,7 +177,10 @@ class ModelWorkflowCondition(BaseModel):
         return current_value
 
     def _evaluate_operator(
-        self, actual_value: Any, expected_value: Any, operator: EnumConditionOperator
+        self,
+        actual_value: str | int | float | bool | list | dict,
+        expected_value: str | int | float | bool | list[str | int | float | bool],
+        operator: EnumConditionOperator,
     ) -> bool:
         """Evaluate the specific operator against actual and expected values."""
         match operator:

@@ -80,6 +80,8 @@ class ModelDependency(BaseModel):
     }
 
     # Compiled regex patterns for performance optimization (Phase 3L performance fix)
+    # Thread-safe: ClassVar patterns are compiled once at class load time
+    # and re.Pattern objects are immutable, allowing safe concurrent access
     _MODULE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
         r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
     )

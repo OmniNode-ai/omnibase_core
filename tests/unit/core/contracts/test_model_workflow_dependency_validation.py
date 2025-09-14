@@ -405,15 +405,23 @@ class TestModelWorkflowDependencyIntegration:
         # Parse YAML
         parsed_yaml = yaml.safe_load(yaml_data)
 
-        # Create dependency from YAML data
+        # Create ModelWorkflowCondition from YAML condition data (STRONG TYPES ONLY)
+        condition_data = parsed_yaml["condition"]
+        condition = ModelWorkflowCondition(
+            condition_type=EnumConditionType(condition_data["condition_type"]),
+            field_name=condition_data["field_name"],
+            operator=EnumConditionOperator(condition_data["operator"]),
+            expected_value=condition_data["expected_value"],
+            description=condition_data.get("description"),
+        )
+
+        # Create dependency from YAML data (STRONG TYPES ONLY - no dict conversion)
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.UUID(parsed_yaml["workflow_id"]),
             dependent_workflow_id=uuid.UUID(parsed_yaml["dependent_workflow_id"]),
             dependency_type=EnumWorkflowDependencyType(parsed_yaml["dependency_type"]),
             required=parsed_yaml["required"],
-            condition=parsed_yaml[
-                "condition"
-            ],  # Will be converted from dict to ModelWorkflowCondition
+            condition=condition,  # Properly constructed ModelWorkflowCondition
             timeout_ms=parsed_yaml["timeout_ms"],
             description=parsed_yaml["description"],
         )

@@ -1,13 +1,105 @@
 """File Event model generated from contract."""
 
 from datetime import datetime
-from typing import Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
-# Type alias for metadata instead of Dict[str, Any]
-FileEventMetadataValue = Union[str, int, float, bool, list[str]]
-FileEventMetadata = dict[str, FileEventMetadataValue]
+# REMOVED: Type alias patterns violate ONEX strong typing standards
+# REPLACED with proper Pydantic model below
+
+
+class ModelFileEventMetadata(BaseModel):
+    """
+    Strongly-typed metadata for file system events.
+
+    Replaces FileEventMetadata dict alias with proper Pydantic model
+    providing runtime validation and type safety.
+
+    ZERO TOLERANCE: No Any types or dict patterns allowed.
+    """
+
+    # Common metadata fields
+    permissions: str | None = Field(
+        default=None,
+        description="File permissions in octal format",
+        pattern=r"^[0-7]{3,4}$",
+    )
+
+    owner: str | None = Field(
+        default=None,
+        description="File owner username",
+        max_length=100,
+    )
+
+    group: str | None = Field(
+        default=None,
+        description="File group name",
+        max_length=100,
+    )
+
+    mime_type: str | None = Field(
+        default=None,
+        description="MIME type of the file",
+        max_length=200,
+    )
+
+    encoding: str | None = Field(
+        default=None,
+        description="File encoding (e.g., 'utf-8')",
+        max_length=50,
+    )
+
+    # Process information
+    process_id: int | None = Field(
+        default=None,
+        description="Process ID that triggered the event",
+        ge=1,
+    )
+
+    process_name: str | None = Field(
+        default=None,
+        description="Name of process that triggered the event",
+        max_length=255,
+    )
+
+    # Additional flags
+    is_directory: bool = Field(
+        default=False,
+        description="Whether the target is a directory",
+    )
+
+    is_hidden: bool = Field(
+        default=False,
+        description="Whether the file is hidden",
+    )
+
+    is_executable: bool = Field(
+        default=False,
+        description="Whether the file is executable",
+    )
+
+    # Custom attributes for flexibility (strongly typed)
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Custom tags associated with the event",
+    )
+
+    attributes: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional string-based attributes",
+    )
+
+    numeric_attributes: dict[str, int | float] = Field(
+        default_factory=dict,
+        description="Additional numeric attributes",
+    )
+
+    class Config:
+        """Pydantic configuration for ONEX compliance."""
+
+        extra = "forbid"  # Reject additional fields for strict typing
+        validate_assignment = True
 
 
 class model_file_event(BaseModel):
@@ -53,9 +145,9 @@ class model_file_event(BaseModel):
         max_length=4096,
     )
 
-    metadata: FileEventMetadata | None = Field(
+    metadata: ModelFileEventMetadata | None = Field(
         default=None,
-        description="Additional event metadata",
+        description="Additional event metadata with strong typing",
     )
 
     is_directory: bool = Field(

@@ -22,6 +22,13 @@ from omnibase_core.core.contracts.model_dependency import ModelDependency
 from omnibase_core.core.contracts.model_workflow_dependency import (
     ModelWorkflowDependency,
 )
+from omnibase_core.core.contracts.models import (
+    ModelCompensationPlan,
+    ModelFilterConditions,
+    ModelTriggerMappings,
+    ModelWorkflowConditions,
+    ModelWorkflowStep,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
@@ -107,9 +114,9 @@ class ModelWorkflowDefinition(BaseModel):
         description="Workflow type (sequential, parallel, conditional, saga, pipeline)",
     )
 
-    steps: list[dict[str, str | int | bool]] = Field(
+    steps: list[ModelWorkflowStep] = Field(
         default_factory=list,
-        description="Ordered list of workflow steps with configuration",
+        description="Ordered list of workflow steps with strong typing and validation",
     )
 
     dependencies: list[ModelWorkflowDependency] = Field(
@@ -117,14 +124,14 @@ class ModelWorkflowDefinition(BaseModel):
         description="List of workflow dependencies with proper typing and constraints",
     )
 
-    conditions: dict[str, str | bool | int] | None = Field(
+    conditions: ModelWorkflowConditions | None = Field(
         default=None,
-        description="Conditions for conditional workflow execution",
+        description="Strongly-typed conditions for conditional workflow execution",
     )
 
-    compensation_plan: dict[str, str | list[str]] | None = Field(
+    compensation_plan: ModelCompensationPlan | None = Field(
         default=None,
-        description="Compensation steps for saga pattern workflows",
+        description="Strongly-typed compensation plan for saga pattern workflows",
     )
 
     priority: int = Field(
@@ -298,7 +305,7 @@ class ModelEventDescriptor(BaseModel):
 
     payload_structure: dict[str, str] = Field(
         default_factory=dict,
-        description="Event payload field definitions",
+        description="Event payload field definitions (strongly typed string-to-string mapping)",
     )
 
     metadata_fields: list[str] = Field(
@@ -326,9 +333,9 @@ class ModelEventSubscription(BaseModel):
         min_length=1,
     )
 
-    filter_conditions: dict[str, str | int | float | bool] = Field(
-        default_factory=dict,
-        description="Event filtering conditions",
+    filter_conditions: ModelFilterConditions | None = Field(
+        default=None,
+        description="Strongly-typed event filtering conditions",
     )
 
     handler_function: str = Field(
@@ -373,9 +380,9 @@ class ModelEventCoordinationConfig(BaseModel):
     and coordination patterns for event-driven execution.
     """
 
-    trigger_mappings: dict[str, str] = Field(
-        default_factory=dict,
-        description="Event pattern to workflow action mappings",
+    trigger_mappings: ModelTriggerMappings = Field(
+        default_factory=ModelTriggerMappings,
+        description="Strongly-typed event pattern to workflow action mappings",
     )
 
     coordination_strategy: str = Field(

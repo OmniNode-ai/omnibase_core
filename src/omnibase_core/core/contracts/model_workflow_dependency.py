@@ -7,6 +7,7 @@ legacy string-based dependency support and enforces architectural consistency.
 ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -77,14 +78,14 @@ class ModelWorkflowDependency(BaseModel):
     @field_validator("condition", mode="before")
     @classmethod
     def validate_condition_structured_only(
-        cls, v: ModelWorkflowCondition | dict | None
+        cls, v: ModelWorkflowCondition | Any | None
     ) -> ModelWorkflowCondition | None:
         """
         Validate condition is ModelWorkflowCondition instance only.
 
-        STRONG TYPES ONLY: Accept ModelWorkflowCondition instances in Python code.
-        YAML SERIALIZATION: Convert dict objects from YAML deserialization ONLY.
-        NO FALLBACKS: Reject strings, Any types, or other legacy patterns.
+        STRONG TYPES ONLY: Accept ModelWorkflowCondition instances ONLY.
+        NO FALLBACKS: Reject dicts, strings, Any types, or other patterns.
+        NO YAML CONVERSION: Use proper serialization/deserialization patterns instead.
         """
         if v is None:
             return v
@@ -92,34 +93,16 @@ class ModelWorkflowDependency(BaseModel):
         if isinstance(v, ModelWorkflowCondition):
             # STRONG TYPE: Already validated ModelWorkflowCondition instance
             return v
-        elif isinstance(v, dict):
-            # YAML SERIALIZATION ONLY: Convert dict from YAML to ModelWorkflowCondition
-            try:
-                return ModelWorkflowCondition.model_validate(v)
-            except Exception as e:
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Invalid condition structure: {str(e)}. Must contain: condition_type, field_name, operator, expected_value.",
-                    context={
-                        "context": {
-                            "dict_keys": (
-                                list(v.keys()) if isinstance(v, dict) else None
-                            ),
-                            "original_error": str(e),
-                            "onex_principle": "Strong types with YAML dict conversion for serialization only",
-                        }
-                    },
-                ) from e
         else:
-            # STRONG TYPES ONLY: Reject all other types (strings, Any, etc.)
+            # STRONG TYPES ONLY: Reject all other types (dicts, strings, Any, etc.)
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance (or dict from YAML). Received {type(v).__name__}.",
+                message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
                 context={
                     "context": {
                         "received_type": str(type(v)),
                         "expected_type": "ModelWorkflowCondition",
-                        "onex_principle": "STRONG TYPES ONLY - no strings, no Any types, no fallbacks",
+                        "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
                     }
                 },
             )

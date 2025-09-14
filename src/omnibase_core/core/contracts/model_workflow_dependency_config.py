@@ -83,7 +83,7 @@ class ModelWorkflowDependencyConfig(BaseModel):
 
         return v
 
-    def to_pydantic_config_dict(self) -> dict[str, any]:
+    def to_pydantic_config_dict(self) -> dict[str, str | bool]:
         """
         Convert to Pydantic model_config dictionary format.
 
