@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload Validation Reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 7-gate-validation-reports
           path: validation_reports/
