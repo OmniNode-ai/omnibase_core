@@ -18,15 +18,13 @@ omni-agent = "omnibase_core.cli.commands:cli"
 cli = ["psutil"]
 monitoring = ["prometheus-client", "sentry-sdk"]
 kubernetes = ["kubernetes"]
-spi = ["omnibase_spi"]
-full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes", "omnibase_spi"]
+full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 # ONEX SPI dependency - HTTPS format for improved CI/CD compatibility
 # Authentication via git config with Personal Access Token
-# Optional for CI environments that don't have private repo access
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main", optional = true}
+omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"
 fastapi = "^0.115.0"

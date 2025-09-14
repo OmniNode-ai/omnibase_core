@@ -78,14 +78,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install dependencies without optional SPI dependency first
-          echo "Installing dependencies without optional SPI dependency..."
+          # Since Poetry tries to resolve all dependencies even if optional,
+          # we need to temporarily modify pyproject.toml for CI
+          echo "Backing up pyproject.toml and removing private dependency for CI..."
+          cp pyproject.toml pyproject.toml.backup
+
+          # Remove the omnibase_spi dependency line for CI installation
+          sed -i '/omnibase_spi.*git.*github.com/d' pyproject.toml
+
+          # Install dependencies without the private dependency
+          echo "Installing dependencies without private omnibase_spi dependency..."
           poetry install --no-interaction --no-ansi
 
-          # Try to install SPI dependency if authentication works
-          echo "Attempting to install SPI dependency with authentication..."
-          export POETRY_HTTP_BASIC_GITHUB_TOKEN=$GITHUB_TOKEN
-          poetry install --no-interaction --no-ansi --extras spi || echo "SPI dependency install failed - proceeding without it"
+          # Restore original pyproject.toml for consistency
+          mv pyproject.toml.backup pyproject.toml
+
+          echo "✅ Dependencies installed successfully for CI validation"
 
       - name: Run 7-Gate Validation on Modified Models
         run: |
