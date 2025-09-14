@@ -4,13 +4,17 @@ Model Workflow Dependency - ONEX Standards Compliant Workflow Dependency Specifi
 Strongly-typed dependency model for workflow orchestration patterns that eliminates
 legacy string-based dependency support and enforces architectural consistency.
 
-ZERO TOLERANCE: No Any types or legacy string support allowed.
+ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
 """
 
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.core.contracts.model_workflow_condition import ModelWorkflowCondition
+from omnibase_core.core.contracts.model_workflow_dependency_config import (
+    ModelWorkflowDependencyConfig,
+)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -32,6 +36,11 @@ class ModelWorkflowDependency(BaseModel):
         description="Unique identifier of the workflow this dependency references",
     )
 
+    dependent_workflow_id: UUID = Field(
+        ...,
+        description="Unique identifier of the workflow that depends on the referenced workflow",
+    )
+
     dependency_type: EnumWorkflowDependencyType = Field(
         ...,
         description="Type of dependency relationship between workflows",
@@ -42,9 +51,9 @@ class ModelWorkflowDependency(BaseModel):
         description="Whether this dependency is required for workflow execution",
     )
 
-    condition: str | None = Field(
+    condition: ModelWorkflowCondition | None = Field(
         default=None,
-        description="Optional condition for conditional dependencies",
+        description="Optional structured condition for conditional dependencies",
     )
 
     timeout_ms: int | None = Field(
@@ -63,36 +72,57 @@ class ModelWorkflowDependency(BaseModel):
         description="Human-readable description of the dependency",
     )
 
-    # ONEX STRONG TYPES: UUID validation handled automatically by Pydantic
+    # ONEX STRONG TYPES: UUID and ModelWorkflowCondition validation handled automatically by Pydantic
 
     @field_validator("condition", mode="before")
     @classmethod
-    def validate_condition_format(cls, v: str | None) -> str | None:
-        """Validate condition format when provided."""
+    def validate_condition_structured_only(
+        cls, v: ModelWorkflowCondition | dict | None
+    ) -> ModelWorkflowCondition | None:
+        """
+        Validate condition is ModelWorkflowCondition instance only.
+
+        STRONG TYPES ONLY: Accept ModelWorkflowCondition instances in Python code.
+        YAML SERIALIZATION: Convert dict objects from YAML deserialization ONLY.
+        NO FALLBACKS: Reject strings, Any types, or other legacy patterns.
+        """
         if v is None:
             return v
 
-        if not isinstance(v, str):
-            v = str(v)
-
-        v = v.strip()
-        if not v:
-            return None
-
-        # Basic validation - ensure it's not empty after stripping
-        min_condition_length = 3
-        if len(v) < min_condition_length:
+        if isinstance(v, ModelWorkflowCondition):
+            # STRONG TYPE: Already validated ModelWorkflowCondition instance
+            return v
+        elif isinstance(v, dict):
+            # YAML SERIALIZATION ONLY: Convert dict from YAML to ModelWorkflowCondition
+            try:
+                return ModelWorkflowCondition.model_validate(v)
+            except Exception as e:
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Invalid condition structure: {str(e)}. Must contain: condition_type, field_name, operator, expected_value.",
+                    context={
+                        "context": {
+                            "dict_keys": (
+                                list(v.keys()) if isinstance(v, dict) else None
+                            ),
+                            "original_error": str(e),
+                            "onex_principle": "Strong types with YAML dict conversion for serialization only",
+                        }
+                    },
+                ) from e
+        else:
+            # STRONG TYPES ONLY: Reject all other types (strings, Any, etc.)
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Condition too short: '{v}' (minimum {min_condition_length} characters)",
+                message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance (or dict from YAML). Received {type(v).__name__}.",
                 context={
-                    "condition": v,
-                    "length": len(v),
-                    "min_length": min_condition_length,
+                    "context": {
+                        "received_type": str(type(v)),
+                        "expected_type": "ModelWorkflowCondition",
+                        "onex_principle": "STRONG TYPES ONLY - no strings, no Any types, no fallbacks",
+                    }
                 },
             )
-
-        return v
 
     def is_sequential(self) -> bool:
         """Check if dependency is sequential."""
@@ -114,9 +144,13 @@ class ModelWorkflowDependency(BaseModel):
         """Check if dependency is compensating (saga pattern)."""
         return self.dependency_type == EnumWorkflowDependencyType.COMPENSATING
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from various input formats
-        "use_enum_values": False,  # Keep enum objects internally, serialize via alias
-        "validate_assignment": True,
-        "str_strip_whitespace": True,
-    }
+    # STRONG TYPES ONLY: Use typed configuration model instead of dict
+    _config_model: ModelWorkflowDependencyConfig = ModelWorkflowDependencyConfig(
+        extra_fields_behavior="ignore",  # Allow extra fields from various input formats
+        use_enum_values=False,  # Keep enum objects internally, serialize via alias
+        validate_assignment=True,
+        strip_whitespace=True,
+    )
+
+    # Pydantic model_config derived from typed configuration
+    model_config = _config_model.to_pydantic_config_dict()

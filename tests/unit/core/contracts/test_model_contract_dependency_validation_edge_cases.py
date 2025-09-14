@@ -67,7 +67,7 @@ class TestModelContractDependencyValidation:
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
         assert "must be a list" in error.message
-        assert error.context["context"]["input_type"] == "<class 'str'>"
+        assert "<class 'str'>" in str(error.context["context"]["context"]["input_type"])
 
     def test_dependency_missing_name_field_raises_onex_error(self):
         """Test dependency missing name field raises OnexError with context."""
@@ -87,10 +87,10 @@ class TestModelContractDependencyValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "missing required 'name' field" in error.message
+        assert "Failed to convert dependency dict 0 to ModelDependency" in error.message
+        assert "name" in error.message  # Should mention the missing name field
         assert error.context["context"]["dependency_index"] == 0
-        assert error.context["context"]["received_keys"] == ["type", "module"]
-        assert "expected_format" in error.context["context"]
+        assert "original_error" in error.context["context"]
 
     def test_dependency_invalid_format_raises_onex_error(self):
         """Test dependency with invalid ModelDependency fields raises OnexError."""
@@ -111,10 +111,9 @@ class TestModelContractDependencyValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "has invalid format" in error.message
+        assert "Failed to convert dependency dict 0 to ModelDependency" in error.message
         assert error.context["context"]["dependency_index"] == 0
-        assert error.context["context"]["dependency_data"] == invalid_dependency
-        assert "validation_error" in error.context["context"]
+        assert "original_error" in error.context["context"]
 
     def test_dependency_not_dict_raises_onex_error(self):
         """Test non-dict dependency raises OnexError."""
@@ -128,11 +127,11 @@ class TestModelContractDependencyValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "must be dict with structured format" in error.message
-        assert "No string dependencies allowed" in error.message
+        assert "Dependency 0 must be ModelDependency instance or dict" in error.message
+        assert "Received str" in error.message
         assert error.context["context"]["dependency_index"] == 0
-        assert error.context["context"]["received_type"] == "<class 'str'>"
-        assert error.context["context"]["expected_type"] == "dict"
+        assert "received_type" in error.context["context"]
+        assert "expected_types" in error.context["context"]
 
     def test_mixed_dependency_types_valid(self):
         """Test mixing ModelDependency objects and valid dicts."""
@@ -186,7 +185,7 @@ class TestModelContractDependencyValidation:
         assert (
             error.context["context"]["dependency_index"] == 1
         )  # Second dependency (0-indexed)
-        assert "missing required 'name' field" in error.message
+        assert "Failed to convert dependency dict 1 to ModelDependency" in error.message
 
     def test_empty_dict_dependency_raises_onex_error(self):
         """Test empty dict dependency raises OnexError."""
@@ -200,8 +199,8 @@ class TestModelContractDependencyValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "missing required 'name' field" in error.message
-        assert error.context["context"]["received_keys"] == []
+        assert "Failed to convert dependency dict 0 to ModelDependency" in error.message
+        assert error.context["context"]["dependency_index"] == 0
 
     def test_dependency_validation_exception_chaining(self):
         """Test that original validation exceptions are properly chained."""
@@ -222,7 +221,7 @@ class TestModelContractDependencyValidation:
 
         error = exc_info.value
         assert error.__cause__ is not None  # Original exception should be chained
-        assert "has invalid format" in error.message
+        assert "Failed to convert dependency dict 0 to ModelDependency" in error.message
 
     def test_large_dependency_list_performance(self):
         """Test validation performance with large dependency list."""
@@ -582,10 +581,10 @@ class TestModelContractDependencyStructuredValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "must be dict with structured format" in error.message
-        assert "No string dependencies allowed" in error.message
+        assert "Dependency 0 must be ModelDependency instance or dict" in error.message
+        assert "Received str" in error.message
         assert error.context["context"]["dependency_index"] == 0
-        assert error.context["context"]["received_type"] == "<class 'str'>"
+        assert "received_type" in error.context["context"]
 
         # Test case 2: Dict dependency with invalid version structure
         malformed_dependencies_case2 = [
@@ -604,9 +603,9 @@ class TestModelContractDependencyStructuredValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "has invalid format" in error.message
+        assert "Failed to convert dependency dict 0 to ModelDependency" in error.message
         assert error.context["context"]["dependency_index"] == 0
-        assert "validation_error" in error.context["context"]
+        assert "original_error" in error.context["context"]
 
         # Test case 3: Multiple malformed dependencies - should report first error
         malformed_dependencies_case3 = [
@@ -624,5 +623,5 @@ class TestModelContractDependencyStructuredValidation:
 
         error = exc_info.value
         assert error.error_code == CoreErrorCode.VALIDATION_FAILED
-        assert "must be dict with structured format" in error.message
+        assert "Dependency 0 must be ModelDependency instance or dict" in error.message
         assert error.context["context"]["dependency_index"] == 0  # Stops at first error

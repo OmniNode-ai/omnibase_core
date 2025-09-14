@@ -661,7 +661,11 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             and self.thunk_emission.batch_size < 1
         ):
             msg = "Batch emission strategy requires positive batch_size"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         # Validate workflow coordination
         if (
@@ -669,8 +673,10 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             and self.workflow_coordination.max_parallel_branches < 1
         ):
             msg = "Parallel execution requires positive max_parallel_branches"
-            raise ValueError(
-                msg,
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
             )
 
         # Validate checkpoint configuration
@@ -679,12 +685,20 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             and self.workflow_coordination.checkpoint_interval_ms < 100
         ):
             msg = "Checkpoint interval must be at least 100ms"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         # Validate branching configuration
         if self.conditional_branching.max_branch_depth < 1:
             msg = "Max branch depth must be at least 1"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         # Validate event registry configuration
         if (
@@ -698,25 +712,41 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         published_names = [event.event_name for event in self.published_events]
         if len(published_names) != len(set(published_names)):
             msg = "Published events must have unique names"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         # Validate event subscriptions reference valid handlers
         for subscription in self.consumed_events:
             if not subscription.handler_function:
                 msg = "Event subscriptions must specify handler_function"
-                raise ValueError(msg)
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=msg,
+                    context={"context": {"onex_principle": "Strong types only"}},
+                )
 
         # Validate workflow registry configuration
         if not self.workflow_registry.workflows:
             msg = "Orchestrator must define at least one workflow"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         if (
             self.workflow_registry.default_workflow_id
             not in self.workflow_registry.workflows
         ):
             msg = "Default workflow ID must exist in workflow registry"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         # Validate workflow definitions
         for workflow_id, workflow in self.workflow_registry.workflows.items():
@@ -744,8 +774,10 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         # Validate performance requirements for orchestrator nodes
         if not self.performance.single_operation_max_ms:
             msg = "Orchestrator nodes must specify single_operation_max_ms performance requirement"
-            raise ValueError(
-                msg,
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
             )
 
         # Validate tool specification if present (infrastructure pattern)
@@ -754,7 +786,11 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             for field in required_fields:
                 if field not in self.tool_specification:
                     msg = f"tool_specification must include '{field}'"
-                    raise ValueError(msg)
+                    raise OnexError(
+                        error_code=CoreErrorCode.VALIDATION_FAILED,
+                        message=msg,
+                        context={"context": {"onex_principle": "Strong types only"}},
+                    )
 
         # Validate subcontract constraints
         self.validate_subcontract_constraints(original_contract_data)
@@ -798,7 +834,11 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             )
 
         if violations:
-            raise ValueError("\n".join(violations))
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="\n".join(violations),
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
     @field_validator("published_events")
     @classmethod
@@ -811,7 +851,11 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         event_names = [event.event_name for event in v]
         if len(event_names) != len(set(event_names)):
             msg = "Published events must have unique event names"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         return v
 
@@ -826,7 +870,11 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         for subscription in v:
             if subscription.batch_processing and subscription.batch_size < 1:
                 msg = "Batch processing requires positive batch_size"
-                raise ValueError(msg)
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=msg,
+                    context={"context": {"onex_principle": "Strong types only"}},
+                )
 
         return v
 
@@ -839,11 +887,19 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         """Validate event coordination configuration consistency."""
         if v.coordination_strategy == "buffered" and v.buffer_size < 1:
             msg = "Buffered coordination requires positive buffer_size"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         if v.correlation_enabled and v.correlation_timeout_ms < 1000:
             msg = "Event correlation requires timeout of at least 1000ms"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+                context={"context": {"onex_principle": "Strong types only"}},
+            )
 
         return v
 
@@ -891,4 +947,8 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
             return load_yaml_content_as_model(yaml_content, cls)
 
         except ValidationError as e:
-            raise ValueError(f"Contract validation failed: {e}") from e
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Contract validation failed: {e}",
+                context={"context": {"onex_principle": "Strong types only"}},
+            ) from e

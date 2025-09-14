@@ -55,8 +55,6 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
             return model_cls.from_yaml(content)
 
         # Direct YAML parsing with Pydantic validation - no fallback
-        import yaml
-
         data = yaml.safe_load(content)
         if data is None:
             data = {}
@@ -97,8 +95,6 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
             return model_cls.from_yaml(content)
 
         # Direct YAML parsing with Pydantic validation - no fallback
-        import yaml
-
         data = yaml.safe_load(content)
         if data is None:
             data = {}

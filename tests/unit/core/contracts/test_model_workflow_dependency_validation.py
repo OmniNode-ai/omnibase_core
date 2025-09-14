@@ -11,6 +11,11 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.core.contracts.model_workflow_condition import (
+    EnumConditionOperator,
+    EnumConditionType,
+    ModelWorkflowCondition,
+)
 from omnibase_core.core.contracts.model_workflow_dependency import (
     ModelWorkflowDependency,
 )
@@ -24,8 +29,10 @@ class TestModelWorkflowDependencyValidation:
     def test_valid_workflow_dependency_creation(self):
         """Test successful creation of valid workflow dependency with UUID."""
         workflow_uuid = uuid.uuid4()
+        dependent_workflow_uuid = uuid.uuid4()
         dependency = ModelWorkflowDependency(
             workflow_id=workflow_uuid,
+            dependent_workflow_id=dependent_workflow_uuid,
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             required=True,
             timeout_ms=5000,
@@ -33,6 +40,7 @@ class TestModelWorkflowDependencyValidation:
         )
 
         assert dependency.workflow_id == workflow_uuid
+        assert dependency.dependent_workflow_id == dependent_workflow_uuid
         assert dependency.dependency_type == EnumWorkflowDependencyType.SEQUENTIAL
         assert dependency.required is True
         assert dependency.timeout_ms == 5000
@@ -50,11 +58,14 @@ class TestModelWorkflowDependencyValidation:
         ]
 
         for workflow_uuid in valid_uuids:
+            dependent_uuid = uuid.uuid4()
             dependency = ModelWorkflowDependency(
                 workflow_id=workflow_uuid,
+                dependent_workflow_id=dependent_uuid,
                 dependency_type=EnumWorkflowDependencyType.PARALLEL,
             )
             assert dependency.workflow_id == workflow_uuid
+            assert dependency.dependent_workflow_id == dependent_uuid
 
     def test_workflow_id_invalid_type_validation_failure(self):
         """Test workflow ID invalid type validation failures."""
@@ -64,6 +75,7 @@ class TestModelWorkflowDependencyValidation:
             with pytest.raises(ValidationError):
                 ModelWorkflowDependency(
                     workflow_id=workflow_id,
+                    dependent_workflow_id=uuid.uuid4(),
                     dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
                 )
 
@@ -75,6 +87,7 @@ class TestModelWorkflowDependencyValidation:
 
         dependency = ModelWorkflowDependency(
             workflow_id=uuid_string,  # Should be converted to UUID
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
         )
 
@@ -86,63 +99,66 @@ class TestModelWorkflowDependencyValidation:
         with pytest.raises(ValidationError):
             ModelWorkflowDependency(
                 workflow_id=None,
+                dependent_workflow_id=uuid.uuid4(),
                 dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             )
 
     def test_condition_validation_success(self):
         """Test successful condition validation."""
-        valid_conditions = [
-            "status == 'completed'",
-            "result.success == true",
-            "output_count > 0",
-            "workflow.stage in ['production', 'staging']",
-            "abc",  # minimum length
-        ]
+        # Test with structured condition (ModelWorkflowCondition)
+        condition = ModelWorkflowCondition(
+            condition_type=EnumConditionType.WORKFLOW_STATE,
+            field_name="status",
+            operator=EnumConditionOperator.EQUALS,
+            expected_value="completed",
+            description="Check if workflow status is completed",
+        )
 
-        for condition in valid_conditions:
-            dependency = ModelWorkflowDependency(
-                workflow_id=uuid.uuid4(),
-                dependency_type=EnumWorkflowDependencyType.CONDITIONAL,
-                condition=condition,
-            )
-            assert dependency.condition == condition
+        dependency = ModelWorkflowDependency(
+            workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
+            dependency_type=EnumWorkflowDependencyType.CONDITIONAL,
+            condition=condition,
+        )
+        assert dependency.condition == condition
+        assert isinstance(dependency.condition, ModelWorkflowCondition)
 
     def test_condition_validation_failure(self):
         """Test condition validation failures."""
+        # Test with invalid types that should be rejected
         invalid_conditions = [
-            "a",  # too short
-            "ab",  # too short
+            "string_condition",  # Strings no longer supported
+            123,  # Numbers not supported
+            [],  # Lists not supported
         ]
 
         for condition in invalid_conditions:
             with pytest.raises(OnexError) as exc_info:
                 ModelWorkflowDependency(
                     workflow_id=uuid.uuid4(),
+                    dependent_workflow_id=uuid.uuid4(),
                     dependency_type=EnumWorkflowDependencyType.CONDITIONAL,
                     condition=condition,
                 )
 
             error = exc_info.value
-            assert "too short" in error.message
-            assert error.context["context"]["condition"] == condition.strip()
-            assert error.context["context"]["min_length"] == 3
+            assert "STRONG TYPES ONLY" in error.message
 
     def test_condition_empty_becomes_none(self):
-        """Test that empty/whitespace conditions become None (valid behavior)."""
-        empty_conditions = ["", "   ", "\t", "\n"]
-
-        for condition in empty_conditions:
-            dependency = ModelWorkflowDependency(
-                workflow_id=uuid.uuid4(),
-                dependency_type=EnumWorkflowDependencyType.CONDITIONAL,
-                condition=condition,
-            )
-            assert dependency.condition is None
+        """Test that None conditions are handled correctly."""
+        dependency = ModelWorkflowDependency(
+            workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
+            dependency_type=EnumWorkflowDependencyType.CONDITIONAL,
+            condition=None,
+        )
+        assert dependency.condition is None
 
     def test_condition_none_handling(self):
         """Test None condition is handled correctly."""
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             condition=None,
         )
@@ -153,6 +169,7 @@ class TestModelWorkflowDependencyValidation:
         # Valid timeout
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             timeout_ms=1000,
         )
@@ -162,6 +179,7 @@ class TestModelWorkflowDependencyValidation:
         with pytest.raises(ValidationError):
             ModelWorkflowDependency(
                 workflow_id=uuid.uuid4(),
+                dependent_workflow_id=uuid.uuid4(),
                 dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
                 timeout_ms=0,
             )
@@ -179,7 +197,9 @@ class TestModelWorkflowDependencyValidation:
 
         for dep_type, method_name in test_cases:
             dependency = ModelWorkflowDependency(
-                workflow_id=uuid.uuid4(), dependency_type=dep_type
+                workflow_id=uuid.uuid4(),
+                dependent_workflow_id=uuid.uuid4(),
+                dependency_type=dep_type,
             )
 
             # Check that the correct method returns True
@@ -195,11 +215,18 @@ class TestModelWorkflowDependencyValidation:
         from omnibase_core.models.core.model_semver import ModelSemVer
 
         version = ModelSemVer(major=1, minor=2, patch=3)
+        condition = ModelWorkflowCondition(
+            condition_type=EnumConditionType.WORKFLOW_STATE,
+            field_name="status",
+            operator=EnumConditionOperator.EQUALS,
+            expected_value="ready",
+        )
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             required=False,
-            condition="status == 'ready'",
+            condition=condition,
             timeout_ms=30000,
             version_constraint=version,
             description="Test dependency",
@@ -215,7 +242,7 @@ class TestModelWorkflowDependencyValidation:
 
         # Check optional fields
         assert result_dict["required"] is False
-        assert result_dict["condition"] == "status == 'ready'"
+        assert "condition" in result_dict
         assert result_dict["timeout_ms"] == 30000
         assert result_dict["description"] == "Test dependency"
         assert "version_constraint" in result_dict
@@ -224,6 +251,7 @@ class TestModelWorkflowDependencyValidation:
         """Test dictionary conversion with minimal required fields."""
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.uuid4(),
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.PARALLEL,
         )
 
@@ -232,6 +260,7 @@ class TestModelWorkflowDependencyValidation:
         # Should only have required fields
         expected_keys = {
             "workflow_id",
+            "dependent_workflow_id",
             "dependency_type",
             "required",
         }  # required has default True
@@ -242,18 +271,26 @@ class TestModelWorkflowDependencyValidation:
     def test_whitespace_stripping(self):
         """Test that whitespace is properly stripped from string fields."""
         test_uuid = uuid.UUID("12345678-1234-5678-9abc-123456789012")
+        condition = ModelWorkflowCondition(
+            condition_type=EnumConditionType.WORKFLOW_STATE,
+            field_name="status",
+            operator=EnumConditionOperator.EQUALS,
+            expected_value="ready",
+        )
         dependency = ModelWorkflowDependency(
             workflow_id=test_uuid,
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
-            condition="  status == 'ready'  ",
+            condition=condition,
             description="  Test description  ",
         )
 
         # Workflow ID should remain as UUID
         assert dependency.workflow_id == test_uuid
 
-        # Condition should be stripped due to validator
-        assert dependency.condition == "status == 'ready'"
+        # Condition should be the structured object
+        assert dependency.condition == condition
+        assert isinstance(dependency.condition, ModelWorkflowCondition)
 
         # Description should be stripped due to model config
         assert dependency.description == "Test description"
@@ -264,6 +301,7 @@ class TestModelWorkflowDependencyValidation:
         test_uuid = uuid.uuid4()
         dependency = ModelWorkflowDependency(
             workflow_id=test_uuid,
+            dependent_workflow_id=uuid.uuid4(),
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
             extra_field="should be ignored",
             another_extra=123,
@@ -277,8 +315,10 @@ class TestModelWorkflowDependencyValidation:
         """Test context information is available for circular dependency detection."""
         # This tests that we have the necessary context for future circular dependency detection
         test_uuid = uuid.UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        dependent_uuid = uuid.UUID("bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
         dependency = ModelWorkflowDependency(
             workflow_id=test_uuid,
+            dependent_workflow_id=dependent_uuid,
             dependency_type=EnumWorkflowDependencyType.SEQUENTIAL,
         )
 
@@ -302,8 +342,10 @@ class TestModelWorkflowDependencyIntegration:
         import json
 
         test_uuid = uuid.UUID("11111111-2222-3333-4444-555555555555")
+        dependent_uuid = uuid.UUID("22222222-3333-4444-5555-666666666666")
         dependency = ModelWorkflowDependency(
             workflow_id=test_uuid,
+            dependent_workflow_id=dependent_uuid,
             dependency_type=EnumWorkflowDependencyType.PARALLEL,
             required=False,
             timeout_ms=15000,
@@ -322,6 +364,9 @@ class TestModelWorkflowDependencyIntegration:
             workflow_id=uuid.UUID(
                 parsed_data["workflow_id"]
             ),  # Convert string back to UUID
+            dependent_workflow_id=uuid.UUID(
+                parsed_data["dependent_workflow_id"]
+            ),  # Convert string back to UUID
             dependency_type=EnumWorkflowDependencyType(
                 parsed_data["dependency_type"]
             ),  # Use proper Pydantic field name
@@ -331,6 +376,7 @@ class TestModelWorkflowDependencyIntegration:
         )
 
         assert reconstructed.workflow_id == dependency.workflow_id
+        assert reconstructed.dependent_workflow_id == dependency.dependent_workflow_id
         assert reconstructed.dependency_type == dependency.dependency_type
         assert reconstructed.required == dependency.required
         assert reconstructed.timeout_ms == dependency.timeout_ms
@@ -340,12 +386,18 @@ class TestModelWorkflowDependencyIntegration:
         """Test comprehensive YAML deserialization for workflow dependencies."""
         import yaml
 
-        # Create test YAML data with UUID
+        # Create test YAML data with UUID and structured condition
         yaml_data = """
         workflow_id: "99999999-8888-7777-6666-555555555555"
+        dependent_workflow_id: "88888888-7777-6666-5555-444444444444"
         dependency_type: "sequential"
         required: true
-        condition: "status == 'completed'"
+        condition:
+          condition_type: "workflow_state"
+          field_name: "status"
+          operator: "equals"
+          expected_value: "completed"
+          description: "Check if workflow status is completed"
         timeout_ms: 30000
         description: "YAML test dependency"
         """
@@ -356,9 +408,12 @@ class TestModelWorkflowDependencyIntegration:
         # Create dependency from YAML data
         dependency = ModelWorkflowDependency(
             workflow_id=uuid.UUID(parsed_yaml["workflow_id"]),
+            dependent_workflow_id=uuid.UUID(parsed_yaml["dependent_workflow_id"]),
             dependency_type=EnumWorkflowDependencyType(parsed_yaml["dependency_type"]),
             required=parsed_yaml["required"],
-            condition=parsed_yaml["condition"],
+            condition=parsed_yaml[
+                "condition"
+            ],  # Will be converted from dict to ModelWorkflowCondition
             timeout_ms=parsed_yaml["timeout_ms"],
             description=parsed_yaml["description"],
         )
@@ -367,9 +422,14 @@ class TestModelWorkflowDependencyIntegration:
         assert dependency.workflow_id == uuid.UUID(
             "99999999-8888-7777-6666-555555555555"
         )
+        assert dependency.dependent_workflow_id == uuid.UUID(
+            "88888888-7777-6666-5555-444444444444"
+        )
         assert dependency.dependency_type == EnumWorkflowDependencyType.SEQUENTIAL
         assert dependency.required is True
-        assert dependency.condition == "status == 'completed'"
+        assert isinstance(dependency.condition, ModelWorkflowCondition)
+        assert dependency.condition.field_name == "status"
+        assert dependency.condition.expected_value == "completed"
         assert dependency.timeout_ms == 30000
         assert dependency.description == "YAML test dependency"
 
@@ -379,8 +439,10 @@ class TestModelWorkflowDependencyIntegration:
 
         # Create original dependency
         original_uuid = uuid.uuid4()
+        dependent_uuid = uuid.uuid4()
         original = ModelWorkflowDependency(
             workflow_id=original_uuid,
+            dependent_workflow_id=dependent_uuid,
             dependency_type=EnumWorkflowDependencyType.PARALLEL,
             required=False,
             timeout_ms=25000,
@@ -397,6 +459,7 @@ class TestModelWorkflowDependencyIntegration:
         # Reconstruct from YAML
         reconstructed = ModelWorkflowDependency(
             workflow_id=uuid.UUID(parsed_yaml["workflow_id"]),
+            dependent_workflow_id=uuid.UUID(parsed_yaml["dependent_workflow_id"]),
             dependency_type=EnumWorkflowDependencyType(parsed_yaml["dependency_type"]),
             required=parsed_yaml["required"],
             timeout_ms=parsed_yaml["timeout_ms"],
@@ -405,6 +468,7 @@ class TestModelWorkflowDependencyIntegration:
 
         # Verify round-trip integrity
         assert reconstructed.workflow_id == original.workflow_id
+        assert reconstructed.dependent_workflow_id == original.dependent_workflow_id
         assert reconstructed.dependency_type == original.dependency_type
         assert reconstructed.required == original.required
         assert reconstructed.timeout_ms == original.timeout_ms
