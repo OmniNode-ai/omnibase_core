@@ -266,23 +266,45 @@ class ModelContractBase(BaseModel, ABC):
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Contract dependencies must be a list, got {type(v)}",
-                context={"input_type": str(type(v))},
+                context={"context": {"input_type": str(type(v))}},
             )
 
         dependencies = []
         for i, item in enumerate(v):
             if isinstance(item, ModelDependency):
                 dependencies.append(item)
-            # ONEX STRONG TYPES ONLY: No dict fallbacks - use ModelDependency directly
+            elif isinstance(item, dict):
+                # Convert dict from YAML to ModelDependency instance
+                try:
+                    dependencies.append(ModelDependency(**item))
+                except Exception as e:
+                    raise OnexError(
+                        error_code=CoreErrorCode.VALIDATION_FAILED,
+                        message=f"Failed to convert dependency dict {i} to ModelDependency: {str(e)}",
+                        context={
+                            "context": {
+                                "dependency_index": i,
+                                "dict_keys": (
+                                    list(item.keys())
+                                    if isinstance(item, dict)
+                                    else None
+                                ),
+                                "original_error": str(e),
+                            }
+                        },
+                    ) from e
             else:
+                # Reject all other types
                 raise OnexError(
                     error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Dependency {i} must be ModelDependency instance. Strong types only - no dict/string fallbacks.",
+                    message=f"Dependency {i} must be ModelDependency instance or dict. Received {type(item).__name__}.",
                     context={
-                        "dependency_index": i,
-                        "received_type": str(type(item)),
-                        "expected_type": "ModelDependency",
-                        "onex_principle": "Strong types only, no fallbacks",
+                        "context": {
+                            "dependency_index": i,
+                            "received_type": str(type(item)),
+                            "expected_types": ["ModelDependency", "dict"],
+                            "onex_principle": "Strong types with YAML dict conversion support",
+                        }
                     },
                 )
 
@@ -291,12 +313,19 @@ class ModelContractBase(BaseModel, ABC):
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
-        """ONEX STRONG TYPES: Only accept EnumNodeType instances, no string conversion."""
+        """Convert string node types from YAML to EnumNodeType instances."""
         if isinstance(v, EnumNodeType):
             return v
-        # ONEX STRONG TYPES ONLY: No string fallbacks
-        msg = f"node_type must be EnumNodeType enum instance, not {type(v).__name__}. Strong types only."
-        raise ValueError(msg)
+        elif isinstance(v, str):
+            # Convert string from YAML to EnumNodeType instance
+            try:
+                return EnumNodeType(v)
+            except ValueError:
+                msg = f"node_type string '{v}' is not a valid EnumNodeType value. Valid values: {list(EnumNodeType)}"
+                raise ValueError(msg)
+        else:
+            msg = f"node_type must be EnumNodeType enum instance or valid enum value string, not {type(v).__name__}."
+            raise ValueError(msg)
 
     def _validate_node_type_compliance(self) -> None:
         """
