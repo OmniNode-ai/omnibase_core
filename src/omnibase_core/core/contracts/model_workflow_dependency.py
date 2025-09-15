@@ -107,6 +107,7 @@ class ModelWorkflowDependency(BaseModel):
         STRONG TYPES ONLY: Accept ModelWorkflowCondition instances ONLY.
         NO FALLBACKS: Reject dicts, strings, Any types, or other patterns.
         NO YAML CONVERSION: Use proper serialization/deserialization patterns instead.
+        ZERO TOLERANCE: Parameter type matches implementation - no Any types allowed.
         """
         if v is None:
             return v
@@ -120,16 +121,12 @@ class ModelWorkflowDependency(BaseModel):
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
                 context={
-                    "context": {
-                        "received_type": str(type(v)),
-                        "received_value": str(v)[:100],  # First 100 chars for debugging
-                        "expected_type": "ModelWorkflowCondition",
-                        "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
-                        "example_usage": {
-                            "correct": "ModelWorkflowCondition(condition_type=EnumConditionType.WORKFLOW_STATE, field_name='status', operator=EnumConditionOperator.EQUALS, expected_value='completed')",
-                            "migration_guide": "See docs/migration/contract-dependency-refactor.md for conversion examples",
-                        },
-                    }
+                    "received_type": str(type(v)),
+                    "received_value": str(v)[:100],  # First 100 chars for debugging
+                    "expected_type": "ModelWorkflowCondition",
+                    "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
+                    "correct_usage": "ModelWorkflowCondition(condition_type=EnumConditionType.WORKFLOW_STATE, field_name='status', operator=EnumConditionOperator.EQUALS, expected_value='completed')",
+                    "migration_guide": "See docs/migration/contract-dependency-refactor.md for conversion examples",
                 },
             )
 
@@ -146,12 +143,11 @@ class ModelWorkflowDependency(BaseModel):
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
                 context={
-                    "context": {
-                        "workflow_id": str(self.workflow_id),
-                        "dependent_workflow_id": str(self.dependent_workflow_id),
-                        "onex_principle": "Circular dependency prevention for workflow orchestration",
-                        "suggested_fix": "Ensure workflow_id and dependent_workflow_id are different UUIDs",
-                    }
+                    "workflow_id": str(self.workflow_id),
+                    "dependent_workflow_id": str(self.dependent_workflow_id),
+                    "onex_principle": "Circular dependency prevention for workflow orchestration",
+                    "suggested_fix": "Ensure workflow_id and dependent_workflow_id are different UUIDs",
+                    "prevention_type": "circular_dependency",
                 },
             )
         return self
