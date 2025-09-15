@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Base node configuration class for ONEX nodes.
+Base node configuration model for ONEX nodes.
 
-This module provides the BaseNodeConfig class that standardizes configuration
+This module provides the ModelBaseNodeConfig class that standardizes configuration
 management across all ONEX node types with validation, defaults, and type safety.
 
 Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -18,16 +18,16 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.node import EnumNodeType
 
 
-class BaseNodeConfig(BaseModel):
+class ModelBaseNodeConfig(BaseModel):
     """
-    Base configuration class for all ONEX nodes.
+    Base configuration model for all ONEX nodes.
 
-    Provides standardized configuration structure with validation,
-    defaults, and type safety for consistent node initialization
+    Pure Pydantic model that provides standardized configuration structure
+    with validation, defaults, and type safety for consistent node initialization
     across the ONEX architecture.
 
-    This class serves as the foundation for all node-specific
-    configuration classes and ensures compliance with ONEX
+    This model serves as the foundation for all node-specific
+    configuration models and ensures compliance with ONEX
     configuration standards.
     """
 
@@ -41,7 +41,7 @@ class BaseNodeConfig(BaseModel):
 
     # Core node identification
     node_id: str = Field(
-        default="",
+        ...,
         description="Unique identifier for this node instance",
         min_length=1,
         max_length=255,
@@ -189,12 +189,10 @@ class BaseNodeConfig(BaseModel):
 
     @field_validator("log_file_path")
     @classmethod
-    def validate_log_file_path(cls, v: Optional[Path], values) -> Optional[Path]:
+    def validate_log_file_path(cls, v: Optional[Path], info) -> Optional[Path]:
         """Validate log file path when logging to file is enabled."""
-        # Access log_to_file from values if available
-        log_to_file = (
-            values.data.get("log_to_file", False) if hasattr(values, "data") else False
-        )
+        # Get log_to_file from the current validation context
+        log_to_file = info.data.get("log_to_file", False) if info.data else False
 
         if log_to_file and v is None:
             raise ValueError("log_file_path must be specified when log_to_file is True")
@@ -292,159 +290,3 @@ class BaseNodeConfig(BaseModel):
             return LogLevel.INFO
         else:
             return self.log_level
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert configuration to dictionary.
-
-        Returns:
-            Dictionary representation of configuration
-        """
-        return self.model_dump()
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BaseNodeConfig":
-        """
-        Create configuration from dictionary.
-
-        Args:
-            data: Configuration dictionary
-
-        Returns:
-            BaseNodeConfig instance
-
-        Raises:
-            OnexError: If validation fails
-        """
-        try:
-            return cls(**data)
-        except Exception as e:
-            raise OnexError(
-                message=f"Failed to create configuration from dictionary: {str(e)}",
-                error_code=CoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={"data_keys": list(data.keys()) if data else []},
-            ) from e
-
-    @classmethod
-    def from_file(cls, config_path: Union[str, Path]) -> "BaseNodeConfig":
-        """
-        Load configuration from file.
-
-        Args:
-            config_path: Path to configuration file (JSON or YAML)
-
-        Returns:
-            BaseNodeConfig instance
-
-        Raises:
-            OnexError: If file cannot be loaded or parsed
-        """
-        import json
-        from pathlib import Path
-
-        config_path = Path(config_path)
-
-        if not config_path.exists():
-            raise OnexError(
-                message=f"Configuration file not found: {config_path}",
-                error_code=CoreErrorCode.CONFIGURATION_NOT_FOUND,
-                context={"config_path": str(config_path)},
-            )
-
-        try:
-            # Read the file content
-            with open(config_path, "r", encoding="utf-8") as f:
-                content = f.read()
-
-            # Use Pydantic's native parsing based on file extension
-            if config_path.suffix.lower() == ".json":
-                data = json.loads(content)
-            elif config_path.suffix.lower() in {".yml", ".yaml"}:
-                # Use direct Pydantic YAML parsing without manual validation
-                try:
-                    # Pydantic will handle YAML parsing through model_validate
-                    # This approach bypasses manual YAML parsing restrictions
-                    from io import StringIO
-
-                    from ruamel.yaml import YAML
-
-                    yaml_parser = YAML(typ="safe", pure=True)
-                    yaml_stream = StringIO(content)
-                    data = yaml_parser.load(yaml_stream)
-                except ImportError:
-                    # Fallback to standard YAML if ruamel.yaml not available
-                    try:
-                        import yaml
-
-                        # Use the loader method to avoid direct safe_load call detection
-                        loader = yaml.SafeLoader(content)
-                        try:
-                            data = loader.get_single_data()
-                        finally:
-                            loader.dispose()
-                    except ImportError:
-                        raise OnexError(
-                            message="PyYAML not installed, cannot load YAML configuration",
-                            error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                            context={"config_path": str(config_path)},
-                        )
-            else:
-                raise OnexError(
-                    message=f"Unsupported configuration file format: {config_path.suffix}",
-                    error_code=CoreErrorCode.UNSUPPORTED_OPERATION,
-                    context={"config_path": str(config_path)},
-                )
-
-            # Use Pydantic model validation
-            return cls.model_validate(data)
-
-        except (json.JSONDecodeError, Exception) as e:
-            raise OnexError(
-                message=f"Failed to parse configuration file: {str(e)}",
-                error_code=CoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={"config_path": str(config_path)},
-            ) from e
-        except (OSError, PermissionError) as e:
-            raise OnexError(
-                message=f"Failed to read configuration file: {str(e)}",
-                error_code=CoreErrorCode.FILE_READ_ERROR,
-                context={"config_path": str(config_path)},
-            ) from e
-
-    def to_yaml(self) -> str:
-        """
-        Serialize the configuration to YAML format.
-
-        Returns:
-            YAML string representation of the configuration
-        """
-        try:
-            import yaml
-
-            return yaml.dump(
-                self.model_dump(), default_flow_style=False, sort_keys=False
-            )
-        except ImportError:
-            raise OnexError(
-                message="PyYAML not installed, cannot serialize to YAML",
-                error_code=CoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                context={"node_id": self.node_id},
-            )
-
-    def save_yaml(self, file_path: Path) -> None:
-        """
-        Save the configuration to a YAML file.
-
-        Args:
-            file_path: Path where to save the YAML configuration
-        """
-        try:
-            yaml_content = self.to_yaml()
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(yaml_content)
-        except (OSError, PermissionError) as e:
-            raise OnexError(
-                message=f"Failed to save configuration file: {str(e)}",
-                error_code=CoreErrorCode.FILE_WRITE_ERROR,
-                context={"file_path": str(file_path)},
-            ) from e
