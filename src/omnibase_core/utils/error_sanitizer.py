@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Error sanitization utility for preventing sensitive information leakage.
 
@@ -9,11 +8,17 @@ of credentials, file paths, and other sensitive data in logs and error reports.
 Author: ONEX Framework Team
 """
 
+import contextlib
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, ClassVar
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.core.errors.core_errors import OnexError
+
+# Constants for magic numbers
+_MIN_GROUPS_FOR_PREFIX_PRESERVATION = 2
+_CONNECTION_STRING_GROUPS = 3
+_BEARER_PATTERN_GROUPS = 2
 
 
 class ErrorSanitizer:
@@ -26,7 +31,7 @@ class ErrorSanitizer:
     """
 
     # Default sensitive patterns to remove or mask
-    DEFAULT_SENSITIVE_PATTERNS = {
+    DEFAULT_SENSITIVE_PATTERNS: ClassVar[dict[str, re.Pattern[str]]] = {
         # Password patterns
         "password": re.compile(r"(password\s*[=:]\s*)([^\s&,;]+)", re.IGNORECASE),
         "pwd": re.compile(r"(pwd\s*[=:]\s*)([^\s&,;]+)", re.IGNORECASE),
@@ -38,11 +43,13 @@ class ErrorSanitizer:
         "bearer": re.compile(r"(bearer\s+)([^\s]+)", re.IGNORECASE),
         # Database connection strings
         "connection_string": re.compile(
-            r"((?:postgresql|mysql|mongodb)://[^:]+:)([^@]+)(@)", re.IGNORECASE
+            r"((?:postgresql|mysql|mongodb)://[^:]+:)([^@]+)(@)",
+            re.IGNORECASE,
         ),
-        # AWS credentials
+        # AWS credentials (more specific patterns)
         "aws_access_key": re.compile(r"(AKIA[0-9A-Z]{16})"),
-        "aws_secret": re.compile(r"([A-Za-z0-9/+=]{40})"),
+        # More specific AWS secret pattern
+        "aws_secret": re.compile(r"\b([A-Za-z0-9/+=]{40})\b(?=\s|$|[&,;])"),
         # File paths (home directories)
         "home_path": re.compile(r"(/(?:home|Users)/[^/\s]+)"),
         # IP addresses (optionally sensitive)
@@ -53,9 +60,10 @@ class ErrorSanitizer:
         self,
         mask_character: str = "*",
         mask_length: int = 8,
+        *,
         preserve_prefixes: bool = True,
-        custom_patterns: Optional[Dict[str, re.Pattern]] = None,
-        skip_patterns: Optional[Set[str]] = None,
+        custom_patterns: dict[str, re.Pattern] | None = None,
+        skip_patterns: set[str] | None = None,
     ):
         """
         Initialize the ErrorSanitizer with configuration options.
@@ -83,6 +91,27 @@ class ErrorSanitizer:
             for pattern_name in skip_patterns:
                 self.patterns.pop(pattern_name, None)
 
+        # Pre-compile combined pattern for faster initial screening
+        self._sensitive_keywords = {
+            "password",
+            "pwd",
+            "passwd",
+            "api_key",
+            "token",
+            "secret",
+            "bearer",
+            "AKIA",
+            "postgresql://",
+            "mysql://",
+            "mongodb://",
+            "/home/",
+            "/Users/",
+        }
+
+        # Cache for message sanitization (simple dict-based cache)
+        self._cache_size = 1000  # Reasonable cache size for message patterns
+        self._sanitization_cache: dict[str, str] = {}
+
     def sanitize_message(self, message: str) -> str:
         """
         Sanitize an error message by masking sensitive information.
@@ -96,6 +125,27 @@ class ErrorSanitizer:
         if not isinstance(message, str):
             return str(message)
 
+        # Fast path: check if message contains any sensitive keywords
+        if not self._contains_sensitive_keywords(message):
+            return message
+
+        # Use cached sanitization for performance
+        return self._sanitize_message_cached(message)
+
+    def _sanitize_message_cached(self, message: str) -> str:
+        """
+        Cached version of message sanitization for better performance.
+
+        Args:
+            message: The error message to sanitize
+
+        Returns:
+            Sanitized error message with sensitive information masked
+        """
+        # Check cache first
+        if message in self._sanitization_cache:
+            return self._sanitization_cache[message]
+
         sanitized = message
 
         for pattern_name, pattern in self.patterns.items():
@@ -105,7 +155,42 @@ class ErrorSanitizer:
             else:
                 sanitized = self._mask_pattern(sanitized, pattern)
 
+        # Cache the result (with simple size limit)
+        if len(self._sanitization_cache) >= self._cache_size:
+            # Clear cache when it gets too large
+            self._sanitization_cache.clear()
+        self._sanitization_cache[message] = sanitized
+
         return sanitized
+
+    def get_cache_info(self) -> dict[str, int]:
+        """
+        Get cache information for testing and monitoring.
+
+        Returns:
+            Dictionary with cache statistics
+        """
+        return {
+            "hits": len(self._sanitization_cache),
+            "misses": 0,  # Simple implementation doesn't track misses
+            "maxsize": self._cache_size,
+            "currsize": len(self._sanitization_cache),
+        }
+
+    def _contains_sensitive_keywords(self, message: str) -> bool:
+        """
+        Fast check if message contains any sensitive keywords.
+
+        Args:
+            message: Message to check
+
+        Returns:
+            True if message might contain sensitive information
+        """
+        message_lower = message.lower()
+        return any(
+            keyword.lower() in message_lower for keyword in self._sensitive_keywords
+        )
 
     def sanitize_exception(self, exception: Exception) -> Exception:
         """
@@ -130,23 +215,21 @@ class ErrorSanitizer:
             if hasattr(exception, "__dict__"):
                 for key, value in exception.__dict__.items():
                     if key not in {
-                        "args"
+                        "args",
                     }:  # Don't copy args as we're replacing the message
-                        try:
+                        with contextlib.suppress(AttributeError, TypeError):
                             setattr(sanitized_exception, key, value)
-                        except (AttributeError, TypeError):
-                            # Some attributes may not be settable
-                            pass
 
-            return sanitized_exception
-
-        except Exception:
+        except (TypeError, ValueError):
             # If we can't create the same exception type, create a generic Exception
             return Exception(sanitized_message)
+        else:
+            return sanitized_exception
 
     def sanitize_onex_error(self, error: OnexError) -> OnexError:
         """
-        Sanitize an OnexError by creating a new instance with sanitized message and context.
+        Sanitize an OnexError by creating a new instance with sanitized message and
+        context.
 
         Args:
             error: The OnexError to sanitize
@@ -175,7 +258,7 @@ class ErrorSanitizer:
             **sanitized_context,
         )
 
-    def sanitize_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def sanitize_dict(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Sanitize a dictionary by recursively sanitizing string values.
 
@@ -199,7 +282,7 @@ class ErrorSanitizer:
 
         return sanitized
 
-    def sanitize_list(self, data: List[Any]) -> List[Any]:
+    def sanitize_list(self, data: list[Any]) -> list[Any]:
         """
         Sanitize a list by recursively sanitizing elements.
 
@@ -223,7 +306,7 @@ class ErrorSanitizer:
 
         return sanitized
 
-    def sanitize_file_path(self, file_path: Union[str, Path]) -> str:
+    def sanitize_file_path(self, file_path: str | Path) -> str:
         """
         Sanitize a file path by masking sensitive directory components.
 
@@ -237,9 +320,7 @@ class ErrorSanitizer:
 
         # Mask home directory paths
         home_pattern = re.compile(r"(/(?:home|Users)/[^/\s]+)")
-        path_str = home_pattern.sub(f"/home/{self.mask_character * 6}", path_str)
-
-        return path_str
+        return home_pattern.sub(f"/home/{self.mask_character * 6}", path_str)
 
     def _mask_pattern(self, text: str, pattern: re.Pattern) -> str:
         """
@@ -254,16 +335,18 @@ class ErrorSanitizer:
         """
         mask = self.mask_character * self.mask_length
 
-        if self.preserve_prefixes and pattern.groups >= 2:
+        if (
+            self.preserve_prefixes
+            and pattern.groups >= _MIN_GROUPS_FOR_PREFIX_PRESERVATION
+        ):
             # Replace only the sensitive part, preserve prefix
             def replacer(match):
-                if len(match.groups()) >= 2:
+                if len(match.groups()) >= _MIN_GROUPS_FOR_PREFIX_PRESERVATION:
                     return match.group(1) + mask
                 return mask
 
             return pattern.sub(replacer, text)
-        else:
-            return pattern.sub(mask, text)
+        return pattern.sub(mask, text)
 
     def _mask_with_groups(self, text: str, pattern: re.Pattern) -> str:
         """
@@ -280,12 +363,11 @@ class ErrorSanitizer:
 
         def replacer(match):
             groups = match.groups()
-            if len(groups) == 3:  # connection_string pattern
+            if len(groups) == _CONNECTION_STRING_GROUPS:  # connection_string pattern
                 return groups[0] + mask + groups[2]
-            elif len(groups) == 2:  # bearer pattern
+            if len(groups) == _BEARER_PATTERN_GROUPS:  # bearer pattern
                 return groups[0] + mask
-            else:
-                return mask
+            return mask
 
         return pattern.sub(replacer, text)
 

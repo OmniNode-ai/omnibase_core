@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Configuration Management Subcontract for ONEX Infrastructure Nodes.
 
@@ -10,7 +9,6 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -35,8 +33,9 @@ class ModelConfigurationSource(BaseModel):
         pattern=r"^[a-z_]+$",
     )
 
-    source_path: Optional[str] = Field(
-        default=None, description="Path or identifier for the configuration source"
+    source_path: str | None = Field(
+        default=None,
+        description="Path or identifier for the configuration source",
     )
 
     priority: int = Field(
@@ -47,7 +46,8 @@ class ModelConfigurationSource(BaseModel):
     )
 
     required: bool = Field(
-        default=False, description="Whether this configuration source is required"
+        default=False,
+        description="Whether this configuration source is required",
     )
 
     watch_for_changes: bool = Field(
@@ -65,24 +65,27 @@ class ModelConfigurationValidation(BaseModel):
         validate_assignment=True,
     )
 
-    required_keys: List[str] = Field(
-        default_factory=list, description="Configuration keys that must be present"
+    required_keys: list[str] = Field(
+        default_factory=list,
+        description="Configuration keys that must be present",
     )
 
-    optional_keys: List[str] = Field(
-        default_factory=list, description="Configuration keys that are optional"
+    optional_keys: list[str] = Field(
+        default_factory=list,
+        description="Configuration keys that are optional",
     )
 
-    validation_schema: Optional[Dict[str, str]] = Field(
+    validation_schema: dict[str, str] | None = Field(
         default=None,
         description="JSON schema or validation rules for configuration values",
     )
 
-    environment_specific: Dict[EnumEnvironment, Dict[str, str]] = Field(
-        default_factory=dict, description="Environment-specific validation rules"
+    environment_specific: dict[EnumEnvironment, dict[str, str]] = Field(
+        default_factory=dict,
+        description="Environment-specific validation rules",
     )
 
-    sensitive_keys: List[str] = Field(
+    sensitive_keys: list[str] = Field(
         default_factory=list,
         description="Configuration keys that contain sensitive data",
     )
@@ -125,11 +128,11 @@ class ModelConfigurationSubcontract(BaseModel):
     config_version: str = Field(
         default="1.0.0",
         description="Version of the configuration schema",
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)*$",
+        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)*$",
     )
 
     # Configuration sources
-    configuration_sources: List[ModelConfigurationSource] = Field(
+    configuration_sources: list[ModelConfigurationSource] = Field(
         default_factory=list,
         description="Ordered list of configuration sources by priority",
     )
@@ -142,10 +145,11 @@ class ModelConfigurationSubcontract(BaseModel):
 
     # Environment integration
     target_environment: EnumEnvironment = Field(
-        default=EnumEnvironment.DEVELOPMENT, description="Target deployment environment"
+        default=EnumEnvironment.DEVELOPMENT,
+        description="Target deployment environment",
     )
 
-    environment_variable_prefix: Optional[str] = Field(
+    environment_variable_prefix: str | None = Field(
         default=None,
         description="Prefix for environment variable configuration keys",
         pattern=r"^[A-Z][A-Z0-9_]*$",
@@ -163,7 +167,8 @@ class ModelConfigurationSubcontract(BaseModel):
     )
 
     strict_validation: bool = Field(
-        default=True, description="Whether to enforce strict configuration validation"
+        default=True,
+        description="Whether to enforce strict configuration validation",
     )
 
     fail_on_missing_required: bool = Field(
@@ -173,7 +178,8 @@ class ModelConfigurationSubcontract(BaseModel):
 
     # Runtime behavior
     allow_runtime_updates: bool = Field(
-        default=False, description="Whether to allow configuration updates at runtime"
+        default=False,
+        description="Whether to allow configuration updates at runtime",
     )
 
     auto_reload_on_change: bool = Field(
@@ -184,22 +190,25 @@ class ModelConfigurationSubcontract(BaseModel):
     reload_debounce_seconds: float = Field(
         default=5.0,
         description="Debounce time for configuration reload in seconds",
-        gt=0.0,
+        ge=1.0,  # Minimum 1 second to prevent reload thrashing
         le=300.0,
     )
 
     # Security and sensitive data
     encrypt_sensitive_values: bool = Field(
-        default=True, description="Whether to encrypt sensitive configuration values"
+        default=True,
+        description="Whether to encrypt sensitive configuration values",
     )
 
     mask_sensitive_in_logs: bool = Field(
-        default=True, description="Whether to mask sensitive values in log output"
+        default=True,
+        description="Whether to mask sensitive values in log output",
     )
 
     # Backup and recovery
     backup_configuration: bool = Field(
-        default=True, description="Whether to create backups of configuration changes"
+        default=True,
+        description="Whether to create backups of configuration changes",
     )
 
     max_backup_versions: int = Field(
@@ -209,8 +218,9 @@ class ModelConfigurationSubcontract(BaseModel):
         le=100,
     )
 
-    backup_directory: Optional[Path] = Field(
-        default=None, description="Directory for configuration backups"
+    backup_directory: Path | None = Field(
+        default=None,
+        description="Directory for configuration backups",
     )
 
     # Integration settings
@@ -228,7 +238,8 @@ class ModelConfigurationSubcontract(BaseModel):
 
     # Logging and monitoring
     log_configuration_changes: bool = Field(
-        default=True, description="Whether to log configuration changes"
+        default=True,
+        description="Whether to log configuration changes",
     )
 
     configuration_log_level: LogLevel = Field(
@@ -237,14 +248,16 @@ class ModelConfigurationSubcontract(BaseModel):
     )
 
     emit_configuration_events: bool = Field(
-        default=False, description="Whether to emit events for configuration changes"
+        default=False,
+        description="Whether to emit events for configuration changes",
     )
 
     @field_validator("configuration_sources")
     @classmethod
     def validate_configuration_sources(
-        cls, v: List[ModelConfigurationSource]
-    ) -> List[ModelConfigurationSource]:
+        cls,
+        v: list[ModelConfigurationSource],
+    ) -> list[ModelConfigurationSource]:
         """Validate configuration sources have unique priorities when required."""
         if len(v) <= 1:
             return v
@@ -252,16 +265,16 @@ class ModelConfigurationSubcontract(BaseModel):
         # Check for duplicate priorities among required sources
         required_priorities = [src.priority for src in v if src.required]
         if len(required_priorities) != len(set(required_priorities)):
-            raise ValueError(
-                "Required configuration sources cannot have duplicate priorities"
-            )
+            msg = "Required configuration sources cannot have duplicate priorities"
+            raise ValueError(msg)
 
         return v
 
     @field_validator("validation_rules")
     @classmethod
     def validate_validation_rules(
-        cls, v: ModelConfigurationValidation
+        cls,
+        v: ModelConfigurationValidation,
     ) -> ModelConfigurationValidation:
         """Validate that required and optional keys don't overlap."""
         required_set = set(v.required_keys)
@@ -269,13 +282,12 @@ class ModelConfigurationSubcontract(BaseModel):
 
         if required_set & optional_set:
             overlapping = required_set & optional_set
-            raise ValueError(
-                f"Keys cannot be both required and optional: {overlapping}"
-            )
+            msg = f"Keys cannot be both required and optional: {overlapping}"
+            raise ValueError(msg)
 
         return v
 
-    def get_effective_environment_prefix(self) -> Optional[str]:
+    def get_effective_environment_prefix(self) -> str | None:
         """
         Get the effective environment variable prefix.
 
@@ -284,11 +296,10 @@ class ModelConfigurationSubcontract(BaseModel):
         """
         if self.environment_variable_prefix:
             return self.environment_variable_prefix
-        elif self.inherit_environment:
+        if self.inherit_environment:
             # Generate default prefix from config name
             return f"{self.config_name.upper().replace('-', '_')}_"
-        else:
-            return None
+        return None
 
     def is_key_sensitive(self, key: str) -> bool:
         """
@@ -303,8 +314,9 @@ class ModelConfigurationSubcontract(BaseModel):
         return key in self.validation_rules.sensitive_keys
 
     def get_required_keys_for_environment(
-        self, environment: Optional[EnumEnvironment] = None
-    ) -> List[str]:
+        self,
+        environment: EnumEnvironment | None = None,
+    ) -> list[str]:
         """
         Get required configuration keys for a specific environment.
 
@@ -345,7 +357,7 @@ class ModelConfigurationSubcontract(BaseModel):
 
         return False
 
-    def get_backup_path(self, version: int) -> Optional[Path]:
+    def get_backup_path(self, version: int) -> Path | None:
         """
         Get the backup path for a specific configuration version.
 
@@ -369,8 +381,9 @@ class ModelConfigurationSubcontract(BaseModel):
             OnexError: If runtime updates are not allowed
         """
         if not self.allow_runtime_updates:
+            msg = "Runtime configuration updates are not allowed for this subcontract"
             raise OnexError(
-                message="Runtime configuration updates are not allowed for this subcontract",
+                message=msg,
                 error_code=CoreErrorCode.INVALID_OPERATION,
                 context={
                     "config_name": self.config_name,
@@ -381,8 +394,9 @@ class ModelConfigurationSubcontract(BaseModel):
     def create_configuration_source(
         self,
         source_type: str,
-        source_path: Optional[str] = None,
+        source_path: str | None = None,
         priority: int = 100,
+        *,
         required: bool = False,
         watch_for_changes: bool = False,
     ) -> ModelConfigurationSource:
@@ -420,8 +434,12 @@ class ModelConfigurationSubcontract(BaseModel):
                 src.priority for src in self.configuration_sources if src.required
             ]
             if source.priority in existing_required_priorities:
+                msg = (
+                    f"Required configuration source priority {source.priority} "
+                    "already exists"
+                )
                 raise OnexError(
-                    message=f"Required configuration source priority {source.priority} already exists",
+                    message=msg,
                     error_code=CoreErrorCode.DUPLICATE_REGISTRATION,
                     context={
                         "config_name": self.config_name,
@@ -436,7 +454,9 @@ class ModelConfigurationSubcontract(BaseModel):
         self.configuration_sources.sort(key=lambda x: x.priority)
 
     def remove_configuration_source(
-        self, source_type: str, source_path: Optional[str] = None
+        self,
+        source_type: str,
+        source_path: str | None = None,
     ) -> bool:
         """
         Remove a configuration source from the subcontract.
