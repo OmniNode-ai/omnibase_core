@@ -133,6 +133,19 @@ class UtilityContractDrivenInputBuilder:
                                     full_module_path = (
                                         f"{enum_module_path}.{enum_module_name}"
                                     )
+
+                                    # Security: validate module is within allowed namespaces
+                                    allowed_prefixes = [
+                                        "omnibase_core.",
+                                        "omnibase_spi.",
+                                        "omnibase.",
+                                    ]
+                                    if not any(
+                                        full_module_path.startswith(prefix)
+                                        for prefix in allowed_prefixes
+                                    ):
+                                        continue  # Skip modules outside allowed namespaces
+
                                     enum_module = importlib.import_module(
                                         full_module_path,
                                     )
