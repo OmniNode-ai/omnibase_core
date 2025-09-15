@@ -6,14 +6,14 @@ Defines the interface for pluggable storage backends at the root level.
 from abc import ABC, abstractmethod
 from typing import Protocol, runtime_checkable
 
-# Import the new Pydantic models
-from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_checkpoint_data import (
+# Import the ONEX-compliant Pydantic models
+from omnibase_core.models.core.model_checkpoint_data import (
     ModelCheckpointData,
 )
-from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_storage_credentials import (
+from omnibase_core.models.core.model_storage_credentials import (
     ModelStorageCredentials,
 )
-from omnibase_core.tools.coordination.hub_generic.v1_0_0.models.model_storage_result import (
+from omnibase_core.models.core.model_storage_result import (
     ModelStorageConfiguration,
     ModelStorageHealthStatus,
     ModelStorageListResult,

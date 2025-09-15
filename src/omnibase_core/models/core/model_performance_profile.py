@@ -158,10 +158,9 @@ class ModelPerformanceProfile(BaseModel):
 
     model_config = ConfigDict()
 
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelPerformanceProfile":
-        """Create from dictionary for easy migration."""
-        return cls(**data)
+    # ONEX Phase 3C: Factory method eliminated - use direct instantiation
+    # Old pattern: ModelPerformanceProfile.from_dict(data)
+    # New pattern: ModelPerformanceProfile(**data)
 
     @field_serializer("profile_timestamp")
     def serialize_datetime(self, value):

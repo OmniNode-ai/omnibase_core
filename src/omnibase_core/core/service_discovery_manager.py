@@ -9,8 +9,8 @@ from typing import Dict, List, Optional, TypeVar
 
 from omnibase_spi import ProtocolLogger
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.decorators import allow_dict_str_any
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
@@ -149,11 +149,15 @@ class ServiceDiscoveryManager:
         # based on protocol types discovered in contracts
 
         if "Logger" in protocol_type.__name__:
-            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import (
-                ToolLoggerEngineNode,
-            )
+            # Use ONEX-compliant structured logging
+            from omnibase_core.core.core_structured_logging import emit_log_event_sync
 
-            return ToolLoggerEngineNode()
+            # Return a simple logging wrapper that follows ONEX patterns
+            class OnexLogger:
+                def log(self, level, message, **kwargs):
+                    emit_log_event_sync(level=level, message=message, **kwargs)
+
+            return OnexLogger()
 
         # Add more protocol-to-implementation mappings here
         # These would be auto-generated from contract analysis
@@ -189,11 +193,15 @@ class ServiceDiscoveryManager:
         # based on protocol types and configurations from contracts
 
         if "Logger" in protocol_type.__name__:
-            from omnibase_core.tools.logging.tool_logger_engine.v1_0_0.node import (
-                ToolLoggerEngineNode,
-            )
+            # Use ONEX-compliant structured logging
+            from omnibase_core.core.core_structured_logging import emit_log_event_sync
 
-            return ToolLoggerEngineNode()
+            # Return a simple logging wrapper that follows ONEX patterns
+            class OnexLogger:
+                def log(self, level, message, **kwargs):
+                    emit_log_event_sync(level=level, message=message, **kwargs)
+
+            return OnexLogger()
 
         msg = f"No static service factory for protocol {protocol_type.__name__}"
         raise OnexError(

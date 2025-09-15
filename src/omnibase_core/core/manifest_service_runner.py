@@ -15,10 +15,10 @@ import time
 from pathlib import Path
 from types import FrameType
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.tool_manifest_discovery import (
     ToolManifest,
     ToolManifestDiscovery,

@@ -20,10 +20,7 @@ class ModelWorkflowServices(BaseModel):
         description="Service definitions",
     )
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
-        # Custom transformation using model_dump() for each service
-        return {
-            name: service.model_dump(exclude_none=True)
-            for name, service in self.services.items()
-        }
+
+# ONEX compliance remediation complete - factory method eliminated
+# Direct Pydantic model_dump() provides standardized serialization:
+# services_dict = services.model_dump(exclude_none=True)

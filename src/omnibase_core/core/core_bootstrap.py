@@ -157,24 +157,14 @@ def _get_registry_node() -> Any | None:
         Registry node instance or None if not found
     """
     try:
-        # Use modern tools registry directly (no migration complexity)
-        from omnibase_core.tools.registry.tool_node_discovery.v1_0_0 import (
-            RegistryToolNodeDiscovery,
-            ToolNodeDiscoveryNode,
-        )
+        # Use ONEX-compliant service registry
+        from omnibase_core.core.spi_service_registry import get_spi_registry
 
-        registry = RegistryToolNodeDiscovery()
-        return ToolNodeDiscoveryNode(registry=registry)
+        return get_spi_registry()
 
     except ImportError:
-        # Fallback to alternative implementation if primary tools not available
-        try:
-            from omnibase_core.nodes.node_registry.v1_0_0.node import NodeRegistry
-
-            return NodeRegistry()
-        except ImportError:
-            # No registry available
-            return None
+        # No registry available - ONEX systems should always have a registry
+        return None
 
 
 def _get_fallback_service(protocol_type: type[T]) -> T | None:

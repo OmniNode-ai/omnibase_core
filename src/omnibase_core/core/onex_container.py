@@ -24,7 +24,7 @@ import os
 import threading
 from typing import Any, TypeVar
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")

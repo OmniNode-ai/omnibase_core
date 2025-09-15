@@ -1,0 +1,103 @@
+{
+  "model_name": "model_workflow_dependency",
+  "model_path": "src/omnibase_core/core/contracts/model_workflow_dependency.py",
+  "timestamp": "2025-09-14T11:59:16.365203",
+  "validation_results": [
+    {
+      "gate_number": 1,
+      "gate_name": "Factory Method Elimination",
+      "success": true,
+      "message": "All factory methods successfully eliminated",
+      "execution_time": 0.007134914398193359,
+      "metrics": {
+        "factory_methods_found": 0,
+        "factory_functions_found": 0
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 2,
+      "gate_name": "Serialization Compliance",
+      "success": true,
+      "message": "Serialization compliance verified",
+      "execution_time": 0.007615327835083008,
+      "metrics": {
+        "to_dict_methods_found": 0,
+        "model_dump_usage_count": 0
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 3,
+      "gate_name": "Import Chain Stability",
+      "success": true,
+      "message": "Import chain stability verified (7 imports)",
+      "execution_time": 0.040138959884643555,
+      "metrics": {
+        "compilation_success": true,
+        "import_count": 7
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 4,
+      "gate_name": "Test Suite Integrity",
+      "success": true,
+      "message": "Test integrity verified (106 tests passed)",
+      "execution_time": 1.4992189407348633,
+      "metrics": {
+        "tests_passed": true,
+        "passed_count": 106,
+        "target_count": 100
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 5,
+      "gate_name": "Performance Stability",
+      "success": true,
+      "message": "No baseline available, performance check skipped",
+      "execution_time": 3.0994415283203125e-06,
+      "metrics": {
+        "baseline_available": false
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 6,
+      "gate_name": "Critical System Functionality",
+      "success": true,
+      "message": "All critical systems operational",
+      "execution_time": 7.867813110351562e-06,
+      "metrics": {
+        "service_status": {
+          "event_bus": true,
+          "node_system": true,
+          "infrastructure": true,
+          "protocol_system": true
+        },
+        "failed_services": []
+      },
+      "rollback_triggered": false
+    },
+    {
+      "gate_number": 7,
+      "gate_name": "Infrastructure Resilience",
+      "success": true,
+      "message": "Infrastructure resilience verified",
+      "execution_time": 2.1457672119140625e-06,
+      "metrics": {
+        "test_results": {
+          "container_resolution": true,
+          "event_processing": true,
+          "load_balancing": true,
+          "failover_capability": true
+        },
+        "failed_tests": []
+      },
+      "rollback_triggered": false
+    }
+  ],
+  "overall_success": true,
+  "total_execution_time": 1.5541212558746338
+}

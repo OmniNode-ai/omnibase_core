@@ -302,7 +302,7 @@ class ModelSecretConfig(BaseModel):
                         namespace_file.read_text().strip()
                     )
                 except Exception as e:
-                    from omnibase_core.core.core_error_codes import CoreErrorCode
+                    from omnibase_core.core.errors.core_errors import CoreErrorCode
                     from omnibase_core.exceptions import OnexError
 
                     msg = f"Failed to read Kubernetes namespace file: {e}"

@@ -8,7 +8,7 @@ Standardized error handling for the ONEX framework.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from omnibase_core.core.core_error_codes import CoreErrorCode
+    from omnibase_core.core.errors.core_errors import CoreErrorCode
 
 
 class OnexError(Exception):

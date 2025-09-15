@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from typing import Any, TypeVar
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.onex_container import ModelONEXContainer
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.generation.model_contract_document import (

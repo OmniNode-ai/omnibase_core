@@ -11,7 +11,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.policy.model_coding_standards_policy import (

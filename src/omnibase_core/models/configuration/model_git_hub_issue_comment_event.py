@@ -28,12 +28,7 @@ class ModelGitHubIssueCommentEvent(BaseModel):
         description="Changes made (for edited action)",
     )
 
-    @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, Any] | None,
-    ) -> Optional["ModelGitHubIssueCommentEvent"]:
-        """Create from dictionary for easy migration."""
-        if data is None:
-            return None
-        return cls(**data)
+
+# ONEX compliance remediation complete - factory method eliminated
+# Direct Pydantic instantiation provides superior validation:
+# event = ModelGitHubIssueCommentEvent(**data) if data else None

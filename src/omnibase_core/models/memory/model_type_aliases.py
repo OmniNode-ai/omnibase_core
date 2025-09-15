@@ -31,22 +31,8 @@ from omnibase_core.models.memory.model_statistics import ModelStatistics
 
 from omnibase_core.core.common_types import ModelScalarValue
 
-# Type aliases for CLI configuration
-CliConfigType = dict[str, str | int | bool]
-"""CLI configuration structure for user preferences and settings.
-
-Supports:
-- String values: api_url, api_key, export_format
-- Integer values: default_limit, connection_timeout
-- Boolean values: auto_session, rich_output, verbose_logging
-
-Example:
-    config: CliConfigType = {
-        "api_url": "http://localhost:8089/api/v1",
-        "default_limit": 10,
-        "rich_output": True
-    }
-"""
+# REPLACED: CliConfigType dict alias has been replaced with proper Pydantic model
+# USE INSTEAD: from omnibase_core.models.memory.model_cli_config import ModelCliConfig
 
 ExportFormatType = ModelScalarValue
 """Flexible value type for export format configuration.

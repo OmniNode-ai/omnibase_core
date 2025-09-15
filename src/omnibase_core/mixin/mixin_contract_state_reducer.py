@@ -10,10 +10,10 @@ state transition capability directly to nodes.
 
 from pathlib import Path
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.exceptions import OnexError

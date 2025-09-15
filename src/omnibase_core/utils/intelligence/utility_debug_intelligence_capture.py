@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.intelligence.model_agent_debug_intelligence import (
     EnumAgentType,

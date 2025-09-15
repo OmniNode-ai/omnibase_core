@@ -80,7 +80,7 @@ class ModelEncryptionAlgorithm(BaseModel):
             "Twofish-CBC",
         }
         if v not in known_algorithms:
-            from omnibase_core.core.core_error_codes import CoreErrorCode
+            from omnibase_core.core.errors.core_errors import CoreErrorCode
             from omnibase_core.exceptions import OnexError
 
             msg = f"Unsupported encryption algorithm: {v}"

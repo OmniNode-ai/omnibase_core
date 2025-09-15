@@ -33,34 +33,6 @@ class ModelSemVer(BaseModel):
         """Convert to semantic version string."""
         return str(self)
 
-    def to_dict(self) -> dict:
-        """Convert to JSON-serializable dictionary."""
-        # Use model_dump() and add custom version_string field
-        result = self.model_dump()
-        result["version_string"] = str(self)
-        return result
-
-    @classmethod
-    def from_string(cls, version_str: str) -> "ModelSemVer":
-        """Create ModelSemVer from version string."""
-        import re
-
-        # Basic SemVer regex pattern for major.minor.patch
-        pattern = (
-            r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
-        )
-
-        match = re.match(pattern, version_str)
-        if not match:
-            msg = f"Invalid semantic version format: {version_str}"
-            raise ValueError(msg)
-
-        return cls(
-            major=int(match.group("major")),
-            minor=int(match.group("minor")),
-            patch=int(match.group("patch")),
-        )
-
     def is_prerelease(self) -> bool:
         """Check if this is a pre-release version."""
         return False  # No prerelease support in simplified version
@@ -122,6 +94,46 @@ class ModelSemVer(BaseModel):
 
 # Type alias for use in models - enforce proper ModelSemVer instances only
 SemVerField = ModelSemVer
+
+
+def parse_semver_from_string(version_str: str) -> ModelSemVer:
+    """
+    Parse semantic version string into ModelSemVer using ONEX-compliant patterns.
+
+    This function replaces the old ModelSemVer.from_string() factory method
+    with proper validation through Pydantic's model creation.
+
+    Args:
+        version_str: Semantic version string (e.g., "1.2.3")
+
+    Returns:
+        ModelSemVer instance validated through Pydantic
+
+    Raises:
+        ValueError: If version string format is invalid
+
+    Example:
+        >>> version = parse_semver_from_string("1.2.3")
+        >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
+    """
+    import re
+
+    # Basic SemVer regex pattern for major.minor.patch
+    pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
+
+    match = re.match(pattern, version_str)
+    if not match:
+        msg = f"Invalid semantic version format: {version_str}"
+        raise ValueError(msg)
+
+    # Use Pydantic's model validation instead of direct construction
+    return ModelSemVer.model_validate(
+        {
+            "major": int(match.group("major")),
+            "minor": int(match.group("minor")),
+            "patch": int(match.group("patch")),
+        }
+    )
 
 
 def parse_input_state_version(input_state: dict) -> "ModelSemVer":

@@ -24,7 +24,9 @@ from omnibase_core.nodes.canary.canary_effect.v1_0_0.models import (
 from omnibase_core.nodes.canary.canary_effect.v1_0_0.models.model_canary_effect_input import (
     EnumCanaryOperationType,
 )
-from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
+    NodeCanaryEffect,
+)
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 
 # Constants to avoid false positive YAML validation detection

@@ -11,6 +11,7 @@ from omnibase_spi import ProtocolLogger
 
 from omnibase_core.core.decorators import allow_dict_str_any
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
+from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_onex_event import (
     DiscoveryRequestModelMetadata,
     DiscoveryResponseModelMetadata,
@@ -245,7 +246,7 @@ class DiscoveryResponderMixin:
             )
 
             response_event = OnexEvent(
-                event_type=create_event_type_from_string("DISCOVERY_RESPONSE"),
+                event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=getattr(self, "node_id", "unknown"),
                 correlation_id=original_event.correlation_id,
                 metadata=response_metadata,

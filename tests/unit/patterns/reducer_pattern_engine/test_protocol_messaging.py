@@ -305,7 +305,7 @@ class TestProtocolMessaging:
             source_node_id="test_client",
         )
 
-        # Should still work (backward compatibility)
+        # Should work with proper protocol interface
         output = await mock_engine.process_workflow(engine_input_future)
         assert isinstance(output, ModelReducerPatternEngineOutput)
 

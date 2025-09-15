@@ -9,9 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.tools.rsd.shared.enums.enum_rsd_agent_request_type import (
-    EnumRSDAgentRequestType,
-)
+from omnibase_core.enums.enum_rsd_agent_request_type import EnumRSDAgentRequestType
 
 
 class ModelAgentRequest(BaseModel):

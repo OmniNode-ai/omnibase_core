@@ -107,19 +107,60 @@ def canonicalize_for_hash(
         entrypoint_type = "python"
         entrypoint_target = "main.py"
 
-    # Create complete model using the canonical constructor
-    model = NodeMetadataBlock.create_with_defaults(
-        name=name,
-        author=author,
-        namespace=namespace,
-        entrypoint_type=entrypoint_type,
-        entrypoint_target=entrypoint_target,
-        **{
-            k: v
-            for k, v in metadata.items()
-            if k not in ["name", "author", "namespace", "entrypoint"]
-        },
-    )
+    # Create complete model using direct Pydantic instantiation (ONEX compliance - no factory methods)
+    from datetime import datetime
+    from uuid import uuid4
+
+    from omnibase_core.models.core.model_entrypoint import EntrypointBlock
+    from omnibase_core.models.core.model_namespace import Namespace
+    from omnibase_core.models.core.model_project_metadata import get_canonical_versions
+    from omnibase_core.models.metadata.metadata_constants import get_namespace_prefix
+
+    now = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    canonical_versions = get_canonical_versions()
+
+    # Filter additional fields (excluding key handled fields)
+    additional_fields = {
+        k: v
+        for k, v in metadata.items()
+        if k not in ["name", "author", "namespace", "entrypoint"]
+    }
+
+    # Remove version fields to prevent conflicts
+    for vfield in ("metadata_version", "protocol_version", "schema_version"):
+        additional_fields.pop(vfield, None)
+
+    # Create entrypoint block
+    entrypoint = EntrypointBlock(type=entrypoint_type, target=entrypoint_target)
+
+    # Create namespace object
+    if isinstance(namespace, str):
+        namespace_obj = Namespace(value=namespace)
+    else:
+        namespace_obj = namespace or Namespace(
+            value=f"{get_namespace_prefix()}.unknown"
+        )
+
+    # Build base data dict
+    data = {
+        "name": name,
+        "uuid": str(additional_fields.get("uuid", str(uuid4()))),
+        "author": author,
+        "created_at": str(additional_fields.get("created_at", now)),
+        "last_modified_at": now,
+        "hash": "0" * 64,
+        "entrypoint": entrypoint,
+        "namespace": namespace_obj,
+        "metadata_version": canonical_versions.metadata_version,
+        "protocol_version": canonical_versions.protocol_version,
+        "schema_version": canonical_versions.schema_version,
+    }
+
+    # Add additional fields
+    data.update(additional_fields)
+
+    # Create model using direct Pydantic instantiation
+    model = NodeMetadataBlock(**data)
 
     # Now mask volatile fields for hash computation
     model_dict = model.model_dump()

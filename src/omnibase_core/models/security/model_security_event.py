@@ -60,89 +60,9 @@ class ModelSecurityEvent(BaseModel):
         description="Required security clearance",
     )
 
-    @classmethod
-    def create_authentication_success(
-        cls,
-        user_id: str,
-        username: str,
-        roles: list[str],
-        ip_address: str | None = None,
-        user_agent: str | None = None,
-        session_id: str | None = None,
-    ) -> "ModelSecurityEvent":
-        """Create authentication success event."""
-        return cls(
-            event_id=str(uuid4()),
-            event_type=EnumSecurityEventType.AUTHENTICATION_SUCCESS,
-            timestamp=datetime.utcnow(),
-            envelope_id="mcp_server",  # Using MCP server as envelope context
-            user_id=user_id,
-            status=EnumSecurityEventStatus.SUCCESS,
-            user_roles=roles,
-        )
-
-    @classmethod
-    def create_authentication_failed(
-        cls,
-        reason: str,
-        error: str | None = None,
-        ip_address: str | None = None,
-        user_agent: str | None = None,
-    ) -> "ModelSecurityEvent":
-        """Create authentication failure event."""
-        return cls(
-            event_id=str(uuid4()),
-            event_type=EnumSecurityEventType.AUTHENTICATION_FAILED,
-            timestamp=datetime.utcnow(),
-            envelope_id="mcp_server",
-            reason=reason,
-            status=EnumSecurityEventStatus.FAILED,
-            errors=[error] if error else [],
-        )
-
-    @classmethod
-    def create_authorization_failed(
-        cls,
-        user_id: str,
-        operation: str,
-        resource: str | None = None,
-        roles: list[str] | None = None,
-        permissions: list[str] | None = None,
-    ) -> "ModelSecurityEvent":
-        """Create authorization failure event."""
-        return cls(
-            event_id=str(uuid4()),
-            event_type=EnumSecurityEventType.AUTHORIZATION_FAILED,
-            timestamp=datetime.utcnow(),
-            envelope_id="mcp_server",
-            user_id=user_id,
-            reason=f"Insufficient permissions for operation: {operation}",
-            status=EnumSecurityEventStatus.FAILED,
-            user_roles=roles or [],
-        )
-
-    @classmethod
-    def create_tool_access(
-        cls,
-        user_id: str,
-        tool_name: str,
-        authorized: bool,
-        session_id: str | None = None,
-    ) -> "ModelSecurityEvent":
-        """Create tool access event."""
-        return cls(
-            event_id=str(uuid4()),
-            event_type=EnumSecurityEventType.TOOL_ACCESS,
-            timestamp=datetime.utcnow(),
-            envelope_id="mcp_server",
-            user_id=user_id,
-            status=(
-                EnumSecurityEventStatus.SUCCESS
-                if authorized
-                else EnumSecurityEventStatus.FAILED
-            ),
-            reason=f"Tool access: {tool_name}",
-        )
+    # === Factory Methods Removed (Phase 3E) ===
+    # ONEX COMPLIANCE: Use Pydantic constructor directly:
+    # ModelSecurityEvent(event_id=str(uuid4()), event_type=..., timestamp=datetime.utcnow(), ...)
 
 
 class ModelSecurityEventCollection(BaseModel):

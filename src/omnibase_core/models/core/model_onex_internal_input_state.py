@@ -13,7 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_base_state import ModelOnexInputState
@@ -72,5 +72,5 @@ class ModelOnexInternalInputState(BaseModel):
             timestamp=boundary_state.timestamp or datetime.utcnow(),
             node_name=boundary_state.node_name or "unknown",
             node_version=boundary_state.node_version
-            or ModelSemVer.from_string("1.0.0"),
+            or parse_semver_from_string("1.0.0"),
         )

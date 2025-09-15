@@ -69,7 +69,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 if isinstance(v, dict):
                     # Enhanced ModelFunctionTool creation with validation
                     try:
-                        function_tool = ModelFunctionTool.from_serializable_dict(v)
+                        function_tool = ModelFunctionTool(
+                            **v
+                        )  # Direct Pydantic instantiation (ONEX compliance)
                         new_data[k] = function_tool
                     except Exception:
                         # Fallback to raw dict if ModelFunctionTool creation fails
@@ -209,9 +211,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
             # Add the tool data
             if isinstance(tool_data, dict):
                 try:
-                    self.root[name] = ModelFunctionTool.from_serializable_dict(
-                        tool_data,
-                    )
+                    self.root[name] = ModelFunctionTool(
+                        **tool_data
+                    )  # Direct Pydantic instantiation (ONEX compliance)
                 except Exception:
                     self.root[name] = tool_data
             else:

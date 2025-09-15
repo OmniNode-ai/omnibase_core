@@ -7,7 +7,7 @@ performance analytics, and operational insights for ONEX registry resolution sys
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -15,12 +15,25 @@ if TYPE_CHECKING:
     from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact
     from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-    from omnibase_core.models.core.model_generic_properties import ModelErrorSummary
+    from omnibase_core.models.core.model_error_summary import ModelErrorSummary
     from omnibase_core.models.core.model_monitoring_metrics import (
         ModelMonitoringMetrics,
     )
 
 from .model_registry_resolution_context import ModelRegistryResolutionContext
+
+
+@runtime_checkable
+class ProtocolRegistry(Protocol):
+    """Protocol for registry instances that can be resolved."""
+
+    def get_name(self) -> str:
+        """Get registry name."""
+        ...
+
+    def is_available(self) -> bool:
+        """Check if registry is available."""
+        ...
 
 
 class ResolutionStatus(str, Enum):
@@ -59,7 +72,9 @@ class ModelRegistryResolutionResult(BaseModel):
     - Factory methods for common scenarios
     """
 
-    registry: Any = Field(..., description="The resolved registry instance")
+    registry: ProtocolRegistry | None = Field(
+        ..., description="The resolved registry instance"
+    )
 
     resolution_context: ModelRegistryResolutionContext = Field(
         ...,
@@ -284,7 +299,7 @@ class ModelRegistryResolutionResult(BaseModel):
         if not self.is_failed() and not self.error_message:
             return None
 
-        from omnibase_core.models.core.model_generic_properties import ModelErrorSummary
+        from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 
         return ModelErrorSummary(
             code=self.error_code,
@@ -568,106 +583,8 @@ class ModelRegistryResolutionResult(BaseModel):
 
         self.add_log_entry(f"Resolution completed with status: {status.value}")
 
-    # === Factory Methods ===
-
-    @classmethod
-    def create_success(
-        cls,
-        registry: Any,
-        context: ModelRegistryResolutionContext,
-        duration_ms: int | None = None,
-        cached: bool = False,
-    ) -> "ModelRegistryResolutionResult":
-        """Create a successful resolution result."""
-        result = cls(
-            registry=registry,
-            resolution_context=context,
-            status=ResolutionStatus.CACHED if cached else ResolutionStatus.SUCCESS,
-            start_time=datetime.now().isoformat(),
-            cached_result=cached,
-            duration_ms=duration_ms,
-        )
-
-        result.add_log_entry("Resolution started")
-        if cached:
-            result.add_log_entry("Result served from cache")
-        result.mark_completed(
-            ResolutionStatus.CACHED if cached else ResolutionStatus.SUCCESS,
-        )
-
-        return result
-
-    @classmethod
-    def create_failure(
-        cls,
-        context: ModelRegistryResolutionContext,
-        error_message: str,
-        error_code: str | None = None,
-        retry_count: int = 0,
-    ) -> "ModelRegistryResolutionResult":
-        """Create a failed resolution result."""
-        result = cls(
-            registry=None,  # No registry on failure
-            resolution_context=context,
-            status=ResolutionStatus.FAILURE,
-            start_time=datetime.now().isoformat(),
-            error_message=error_message,
-            error_code=error_code,
-            retry_count=retry_count,
-        )
-
-        result.add_log_entry("Resolution started")
-        result.add_log_entry(f"Resolution failed: {error_message}")
-        if retry_count > 0:
-            result.add_log_entry(f"Failed after {retry_count} retries")
-        result.mark_completed(ResolutionStatus.FAILURE)
-
-        return result
-
-    @classmethod
-    def create_timeout(
-        cls,
-        context: ModelRegistryResolutionContext,
-        timeout_seconds: int,
-    ) -> "ModelRegistryResolutionResult":
-        """Create a timeout resolution result."""
-        result = cls(
-            registry=None,
-            resolution_context=context,
-            status=ResolutionStatus.TIMEOUT,
-            start_time=datetime.now().isoformat(),
-            error_message=f"Resolution timed out after {timeout_seconds} seconds",
-            error_code="RESOLUTION_TIMEOUT",
-            duration_ms=timeout_seconds * 1000,
-        )
-
-        result.add_log_entry("Resolution started")
-        result.add_log_entry(f"Resolution timed out after {timeout_seconds}s")
-        result.mark_completed(ResolutionStatus.TIMEOUT)
-
-        return result
-
-    @classmethod
-    def create_partial_success(
-        cls,
-        registry: Any,
-        context: ModelRegistryResolutionContext,
-        warnings: list[str],
-        duration_ms: int | None = None,
-    ) -> "ModelRegistryResolutionResult":
-        """Create a partial success resolution result."""
-        result = cls(
-            registry=registry,
-            resolution_context=context,
-            status=ResolutionStatus.PARTIAL_SUCCESS,
-            start_time=datetime.now().isoformat(),
-            warnings=warnings,
-            duration_ms=duration_ms,
-        )
-
-        result.add_log_entry("Resolution started")
-        for warning in warnings:
-            result.add_log_entry(f"WARNING: {warning}")
-        result.mark_completed(ResolutionStatus.PARTIAL_SUCCESS)
-
-        return result
+    # === Factory Methods Removed (Phase 3E) ===
+    # ONEX COMPLIANCE: Use Pydantic constructor directly with method calls:
+    # result = ModelRegistryResolutionResult(registry=..., resolution_context=...)
+    # result.add_log_entry("Resolution started")
+    # result.mark_completed(status)

@@ -30,15 +30,15 @@ and compliance with one-model-per-file naming conventions.
 
 from pathlib import Path
 
-from omnibase_core.metadata.metadata_constants import (
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
+from omnibase_core.models.metadata.metadata_constants import (
     METADATA_VERSION_KEY,
     NAMESPACE_KEY,
     PROJECT_ONEX_YAML_FILENAME,
     PROTOCOL_VERSION_KEY,
     SCHEMA_VERSION_KEY,
 )
-from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
 )

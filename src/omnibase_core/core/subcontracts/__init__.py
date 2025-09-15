@@ -18,6 +18,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from .model_aggregation_subcontract import ModelAggregationSubcontract
 from .model_caching_subcontract import ModelCachingSubcontract
+from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_event_type_subcontract import ModelEventTypeSubcontract
 from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_routing_subcontract import ModelRoutingSubcontract
@@ -26,6 +27,7 @@ from .model_state_management_subcontract import ModelStateManagementSubcontract
 __all__ = [
     "ModelAggregationSubcontract",
     "ModelCachingSubcontract",
+    "ModelConfigurationSubcontract",
     "ModelEventTypeSubcontract",
     "ModelFSMSubcontract",
     "ModelRoutingSubcontract",

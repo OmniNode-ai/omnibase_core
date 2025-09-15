@@ -2,6 +2,8 @@
 Workflow permissions model.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -11,30 +13,30 @@ class ModelWorkflowPermissions(BaseModel):
     Replaces Dict[str, Any] for permissions fields.
     """
 
-    # Standard permissions
-    actions: str | None = Field(
-        None,
+    # Standard permissions - Explicit type safety with defaults
+    actions: str = Field(
+        default="read",
         description="Actions permission (read/write/none)",
     )
-    attestations: str | None = Field(None, description="Attestations permission")
-    checks: str | None = Field(None, description="Checks permission")
-    contents: str | None = Field(None, description="Contents permission")
-    deployments: str | None = Field(None, description="Deployments permission")
-    discussions: str | None = Field(None, description="Discussions permission")
-    id_token: str | None = Field(None, description="ID token permission")
-    issues: str | None = Field(None, description="Issues permission")
-    packages: str | None = Field(None, description="Packages permission")
-    pages: str | None = Field(None, description="Pages permission")
-    pull_requests: str | None = Field(None, description="Pull requests permission")
-    repository_projects: str | None = Field(
-        None,
+    attestations: str = Field(default="read", description="Attestations permission")
+    checks: str = Field(default="read", description="Checks permission")
+    contents: str = Field(default="read", description="Contents permission")
+    deployments: str = Field(default="read", description="Deployments permission")
+    discussions: str = Field(default="read", description="Discussions permission")
+    id_token: str = Field(default="write", description="ID token permission")
+    issues: str = Field(default="read", description="Issues permission")
+    packages: str = Field(default="read", description="Packages permission")
+    pages: str = Field(default="read", description="Pages permission")
+    pull_requests: str = Field(default="read", description="Pull requests permission")
+    repository_projects: str = Field(
+        default="read",
         description="Repository projects permission",
     )
-    security_events: str | None = Field(
-        None,
+    security_events: str = Field(
+        default="read",
         description="Security events permission",
     )
-    statuses: str | None = Field(None, description="Statuses permission")
+    statuses: str = Field(default="read", description="Statuses permission")
 
     # Additional permissions
     custom_permissions: dict[str, str] = Field(
@@ -42,21 +44,56 @@ class ModelWorkflowPermissions(BaseModel):
         description="Custom permissions",
     )
 
-    def to_dict(self) -> dict[str, str]:
-        """Convert to dictionary."""
-        # Use model_dump() as base and apply field name transformations
-        result = {}
-        for field_name, field_value in self.model_dump(exclude_none=True).items():
-            if field_name == "custom_permissions":
-                result.update(field_value)
-            elif field_name == "id_token":
-                result["id-token"] = field_value
-            elif field_name == "pull_requests":
-                result["pull-requests"] = field_value
-            elif field_name == "repository_projects":
-                result["repository-projects"] = field_value
-            elif field_name == "security_events":
-                result["security-events"] = field_value
-            else:
-                result[field_name] = field_value
+    @property
+    def permission_summary(self) -> dict[str, Any]:
+        """Get comprehensive permissions summary."""
+        standard_permissions = {
+            "actions": self.actions,
+            "attestations": self.attestations,
+            "checks": self.checks,
+            "contents": self.contents,
+            "deployments": self.deployments,
+            "discussions": self.discussions,
+            "id-token": self.id_token,
+            "issues": self.issues,
+            "packages": self.packages,
+            "pages": self.pages,
+            "pull-requests": self.pull_requests,
+            "repository-projects": self.repository_projects,
+            "security-events": self.security_events,
+            "statuses": self.statuses,
+        }
+
+        # Include custom permissions
+        result = {**standard_permissions, **self.custom_permissions}
         return result
+
+    @property
+    def write_permissions(self) -> list[str]:
+        """Get list of permissions set to 'write'."""
+        write_perms = []
+        summary = self.permission_summary
+        for perm_name, perm_value in summary.items():
+            if perm_value == "write":
+                write_perms.append(perm_name)
+        return write_perms
+
+    @property
+    def read_only_permissions(self) -> list[str]:
+        """Get list of permissions set to 'read'."""
+        read_perms = []
+        summary = self.permission_summary
+        for perm_name, perm_value in summary.items():
+            if perm_value == "read":
+                read_perms.append(perm_name)
+        return read_perms
+
+    @property
+    def denied_permissions(self) -> list[str]:
+        """Get list of permissions set to 'none'."""
+        denied_perms = []
+        summary = self.permission_summary
+        for perm_name, perm_value in summary.items():
+            if perm_value == "none":
+                denied_perms.append(perm_name)
+        return denied_perms

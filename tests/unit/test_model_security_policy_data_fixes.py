@@ -11,8 +11,8 @@ from typing import get_type_hints
 
 import pytest
 
-from omnibase_core.model.common.model_typed_value import ModelTypedMapping
-from omnibase_core.model.security.model_security_policy_data import (
+from omnibase_core.models.common.model_typed_value import ModelTypedMapping
+from omnibase_core.models.security.model_security_policy_data import (
     ModelSecurityPolicyData,
 )
 
@@ -283,11 +283,11 @@ class TestModelSecurityPolicyDataIntegration:
         assert policy.get_policy_value("float_val") == 3.14159
 
 
-class TestBackwardsCompatibility:
-    """Test backwards compatibility features."""
+class TestSecurityPolicyDataFeatures:
+    """Test security policy data features."""
 
-    def test_property_accessor_compatibility(self):
-        """Test that property accessors maintain compatibility."""
+    def test_property_accessor_patterns(self):
+        """Test that property accessors work properly."""
         # Create policy using old-style dict
         legacy_data = {"version": "1.0", "debug": False, "max_users": 1000}
 

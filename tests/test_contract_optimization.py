@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from omnibase_core.core.contracts.model_contract_orchestrator import (
     ModelContractOrchestrator,
 )
-from omnibase_core.model.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer
 
 
 def test_contract_optimization():

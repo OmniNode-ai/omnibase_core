@@ -13,7 +13,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.security.model_chain_metrics import ModelChainMetrics
 from omnibase_core.models.security.model_node_signature import (

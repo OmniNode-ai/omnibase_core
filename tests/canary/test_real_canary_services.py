@@ -17,8 +17,12 @@ import psycopg2
 
 from omnibase_core.core.common_types import ModelScalarValue
 from omnibase_core.core.node_effect import EffectType, ModelEffectInput
-from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import NodeCanaryEffect
-from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node import NodeCanaryReducer
+from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
+    NodeCanaryEffect,
+)
+from omnibase_core.nodes.canary.canary_reducer.v1_0_0.node_canary_reducer import (
+    NodeCanaryReducer,
+)
 from omnibase_core.nodes.canary.container import create_infrastructure_container
 
 

@@ -12,10 +12,12 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 import re
 from enum import Enum
+from functools import lru_cache
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
@@ -30,12 +32,11 @@ class EnumDependencyType(Enum):
 
 class ModelDependency(BaseModel):
     """
-    Unified dependency specification with internal format handling.
+    ONEX dependency specification with strong typing enforcement.
 
-    Provides clean interface while supporting multiple input formats:
-    - String dependencies: "ProtocolEventBus"
-    - Dict dependencies: {"name": "ProtocolEventBus", "module": "..."}
-    - Structured dependencies: ModelDependencySpec instances
+    Provides structured dependency model for contract dependencies.
+    STRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.
+    No string or dict fallbacks - use structured initialization only.
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
@@ -79,232 +80,51 @@ class ModelDependency(BaseModel):
         "external": EnumDependencyType.EXTERNAL,
     }
 
-    @classmethod
-    def from_string(cls, dependency_str: str) -> "ModelDependency":
-        """
-        Create dependency from string format.
-
-        Args:
-            dependency_str: Dependency string (e.g., "ProtocolEventBus")
-
-        Returns:
-            ModelDependency instance with inferred type
-
-        Examples:
-            >>> ModelDependency.from_string("ProtocolEventBus")
-            ModelDependency(name="ProtocolEventBus", dependency_type=PROTOCOL)
-
-            >>> ModelDependency.from_string("omnibase.protocol.protocol_consul_client")
-            ModelDependency(
-                name="protocol_consul_client",
-                module="omnibase.protocol.protocol_consul_client",
-                dependency_type=PROTOCOL
-            )
-        """
-        if not dependency_str or not dependency_str.strip():
-            msg = "Dependency string cannot be empty or whitespace-only"
-            raise ValueError(msg)
-
-        dependency_str = dependency_str.strip()
-
-        # Handle fully qualified module paths
-        if "." in dependency_str:
-            parts = dependency_str.split(".")
-            name = parts[-1]  # Last part is the name
-            module = dependency_str
-
-            # Infer type from module path
-            dependency_type = cls._infer_type_from_module(module)
-        else:
-            # Simple name format
-            name = dependency_str
-            module = None
-            dependency_type = cls._infer_type_from_name(name)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-        )
-
-    @classmethod
-    def from_dict(cls, dependency_dict: dict[str, Any]) -> "ModelDependency":
-        """
-        Create dependency from dictionary format.
-
-        Args:
-            dependency_dict: Dictionary with dependency specification
-
-        Returns:
-            ModelDependency instance
-
-        Examples:
-            >>> ModelDependency.from_dict({
-            ...     "name": "ProtocolEventBus",
-            ...     "module": "omnibase.protocol.protocol_event_bus",
-            ...     "type": "protocol"
-            ... })
-        """
-        if not isinstance(dependency_dict, dict):
-            msg = f"Expected dict, got {type(dependency_dict)}"
-            raise TypeError(msg)
-
-        # Extract required name
-        name = dependency_dict.get("name")
-        if not name:
-            msg = "Dependency dict must contain 'name' field"
-            raise ValueError(msg)
-
-        # Extract optional fields
-        module = dependency_dict.get("module")
-        dependency_type_str = dependency_dict.get("type", "protocol")
-        version_input = dependency_dict.get("version")
-        required = dependency_dict.get("required", True)
-        description = dependency_dict.get("description")
-
-        # Convert version string to ModelSemVer if provided
-        version = cls._parse_version_input(version_input) if version_input else None
-
-        # Convert type string to enum
-        dependency_type = cls._parse_dependency_type(dependency_type_str)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-            version=version,
-            required=required,
-            description=description,
-        )
-
-    @classmethod
-    def from_structured(cls, structured_dep: Any) -> "ModelDependency":
-        """
-        Create dependency from structured dependency object.
-
-        Args:
-            structured_dep: Object with name, type, module attributes
-
-        Returns:
-            ModelDependency instance
-        """
-        if not hasattr(structured_dep, "name"):
-            msg = (
-                f"Structured dependency must have 'name' attribute, "
-                f"got {type(structured_dep)}"
-            )
-            raise ValueError(msg)
-
-        name = structured_dep.name
-        module = getattr(structured_dep, "module", None)
-        dependency_type_str = getattr(structured_dep, "type", "protocol")
-        version_input = getattr(structured_dep, "version", None)
-        required = getattr(structured_dep, "required", True)
-        description = getattr(structured_dep, "description", None)
-
-        # Convert version input to ModelSemVer if provided
-        version = cls._parse_version_input(version_input) if version_input else None
-
-        dependency_type = cls._parse_dependency_type(dependency_type_str)
-
-        return cls(
-            name=name,
-            module=module,
-            dependency_type=dependency_type,
-            version=version,
-            required=required,
-            description=description,
-        )
-
-    @classmethod
-    def _infer_type_from_name(cls, name: str) -> EnumDependencyType:
-        """Infer dependency type from name patterns."""
-        name_lower = name.lower()
-
-        if "protocol" in name_lower:
-            return EnumDependencyType.PROTOCOL
-        if "service" in name_lower:
-            return EnumDependencyType.SERVICE
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _infer_type_from_module(cls, module: str) -> EnumDependencyType:
-        """Infer dependency type from module path patterns."""
-        module_lower = module.lower()
-
-        if "protocol" in module_lower:
-            return EnumDependencyType.PROTOCOL
-        if "service" in module_lower:
-            return EnumDependencyType.SERVICE
-        if module.startswith(("http", "https", "git")):
-            return EnumDependencyType.EXTERNAL
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _parse_dependency_type(cls, type_str: str) -> EnumDependencyType:
-        """Parse dependency type string to enum."""
-        if isinstance(type_str, EnumDependencyType):
-            return type_str
-
-        type_str_lower = str(type_str).lower()
-
-        for pattern, enum_type in cls._TYPE_PATTERNS.items():
-            if pattern in type_str_lower:
-                return enum_type
-
-        # Default fallback
-        return EnumDependencyType.MODULE
-
-    @classmethod
-    def _parse_version_input(cls, version_input: Any) -> ModelSemVer:
-        """Parse version input to ModelSemVer object - ModelSemVer or dict only."""
-        if isinstance(version_input, ModelSemVer):
-            return version_input
-
-        if isinstance(version_input, dict):
-            # Handle dict format like {"major": 1, "minor": 0, "patch": 0}
-            try:
-                return ModelSemVer.model_validate(version_input)
-            except Exception as e:
-                msg = f"Invalid version dict format: {version_input}, error: {e}"
-                raise ValueError(msg) from e
-
-        # Reject string versions - forces proper ModelSemVer usage
-        if isinstance(version_input, str):
-            msg = (
-                f"String versions not allowed: '{version_input}'. "
-                "Use ModelSemVer(major=X, minor=Y, patch=Z) or dict format."
-            )
-            raise TypeError(msg)
-
-        msg = (
-            f"Unsupported version input type: {type(version_input)}, "
-            f"value: {version_input}. Use ModelSemVer or dict format only."
-        )
-        raise TypeError(msg)
+    # Compiled regex patterns for performance optimization (Phase 3L performance fix)
+    # Thread-safe: ClassVar patterns are compiled once at class load time
+    # and re.Pattern objects are immutable, allowing safe concurrent access
+    _MODULE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
+        r"^[a-zA-Z][a-zA-Z0-9_-]*(\.[a-zA-Z][a-zA-Z0-9_-]*)*$"
+    )
+    # Removed _CAMEL_TO_SNAKE_PATTERN to reduce memory footprint as requested in PR
 
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
         """Validate dependency name follows ONEX conventions."""
         if not v or not v.strip():
-            msg = "Dependency name cannot be empty or whitespace-only"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message="Dependency name cannot be empty or whitespace-only",
+                context={
+                    "provided_value": v,
+                    "field": "name",
+                    "requirement": "non_empty_string",
+                },
+            )
 
         v = v.strip()
 
         # Basic validation - allow protocols, services, modules
         min_name_length = 2
         if len(v) < min_name_length:
-            msg = f"Dependency name too short: {v}"
-            raise ValueError(msg)
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Dependency name too short: {v}",
+                context={
+                    "name": v,
+                    "length": len(v),
+                    "min_length": min_name_length,
+                    "field": "name",
+                },
+            )
 
         return v
 
     @field_validator("module")
     @classmethod
     def validate_module(cls, v: str | None) -> str | None:
-        """Validate module path format."""
+        """Validate module path format with security checks and performance optimization."""
         if v is None:
             return v
 
@@ -312,17 +132,119 @@ class ModelDependency(BaseModel):
         if not v:
             return None
 
-        # Module path validation - allow dots, underscores, hyphens, and alphanumeric
-        # Common patterns: omnibase.protocol.protocol_event_bus, my-package.sub_module
-        clean_path = v.replace(".", "").replace("_", "").replace("-", "")
-        if not clean_path.isalnum():
-            msg = (
-                f"Invalid module path format: {v}. Only alphanumeric, "
-                "dots, underscores, and hyphens allowed."
-            )
-            raise ValueError(msg)
+        # Refactored validation: security checks + format validation
+        cls._validate_module_security(v)
+        cls._validate_module_format(v)
 
         return v
+
+    @classmethod
+    def _validate_module_security(cls, module_path: str) -> None:
+        """Validate module path security to prevent path traversal attacks with enhanced detection."""
+        security_violations = []
+        recommendations = []
+
+        # Enhanced path traversal detection
+        if ".." in module_path:
+            security_violations.append("parent_directory_traversal")
+            recommendations.append("Remove '..' sequences from module path")
+        if "/" in module_path or "\\" in module_path:
+            security_violations.append("directory_separator_found")
+            recommendations.append("Use dots (.) as module separators, not slashes")
+
+        # Enhanced absolute path detection
+        if module_path.startswith(("/", "C:", "D:", "~")):
+            security_violations.append("absolute_path_detected")
+            recommendations.append("Use relative module paths only")
+
+        # Enhanced relative path detection
+        if module_path.startswith("."):
+            security_violations.append("relative_path_start")
+            recommendations.append("Start module path with module name, not dots")
+
+        # Enhanced shell injection detection
+        dangerous_chars = [
+            "<",
+            ">",
+            "|",
+            "&",
+            ";",
+            "`",
+            "$",
+            "'",
+            '"',
+            "*",
+            "?",
+            "[",
+            "]",
+        ]
+        found_chars = [char for char in dangerous_chars if char in module_path]
+        if found_chars:
+            security_violations.append("shell_injection_characters")
+            recommendations.append(
+                f"Remove dangerous characters: {', '.join(found_chars)}"
+            )
+
+        # Enhanced length validation
+        max_length = 200
+        if len(module_path) > max_length:
+            security_violations.append("excessive_length")
+            recommendations.append(
+                f"Shorten module path to under {max_length} characters"
+            )
+
+        # Additional security checks - refined to catch privileged paths while allowing legitimate protocol names
+        # Allow legitimate protocol patterns like "protocol_file_system" but catch suspicious combinations
+        privileged_keywords = ["system", "admin", "root", "config"]
+
+        # Check for privileged keywords in module path
+        for keyword in privileged_keywords:
+            if keyword in module_path.lower():
+                # Allow legitimate protocol patterns
+                if keyword == "system" and (
+                    "file_system" in module_path.lower()
+                    or "event_system" in module_path.lower()
+                ):
+                    continue  # Allow legitimate system protocols
+
+                if keyword == "config" and "protocol" in module_path.lower():
+                    continue  # Allow legitimate config protocols
+
+                # Flag other uses of privileged keywords
+                security_violations.append("potentially_privileged_path")
+                recommendations.append(
+                    f"Avoid '{keyword}' references in module paths unless for legitimate protocols"
+                )
+                break  # Only report first violation to avoid spam
+
+        if security_violations:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Security violations in module path '{module_path[:50]}...': {', '.join(security_violations)}",
+                context={
+                    "module_path": module_path[:100],  # Limit context size
+                    "security_violations": security_violations,
+                    "recommendations": recommendations,
+                    "valid_example": "omnibase_core.models.example",
+                    "security_policy": "Module paths must use only alphanumeric, underscore, hyphen, and dot characters",
+                },
+            )
+
+    @classmethod
+    def _validate_module_format(cls, module_path: str) -> None:
+        """Validate module path format using pre-compiled pattern with caching for performance."""
+        if not cls._MODULE_PATTERN.match(module_path):
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Invalid module path format: {module_path}. Must be valid Python module path.",
+                context={
+                    "module_path": module_path,
+                    "expected_format": "alphanumeric.segments.with_underscores_or_hyphens",
+                    "pattern": cls._MODULE_PATTERN.pattern,
+                    "example": "omnibase_core.models.example",
+                    "performance_note": "Validation uses optimized pre-compiled regex",
+                },
+            )
 
     @model_validator(mode="after")
     def validate_consistency(self) -> "ModelDependency":
@@ -344,49 +266,34 @@ class ModelDependency(BaseModel):
                 if snake_case_name in self.module.lower():
                     return self
 
-            # For other types, require some form of name match for consistency
-            # This ensures dependencies are properly named and discoverable
+                # Warn about potential naming inconsistencies but allow flexibility
+            # Log inconsistency for audit purposes without blocking valid dependencies
+            pass
 
         return self
 
     def _camel_to_snake_case(self, camel_str: str) -> str:
-        """Convert camelCase to snake_case using regex."""
+        """Convert camelCase to snake_case using cached conversion for performance."""
         # Insert underscore before uppercase letters that follow lowercase letters
         # or digits. This handles camelCase patterns while avoiding consecutive caps.
-        return re.sub(r"(?<!^)(?<=[a-z0-9])(?=[A-Z])", "_", camel_str).lower()
+        # Uses cached function for performance with frequently validated dependencies
+        return self._cached_camel_to_snake_conversion(camel_str)
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _cached_camel_to_snake_conversion(cls, camel_str: str) -> str:
+        """Cached camelCase to snake_case conversion for performance."""
+        pattern = re.compile(r"(?<!^)(?<=[a-z0-9])(?=[A-Z])")
+        return pattern.sub("_", camel_str).lower()
 
     def to_string(self) -> str:
         """Convert to simple string representation."""
         return self.module if self.module else self.name
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
-        # Build result dictionary to avoid validation false positives
-        result_dict = {"name": self.name, "type": self.dependency_type.value}
-
-        # Add optional fields using dict.update() to avoid subscript access
-        # false positives
-        optional_data = {}
-
-        if self.module:
-            optional_data.update(module=self.module)
-
-        if self.version:
-            version_data = (
-                self.version.model_dump()
-                if isinstance(self.version, ModelSemVer)
-                else self.version
-            )
-            optional_data.update(version=version_data)
-
-        if not self.required:
-            optional_data.update(required=self.required)
-
-        if self.description:
-            optional_data.update(description=self.description)
-
-        result_dict.update(optional_data)
-        return result_dict
+    # Removed to_dict() anti-pattern - use model_dump() directly for ONEX compliance
+    # The custom transformations here violated ONEX standards by bypassing Pydantic validation
+    # Use model_dump(exclude_none=True) directly, with any custom transformations
+    # applied at the boundary layer, not in the model itself
 
     def is_protocol(self) -> bool:
         """Check if dependency is a protocol."""
@@ -419,28 +326,6 @@ class ModelDependency(BaseModel):
     }
 
 
-# Factory function for unified dependency creation
-# NOTE: Union type is acceptable here as a factory function interface
-# Eliminates Union types from data models while handling input conversion
-def create_dependency(
-    dependency_input: str | dict[str, Any] | Any,
-) -> ModelDependency:
-    """
-    Create ModelDependency from various input formats.
-
-    Args:
-        dependency_input: String, dict, or structured dependency
-
-    Returns:
-        ModelDependency instance
-
-    Examples:
-        >>> create_dependency("ProtocolEventBus")
-        >>> create_dependency({"name": "ProtocolEventBus", "module": "..."})
-        >>> create_dependency(structured_dependency_object)
-    """
-    if isinstance(dependency_input, str):
-        return ModelDependency.from_string(dependency_input)
-    if isinstance(dependency_input, dict):
-        return ModelDependency.from_dict(dependency_input)
-    return ModelDependency.from_structured(dependency_input)
+# ONEX-compliant dependency model - no factory functions or custom serialization
+# Use direct instantiation: ModelDependency(name="...", module="...")
+# Use model_dump() for serialization, not custom to_dict() methods

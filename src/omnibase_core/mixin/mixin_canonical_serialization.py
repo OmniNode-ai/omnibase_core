@@ -343,7 +343,10 @@ def extract_metadata_block_and_body(
     import re
     from pathlib import Path
 
-    from omnibase_core.metadata.metadata_constants import MD_META_CLOSE, MD_META_OPEN
+    from omnibase_core.models.metadata.metadata_constants import (
+        MD_META_CLOSE,
+        MD_META_OPEN,
+    )
 
     _component_name = Path(__file__).stem
 

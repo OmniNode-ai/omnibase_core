@@ -15,9 +15,7 @@ providing clean separation between node logic and caching behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class ModelCacheKeyStrategy(BaseModel):
@@ -345,7 +343,7 @@ class ModelCachingSubcontract(BaseModel):
 
     @field_validator("max_memory_mb")
     @classmethod
-    def validate_memory_allocation(cls, v: int, values: Any) -> int:
+    def validate_memory_allocation(cls, v: int) -> int:
         """Validate memory allocation is reasonable."""
         if v > 16384:  # 16GB
             msg = "max_memory_mb cannot exceed 16GB for safety"
@@ -363,10 +361,10 @@ class ModelCachingSubcontract(BaseModel):
 
     @field_validator("l2_cache_size")
     @classmethod
-    def validate_cache_hierarchy(cls, v: int, values: Any) -> int:
+    def validate_cache_hierarchy(cls, v: int, info: ValidationInfo) -> int:
         """Validate L2 cache is larger than L1 when multi-level is enabled."""
-        if hasattr(values, "data") and values.data.get("multi_level_enabled", False):
-            l1_size = values.data.get("l1_cache_size", 1000)
+        if info.data and info.data.get("multi_level_enabled", False):
+            l1_size = info.data.get("l1_cache_size", 1000)
             if v <= l1_size:
                 msg = "l2_cache_size must be larger than l1_cache_size"
                 raise ValueError(msg)

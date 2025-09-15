@@ -131,7 +131,7 @@ class TestModelCanaryEffectInput:
         assert "Extra inputs are not permitted" in str(error)
 
     def test_to_operation_data(self):
-        """Test backward compatibility conversion method."""
+        """Test standard conversion method."""
         correlation_id = str(uuid.uuid4())
         parameters = {"test": "value"}
 
@@ -411,8 +411,8 @@ class TestModelIntegration:
         assert deserialized_input.parameters == input_model.parameters
         assert deserialized_input.correlation_id == input_model.correlation_id
 
-    def test_backward_compatibility_workflow(self):
-        """Test complete workflow with backward compatibility."""
+    def test_standard_workflow_patterns(self):
+        """Test complete workflow with standard patterns."""
         # Create new contract-driven input
         input_model = ModelCanaryEffectInput(
             operation_type=EnumCanaryOperationType.DATABASE_OPERATION,

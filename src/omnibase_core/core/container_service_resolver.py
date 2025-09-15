@@ -9,7 +9,7 @@ dependency-injector DynamicContainer transformation.
 from collections.abc import Callable
 from typing import TypeVar
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.hybrid_event_bus_factory import create_hybrid_event_bus
 from omnibase_core.core.models import ModelContainerInstance, ModelService
 from omnibase_core.exceptions import OnexError

@@ -4,7 +4,7 @@ Extension value model.
 
 from pydantic import BaseModel
 
-from omnibase_core.types import JsonSerializable
+from omnibase_core.models.types import JsonSerializable
 
 
 class ModelExtensionValue(BaseModel):
