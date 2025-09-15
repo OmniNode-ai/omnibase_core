@@ -142,7 +142,7 @@ class ModelSessionAffinity(BaseModel):
 
     hash_algorithm: str = Field(
         default="sha256",
-        description="Hash algorithm for IP/header hashing",
+        description="Hash algorithm for IP/header hashing (sha256 recommended, md5/sha1 deprecated)",
         pattern="^(md5|sha1|sha256|sha512)$",
     )
 
@@ -216,11 +216,22 @@ class ModelSessionAffinity(BaseModel):
             return None
 
         import hashlib
+        import warnings
 
         # Create hash of affinity key
         if self.hash_algorithm == "md5":
+            warnings.warn(
+                "MD5 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             hash_obj = hashlib.md5(affinity_key.encode())
         elif self.hash_algorithm == "sha1":
+            warnings.warn(
+                "SHA1 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             hash_obj = hashlib.sha1(affinity_key.encode())
         elif self.hash_algorithm == "sha256":
             hash_obj = hashlib.sha256(affinity_key.encode())

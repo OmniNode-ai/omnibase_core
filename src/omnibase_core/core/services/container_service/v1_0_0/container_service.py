@@ -366,6 +366,24 @@ class ContainerService:
                     },
                 )
 
+            # Additional security: validate module is within allowed namespaces
+            allowed_prefixes = [
+                "omnibase_core.",
+                "omnibase_spi.",
+                # Add other trusted prefixes as needed
+            ]
+            if not any(module_path.startswith(prefix) for prefix in allowed_prefixes):
+                raise OnexError(
+                    code=CoreErrorCode.VALIDATION_ERROR,
+                    message=f"Module path not in allowed namespace: {module_path}",
+                    details={
+                        "module_path": module_path,
+                        "dependency_name": dep_name,
+                        "allowed_prefixes": allowed_prefixes,
+                        "reason": "Module must be from trusted namespace",
+                    },
+                )
+
             # Import module
             module = importlib.import_module(module_path)
 
@@ -527,6 +545,31 @@ class ContainerService:
                 protocol_name = module_parts[-1]
                 module_path = ".".join(module_parts[:-1])
 
+                # Security validation for protocol module path
+                if (
+                    not module_path
+                    or not module_path.replace(".", "").replace("_", "").isalnum()
+                ):
+                    validation_errors.append(
+                        f"Invalid protocol module path: {module_path}"
+                    )
+                    return False, validation_errors
+
+                # Additional security: validate protocol is within allowed namespaces
+                allowed_protocol_prefixes = [
+                    "omnibase_core.",
+                    "omnibase_spi.",
+                    # Add other trusted prefixes as needed
+                ]
+                if not any(
+                    module_path.startswith(prefix)
+                    for prefix in allowed_protocol_prefixes
+                ):
+                    validation_errors.append(
+                        f"Protocol module not in allowed namespace: {module_path}"
+                    )
+                    return False, validation_errors
+
                 # Import protocol module
                 protocol_module = importlib.import_module(module_path)
                 protocol_class = getattr(protocol_module, protocol_name, None)
@@ -564,7 +607,7 @@ class ContainerService:
                 if method_name not in service_methods:
                     missing_methods.append(f"Missing method: {method_name}")
                 else:
-                    # Validate method signature compatibility (basic check)
+                    # Validate method signature (basic check)
                     service_method = service_methods[method_name]
                     if not self._validate_method_signature(
                         service_method, method_signature

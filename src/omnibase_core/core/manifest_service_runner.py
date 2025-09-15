@@ -140,6 +140,27 @@ class ManifestServiceRunner:
         )
 
         try:
+            # Security: validate module is within allowed namespaces
+            allowed_prefixes = [
+                "omnibase_core.",
+                "omnibase_spi.",
+                "omnibase.",
+                # Add other trusted prefixes as needed
+            ]
+            if not any(
+                version_info.node_module.startswith(prefix)
+                for prefix in allowed_prefixes
+            ):
+                raise OnexError(
+                    code=CoreErrorCode.VALIDATION_ERROR,
+                    message=f"Module path not in allowed namespace: {version_info.node_module}",
+                    details={
+                        "module_path": version_info.node_module,
+                        "allowed_prefixes": allowed_prefixes,
+                        "tool_name": manifest.name,
+                    },
+                )
+
             # Import and create the tool
             module = importlib.import_module(version_info.node_module)
 

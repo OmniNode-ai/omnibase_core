@@ -213,6 +213,23 @@ class NodeLoader:
             Node class
         """
         try:
+            # Security: validate module is within allowed namespaces
+            allowed_prefixes = [
+                "omnibase_core.",
+                "omnibase_spi.",
+                "omnibase.",
+                # Add other trusted prefixes as needed
+            ]
+            if not any(module_path.startswith(prefix) for prefix in allowed_prefixes):
+                raise NodeLoadError(
+                    code=CoreErrorCode.VALIDATION_ERROR,
+                    message=f"Module path not in allowed namespace: {module_path}",
+                    details={
+                        "module_path": module_path,
+                        "allowed_prefixes": allowed_prefixes,
+                    },
+                )
+
             # Check cache
             if module_path in self.loaded_modules:
                 module = self.loaded_modules[module_path]
@@ -340,7 +357,24 @@ class NodeLoader:
         )
 
         try:
-            module = importlib.import_module(module_path.rsplit(".", 1)[0])
+            base_module_path = module_path.rsplit(".", 1)[0]
+
+            # Security: validate protocol module is within allowed namespaces
+            allowed_prefixes = [
+                "omnibase_core.",
+                "omnibase_spi.",
+                "omnibase.",
+                # Add other trusted prefixes as needed
+            ]
+            if not any(
+                base_module_path.startswith(prefix) for prefix in allowed_prefixes
+            ):
+                logger.warning(
+                    f"⚠️ Protocol module not in allowed namespace: {base_module_path}"
+                )
+                return type(protocol_name, (), {})
+
+            module = importlib.import_module(base_module_path)
             return getattr(module, protocol_name)
         except (ImportError, AttributeError) as e:
             logger.warning(f"⚠️ Could not load protocol {protocol_name}: {e}")

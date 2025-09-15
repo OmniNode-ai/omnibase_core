@@ -347,6 +347,25 @@ class ToolDiscoveryService:
                     {"module_path": module_path},
                 )
 
+                # Security: validate module is within allowed namespaces
+                allowed_prefixes = [
+                    "omnibase_core.",
+                    "omnibase_spi.",
+                    "omnibase.",
+                    # Add other trusted prefixes as needed
+                ]
+                if not any(
+                    module_path.startswith(prefix) for prefix in allowed_prefixes
+                ):
+                    raise OnexError(
+                        code=CoreErrorCode.VALIDATION_ERROR,
+                        message=f"Module path not in allowed namespace: {module_path}",
+                        details={
+                            "module_path": module_path,
+                            "allowed_prefixes": allowed_prefixes,
+                        },
+                    )
+
                 module = importlib.import_module(module_path)
 
                 # Cache module if caching is enabled
