@@ -39,12 +39,12 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.exceptions import OnexError
-from omnibase_core.metadata.metadata_constants import (
+from omnibase_core.models.core.model_examples import ModelExamples
+from omnibase_core.models.metadata.metadata_constants import (
     CONTRACT_SCHEMA_VERSION_KEY,
     CONTRACT_VERSION_KEY,
     NODE_VERSION_KEY,
 )
-from omnibase_core.models.core.model_examples import ModelExamples
 
 from .model_error_state import ModelErrorState
 from .model_generic_metadata import ModelGenericMetadata

@@ -146,7 +146,7 @@ class TestCanaryArchitectureCompliant:
 
         try:
             # Import the node class dynamically (this is what NodeLoader would do)
-            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import (
+            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
                 NodeCanaryEffect,
             )
 
@@ -178,7 +178,7 @@ class TestCanaryArchitectureCompliant:
         """Test effect operations using container-based node instantiation."""
         try:
             # Dynamic import (proper architecture pattern)
-            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import (
+            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
                 NodeCanaryEffect,
             )
 
@@ -233,7 +233,7 @@ class TestCanaryArchitectureCompliant:
             event_bus = container.get_service("ProtocolEventBus")
 
             # Step 2: Instantiate node with container (dependency injection)
-            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node import (
+            from omnibase_core.nodes.canary.canary_effect.v1_0_0.node_canary_effect import (
                 NodeCanaryEffect,
             )
 

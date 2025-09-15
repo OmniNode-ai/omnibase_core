@@ -15,9 +15,7 @@ providing clean separation between node logic and state handling behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class ModelStatePersistence(BaseModel):
@@ -357,9 +355,9 @@ class ModelStateManagementSubcontract(BaseModel):
 
     @field_validator("cache_size")
     @classmethod
-    def validate_cache_size(cls, v: int, values: Any) -> int:
+    def validate_cache_size(cls, v: int, info: ValidationInfo) -> int:
         """Validate cache size when caching is enabled."""
-        if hasattr(values, "data") and values.data.get("caching_enabled", True):
+        if info.data and info.data.get("caching_enabled", True):
             if v < 10:
                 msg = "cache_size must be at least 10 when caching is enabled"
                 raise ValueError(
@@ -369,9 +367,9 @@ class ModelStateManagementSubcontract(BaseModel):
 
     @field_validator("cleanup_interval_ms")
     @classmethod
-    def validate_cleanup_interval(cls, v: int, values: Any) -> int:
+    def validate_cleanup_interval(cls, v: int, info: ValidationInfo) -> int:
         """Validate cleanup interval when cleanup is enabled."""
-        if hasattr(values, "data") and values.data.get("cleanup_enabled", True):
+        if info.data and info.data.get("cleanup_enabled", True):
             if v < 60000:  # 1 minute minimum
                 msg = "cleanup_interval_ms must be at least 60000ms (1 minute)"
                 raise ValueError(

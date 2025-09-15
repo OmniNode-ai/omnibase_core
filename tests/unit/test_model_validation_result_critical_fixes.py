@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.model.common.model_validation_result import (
+from omnibase_core.models.common.model_validation_result import (
     ModelValidationIssue,
     ModelValidationMetadata,
     ModelValidationResult,
 )
-from omnibase_core.model.validation.model_validation_rule import EnumValidationSeverity
+from omnibase_core.models.validation.model_validation_rule import EnumValidationSeverity
 
 
 class TestModelValidationResultMerge:

@@ -1,5 +1,16 @@
 # CLAUDE.md - Phase 1: Reducer Pattern Engine Core Demo
 
+## 🚫 CRITICAL POLICY: NO BACKWARDS COMPATIBILITY
+
+**NEVER KEEP BACKWARDS COMPATIBILITY EVER EVER EVER**
+
+This project follows a **ZERO BACKWARDS COMPATIBILITY** policy:
+- **Breaking changes are always acceptable**
+- **No deprecated code maintenance**
+- **All models MUST conform to current protocols**
+- **Clean, modern architecture only**
+- **Remove old patterns immediately**
+
 ## Project Overview
 
 **Service**: Omnibase Core - Reducer Pattern Engine  

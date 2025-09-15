@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelSemVerConstraint(BaseModel):
@@ -48,57 +48,57 @@ class ModelSemVerConstraint(BaseModel):
                 result: dict[str, Any] = {}
                 for part in parts:
                     if part.startswith(">="):
-                        result["min"] = ModelSemVer.from_string(
+                        result["min"] = parse_semver_from_string(
                             part[2:]
                         )  # Use alias "min"
                         result["min_inclusive"] = True
                     elif part.startswith(">"):
-                        result["min"] = ModelSemVer.from_string(
+                        result["min"] = parse_semver_from_string(
                             part[1:]
                         )  # Use alias "min"
                         result["min_inclusive"] = False
                     elif part.startswith("<="):
-                        result["max"] = ModelSemVer.from_string(
+                        result["max"] = parse_semver_from_string(
                             part[2:]
                         )  # Use alias "max"
                         result["max_inclusive"] = True
                     elif part.startswith("<"):
-                        result["max"] = ModelSemVer.from_string(
+                        result["max"] = parse_semver_from_string(
                             part[1:]
                         )  # Use alias "max"
                         result["max_inclusive"] = False
                     elif part.startswith("="):
-                        result["exact"] = ModelSemVer.from_string(part[1:])
+                        result["exact"] = parse_semver_from_string(part[1:])
                     else:
                         # Assume exact match
-                        result["exact"] = ModelSemVer.from_string(part)
+                        result["exact"] = parse_semver_from_string(part)
                 return result
             if v.startswith(">="):
                 return {
-                    "min": ModelSemVer.from_string(v[2:]),  # Use alias
+                    "min": parse_semver_from_string(v[2:]),  # Use alias
                     "min_inclusive": True,
                 }
             if v.startswith(">"):
                 return {
-                    "min": ModelSemVer.from_string(v[1:]),  # Use alias
+                    "min": parse_semver_from_string(v[1:]),  # Use alias
                     "min_inclusive": False,
                 }
             if v.startswith("<="):
                 return {
-                    "max": ModelSemVer.from_string(v[2:]),  # Use alias
+                    "max": parse_semver_from_string(v[2:]),  # Use alias
                     "max_inclusive": True,
                 }
             if v.startswith("<"):
                 return {
-                    "max": ModelSemVer.from_string(v[1:]),  # Use alias
+                    "max": parse_semver_from_string(v[1:]),  # Use alias
                     "max_inclusive": False,
                 }
             if v.startswith("^"):
-                return {"compatible": ModelSemVer.from_string(v[1:])}
+                return {"compatible": parse_semver_from_string(v[1:])}
             if v.startswith("~"):
-                return {"minimum": ModelSemVer.from_string(v[1:])}
+                return {"minimum": parse_semver_from_string(v[1:])}
             # Assume exact version
-            return {"exact": ModelSemVer.from_string(v)}
+            return {"exact": parse_semver_from_string(v)}
         if isinstance(v, dict):
             return v
         if hasattr(v, "__dict__"):

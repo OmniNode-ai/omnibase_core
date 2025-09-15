@@ -9,7 +9,6 @@ from typing import Annotated, ClassVar, Optional, TypeAlias, cast
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import Lifecycle, MetaTypeEnum
-from omnibase_core.metadata.metadata_constants import get_namespace_prefix
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
@@ -25,6 +24,7 @@ from omnibase_core.models.core.model_project_metadata import get_canonical_versi
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
+from omnibase_core.models.metadata.metadata_constants import get_namespace_prefix
 from omnibase_core.utils.safe_yaml_loader import (
     load_yaml_content_as_model,
 )
@@ -59,6 +59,8 @@ class ModelNodeMetadataBlock(BaseModel):
     Canonical ONEX node metadata block (see onex_node.yaml and node_contracts.md).
     Entrypoint must be a URI: <type>://<target>
     Example: 'python://main.py', 'cli://script.sh', 'docker://image', 'markdown://log.md'
+
+    ONEX COMPLIANCE: All factory methods removed. Use direct Pydantic instantiation only.
     """
 
     metadata_version: Annotated[
@@ -180,19 +182,6 @@ class ModelNodeMetadataBlock(BaseModel):
         super().__init__(**data)
 
     @classmethod
-    def from_file_or_content(
-        cls,
-        content: str,
-        already_extracted_block: str | None = None,
-        event_bus=None,
-    ) -> "ModelNodeMetadataBlock":
-        block_yaml = already_extracted_block or content
-        # Load and validate YAML using Pydantic model
-        yaml_model = load_yaml_content_as_model(block_yaml, ModelGenericYaml)
-        data = yaml_model.model_dump()
-        return cls(**data)
-
-    @classmethod
     def get_volatile_fields(cls) -> list[str]:
         model_fields = getattr(cls, "model_fields", {})
         if isinstance(model_fields, dict):
@@ -282,132 +271,6 @@ class ModelNodeMetadataBlock(BaseModel):
         # PATCH: Remove all None/null/empty fields after dict construction
         d = {k: v for k, v in d.items() if v not in (None, "", [], {})}
         return ModelSerializableDict(data=d)
-
-    @classmethod
-    def from_serializable_dict(
-        cls: type["ModelNodeMetadataBlock"],
-        data: ModelSerializableDict,
-    ) -> "ModelNodeMetadataBlock":
-        # Convert ModelSerializableDict to regular dict for processing
-        data_dict = data.data if isinstance(data, ModelSerializableDict) else data
-
-        # Handle entrypoint deserialization
-        if "entrypoint" in data_dict:
-            if isinstance(data_dict["entrypoint"], str):
-                data_dict["entrypoint"] = EntrypointBlock(
-                    type=data_dict["entrypoint"].split("://")[0],
-                    target=data_dict["entrypoint"].split("://")[1],
-                )
-            elif isinstance(data_dict["entrypoint"], dict):
-                data_dict["entrypoint"] = EntrypointBlock(**data_dict["entrypoint"])
-        # Handle tools deserialization
-        if "tools" in data_dict and isinstance(data_dict["tools"], dict):
-            tools_dict = {}
-            for tool_name, tool_data in data_dict["tools"].items():
-                if isinstance(tool_data, dict):
-                    tools_dict[tool_name] = ModelFunctionTool.from_serializable_dict(
-                        tool_data,
-                    )
-                else:
-                    tools_dict[tool_name] = tool_data
-            data_dict["tools"] = ModelToolCollection.from_dict(tools_dict)
-        return cls(**data_dict)
-
-    @classmethod
-    def create_with_defaults(
-        cls,
-        name: str | None = None,
-        author: str | None = None,
-        namespace: Namespace | None = None,
-        entrypoint_type: str | None = None,
-        entrypoint_target: str | None = None,
-        file_path: Optional["Path"] = None,
-        runtime_language_hint: str | None = None,
-        **additional_fields: str,
-    ) -> "ModelNodeMetadataBlock":
-        """
-        Create a complete NodeMetadataBlock with sensible defaults for all required fields.
-        PROTOCOL: entrypoint_type and entrypoint_target must be used as provided, for all file types. entrypoint_target must always be the filename stem (no extension).
-
-        # === CRITICAL INVARIANT: UUID and CREATED_AT IDEMPOTENCY ===
-        # These fields MUST be preserved if present (not None) in additional_fields.
-        # Regression (May 2025): Logic previously always generated new values, breaking protocol idempotency.
-        # See test_stamp_idempotency in test_node.py and standards doc for rationale.
-        # DO NOT REMOVE THIS CHECK: All changes here must be justified in PR and reviewed by maintainers.
-        """
-        from datetime import datetime
-        from uuid import uuid4
-
-        now = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
-        canonical_versions = get_canonical_versions()
-        canonical_namespace = None
-        ep_type = entrypoint_type or None
-        ep_target = entrypoint_target
-        # Infer entrypoint_type from file extension if not provided
-        if file_path is not None and not ep_type:
-            ext = file_path.suffix.lower().lstrip(".")
-            ep_type = Namespace.CANONICAL_SCHEME_MAP.get(ext, ext)
-        # Always use the filename stem (no extension) for entrypoint_target
-        if file_path is not None and not ep_target:
-            ep_target = file_path.stem
-        elif ep_target:
-            ep_target = Path(ep_target).stem
-        else:
-            ep_target = "main"
-        # Set runtime_language_hint only for code files
-        if runtime_language_hint is None:
-            code_types = {"python", "typescript", "javascript", "html"}
-            if ep_type in code_types:
-                runtime_language_hint = (
-                    cls.RUNTIME_LANGUAGE_HINT_MAP.get_value(ep_type) or None
-                )
-            else:
-                runtime_language_hint = None
-        if file_path is not None:
-            canonical_namespace = Namespace.from_path(file_path)
-        # Entrypoint construction: always use provided type/target (target is stem)
-        entrypoint = EntrypointBlock(type=ep_type, target=ep_target)
-        data: dict[str, str | EntrypointBlock | Namespace] = {
-            "name": name or (file_path.stem if file_path is not None else "unknown"),
-            "uuid": str(additional_fields.get("uuid") or str(uuid4())),
-            "author": author or "unknown",
-            "created_at": str(additional_fields.get("created_at") or now),
-            "last_modified_at": now,
-            "hash": "0" * 64,
-            "entrypoint": entrypoint,
-            "namespace": namespace
-            or canonical_namespace
-            or Namespace(value=f"{get_namespace_prefix()}.unknown"),
-            "metadata_version": canonical_versions.metadata_version,
-            "protocol_version": canonical_versions.protocol_version,
-            "schema_version": canonical_versions.schema_version,
-        }
-        if runtime_language_hint is not None:
-            data["runtime_language_hint"] = runtime_language_hint
-        # Convert additional_fields to a mutable dict if needed
-        additional_fields_dict = (
-            dict(additional_fields)
-            if not isinstance(additional_fields, dict)
-            else additional_fields
-        )
-
-        for vfield in ("metadata_version", "protocol_version", "schema_version"):
-            if vfield in additional_fields_dict:
-                del additional_fields_dict[vfield]
-        # PATCH: Always pass tools if present in additional_fields
-        tools = additional_fields_dict.pop("tools", None)
-        if tools is not None:
-            # Omit tools if empty dict or empty ToolCollection
-            if (isinstance(tools, dict) and not tools) or (
-                hasattr(tools, "root") and not tools.root
-            ):
-                tools = None
-            else:
-                pass
-            if tools is not None:
-                data["tools"] = tools
-        data.update(additional_fields_dict)
-        return cls(**data)  # type: ignore[arg-type]
 
     @field_validator("entrypoint", mode="before")
     @classmethod

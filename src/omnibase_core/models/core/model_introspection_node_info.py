@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
 
 
 class ModelIntrospectionNodeInfo(BaseModel):
@@ -38,7 +38,7 @@ class ModelIntrospectionNodeInfo(BaseModel):
             )
         if isinstance(v, str):
             # Parse string version to ModelSemVer
-            return ModelSemVer.from_string(v)
+            return parse_semver_from_string(v)
         # Fallback to default version
         return ModelSemVer(major=1, minor=0, patch=0)
 

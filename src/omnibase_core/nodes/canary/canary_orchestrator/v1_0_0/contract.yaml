@@ -71,14 +71,17 @@ workflow_registry:
       workflow_name: "Infrastructure Startup Sequence"
       workflow_type: "sequential"
       steps:
-        - step_name: "consul_health_check"
-          step_type: "health_check"
+        - step_id: "consul_health_check_step"
+          step_name: "consul_health_check"
+          step_type: "compute"
           timeout_ms: 5000
-        - step_name: "vault_initialization"
-          step_type: "service_init"
+        - step_id: "vault_initialization_step"
+          step_name: "vault_initialization"
+          step_type: "compute"
           timeout_ms: 10000
-        - step_name: "kafka_cluster_verify"
-          step_type: "cluster_check"
+        - step_id: "kafka_cluster_verify_step"
+          step_name: "kafka_cluster_verify"
+          step_type: "compute"
           timeout_ms: 8000
       dependencies: []
       priority: 100
@@ -87,14 +90,17 @@ workflow_registry:
       workflow_name: "Infrastructure Graceful Shutdown"
       workflow_type: "sequential"
       steps:
-        - step_name: "drain_kafka_queues"
-          step_type: "graceful_drain"
+        - step_id: "drain_kafka_queues_step"
+          step_name: "drain_kafka_queues"
+          step_type: "effect"
           timeout_ms: 30000
-        - step_name: "vault_token_revoke"
-          step_type: "cleanup"
+        - step_id: "vault_token_revoke_step"
+          step_name: "vault_token_revoke"
+          step_type: "effect"
           timeout_ms: 5000
-        - step_name: "consul_deregister"
-          step_type: "deregister"
+        - step_id: "consul_deregister_step"
+          step_name: "consul_deregister"
+          step_type: "effect"
           timeout_ms: 3000
       dependencies: []
       priority: 200

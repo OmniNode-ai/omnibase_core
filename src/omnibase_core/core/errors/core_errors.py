@@ -517,7 +517,34 @@ class OnexError(Exception):
 
             # Convert dictionary context to ModelErrorContext for new ModelOnexError
             if isinstance(context, dict):
-                context_model = ModelErrorContext.from_dict(context)
+                # ONEX-compliant boundary-layer transformation
+                # Extract known fields from dict for direct construction
+                known_fields = {
+                    k: v
+                    for k, v in {
+                        "file_path": context.get("file_path"),
+                        "line_number": context.get("line_number"),
+                        "column_number": context.get("column_number"),
+                        "function_name": context.get("function_name"),
+                        "module_name": context.get("module_name"),
+                        "stack_trace": context.get("stack_trace"),
+                    }.items()
+                    if v is not None
+                }
+
+                # Convert remaining fields to schema values for additional_context
+                from omnibase_core.models.core.model_schema_value import (
+                    ModelSchemaValue,
+                )
+
+                additional_context = {}
+                for key, value in context.items():
+                    if key not in known_fields:
+                        additional_context[key] = ModelSchemaValue.from_value(value)
+
+                context_model = ModelErrorContext(
+                    **known_fields, additional_context=additional_context
+                )
             else:
                 context_model = context or ModelErrorContext()
 
@@ -646,11 +673,77 @@ class OnexError(Exception):
     def context(self) -> dict[str, str | int | bool | float]:
         """Get the context information."""
         # Handle both old dict format and new ModelErrorContext format
-        if hasattr(self.model.context, "to_dict"):
-            # New ModelErrorContext format
-            return self.model.context.to_dict()
+        if hasattr(self.model.context, "model_dump"):
+            # ONEX-compliant pattern: Use model_dump() with boundary-layer transformation
+            context_data = self.model.context.model_dump()
+
+            # Transform to expected error context format
+            result: dict[str, str | int] = {}
+
+            # Add known fields if present
+            for field in [
+                "file_path",
+                "line_number",
+                "column_number",
+                "function_name",
+                "module_name",
+                "stack_trace",
+            ]:
+                if context_data.get(field) is not None:
+                    result[field] = context_data[field]
+
+            # Add additional context by converting schema values back to primitives
+            additional_context = context_data.get("additional_context", {})
+            for key, value_obj in additional_context.items():
+                if isinstance(value_obj, dict):
+                    # Handle ModelSchemaValue serialized structure
+                    result[key] = self._extract_schema_value(value_obj)
+                else:
+                    result[key] = value_obj
+
+            return result
         # Old dict format
         return self.model.context
+
+    def _extract_schema_value(self, value_obj: dict) -> any:
+        """
+        Extract the actual value from a ModelSchemaValue structure.
+
+        Args:
+            value_obj: Dictionary representing serialized ModelSchemaValue
+
+        Returns:
+            The extracted primitive value
+        """
+        # Handle ModelSchemaValue serialized structure
+        if isinstance(value_obj, dict):
+            value_type = value_obj.get("value_type")
+
+            if value_type == "string":
+                return value_obj.get("string_value")
+            elif value_type == "number":
+                return value_obj.get("number_value")
+            elif value_type == "boolean":
+                return value_obj.get("boolean_value")
+            elif value_type == "null":
+                return None
+            elif value_type == "array":
+                array_val = value_obj.get("array_value")
+                if isinstance(array_val, list):
+                    return [self._extract_schema_value(item) for item in array_val]
+                return array_val
+            elif value_type == "object":
+                object_val = value_obj.get("object_value", {})
+                if isinstance(object_val, dict):
+                    return {
+                        k: self._extract_schema_value(v) for k, v in object_val.items()
+                    }
+                return object_val
+            else:
+                # Fallback: try "value" key or return as-is
+                return value_obj.get("value", value_obj)
+
+        return value_obj
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""

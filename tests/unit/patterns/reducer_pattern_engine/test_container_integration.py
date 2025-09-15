@@ -35,7 +35,7 @@ class TestContainerIntegration:
         container.workflow_factory = Mock()
         container.workflow_coordinator = Mock()
 
-        # Mock base container for compatibility
+        # Mock base container for integration
         base_container = Mock()
         base_container.config = container.config
         base_container.enhanced_logger = container.enhanced_logger
@@ -272,8 +272,8 @@ class TestContainerIntegration:
                 # Engine should be functional
                 assert engine.container == mock_container
 
-    def test_container_compatibility_layer(self, node_engine):
-        """Test compatibility layer with different container versions."""
+    def test_container_integration_layer(self, node_engine):
+        """Test integration layer with different container versions."""
         # Test base container access
         if hasattr(node_engine.container, "base_container"):
             base_container = node_engine.container.base_container

@@ -9,10 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_rsd_trigger_type import EnumRSDTriggerType
 from omnibase_core.models.rsd.model_event_data import ModelEventData
-from omnibase_core.tools.rsd.shared.enums.enum_rsd_trigger_type import (
-    EnumRSDTriggerType,
-)
 
 
 class ModelTriggerContext(BaseModel):

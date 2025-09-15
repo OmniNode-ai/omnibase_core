@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union, cast
 
 from pydantic import BaseModel
 
-from omnibase_core.types.onex_common_types import JsonSerializable
+from omnibase_core.models.types.onex_common_types import JsonSerializable
 
 # Define PropertyValue locally to avoid dependency issues
 PropertyValue = JsonSerializable

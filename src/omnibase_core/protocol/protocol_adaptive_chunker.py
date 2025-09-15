@@ -14,7 +14,7 @@ from omnibase_core.models.advanced.model_adaptive_chunk import ModelModelAdaptiv
 from omnibase_core.models.advanced.model_chunking_quality_metrics import (
     ModelModelChunkingQualityMetrics,
 )
-from omnibase_core.tools.discovery.advanced.tool_multi_vector_indexer.v1_0_0.models.model_tool_multi_vector_indexer_input_state import (
+from omnibase_core.models.advanced.model_indexing_configuration import (
     ModelIndexingConfiguration,
 )
 

@@ -83,33 +83,20 @@ class ModelCustomFields(BaseModel):
 
         return v
 
+    # DEPRECATED: Use model_dump(exclude_none=True) instead
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for current standards."""
+        """
+        DEPRECATED: Use model_dump(exclude_none=True) instead.
+
+        Convert to dictionary for current standards.
+        This method will be removed in a future release.
+        """
         # Custom compatibility logic - return just the field values
         return self.field_values.copy()
 
-    @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelCustomFields"]:
-        """Create from dictionary for easy migration."""
-        if data is None:
-            return None
-
-        # Handle legacy format - assume all data is field values
-        if not isinstance(data, dict):
-            return None
-
-        # Check if it's already in new format
-        if "field_values" in data and "field_definitions" in data:
-            return cls(**data)
-
-        # Legacy format - treat entire dict as field values
-        return cls(
-            field_values=data,
-            schema_version="1.0",
-            modified_by=None,
-            strict_validation=False,
-            allow_undefined_fields=True,
-        )
+    # REMOVED: from_dict factory method - use Pydantic model_validate() instead
+    # Factory methods bypass Pydantic validation and violate ONEX architecture.
+    # Migration: Replace ModelCustomFields.from_dict(data) with ModelCustomFields(**data)
 
     def get_field(self, name: str, default: Any = None) -> Any:
         """Get a custom field value."""

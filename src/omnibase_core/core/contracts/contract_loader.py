@@ -9,7 +9,11 @@ implementation to eliminate duplicate node.py code.
 Author: ONEX Framework Team
 """
 
+import hashlib
+from datetime import datetime
 from pathlib import Path
+
+import yaml
 
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
@@ -149,10 +153,16 @@ class ContractLoader:
             # Parse and cache if enabled
             if self.state.cache_enabled:
                 parsed_content = self._parse_contract_content(content, file_path)
+                stat = file_path.stat()
+                content_str = str(content)
                 self.state.contract_cache[file_path_str] = ModelContractCache(
+                    cache_key=f"{file_path_str}_{stat.st_mtime}",
                     file_path=file_path,
                     content=parsed_content,
-                    last_modified=file_path.stat().st_mtime,
+                    cached_at=datetime.now(),
+                    file_modified_at=datetime.fromtimestamp(stat.st_mtime),
+                    file_size=stat.st_size,
+                    content_hash=hashlib.sha256(content_str.encode()).hexdigest(),
                 )
 
             return content

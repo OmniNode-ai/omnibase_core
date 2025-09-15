@@ -89,38 +89,9 @@ class ModelValueContainer(BaseModel):
         except (TypeError, ValueError) as e:
             raise ValueError(f"Value is not JSON serializable: {e}")
 
-    # Type-safe factory methods
-    @classmethod
-    def create_string(cls, value: str, **metadata: str) -> "ModelValueContainer":
-        """Create a string value container."""
-        return cls(value=value, metadata=metadata)
-
-    @classmethod
-    def create_int(cls, value: int, **metadata: str) -> "ModelValueContainer":
-        """Create an integer value container."""
-        return cls(value=value, metadata=metadata)
-
-    @classmethod
-    def create_float(cls, value: float, **metadata: str) -> "ModelValueContainer":
-        """Create a float value container."""
-        return cls(value=value, metadata=metadata)
-
-    @classmethod
-    def create_bool(cls, value: bool, **metadata: str) -> "ModelValueContainer":
-        """Create a boolean value container."""
-        return cls(value=value, metadata=metadata)
-
-    @classmethod
-    def create_list(cls, value: list[Any], **metadata: str) -> "ModelValueContainer":
-        """Create a list value container."""
-        return cls(value=value, metadata=metadata)
-
-    @classmethod
-    def create_dict(
-        cls, value: dict[str, Any], **metadata: str
-    ) -> "ModelValueContainer":
-        """Create a dict value container."""
-        return cls(value=value, metadata=metadata)
+    # ✅ Factory methods removed for ONEX compliance
+    # Use direct __init__ calls: ModelValueContainer(value=data, metadata={})
+    # ONEX Pattern: YAML Contract → Pydantic Model → Direct __init__() only
 
     # === ProtocolValidatable Implementation ===
 
@@ -354,32 +325,32 @@ class ModelTypedMapping(BaseModel):
     )
 
     def set_string(self, key: str, value: str) -> None:
-        """Set a string value."""
-        self.data[key] = ModelValueContainer.create_string(value)
+        """Set a string value using ONEX-compliant direct __init__ calls."""
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_int(self, key: str, value: int) -> None:
-        """Set an integer value."""
-        self.data[key] = ModelValueContainer.create_int(value)
+        """Set an integer value using ONEX-compliant direct __init__ calls."""
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_float(self, key: str, value: float) -> None:
-        """Set a float value."""
-        self.data[key] = ModelValueContainer.create_float(value)
+        """Set a float value using ONEX-compliant direct __init__ calls."""
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_bool(self, key: str, value: bool) -> None:
-        """Set a boolean value."""
-        self.data[key] = ModelValueContainer.create_bool(value)
+        """Set a boolean value using ONEX-compliant direct __init__ calls."""
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_list(self, key: str, value: list[Any]) -> None:
-        """Set a list value."""
-        self.data[key] = ModelValueContainer.create_list(value)
+        """Set a list value using ONEX-compliant direct __init__ calls."""
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_dict(self, key: str, value: dict[str, Any]) -> None:
-        """Set a dict value with depth checking for security."""
+        """Set a dict value with depth checking for security using ONEX-compliant direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
             raise ValueError(
                 f"Maximum nesting depth ({self.MAX_DEPTH}) exceeded to prevent DoS attacks"
             )
-        self.data[key] = ModelValueContainer.create_dict(value)
+        self.data[key] = ModelValueContainer(value=value)
 
     def set_value(self, key: str, value: Any) -> None:
         """
@@ -464,54 +435,12 @@ class ModelTypedMapping(BaseModel):
         """Convert to a regular Python dictionary with native types."""
         return {key: container.value for key, container in self.data.items()}
 
-    @classmethod
-    def from_python_dict(
-        cls, data: dict[str, Any], depth: int = 0
-    ) -> "ModelTypedMapping":
-        """
-        Create a typed mapping from a regular Python dictionary.
-
-        Args:
-            data: Dictionary with JSON-serializable values
-            depth: Current nesting depth (for DoS prevention)
-
-        Returns:
-            ModelTypedMapping with typed containers
-
-        Raises:
-            ValueError: If maximum depth exceeded or unsupported type found
-        """
-        if depth > cls.MAX_DEPTH:
-            raise ValueError(
-                f"Maximum nesting depth ({cls.MAX_DEPTH}) exceeded to prevent DoS attacks"
-            )
-
-        instance = cls(current_depth=depth)
-        for key, value in data.items():
-            # Type-safe assignment based on Python type
-            if isinstance(value, str):
-                instance.set_string(key, value)
-            elif isinstance(value, bool):  # Check bool before int
-                instance.set_bool(key, value)
-            elif isinstance(value, int):
-                instance.set_int(key, value)
-            elif isinstance(value, float):
-                instance.set_float(key, value)
-            elif isinstance(value, list):
-                instance.set_list(key, value)
-            elif isinstance(value, dict):
-                # Recursively create nested mapping with depth + 1
-                nested_mapping = cls.from_python_dict(value, depth + 1)
-                instance.data[key] = ModelValueContainer.create_dict(
-                    nested_mapping.to_python_dict()
-                )
-            elif value is None:
-                # For None values, we'll store as a special case
-                # This is the only legitimate use of a "null" representation
-                continue  # Skip None values for now
-            else:
-                raise ValueError(f"Unsupported type for key '{key}': {type(value)}")
-        return instance
+    # ✅ Factory method from_python_dict removed for ONEX compliance
+    # Use ONEX pattern: Create instance with ModelTypedMapping() then populate with set_value()
+    # Example:
+    #   mapping = ModelTypedMapping()
+    #   for key, value in data.items():
+    #       mapping.set_value(key, value)
 
     # === ProtocolValidatable Implementation ===
 

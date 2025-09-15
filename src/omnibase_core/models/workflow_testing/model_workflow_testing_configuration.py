@@ -6,7 +6,7 @@ This module provides Pydantic models for workflow testing configuration,
 supporting flexible dependency accommodation and comprehensive test workflows.
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_workflow_testing import (
     EnumAccommodationLevel,
@@ -32,8 +32,8 @@ class ModelDependencyFlexibility(BaseModel):
         description="Default strategy for dependency accommodation",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "accommodation_levels": [
@@ -46,6 +46,7 @@ class ModelDependencyFlexibility(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelRealDependencyConfig(BaseModel):
@@ -111,8 +112,8 @@ class ModelAccommodationOptions(BaseModel):
         description="Strategy to use when primary option fails",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "real": {
@@ -129,6 +130,7 @@ class ModelAccommodationOptions(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelDependencyAccommodation(BaseModel):
@@ -144,8 +146,8 @@ class ModelDependencyAccommodation(BaseModel):
         description="Available accommodation options for this dependency",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "interface_protocol": "ProtocolRegistryCanaryPure",
@@ -164,6 +166,7 @@ class ModelDependencyAccommodation(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelExpectedOutcome(BaseModel):
@@ -181,16 +184,17 @@ class ModelExpectedOutcome(BaseModel):
         description="Custom message for validation failure",
     )
 
-    @validator("expected_value", pre=True)
-    def convert_expected_value_to_generic(self, v):
+    @field_validator("expected_value", mode="before")
+    @classmethod
+    def convert_expected_value_to_generic(cls, v):
         """Convert primitive values to ModelGenericValue automatically."""
         if isinstance(v, ModelGenericValue):
             return v
         # Convert primitive values using ModelGenericValue factory method
         return ModelGenericValue.from_python_value(v)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "outcome_field": "transformed_text",
@@ -200,6 +204,7 @@ class ModelExpectedOutcome(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelStepParameters(BaseModel):
@@ -230,8 +235,9 @@ class ModelStepParameters(BaseModel):
         description="Number of repetitions for validation",
     )
 
-    @validator("failure_injection", pre=True)
-    def convert_failure_injection_to_generic(self, v):
+    @field_validator("failure_injection", mode="before")
+    @classmethod
+    def convert_failure_injection_to_generic(cls, v):
         """Convert primitive values in failure_injection to ModelGenericValue automatically."""
         if v is None:
             return v
@@ -249,8 +255,9 @@ class ModelStepParameters(BaseModel):
             return converted
         return v
 
-    class Config:
-        extra = "allow"  # Allow additional parameters for extensibility
+    model_config = ConfigDict(
+        extra="allow"  # Allow additional parameters for extensibility
+    )
 
 
 class ModelTestExecutionStep(BaseModel):
@@ -271,8 +278,8 @@ class ModelTestExecutionStep(BaseModel):
         description="Timeout for step execution in milliseconds",
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "step_id": "execute_pure_transformation",
@@ -292,6 +299,7 @@ class ModelTestExecutionStep(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelTestWorkflow(BaseModel):
@@ -323,16 +331,17 @@ class ModelTestWorkflow(BaseModel):
         description="Actions to perform after workflow completion",
     )
 
-    @validator("test_execution_steps")
-    def validate_test_steps_not_empty(self, v):
+    @field_validator("test_execution_steps")
+    @classmethod
+    def validate_test_steps_not_empty(cls, v):
         """Validate that test workflows have at least one execution step."""
         if not v:
             msg = "Test workflows must have at least one execution step"
             raise ValueError(msg)
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "workflow_id": "pure_functional_transformation_with_adaptive_accommodation",
@@ -350,6 +359,7 @@ class ModelTestWorkflow(BaseModel):
                 },
             ],
         }
+    )
 
 
 class ModelWorkflowTestingConfiguration(BaseModel):
@@ -377,8 +387,9 @@ class ModelWorkflowTestingConfiguration(BaseModel):
         description="Contexts in which these tests should run",
     )
 
-    @validator("test_workflows")
-    def validate_workflows_not_empty(self, v):
+    @field_validator("test_workflows")
+    @classmethod
+    def validate_workflows_not_empty(cls, v):
         """Validate that there is at least one test workflow."""
         if not v:
             msg = (
@@ -389,8 +400,9 @@ class ModelWorkflowTestingConfiguration(BaseModel):
             )
         return v
 
-    @validator("test_workflows")
-    def validate_unique_workflow_ids(self, v):
+    @field_validator("test_workflows")
+    @classmethod
+    def validate_unique_workflow_ids(cls, v):
         """Validate that all workflow IDs are unique."""
         workflow_ids = [workflow.workflow_id for workflow in v]
         if len(workflow_ids) != len(set(workflow_ids)):
@@ -398,8 +410,8 @@ class ModelWorkflowTestingConfiguration(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "workflow_testing_version": {"major": 1, "minor": 0, "patch": 0},
@@ -420,3 +432,4 @@ class ModelWorkflowTestingConfiguration(BaseModel):
                 },
             ],
         }
+    )

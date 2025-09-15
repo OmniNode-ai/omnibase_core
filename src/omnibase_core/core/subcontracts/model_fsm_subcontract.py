@@ -15,9 +15,7 @@ providing clean separation between node logic and state machine behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class ModelFSMStateDefinition(BaseModel):
@@ -449,13 +447,13 @@ class ModelFSMSubcontract(BaseModel):
     def validate_initial_state_exists(
         cls,
         v: list[ModelFSMStateDefinition],
-        values: Any,
+        info: ValidationInfo,
     ) -> list[ModelFSMStateDefinition]:
         """Validate that initial state is defined in states list."""
-        if hasattr(values, "data") and "initial_state" in values.data:
+        if info.data and "initial_state" in info.data:
             state_names = [state.state_name for state in v]
-            if values.data["initial_state"] not in state_names:
-                msg = f"Initial state '{values.data['initial_state']}' not found in states list"
+            if info.data["initial_state"] not in state_names:
+                msg = f"Initial state '{info.data['initial_state']}' not found in states list"
                 raise ValueError(
                     msg,
                 )
@@ -463,10 +461,12 @@ class ModelFSMSubcontract(BaseModel):
 
     @field_validator("terminal_states", "error_states")
     @classmethod
-    def validate_special_states_exist(cls, v: list[str], values: Any) -> list[str]:
+    def validate_special_states_exist(
+        cls, v: list[str], info: ValidationInfo
+    ) -> list[str]:
         """Validate that terminal and error states are defined in states list."""
-        if hasattr(values, "data") and "states" in values.data and v:
-            state_names = [state.state_name for state in values.data["states"]]
+        if info.data and "states" in info.data and v:
+            state_names = [state.state_name for state in info.data["states"]]
             for state_name in v:
                 if state_name not in state_names:
                     msg = f"State '{state_name}' not found in states list"
@@ -478,11 +478,11 @@ class ModelFSMSubcontract(BaseModel):
     def validate_transition_states_exist(
         cls,
         v: list[ModelFSMStateTransition],
-        values: Any,
+        info: ValidationInfo,
     ) -> list[ModelFSMStateTransition]:
         """Validate that all transition source and target states exist."""
-        if hasattr(values, "data") and "states" in values.data:
-            state_names = [state.state_name for state in values.data["states"]]
+        if info.data and "states" in info.data:
+            state_names = [state.state_name for state in info.data["states"]]
             # Add wildcard state to supported states for global transitions
             state_names_with_wildcard = [*state_names, "*"]
 

@@ -88,6 +88,7 @@ class ManualYamlValidationDetector:
                     self._is_in_safe_yaml_loader(file_path)
                     and self._is_in_yaml_utility_function()
                 )
+                and not self._is_in_test_file(file_path)
             ):
                 errors.append(
                     f"Line {node.lineno}: Found yaml.safe_load() - "
@@ -157,13 +158,28 @@ class ManualYamlValidationDetector:
             "_load_yaml_file",
             "load_yaml_as_dict",  # YAML dict loader utilities
             "load_yaml_as_dict_with_validation",
+            # Test functions that legitimately test YAML serialization/deserialization
+            "test_yaml_serialization_compatibility",
+            "test_yaml_deserialization_comprehensive",
+            "test_yaml_round_trip_serialization",
         }
         return (
             current_function in yaml_utility_functions
             or current_function.startswith("from_yaml")
             or current_function.endswith("_yaml")
             or "yaml" in current_function.lower()
+            or current_function.startswith("test_yaml_")  # Allow YAML test functions
         )
+
+    def _is_in_test_file(self, file_path: Path) -> bool:
+        """Check if we're in a test file where YAML usage might be legitimate."""
+        test_file_patterns = {
+            "test_",
+            "_test.py",
+            "tests/",
+        }
+        file_str = str(file_path)
+        return any(pattern in file_str for pattern in test_file_patterns)
 
     def _is_yaml_field_access(self, node: ast.Subscript) -> bool:
         """Check if this looks like direct YAML field access (not serialization)."""

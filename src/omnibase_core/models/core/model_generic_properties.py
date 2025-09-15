@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.types import PropertyValue
+from omnibase_core.models.types import PropertyValue
 
 
 class ModelGenericProperties(BaseModel):
@@ -59,30 +59,72 @@ class ModelGenericProperties(BaseModel):
         return result
 
     @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, PropertyValue] | None,
+    def from_flat_dict(
+        cls, data: dict[str, PropertyValue] | None
     ) -> Optional["ModelGenericProperties"]:
-        """Create from dictionary with type inference."""
+        """
+        Create ModelGenericProperties from flat dictionary with automatic type categorization.
+
+        Uses proper Pydantic validation and construction patterns.
+        This replaces the old from_dict() factory method with ONEX-compliant implementation.
+
+        Args:
+            data: Flat dictionary with mixed property types, or None
+
+        Returns:
+            ModelGenericProperties instance or None if data is None
+
+        Example:
+            >>> props = ModelGenericProperties.from_flat_dict({
+            ...     "name": "example",
+            ...     "count": 42,
+            ...     "enabled": True,
+            ...     "tags": ["a", "b", "c"],
+            ...     "config": {"key": "value"}
+            ... })
+        """
         if data is None:
             return None
 
-        obj = cls()
+        # Categorize properties by type
+        categorized_data = cls._categorize_properties(data)
+
+        # Use Pydantic's model_validate for proper validation
+        return cls.model_validate(categorized_data)
+
+    @staticmethod
+    def _categorize_properties(
+        data: dict[str, PropertyValue],
+    ) -> dict[str, dict[str, PropertyValue]]:
+        """
+        Categorize mixed property data into typed property dictionaries.
+
+        This is a helper method that automatically sorts properties by type
+        for use with the typed property fields.
+        """
+        categorized: dict[str, dict[str, PropertyValue]] = {
+            "string_properties": {},
+            "numeric_properties": {},
+            "boolean_properties": {},
+            "list_properties": {},
+            "nested_properties": {},
+        }
+
         for key, value in data.items():
             if isinstance(value, str):
-                obj.string_properties[key] = value
+                categorized["string_properties"][key] = value
             elif isinstance(value, bool):
-                obj.boolean_properties[key] = value
+                categorized["boolean_properties"][key] = value
             elif isinstance(value, (int, float)):
-                obj.numeric_properties[key] = value
+                categorized["numeric_properties"][key] = value
             elif isinstance(value, list) and all(isinstance(v, str) for v in value):
-                obj.list_properties[key] = value
+                categorized["list_properties"][key] = value
             elif isinstance(value, dict) and all(
                 isinstance(v, str) for v in value.values()
             ):
-                obj.nested_properties[key] = value
+                categorized["nested_properties"][key] = value
 
-        return obj
+        return categorized
 
     def get(
         self, key: str, default: PropertyValue | None = None

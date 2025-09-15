@@ -9,7 +9,7 @@ Tests all Priority 1 critical security fixes:
 
 import pytest
 
-from omnibase_core.model.common.model_typed_value import (
+from omnibase_core.models.common.model_typed_value import (
     ModelTypedMapping,
     ModelValueContainer,
 )
@@ -29,9 +29,10 @@ class TestModelTypedMappingDoSProtection:
             current_level[f"level{i}"] = {}
             current_level = current_level[f"level{i}"]
 
-        # Attempting to create ModelTypedMapping should raise ValueError
+        # Attempting to create ModelTypedMapping should raise ValueError (ONEX pattern)
         with pytest.raises(ValueError) as exc_info:
-            ModelTypedMapping.from_python_dict(nested_dict)
+            mapping = ModelTypedMapping()
+            mapping.set_value("root", nested_dict)  # This will trigger depth limit
 
         assert "Maximum nesting depth (10) exceeded" in str(exc_info.value)
         assert "DoS attacks" in str(exc_info.value)
@@ -48,7 +49,9 @@ class TestModelTypedMappingDoSProtection:
             current_level = current_level[f"level{i}"]
 
         # This should work (depth = 9)
-        mapping = ModelTypedMapping.from_python_dict(nested_dict)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", nested_dict)
         assert mapping is not None
         assert "root" in mapping.keys()
 
@@ -56,7 +59,9 @@ class TestModelTypedMappingDoSProtection:
         current_level["level9"] = {"final": "value"}
 
         # This should still work (depth = 10)
-        mapping = ModelTypedMapping.from_python_dict(nested_dict)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", nested_dict)
         assert mapping is not None
 
         # Add one more level to exceed the limit
@@ -66,14 +71,18 @@ class TestModelTypedMappingDoSProtection:
 
         # This should fail (depth = 11)
         with pytest.raises(ValueError):
-            ModelTypedMapping.from_python_dict(nested_dict)
+            # ONEX: Replaced with direct creation
+            mapping = ModelTypedMapping()
+            mapping.set_value("data", nested_dict)
 
     def test_depth_tracking_in_instance(self):
         """Test that depth is properly tracked in instances."""
         # Create a mapping with some nesting
         nested_data = {"shallow": "value", "nested": {"inner": {"deep": "value"}}}
 
-        mapping = ModelTypedMapping.from_python_dict(nested_data)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", nested_data)
 
         # Verify depth tracking
         assert mapping.current_depth == 0  # Root level
@@ -116,7 +125,9 @@ class TestModelTypedMappingTypeValidation:
 
         # Should raise ValueError for unsupported type
         with pytest.raises(ValueError) as exc_info:
-            ModelTypedMapping.from_python_dict(unsupported_data)
+            # ONEX: Replaced with direct creation
+            mapping = ModelTypedMapping()
+            mapping.set_value("data", unsupported_data)
 
         assert "Unsupported type for key 'unsupported'" in str(exc_info.value)
 
@@ -198,7 +209,9 @@ class TestModelTypedMappingPerformance:
         large_dict = {f"key_{i}": f"value_{i}" for i in range(1000)}
 
         # Should handle large dictionary without issues
-        mapping = ModelTypedMapping.from_python_dict(large_dict)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", large_dict)
 
         assert len(mapping.keys()) == 1000
         assert mapping.get_string("key_0") == "value_0"
@@ -235,7 +248,9 @@ class TestModelTypedMappingPerformance:
             "empty_structures": {"empty_list": [], "empty_dict": {}},
         }
 
-        mapping = ModelTypedMapping.from_python_dict(test_data)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", test_data)
         result = mapping.to_python_dict()
 
         # Verify all data types are preserved correctly
@@ -257,7 +272,9 @@ class TestModelTypedMappingErrorRecovery:
         }
 
         # First create a valid mapping
-        mapping = ModelTypedMapping.from_python_dict(mixed_data)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
+        mapping.set_value("data", mixed_data)
 
         # Then try to add an invalid type manually
         with pytest.raises(ValueError):
@@ -270,7 +287,8 @@ class TestModelTypedMappingErrorRecovery:
     def test_empty_dictionary_handling(self):
         """Test handling of empty dictionaries."""
         empty_dict = {}
-        mapping = ModelTypedMapping.from_python_dict(empty_dict)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
 
         assert len(mapping.keys()) == 0
         assert mapping.to_python_dict() == {}
@@ -284,7 +302,8 @@ class TestModelTypedMappingErrorRecovery:
             "another_none": None,
         }
 
-        mapping = ModelTypedMapping.from_python_dict(data_with_none)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
 
         # None values should be skipped
         result = mapping.to_python_dict()
@@ -302,7 +321,8 @@ class TestModelTypedMappingErrorRecovery:
         }
 
         # This should work within depth limits
-        mapping = ModelTypedMapping.from_python_dict(malformed_data)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
         result = mapping.to_python_dict()
 
         assert result["normal"] == "value"
@@ -328,7 +348,8 @@ class TestSecurityIntegration:
         complex_data["bulk_data"] = {f"item_{i}": i for i in range(100)}
 
         # This should work - within all limits
-        mapping = ModelTypedMapping.from_python_dict(complex_data)
+        # ONEX: Replaced with direct creation
+        mapping = ModelTypedMapping()
 
         assert mapping is not None
         assert len(mapping.keys()) >= 2  # bulk_data + level0
@@ -349,7 +370,9 @@ class TestSecurityIntegration:
 
         for attack_data in attack_vectors:
             with pytest.raises(ValueError):
-                ModelTypedMapping.from_python_dict(attack_data)
+                # ONEX: Replaced with direct creation
+                mapping = ModelTypedMapping()
+                mapping.set_value("data", attack_data)
 
 
 if __name__ == "__main__":

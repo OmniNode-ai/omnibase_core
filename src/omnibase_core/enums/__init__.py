@@ -8,6 +8,10 @@ organized by functional domains for better maintainability.
 # Artifact-related enums
 from .enum_artifact_type import ArtifactTypeEnum
 
+# Infrastructure-related enums
+from .enum_auth_type import EnumAuthType
+from .enum_backoff_strategy import EnumBackoffStrategy
+
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
 
@@ -27,9 +31,13 @@ from .enum_metadata import (
 
 # Namespace-related enums
 from .enum_namespace_strategy import NamespaceStrategyEnum
+from .enum_notification_method import EnumNotificationMethod
 
 # URI-related enums
 from .enum_uri_type import UriTypeEnum
+
+# Workflow-related enums
+from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
 # Execution-related enums
 from .execution import EnumExecutionMode, EnumOperationStatus
@@ -72,4 +80,10 @@ __all__ = [
     "TraversalModeEnum",
     # URI domain
     "UriTypeEnum",
+    # Workflow domain
+    "EnumWorkflowDependencyType",
+    # Infrastructure domain
+    "EnumAuthType",
+    "EnumBackoffStrategy",
+    "EnumNotificationMethod",
 ]
