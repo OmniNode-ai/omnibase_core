@@ -295,7 +295,9 @@ def validate_payload_runtime(
         # Check depth to prevent stack overflow attacks
         depth = _calculate_payload_depth(payload)
         if depth > max_depth:
-            errors.append(f"Payload depth {depth} exceeds maximum allowed depth {max_depth}")
+            errors.append(
+                f"Payload depth {depth} exceeds maximum allowed depth {max_depth}"
+            )
 
         # If no schema provided, just do basic checks
         if expected_schema is None:
@@ -307,11 +309,7 @@ def validate_payload_runtime(
         else:
             # Schema validation
             schema_errors = _validate_against_schema(
-                payload,
-                expected_schema,
-                strict_types,
-                allow_extra_fields,
-                ""
+                payload, expected_schema, strict_types, allow_extra_fields, ""
             )
             errors.extend(schema_errors)
 
@@ -356,13 +354,15 @@ def _validate_against_schema(
     schema: dict[str, Any],
     strict_types: bool,
     allow_extra_fields: bool,
-    path: str
+    path: str,
 ) -> list[str]:
     """Validate payload against schema definition."""
     errors = []
 
     if not isinstance(payload, dict):
-        errors.append(f"Expected dict at {path or 'root'}, got {type(payload).__name__}")
+        errors.append(
+            f"Expected dict at {path or 'root'}, got {type(payload).__name__}"
+        )
         return errors
 
     # Check required fields
@@ -414,7 +414,9 @@ def _validate_payload_security(payload: Any) -> list[str]:
             for key, value in payload.items():
                 # Prevent key-based attacks
                 if len(str(key)) > 1000:
-                    errors.append(f"Dictionary key too long: {len(str(key))} characters")
+                    errors.append(
+                        f"Dictionary key too long: {len(str(key))} characters"
+                    )
 
                 # Recursive check
                 if isinstance(value, (dict, list, str)):

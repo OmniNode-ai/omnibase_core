@@ -19,11 +19,7 @@ from omnibase_spi.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolServiceInstance,
     ProtocolServiceRegistration,
-)
-from omnibase_spi.protocols.container import (
     ProtocolServiceRegistry,
-)
-from omnibase_spi.protocols.container import (
     ProtocolServiceRegistryStatus,
 )
 

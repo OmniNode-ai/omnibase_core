@@ -186,13 +186,19 @@ class ContainerService:
 
             # Enhanced dependency interface validation if enabled
             interface_validation_results = {}
-            if self._config and getattr(self._config, "enable_interface_validation", True):
+            if self._config and getattr(
+                self._config, "enable_interface_validation", True
+            ):
                 try:
                     interface_validation_results = self.validate_dependency_interfaces(
                         container, contract_content
                     )
 
-                    valid_count = sum(1 for is_valid, _ in interface_validation_results.values() if is_valid)
+                    valid_count = sum(
+                        1
+                        for is_valid, _ in interface_validation_results.values()
+                        if is_valid
+                    )
                     total_count = len(interface_validation_results)
 
                     emit_log_event(
@@ -207,12 +213,18 @@ class ContainerService:
                     )
 
                     # Check for strict validation mode
-                    if (self._config and
-                        getattr(self._config, "strict_interface_validation", False) and
-                        valid_count < total_count):
+                    if (
+                        self._config
+                        and getattr(self._config, "strict_interface_validation", False)
+                        and valid_count < total_count
+                    ):
 
                         failed_deps = [
-                            dep_name for dep_name, (is_valid, _) in interface_validation_results.items()
+                            dep_name
+                            for dep_name, (
+                                is_valid,
+                                _,
+                            ) in interface_validation_results.items()
                             if not is_valid
                         ]
 
@@ -246,7 +258,8 @@ class ContainerService:
                 "successful_registrations": len(registered_services),
                 "failed_registrations": len(failed_services),
                 "container_type": type(container).__name__,
-                "interface_validation_enabled": self._config and getattr(self._config, "enable_interface_validation", True),
+                "interface_validation_enabled": self._config
+                and getattr(self._config, "enable_interface_validation", True),
                 "interface_validation_results": len(interface_validation_results),
             }
 
@@ -255,7 +268,9 @@ class ContainerService:
                     {
                         "validation_enabled": self._config.enable_service_validation,
                         "lifecycle_logging_enabled": self._config.enable_lifecycle_logging,
-                        "interface_validation_enabled": getattr(self._config, "enable_interface_validation", True),
+                        "interface_validation_enabled": getattr(
+                            self._config, "enable_interface_validation", True
+                        ),
                     },
                 )
 
@@ -276,7 +291,10 @@ class ContainerService:
                 # Store interface validation results in the result metadata
                 result.container_metadata["interface_validation_details"] = {
                     dep_name: {"valid": is_valid, "error_count": len(errors)}
-                    for dep_name, (is_valid, errors) in interface_validation_results.items()
+                    for dep_name, (
+                        is_valid,
+                        errors,
+                    ) in interface_validation_results.items()
                 }
 
             emit_log_event(
@@ -486,16 +504,24 @@ class ContainerService:
                 return False, validation_errors
 
             # Cache validation results for performance
-            cache_key = f"{dependency_name}:{expected_protocol}:{type(service).__name__}"
+            cache_key = (
+                f"{dependency_name}:{expected_protocol}:{type(service).__name__}"
+            )
             if cache_key in self._validation_cache:
                 cached_result = self._validation_cache[cache_key]
-                return cached_result, [] if cached_result else [f"Cached validation failed for {dependency_name}"]
+                return cached_result, (
+                    []
+                    if cached_result
+                    else [f"Cached validation failed for {dependency_name}"]
+                )
 
             # Import and validate protocol interface
             try:
                 module_parts = expected_protocol.split(".")
                 if len(module_parts) < 2:
-                    validation_errors.append(f"Invalid protocol path: {expected_protocol}")
+                    validation_errors.append(
+                        f"Invalid protocol path: {expected_protocol}"
+                    )
                     return False, validation_errors
 
                 protocol_name = module_parts[-1]
@@ -506,19 +532,27 @@ class ContainerService:
                 protocol_class = getattr(protocol_module, protocol_name, None)
 
                 if protocol_class is None:
-                    validation_errors.append(f"Protocol {protocol_name} not found in {module_path}")
+                    validation_errors.append(
+                        f"Protocol {protocol_name} not found in {module_path}"
+                    )
                     return False, validation_errors
 
                 # Check if protocol is actually a Protocol class
                 if not hasattr(protocol_class, "__protocol__"):
-                    validation_errors.append(f"{expected_protocol} is not a valid Protocol")
+                    validation_errors.append(
+                        f"{expected_protocol} is not a valid Protocol"
+                    )
                     return False, validation_errors
 
             except ImportError as e:
-                validation_errors.append(f"Cannot import protocol {expected_protocol}: {e}")
+                validation_errors.append(
+                    f"Cannot import protocol {expected_protocol}: {e}"
+                )
                 return False, validation_errors
             except Exception as e:
-                validation_errors.append(f"Protocol validation error for {expected_protocol}: {e}")
+                validation_errors.append(
+                    f"Protocol validation error for {expected_protocol}: {e}"
+                )
                 return False, validation_errors
 
             # Validate service implements protocol methods
@@ -532,7 +566,9 @@ class ContainerService:
                 else:
                     # Validate method signature compatibility (basic check)
                     service_method = service_methods[method_name]
-                    if not self._validate_method_signature(service_method, method_signature):
+                    if not self._validate_method_signature(
+                        service_method, method_signature
+                    ):
                         validation_errors.append(
                             f"Method signature mismatch for {method_name}"
                         )
@@ -604,7 +640,9 @@ class ContainerService:
             # Get protocol annotations/methods
             if hasattr(protocol_class, "__annotations__"):
                 for name, annotation in protocol_class.__annotations__.items():
-                    if callable(annotation) or str(annotation).startswith("typing.Callable"):
+                    if callable(annotation) or str(annotation).startswith(
+                        "typing.Callable"
+                    ):
                         methods[name] = annotation
 
             # Also check for methods defined directly on the protocol
@@ -647,7 +685,9 @@ class ContainerService:
         try:
             if hasattr(protocol_class, "__annotations__"):
                 for name, annotation in protocol_class.__annotations__.items():
-                    if not callable(annotation) and not str(annotation).startswith("typing.Callable"):
+                    if not callable(annotation) and not str(annotation).startswith(
+                        "typing.Callable"
+                    ):
                         attributes.add(name)
         except Exception as e:
             emit_log_event(
@@ -676,7 +716,9 @@ class ContainerService:
 
         return attributes
 
-    def _validate_method_signature(self, service_method: Any, protocol_signature: Any) -> bool:
+    def _validate_method_signature(
+        self, service_method: Any, protocol_signature: Any
+    ) -> bool:
         """
         Basic method signature validation.
 
@@ -721,7 +763,10 @@ class ContainerService:
         validation_results = {}
 
         try:
-            if not hasattr(contract_dependencies, "dependencies") or not contract_dependencies.dependencies:
+            if (
+                not hasattr(contract_dependencies, "dependencies")
+                or not contract_dependencies.dependencies
+            ):
                 emit_log_event(
                     LogLevel.INFO,
                     "No contract dependencies to validate interfaces",
@@ -740,13 +785,19 @@ class ContainerService:
                     expected_protocol = getattr(dependency, "protocol", None)
 
                 if not expected_protocol:
-                    validation_results[dep_name] = (False, ["No protocol interface specified"])
+                    validation_results[dep_name] = (
+                        False,
+                        ["No protocol interface specified"],
+                    )
                     continue
 
                 # Get service from container
                 service_attr = f"_service_{dep_name}"
                 if not hasattr(container, service_attr):
-                    validation_results[dep_name] = (False, [f"Service not found in container: {service_attr}"])
+                    validation_results[dep_name] = (
+                        False,
+                        [f"Service not found in container: {service_attr}"],
+                    )
                     continue
 
                 service = getattr(container, service_attr)
@@ -759,7 +810,9 @@ class ContainerService:
 
             # Log summary
             total_deps = len(validation_results)
-            valid_deps = sum(1 for is_valid, _ in validation_results.values() if is_valid)
+            valid_deps = sum(
+                1 for is_valid, _ in validation_results.values() if is_valid
+            )
 
             emit_log_event(
                 LogLevel.INFO,

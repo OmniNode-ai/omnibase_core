@@ -7,7 +7,7 @@ that are extracted from ModelNodeBase as part of NODEBASE-001 Phase 2.
 Author: ONEX Framework Team
 """
 
-from typing import Any, Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.models.core.model_contract_content import ModelContractContent
