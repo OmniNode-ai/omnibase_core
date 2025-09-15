@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-if TYPE_CHECKING:
-    from datetime import datetime
+from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorInfo
 
-    from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-    from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-    from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorInfo
-
-    from .model_onex_message import ModelOnexMessage
-    from .model_unified_summary import ModelUnifiedSummary
-    from .model_unified_version import ModelUnifiedVersion
+from .model_onex_message import ModelOnexMessage
+from .model_unified_summary import ModelUnifiedSummary
+from .model_unified_version import ModelUnifiedVersion
 
 
 class ModelOnexResult(BaseModel):
