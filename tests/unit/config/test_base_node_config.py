@@ -55,7 +55,7 @@ class TestModelBaseNodeConfig:
 
             assert config.node_id == "full-test-node"
             assert config.node_name == "Full Test Node"
-            assert config.node_type == EnumNodeType.STORAGE
+            assert config.node_type == EnumNodeType.EFFECT
             assert config.node_version == "2.1.0"
             assert config.log_level == EnumLogLevel.DEBUG
             assert config.log_to_file is True
@@ -250,8 +250,8 @@ class TestModelBaseNodeConfig:
                 custom_config={"test_key": "test_value"},
             )
 
-            # Save to YAML
-            yaml_data = yaml.dump(original_config.model_dump())
+            # Save to YAML (use mode='json' to ensure Path objects are serialized as strings)
+            yaml_data = yaml.dump(original_config.model_dump(mode="json"))
             config_path.write_text(yaml_data)
 
             # Load from YAML

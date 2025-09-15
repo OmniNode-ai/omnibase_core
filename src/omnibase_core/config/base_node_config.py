@@ -68,7 +68,7 @@ class ModelBaseNodeConfig(BaseModel):
     )
 
     node_name: str = Field(
-        default="",
+        default="unnamed-node",
         description="Human-readable name for this node",
         min_length=1,
         max_length=255,
@@ -82,7 +82,7 @@ class ModelBaseNodeConfig(BaseModel):
     node_version: str = Field(
         default="1.0.0",
         description="Version of this node implementation",
-        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9]+)*$",
+        pattern=r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)*$",
     )
 
     # Logging configuration
