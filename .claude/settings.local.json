@@ -43,7 +43,9 @@
       "mcp__serena__think_about_whether_you_are_done",
       "mcp__archon__cross_project_rag_query",
       "mcp__archon__omninode_cross_search",
-      "Bash(gh pr checks:*)"
+      "Bash(gh pr checks:*)",
+      "Read(//Volumes/PRO-G40/Code/omnibase_spi/src/omnibase_spi/protocols/**)",
+      "Read(//Volumes/PRO-G40/Code/omnibase_spi/**)"
     ],
     "deny": [],
     "ask": []
