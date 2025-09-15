@@ -107,7 +107,7 @@ class ModelONEXContainer:
         available_shortcuts = ["event_bus", "logger", "health_check"]
 
         raise OnexError(
-            code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            code=CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
             message=f"Unable to resolve service for protocol: {protocol_name}",
             details={
                 "requested_protocol": protocol_name,
