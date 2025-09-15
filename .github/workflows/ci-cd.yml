@@ -51,7 +51,25 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-ansi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Since Poetry tries to resolve all dependencies even if optional,
+          # we need to temporarily modify pyproject.toml for CI
+          echo "Backing up pyproject.toml and removing private dependency for CI..."
+          cp pyproject.toml pyproject.toml.backup
+
+          # Remove the omnibase_spi dependency line for CI installation
+          sed -i '/omnibase_spi.*git.*github.com/d' pyproject.toml
+
+          # Install dependencies without the private dependency
+          echo "Installing dependencies without private omnibase_spi dependency..."
+          poetry install --no-interaction --no-ansi
+
+          # Restore original pyproject.toml for consistency
+          mv pyproject.toml.backup pyproject.toml
+
+          echo "✅ Dependencies installed successfully for CI validation"
 
       - name: Run 7-Gate Validation on Modified Models
         run: |
