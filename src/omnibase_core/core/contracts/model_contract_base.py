@@ -260,12 +260,13 @@ class ModelContractBase(BaseModel, ABC):
     def validate_dependencies_model_dependency_only(
         cls, v: object
     ) -> list[ModelDependency]:
-        """Validate dependencies with YAML deserialization support and memory safety.
+        """Validate dependencies with optimized batch processing.
 
         ZERO TOLERANCE for runtime: Only ModelDependency objects.
         YAML EXCEPTION: Allow dict conversion only during YAML contract loading.
         MEMORY SAFETY: Enforce maximum dependencies limit to prevent resource exhaustion.
         SECURITY: Reject string dependencies with clear actionable error messages.
+        PERFORMANCE: Batch validation for large dependency lists.
         """
         if not v:
             return []
@@ -295,74 +296,133 @@ class ModelContractBase(BaseModel, ABC):
                 },
             )
 
-        dependencies = []
-        for i, item in enumerate(v):
+        # Batch validation approach for better performance
+        return cls._validate_dependency_batch(v)
+
+    @classmethod
+    def _validate_dependency_batch(cls, dependencies: list) -> list[ModelDependency]:
+        """
+        Optimized batch validation for dependency lists.
+
+        Groups validation by type for better performance and provides
+        comprehensive error reporting for multiple issues.
+        """
+        if not dependencies:
+            return []
+
+        # Pre-categorize items by type for batch processing
+        model_deps = []
+        dict_deps = []
+        string_deps = []
+        invalid_deps = []
+
+        # Single pass categorization
+        for i, item in enumerate(dependencies):
             if isinstance(item, ModelDependency):
-                dependencies.append(item)
+                model_deps.append((i, item))
             elif isinstance(item, dict):
-                # YAML DESERIALIZATION EXCEPTION: Allow dict-to-ModelDependency for contract loading
-                # This maintains zero tolerance for runtime while enabling YAML contract deserialization
-                try:
-                    dependencies.append(ModelDependency(**item))
-                except Exception as e:
-                    raise OnexError(
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                        message=f"Failed to convert YAML dependency {i} to ModelDependency: {str(e)}",
-                        context={
-                            "dependency_index": i,
-                            "dependency_data": str(item)[:200],  # Limit output size
-                            "validation_error": str(e)[:100],  # Limit error size
-                            "yaml_deserialization": "Dict conversion allowed only for YAML loading",
-                            "example_format": {
-                                "name": "ProtocolEventBus",
-                                "module": "omnibase_core.protocol",
-                            },
-                        },
-                    ) from e
+                dict_deps.append((i, item))
             elif isinstance(item, str):
-                # SECURITY ENHANCEMENT: Explicit string rejection with clear guidance
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"String dependency '{item[:50]}...' not allowed. Use structured ModelDependency format.",
-                    context={
-                        "dependency_index": i,
-                        "received_value": str(item)[
-                            :100
-                        ],  # First 100 chars for debugging
-                        "received_type": "str",
-                        "security_policy": "String dependencies rejected to prevent injection attacks",
-                        "migration_path": f"Convert '{item[:30]}...' to ModelDependency(name='{item[:30]}...', module='...')",
-                        "example_conversion": {
-                            "old_format": (
-                                item[:30] if len(str(item)) > 30 else str(item)
-                            ),
-                            "new_format": {
-                                "name": "YourDependencyName",
-                                "module": "your.module.path",
-                            },
-                        },
-                    },
-                )
+                string_deps.append((i, item))
             else:
-                # ZERO TOLERANCE: Reject all other types with actionable guidance
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Invalid dependency type {type(item).__name__} at index {i}. Only ModelDependency or dict (YAML) allowed.",
-                    context={
-                        "dependency_index": i,
-                        "received_type": type(item).__name__,
-                        "received_value": str(item)[
-                            :100
-                        ],  # First 100 chars for debugging
-                        "allowed_types": ["ModelDependency", "dict (YAML only)"],
-                        "migration_examples": {
-                            "python_code": "ModelDependency(name='ProtocolName', module='module.path')",
-                            "yaml_format": "name: ProtocolName\nmodule: module.path",
-                        },
-                    },
+                invalid_deps.append((i, item))
+
+        # Immediate rejection of invalid types with batch error messages
+        if string_deps or invalid_deps:
+            cls._raise_batch_validation_errors(string_deps, invalid_deps)
+
+        # Batch process valid ModelDependency instances
+        result_deps = [item for _, item in model_deps]
+
+        # Batch convert dict dependencies to ModelDependency
+        if dict_deps:
+            result_deps.extend(cls._batch_convert_dict_dependencies(dict_deps))
+
+        return result_deps
+
+    @classmethod
+    def _raise_batch_validation_errors(
+        cls, string_deps: list[tuple[int, str]], invalid_deps: list[tuple[int, object]]
+    ) -> None:
+        """Raise comprehensive batch validation errors."""
+        error_details = []
+
+        # Collect all string dependency errors
+        for i, item in string_deps:
+            error_details.append(
+                {
+                    "index": i,
+                    "type": "string_dependency",
+                    "value": str(item)[:50] + ("..." if len(str(item)) > 50 else ""),
+                    "error": "String dependencies not allowed - security risk",
+                }
+            )
+
+        # Collect all invalid type errors
+        for i, item in invalid_deps:
+            error_details.append(
+                {
+                    "index": i,
+                    "type": "invalid_type",
+                    "value": str(item)[:50] + ("..." if len(str(item)) > 50 else ""),
+                    "error": f"Invalid type {type(item).__name__} not allowed",
+                }
+            )
+
+        # Single comprehensive error with all validation issues
+        raise OnexError(
+            error_code=CoreErrorCode.VALIDATION_FAILED,
+            message=f"Batch validation failed: {len(error_details)} invalid dependencies found",
+            context={
+                "validation_errors": error_details,
+                "total_dependencies": len(string_deps) + len(invalid_deps),
+                "security_policy": "String dependencies rejected to prevent injection attacks",
+                "allowed_types": ["ModelDependency", "dict (YAML only)"],
+                "example_format": {
+                    "name": "ProtocolEventBus",
+                    "module": "omnibase_core.protocol",
+                },
+            },
+        )
+
+    @classmethod
+    def _batch_convert_dict_dependencies(
+        cls, dict_deps: list[tuple[int, dict]]
+    ) -> list[ModelDependency]:
+        """Batch convert dict dependencies to ModelDependency instances."""
+        result_deps = []
+        conversion_errors = []
+
+        for i, item in dict_deps:
+            try:
+                result_deps.append(ModelDependency(**item))
+            except Exception as e:
+                conversion_errors.append(
+                    {
+                        "index": i,
+                        "data": str(item)[:100]
+                        + ("..." if len(str(item)) > 100 else ""),
+                        "error": str(e)[:100] + ("..." if len(str(e)) > 100 else ""),
+                    }
                 )
 
-        return dependencies
+        # Report all conversion errors at once if any occurred
+        if conversion_errors:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Batch YAML dependency conversion failed: {len(conversion_errors)} errors",
+                context={
+                    "conversion_errors": conversion_errors,
+                    "total_failed": len(conversion_errors),
+                    "yaml_deserialization": "Dict conversion allowed only for YAML loading",
+                    "example_format": {
+                        "name": "ProtocolEventBus",
+                        "module": "omnibase_core.protocol",
+                    },
+                },
+            )
+
+        return result_deps
 
     @field_validator("node_type", mode="before")
     @classmethod

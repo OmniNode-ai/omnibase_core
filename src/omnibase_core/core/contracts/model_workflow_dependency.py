@@ -10,12 +10,9 @@ ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
 # NO Any imports - ZERO TOLERANCE for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.core.contracts.model_workflow_condition import ModelWorkflowCondition
-from omnibase_core.core.contracts.model_workflow_dependency_config import (
-    ModelWorkflowDependencyConfig,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -172,13 +169,14 @@ class ModelWorkflowDependency(BaseModel):
         """Check if dependency is compensating (saga pattern)."""
         return self.dependency_type == EnumWorkflowDependencyType.COMPENSATING
 
-    # STRONG TYPES ONLY: Use typed configuration model instead of dict
-    _config_model: ModelWorkflowDependencyConfig = ModelWorkflowDependencyConfig(
-        extra_fields_behavior="ignore",  # Allow extra fields from various input formats
+    # Clean Pydantic v2 configuration using ConfigDict
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from various input formats
         use_enum_values=False,  # Keep enum objects internally, serialize via alias
         validate_assignment=True,
-        strip_whitespace=True,
+        str_strip_whitespace=True,
+        frozen=False,  # Allow modification after creation
+        populate_by_name=False,  # Use field names, not aliases
+        use_list=True,  # Use list type for array-like fields
+        json_schema_serialization_defaults_required=False,  # Don't require defaults in schema
     )
-
-    # Pydantic model_config derived from typed configuration
-    model_config = _config_model.to_pydantic_config_dict()

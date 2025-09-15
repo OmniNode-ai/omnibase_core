@@ -8,6 +8,7 @@ ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
 from enum import Enum
+from typing import Generic, TypeVar, Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -43,6 +44,33 @@ class EnumConditionType(str, Enum):
     CUSTOM_EXPRESSION = "custom_expression"
 
 
+# Type-safe value types
+ConditionValue = TypeVar("ConditionValue", str, int, float, bool)
+
+
+class ModelConditionValue(BaseModel, Generic[ConditionValue]):
+    """Generic container for strongly-typed condition values."""
+
+    value: ConditionValue = Field(..., description="Typed condition value")
+
+    @property
+    def python_type(self) -> type:
+        """Get the Python type of the contained value."""
+        return type(self.value)
+
+
+class ModelConditionValueList(BaseModel):
+    """Container for list of strongly-typed condition values."""
+
+    values: list[str | int | float | bool] = Field(
+        ..., description="List of condition values"
+    )
+
+    def contains(self, item: str | int | float | bool) -> bool:
+        """Check if the list contains the specified item."""
+        return item in self.values
+
+
 class ModelWorkflowCondition(BaseModel):
     """
     Strongly-typed workflow condition specification.
@@ -70,9 +98,15 @@ class ModelWorkflowCondition(BaseModel):
         description="Operator to use for condition evaluation",
     )
 
-    expected_value: str | int | float | bool | list[str | int | float | bool] = Field(
+    expected_value: Union[
+        ModelConditionValue[str],
+        ModelConditionValue[int],
+        ModelConditionValue[float],
+        ModelConditionValue[bool],
+        ModelConditionValueList,
+    ] = Field(
         ...,
-        description="Expected value for comparison (strongly typed)",
+        description="Expected value for comparison (strongly typed container)",
     )
 
     description: str | None = Field(
@@ -114,13 +148,24 @@ class ModelWorkflowCondition(BaseModel):
     @classmethod
     def validate_expected_value(
         cls,
-        v: str | int | float | bool | list[str | int | float | bool],
+        v: Union[
+            ModelConditionValue[str],
+            ModelConditionValue[int],
+            ModelConditionValue[float],
+            ModelConditionValue[bool],
+            ModelConditionValueList,
+        ],
         info: ValidationInfo | None = None,
-    ) -> str | int | float | bool | list[str | int | float | bool]:
-        """Validate expected value is compatible with operator."""
-        # Pydantic v2 compatible: uses ValidationInfo instead of values dict
-        # Access other field values via info.data if needed for cross-field validation
-        # For now, basic validation - can be enhanced based on operator type
+    ) -> Union[
+        ModelConditionValue[str],
+        ModelConditionValue[int],
+        ModelConditionValue[float],
+        ModelConditionValue[bool],
+        ModelConditionValueList,
+    ]:
+        """Validate expected value container is properly typed and compatible with operator."""
+        # Validation is handled by the container types themselves
+        # Additional operator compatibility checks can be added based on info.data
         return v
 
     def evaluate_condition(
@@ -142,9 +187,12 @@ class ModelWorkflowCondition(BaseModel):
             # Extract field value from context
             field_value = self._extract_field_value(context_data, self.field_name)
 
+            # Extract the actual value from the container
+            expected_actual_value = self._extract_container_value(self.expected_value)
+
             # Perform operator-specific evaluation
             return self._evaluate_operator(
-                field_value, self.expected_value, self.operator
+                field_value, expected_actual_value, self.operator
             )
 
         except KeyError as e:
@@ -175,6 +223,23 @@ class ModelWorkflowCondition(BaseModel):
                 raise KeyError(f"Field path '{field_path}' not found")
 
         return current_value
+
+    def _extract_container_value(
+        self,
+        container: Union[
+            ModelConditionValue[str],
+            ModelConditionValue[int],
+            ModelConditionValue[float],
+            ModelConditionValue[bool],
+            ModelConditionValueList,
+        ],
+    ) -> str | int | float | bool | list[str | int | float | bool]:
+        """Extract the actual value from the type-safe container."""
+        if isinstance(container, ModelConditionValueList):
+            return container.values
+        else:
+            # ModelConditionValue generic container
+            return container.value
 
     def _evaluate_operator(
         self,
