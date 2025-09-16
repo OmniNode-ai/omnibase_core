@@ -278,34 +278,17 @@ class Phase3Validator:
         all_output = result.stdout + "\n" + result.stderr
         output_lines = all_output.split("\n")
 
-        # Check for test collection errors (common in CI environments)
+        # Check for test collection errors - should not happen with proper dependencies
         has_collection_error = "error during collection" in all_output.lower()
-        is_ci_environment = (
-            "github" in all_output.lower() or not self.baseline
-        )  # Heuristic for CI
-
-        if (
-            has_collection_error
-            and is_ci_environment
-            and "workflow-orchestrator" in self.branch_context
-        ):
-            # CI environment workaround for workflow orchestrator validation
-            print(f"⚠️  CI Environment: Test collection error detected")
-            print(f"🔧 Applying workflow-orchestrator CI workaround")
-            print(
-                f"✅ WorkflowOrchestrator tests verified locally - allowing CI to pass"
-            )
-
+        if has_collection_error:
             return (
-                True,  # Allow to pass in CI environment
-                f"CI environment workaround: Test collection issues bypassed for workflow-orchestrator ({self.branch_context})",
+                False,
+                f"Test collection failed - check dependencies and imports",
                 {
-                    "tests_passed": True,
-                    "passed_count": target_count,  # Use target as passed count
-                    "target_count": target_count,
-                    "ci_workaround": True,
-                    "collection_error_bypassed": True,
+                    "tests_passed": False,
+                    "collection_error": True,
                     "branch_context": self.branch_context,
+                    "error_output": all_output[-500:],
                 },
             )
 
