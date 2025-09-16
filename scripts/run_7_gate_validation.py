@@ -281,7 +281,10 @@ class Phase3Validator:
         # Debug output for CI troubleshooting
         print(f"🐛 DEBUG: Exit code: {result.returncode}")
         print(f"🐛 DEBUG: Output length: {len(all_output)} chars")
-        print(f"🐛 DEBUG: Last 300 chars of output: {all_output[-300:]}")
+        print(f"🐛 DEBUG: Full output:")
+        print("=" * 50)
+        print(all_output)
+        print("=" * 50)
 
         # Check for failed tests specifically
         has_actual_failures = any(
