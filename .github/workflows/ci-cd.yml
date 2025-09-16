@@ -25,12 +25,15 @@ jobs:
       contents: read
       actions: read
       packages: read
+      # Note: GITHUB_TOKEN has limited access to other private repos
+      # May need organization-level PAT for omnibase_spi access
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT if available for private repo access, fallback to GITHUB_TOKEN
+          token: ${{ secrets.OMNINODE_PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -54,10 +57,11 @@ jobs:
 
       - name: Configure git for private dependencies
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT if available for private repo access, fallback to GITHUB_TOKEN
+          ACCESS_TOKEN: ${{ secrets.OMNINODE_PAT || secrets.GITHUB_TOKEN }}
         run: |
           # Set up git authentication in multiple formats to cover all cases
-          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${ACCESS_TOKEN}@github.com/".insteadOf "https://github.com/"
           git config --global user.email "ci@omninode.ai"
           git config --global user.name "CI Bot"
 
@@ -66,27 +70,27 @@ jobs:
 
           # Test git access
           echo "Testing git access to omnibase_spi..."
-          if git ls-remote https://x-access-token:${GITHUB_TOKEN}@github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
+          if git ls-remote https://x-access-token:${ACCESS_TOKEN}@github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
             echo "✅ Successfully authenticated to omnibase_spi repository"
           else
             echo "❌ Warning: Cannot access omnibase_spi repository"
-            echo "  GITHUB_TOKEN may not have access to private repositories"
+            echo "  ACCESS_TOKEN may not have access to private repositories"
             echo "  Proceeding with Poetry install - may fail on omnibase_spi dependency"
           fi
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT if available for private repo access, fallback to GITHUB_TOKEN
+          ACCESS_TOKEN: ${{ secrets.OMNINODE_PAT || secrets.GITHUB_TOKEN }}
           GIT_USERNAME: x-access-token
-          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Install all dependencies including private omnibase_spi dependency
           echo "Installing dependencies with omnibase_spi from private repository..."
 
           # Set git credentials for this session
           git config --global credential.helper store
-          echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+          echo "https://x-access-token:${ACCESS_TOKEN}@github.com" > ~/.git-credentials
 
           poetry install --no-interaction --no-ansi -vvv
 
