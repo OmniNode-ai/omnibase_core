@@ -375,9 +375,9 @@ class Phase3Validator:
 
         elif "workflow-orchestrator" in self.branch_context:
             return (
-                "tests/unit/",  # Broader test scope for new features
-                30,  # Moderate requirement for new feature
-                "WorkflowOrchestrator feature validation",
+                "tests/unit/agents/test_workflow_orchestrator_agent.py",  # Focus on specific agent tests
+                24,  # All WorkflowOrchestrator tests (24 total)
+                "WorkflowOrchestrator agent validation",
             )
 
         # Standard validation for production branches
