@@ -66,6 +66,20 @@ class TestWorkflowOrchestratorAgent:
             agent._execution_states_lock = threading.RLock()
             agent._registry = None
             agent._registry_lock = threading.RLock()
+
+            # Enhanced workflow coordination tracking (new attributes)
+            agent._workflow_instances = {}
+            agent._workflow_instances_lock = threading.RLock()
+            agent._coordination_results = {}
+            agent._coordination_results_lock = threading.RLock()
+
+            # Node coordination patterns
+            agent._node_coordination_config = {
+                "COMPUTE": {"assignment_strategy": "load_balanced"},
+                "EFFECT": {"assignment_strategy": "capability_matched"},
+                "REDUCER": {"assignment_strategy": "state_affinity"},
+            }
+
             agent._last_cleanup_time = datetime.now()
             agent._cleanup_stats = {
                 "total_cleanups": 0,
@@ -73,6 +87,10 @@ class TestWorkflowOrchestratorAgent:
                 "states_removed_limit": 0,
                 "max_states_held": 0,
                 "avg_cleanup_duration_ms": 0.0,
+                "workflows_created": 0,
+                "workflows_executed": 0,
+                "coordination_failures": 0,
+                "active_workflows": 0,
             }
             agent.node_id = "test-orchestrator-001"
             return agent
@@ -356,7 +374,7 @@ class TestWorkflowOrchestratorAgent:
             health_result = orchestrator_agent.health_check()
 
         assert health_result.status == "healthy"
-        assert health_result.service_name == "WorkflowOrchestratorAgent"
+        assert health_result.service_name == "EnhancedWorkflowOrchestratorAgent"
         assert "workflow_orchestration" in health_result.capabilities
         assert "dependency_management" in health_result.capabilities
         assert (
@@ -409,7 +427,7 @@ class TestWorkflowOrchestratorAgent:
                 health_result = orchestrator_agent.health_check()
 
         assert health_result.status == "unhealthy"
-        assert health_result.service_name == "WorkflowOrchestratorAgent"
+        assert health_result.service_name == "EnhancedWorkflowOrchestratorAgent"
         assert "Health check error" in health_result.errors
 
     def test_operation_routing(self, orchestrator_agent):
