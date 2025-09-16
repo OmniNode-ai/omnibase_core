@@ -61,8 +61,8 @@ jobs:
           git config --global user.email "ci@omninode.ai"
           git config --global user.name "CI Bot"
 
-          # Configure Poetry to use system git for private repos
-          poetry config experimental.system-git-client true
+          # Configure Poetry for private repos (system-git-client deprecated)
+          # poetry config experimental.system-git-client true # Deprecated in Poetry 1.2+
 
           # Test git access
           echo "Testing git access to omnibase_spi..."
