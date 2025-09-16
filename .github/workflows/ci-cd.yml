@@ -157,7 +157,7 @@ jobs:
               echo "🔍 Running 7-gate validation on: $model_file"
 
               # Pass branch context to validation script for intelligent test requirements
-              if poetry run python scripts/run_7_gate_validation.py "$model_file" --branch-context="$BRANCH_NAME"; then
+              if poetry run python scripts/run_7_gate_validation.py "$model_file" --branch-context="$BRANCH_NAME" --no-rollback; then
                 echo "✅ Validation passed: $model_file"
                 VALIDATED_COUNT=$((VALIDATED_COUNT + 1))
               else
