@@ -1,4 +1,7 @@
 import importlib
+import inspect
+import os
+import sys
 from pathlib import Path
 
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -12,25 +15,67 @@ class MixinNodeIdFromContract:
     Mixin to load node_id (node_name) from node.onex.yaml or contract.yaml in the node's directory.
     Provides the _load_node_id() utility method for use in node __init__.
     Now supports explicit contract_path injection for testability and non-standard instantiation.
+
+    Security: Uses configurable allowed namespaces to prevent unauthorized access.
+    By default, allows omnibase_* modules, but can be customized via OMNIBASE_ALLOWED_NAMESPACES
+    environment variable or _allowed_namespaces class attribute.
     """
+
+    # Default allowed namespaces - can be overridden by subclasses
+    _allowed_namespaces = [
+        "omnibase_core.",
+        "omnibase_spi.",
+        "omnibase.",
+    ]
 
     def __init__(self, contract_path: Path | None = None, *args, **kwargs):
         self._explicit_contract_path = contract_path
         super().__init__(*args, **kwargs)
 
-    def _get_node_dir(self):
-        # Security: validate module is within allowed namespaces
-        allowed_prefixes = [
+    def _get_allowed_namespaces(self) -> list[str]:
+        """
+        Get allowed module namespaces for security validation.
+
+        Priority order:
+        1. OMNIBASE_ALLOWED_NAMESPACES environment variable (comma-separated)
+        2. Class-level _allowed_namespaces attribute
+        3. Default omnibase namespaces
+
+        Returns:
+            List of allowed namespace prefixes
+        """
+        # Check environment variable first (for package consumers)
+        env_namespaces = os.environ.get("OMNIBASE_ALLOWED_NAMESPACES")
+        if env_namespaces:
+            return [ns.strip() for ns in env_namespaces.split(",") if ns.strip()]
+
+        # Use class-level configuration (for subclasses)
+        if hasattr(self, "_allowed_namespaces"):
+            return self._allowed_namespaces
+
+        # Default to omnibase namespaces only
+        return [
             "omnibase_core.",
             "omnibase_spi.",
             "omnibase.",
-            # Add other trusted prefixes as needed
         ]
+
+    def _get_node_dir(self):
+        """
+        Get the directory containing the node module.
+
+        Security: Validates module is within allowed namespaces to prevent
+        unauthorized filesystem access. Consumers can configure allowed
+        namespaces via environment variable or subclass attribute.
+        """
+        allowed_prefixes = self._get_allowed_namespaces()
+
         if not any(
             self.__class__.__module__.startswith(prefix) for prefix in allowed_prefixes
         ):
             raise ValueError(
-                f"Module not in allowed namespace: {self.__class__.__module__}"
+                f"Module '{self.__class__.__module__}' not in allowed namespaces: {allowed_prefixes}. "
+                f"Set OMNIBASE_ALLOWED_NAMESPACES environment variable or override _allowed_namespaces class attribute."
             )
 
         module = importlib.import_module(self.__class__.__module__)

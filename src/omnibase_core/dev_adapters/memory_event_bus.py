@@ -236,31 +236,89 @@ class InMemoryEventBus(ProtocolEventBusInMemory):
 
         logger.debug(f"📤 Published event {event.event_id} to partition {partition_id}")
 
-    def subscribe(self, callback: Callable[[OnexEvent], None]) -> None:
+    def subscribe(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Subscribe a callback to receive events (synchronous).
 
         Args:
             callback: Callable invoked with each OnexEvent
+            event_type: Optional event type filter. If provided, callback only receives
+                       events matching this type. If None, receives all events.
         """
         with self._sync_lock:
-            self._global_subscribers.append(callback)
+            # Create filtered callback if event_type is specified
+            if event_type:
+
+                def filtered_callback(event: OnexEvent) -> None:
+                    if hasattr(event, "event_type") and event.event_type == event_type:
+                        callback(event)
+                    elif hasattr(event, "type") and event.type == event_type:
+                        callback(event)
+
+                # Store original callback reference for unsubscribe
+                filtered_callback._original_callback = callback  # type: ignore
+                filtered_callback._event_type = event_type  # type: ignore
+                self._global_subscribers.append(filtered_callback)
+            else:
+                self._global_subscribers.append(callback)
+
+            event_filter_msg = f" (filter: {event_type})" if event_type else ""
             logger.info(
-                f"📥 Added global sync subscriber (total: {len(self._global_subscribers)})"
+                f"📥 Added global sync subscriber{event_filter_msg} (total: {len(self._global_subscribers)})"
             )
 
-    def unsubscribe(self, callback: Callable[[OnexEvent], None]) -> None:
+    def unsubscribe(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Unsubscribe a previously registered callback (synchronous).
 
         Args:
             callback: Callable to remove
+            event_type: Optional event type filter. If provided, only removes
+                       subscription for this specific event type. If None,
+                       removes callback from all event types.
         """
         with self._sync_lock:
-            if callback in self._global_subscribers:
-                self._global_subscribers.remove(callback)
+            removed_count = 0
+
+            # Remove direct callback if no event_type specified
+            if event_type is None:
+                if callback in self._global_subscribers:
+                    self._global_subscribers.remove(callback)
+                    removed_count += 1
+
+                # Also remove any filtered callbacks for this original callback
+                to_remove = [
+                    cb
+                    for cb in self._global_subscribers
+                    if hasattr(cb, "_original_callback")
+                    and cb._original_callback == callback
+                ]
+                for cb in to_remove:
+                    self._global_subscribers.remove(cb)
+                    removed_count += 1
+            else:
+                # Remove only the specific filtered callback
+                to_remove = [
+                    cb
+                    for cb in self._global_subscribers
+                    if hasattr(cb, "_original_callback")
+                    and cb._original_callback == callback
+                    and hasattr(cb, "_event_type")
+                    and cb._event_type == event_type
+                ]
+                for cb in to_remove:
+                    self._global_subscribers.remove(cb)
+                    removed_count += 1
+
+            if removed_count > 0:
+                event_filter_msg = f" (filter: {event_type})" if event_type else ""
                 logger.info(
-                    f"📤 Removed global sync subscriber (total: {len(self._global_subscribers)})"
+                    f"📤 Removed {removed_count} global sync subscriber(s){event_filter_msg} "
+                    f"(total: {len(self._global_subscribers)})"
                 )
 
     def clear(self) -> None:

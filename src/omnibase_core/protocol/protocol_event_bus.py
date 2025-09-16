@@ -59,7 +59,7 @@ class ProtocolEventBus(Protocol):
     # - Audit logging for compliance
     #
     # Phase 4 - Advanced Features:
-    # - Message routing and filtering
+    # ✅ Message routing and filtering (IMPLEMENTED)
     # - Priority queues
     # - Rate limiting per tenant
     # - Monitoring and health checks
@@ -87,35 +87,87 @@ class ProtocolEventBus(Protocol):
         """
         ...
 
-    def subscribe(self, callback: Callable[[OnexEvent], None]) -> None:
+    def subscribe(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Subscribe a callback to receive events (synchronous).
+
         Args:
             callback: Callable invoked with each OnexEvent
+            event_type: Optional event type filter. If provided, callback only receives
+                       events matching this type. If None, receives all events.
+
+        Examples:
+            # Subscribe to all events
+            event_bus.subscribe(my_callback)
+
+            # Subscribe to specific event type
+            event_bus.subscribe(my_callback, "tool_invocation")
+            event_bus.subscribe(my_callback, CoreEventTypes.TOOL_INVOCATION)
         """
         ...
 
-    async def subscribe_async(self, callback: Callable[[OnexEvent], None]) -> None:
+    async def subscribe_async(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Subscribe a callback to receive events (asynchronous).
+
         Args:
             callback: Callable invoked with each OnexEvent
+            event_type: Optional event type filter. If provided, callback only receives
+                       events matching this type. If None, receives all events.
+
+        Examples:
+            # Subscribe to all events
+            await event_bus.subscribe_async(my_callback)
+
+            # Subscribe to specific event type
+            await event_bus.subscribe_async(my_callback, "tool_invocation")
+            await event_bus.subscribe_async(my_callback, CoreEventTypes.TOOL_INVOCATION)
         """
         ...
 
-    def unsubscribe(self, callback: Callable[[OnexEvent], None]) -> None:
+    def unsubscribe(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Unsubscribe a previously registered callback (synchronous).
+
         Args:
             callback: Callable to remove
+            event_type: Optional event type filter. If provided, only removes
+                       subscription for this specific event type. If None,
+                       removes callback from all event types.
+
+        Examples:
+            # Unsubscribe from all events
+            event_bus.unsubscribe(my_callback)
+
+            # Unsubscribe from specific event type only
+            event_bus.unsubscribe(my_callback, "tool_invocation")
         """
         ...
 
-    async def unsubscribe_async(self, callback: Callable[[OnexEvent], None]) -> None:
+    async def unsubscribe_async(
+        self, callback: Callable[[OnexEvent], None], event_type: str | None = None
+    ) -> None:
         """
         Unsubscribe a previously registered callback (asynchronous).
+
         Args:
             callback: Callable to remove
+            event_type: Optional event type filter. If provided, only removes
+                       subscription for this specific event type. If None,
+                       removes callback from all event types.
+
+        Examples:
+            # Unsubscribe from all events
+            await event_bus.unsubscribe_async(my_callback)
+
+            # Unsubscribe from specific event type only
+            await event_bus.unsubscribe_async(my_callback, "tool_invocation")
         """
         ...
 
