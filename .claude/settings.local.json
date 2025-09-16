@@ -45,7 +45,8 @@
       "mcp__archon__omninode_cross_search",
       "Bash(gh pr checks:*)",
       "Read(//Volumes/PRO-G40/Code/omnibase_spi/src/omnibase_spi/protocols/**)",
-      "Read(//Volumes/PRO-G40/Code/omnibase_spi/**)"
+      "Read(//Volumes/PRO-G40/Code/omnibase_spi/**)",
+      "Bash(semgrep:*)"
     ],
     "deny": [],
     "ask": []
