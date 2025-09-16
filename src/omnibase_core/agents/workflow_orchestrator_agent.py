@@ -101,8 +101,15 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
         self._registry: Optional["ProtocolNodeRegistry"] = None
         self._registry_lock = threading.RLock()
 
-        # Memory management tracking
+        # Memory management tracking with enhanced metrics
         self._last_cleanup_time = datetime.now()
+        self._cleanup_stats = {
+            "total_cleanups": 0,
+            "states_removed_ttl": 0,
+            "states_removed_limit": 0,
+            "max_states_held": 0,
+            "avg_cleanup_duration_ms": 0.0,
+        }
 
         emit_log_event(
             level=LogLevel.INFO,
@@ -124,19 +131,111 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
 
     def run(self, input_state: ModelWorkflowInputState) -> ModelOnexResult:
         """Run the workflow orchestrator with the provided input state."""
-        # Input validation - check for required fields
+        # Comprehensive input validation and security checks
+        if input_state is None:
+            raise OnexError(
+                error_code=CoreErrorCode.INVALID_INPUT,
+                message="input_state is required but was None",
+                context={"validation_failed": "input_state_null"},
+            )
+
+        # Validate required fields
         if input_state.scenario_id is None:
             raise OnexError(
                 error_code=CoreErrorCode.INVALID_INPUT,
                 message="scenario_id is required but was None",
-                context={"input_state": str(input_state)},
+                context={
+                    "input_state": str(input_state),
+                    "validation_failed": "scenario_id_null",
+                },
             )
 
         if input_state.operation_type is None:
             raise OnexError(
                 error_code=CoreErrorCode.INVALID_INPUT,
                 message="operation_type is required but was None",
-                context={"input_state": str(input_state)},
+                context={
+                    "input_state": str(input_state),
+                    "validation_failed": "operation_type_null",
+                },
+            )
+
+        # Security validation for scenario_id
+        if (
+            not isinstance(input_state.scenario_id, str)
+            or len(input_state.scenario_id.strip()) == 0
+        ):
+            raise OnexError(
+                error_code=CoreErrorCode.INVALID_INPUT,
+                message="scenario_id must be a non-empty string",
+                context={
+                    "scenario_id": input_state.scenario_id,
+                    "validation_failed": "scenario_id_invalid",
+                },
+            )
+
+        # Security validation for operation_type
+        if (
+            not isinstance(input_state.operation_type, str)
+            or len(input_state.operation_type.strip()) == 0
+        ):
+            raise OnexError(
+                error_code=CoreErrorCode.INVALID_INPUT,
+                message="operation_type must be a non-empty string",
+                context={
+                    "operation_type": input_state.operation_type,
+                    "validation_failed": "operation_type_invalid",
+                },
+            )
+
+        # Security check for scenario_id - prevent path traversal and injection
+        dangerous_chars = [
+            "../",
+            "..\\",
+            "<",
+            ">",
+            "&",
+            "|",
+            ";",
+            "`",
+            "$",
+            "(",
+            ")",
+            "{",
+            "}",
+            "[",
+            "]",
+        ]
+        for char in dangerous_chars:
+            if char in input_state.scenario_id:
+                raise OnexError(
+                    error_code=CoreErrorCode.INVALID_INPUT,
+                    message=f"scenario_id contains dangerous character sequence: {char}",
+                    context={
+                        "scenario_id": input_state.scenario_id,
+                        "validation_failed": "security_violation",
+                    },
+                )
+
+        # Length limits for security
+        if len(input_state.scenario_id) > 255:
+            raise OnexError(
+                error_code=CoreErrorCode.INVALID_INPUT,
+                message="scenario_id exceeds maximum length of 255 characters",
+                context={
+                    "scenario_id_length": len(input_state.scenario_id),
+                    "validation_failed": "length_exceeded",
+                },
+            )
+
+        if len(input_state.operation_type) > 100:
+            raise OnexError(
+                error_code=CoreErrorCode.INVALID_INPUT,
+                message="operation_type exceeds maximum length of 100 characters",
+                context={
+                    "operation_type_length": len(input_state.operation_type),
+                    "validation_failed": "length_exceeded",
+                },
             )
 
         # Extract validated parameters
@@ -212,7 +311,7 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
             )
 
     def _cleanup_execution_states_if_needed(self) -> None:
-        """Clean up old execution states based on TTL and memory limits."""
+        """Clean up old execution states based on TTL and memory limits with enhanced tracking."""
         current_time = datetime.now()
 
         # Check if it's time for cleanup
@@ -221,7 +320,18 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
         ).total_seconds() < CONFIG.CLEANUP_INTERVAL_SECONDS:
             return
 
+        cleanup_start = datetime.now()
+        states_removed_ttl = 0
+        states_removed_limit = 0
+
         with self._execution_states_lock:
+            initial_count = len(self._execution_states)
+
+            # Update max states held metric
+            self._cleanup_stats["max_states_held"] = max(
+                self._cleanup_stats["max_states_held"], initial_count
+            )
+
             # Remove states older than TTL
             expired_states = []
             for scenario_id, state in self._execution_states.items():
@@ -235,6 +345,7 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
 
             for scenario_id in expired_states:
                 del self._execution_states[scenario_id]
+            states_removed_ttl = len(expired_states)
 
             # If still over limit, remove oldest completed states
             if len(self._execution_states) > CONFIG.MAX_EXECUTION_STATES:
@@ -255,20 +366,89 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
                 for i in range(min(states_to_remove, len(completed_states))):
                     scenario_id = completed_states[i][0]
                     del self._execution_states[scenario_id]
+                    states_removed_limit += 1
+
+            # Update cleanup statistics
+            cleanup_duration = (datetime.now() - cleanup_start).total_seconds() * 1000
+            self._cleanup_stats["total_cleanups"] += 1
+            self._cleanup_stats["states_removed_ttl"] += states_removed_ttl
+            self._cleanup_stats["states_removed_limit"] += states_removed_limit
+
+            # Update rolling average of cleanup duration
+            prev_avg = self._cleanup_stats["avg_cleanup_duration_ms"]
+            total_cleanups = self._cleanup_stats["total_cleanups"]
+            self._cleanup_stats["avg_cleanup_duration_ms"] = (
+                prev_avg * (total_cleanups - 1) + cleanup_duration
+            ) / total_cleanups
 
             self._last_cleanup_time = current_time
 
-            if expired_states:
+            # Enhanced logging with performance metrics
+            if states_removed_ttl > 0 or states_removed_limit > 0:
                 emit_log_event(
                     level=LogLevel.DEBUG,
-                    message="Cleaned up expired execution states",
-                    metadata=ModelGenericMetadata.from_dict(
+                    message="Enhanced cleanup completed",
+                    context=ModelGenericMetadata.from_dict(
                         {
-                            "removed_count": len(expired_states),
+                            "states_removed_ttl": states_removed_ttl,
+                            "states_removed_limit": states_removed_limit,
                             "remaining_count": len(self._execution_states),
+                            "cleanup_duration_ms": round(cleanup_duration, 2),
+                            "total_cleanups": self._cleanup_stats["total_cleanups"],
+                            "max_states_held": self._cleanup_stats["max_states_held"],
+                            "avg_cleanup_duration_ms": round(
+                                self._cleanup_stats["avg_cleanup_duration_ms"], 2
+                            ),
                         }
                     ),
                 )
+
+    def get_memory_statistics(self) -> dict:
+        """Get comprehensive memory management statistics for monitoring."""
+        with self._execution_states_lock:
+            current_states = len(self._execution_states)
+            active_states = len(
+                [
+                    state
+                    for state in self._execution_states.values()
+                    if state.status == EnumWorkflowStatus.RUNNING
+                ]
+            )
+            completed_states = len(
+                [
+                    state
+                    for state in self._execution_states.values()
+                    if state.status == EnumWorkflowStatus.COMPLETED
+                ]
+            )
+            failed_states = len(
+                [
+                    state
+                    for state in self._execution_states.values()
+                    if state.status == EnumWorkflowStatus.FAILED
+                ]
+            )
+
+            return {
+                "current_states": current_states,
+                "active_states": active_states,
+                "completed_states": completed_states,
+                "failed_states": failed_states,
+                "memory_utilization_percent": round(
+                    (current_states / CONFIG.MAX_EXECUTION_STATES) * 100, 2
+                ),
+                "cleanup_stats": self._cleanup_stats.copy(),
+                "time_since_last_cleanup_seconds": int(
+                    (datetime.now() - self._last_cleanup_time).total_seconds()
+                ),
+                "next_cleanup_in_seconds": max(
+                    0,
+                    int(
+                        CONFIG.CLEANUP_INTERVAL_SECONDS
+                        - (datetime.now() - self._last_cleanup_time).total_seconds()
+                    ),
+                ),
+            }
 
     async def orchestrate_operation_with_timeout(
         self,
@@ -560,16 +740,9 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
             base_health = super().health_check()
 
             # Additional orchestrator-specific health checks with thread safety
-            with self._execution_states_lock:
-                active_workflows = len(
-                    [
-                        state
-                        for state in self._execution_states.values()
-                        if state.status == EnumWorkflowStatus.RUNNING
-                    ]
-                )
-
-                total_workflows = len(self._execution_states)
+            memory_stats = self.get_memory_statistics()
+            active_workflows = memory_stats["active_states"]
+            total_workflows = memory_stats["current_states"]
 
             # Calculate health score based on active workflows and system state using config
             health_score = 1.0
@@ -601,6 +774,19 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
 
             from datetime import datetime
 
+            # Include memory statistics in warnings for monitoring
+            warnings = []
+            if health_score <= 0.7:
+                warnings.append("High workflow load detected")
+            if memory_stats["memory_utilization_percent"] > 80:
+                warnings.append(
+                    f"Memory utilization high: {memory_stats['memory_utilization_percent']}%"
+                )
+            if memory_stats["active_states"] > CONFIG.MAX_ACTIVE_WORKFLOWS_WARNING:
+                warnings.append(
+                    f"Active workflows: {memory_stats['active_states']} (warning threshold: {CONFIG.MAX_ACTIVE_WORKFLOWS_WARNING})"
+                )
+
             return ModelHealthCheckResult(
                 status="healthy" if is_healthy else "unhealthy",
                 service_name="WorkflowOrchestratorAgent",
@@ -608,7 +794,12 @@ class WorkflowOrchestratorAgent(NodeOrchestratorService, ProtocolWorkflowOrchest
                 capabilities=capabilities,
                 uptime_seconds=0,
                 dependencies_healthy=registry_connected,
-                warnings=[] if health_score > 0.7 else ["High workflow load detected"],
+                warnings=warnings,
+                memory_usage_mb=memory_stats["current_states"]
+                * 0.1,  # Approximate memory usage
+                cpu_usage_percent=min(
+                    memory_stats["memory_utilization_percent"] / 2, 100.0
+                ),  # Estimate based on utilization
             )
 
         except Exception as e:

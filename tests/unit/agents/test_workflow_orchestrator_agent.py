@@ -67,6 +67,13 @@ class TestWorkflowOrchestratorAgent:
             agent._registry = None
             agent._registry_lock = threading.RLock()
             agent._last_cleanup_time = datetime.now()
+            agent._cleanup_stats = {
+                "total_cleanups": 0,
+                "states_removed_ttl": 0,
+                "states_removed_limit": 0,
+                "max_states_held": 0,
+                "avg_cleanup_duration_ms": 0.0,
+            }
             agent.node_id = "test-orchestrator-001"
             return agent
 
@@ -452,6 +459,108 @@ class TestWorkflowOrchestratorAgent:
                     )
 
                     mock_handler.assert_called_once()
+
+    def test_input_validation_security_checks(self, orchestrator_agent):
+        """Test comprehensive input validation and security checks."""
+        from omnibase_core.models.service.model_workflow_parameters import (
+            ModelWorkflowParameters,
+        )
+
+        # Test scenario_id with dangerous characters
+        dangerous_scenario_id = "test-scenario-../../etc/passwd"
+        input_state = ModelWorkflowInputState(
+            action="orchestrate",
+            scenario_id=dangerous_scenario_id,
+            operation_type="generic",
+            correlation_id=str(uuid4()),
+            parameters=ModelWorkflowParameters(),
+        )
+
+        with patch("omnibase_core.agents.workflow_orchestrator_agent.emit_log_event"):
+            with pytest.raises(OnexError) as exc_info:
+                orchestrator_agent.run(input_state)
+
+            assert "dangerous character sequence" in str(exc_info.value)
+
+    def test_input_validation_length_limits(self, orchestrator_agent):
+        """Test input validation length limits."""
+        from omnibase_core.models.service.model_workflow_parameters import (
+            ModelWorkflowParameters,
+        )
+
+        # Test scenario_id length limit
+        long_scenario_id = "x" * 256  # Exceeds 255 character limit
+        input_state = ModelWorkflowInputState(
+            action="orchestrate",
+            scenario_id=long_scenario_id,
+            operation_type="generic",
+            correlation_id=str(uuid4()),
+            parameters=ModelWorkflowParameters(),
+        )
+
+        with patch("omnibase_core.agents.workflow_orchestrator_agent.emit_log_event"):
+            with pytest.raises(OnexError) as exc_info:
+                orchestrator_agent.run(input_state)
+
+            assert "exceeds maximum length" in str(exc_info.value)
+
+    def test_memory_statistics_tracking(self, orchestrator_agent):
+        """Test memory statistics tracking functionality."""
+        # Get initial memory statistics
+        stats = orchestrator_agent.get_memory_statistics()
+
+        assert isinstance(stats, dict)
+        assert "current_states" in stats
+        assert "active_states" in stats
+        assert "completed_states" in stats
+        assert "failed_states" in stats
+        assert "memory_utilization_percent" in stats
+        assert "cleanup_stats" in stats
+
+        # Verify cleanup stats structure
+        cleanup_stats = stats["cleanup_stats"]
+        expected_keys = [
+            "total_cleanups",
+            "states_removed_ttl",
+            "states_removed_limit",
+            "max_states_held",
+            "avg_cleanup_duration_ms",
+        ]
+        for key in expected_keys:
+            assert key in cleanup_stats
+
+    def test_enhanced_cleanup_functionality(self, orchestrator_agent):
+        """Test enhanced memory cleanup with statistics tracking."""
+        from datetime import datetime, timedelta
+
+        from omnibase_core.agents.models.model_orchestrator_execution_state import (
+            ModelOrchestratorExecutionState,
+        )
+
+        # Add some test execution states
+        old_time = datetime.now() - timedelta(hours=2)
+        for i in range(5):
+            state = ModelOrchestratorExecutionState(
+                scenario_id=f"old-scenario-{i}",
+                status=EnumWorkflowStatus.COMPLETED,
+                start_time=old_time,
+                end_time=old_time + timedelta(minutes=5),
+                correlation_id=f"corr-{i}",
+                operation_type="test",
+            )
+            orchestrator_agent._execution_states[f"old-scenario-{i}"] = state
+
+        initial_count = len(orchestrator_agent._execution_states)
+
+        # Force cleanup by setting last cleanup time to past
+        orchestrator_agent._last_cleanup_time = datetime.now() - timedelta(minutes=10)
+
+        # Trigger cleanup
+        orchestrator_agent._cleanup_execution_states_if_needed()
+
+        # Verify cleanup occurred
+        assert len(orchestrator_agent._execution_states) <= initial_count
+        assert orchestrator_agent._cleanup_stats["total_cleanups"] > 0
 
 
 class TestModelOrchestratorParameters:
