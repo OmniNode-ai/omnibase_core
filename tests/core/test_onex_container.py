@@ -18,7 +18,7 @@ import pytest
 
 # Import production implementation directly - no code duplication
 import omnibase_core.core.onex_container as onex_container_module
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.core.onex_container import ModelONEXContainer as ONEXContainer
 from omnibase_core.core.onex_container import create_onex_container, get_container
 from omnibase_core.exceptions.base_onex_error import OnexError
@@ -173,7 +173,7 @@ class TestONEXContainer:
             container.get_service("NonExistentProtocol")
 
         error = exc_info.value
-        assert error.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert error.code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
         assert (
             "Unable to resolve service for protocol: NonExistentProtocol"
             in error.message
@@ -188,7 +188,7 @@ class TestONEXContainer:
             container.get_service("event_bus")
 
         error = exc_info.value
-        assert error.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert error.code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
         assert "Unable to resolve service for protocol: event_bus" in error.message
 
     def test_configuration_method(self):
@@ -367,7 +367,7 @@ class TestErrorHandling:
         with pytest.raises(OnexError) as exc_info:
             container.get_service("")
 
-        assert exc_info.value.code == CoreErrorCode.SERVICE_RESOLUTION_FAILED
+        assert exc_info.value.code == CoreErrorCode.REGISTRY_RESOLUTION_FAILED
 
     def test_none_service_registration(self):
         """Test that None can be registered as a service (valid use case)."""

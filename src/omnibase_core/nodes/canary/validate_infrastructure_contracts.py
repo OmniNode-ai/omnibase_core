@@ -212,6 +212,18 @@ class ContractValidator:
                     parts[:-1],
                 )  # Everything except last part is module
 
+                # Security: validate module is within allowed namespaces
+                allowed_prefixes = [
+                    "omnibase_core.",
+                    "omnibase_spi.",
+                    "omnibase.",
+                    # Add other trusted prefixes as needed
+                ]
+                if not any(
+                    module_path.startswith(prefix) for prefix in allowed_prefixes
+                ):
+                    return None
+
                 # Try to import the module directly
                 module = importlib.import_module(module_path)
 
@@ -252,6 +264,18 @@ class ContractValidator:
                 continue
 
             try:
+                # Security: validate module is within allowed namespaces
+                allowed_prefixes = [
+                    "omnibase_core.",
+                    "omnibase_spi.",
+                    "omnibase.",
+                    # Add other trusted prefixes as needed
+                ]
+                if not any(
+                    module_path.startswith(prefix) for prefix in allowed_prefixes
+                ):
+                    continue
+
                 module = importlib.import_module(module_path)
 
                 # Look for the model class in the module

@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 
 import psutil
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 
 logger = logging.getLogger(__name__)

@@ -24,7 +24,7 @@ import os
 import threading
 from typing import Any, TypeVar
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions.base_onex_error import OnexError
 
 T = TypeVar("T")
@@ -107,7 +107,7 @@ class ModelONEXContainer:
         available_shortcuts = ["event_bus", "logger", "health_check"]
 
         raise OnexError(
-            code=CoreErrorCode.SERVICE_RESOLUTION_FAILED,
+            code=CoreErrorCode.REGISTRY_RESOLUTION_FAILED,
             message=f"Unable to resolve service for protocol: {protocol_name}",
             details={
                 "requested_protocol": protocol_name,

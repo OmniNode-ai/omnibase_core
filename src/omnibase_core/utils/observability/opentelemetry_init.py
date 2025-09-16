@@ -65,6 +65,19 @@ logger = logging.getLogger(__name__)
 for name, module_path in instrumentor_modules.items():
     try:
         module_name, class_name = module_path.rsplit(".", 1)
+
+        # Security: validate module is within allowed namespaces
+        allowed_prefixes = [
+            "opentelemetry.",
+            # Add other trusted prefixes as needed
+        ]
+        if not any(module_name.startswith(prefix) for prefix in allowed_prefixes):
+            logger.warning(
+                f"Skipping instrumentor {name}: module not in allowed namespace: {module_name}"
+            )
+            instrumentor_imports[name] = None
+            continue
+
         module = __import__(module_name, fromlist=[class_name])
         instrumentor_imports[name] = getattr(module, class_name)
     except ImportError:

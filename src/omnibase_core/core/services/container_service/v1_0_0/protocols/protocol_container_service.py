@@ -7,10 +7,13 @@ that are extracted from ModelNodeBase as part of NODEBASE-001 Phase 2.
 Author: ONEX Framework Team
 """
 
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.models.core.model_contract_content import ModelContractContent
+
+if TYPE_CHECKING:
+    from ..models.model_container_result import ModelContainerResult
 
 
 @allow_any_type(
@@ -29,7 +32,7 @@ class ProtocolContainerService(Protocol):
         contract_content: ModelContractContent,
         node_id: str,
         nodebase_ref: Any | None = None,
-    ) -> Any:
+    ) -> "ModelContainerResult":
         """
         Create and configure ModelONEXContainer from contract dependencies.
 

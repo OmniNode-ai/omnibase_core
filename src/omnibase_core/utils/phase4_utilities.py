@@ -7,6 +7,7 @@ time calculations, risk assessments, scheduling helpers, and monitoring utilitie
 
 import hashlib
 import statistics
+import warnings
 from datetime import datetime, time, timedelta
 
 from omnibase_core.models.automation.model_operational_window import (
@@ -654,6 +655,12 @@ class Phase4HashingUtilities:
         date_str = timestamp.strftime("%Y%m%d")
         time_str = timestamp.strftime("%H%M%S")
         hash_input = f"{severity}:{component}:{timestamp.isoformat()}"
+
+        warnings.warn(
+            "MD5 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         hash_suffix = hashlib.md5(hash_input.encode()).hexdigest()[:6]
 
         return f"INC-{date_str}-{time_str}-{hash_suffix}"

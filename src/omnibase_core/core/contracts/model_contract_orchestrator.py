@@ -949,17 +949,33 @@ class ModelContractOrchestrator(ModelContractBase, MixinLazyEvaluation):  # type
         Returns:
             ModelContractOrchestrator: Validated contract model instance
         """
+        import yaml
         from pydantic import ValidationError
 
-        from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
-
         try:
-            # Use safe YAML loader to parse content and validate as model
-            return load_yaml_content_as_model(yaml_content, cls)
+            # Parse YAML directly without recursion
+            yaml_data = yaml.safe_load(yaml_content)
+            if yaml_data is None:
+                yaml_data = {}
+
+            # Validate with Pydantic model directly - avoids from_yaml recursion
+            return cls.model_validate(yaml_data)
 
         except ValidationError as e:
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"Contract validation failed: {e}",
+                context={"context": {"onex_principle": "Strong types only"}},
+            ) from e
+        except yaml.YAMLError as e:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"YAML parsing error: {e}",
+                context={"context": {"onex_principle": "Strong types only"}},
+            ) from e
+        except Exception as e:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Failed to load contract YAML: {e}",
                 context={"context": {"onex_principle": "Strong types only"}},
             ) from e

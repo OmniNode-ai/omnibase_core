@@ -8,11 +8,11 @@ Author: ONEX Framework Team
 
 from .event_bus_service import EventBusService
 from .models import ModelEventBusConfig, ModelEventBusResult
-from .protocols import ProtocolEventBusService
+from .protocols import ProtocolEventBus
 
 __all__ = [
     "EventBusService",
     "ModelEventBusConfig",
     "ModelEventBusResult",
-    "ProtocolEventBusService",
+    "ProtocolEventBus",
 ]

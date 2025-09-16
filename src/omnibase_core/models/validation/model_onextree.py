@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.enums.enum_onex_tree_node_type import EnumOnexTreeNodeType
 from omnibase_core.exceptions import OnexError
 

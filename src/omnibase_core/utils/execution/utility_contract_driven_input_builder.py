@@ -8,10 +8,10 @@ following ONEX canonical patterns without hardcoded tool logic.
 
 from pathlib import Path
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.decorators import allow_any_type
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.exceptions import OnexError
@@ -133,6 +133,19 @@ class UtilityContractDrivenInputBuilder:
                                     full_module_path = (
                                         f"{enum_module_path}.{enum_module_name}"
                                     )
+
+                                    # Security: validate module is within allowed namespaces
+                                    allowed_prefixes = [
+                                        "omnibase_core.",
+                                        "omnibase_spi.",
+                                        "omnibase.",
+                                    ]
+                                    if not any(
+                                        full_module_path.startswith(prefix)
+                                        for prefix in allowed_prefixes
+                                    ):
+                                        continue  # Skip modules outside allowed namespaces
+
                                     enum_module = importlib.import_module(
                                         full_module_path,
                                     )

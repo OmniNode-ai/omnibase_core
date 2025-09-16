@@ -98,7 +98,7 @@ class ModelExternalServiceConfig(BaseModel):
                             **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.core.core_error_codes import CoreErrorCode
+                        from omnibase_core.core.errors.core_errors import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
                         msg = f"Invalid database connection config: {e!s}"
@@ -107,7 +107,7 @@ class ModelExternalServiceConfig(BaseModel):
                             error_code=CoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.core.core_error_codes import CoreErrorCode
+                        from omnibase_core.core.errors.core_errors import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
                         msg = f"Failed to create database connection config: {e!s}"
@@ -121,7 +121,7 @@ class ModelExternalServiceConfig(BaseModel):
                             **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.core.core_error_codes import CoreErrorCode
+                        from omnibase_core.core.errors.core_errors import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
                         msg = f"Invalid REST API connection config: {e!s}"
@@ -130,7 +130,7 @@ class ModelExternalServiceConfig(BaseModel):
                             error_code=CoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-                        from omnibase_core.core.core_error_codes import CoreErrorCode
+                        from omnibase_core.core.errors.core_errors import CoreErrorCode
                         from omnibase_core.exceptions import OnexError
 
                         msg = f"Failed to create REST API connection config: {e!s}"

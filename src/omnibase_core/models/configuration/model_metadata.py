@@ -46,7 +46,7 @@ MetadataBlockModel = ModelMetadataBlock
 if TYPE_CHECKING:
     import re
 
-    from omnibase_core.core.core_error_codes import CoreErrorCode
+    from omnibase_core.core.errors.core_errors import CoreErrorCode
     from omnibase_core.enums import (
         MetaTypeEnum,
         ProtocolVersionEnum,
@@ -122,7 +122,7 @@ class ModelOnexMetadata(BaseModel):
     def check_metadata_version(cls, v: str) -> str:
         import re
 
-        from omnibase_core.core.core_error_codes import CoreErrorCode
+        from omnibase_core.core.errors.core_errors import CoreErrorCode
         from omnibase_core.exceptions import OnexError
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
@@ -138,7 +138,7 @@ class ModelOnexMetadata(BaseModel):
     def check_name(cls, v: str) -> str:
         import re
 
-        from omnibase_core.core.core_error_codes import CoreErrorCode
+        from omnibase_core.core.errors.core_errors import CoreErrorCode
         from omnibase_core.exceptions import OnexError
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
@@ -165,7 +165,7 @@ class ModelOnexMetadata(BaseModel):
     def check_version(cls, v: str) -> str:
         import re
 
-        from omnibase_core.core.core_error_codes import CoreErrorCode
+        from omnibase_core.core.errors.core_errors import CoreErrorCode
         from omnibase_core.exceptions import OnexError
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
@@ -176,7 +176,7 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("protocols_supported", mode="before")
     @classmethod
     def check_protocols_supported(cls, v: list[str] | str) -> list[str]:
-        from omnibase_core.core.core_error_codes import CoreErrorCode
+        from omnibase_core.core.errors.core_errors import CoreErrorCode
         from omnibase_core.exceptions import OnexError
 
         if isinstance(v, str):
