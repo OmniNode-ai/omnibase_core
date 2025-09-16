@@ -1,0 +1,18 @@
+# Requirements for omni* ecosystem validation tools
+# These are minimal dependencies for the validation scripts
+
+# No external dependencies required - validation scripts use only Python stdlib:
+# - ast (for parsing Python code)
+# - pathlib (for file system operations)
+# - re (for pattern matching)
+# - argparse (for command-line interfaces)
+# - dataclasses (for data structures)
+# - typing (for type hints)
+
+# Optional: If you want enhanced functionality, uncomment these:
+# pydantic>=2.0.0  # For advanced model validation
+# pyyaml>=6.0      # For YAML configuration parsing
+# requests>=2.28.0 # For API-based validation (future use)
+
+# The validation tools are designed to work with Python 3.11+ standard library only
+# to minimize dependencies and ensure they work in any environment.
