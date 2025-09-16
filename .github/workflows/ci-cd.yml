@@ -61,25 +61,33 @@ jobs:
           git config --global user.email "ci@omninode.ai"
           git config --global user.name "CI Bot"
 
-          # Also set up credentials helper for HTTPS
-          echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
-          git config --global credential.helper store
+          # Configure Poetry to use system git for private repos
+          poetry config experimental.system-git-client true
 
           # Test git access
           echo "Testing git access to omnibase_spi..."
-          if git ls-remote https://github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
+          if git ls-remote https://x-access-token:${GITHUB_TOKEN}@github.com/OmniNode-ai/omnibase_spi.git HEAD >/dev/null 2>&1; then
             echo "✅ Successfully authenticated to omnibase_spi repository"
           else
-            echo "❌ Warning: Cannot access omnibase_spi repository - will use fallback install"
+            echo "❌ Warning: Cannot access omnibase_spi repository"
+            echo "  GITHUB_TOKEN may not have access to private repositories"
+            echo "  Proceeding with Poetry install - may fail on omnibase_spi dependency"
           fi
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USERNAME: x-access-token
+          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Install all dependencies including private omnibase_spi dependency
           echo "Installing dependencies with omnibase_spi from private repository..."
+
+          # Set git credentials for this session
+          git config --global credential.helper store
+          echo "https://x-access-token:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+
           poetry install --no-interaction --no-ansi -vvv
 
           echo "✅ Dependencies installed successfully including omnibase_spi"
