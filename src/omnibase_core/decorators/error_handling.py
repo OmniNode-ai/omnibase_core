@@ -10,7 +10,7 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 
 

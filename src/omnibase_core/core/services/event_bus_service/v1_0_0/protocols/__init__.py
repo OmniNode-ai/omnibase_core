@@ -4,6 +4,6 @@ Protocols for Event Bus Service Operations.
 Author: ONEX Framework Team
 """
 
-from .protocol_event_bus_service import ProtocolEventBusService
+from omnibase_spi.protocols.event_bus import ProtocolEventBus
 
-__all__ = ["ProtocolEventBusService"]
+__all__ = ["ProtocolEventBus"]

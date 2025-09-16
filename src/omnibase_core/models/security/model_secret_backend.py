@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.exceptions import OnexError
 

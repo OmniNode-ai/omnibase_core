@@ -38,6 +38,23 @@ class ModelContainerConfig(BaseModel):
         description="Enable registry wrapper for current standards with Phase 0 pattern",
     )
 
+    enable_interface_validation: bool = Field(
+        default=True,
+        description="Enable enhanced protocol interface validation for registered services",
+    )
+
+    interface_validation_cache_size: int = Field(
+        default=100,
+        description="Maximum number of interface validation results to cache",
+        ge=10,
+        le=1000,
+    )
+
+    strict_interface_validation: bool = Field(
+        default=False,
+        description="Enable strict interface validation that fails container creation on validation errors",
+    )
+
     container_metadata: dict | None = Field(
         default=None,
         description="Additional metadata to attach to container instance",

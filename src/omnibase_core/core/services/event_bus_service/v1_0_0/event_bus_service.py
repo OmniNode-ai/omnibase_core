@@ -19,6 +19,8 @@ import os
 import time
 from uuid import UUID
 
+from omnibase_spi.protocols.event_bus import ProtocolEventBus
+
 from omnibase_core.core.core_structured_logging import (
     emit_log_event_sync as emit_log_event,
 )
@@ -29,14 +31,13 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocol.protocol_event_bus import ProtocolEventBus
 
 from .models.model_event_bus_config import ModelEventBusConfig
-from .protocols.protocol_event_bus_service import ProtocolEventBusService
 
 
-class EventBusService(ProtocolEventBusService):
+class EventBusService(ProtocolEventBus):
     """
     Event Bus Service for centralized event operations.
 
-    Implements the ProtocolEventBusService interface to provide
+    Implements the ProtocolEventBus interface to provide
     comprehensive event bus management extracted from ModelNodeBase.
 
     Phase 5: All event bus operations are now centralized in this service

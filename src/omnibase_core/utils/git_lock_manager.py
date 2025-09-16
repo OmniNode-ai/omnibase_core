@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.model_git_lock_summary import ModelGitLockSummary
 

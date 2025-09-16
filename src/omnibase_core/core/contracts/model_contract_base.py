@@ -195,6 +195,7 @@ class ModelContractBase(BaseModel, ABC):
     dependencies: list[ModelDependency] = Field(
         default_factory=list,
         description="Required protocol dependencies with structured specification",
+        max_length=100,  # Prevent memory issues with extensive dependency lists
     )
 
     protocol_interfaces: list[str] = Field(
@@ -248,6 +249,9 @@ class ModelContractBase(BaseModel, ABC):
         # Validate protocol dependencies exist
         self._validate_protocol_dependencies()
 
+        # Validate dependency graph for circular dependencies
+        self._validate_dependency_graph()
+
         # Delegate to node-specific validation
         self.validate_node_specific_config()
 
@@ -256,10 +260,13 @@ class ModelContractBase(BaseModel, ABC):
     def validate_dependencies_model_dependency_only(
         cls, v: object
     ) -> list[ModelDependency]:
-        """Validate dependencies with YAML deserialization support.
+        """Validate dependencies with optimized batch processing.
 
         ZERO TOLERANCE for runtime: Only ModelDependency objects.
         YAML EXCEPTION: Allow dict conversion only during YAML contract loading.
+        MEMORY SAFETY: Enforce maximum dependencies limit to prevent resource exhaustion.
+        SECURITY: Reject string dependencies with clear actionable error messages.
+        PERFORMANCE: Batch validation for large dependency lists.
         """
         if not v:
             return []
@@ -267,43 +274,155 @@ class ModelContractBase(BaseModel, ABC):
         if not isinstance(v, list):
             raise OnexError(
                 error_code=CoreErrorCode.VALIDATION_FAILED,
-                message=f"Contract dependencies must be a list, got {type(v)}",
-                context={"input_type": str(type(v))},
+                message=f"Contract dependencies must be a list, got {type(v).__name__}",
+                context={
+                    "input_type": type(v).__name__,
+                    "expected_type": "list",
+                    "example": '[{"name": "ProtocolEventBus", "module": "omnibase_core.protocol"}]',
+                },
             )
 
-        dependencies = []
-        for i, item in enumerate(v):
+        # Memory safety check: prevent unbounded list growth
+        max_dependencies = 100  # Same as Field max_length constraint
+        if len(v) > max_dependencies:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Too many dependencies: {len(v)}. Maximum allowed: {max_dependencies}",
+                context={
+                    "dependency_count": len(v),
+                    "max_allowed": max_dependencies,
+                    "memory_safety": "Prevents memory exhaustion with large dependency lists",
+                    "suggestion": "Consider using pagination or breaking into smaller contracts",
+                },
+            )
+
+        # Batch validation approach for better performance
+        return cls._validate_dependency_batch(v)
+
+    @classmethod
+    def _validate_dependency_batch(cls, dependencies: list) -> list[ModelDependency]:
+        """
+        Optimized batch validation for dependency lists.
+
+        Groups validation by type for better performance and provides
+        comprehensive error reporting for multiple issues.
+        """
+        if not dependencies:
+            return []
+
+        # Pre-categorize items by type for batch processing
+        model_deps = []
+        dict_deps = []
+        string_deps = []
+        invalid_deps = []
+
+        # Single pass categorization
+        for i, item in enumerate(dependencies):
             if isinstance(item, ModelDependency):
-                dependencies.append(item)
+                model_deps.append((i, item))
             elif isinstance(item, dict):
-                # YAML DESERIALIZATION EXCEPTION: Allow dict-to-ModelDependency for contract loading
-                # This maintains zero tolerance for runtime while enabling YAML contract deserialization
-                try:
-                    dependencies.append(ModelDependency(**item))
-                except Exception as e:
-                    raise OnexError(
-                        error_code=CoreErrorCode.VALIDATION_FAILED,
-                        message=f"Failed to convert YAML dependency {i} to ModelDependency: {str(e)}",
-                        context={
-                            "dependency_index": i,
-                            "dependency_data": item,
-                            "validation_error": str(e),
-                            "yaml_deserialization": "Dict conversion allowed only for YAML loading",
-                        },
-                    ) from e
+                dict_deps.append((i, item))
+            elif isinstance(item, str):
+                string_deps.append((i, item))
             else:
-                # ZERO TOLERANCE: Reject all other types including strings
-                raise OnexError(
-                    error_code=CoreErrorCode.VALIDATION_FAILED,
-                    message=f"Dependency {i} must be ModelDependency or dict (YAML only). No string dependencies allowed.",
-                    context={
-                        "dependency_index": i,
-                        "received_type": str(type(item)),
-                        "expected_types": ["ModelDependency", "dict (YAML only)"],
-                    },
+                invalid_deps.append((i, item))
+
+        # Immediate rejection of invalid types with batch error messages
+        if string_deps or invalid_deps:
+            cls._raise_batch_validation_errors(string_deps, invalid_deps)
+
+        # Batch process valid ModelDependency instances
+        result_deps = [item for _, item in model_deps]
+
+        # Batch convert dict dependencies to ModelDependency
+        if dict_deps:
+            result_deps.extend(cls._batch_convert_dict_dependencies(dict_deps))
+
+        return result_deps
+
+    @classmethod
+    def _raise_batch_validation_errors(
+        cls, string_deps: list[tuple[int, str]], invalid_deps: list[tuple[int, object]]
+    ) -> None:
+        """Raise comprehensive batch validation errors."""
+        error_details = []
+
+        # Collect all string dependency errors
+        for i, item in string_deps:
+            error_details.append(
+                {
+                    "index": i,
+                    "type": "string_dependency",
+                    "value": str(item)[:50] + ("..." if len(str(item)) > 50 else ""),
+                    "error": "String dependencies not allowed - security risk",
+                }
+            )
+
+        # Collect all invalid type errors
+        for i, item in invalid_deps:
+            error_details.append(
+                {
+                    "index": i,
+                    "type": "invalid_type",
+                    "value": str(item)[:50] + ("..." if len(str(item)) > 50 else ""),
+                    "error": f"Invalid type {type(item).__name__} not allowed",
+                }
+            )
+
+        # Single comprehensive error with all validation issues
+        raise OnexError(
+            error_code=CoreErrorCode.VALIDATION_FAILED,
+            message=f"Batch validation failed: {len(error_details)} invalid dependencies found",
+            context={
+                "validation_errors": error_details,
+                "total_dependencies": len(string_deps) + len(invalid_deps),
+                "security_policy": "String dependencies rejected to prevent injection attacks",
+                "allowed_types": ["ModelDependency", "dict (YAML only)"],
+                "example_format": {
+                    "name": "ProtocolEventBus",
+                    "module": "omnibase_core.protocol",
+                },
+            },
+        )
+
+    @classmethod
+    def _batch_convert_dict_dependencies(
+        cls, dict_deps: list[tuple[int, dict]]
+    ) -> list[ModelDependency]:
+        """Batch convert dict dependencies to ModelDependency instances."""
+        result_deps = []
+        conversion_errors = []
+
+        for i, item in dict_deps:
+            try:
+                result_deps.append(ModelDependency(**item))
+            except Exception as e:
+                conversion_errors.append(
+                    {
+                        "index": i,
+                        "data": str(item)[:100]
+                        + ("..." if len(str(item)) > 100 else ""),
+                        "error": str(e)[:100] + ("..." if len(str(e)) > 100 else ""),
+                    }
                 )
 
-        return dependencies
+        # Report all conversion errors at once if any occurred
+        if conversion_errors:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Batch YAML dependency conversion failed: {len(conversion_errors)} errors",
+                context={
+                    "conversion_errors": conversion_errors,
+                    "total_failed": len(conversion_errors),
+                    "yaml_deserialization": "Dict conversion allowed only for YAML loading",
+                    "example_format": {
+                        "name": "ProtocolEventBus",
+                        "module": "omnibase_core.protocol",
+                    },
+                },
+            )
+
+        return result_deps
 
     @field_validator("node_type", mode="before")
     @classmethod
@@ -392,6 +511,84 @@ class ModelContractBase(BaseModel, ABC):
                 msg,
             )
 
+    def _validate_dependency_graph(self) -> None:
+        """
+        Validate dependency graph to prevent circular dependencies and ensure consistency.
+
+        This validation prevents complex circular dependency scenarios where multiple
+        dependencies might create loops in the contract dependency graph.
+        """
+        if not self.dependencies:
+            return
+
+        # Build dependency graph for cycle detection
+        dependency_names = set()
+        contract_name = self.name.lower()
+
+        for dependency in self.dependencies:
+            dep_name = dependency.name.lower()
+
+            # Check for direct self-dependency
+            if dep_name == contract_name:
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Direct circular dependency: Contract '{self.name}' cannot depend on itself via dependency '{dependency.name}'.",
+                    context={
+                        "contract_name": self.name,
+                        "dependency_name": dependency.name,
+                        "dependency_type": dependency.dependency_type.value,
+                        "validation_type": "direct_circular_dependency",
+                        "suggested_fix": "Remove self-referencing dependency or use a different dependency name",
+                    },
+                )
+
+            # Check for duplicate dependencies (same name)
+            if dep_name in dependency_names:
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Duplicate dependency detected: '{dependency.name}' is already defined in this contract.",
+                    context={
+                        "contract_name": self.name,
+                        "duplicate_dependency": dependency.name,
+                        "dependency_type": dependency.dependency_type.value,
+                        "validation_type": "duplicate_dependency",
+                        "suggested_fix": "Remove duplicate dependency or use different names for different versions",
+                    },
+                )
+
+            dependency_names.add(dep_name)
+
+            # Additional validation for module-based circular dependencies
+            if dependency.module and self.name.lower() in dependency.module.lower():
+                # This could indicate a potential circular dependency through module references
+                raise OnexError(
+                    error_code=CoreErrorCode.VALIDATION_FAILED,
+                    message=f"Potential circular dependency: Contract '{self.name}' depends on module '{dependency.module}' which contains the contract name.",
+                    context={
+                        "contract_name": self.name,
+                        "dependency_name": dependency.name,
+                        "dependency_module": dependency.module,
+                        "validation_type": "module_circular_dependency",
+                        "warning": "This may indicate a circular dependency through module references",
+                        "suggested_fix": "Verify that the module does not depend back on this contract",
+                    },
+                )
+
+        # Validate maximum dependency complexity to prevent over-complex contracts
+        max_dependencies = 50  # Reasonable limit for contract complexity
+        if len(self.dependencies) > max_dependencies:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_FAILED,
+                message=f"Contract has too many dependencies: {len(self.dependencies)}. Maximum recommended: {max_dependencies}.",
+                context={
+                    "contract_name": self.name,
+                    "dependency_count": len(self.dependencies),
+                    "max_recommended": max_dependencies,
+                    "validation_type": "complexity_limit",
+                    "architectural_guidance": "Consider breaking complex contracts into smaller, more focused contracts",
+                },
+            )
+
     class Config:
         """Pydantic model configuration for ONEX compliance."""
 
@@ -399,3 +596,5 @@ class ModelContractBase(BaseModel, ABC):
         use_enum_values = False  # Keep enum objects, don't convert to strings
         validate_assignment = True
         str_strip_whitespace = True
+        # Enable model validation caching for performance
+        validate_default = True

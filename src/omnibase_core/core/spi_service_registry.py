@@ -19,11 +19,7 @@ from omnibase_spi.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolServiceInstance,
     ProtocolServiceRegistration,
-)
-from omnibase_spi.protocols.container import (
-    ProtocolServiceRegistry as ProtocolServiceRegistryConfig,
-)
-from omnibase_spi.protocols.container import (
+    ProtocolServiceRegistry,
     ProtocolServiceRegistryStatus,
 )
 
@@ -217,7 +213,7 @@ class SPIServiceRegistry:
 
     # SPI ProtocolServiceRegistry properties
     @property
-    def config(self) -> ProtocolServiceRegistryConfig:
+    def config(self) -> ProtocolServiceRegistry:
         """Get registry configuration."""
         # Return a minimal config implementation
         return type(

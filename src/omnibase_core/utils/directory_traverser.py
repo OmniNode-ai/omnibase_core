@@ -4,6 +4,7 @@ Directory traversal utility for finding and processing files in directories.
 
 import fnmatch
 import importlib
+import inspect
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
@@ -202,7 +203,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="_find_files_with_config",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),
@@ -224,7 +225,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="_find_files_with_config",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),
@@ -250,7 +251,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="_find_files_with_config",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -264,7 +265,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="_find_files_with_config",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -281,7 +282,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="_find_files_with_config",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -295,7 +296,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="_find_files_with_config",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -309,7 +310,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="_find_files_with_config",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),
@@ -359,7 +360,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="_find_files_with_config",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -383,7 +384,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="_find_files_with_config",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),
@@ -461,7 +462,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=LogModelContext(
                             calling_module=__name__,
                             calling_function="load_ignore_patterns",
-                            calling_line=__import__("inspect").currentframe().f_lineno,
+                            calling_line=inspect.currentframe().f_lineno,
                             timestamp="auto",
                             node_id="directory_traverser",
                         ),
@@ -508,7 +509,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 context=LogModelContext(
                     calling_module=__name__,
                     calling_function="should_ignore",
-                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    calling_line=inspect.currentframe().f_lineno,
                     timestamp="auto",
                     node_id="directory_traverser",
                 ),
@@ -529,7 +530,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="should_ignore",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),
@@ -543,7 +544,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 context=LogModelContext(
                     calling_module=__name__,
                     calling_function="should_ignore",
-                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    calling_line=inspect.currentframe().f_lineno,
                     timestamp="auto",
                     node_id="directory_traverser",
                 ),
@@ -558,7 +559,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 context=LogModelContext(
                     calling_module=__name__,
                     calling_function="should_ignore",
-                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    calling_line=inspect.currentframe().f_lineno,
                     timestamp="auto",
                     node_id="directory_traverser",
                 ),
@@ -573,7 +574,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 context=LogModelContext(
                     calling_module=__name__,
                     calling_function="should_ignore",
-                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    calling_line=inspect.currentframe().f_lineno,
                     timestamp="auto",
                     node_id="directory_traverser",
                 ),
@@ -590,7 +591,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=LogModelContext(
                             calling_module=__name__,
                             calling_function="should_ignore",
-                            calling_line=__import__("inspect").currentframe().f_lineno,
+                            calling_line=inspect.currentframe().f_lineno,
                             timestamp="auto",
                             node_id="directory_traverser",
                         ),
@@ -623,7 +624,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                         context=LogModelContext(
                             calling_module=__name__,
                             calling_function="should_ignore",
-                            calling_line=__import__("inspect").currentframe().f_lineno,
+                            calling_line=inspect.currentframe().f_lineno,
                             timestamp="auto",
                             node_id="directory_traverser",
                         ),
@@ -638,7 +639,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="should_ignore",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -653,7 +654,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                     context=LogModelContext(
                         calling_module=__name__,
                         calling_function="should_ignore",
-                        calling_line=__import__("inspect").currentframe().f_lineno,
+                        calling_line=inspect.currentframe().f_lineno,
                         timestamp="auto",
                         node_id="directory_traverser",
                     ),
@@ -667,7 +668,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
                 context=LogModelContext(
                     calling_module=__name__,
                     calling_function="should_ignore",
-                    calling_line=__import__("inspect").currentframe().f_lineno,
+                    calling_line=inspect.currentframe().f_lineno,
                     timestamp="auto",
                     node_id="directory_traverser",
                 ),
@@ -680,7 +681,7 @@ class DirectoryTraverser(ProtocolDirectoryTraverser, ProtocolFileDiscoverySource
             context=LogModelContext(
                 calling_module=__name__,
                 calling_function="should_ignore",
-                calling_line=__import__("inspect").currentframe().f_lineno,
+                calling_line=inspect.currentframe().f_lineno,
                 timestamp="auto",
                 node_id="directory_traverser",
             ),

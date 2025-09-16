@@ -247,6 +247,197 @@ def get_payload_size_recommendations(environment: str) -> dict[str, int]:
     return {k: v * 1024 for k, v in env_config.items()}
 
 
+def validate_payload_runtime(
+    payload: Any,
+    expected_schema: dict[str, Any] | None = None,
+    strict_types: bool = True,
+    max_depth: int = 10,
+    allow_extra_fields: bool = False,
+) -> tuple[bool, list[str]]:
+    """
+    Comprehensive runtime payload validation with schema checking.
+
+    Addresses PR feedback requirement for enhanced runtime validation beyond
+    just size limits. Validates structure, types, depth, and schema compliance.
+
+    Args:
+        payload: The payload to validate
+        expected_schema: Optional schema dictionary for structure validation
+        strict_types: Whether to enforce strict type checking
+        max_depth: Maximum allowed nesting depth
+        allow_extra_fields: Whether to allow fields not in schema
+
+    Returns:
+        tuple: (is_valid, list_of_errors)
+
+    Example:
+        schema = {
+            "event_type": str,
+            "data": {
+                "user_id": int,
+                "action": str,
+                "metadata": dict  # Allow any dict
+            }
+        }
+
+        is_valid, errors = validate_payload_runtime(payload, schema)
+        if not is_valid:
+            raise OnexError(f"Payload validation failed: {errors}")
+    """
+    errors = []
+
+    try:
+        # Basic type validation
+        if payload is None:
+            errors.append("Payload cannot be None")
+            return False, errors
+
+        # Check depth to prevent stack overflow attacks
+        depth = _calculate_payload_depth(payload)
+        if depth > max_depth:
+            errors.append(
+                f"Payload depth {depth} exceeds maximum allowed depth {max_depth}"
+            )
+
+        # If no schema provided, just do basic checks
+        if expected_schema is None:
+            # Basic checks - ensure payload is serializable
+            try:
+                json.dumps(payload)
+            except (TypeError, ValueError) as e:
+                errors.append(f"Payload is not JSON serializable: {e}")
+        else:
+            # Schema validation
+            schema_errors = _validate_against_schema(
+                payload, expected_schema, strict_types, allow_extra_fields, ""
+            )
+            errors.extend(schema_errors)
+
+        # Security checks
+        security_errors = _validate_payload_security(payload)
+        errors.extend(security_errors)
+
+        return len(errors) == 0, errors
+
+    except Exception as e:
+        errors.append(f"Runtime validation error: {e}")
+        return False, errors
+
+
+def _calculate_payload_depth(payload: Any, current_depth: int = 0) -> int:
+    """Calculate the nesting depth of a payload to prevent DoS attacks."""
+    if current_depth > 50:  # Safety limit to prevent infinite recursion
+        return current_depth
+
+    if isinstance(payload, dict):
+        if not payload:
+            return current_depth
+        max_child_depth = 0
+        for value in payload.values():
+            child_depth = _calculate_payload_depth(value, current_depth + 1)
+            max_child_depth = max(max_child_depth, child_depth)
+        return max_child_depth
+    elif isinstance(payload, (list, tuple)):
+        if not payload:
+            return current_depth
+        max_child_depth = 0
+        for item in payload:
+            child_depth = _calculate_payload_depth(item, current_depth + 1)
+            max_child_depth = max(max_child_depth, child_depth)
+        return max_child_depth
+    else:
+        return current_depth
+
+
+def _validate_against_schema(
+    payload: Any,
+    schema: dict[str, Any],
+    strict_types: bool,
+    allow_extra_fields: bool,
+    path: str,
+) -> list[str]:
+    """Validate payload against schema definition."""
+    errors = []
+
+    if not isinstance(payload, dict):
+        errors.append(
+            f"Expected dict at {path or 'root'}, got {type(payload).__name__}"
+        )
+        return errors
+
+    # Check required fields
+    for field_name, field_type in schema.items():
+        field_path = f"{path}.{field_name}" if path else field_name
+
+        if field_name not in payload:
+            errors.append(f"Missing required field: {field_path}")
+            continue
+
+        field_value = payload[field_name]
+
+        # Type checking
+        if isinstance(field_type, dict):
+            # Nested schema
+            nested_errors = _validate_against_schema(
+                field_value, field_type, strict_types, allow_extra_fields, field_path
+            )
+            errors.extend(nested_errors)
+        elif isinstance(field_type, type):
+            # Simple type check
+            if strict_types and not isinstance(field_value, field_type):
+                errors.append(
+                    f"Type mismatch at {field_path}: expected {field_type.__name__}, "
+                    f"got {type(field_value).__name__}"
+                )
+        # Handle Union types, Optional, etc. could be added here
+
+    # Check for extra fields if not allowed
+    if not allow_extra_fields:
+        extra_fields = set(payload.keys()) - set(schema.keys())
+        if extra_fields:
+            for extra_field in extra_fields:
+                field_path = f"{path}.{extra_field}" if path else extra_field
+                errors.append(f"Unexpected field: {field_path}")
+
+    return errors
+
+
+def _validate_payload_security(payload: Any) -> list[str]:
+    """Security validation for payloads to prevent common attacks."""
+    errors = []
+
+    try:
+        # Check for extremely large string values that could cause memory issues
+        if isinstance(payload, str) and len(payload) > 1_000_000:  # 1MB string limit
+            errors.append(f"String value too large: {len(payload)} characters")
+        elif isinstance(payload, dict):
+            for key, value in payload.items():
+                # Prevent key-based attacks
+                if len(str(key)) > 1000:
+                    errors.append(
+                        f"Dictionary key too long: {len(str(key))} characters"
+                    )
+
+                # Recursive check
+                if isinstance(value, (dict, list, str)):
+                    sub_errors = _validate_payload_security(value)
+                    errors.extend(sub_errors)
+        elif isinstance(payload, list):
+            # Check for excessively large lists
+            if len(payload) > 10_000:  # 10k item limit
+                errors.append(f"List too large: {len(payload)} items")
+
+            for item in payload:
+                if isinstance(item, (dict, list, str)):
+                    sub_errors = _validate_payload_security(item)
+                    errors.extend(sub_errors)
+
+    except Exception as e:
+        errors.append(f"Security validation error: {e}")
+
+    return errors
+
+
 def decompress_payload(payload: dict[str, Any] | str) -> Any:
     """
     Decompress a compressed payload.

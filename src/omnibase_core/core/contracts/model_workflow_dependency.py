@@ -10,12 +10,9 @@ ZERO TOLERANCE: No Any types, string fallbacks, or dict configs allowed.
 # NO Any imports - ZERO TOLERANCE for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.core.contracts.model_workflow_condition import ModelWorkflowCondition
-from omnibase_core.core.contracts.model_workflow_dependency_config import (
-    ModelWorkflowDependencyConfig,
-)
 from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.models.core.model_semver import ModelSemVer
@@ -107,6 +104,7 @@ class ModelWorkflowDependency(BaseModel):
         STRONG TYPES ONLY: Accept ModelWorkflowCondition instances ONLY.
         NO FALLBACKS: Reject dicts, strings, Any types, or other patterns.
         NO YAML CONVERSION: Use proper serialization/deserialization patterns instead.
+        ZERO TOLERANCE: Parameter type matches implementation - no Any types allowed.
         """
         if v is None:
             return v
@@ -120,16 +118,12 @@ class ModelWorkflowDependency(BaseModel):
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"STRONG TYPES ONLY: condition must be ModelWorkflowCondition instance. Received {type(v).__name__}.",
                 context={
-                    "context": {
-                        "received_type": str(type(v)),
-                        "received_value": str(v)[:100],  # First 100 chars for debugging
-                        "expected_type": "ModelWorkflowCondition",
-                        "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
-                        "example_usage": {
-                            "correct": "ModelWorkflowCondition(condition_type=EnumConditionType.WORKFLOW_STATE, field_name='status', operator=EnumConditionOperator.EQUALS, expected_value='completed')",
-                            "migration_guide": "See docs/migration/contract-dependency-refactor.md for conversion examples",
-                        },
-                    }
+                    "received_type": str(type(v)),
+                    "received_value": str(v)[:100],  # First 100 chars for debugging
+                    "expected_type": "ModelWorkflowCondition",
+                    "onex_principle": "STRONG TYPES ONLY - no dicts, no strings, no Any types, no fallbacks",
+                    "correct_usage": "ModelWorkflowCondition(condition_type=EnumConditionType.WORKFLOW_STATE, field_name='status', operator=EnumConditionOperator.EQUALS, expected_value='completed')",
+                    "migration_guide": "See docs/migration/contract-dependency-refactor.md for conversion examples",
                 },
             )
 
@@ -146,12 +140,11 @@ class ModelWorkflowDependency(BaseModel):
                 error_code=CoreErrorCode.VALIDATION_FAILED,
                 message=f"CIRCULAR DEPENDENCY DETECTED: Workflow {self.workflow_id} cannot depend on itself.",
                 context={
-                    "context": {
-                        "workflow_id": str(self.workflow_id),
-                        "dependent_workflow_id": str(self.dependent_workflow_id),
-                        "onex_principle": "Circular dependency prevention for workflow orchestration",
-                        "suggested_fix": "Ensure workflow_id and dependent_workflow_id are different UUIDs",
-                    }
+                    "workflow_id": str(self.workflow_id),
+                    "dependent_workflow_id": str(self.dependent_workflow_id),
+                    "onex_principle": "Circular dependency prevention for workflow orchestration",
+                    "suggested_fix": "Ensure workflow_id and dependent_workflow_id are different UUIDs",
+                    "prevention_type": "circular_dependency",
                 },
             )
         return self
@@ -176,13 +169,14 @@ class ModelWorkflowDependency(BaseModel):
         """Check if dependency is compensating (saga pattern)."""
         return self.dependency_type == EnumWorkflowDependencyType.COMPENSATING
 
-    # STRONG TYPES ONLY: Use typed configuration model instead of dict
-    _config_model: ModelWorkflowDependencyConfig = ModelWorkflowDependencyConfig(
-        extra_fields_behavior="ignore",  # Allow extra fields from various input formats
+    # Clean Pydantic v2 configuration using ConfigDict
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from various input formats
         use_enum_values=False,  # Keep enum objects internally, serialize via alias
         validate_assignment=True,
-        strip_whitespace=True,
+        str_strip_whitespace=True,
+        frozen=False,  # Allow modification after creation
+        populate_by_name=False,  # Use field names, not aliases
+        use_list=True,  # Use list type for array-like fields
+        json_schema_serialization_defaults_required=False,  # Don't require defaults in schema
     )
-
-    # Pydantic model_config derived from typed configuration
-    model_config = _config_model.to_pydantic_config_dict()

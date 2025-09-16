@@ -2,6 +2,7 @@
 Model for hash algorithm configuration used by metadata tools.
 """
 
+import warnings
 from enum import Enum
 
 from pydantic import BaseModel, Field, validator
@@ -41,6 +42,18 @@ class ModelHashAlgorithm(BaseModel):
         None,
         description="Digest size for variable-length algorithms",
     )
+
+    @validator("algorithm")
+    def validate_algorithm_security(cls, v):
+        """Validate algorithm security and warn about deprecated algorithms."""
+        if v in [EnumHashAlgorithm.SHA1, EnumHashAlgorithm.MD5]:
+            warnings.warn(
+                f"{v.value.upper()} hash algorithm is deprecated and insecure. "
+                f"Use SHA256, SHA512, or BLAKE2 instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return v
 
     @validator("key")
     def validate_key_for_algorithm(self, v, values):

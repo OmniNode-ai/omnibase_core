@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator
 
+from omnibase_core.core.errors.core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.configuration.model_connection_parse_result import (
     LatencyProfile,
     ParsedConnectionInfo,
@@ -872,9 +873,15 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         port: int = 5432,
         database: str = "onex_dev",
         username: str = "onex_user",
-        password: str = "secure_password",
+        password: str | None = None,
     ) -> "ModelDatabaseSecureConfig":
         """Create PostgreSQL configuration."""
+        if password is None:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                message="Password is required for database configuration",
+                context={"host": host, "database": database, "username": username},
+            )
         return cls(
             host=host,
             port=port,
@@ -891,9 +898,15 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         port: int = 3306,
         database: str = "onex_dev",
         username: str = "onex_user",
-        password: str = "secure_password",
+        password: str | None = None,
     ) -> "ModelDatabaseSecureConfig":
         """Create MySQL configuration."""
+        if password is None:
+            raise OnexError(
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+                message="Password is required for database configuration",
+                context={"host": host, "database": database, "username": username},
+            )
         return cls(
             host=host,
             port=port,

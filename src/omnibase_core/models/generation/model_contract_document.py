@@ -126,17 +126,33 @@ class ModelContractDocument(BaseModel):
 
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelContractDocument":
-        """Create from YAML content with proper validation."""
+        """
+        Create contract model from YAML content with proper enum handling.
+
+        Args:
+            yaml_content: YAML string representation
+
+        Returns:
+            ModelContractDocument: Validated contract model instance
+        """
+        import yaml
         from pydantic import ValidationError
 
-        from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
-
         try:
-            # Use safe YAML loader to parse content and validate as model
-            return load_yaml_content_as_model(yaml_content, cls)
+            # Parse YAML directly without recursion
+            yaml_data = yaml.safe_load(yaml_content)
+            if yaml_data is None:
+                yaml_data = {}
+
+            # Validate with Pydantic model directly - avoids from_yaml recursion
+            return cls.model_validate(yaml_data)
 
         except ValidationError as e:
-            raise ValueError(f"Document validation failed: {e}") from e
+            raise ValueError(f"Contract validation failed: {e}") from e
+        except yaml.YAMLError as e:
+            raise ValueError(f"YAML parsing error: {e}") from e
+        except Exception as e:
+            raise ValueError(f"Failed to load contract YAML: {e}") from e
 
     @classmethod
     def from_file(cls, file_path: Path) -> "ModelContractDocument":

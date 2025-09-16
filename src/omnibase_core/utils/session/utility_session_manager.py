@@ -6,6 +6,7 @@ Follows ONEX utility patterns with strong typing and single responsibility.
 
 import hashlib
 import socket
+import warnings
 
 from omnibase_core.models.hook_events.model_onex_hook_event import ModelOnexHookEvent
 from omnibase_core.utils.session.model_session_info import ModelSessionInfo
@@ -63,6 +64,11 @@ class UtilitySessionManager:
             session_key = f"{self.hostname}:{working_directory}"
 
             # Generate consistent session ID from the key (use hash for consistency)
+            warnings.warn(
+                "MD5 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return hashlib.md5(session_key.encode()).hexdigest()
 
         # Fallback for events without working directory

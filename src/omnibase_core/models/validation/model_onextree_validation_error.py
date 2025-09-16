@@ -4,7 +4,7 @@ OnextreeValidationError model.
 
 from pydantic import BaseModel
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 
 
 class ModelOnextreeValidationError(BaseModel):

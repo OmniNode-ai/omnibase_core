@@ -790,6 +790,23 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 import importlib
 
+                # Security: validate module is within allowed namespaces
+                allowed_prefixes = [
+                    "omnibase_core.",
+                    "omnibase_spi.",
+                    "omnibase.",
+                    # Add other trusted prefixes as needed
+                ]
+                if not any(
+                    models_module.startswith(prefix) for prefix in allowed_prefixes
+                ):
+                    emit_log_event(
+                        LogLevel.WARNING,
+                        f"Skipping model import: module not in allowed namespace: {models_module}",
+                        {"node_name": self.get_node_name()},
+                    )
+                    return None
+
                 module = importlib.import_module(models_module)
 
                 # Look for input state class

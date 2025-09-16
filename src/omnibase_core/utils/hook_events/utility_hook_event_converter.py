@@ -150,7 +150,7 @@ class UtilityHookEventConverter:
         # Convert error message to proper error model if present
         error = None
         if tool_event.error_message:
-            from omnibase_core.core.core_error_codes import CoreErrorCode
+            from omnibase_core.core.errors.core_errors import CoreErrorCode
             from omnibase_core.models.core.model_onex_error import ModelOnexError
 
             error = ModelOnexError(

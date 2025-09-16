@@ -25,6 +25,18 @@ class MixinNodeSetup:
         for cls in type(self).mro():
             if cls is not MixinNodeSetup and hasattr(cls, "__module__"):
                 try:
+                    # Security: validate module is within allowed namespaces
+                    allowed_prefixes = [
+                        "omnibase_core.",
+                        "omnibase_spi.",
+                        "omnibase.",
+                        # Add other trusted prefixes as needed
+                    ]
+                    if not any(
+                        cls.__module__.startswith(prefix) for prefix in allowed_prefixes
+                    ):
+                        continue
+
                     mod = __import__(cls.__module__, fromlist=["__file__"])
                     return Path(mod.__file__).parent
                 except Exception:

@@ -14,6 +14,20 @@ class MixinIntrospectFromContract:
     """
 
     def _get_node_dir(self):
+        # Security: validate module is within allowed namespaces
+        allowed_prefixes = [
+            "omnibase_core.",
+            "omnibase_spi.",
+            "omnibase.",
+            # Add other trusted prefixes as needed
+        ]
+        if not any(
+            self.__class__.__module__.startswith(prefix) for prefix in allowed_prefixes
+        ):
+            raise ValueError(
+                f"Module not in allowed namespace: {self.__class__.__module__}"
+            )
+
         module = importlib.import_module(self.__class__.__module__)
         node_file = Path(module.__file__)
         return node_file.parent

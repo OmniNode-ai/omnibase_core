@@ -37,7 +37,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.core.errors.core_errors import CoreErrorCode
 from omnibase_core.exceptions import OnexError
 from omnibase_core.models.core.model_examples import ModelExamples
 from omnibase_core.models.metadata.metadata_constants import (
