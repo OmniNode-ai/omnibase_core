@@ -80,9 +80,13 @@ jobs:
         run: |
           # Install all dependencies including private omnibase_spi dependency
           echo "Installing dependencies with omnibase_spi from private repository..."
-          poetry install --no-interaction --no-ansi
+          poetry install --no-interaction --no-ansi -vvv
 
           echo "✅ Dependencies installed successfully including omnibase_spi"
+
+          # Verify omnibase_spi is installed
+          echo "🔍 Verifying omnibase_spi installation..."
+          poetry run python -c "import omnibase_spi; print(f'✅ omnibase_spi imported successfully from {omnibase_spi.__file__}')" || echo "❌ Failed to import omnibase_spi"
 
       - name: Run 7-Gate Validation on Modified Models
         run: |
