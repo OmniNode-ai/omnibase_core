@@ -1,0 +1,484 @@
+# ONEX Reducer Contract - Reducer Pattern Engine v1.0.0
+# Phase 1: Core Implementation with Comprehensive Subcontract Integration
+#
+# This contract defines the ONEX-compliant reducer pattern engine with:
+# - Full NodeReducer architecture compliance
+# - Comprehensive subcontract composition
+# - LlamaIndex workflow coordination support
+# - Event-driven architecture patterns
+# - State management with FSM integration
+
+# === CORE NODE SPECIFICATION ===
+node_type: "REDUCER"
+version: {major: 1, minor: 0, patch: 0}
+node_name: "reducer_pattern_engine"
+
+# Node metadata
+metadata:
+  name: "Reducer Pattern Engine"
+  description: "ONEX-compliant reducer pattern engine with workflow coordination and subcontract integration"
+  author: "ONEX Framework Team"
+  phase: "Phase 1 - Core Implementation"
+  created_date: "2025-01-15"
+
+# ONEX architecture compliance
+architecture:
+  four_node_compliance: true
+  extends_node_type: "NodeReducer"
+  service_integration: "NodeReducerService"
+  container_integration: "ModelONEXContainer"
+
+# === INFRASTRUCTURE PATTERN SUPPORT ===
+# Core tool specification for infrastructure patterns
+tool_specification:
+  tool_name: "reducer_pattern_engine_tool"
+  main_tool_class: "ReducerPatternEngine"
+  tool_version: {major: 1, minor: 0, patch: 0}
+
+# Service configuration
+service_configuration:
+  service_type: "reducer_pattern_engine"
+  initialization_required: true
+  dependency_injection: true
+  health_check_enabled: true
+
+# Input/Output state definitions
+input_state:
+  workflow_type:
+    type: "string"
+    required: true
+    description: "Type of workflow to process"
+    validation:
+      min_length: 1
+      allowed_values: ["document_regeneration"] # Phase 1 limitation
+
+  instance_id:
+    type: "string"
+    required: true
+    description: "Unique workflow instance identifier"
+    validation:
+      min_length: 1
+      format: "uuid_or_string"
+
+  data:
+    type: "object"
+    required: true
+    description: "Workflow payload data"
+    validation:
+      properties:
+        document:
+          type: "object"
+          required: true
+
+output_state:
+  success:
+    type: "boolean"
+    required: true
+    description: "Whether workflow processing succeeded"
+
+  result_data:
+    type: "object"
+    required: false
+    description: "Processed workflow results"
+
+  workflow_type:
+    type: "string"
+    required: true
+    description: "Type of workflow that was processed"
+
+  instance_id:
+    type: "string"
+    required: true
+    description: "Workflow instance identifier"
+
+  execution_time_ms:
+    type: "integer"
+    required: true
+    description: "Processing time in milliseconds"
+    validation:
+      minimum: 0
+
+  correlation_id:
+    type: "string"
+    required: true
+    description: "Request correlation identifier for tracing"
+
+# === CORE REDUCTION FUNCTIONALITY ===
+# Reducer-specific configuration
+reduction_operations:
+  - operation_type: "workflow_processing"
+    reduction_function: "process_workflow"
+    associative: false
+    commutative: false
+    chunk_size: 1
+    parallel_enabled: false # Phase 1: Sequential processing
+    intermediate_results_caching: true
+
+# Streaming configuration (Phase 1: Basic support)
+streaming:
+  enabled: true
+  buffer_size: 4096
+  window_size: 100
+  memory_threshold_mb: 256
+  backpressure_enabled: true
+
+# Conflict resolution (Phase 1: Simple strategies)
+conflict_resolution:
+  strategy: "last_writer_wins"
+  detection_enabled: true
+  timestamp_based_resolution: true
+  conflict_logging_enabled: true
+
+# Memory management
+memory_management:
+  max_memory_mb: 512
+  gc_threshold: 0.8
+  lazy_loading_enabled: true
+  spill_to_disk_enabled: false # Phase 1: Memory only
+
+# Reducer settings
+order_preserving: true
+incremental_processing: true
+result_caching_enabled: true
+partial_results_enabled: false # Phase 1: Complete results only
+
+# === COMPREHENSIVE SUBCONTRACT INTEGRATION ===
+
+# FSM Subcontract - Critical for workflow state management
+state_transitions:
+  subcontract_name: "fsm_subcontract"
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+  state_machine_name: "document_processing_fsm"
+
+  # Document processing states
+  states:
+    - state_name: "initialized"
+      state_type: "initial"
+      description: "Workflow initialized and ready for processing"
+      entry_actions: ["log_workflow_start", "validate_input"]
+      exit_actions: ["prepare_processing_context"]
+
+    - state_name: "processing"
+      state_type: "intermediate"
+      description: "General processing state"
+      entry_actions: ["start_processing_timer"]
+
+    - state_name: "analyzing"
+      state_type: "intermediate"
+      description: "Analyzing document content and structure"
+      entry_actions: ["begin_document_analysis"]
+      exit_actions: ["store_analysis_results"]
+
+    - state_name: "generating"
+      state_type: "intermediate"
+      description: "Generating new document content"
+      entry_actions: ["start_content_generation"]
+      exit_actions: ["validate_generated_content"]
+
+    - state_name: "finalizing"
+      state_type: "intermediate"
+      description: "Finalizing document and preparing output"
+      entry_actions: ["prepare_final_document"]
+
+    - state_name: "completed"
+      state_type: "final"
+      description: "Workflow completed successfully"
+      entry_actions: ["log_completion", "cleanup_resources"]
+
+    - state_name: "failed"
+      state_type: "final"
+      description: "Workflow failed with errors"
+      entry_actions: ["log_error", "cleanup_resources"]
+
+  # State transitions
+  transitions:
+    - from_state: "initialized"
+      to_state: "processing"
+      event: "start_processing"
+      guard: "input_validated"
+
+    - from_state: "processing"
+      to_state: "analyzing"
+      event: "begin_analysis"
+
+    - from_state: "analyzing"
+      to_state: "generating"
+      event: "analysis_complete"
+      guard: "analysis_successful"
+
+    - from_state: "generating"
+      to_state: "finalizing"
+      event: "generation_complete"
+      guard: "content_generated"
+
+    - from_state: "finalizing"
+      to_state: "completed"
+      event: "finalization_complete"
+      guard: "output_ready"
+
+    # Error transitions from any state
+    - from_state: "*"
+      to_state: "failed"
+      event: "error_occurred"
+
+  # Initial state
+  initial_state: "initialized"
+
+  # FSM operations
+  operations:
+    - operation_name: "transition"
+      description: "Perform state transition with validation"
+      requires_atomic_execution: true
+      supports_rollback: true
+
+    - operation_name: "get_current_state"
+      description: "Get current FSM state"
+      requires_atomic_execution: false
+      supports_rollback: false
+
+    - operation_name: "validate_transition"
+      description: "Validate if transition is allowed"
+      requires_atomic_execution: false
+      supports_rollback: false
+
+# Event Type Subcontract - Event-driven architecture
+event_type:
+  subcontract_name: "event_type_subcontract"
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Workflow events
+  event_types:
+    - event_name: "workflow_initialized"
+      event_category: "lifecycle"
+      priority: "normal"
+      requires_acknowledgment: false
+      event_schema:
+        instance_id: "string"
+        workflow_type: "string"
+        correlation_id: "string"
+
+    - event_name: "document_analyzed"
+      event_category: "processing"
+      priority: "normal"
+      requires_acknowledgment: false
+      event_schema:
+        analysis_results: "object"
+        word_count: "integer"
+
+    - event_name: "content_generated"
+      event_category: "processing"
+      priority: "normal"
+      requires_acknowledgment: false
+      event_schema:
+        content_length: "integer"
+        generation_method: "string"
+
+    - event_name: "workflow_completed"
+      event_category: "lifecycle"
+      priority: "high"
+      requires_acknowledgment: false
+      event_schema:
+        success: "boolean"
+        execution_time_ms: "integer"
+
+    - event_name: "workflow_failed"
+      event_category: "error"
+      priority: "high"
+      requires_acknowledgment: true
+      event_schema:
+        error_message: "string"
+        error_code: "string"
+
+  # Event routing configuration
+  event_routing:
+    default_route: "local_log"
+    routes:
+      - event_pattern: "workflow_*"
+        destination: "workflow_monitor"
+
+      - event_pattern: "*_failed"
+        destination: "error_handler"
+
+# State Management Subcontract - Workflow persistence
+state_management:
+  subcontract_name: "state_management_subcontract"
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # State persistence configuration
+  persistence_type: "memory" # Phase 1: In-memory only
+  state_serialization: "json"
+  compression_enabled: false
+  encryption_enabled: false # Phase 1: No encryption
+
+  # State operations
+  operations:
+    - operation_name: "save_state"
+      description: "Save current workflow state"
+      atomic: true
+      versioned: true
+
+    - operation_name: "load_state"
+      description: "Load workflow state by ID"
+      atomic: false
+      versioned: true
+
+    - operation_name: "delete_state"
+      description: "Remove workflow state"
+      atomic: true
+      versioned: false
+
+  # State validation
+  validation_rules:
+    - rule_name: "state_schema_validation"
+      description: "Validate state against schema"
+      enabled: true
+
+    - rule_name: "state_transition_validation"
+      description: "Validate state transitions"
+      enabled: true
+
+# Workflow Coordination Subcontract - LlamaIndex integration foundation
+workflow_coordination:
+  subcontract_name: "workflow_coordination_subcontract"
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+  applicable_node_types: ["REDUCER"]
+
+  # Workflow configuration
+  max_concurrent_workflows: 5 # Phase 1: Limited concurrency
+  default_workflow_timeout_ms: 300000 # 5 minutes
+  node_coordination_timeout_ms: 30000
+  checkpoint_interval_ms: 60000
+
+  # Phase 1 capabilities
+  auto_retry_enabled: true
+  parallel_execution_enabled: false # Phase 1: Sequential only
+  workflow_persistence_enabled: true
+
+  # Failure recovery
+  max_retries: 3
+  retry_delay_ms: 2000
+  exponential_backoff: true
+
+# Caching Subcontract - Performance optimization
+caching:
+  subcontract_name: "caching_subcontract"
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Cache configuration
+  cache_type: "memory" # Phase 1: In-memory only
+  max_cache_size_mb: 64
+  default_ttl_seconds: 3600
+  cleanup_interval_seconds: 300
+
+  # Cache operations
+  operations:
+    - operation_name: "get"
+      description: "Retrieve cached value"
+      supports_batch: false
+
+    - operation_name: "set"
+      description: "Store value in cache"
+      supports_batch: false
+      supports_ttl: true
+
+    - operation_name: "invalidate"
+      description: "Remove cached value"
+      supports_batch: true
+      supports_pattern: true
+
+# === INFRASTRUCTURE INTEGRATION ===
+infrastructure:
+  deployment_type: "embedded"
+  scaling_mode: "vertical"
+  resource_requirements:
+    cpu_cores: 2
+    memory_mb: 512
+    storage_mb: 100
+
+infrastructure_services:
+  logging_service: "core_structured_logging"
+  monitoring_service: "core_metrics"
+  container_service: "model_onex_container"
+
+# === VALIDATION RULES ===
+validation_rules:
+  input_validation:
+    - rule_name: "workflow_type_validation"
+      description: "Ensure workflow_type is supported"
+      validation_type: "enum"
+      allowed_values: ["document_regeneration"]
+
+    - rule_name: "instance_id_validation"
+      description: "Ensure instance_id is valid identifier"
+      validation_type: "regex"
+      pattern: "^[a-zA-Z0-9_-]+$"
+
+    - rule_name: "document_data_validation"
+      description: "Ensure document data structure is valid"
+      validation_type: "schema"
+      required_fields: ["document"]
+
+  output_validation:
+    - rule_name: "success_field_validation"
+      description: "Ensure success field is boolean"
+      validation_type: "type"
+      expected_type: "boolean"
+
+    - rule_name: "correlation_id_validation"
+      description: "Ensure correlation_id is present"
+      validation_type: "required"
+
+# === QUALITY GATES ===
+quality_gates:
+  performance:
+    max_processing_time_ms: 10000 # 10 seconds for Phase 1
+    max_memory_usage_mb: 256
+    min_throughput_per_second: 1
+
+  reliability:
+    min_success_rate_percent: 95.0
+    max_error_rate_percent: 5.0
+    required_availability_percent: 99.0
+
+  maintainability:
+    max_cyclomatic_complexity: 10
+    min_test_coverage_percent: 90.0
+    max_technical_debt_hours: 8
+
+# === PHASE ROADMAP ===
+phase_roadmap:
+  phase_1:
+    status: "current"
+    description: "Core implementation with single workflow type"
+    deliverables:
+      - "ReducerPatternEngine with contract compliance"
+      - "WorkflowRouter with hash-based routing"
+      - "ReducerDocumentRegenerationSubreducer reference implementation"
+      - "Basic subcontract integration"
+
+  phase_2:
+    status: "planned"
+    description: "Multiple workflow types and enhanced subreducers"
+    deliverables:
+      - "Additional workflow types (code_analysis, pr_creation)"
+      - "Enhanced FSM patterns with complex state management"
+      - "Improved caching and performance optimization"
+      - "Load balancing and scaling support"
+
+  phase_3:
+    status: "planned"
+    description: "Full LlamaIndex integration and protocol compliance"
+    deliverables:
+      - "Complete LlamaIndex workflow integration"
+      - "StartEvent/StopEvent/step decorator patterns"
+      - "Advanced workflow coordination"
+      - "Inter-node communication protocols"
+
+  phase_4:
+    status: "planned"
+    description: "Production features and advanced capabilities"
+    deliverables:
+      - "Advanced monitoring and metrics"
+      - "Circuit breakers and resilience patterns"
+      - "Horizontal scaling and distribution"
+      - "Enterprise security features"

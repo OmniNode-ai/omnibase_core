@@ -24,16 +24,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
-if TYPE_CHECKING:
-    from datetime import datetime
-
-    from .model_onex_message_context import ModelOnexMessageContext
+from .model_onex_message_context import ModelOnexMessageContext
 
 __all__ = ["ModelOnexMessage"]
 

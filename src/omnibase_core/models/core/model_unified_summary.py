@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
-if TYPE_CHECKING:
-    from .model_unified_summary_details import ModelUnifiedSummaryDetails
+from .model_unified_summary_details import ModelUnifiedSummaryDetails
 
 
 class ModelUnifiedSummary(BaseModel):
