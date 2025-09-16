@@ -278,7 +278,7 @@ class Phase3Validator:
         all_output = result.stdout + "\n" + result.stderr
         output_lines = all_output.split("\n")
 
-        # Check for test collection errors - should not happen with proper dependencies
+        # Check for test collection errors
         has_collection_error = "error during collection" in all_output.lower()
         if has_collection_error:
             return (
