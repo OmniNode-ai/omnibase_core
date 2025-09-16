@@ -278,6 +278,11 @@ class Phase3Validator:
         all_output = result.stdout + "\n" + result.stderr
         output_lines = all_output.split("\n")
 
+        # Debug output for CI troubleshooting
+        print(f"🐛 DEBUG: Exit code: {result.returncode}")
+        print(f"🐛 DEBUG: Output length: {len(all_output)} chars")
+        print(f"🐛 DEBUG: Last 300 chars of output: {all_output[-300:]}")
+
         # Check for failed tests specifically
         has_actual_failures = any(
             "failed" in line and not "0 failed" in line for line in output_lines
