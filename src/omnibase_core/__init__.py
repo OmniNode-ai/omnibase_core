@@ -1,9 +1,8 @@
 """
-omnibase_core: ONEX foundational architecture
+Omnibase Core - ONEX Four-Node Architecture Implementation
 
-Provides:
-- 4 node service base classes (Effect, Compute, Reducer, Orchestrator)
-- Event-driven coordination models (ModelEventEnvelope, etc.)
-- Protocol-driven dependency injection (ModelONEXContainer)
-- Core mixins and error handling
+Main module for the omnibase_core package following ONEX standards.
 """
+
+__version__ = "1.0.0"
+__package__ = "omnibase_core"

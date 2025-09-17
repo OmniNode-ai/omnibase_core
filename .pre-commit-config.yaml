@@ -117,7 +117,7 @@ repos:
       # Repository structure validation (NEW)
       - id: validate-repository-structure
         name: Omni* Repository Structure Validation
-        entry: python tools/validation/validate_structure.py
+        entry: python scripts/validation/validate_structure.py
         args: ['.', 'omnibase_core']
         language: system
         always_run: true
@@ -127,19 +127,21 @@ repos:
       # Naming convention validation (NEW)
       - id: validate-naming-conventions
         name: Omni* Naming Convention Validation
-        entry: python tools/validation/validate_naming.py
+        entry: python scripts/validation/validate_naming.py
         args: ['.']
         language: system
-        types: [python]
+        always_run: true
+        pass_filenames: false
         stages: [commit]
 
       # Optional type usage audit (NEW)
       - id: audit-optional-usage
         name: Omni* Optional Type Usage Audit
-        entry: python tools/validation/audit_optional.py
+        entry: python scripts/validation/audit_optional.py
         args: ['.']
         language: system
-        types: [python]
+        always_run: true
+        pass_filenames: false
         stages: [commit]
 
 # Configuration

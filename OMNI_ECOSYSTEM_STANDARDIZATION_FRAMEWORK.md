@@ -29,50 +29,15 @@ Every omni* repository MUST follow this exact structure:
 ├── src/
 │   └── {REPO_NAME}/
 │       ├── models/                   # ALL models organized by domain
-│       │   ├── workflow/
-│       │   │   ├── __init__.py
-│       │   │   ├── model_workflow_state.py
-│       │   │   └── model_workflow_execution.py
-│       │   ├── infrastructure/
-│       │   │   ├── __init__.py
-│       │   │   ├── model_infrastructure_node.py
-│       │   │   └── model_infrastructure_config.py
-│       │   ├── agent/
-│       │   │   ├── __init__.py
-│       │   │   ├── model_agent_context.py
-│       │   │   └── model_agent_response.py
-│       │   └── core/
-│       │       ├── __init__.py
-│       │       ├── model_base_node.py
-│       │       └── model_container_config.py
+│       │   ├── {domain}/             # Create domains as needed for your project
+│       │   │   ├── __init__.py       # Examples: workflow/, infrastructure/, agent/, core/
+│       │   │   └── model_{entity}.py # Only create domain folders that exist in your project
 │       ├── enums/                    # ALL enums organized by domain
-│       │   ├── workflow/
-│       │   │   ├── __init__.py
-│       │   │   ├── enum_workflow_status.py
-│       │   │   └── enum_workflow_type.py
-│       │   ├── infrastructure/
-│       │   │   ├── __init__.py
-│       │   │   ├── enum_node_type.py
-│       │   │   └── enum_deployment_status.py
-│       │   ├── agent/
-│       │   │   ├── __init__.py
-│       │   │   ├── enum_agent_type.py
-│       │   │   └── enum_agent_status.py
-│       │   └── core/
-│       │       ├── __init__.py
-│       │       ├── enum_log_level.py
-│       │       └── enum_environment.py
+│       │   ├── {domain}/             # Create domains as needed for your project
+│       │   │   ├── __init__.py       # Examples: workflow/, infrastructure/, agent/, core/
+│       │   │   └── enum_{category}.py # Only create domain folders that exist in your project
 │       ├── protocols/                # ONLY for omnibase_spi (others import)
-│       │   ├── core/
-│       │   ├── workflow/
-│       │   ├── services/
-│       │   └── validation/
-│       ├── services/                 # Service implementations
-│       │   └── service_{NAME}/
-│       │       └── v1_0_0/
-│       │           ├── service.py
-│       │           ├── protocols/
-│       │           └── models/       # Service-specific models only
+│       │   └── {domain}/             # Create domains as needed: core/, workflow/, validation/
 │       ├── nodes/                    # ONEX 4-node implementations
 │       │   └── node_{DOMAIN}_{NAME}_{TYPE}/
 │       │       └── v1_0_0/
@@ -87,29 +52,36 @@ Every omni* repository MUST follow this exact structure:
 │       │   └── util_performance_monitor.py
 │       ├── exceptions/               # Custom exceptions
 │       │   ├── exception_validation.py
-│       │   ├── exception_node.py
-│       │   └── exception_service.py
+│       │   └── exception_node.py
 │       └── __init__.py
-├── tests/                            # Mirror src/ structure exactly
-│   ├── unit/
-│   │   └── {REPO_NAME}/             # Mirrors src/{REPO_NAME}
-│   ├── integration/
-│   │   └── {REPO_NAME}/
-│   └── fixtures/
-├── tools/                           # Development tools
+├── tests/                            # Test organization by type
+│   ├── unit/                        # Unit tests organized by component
+│   │   ├── models/
+│   │   ├── nodes/
+│   │   └── core/
+│   ├── integration/                 # Integration tests
+│   │   ├── workflows/
+│   │   └── node_interactions/
+│   └── fixtures/                    # Test data and mocks
+├── scripts/                         # Development scripts and automation
 │   ├── validation/
 │   │   ├── validate_structure.py
 │   │   ├── validate_naming.py
 │   │   └── audit_optional.py
-│   ├── migration/
-│   │   └── migrate_repository.py
 │   └── hooks/
 │       └── pre_commit_hooks.py
 ├── docs/                            # Documentation
 │   ├── architecture/
 │   ├── templates/
 │   └── standards/
-├── scripts/                         # Deployment scripts
+├── deployment/                      # Docker, compose files, db schema
+│   ├── docker/
+│   │   ├── Dockerfile
+│   │   └── docker-compose.yml
+│   ├── database/                    # Database schema and migrations
+│   │   ├── schema/
+│   │   └── migrations/
+│   └── scripts/                     # Deployment automation scripts
 ├── .pre-commit-config.yaml         # Inherited from omnibase_core
 ├── .omni-structure.yaml            # Structure validation config
 ├── pyproject.toml                  # Python configuration
@@ -142,7 +114,7 @@ model_user_profile.py           # Models: model_*
 protocol_event_handler.py       # Protocols: protocol_*
 node_compute_calculator.py      # Nodes: node_*
 enum_workflow_status.py         # Enums: enum_*
-service_contract_loader.py      # Services: service_*
+node_contract_loader.py         # Nodes: node_*
 util_string_formatter.py        # Utilities: util_*
 mixin_health_check.py          # Mixins: mixin_*
 exception_validation.py         # Exceptions: exception_*
@@ -237,10 +209,10 @@ omnibase_spi/src/omnibase_spi/protocols/
 │   ├── protocol_workflow_engine.py
 │   ├── protocol_workflow_state.py
 │   └── protocol_workflow_step.py
-├── services/                      # Service protocols
-│   ├── protocol_contract_service.py
-│   ├── protocol_discovery_service.py
-│   └── protocol_validation_service.py
+├── nodes/                         # Node protocols
+│   ├── protocol_node_execution.py
+│   ├── protocol_node_discovery.py
+│   └── protocol_node_validation.py
 ├── nodes/                        # Node-specific protocols
 │   ├── protocol_compute_node.py
 │   ├── protocol_effect_node.py
@@ -257,7 +229,7 @@ omnibase_spi/src/omnibase_spi/protocols/
 # ✅ CORRECT - Import from omnibase_spi
 from omnibase_spi.protocols.core import ProtocolEventBus
 from omnibase_spi.protocols.nodes import ProtocolComputeNode
-from omnibase_spi.protocols.services import ProtocolContractService
+from omnibase_spi.protocols.nodes import ProtocolNodeExecution
 
 # ❌ WRONG - Don't define protocols locally
 # from .protocols.local_protocol import LocalProtocol  # BANNED
@@ -336,51 +308,52 @@ class NodeDeploymentOrchestrator(NodeOrchestrator):
 ## 🎯 Domain Organization Strategy
 
 ### Model Domain Categories
-Models are organized by business domain, not technical pattern:
+Models are organized by business domain, not technical pattern.
+
+**⚠️ IMPORTANT**: Only create domain folders that exist in your specific project. These are examples:
 
 ```python
 models/
-├── workflow/                     # Workflow management domain
+├── {domain_name}/               # Create ONLY domains that exist in your project
+│   └── model_{entity}.py        # Examples of common domains:
+│
+# Example domains (create only what you need):
+├── workflow/                    # IF your project handles workflows
 │   ├── model_workflow_definition.py
-│   ├── model_workflow_execution_state.py
-│   ├── model_workflow_step.py
-│   └── model_workflow_result.py
-├── infrastructure/              # Infrastructure management domain
+│   └── model_workflow_execution_state.py
+├── infrastructure/              # IF your project manages infrastructure
 │   ├── model_node_configuration.py
-│   ├── model_deployment_config.py
-│   ├── model_service_registry.py
-│   └── model_health_status.py
-├── agent/                      # AI agent domain
+│   └── model_deployment_config.py
+├── agent/                       # IF your project has AI agents
 │   ├── model_agent_context.py
-│   ├── model_agent_response.py
-│   ├── model_agent_capability.py
-│   └── model_agent_memory.py
-└── core/                       # Core system domain
+│   └── model_agent_response.py
+└── core/                        # Most projects need core domain
     ├── model_container_config.py
-    ├── model_event_envelope.py
-    ├── model_error_context.py
-    └── model_performance_metrics.py
+    └── model_event_envelope.py
 ```
 
 ### Enum Domain Categories
+
+**⚠️ IMPORTANT**: Only create domain folders that exist in your specific project. These are examples:
+
 ```python
 enums/
-├── workflow/
+├── {domain_name}/               # Create ONLY domains that exist in your project
+│   └── enum_{category}.py       # Examples of common domains:
+│
+# Example domains (create only what you need):
+├── workflow/                    # IF your project handles workflows
 │   ├── enum_workflow_status.py    # PENDING, RUNNING, COMPLETED, FAILED
-│   ├── enum_workflow_type.py      # DEPLOYMENT, MIGRATION, VALIDATION
-│   └── enum_step_status.py        # TODO, IN_PROGRESS, DONE, SKIPPED
-├── infrastructure/
+│   └── enum_workflow_type.py      # DEPLOYMENT, MIGRATION, VALIDATION
+├── infrastructure/              # IF your project manages infrastructure
 │   ├── enum_node_type.py          # COMPUTE, EFFECT, REDUCER, ORCHESTRATOR
-│   ├── enum_deployment_status.py  # DEPLOYING, DEPLOYED, FAILED, ROLLBACK
-│   └── enum_environment_type.py   # DEV, STAGING, PROD
-├── agent/
+│   └── enum_deployment_status.py  # DEPLOYING, DEPLOYED, FAILED, ROLLBACK
+├── agent/                       # IF your project has AI agents
 │   ├── enum_agent_type.py         # WORKFLOW, DEBUG, ANALYSIS, COORDINATION
-│   ├── enum_agent_status.py       # IDLE, ACTIVE, PROCESSING, ERROR
-│   └── enum_capability_type.py    # CODE_ANALYSIS, DOCUMENTATION, TESTING
-└── core/
+│   └── enum_agent_status.py       # IDLE, ACTIVE, PROCESSING, ERROR
+└── core/                        # Most projects need core domain
     ├── enum_log_level.py          # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    ├── enum_event_type.py         # NODE_CREATED, WORKFLOW_STARTED, ERROR_OCCURRED
-    └── enum_validation_result.py  # VALID, INVALID, WARNING, PARTIAL
+    └── enum_event_type.py         # NODE_CREATED, WORKFLOW_STARTED, ERROR_OCCURRED
 ```
 
 ## 📋 Contract and Subcontract Requirements
@@ -481,6 +454,7 @@ subcontracts:
   - event_type_subcontract       # Event coordination
   - routing_subcontract          # Workflow routing
   - state_management_subcontract # Workflow state tracking
+  - workflow_coordination_subcontract # Multi-workflow orchestration patterns
 
 # ORCHESTRATOR-specific configuration
 workflow_config:
@@ -528,26 +502,26 @@ repos:
     hooks:
       - id: validate-structure
         name: Validate Repository Structure
-        entry: python tools/validation/validate_structure.py
+        entry: python scripts/validation/validate_structure.py
         language: system
         always_run: true
         pass_filenames: false
 
       - id: validate-naming
         name: Validate Naming Conventions
-        entry: python tools/validation/validate_naming.py
+        entry: python scripts/validation/validate_naming.py
         language: system
         types: [python]
 
       - id: audit-optional
         name: Audit Optional Type Usage
-        entry: python tools/validation/audit_optional.py
+        entry: python scripts/validation/audit_optional.py
         language: system
         types: [python]
 
       - id: validate-protocols
         name: Validate Protocol Location
-        entry: python tools/validation/validate_protocols.py
+        entry: python scripts/validation/validate_protocols.py
         language: system
         types: [python]
 ```
@@ -580,19 +554,19 @@ jobs:
         pip install -r requirements.txt
 
     - name: Validate Repository Structure
-      run: python tools/validation/validate_structure.py . ${{ github.repository }}
+      run: python scripts/validation/validate_structure.py . ${{ github.repository }}
 
     - name: Validate Naming Conventions
-      run: python tools/validation/validate_naming.py .
+      run: python scripts/validation/validate_naming.py .
 
     - name: Audit Optional Usage
-      run: python tools/validation/audit_optional.py .
+      run: python scripts/validation/audit_optional.py .
 
     - name: Validate Protocol Locations
-      run: python tools/validation/validate_protocols.py .
+      run: python scripts/validation/validate_protocols.py .
 
     - name: Generate Compliance Report
-      run: python tools/validation/generate_compliance_report.py . > STANDARDS_COMPLIANCE.md
+      run: python scripts/validation/generate_compliance_report.py . > STANDARDS_COMPLIANCE.md
 
     - name: Upload Compliance Report
       uses: actions/upload-artifact@v3
@@ -607,10 +581,10 @@ jobs:
 **Current Issues**: 1,279+ scattered model files, 92 misplaced protocols, dual directories
 
 **Migration Steps**:
-1. Run structure validation: `python tools/validation/validate_structure.py . omnibase_core`
-2. Preview migration: `python tools/migration/migrate_repository.py . omnibase_core --dry-run`
-3. Execute migration: `python tools/migration/migrate_repository.py . omnibase_core`
-4. Validate compliance: `python tools/validation/validate_structure.py . omnibase_core`
+1. Run structure validation: `python scripts/validation/validate_structure.py . omnibase_core`
+2. Manual reorganization: Archive existing code, rebuild with standard structure
+3. Validate structure: `python scripts/validation/validate_structure.py . omnibase_core`
+4. Validate compliance: `python scripts/validation/validate_structure.py . omnibase_core`
 
 **Expected Results**:
 - 1,279 model files → Domain-organized in `/models/`

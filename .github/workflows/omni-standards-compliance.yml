@@ -2,9 +2,9 @@ name: Omni* Ecosystem Standards Compliance
 
 on:
   push:
-    branches: [ main, develop, feature/*, fix/*, chore/* ]
+    branches: [main, develop, feature/*, fix/*, chore/*]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
   PYTHON_VERSION: '3.11'
@@ -243,7 +243,7 @@ jobs:
 
           echo "✅ Legacy compatibility check completed"
 
-# Additional job for full ecosystem repositories
+        # Additional job for full ecosystem repositories
   ecosystem-validation:
     name: Ecosystem Integration Validation
     runs-on: ubuntu-latest
