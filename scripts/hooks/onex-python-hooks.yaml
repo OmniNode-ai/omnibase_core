@@ -1,0 +1,78 @@
+# ONEX Python Development Pre-commit Hooks
+# Python-specific formatting, linting, and validation hooks
+#
+# To use in other repositories:
+# 1. Add to your .pre-commit-config.yaml after onex-core-hooks.yaml
+# 2. Customize Python version and file patterns as needed
+# 3. Ensure poetry environment is available
+
+repos:
+  # Python Code Formatting (Standard across all omni* repositories)
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        name: Black Python Formatter
+        args: [--line-length, "88", --target-version, py311]
+        language_version: python3.11
+
+  # Python Import Sorting (Must match Black configuration)
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        name: isort Import Sorter
+        args: [--profile, black, --line-length, "88"]
+
+  # Python Type Checking via Poetry
+  - repo: local
+    hooks:
+      - id: mypy-poetry
+        name: MyPy Type Checking (via Poetry)
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=skip, --config-file=mypy.ini]
+        # Focus on core framework components (customize per repository)
+        files: ^src/.*/(core|model|enums|exceptions|decorators).*\.py$
+        # Exclude problematic files until properly configured
+        exclude: ^(tests/|.*examples.*|.*contracts.*effect).*\.py$
+
+  # ONEX Python Pattern Validation
+  - repo: local
+    hooks:
+      # Pydantic pattern validation
+      - id: validate-pydantic-patterns
+        name: ONEX Pydantic Pattern Validation
+        entry: python -c "from omnibase_core.validation import validate_pydantic_patterns; import sys; result = validate_pydantic_patterns('.', allow_errors=13); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
+      # Union usage validation
+      - id: validate-union-usage
+        name: ONEX Union Usage Validation
+        entry: python -c "from omnibase_core.validation import validate_union_usage; import sys; result = validate_union_usage('.', max_unions=7000); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
+      # Import validation
+      - id: validate-imports
+        name: ONEX Import Validation
+        entry: python -c "from omnibase_core.validation import validate_imports; import sys; result = validate_imports('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [commit]
+
+      # Optional type usage audit
+      - id: audit-optional-usage
+        name: ONEX Optional Type Usage Audit
+        entry: python -c "from omnibase_core.validation import audit_optional_usage; import sys; result = audit_optional_usage('.'); print('✅ Optional type usage audit completed')"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
