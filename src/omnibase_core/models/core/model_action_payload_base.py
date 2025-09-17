@@ -9,6 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 
 
@@ -27,8 +28,8 @@ class ModelActionPayloadBase(BaseModel):
         None,
         description="Correlation ID for tracking this action",
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
+    metadata: ModelGenericMetadata = Field(
+        default_factory=ModelGenericMetadata,
         description="Additional metadata for the action",
     )
 

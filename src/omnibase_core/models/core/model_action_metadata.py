@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_performance_metrics import ModelPerformanceMetrics
 from omnibase_core.models.core.model_security_context import ModelSecurityContext
+from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 
 
 class ModelActionMetadata(BaseModel):
@@ -46,14 +47,12 @@ class ModelActionMetadata(BaseModel):
     )
 
     # Trust and security
-    trust_score: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=1.0,
-        description="Trust score for action execution (0.0-1.0)",
+    trust_score: ModelTrustLevel = Field(
+        default_factory=ModelTrustLevel.trusted,
+        description="Rich trust level for action execution with verification support",
     )
     security_context: ModelSecurityContext = Field(
-        default_factory=ModelSecurityContext,  # type: ignore
+        default_factory=ModelSecurityContext,
         description="Structured security context and permissions",
     )
 
@@ -116,7 +115,7 @@ class ModelActionMetadata(BaseModel):
 
     # Performance tracking
     performance_metrics: ModelPerformanceMetrics = Field(
-        default_factory=ModelPerformanceMetrics,  # type: ignore
+        default_factory=ModelPerformanceMetrics,
         description="Structured performance metrics for this action",
     )
     resource_usage: dict[str, int | float] = Field(
@@ -186,7 +185,7 @@ class ModelActionMetadata(BaseModel):
             "action_type": self.action_type.name,
             "action_name": self.action_name,
             "correlation_id": str(self.correlation_id),
-            "trust_score": self.trust_score,
+            "trust_score": self.trust_score.trust_score,
             "status": self.status,
             "mcp_endpoint": self.mcp_endpoint,
             "graphql_endpoint": self.graphql_endpoint,
@@ -197,7 +196,7 @@ class ModelActionMetadata(BaseModel):
 
     def validate_trust_score(self) -> bool:
         """Validate that the trust score is within acceptable bounds."""
-        return 0.0 <= self.trust_score <= 1.0
+        return bool(self.trust_score.is_trusted())
 
     def is_expired(self) -> bool:
         """Check if the action has expired based on timeout."""
@@ -210,7 +209,7 @@ class ModelActionMetadata(BaseModel):
     def can_execute(self, minimum_trust_score: float = 0.0) -> bool:
         """Check if the action can be executed based on trust score and expiration."""
         return (
-            self.trust_score >= minimum_trust_score
+            self.trust_score.is_trusted(minimum_trust_score)
             and not self.is_expired()
             and self.status in ["created", "ready"]
         )
