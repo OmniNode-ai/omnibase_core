@@ -141,14 +141,7 @@ class GenericImportValidator:
             # Test that we can import and use basic functionality
             pkg = importlib.import_module(self.package_name)
 
-            # Check for version info
-            if hasattr(pkg, "__version__"):
-                self.results.append(("Package version", True, f"v{pkg.__version__}"))
-            else:
-                self.results.append(
-                    ("Package version", False, "No __version__ attribute")
-                )
-                success = False
+            # Note: No version check - versions come from contracts, not __version__
 
             self.results.append(
                 ("Container functionality", True, "Basic import successful")

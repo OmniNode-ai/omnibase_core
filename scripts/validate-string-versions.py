@@ -2,8 +2,12 @@
 """
 String Version Validation Hook for ONEX Architecture
 
-Validates that contract YAML files use proper ModelSemVer format instead of string versions.
+Validates that:
+1. Contract YAML files use proper ModelSemVer format instead of string versions
+2. Python __init__.py files do not contain hardcoded __version__ strings
+
 String versions like "1.0.0" should be ModelSemVer format like {major: 1, minor: 0, patch: 0}.
+Versions should only come from contracts, never from __init__.py files.
 
 Uses AST parsing for reliable detection of semantic version patterns.
 This prevents runtime issues and ensures proper type compliance.
@@ -16,8 +20,17 @@ from typing import Any
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
+# Try to import Pydantic models if available (may not exist in empty package structure)
+try:
+    from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+    from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
+
+    PYDANTIC_MODELS_AVAILABLE = True
+except ImportError:
+    # Empty package structure - models are archived
+    ModelGenericYaml = None
+    load_yaml_content_as_model = None
+    PYDANTIC_MODELS_AVAILABLE = False
 
 
 class StringVersionValidator:
@@ -26,6 +39,64 @@ class StringVersionValidator:
     def __init__(self):
         self.errors: list[str] = []
         self.checked_files = 0
+
+    def validate_python_file(self, python_path: Path) -> bool:
+        """Validate a Python file for hardcoded __version__ strings."""
+        try:
+            with open(python_path, encoding="utf-8") as f:
+                content = f.read()
+
+            # Skip empty files
+            if not content.strip():
+                return True
+
+            self.checked_files += 1
+            file_errors = []
+
+            # Check for __version__ declarations
+            self._validate_python_version_declarations(
+                content, python_path, file_errors
+            )
+
+            if file_errors:
+                self.errors.extend([f"{python_path}: {error}" for error in file_errors])
+                return False
+
+            return True
+
+        except Exception as e:
+            # Skip files we can't parse instead of failing
+            return True
+
+    def _validate_python_version_declarations(
+        self,
+        content: str,
+        python_path: Path,
+        errors: list[str],
+    ) -> None:
+        """Check Python content for hardcoded __version__ declarations."""
+        lines = content.split("\n")
+
+        for line_num, line in enumerate(lines, 1):
+            stripped_line = line.strip()
+
+            # Skip comments and empty lines
+            if not stripped_line or stripped_line.startswith("#"):
+                continue
+
+            # Check for __version__ declarations
+            if "__version__" in stripped_line and "=" in stripped_line:
+                # Extract the assignment
+                if stripped_line.startswith("__version__"):
+                    assignment_part = stripped_line.split("=", 1)[1].strip()
+                    # Remove quotes and check if it's a version string
+                    clean_value = assignment_part.strip().strip("\"'")
+
+                    if self._is_semantic_version_ast(clean_value):
+                        errors.append(
+                            f"Line {line_num}: __version__ uses hardcoded string '{clean_value}' - "
+                            f"versions should only come from contracts, not __init__.py files"
+                        )
 
     def validate_yaml_file(self, yaml_path: Path) -> bool:
         """Validate a single YAML file for string version usage."""
@@ -37,26 +108,25 @@ class StringVersionValidator:
             if not content.strip():
                 return True
 
-            # Parse YAML using Pydantic model validation
-            try:
-                yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
-                yaml_data = yaml_model.model_dump()
-            except Exception:
-                # If we can't parse with Pydantic, skip this file
-                # (it's likely not an ONEX contract file)
-                return True
-
-            if not yaml_data:
-                return True  # Empty files are not our concern
+            # Parse YAML using Pydantic model validation if available
+            yaml_data = None
+            if PYDANTIC_MODELS_AVAILABLE:
+                try:
+                    yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
+                    yaml_data = yaml_model.model_dump()
+                except Exception:
+                    # If we can't parse with Pydantic, just use AST validation
+                    pass
 
             self.checked_files += 1
             file_errors = []
 
-            # Use AST-based validation on the raw content
+            # Use AST-based validation on the raw content (always runs)
             self._validate_yaml_content_ast(content, yaml_path, file_errors)
 
-            # Also validate the parsed structure for completeness
-            self._validate_parsed_yaml(yaml_data, file_errors)
+            # Also validate the parsed structure if we have it
+            if yaml_data:
+                self._validate_parsed_yaml(yaml_data, file_errors)
 
             if file_errors:
                 self.errors.extend([f"{yaml_path}: {error}" for error in file_errors])
@@ -197,6 +267,20 @@ class StringVersionValidator:
         except (ValueError, TypeError):
             return False
 
+    def validate_all_files(self, file_paths: list[Path]) -> bool:
+        """Validate all provided files (YAML and Python)."""
+        success = True
+
+        for file_path in file_paths:
+            if file_path.suffix.lower() in [".yaml", ".yml"]:
+                if not self.validate_yaml_file(file_path):
+                    success = False
+            elif file_path.suffix.lower() == ".py":
+                if not self.validate_python_file(file_path):
+                    success = False
+
+        return success
+
     def validate_all_yaml_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided YAML files."""
         success = True
@@ -220,10 +304,13 @@ class StringVersionValidator:
                 print(f"   • {error}")
 
             print("\n🔧 How to fix:")
-            print('   Replace string versions like "1.0.0" with ModelSemVer format:')
+            print("   YAML files: Replace string versions with ModelSemVer format:")
             print('   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}')
             print(
                 '   contract_version: "2.1.3"  →  contract_version: {major: 2, minor: 1, patch: 3}',
+            )
+            print(
+                "   Python files: Remove __version__ from __init__.py - versions come from contracts only"
             )
 
         else:
@@ -236,8 +323,8 @@ def main() -> int:
     """Main entry point for the validation hook."""
     if len(sys.argv) < 2:
         print("Usage: validate-string-versions.py [--dir] <path1> [path2] ...")
-        print("  --dir: Recursively scan directories for YAML files")
-        print("  Without --dir: Treat arguments as individual YAML files")
+        print("  --dir: Recursively scan directories for YAML and Python files")
+        print("  Without --dir: Treat arguments as individual YAML/Python files")
         return 1
 
     validator = StringVersionValidator()
@@ -257,11 +344,11 @@ def main() -> int:
     yaml_files = []
 
     if scan_dirs:
-        # Recursively scan directories for YAML files
+        # Recursively scan directories for YAML and Python files
         for arg in args:
             path = Path(arg)
             if path.is_dir():
-                # Recursively find all YAML files, but exclude non-ONEX directories
+                # Recursively find all YAML and Python files, but exclude non-ONEX directories
                 exclude_patterns = [
                     "deployment",
                     ".github",
@@ -271,15 +358,23 @@ def main() -> int:
                     "grafana",
                     "kubernetes",
                     "ci-cd.yml",  # GitHub Actions CI file
+                    "__pycache__",
+                    ".mypy_cache",
+                    ".pytest_cache",
+                    "node_modules",
                 ]
 
-                all_yaml_files = list(path.rglob("*.yaml")) + list(path.rglob("*.yml"))
+                all_files = (
+                    list(path.rglob("*.yaml"))
+                    + list(path.rglob("*.yml"))
+                    + list(path.rglob("*.py"))
+                )
 
                 # Filter out excluded files using path components
-                for yaml_file in all_yaml_files:
+                for file_path in all_files:
                     should_exclude = False
-                    path_parts = yaml_file.parts
-                    file_name = yaml_file.name
+                    path_parts = file_path.parts
+                    file_name = file_path.name
 
                     # Check if any path component or filename matches exclusion patterns
                     for pattern in exclude_patterns:
@@ -288,23 +383,23 @@ def main() -> int:
                             break
 
                     if not should_exclude:
-                        yaml_files.append(yaml_file)
+                        yaml_files.append(file_path)
 
-            elif path.suffix.lower() in [".yaml", ".yml"] and path.exists():
+            elif path.suffix.lower() in [".yaml", ".yml", ".py"] and path.exists():
                 yaml_files.append(path)
     else:
         # Individual file mode
         for arg in args:
             path = Path(arg)
-            if path.suffix.lower() in [".yaml", ".yml"] and path.exists():
+            if path.suffix.lower() in [".yaml", ".yml", ".py"] and path.exists():
                 yaml_files.append(path)
 
     if not yaml_files:
-        # No YAML files to check
-        print("✅ String Version Validation PASSED (no YAML files to check)")
+        # No files to check
+        print("✅ String Version Validation PASSED (no YAML or Python files to check)")
         return 0
 
-    success = validator.validate_all_yaml_files(yaml_files)
+    success = validator.validate_all_files(yaml_files)
     validator.print_results()
 
     return 0 if success else 1

@@ -29,10 +29,10 @@ class ValidationResult:
     success: bool
     message: str
     protocols_found: int = 0
-    violations: List[str] = None
-    recommendations: List[str] = None
+    violations: Optional[List[str]] = None
+    recommendations: Optional[List[str]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.violations is None:
             self.violations = []
         if self.recommendations is None:
@@ -57,7 +57,7 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
         self.imports = []
         self.class_name = ""
 
-    def visit_ClassDef(self, node):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Extract class definition."""
         if "Protocol" in node.name and node.name[0].isupper():
             self.class_name = node.name
@@ -75,12 +75,12 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
                     continue
         self.generic_visit(node)
 
-    def visit_Import(self, node):
+    def visit_Import(self, node: ast.Import) -> None:
         """Extract imports."""
         for alias in node.names:
             self.imports.append(alias.name)
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Extract from imports."""
         if node.module:
             for alias in node.names:

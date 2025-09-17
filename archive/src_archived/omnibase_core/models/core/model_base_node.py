@@ -5,7 +5,7 @@ Base class for all ONEX nodes (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR).
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 
 class BaseNode(ABC):
@@ -21,7 +21,7 @@ class BaseNode(ABC):
         self.version: str = ""
 
     @abstractmethod
-    async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """
         Execute the node's primary function.
 
@@ -33,6 +33,6 @@ class BaseNode(ABC):
         """
         pass
 
-    def get_node_info(self) -> Dict[str, str]:
+    def get_node_info(self) -> dict[str, str]:
         """Get node metadata information."""
         return {"type": self.node_type, "name": self.node_name, "version": self.version}
