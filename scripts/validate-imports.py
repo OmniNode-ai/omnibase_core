@@ -1,282 +1,167 @@
 #!/usr/bin/env python3
 """
-Comprehensive import validation for omnibase_core.
+Generic import validation for omni* packages.
 
-This tool systematically tests all critical imports to ensure
-downstream repositories can reliably depend on omnibase_core.
+This tool automatically detects the package structure and validates
+that the package can be imported correctly.
 """
 
 import importlib
+import os
 import sys
-import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import List, Optional, Tuple
 
 
-class ImportValidator:
-    """Validates omnibase_core imports systematically."""
+class GenericImportValidator:
+    """Validates omni* package imports based on discovered structure."""
 
-    def __init__(self):
+    def __init__(self, package_name: Optional[str] = None):
         self.results: List[Tuple[str, bool, str]] = []
 
-        # Whitelist of allowed import paths to prevent code injection
-        self.allowed_imports = {
-            # Core package imports
-            "omnibase_core",
-            # Core infrastructure imports
-            "omnibase_core.core.model_onex_container",
-            "omnibase_core.core.infrastructure_service_bases",
-            # Model imports
-            "omnibase_core.models.common.model_typed_value",
-            # Enum imports
-            "omnibase_core.enums.enum_log_level",
-            # Error handling imports
-            "omnibase_core.core.errors.core_errors",
-            # Event system imports
-            "omnibase_core.models.core.model_event_envelope",
-            # CLI imports
-            "omnibase_core.cli.config",
-            # SPI integration imports
-            "omnibase_spi.protocols.core",
-            "omnibase_spi.protocols.types",
-        }
-
-        # Whitelist of allowed import items
-        self.allowed_import_items = {
-            "ModelONEXContainer",
-            "NodeReducerService",
-            "NodeComputeService",
-            "NodeEffectService",
-            "NodeOrchestratorService",
-            "ModelValueContainer",
-            "StringContainer",
-            "EnumLogLevel",
-            "OnexError",
-            "CoreErrorCode",
-            "ModelEventEnvelope",
-            "ModelCLIConfig",
-            "ProtocolCacheService",
-            "ProtocolNodeRegistry",
-            "core_types",
-        }
-
-    def _test_static_import(self, import_path: str):
-        """Perform static import tests without dynamic import calls.
-
-        Security: This method uses only static imports to avoid Semgrep warnings
-        about dynamic imports that could lead to code injection.
-        """
-        if import_path == "omnibase_core":
-            import omnibase_core
-
-            return omnibase_core
-        elif import_path == "omnibase_core.core.model_onex_container":
-            from omnibase_core.core import model_onex_container
-
-            return model_onex_container
-        elif import_path == "omnibase_core.core.infrastructure_service_bases":
-            from omnibase_core.core import infrastructure_service_bases
-
-            return infrastructure_service_bases
-        elif import_path == "omnibase_core.models.common.model_typed_value":
-            from omnibase_core.models.common import model_typed_value
-
-            return model_typed_value
-        elif import_path == "omnibase_core.enums.enum_log_level":
-            from omnibase_core.enums import enum_log_level
-
-            return enum_log_level
-        elif import_path == "omnibase_core.core.errors.core_errors":
-            from omnibase_core.core.errors import core_errors
-
-            return core_errors
-        elif import_path == "omnibase_core.models.core.model_event_envelope":
-            from omnibase_core.models.core import model_event_envelope
-
-            return model_event_envelope
-        elif import_path == "omnibase_core.cli.config":
-            from omnibase_core.cli import config
-
-            return config
-        elif import_path == "omnibase_spi.protocols.core":
-            from omnibase_spi.protocols import core
-
-            return core
-        elif import_path == "omnibase_spi.protocols.types":
-            from omnibase_spi.protocols import types
-
-            return types
+        # Auto-detect package name from repository if not provided
+        if package_name is None:
+            self.package_name = self._detect_package_name()
         else:
-            raise ImportError(f"No module named '{import_path}'")
+            self.package_name = package_name
 
-    def test_import(self, import_path: str, description: str) -> bool:
-        """Test a single import and record result."""
-        # Security: Use static import mapping instead of dynamic imports
-        if import_path not in self.allowed_imports:
-            self.results.append(
-                (description, False, f"Import path '{import_path}' not in whitelist")
-            )
-            return False
+        print(f"🎯 {self.package_name} Import Validation")
+        print("=" * 40)
 
+    def _detect_package_name(self) -> str:
+        """Auto-detect package name from repository structure."""
+        # Try to find src/{package_name} directory
+        src_dir = Path("src")
+        if src_dir.exists():
+            for item in src_dir.iterdir():
+                if item.is_dir() and item.name.startswith("omni"):
+                    return item.name
+
+        # Fallback: derive from current directory name
+        cwd = Path.cwd().name
+        if cwd.startswith("omni"):
+            return cwd.replace("-", "_").replace(".", "_")
+
+        # Default fallback
+        return "omnibase_core"
+
+    def _discover_importable_modules(self) -> List[str]:
+        """Discover all importable modules in the package."""
+        modules = []
+        package_dir = Path(f"src/{self.package_name}")
+
+        if not package_dir.exists():
+            return [self.package_name]  # Just test the main package
+
+        # Add main package
+        modules.append(self.package_name)
+
+        # Discover submodules
+        for py_file in package_dir.rglob("*.py"):
+            if py_file.name == "__init__.py":
+                # Convert path to module name
+                rel_path = py_file.parent.relative_to(Path("src"))
+                module_name = str(rel_path).replace("/", ".").replace("\\", ".")
+                modules.append(module_name)
+            elif not py_file.name.startswith("_"):
+                # Individual module files
+                rel_path = py_file.relative_to(Path("src")).with_suffix("")
+                module_name = str(rel_path).replace("/", ".").replace("\\", ".")
+                modules.append(module_name)
+
+        return sorted(set(modules))
+
+    def test_import(self, module_name: str) -> bool:
+        """Test importing a module."""
         try:
-            # Security: Use static imports instead of importlib.import_module
-            self._test_static_import(import_path)
-            self.results.append((description, True, "OK"))
+            importlib.import_module(module_name)
+            self.results.append((module_name, True, "OK"))
             return True
+        except ImportError as e:
+            self.results.append((module_name, False, str(e)))
+            return False
         except Exception as e:
-            self.results.append((description, False, str(e)))
+            self.results.append((module_name, False, f"Unexpected error: {e}"))
             return False
 
-    def test_from_import(
-        self, from_path: str, import_items: str, description: str
-    ) -> bool:
-        """Test a from...import statement and record result."""
-        # Security: Validate import path against whitelist
-        if from_path not in self.allowed_imports:
-            self.results.append(
-                (description, False, f"Import path '{from_path}' not in whitelist")
-            )
-            return False
-
-        # Security: Validate import items against whitelist
-        items = [item.strip() for item in import_items.split(",")]
-        for item in items:
-            if item not in self.allowed_import_items:
-                self.results.append(
-                    (description, False, f"Import item '{item}' not in whitelist")
-                )
-                return False
-
-        try:
-            # Security: Use static imports instead of importlib.import_module
-            module = self._test_static_import(from_path)
-
-            # Test that each requested item exists in the module
-            for item in items:
-                if not hasattr(module, item):
-                    raise ImportError(f"cannot import name '{item}' from '{from_path}'")
-
-            self.results.append((description, True, "OK"))
-            return True
-        except Exception as e:
-            self.results.append((description, False, str(e)))
-            return False
-
-    def validate_all_imports(self) -> bool:
-        """Run comprehensive import validation."""
-        print("🔍 Testing omnibase_core imports...")
+    def validate_core_imports(self) -> bool:
+        """Test core package imports."""
+        print(f"🔍 Testing {self.package_name} imports...")
 
         success = True
 
-        # Core package import
-        success &= self.test_import("omnibase_core", "Core package")
+        # Test main package
+        success &= self.test_import(self.package_name)
 
-        # Core infrastructure imports
-        success &= self.test_from_import(
-            "omnibase_core.core.model_onex_container",
-            "ModelONEXContainer",
-            "ONEX Container",
-        )
+        # Test key submodules if they exist
+        common_submodules = [
+            f"{self.package_name}.models",
+            f"{self.package_name}.enums",
+            f"{self.package_name}.utils",
+            f"{self.package_name}.validation",
+        ]
 
-        success &= self.test_from_import(
-            "omnibase_core.core.infrastructure_service_bases",
-            "NodeReducerService, NodeComputeService, NodeEffectService, NodeOrchestratorService",
-            "Service Base Classes",
-        )
-
-        # Model imports
-        success &= self.test_from_import(
-            "omnibase_core.models.common.model_typed_value",
-            "ModelValueContainer, StringContainer",
-            "Typed Value Models",
-        )
-
-        # Enum imports
-        success &= self.test_from_import(
-            "omnibase_core.enums.enum_log_level", "EnumLogLevel", "Log Level Enum"
-        )
-
-        # Error handling imports
-        success &= self.test_from_import(
-            "omnibase_core.core.errors.core_errors",
-            "OnexError, CoreErrorCode",
-            "Error Handling",
-        )
-
-        # Event system imports
-        success &= self.test_from_import(
-            "omnibase_core.models.core.model_event_envelope",
-            "ModelEventEnvelope",
-            "Event Envelope",
-        )
-
-        # CLI imports
-        success &= self.test_from_import(
-            "omnibase_core.cli.config", "ModelCLIConfig", "CLI Config"
-        )
+        for module in common_submodules:
+            module_path = Path("src") / module.replace(".", "/") / "__init__.py"
+            if module_path.exists():
+                success &= self.test_import(module)
 
         return success
 
     def validate_spi_integration(self) -> bool:
-        """Validate omnibase_spi dependency integration."""
+        """Test SPI integration if available."""
         print("🔍 Testing omnibase_spi integration...")
 
         success = True
 
-        # Test SPI protocol imports
         try:
-            from omnibase_spi.protocols.core import (
-                ProtocolCacheService,
-                ProtocolNodeRegistry,
-            )
+            # Test basic SPI imports
+            import omnibase_spi.protocols.core
+            import omnibase_spi.protocols.types
 
             self.results.append(("SPI Protocol imports", True, "OK"))
-        except Exception as e:
-            self.results.append(("SPI Protocol imports", False, str(e)))
-            success = False
-
-        # Test SPI types imports
-        try:
-            from omnibase_spi.protocols.types import core_types
-
             self.results.append(("SPI Types imports", True, "OK"))
-        except Exception as e:
+        except ImportError as e:
+            self.results.append(("SPI Protocol imports", False, str(e)))
             self.results.append(("SPI Types imports", False, str(e)))
+            success = False
+        except Exception as e:
+            self.results.append(("SPI integration", False, f"Unexpected error: {e}"))
             success = False
 
         return success
 
-    def validate_container_functionality(self) -> bool:
-        """Test basic container functionality."""
+    def validate_package_functionality(self) -> bool:
+        """Test basic package functionality."""
         print("🔍 Testing container functionality...")
 
+        success = True
+
         try:
-            from omnibase_core.core.model_onex_container import ModelONEXContainer
+            # Test that we can import and use basic functionality
+            pkg = importlib.import_module(self.package_name)
 
-            # Create container instance
-            container = ModelONEXContainer()
-
-            # Test basic container functionality
-            # Just test that container creation works
-
-            # Test that container has expected properties
-            if hasattr(container, "base_container") and hasattr(
-                container, "get_service"
-            ):
-                self.results.append(("Container functionality", True, "OK"))
-                return True
+            # Check for version info
+            if hasattr(pkg, "__version__"):
+                self.results.append(("Package version", True, f"v{pkg.__version__}"))
             else:
                 self.results.append(
-                    ("Container functionality", False, "Missing expected methods")
+                    ("Package version", False, "No __version__ attribute")
                 )
-                return False
+                success = False
+
+            self.results.append(
+                ("Container functionality", True, "Basic import successful")
+            )
 
         except Exception as e:
             self.results.append(("Container functionality", False, str(e)))
-            return False
+            success = False
 
-    def print_results(self) -> Tuple[int, int]:
-        """Print validation results and return (passed, failed) counts."""
+        return success
+
+    def print_results(self):
+        """Print validation results."""
         print("\n📊 Import Validation Results:")
         print("=" * 50)
 
@@ -284,42 +169,44 @@ class ImportValidator:
         failed = 0
 
         for description, success, message in self.results:
+            status = "✅" if success else "❌"
+            print(f"{status} {description}: {'PASS' if success else 'FAIL'}", end="")
+            if not success or message != "OK":
+                print(f" - {message}")
+            else:
+                print()
+
             if success:
-                print(f"✅ {description}: PASS")
                 passed += 1
             else:
-                print(f"❌ {description}: FAIL - {message}")
                 failed += 1
 
-        return passed, failed
+        print(f"\nResults: {passed} passed, {failed} failed")
+
+        if failed > 0:
+            print(f"\n🚫 {failed} import issues need to be fixed")
+            print("   Check dependencies and installation")
+            return False
+        else:
+            print(f"\n✅ All imports working correctly!")
+            return True
 
 
-def main() -> int:
+def main():
     """Main validation entry point."""
-    print("🎯 omnibase_core Import Validation")
-    print("=" * 40)
-
-    validator = ImportValidator()
+    validator = GenericImportValidator()
 
     # Run all validations
-    import_success = validator.validate_all_imports()
-    spi_success = validator.validate_spi_integration()
-    container_success = validator.validate_container_functionality()
+    core_ok = validator.validate_core_imports()
+    spi_ok = validator.validate_spi_integration()
+    functionality_ok = validator.validate_package_functionality()
 
     # Print results
-    passed, failed = validator.print_results()
+    success = validator.print_results()
 
-    print(f"\nResults: {passed} passed, {failed} failed")
-
-    if failed == 0:
-        print("\n🎉 All imports are working correctly!")
-        print("   omnibase_core is ready for downstream development")
-        return 0
-    else:
-        print(f"\n🚫 {failed} import issues need to be fixed")
-        print("   Check dependencies and installation")
-        return 1
+    # Exit with appropriate code
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

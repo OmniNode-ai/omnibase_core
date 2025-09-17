@@ -241,11 +241,11 @@ jobs:
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Naming Conventions" >> /tmp/compliance-reports/compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-string-versions.py >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-string-versions.py --dir . >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Backward Compatibility" >> /tmp/compliance-reports/compliance-report.md
-          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-no-backward-compatibility.py --directories src >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
+          cd $GITHUB_WORKSPACE && poetry run python scripts/validate-no-backward-compatibility.py -d src >> /tmp/compliance-reports/compliance-report.md 2>&1 || true
 
           echo "" >> /tmp/compliance-reports/compliance-report.md
           echo "## Optional Usage Audit" >> /tmp/compliance-reports/compliance-report.md
