@@ -7,6 +7,8 @@ enabling third-party nodes to register their own actions dynamically.
 
 from pathlib import Path
 
+from pydantic import BaseModel, Field
+
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
@@ -15,13 +17,23 @@ from omnibase_core.utils.safe_yaml_loader import (
 from .model_cli_action import ModelCliAction
 
 
-class ActionRegistry:
+class ModelActionRegistry(BaseModel):
     """Registry for dynamically discovered CLI actions."""
 
-    def __init__(self):
-        self._actions: dict[str, ModelCliAction] = {}
-        self._node_actions: dict[str, set[str]] = {}
-        self._qualified_actions: dict[str, ModelCliAction] = {}
+    _actions: dict[str, ModelCliAction] = Field(
+        default_factory=dict,
+        description="Registry of actions by name",
+    )
+    _node_actions: dict[str, set[str]] = Field(
+        default_factory=dict,
+        description="Actions grouped by node name",
+    )
+    _qualified_actions: dict[str, ModelCliAction] = Field(
+        default_factory=dict,
+        description="Actions by qualified name (node:action)",
+    )
+
+    model_config = {"arbitrary_types_allowed": True}
 
     def register_action(self, action: ModelCliAction) -> None:
         """Register a CLI action from a node contract."""
@@ -205,14 +217,14 @@ class ActionRegistry:
 
 
 # Global registry instance
-_global_action_registry: ActionRegistry | None = None
+_global_action_registry: ModelActionRegistry | None = None
 
 
-def get_action_registry() -> ActionRegistry:
+def get_action_registry() -> ModelActionRegistry:
     """Get the global action registry instance."""
     global _global_action_registry
     if _global_action_registry is None:
-        _global_action_registry = ActionRegistry()
+        _global_action_registry = ModelActionRegistry()
         # Bootstrap core actions
         _global_action_registry.bootstrap_core_actions()
     return _global_action_registry
@@ -222,3 +234,7 @@ def reset_action_registry() -> None:
     """Reset the global action registry (for testing)."""
     global _global_action_registry
     _global_action_registry = None
+
+
+# Legacy alias for registry access
+ActionRegistry = ModelActionRegistry

@@ -5,10 +5,13 @@ Action payload with rich metadata for tool-as-a-service execution.
 Wraps a ModelNodeAction with execution parameters and context.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field
 
+from .model_action_parameters import ModelActionParameters
+from .model_generic_metadata import ModelGenericMetadata
 from .model_node_action import ModelNodeAction
 from .model_onex_base_state import ModelOnexInputState
 
@@ -25,11 +28,9 @@ class ModelActionPayload(ModelOnexInputState):
     """
 
     action: ModelNodeAction = Field(..., description="The action to execute")
-    parameters: dict[str, str | int | float | bool | list[str] | dict[str, str]] = (
-        Field(
-            default_factory=dict,
-            description="Action execution parameters with strong typing",
-        )
+    parameters: ModelActionParameters = Field(
+        default_factory=ModelActionParameters,
+        description="Action execution parameters with strong typing",
     )
     execution_context: dict[str, str | int | float | bool] = Field(
         default_factory=dict,
@@ -63,8 +64,8 @@ class ModelActionPayload(ModelOnexInputState):
     )
 
     # Tool-as-a-Service metadata with strong typing
-    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
-        default_factory=dict,
+    service_metadata: ModelGenericMetadata = Field(
+        default_factory=ModelGenericMetadata,
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(
@@ -79,7 +80,7 @@ class ModelActionPayload(ModelOnexInputState):
     def create_child_payload(
         self,
         child_action: ModelNodeAction,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelActionPayload":
         """Create child payload for action composition."""
         return ModelActionPayload(

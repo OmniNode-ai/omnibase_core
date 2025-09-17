@@ -10,6 +10,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+from .model_semver import ModelSemVer
+from .model_trust_level import ModelTrustLevel
+
 
 class ModelActionBase(BaseModel):
     """
@@ -30,16 +34,14 @@ class ModelActionBase(BaseModel):
         default_factory=datetime.utcnow,
         description="Action model creation timestamp",
     )
-    trust_level: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=1.0,
-        description="Trust score for action validation (0.0-1.0)",
+    trust_level: ModelTrustLevel = Field(
+        default_factory=ModelTrustLevel.trusted,
+        description="Rich trust level with verification and expiration support",
     )
 
     # Service metadata for tool-as-a-service with strong typing
-    service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
-        default_factory=dict,
+    service_metadata: ModelGenericMetadata = Field(
+        default_factory=ModelGenericMetadata,
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(
@@ -48,8 +50,8 @@ class ModelActionBase(BaseModel):
     )
 
     # MCP/GraphQL compatibility with strong typing
-    mcp_schema_version: str = Field(
-        default="1.0.0",
+    mcp_schema_version: ModelSemVer = Field(
+        default=ModelSemVer(major=1, minor=0, patch=0),
         description="MCP schema version for current standards",
     )
     graphql_compatible: bool = Field(
