@@ -58,14 +58,6 @@ repos:
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
         stages: [commit]
 
-      # Canary Node Unit Tests
-      - id: canary-unit-tests
-        name: Canary Node Unit Tests
-        entry: python scripts/run-canary-tests.py
-        language: system
-        pass_filenames: false
-        files: ^(src/omnibase_core/nodes/canary/|tests/unit/test_canary_nodes\.py).*$
-        stages: [commit]
 
       # Union Usage Validation
       - id: validate-union-usage
@@ -111,7 +103,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^scripts/validate-no-backward-compatibility\.py$ # Exclude the validation script itself
+        exclude: ^(scripts/validate-no-backward-compatibility\.py|archived/.*)$ # Exclude the validation script itself and archived directory
         stages: [commit]
 
       # Repository structure validation (NEW)

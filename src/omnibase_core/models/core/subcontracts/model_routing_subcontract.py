@@ -419,7 +419,7 @@ class ModelRoutingSubcontract(BaseModel):
         v: list[ModelRouteDefinition],
     ) -> list[ModelRouteDefinition]:
         """Validate that route priorities are unique within same pattern."""
-        pattern_priorities = {}
+        pattern_priorities: dict[tuple[str, str], int] = {}
         for route in v:
             key = (route.route_pattern, route.method or "*")
             if key in pattern_priorities and pattern_priorities[key] == route.priority:

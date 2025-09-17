@@ -15,7 +15,7 @@ class BaseNode(ABC):
     All nodes must extend this class and implement the execute method.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.node_type: str = ""
         self.node_name: str = ""
         self.version: str = ""
