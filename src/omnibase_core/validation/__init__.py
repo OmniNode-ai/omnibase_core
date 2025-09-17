@@ -18,6 +18,14 @@ Usage:
         print("Protocol violations found!")
 """
 
+from .ecosystem_validators import (
+    ValidationResponse,
+    validate_naming_conventions,
+    validate_no_legacy_patterns,
+    validate_no_manual_yaml,
+    validate_no_string_versions,
+    validate_repository_structure,
+)
 from .exceptions import (
     AuditError,
     ConfigurationError,
@@ -67,6 +75,7 @@ __all__ = [
     "MigrationResult",
     "ProtocolInfo",
     "ValidationResult",
+    "ValidationResponse",
     # Exceptions
     "ValidationFrameworkError",
     "ConfigurationError",
@@ -80,4 +89,10 @@ __all__ = [
     "audit_protocols",
     "check_against_spi",
     "create_migration_plan",
+    # Ecosystem validation functions
+    "validate_repository_structure",
+    "validate_naming_conventions",
+    "validate_no_string_versions",
+    "validate_no_legacy_patterns",
+    "validate_no_manual_yaml",
 ]
