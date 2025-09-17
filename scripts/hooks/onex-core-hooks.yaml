@@ -1,0 +1,80 @@
+# ONEX Core Framework Pre-commit Hooks
+# Essential hooks for ONEX architectural compliance
+#
+# To use in other repositories:
+# 1. Add to your .pre-commit-config.yaml
+# 2. Ensure omnibase_core dependency in pyproject.toml
+# 3. Customize file patterns for your repository structure
+
+repos:
+  # ONEX Framework Validation
+  - repo: local
+    hooks:
+      # Repository structure validation
+      - id: validate-repository-structure
+        name: ONEX Repository Structure Validation
+        entry: python -c "from omnibase_core.validation import validate_repository_structure; import sys; result = validate_repository_structure('.', 'omnibase_core'); sys.exit(0 if result.success else 1)"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
+      # Naming convention validation
+      - id: validate-naming-conventions
+        name: ONEX Naming Convention Validation
+        entry: python -c "from omnibase_core.validation import validate_naming_conventions; import sys; result = validate_naming_conventions('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
+      # Protocol duplication check (for repositories with protocols)
+      - id: validate-no-protocol-duplicates
+        name: ONEX Protocol Duplication Check
+        entry: python -c "from omnibase_core.validation import audit_protocols; import sys; result = audit_protocols('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+        # Only run if repository contains protocols
+        files: ^src/.*protocol.*\.py$
+
+      # SPI duplication check (requires omnibase_spi sibling directory)
+      - id: check-spi-duplicates
+        name: ONEX SPI Duplication Check
+        entry: python -c "import os, sys; from omnibase_core.validation import check_against_spi; result = check_against_spi('.', '../omnibase_spi') if os.path.exists('../omnibase_spi') else type('Result', (), dict(success=True))(); sys.exit(0 if result.success else 1)"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+        # Only run if repository contains protocols
+        files: ^src/.*protocol.*\.py$
+
+      # String version anti-pattern detection
+      - id: validate-string-versions
+        name: ONEX String Version Anti-Pattern Detection
+        entry: python -c "from omnibase_core.validation import validate_no_string_versions; import sys; result = validate_no_string_versions('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: true
+        files: ^.*\.(py|yaml|yml)$
+        stages: [commit]
+
+      # Backward compatibility anti-pattern detection
+      - id: validate-no-backward-compatibility
+        name: ONEX Backward Compatibility Anti-Pattern Detection
+        entry: python -c "from omnibase_core.validation import validate_no_legacy_patterns; import sys; result = validate_no_legacy_patterns('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: true
+        files: ^.*\.py$
+        exclude: ^(scripts/.*|archived/.*)$
+        stages: [commit]
+
+      # Manual YAML prevention
+      - id: validate-no-manual-yaml
+        name: ONEX Manual YAML Prevention
+        entry: python -c "from omnibase_core.validation import validate_no_manual_yaml; import sys; result = validate_no_manual_yaml('.'); sys.exit(0 if result.success else 1)"
+        language: system
+        pass_filenames: true
+        files: ^.*\.py$
+        exclude: ^scripts/.*$
+        stages: [commit]
