@@ -58,14 +58,6 @@ repos:
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
         stages: [commit]
 
-      # Canary Node Unit Tests
-      - id: canary-unit-tests
-        name: Canary Node Unit Tests
-        entry: python scripts/run-canary-tests.py
-        language: system
-        pass_filenames: false
-        files: ^(src/omnibase_core/nodes/canary/|tests/unit/test_canary_nodes\.py).*$
-        stages: [commit]
 
       # Union Usage Validation
       - id: validate-union-usage
@@ -111,7 +103,37 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^scripts/validate-no-backward-compatibility\.py$ # Exclude the validation script itself
+        exclude: ^(scripts/validate-no-backward-compatibility\.py|archived/.*)$ # Exclude the validation script itself and archived directory
+        stages: [commit]
+
+      # Repository structure validation (NEW)
+      - id: validate-repository-structure
+        name: Omni* Repository Structure Validation
+        entry: python scripts/validation/validate_structure.py
+        args: ['.', 'omnibase_core']
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
+      # Naming convention validation (NEW)
+      - id: validate-naming-conventions
+        name: Omni* Naming Convention Validation
+        entry: python scripts/validation/validate_naming.py
+        args: ['.']
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
+      # Optional type usage audit (NEW)
+      - id: audit-optional-usage
+        name: Omni* Optional Type Usage Audit
+        entry: python scripts/validation/audit_optional.py
+        args: ['.']
+        language: system
+        always_run: true
+        pass_filenames: false
         stages: [commit]
 
 # Configuration

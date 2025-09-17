@@ -48,7 +48,8 @@
       "Read(//Volumes/PRO-G40/Code/omniagent/src/omni_agent/services/**)",
       "Read(//Volumes/PRO-G40/Code/omnibase_spi/src/omnibase_spi/protocols/**)",
       "Read(//Volumes/PRO-G40/Code/omnibase_spi/**)",
-      "Bash(semgrep:*)"
+      "Bash(semgrep:*)",
+      "Read(//Volumes/PRO-G40/Code/omnibase_infra/src/omnibase_infra/nodes/**)"
     ],
     "deny": [],
     "ask": []

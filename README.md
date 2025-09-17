@@ -301,3 +301,4 @@ class EventBusService(ProtocolEventBus):
 - **Zero Registry Coupling**: Clean protocol-based dependencies
 
 This repository provides the foundational layer that makes ONEX tool development fast, type-safe, and consistent across the entire ecosystem.
+# Test change

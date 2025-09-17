@@ -1,208 +1,112 @@
 #!/usr/bin/env python3
 """
-Union Usage Validator for ONEX Architecture
-
-Validates that Union types are used sparingly and issues warnings/errors
-based on usage count. Promotes strong typing over loose union types.
-
-Usage:
-    python scripts/validate-union-usage.py
+Generic Union type usage validation for omni* repositories.
+Validates that Union types are used properly according to ONEX standards.
 """
 
-import re
+import argparse
+import ast
 import sys
 from pathlib import Path
+from typing import Dict, List, Set
 
 
-class UnionValidator:
-    """Validates Union usage in Python files."""
+class UnionUsageChecker(ast.NodeVisitor):
+    """Check for Union type usage patterns."""
 
-    def __init__(self, max_unions: int = 7000):
-        self.max_unions = max_unions
-        # Focus on problematic Union patterns
-        self.union_patterns = [
-            r"Union\[",  # Union[type1, type2]
-            r"\|\s*\w+",  # type1 | type2 (Python 3.10+ syntax)
-        ]
-        # Patterns to exclude (acceptable uses)
-        self.acceptable_patterns = [
-            # Optional patterns - these are preferred over Union[T, None]
-            r"\w+\s*\|\s*None",  # type | None (Optional pattern)
-            r"None\s*\|\s*\w+",  # None | type (Optional pattern)
-            # Simple type unions - these are often acceptable
-            r"str\s*\|\s*int",  # str | int (common basic union)
-            r"int\s*\|\s*str",  # int | str (common basic union)
-            r"str\s*\|\s*bool",  # str | bool (common basic union)
-            r"bool\s*\|\s*str",  # bool | str (common basic union)
-            r"int\s*\|\s*float",  # int | float (numeric union)
-            r"float\s*\|\s*int",  # float | int (numeric union)
-            # Complex type with None - acceptable Optional patterns
-            r"\w+\[.*?\]\s*\|\s*None",  # List[T] | None, Dict[K, V] | None, etc.
-            r"None\s*\|\s*\w+\[.*?\]",  # None | List[T], None | Dict[K, V], etc.
-            # Path patterns
-            r"str\s*\|\s*Path",  # str | Path (common path handling)
-            r"Path\s*\|\s*str",  # Path | str (common path handling)
-        ]
+    def __init__(self):
+        self.union_count = 0
+        self.issues = []
 
-    def is_acceptable_union(self, line: str) -> bool:
-        """Check if a union usage is acceptable."""
-        for pattern in self.acceptable_patterns:
-            if re.search(pattern, line):
-                return True
-        return False
+    def visit_Subscript(self, node):
+        """Visit subscript nodes (e.g., Union[str, int])."""
+        if isinstance(node.value, ast.Name) and node.value.id == "Union":
+            self.union_count += 1
 
-    def find_unions_in_file(self, file_path: Path) -> list[tuple[int, str]]:
-        """
-        Find all Union usages in a Python file.
+            # Check for Union with None (should use Optional or | None)
+            if isinstance(node.slice, ast.Tuple) and len(node.slice.elts) == 2:
+                for elt in node.slice.elts:
+                    if isinstance(elt, ast.Constant) and elt.value is None:
+                        self.issues.append(
+                            f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
+                        )
+                    elif isinstance(elt, ast.Name) and elt.id == "None":
+                        self.issues.append(
+                            f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
+                        )
 
-        Args:
-            file_path: Path to the Python file
+        self.generic_visit(node)
 
-        Returns:
-            List of (line_number, line_content) tuples containing unions
-        """
-        unions = []
 
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                for line_num, line in enumerate(f, 1):
-                    for pattern in self.union_patterns:
-                        if re.search(pattern, line):
-                            # Skip comments and docstrings
-                            stripped = line.strip()
-                            if (
-                                stripped.startswith("#")
-                                or stripped.startswith('"""')
-                                or stripped.startswith("'''")
-                            ):
-                                continue
+def validate_python_file(file_path: Path) -> tuple[int, List[str]]:
+    """Validate Union usage in a Python file."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
 
-                            # Skip acceptable union patterns
-                            if self.is_acceptable_union(line):
-                                continue
+        tree = ast.parse(content, filename=str(file_path))
+        checker = UnionUsageChecker()
+        checker.visit(tree)
 
-                            unions.append((line_num, line.strip()))
-                            break
-        except (UnicodeDecodeError, PermissionError) as e:
-            print(f"⚠️  Could not read {file_path}: {e}")
+        return checker.union_count, checker.issues
 
-        return unions
-
-    def validate_project(self, src_dir: Path) -> bool:
-        """
-        Validate Union usage across the entire project.
-
-        Args:
-            src_dir: Source directory to scan
-
-        Returns:
-            True if validation passes, False otherwise
-        """
-        print("🔍 ONEX Union Usage Validation")
-        print("=" * 50)
-
-        # Find all Python files
-        python_files = list(src_dir.rglob("*.py"))
-        print(f"📁 Scanning {len(python_files)} Python files...")
-
-        total_unions = 0
-        files_with_unions = {}
-
-        for py_file in python_files:
-            unions = self.find_unions_in_file(py_file)
-            if unions:
-                relative_path = py_file.relative_to(src_dir.parent)
-                files_with_unions[str(relative_path)] = unions
-                total_unions += len(unions)
-
-        print(
-            f"📊 Found {total_unions} Union usages across {len(files_with_unions)} files",
-        )
-
-        # Report findings
-        if files_with_unions:
-            print("\n⚠️  FILES WITH UNION USAGE:")
-            for file_path, unions in files_with_unions.items():
-                print(f"\n   📄 {file_path} ({len(unions)} unions):")
-                for line_num, line in unions[:3]:  # Show first 3 unions per file
-                    print(f"      Line {line_num}: {line}")
-                if len(unions) > 3:
-                    print(f"      ... and {len(unions) - 3} more")
-
-        # Apply validation rules
-        success = True
-
-        if total_unions > self.max_unions:
-            print(
-                f"\n❌ ERROR: Too many Union usages ({total_unions} > {self.max_unions})",
-            )
-            print("   ONEX Architecture promotes strong typing over loose unions.")
-            print("   Consider using:")
-            print("   • Specific Pydantic models instead of Union[str, int, dict]")
-            print("   • Enums instead of Union[Literal[...], ...]")
-            print("   • Protocol types instead of Union[Type1, Type2]")
-            print("   • Optional[T] instead of Union[T, None]")
-            success = False
-        elif total_unions > 0:
-            print(f"\n⚠️  WARNING: {total_unions} Union usages found")
-            print("   Consider reducing union types for stronger typing:")
-            print("   • Use Optional[T] instead of Union[T, None]")
-            print("   • Use specific types instead of Union[str, int, float, bool]")
-            print("   • Use Pydantic models for complex data structures")
-        else:
-            print("\n✅ EXCELLENT: No Union types found!")
-
-        print("\n📊 UNION VALIDATION SUMMARY")
-        print("=" * 50)
-        print(f"Total Union usages: {total_unions}")
-        print(f"Files with unions: {len(files_with_unions)}")
-        print(f"Maximum allowed: {self.max_unions}")
-        print(f"Status: {'PASSED' if success else 'FAILED'}")
-
-        if success and total_unions == 0:
-            print("🎉 Perfect strong typing compliance!")
-
-        return success
+    except Exception as e:
+        return 0, [f"Error parsing {file_path}: {e}"]
 
 
 def main():
-    """Main entry point."""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="ONEX Union Usage Validator",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    """Main validation function."""
+    parser = argparse.ArgumentParser(description="Validate Union type usage")
     parser.add_argument(
-        "--max-unions",
-        "-m",
-        type=int,
-        default=7000,
-        help="Maximum allowed Union usages before failing (default: 7000)",
+        "--max-unions", type=int, default=100, help="Maximum allowed Union types"
     )
-    parser.add_argument(
-        "--src-dir",
-        "-s",
-        type=Path,
-        default=Path("src"),
-        help="Source directory to scan (default: src)",
-    )
-
+    parser.add_argument("path", nargs="?", default=".", help="Path to validate")
     args = parser.parse_args()
 
-    if not args.src_dir.exists():
-        print(f"❌ Source directory not found: {args.src_dir}")
-        sys.exit(1)
+    base_path = Path(args.path)
+    python_files = list(base_path.rglob("*.py"))
 
-    validator = UnionValidator(max_unions=args.max_unions)
-    success = validator.validate_project(args.src_dir)
+    # Filter out archived files and __pycache__
+    python_files = [
+        f
+        for f in python_files
+        if "/archived/" not in str(f)
+        and "archived" not in f.parts
+        and "__pycache__" not in str(f)
+    ]
 
-    if not success:
-        print("\n🚫 Union validation failed!")
-        sys.exit(1)
-    else:
-        print("\n✅ Union validation passed!")
+    if not python_files:
+        print("✅ Union validation: No Python files to validate")
+        return 0
+
+    total_unions = 0
+    total_issues = []
+
+    for py_file in python_files:
+        union_count, issues = validate_python_file(py_file)
+        total_unions += union_count
+
+        if issues:
+            total_issues.extend([f"{py_file}: {issue}" for issue in issues])
+
+    # Report results
+    if total_issues:
+        print(f"❌ Union validation issues found:")
+        for issue in total_issues:
+            print(f"   {issue}")
+
+    if total_unions > args.max_unions:
+        print(f"❌ Union count exceeded: {total_unions} > {args.max_unions}")
+        return 1
+
+    if total_issues:
+        return 1
+
+    print(
+        f"✅ Union validation: {total_unions} unions in {len(python_files)} files (limit: {args.max_unions})"
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
