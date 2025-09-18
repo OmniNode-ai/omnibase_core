@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelParseMetadata(BaseModel):
     """
@@ -102,7 +104,7 @@ class ModelParseMetadata(BaseModel):
         description="Additional parsing context",
     )
 
-    debug_info: dict[str, Any] = Field(
+    debug_info: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Debug information for troubleshooting",
     )

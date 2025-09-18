@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelRouteHop(BaseModel):
     """
@@ -46,7 +48,7 @@ class ModelRouteHop(BaseModel):
     next_hop: str | None = Field(None, description="Address of next hop chosen")
 
     # Metadata and debugging
-    metadata: dict[str, Any] = Field(
+    metadata: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Additional hop-specific metadata",
     )

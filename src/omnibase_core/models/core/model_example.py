@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelExample(BaseModel):
     """
@@ -18,14 +20,16 @@ class ModelExample(BaseModel):
     description: str | None = Field(None, description="Example description")
 
     # Example data - using a more structured approach
-    input_data: dict[str, Any] | None = Field(None, description="Example input data")
-    output_data: dict[str, Any] | None = Field(
+    input_data: ModelGenericMetadata | None = Field(
+        None, description="Example input data"
+    )
+    output_data: ModelGenericMetadata | None = Field(
         None,
         description="Example output data",
     )
 
     # Additional context
-    context: dict[str, Any] | None = Field(
+    context: ModelGenericMetadata | None = Field(
         None,
         description="Additional context for the example",
     )
