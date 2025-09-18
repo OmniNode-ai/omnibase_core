@@ -7,7 +7,7 @@ anycast, and constraint-based routing.
 """
 
 import re
-from typing import Any
+from typing import Any, Type
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -76,7 +76,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("final_destination")
     @classmethod
-    def validate_destination_address(cls, v):
+    def validate_destination_address(cls: Type["ModelRouteSpec"], v: str) -> str:
         """Validate destination address format."""
         valid_patterns = [
             r"^node://[a-f0-9-]+$",  # node://uuid
@@ -93,7 +93,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("remaining_hops")
     @classmethod
-    def validate_hop_addresses(cls, v):
+    def validate_hop_addresses(cls: Type["ModelRouteSpec"], v: list[str]) -> list[str]:
         """Validate hop address formats."""
         for hop in v:
             # Use same validation as final_destination
@@ -109,7 +109,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("routing_strategy")
     @classmethod
-    def validate_routing_strategy(cls, v):
+    def validate_routing_strategy(cls: Type["ModelRouteSpec"], v: str) -> str:
         """Validate routing strategy."""
         valid_strategies = ["explicit", "dynamic", "anycast", "broadcast", "multicast"]
         if v not in valid_strategies:
@@ -121,7 +121,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("delivery_mode")
     @classmethod
-    def validate_delivery_mode(cls, v):
+    def validate_delivery_mode(cls: Type["ModelRouteSpec"], v: str) -> str:
         """Validate delivery mode."""
         valid_modes = ["best_effort", "guaranteed", "at_least_once", "at_most_once"]
         if v not in valid_modes:
@@ -133,7 +133,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("ttl")
     @classmethod
-    def validate_ttl(cls, v):
+    def validate_ttl(cls: Type["ModelRouteSpec"], v: int) -> int:
         """Validate TTL is reasonable."""
         if v < 1 or v > 255:
             msg = "TTL must be between 1 and 255"
@@ -142,7 +142,7 @@ class ModelRouteSpec(BaseModel):
 
     @field_validator("priority")
     @classmethod
-    def validate_priority(cls, v):
+    def validate_priority(cls: Type["ModelRouteSpec"], v: int) -> int:
         """Validate priority range."""
         if v < 1 or v > 10:
             msg = "Priority must be between 1 (highest) and 10 (lowest)"
@@ -150,7 +150,7 @@ class ModelRouteSpec(BaseModel):
         return v
 
     @classmethod
-    def create_direct_route(cls, destination: str, **kwargs) -> "ModelRouteSpec":
+    def create_direct_route(cls, destination: str, **kwargs: Any) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
         return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)
 
@@ -159,7 +159,7 @@ class ModelRouteSpec(BaseModel):
         cls,
         destination: str,
         hops: list[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
         return cls(
@@ -170,7 +170,9 @@ class ModelRouteSpec(BaseModel):
         )
 
     @classmethod
-    def create_anycast_route(cls, service_pattern: str, **kwargs) -> "ModelRouteSpec":
+    def create_anycast_route(
+        cls, service_pattern: str, **kwargs: Any
+    ) -> "ModelRouteSpec":
         """Create anycast route to any instance of a service."""
         return cls(
             final_destination=service_pattern,
@@ -179,7 +181,7 @@ class ModelRouteSpec(BaseModel):
         )
 
     @classmethod
-    def create_broadcast_route(cls, **kwargs) -> "ModelRouteSpec":
+    def create_broadcast_route(cls, **kwargs: Any) -> "ModelRouteSpec":
         """Create broadcast route to all nodes."""
         return cls(
             final_destination="broadcast://all",
@@ -189,18 +191,26 @@ class ModelRouteSpec(BaseModel):
 
     def add_constraint(self, key: str, value: Any) -> None:
         """Add a routing constraint."""
+        if self.constraints is None:
+            self.constraints = ModelGenericMetadata()
         self.constraints[key] = value
 
     def set_latency_constraint(self, max_latency_ms: int) -> None:
         """Set maximum acceptable latency constraint."""
+        if self.constraints is None:
+            self.constraints = ModelGenericMetadata()
         self.constraints["max_latency_ms"] = max_latency_ms
 
     def set_region_constraint(self, allowed_regions: list[str]) -> None:
         """Set allowed regions constraint."""
+        if self.constraints is None:
+            self.constraints = ModelGenericMetadata()
         self.constraints["allowed_regions"] = allowed_regions
 
     def set_security_constraint(self, min_security_level: str) -> None:
         """Set minimum security level constraint."""
+        if self.constraints is None:
+            self.constraints = ModelGenericMetadata()
         self.constraints["min_security_level"] = min_security_level
 
     def consume_next_hop(self) -> str | None:

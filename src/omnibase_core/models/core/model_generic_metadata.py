@@ -62,7 +62,7 @@ class ModelGenericMetadata(BaseModel):
         return cls(**data)
 
     @field_serializer("created_at", "updated_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

@@ -256,7 +256,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 d[k] = v.to_uri()
                 continue
             # Namespace as URI string (always)
-            if k == "namespace" and isinstance(v, Namespace):  # type: ignore[misc]
+            if k == "namespace" and isinstance(v, Namespace):
                 d[k] = str(v)
                 continue
             # PATCH: Omit nodes if None, empty dict, or empty NodeCollection (protocol rule)
@@ -276,7 +276,7 @@ class ModelNodeMetadataBlock(BaseModel):
     @classmethod
     def validate_entrypoint(cls, value):
         if isinstance(value, EntrypointBlock):
-            return value
+            return str(value) if value else ""
         if isinstance(value, str):
             # Accept URI string and convert to EntrypointBlock
             return EntrypointBlock.from_uri(value)
@@ -288,7 +288,7 @@ class ModelNodeMetadataBlock(BaseModel):
     def validate_namespace_field(cls, value: object):
         # Recursively flatten any dict or Namespace to a plain string
         def flatten_namespace(val: object):
-            if isinstance(val, Namespace):  # type: ignore[misc]
+            if isinstance(val, Namespace):
                 return val.value
             if isinstance(val, str):
                 # Normalize scheme if present
@@ -310,7 +310,7 @@ class ModelNodeMetadataBlock(BaseModel):
             return v
         out = {}
         for k, val in v.items():
-            if isinstance(val, ExtensionValueModel):  # type: ignore[misc]
+            if isinstance(val, ExtensionValueModel):
                 out[k] = val
             elif isinstance(val, dict):
                 out[k] = ExtensionValueModel(**val)

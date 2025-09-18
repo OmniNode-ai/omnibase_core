@@ -12,7 +12,20 @@ from typing import Any, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
+
+from .model_contract_action import ModelContractAction
 from .model_generic_metadata import ModelGenericMetadata
+from .model_yaml_items import (
+    ModelYamlCommand,
+    ModelYamlEntry,
+    ModelYamlExample,
+    ModelYamlOptions,
+    ModelYamlParameters,
+    ModelYamlPermissions,
+    ModelYamlRegistryItem,
+    ModelYamlRule,
+)
+from .model_yaml_items import ModelYamlState as ModelYamlStateItem
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -23,7 +36,7 @@ class ModelGenericYaml(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Allow any additional fields for maximum flexibility
-    root_list: list[Any] | None = Field(
+    root_list: list[dict[str, str]] | None = Field(
         None, description="Root level list for YAML arrays"
     )
 
@@ -64,10 +77,14 @@ class ModelYamlConfiguration(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common configuration patterns
-    config: ModelGenericMetadata | None = Field(None, description="Configuration section")
+    config: ModelGenericMetadata | None = Field(
+        None, description="Configuration section"
+    )
     settings: ModelGenericMetadata | None = Field(None, description="Settings section")
-    options: dict[str, Any] | None = Field(None, description="Options section")
-    parameters: dict[str, Any] | None = Field(None, description="Parameters section")
+    options: ModelYamlOptions | None = Field(None, description="Options section")
+    parameters: ModelYamlParameters | None = Field(
+        None, description="Parameters section"
+    )
 
 
 class ModelYamlMetadata(BaseModel):
@@ -91,11 +108,13 @@ class ModelYamlRegistry(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common registry patterns
-    registry: dict[str, Any] | None = Field(None, description="Registry section")
-    items: list[dict[str, Any]] | None = Field(None, description="Items list")
-    entries: list[dict[str, Any]] | None = Field(None, description="Entries list")
-    actions: list[dict[str, Any]] | None = Field(None, description="Actions list")
-    commands: list[dict[str, Any]] | None = Field(None, description="Commands list")
+    registry: dict[str, ModelYamlRegistryItem] | None = Field(
+        None, description="Registry section"
+    )
+    items: list[ModelYamlRegistryItem] | None = Field(None, description="Items list")
+    entries: list[ModelYamlEntry] | None = Field(None, description="Entries list")
+    actions: list[ModelContractAction] | None = Field(None, description="Actions list")
+    commands: list[ModelYamlCommand] | None = Field(None, description="Commands list")
 
 
 class ModelYamlWithExamples(BaseModel):
@@ -104,7 +123,9 @@ class ModelYamlWithExamples(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # For schema files with examples
-    examples: list[dict[str, Any]] | None = Field(None, description="Examples section")
+    examples: list[ModelYamlExample] | None = Field(
+        None, description="Examples section"
+    )
 
     @classmethod
     def from_yaml(cls, yaml_content: str) -> "ModelYamlWithExamples":
@@ -132,10 +153,10 @@ class ModelYamlPolicy(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common policy patterns
-    policy: dict[str, Any] | None = Field(None, description="Policy definition")
-    rules: list[dict[str, Any]] | None = Field(None, description="Policy rules")
-    permissions: dict[str, Any] | None = Field(None, description="Permissions")
-    restrictions: dict[str, Any] | None = Field(None, description="Restrictions")
+    policy: dict[str, str] | None = Field(None, description="Policy definition")
+    rules: list[ModelYamlRule] | None = Field(None, description="Policy rules")
+    permissions: ModelYamlPermissions | None = Field(None, description="Permissions")
+    restrictions: ModelYamlPermissions | None = Field(None, description="Restrictions")
 
 
 class ModelYamlState(BaseModel):
@@ -144,7 +165,7 @@ class ModelYamlState(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common state patterns
-    state: dict[str, Any] | None = Field(None, description="State section")
+    state: ModelYamlStateItem | None = Field(None, description="State section")
     status: str | None = Field(None, description="Status field")
     data: ModelGenericMetadata | None = Field(None, description="Data section")
 
@@ -155,9 +176,11 @@ class ModelYamlList(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # For files that are root-level arrays
-    root_list: list[Any] = Field(default_factory=list, description="Root level list")
+    root_list: list[dict[str, str]] = Field(
+        default_factory=list, description="Root level list"
+    )
 
-    def __init__(self, data: Any = None, **kwargs):
+    def __init__(self, data: list[dict[str, str]] | None = None, **kwargs: Any) -> None:
         """Handle case where YAML root is a list."""
         if isinstance(data, list):
             super().__init__(root_list=data, **kwargs)

@@ -4,6 +4,8 @@ Semantic Version Model
 Pydantic model for semantic versioning following SemVer specification.
 """
 
+from typing import Type
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -18,7 +20,7 @@ class ModelSemVer(BaseModel):
 
     @field_validator("major", "minor", "patch")
     @classmethod
-    def validate_non_negative(cls, v: int) -> int:
+    def validate_non_negative(cls: Type["ModelSemVer"], v: int) -> int:
         """Validate version numbers are non-negative."""
         if v < 0:
             msg = "Version numbers must be non-negative"
@@ -62,7 +64,7 @@ class ModelSemVer(BaseModel):
     def __lt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is less than another."""
         if not isinstance(other, ModelSemVer):
-            return NotImplemented
+            raise TypeError(f"Cannot compare ModelSemVer with {type(other)}")
         return (self.major, self.minor, self.patch) < (
             other.major,
             other.minor,
@@ -76,7 +78,7 @@ class ModelSemVer(BaseModel):
     def __gt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
-            return NotImplemented
+            raise TypeError(f"Cannot compare ModelSemVer with {type(other)}")
         return (self.major, self.minor, self.patch) > (
             other.major,
             other.minor,

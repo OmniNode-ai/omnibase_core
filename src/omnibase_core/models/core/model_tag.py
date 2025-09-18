@@ -74,6 +74,9 @@ class ModelTag(BaseModel):
             created_by="system",
             is_system=True,
             color=color,
+            description=None,
+            icon=None,
+            parent_tag=None,
         )
 
     # Factory methods for common tags

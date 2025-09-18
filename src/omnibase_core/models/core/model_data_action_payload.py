@@ -4,12 +4,14 @@ Data Action Payload Model.
 Payload for data actions (read, write, create, update, delete, etc.).
 """
 
-from typing import Any
+from typing import Any, Type
 
 from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelDataActionPayload(ModelActionPayloadBase):
@@ -26,10 +28,11 @@ class ModelDataActionPayload(ModelActionPayloadBase):
 
     @field_validator("action_type")
     @classmethod
-    def validate_data_action(cls, v: ModelNodeActionType) -> ModelNodeActionType:
+    def validate_data_action(
+        cls: Type["ModelDataActionPayload"], v: ModelNodeActionType
+    ) -> ModelNodeActionType:
         """Validate that action_type is a valid data action."""
         from omnibase_core.models.core.predefined_categories import OPERATION, QUERY
-from .model_generic_metadata import ModelGenericMetadata
 
         if v.category not in [OPERATION, QUERY]:
             msg = f"Invalid data action: {v.name}"

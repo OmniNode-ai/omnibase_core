@@ -57,9 +57,7 @@ class ModelExecutionCapabilities(BaseModel):
 
     def supports_node_type(self, node_type: ModelNodeType) -> bool:
         """Check if a specific node type is supported."""
-        return any(
-            nt.type_name == node_type.type_name for nt in self.supported_node_types
-        )
+        return any(nt.name == node_type.name for nt in self.supported_node_types)
 
     def supports_delivery_mode(self, mode: EnumDeliveryMode) -> bool:
         """Check if a specific delivery mode is supported."""
@@ -67,12 +65,13 @@ class ModelExecutionCapabilities(BaseModel):
 
     def get_max_timeout_ms(self) -> int:
         """Get maximum timeout in milliseconds."""
+        timeout_ms = self.timeout.total_milliseconds()
         if (
             self.performance_constraints
             and self.performance_constraints.max_execution_time_ms
         ):
             return min(
-                self.timeout.total_milliseconds(),
-                self.performance_constraints.max_execution_time_ms,
+                timeout_ms,
+                int(self.performance_constraints.max_execution_time_ms),
             )
-        return self.timeout.total_milliseconds()
+        return timeout_ms

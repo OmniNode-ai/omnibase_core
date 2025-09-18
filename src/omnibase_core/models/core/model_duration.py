@@ -5,6 +5,8 @@ Type-safe duration representation with multiple time units
 and conversion capabilities.
 """
 
+from typing import Any, Type
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -18,7 +20,7 @@ class ModelDuration(BaseModel):
 
     milliseconds: int = Field(default=0, description="Duration in milliseconds", ge=0)
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         """Initialize duration with flexible input."""
         # Handle different input formats
         if "seconds" in data:
@@ -34,7 +36,7 @@ class ModelDuration(BaseModel):
 
     @field_validator("milliseconds")
     @classmethod
-    def validate_positive(cls, v):
+    def validate_positive(cls: Type["ModelDuration"], v: int) -> int:
         """Ensure duration is non-negative."""
         if v < 0:
             msg = "Duration must be non-negative"
@@ -111,48 +113,48 @@ class ModelDuration(BaseModel):
         """Return detailed representation."""
         return f"ModelDuration(milliseconds={self.milliseconds})"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Check equality with another duration."""
         if isinstance(other, ModelDuration):
             return self.milliseconds == other.milliseconds
         return False
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
         """Check if this duration is less than another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds < other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: Any) -> bool:
         """Check if this duration is less than or equal to another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds <= other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: Any) -> bool:
         """Check if this duration is greater than another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds > other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, other: Any) -> bool:
         """Check if this duration is greater than or equal to another."""
         if isinstance(other, ModelDuration):
             return self.milliseconds >= other.milliseconds
         msg = f"Cannot compare ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __add__(self, other) -> "ModelDuration":
+    def __add__(self, other: Any) -> "ModelDuration":
         """Add two durations."""
         if isinstance(other, ModelDuration):
             return ModelDuration(milliseconds=self.milliseconds + other.milliseconds)
         msg = f"Cannot add ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __sub__(self, other) -> "ModelDuration":
+    def __sub__(self, other: Any) -> "ModelDuration":
         """Subtract two durations."""
         if isinstance(other, ModelDuration):
             result_ms = max(0, self.milliseconds - other.milliseconds)
@@ -160,14 +162,14 @@ class ModelDuration(BaseModel):
         msg = f"Cannot subtract {type(other)} from ModelDuration"
         raise TypeError(msg)
 
-    def __mul__(self, other) -> "ModelDuration":
+    def __mul__(self, other: Any) -> "ModelDuration":
         """Multiply duration by a number."""
         if isinstance(other, int | float):
             return ModelDuration(milliseconds=int(self.milliseconds * other))
         msg = f"Cannot multiply ModelDuration with {type(other)}"
         raise TypeError(msg)
 
-    def __truediv__(self, other) -> "ModelDuration":
+    def __truediv__(self, other: Any) -> "ModelDuration":
         """Divide duration by a number."""
         if isinstance(other, int | float):
             if other == 0:

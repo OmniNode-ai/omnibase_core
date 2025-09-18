@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.core.model_node_info import ModelNodeInfo
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+
 from .model_generic_metadata import ModelGenericMetadata
 
 
@@ -126,7 +127,7 @@ class ModelCliOutputData(BaseModel):
         if hasattr(self, field_name):
             value = getattr(self, field_name)
             if value is not None:
-                return value
+                return str(value) if value else ""
 
         # Then check custom fields
         if self.custom_fields:

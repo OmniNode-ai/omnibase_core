@@ -32,8 +32,8 @@ class FileProcessingError(ValidationFrameworkError):
     """
 
     def __init__(
-        self, message: str, file_path: str, original_exception: Exception = None
-    ):
+        self, message: str, file_path: str, original_exception: Exception | None = None
+    ) -> None:
         self.file_path = file_path
         self.original_exception = original_exception
         super().__init__(f"{message} [File: {self.file_path}]")

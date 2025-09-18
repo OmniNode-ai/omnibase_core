@@ -67,7 +67,15 @@ class ModelCustomSettings(BaseModel):
             return cls(**data)
 
         # Legacy format - all settings in flat dict
-        return cls(general_settings=data.copy())
+        return cls(
+            general_settings=data.copy(),
+            advanced_settings={},
+            experimental_settings={},
+            version="1.0",
+            last_modified=None,
+            validate_on_set=False,
+            allow_unknown=True,
+        )
 
     def get_setting(self, key: str, default: Any = None) -> Any:
         """Get a setting value."""
@@ -81,7 +89,7 @@ class ModelCustomSettings(BaseModel):
                 return settings[key]
         return default
 
-    def set_setting(self, key: str, value: Any, category: str = "general"):
+    def set_setting(self, key: str, value: Any, category: str = "general") -> None:
         """Set a setting value."""
         if category == "advanced":
             self.advanced_settings[key] = value

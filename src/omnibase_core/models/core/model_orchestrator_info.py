@@ -131,7 +131,7 @@ class ModelOrchestratorInfo(BaseModel):
         return self.workflow_status in ["completed", "succeeded", "failed", "cancelled"]
 
     @field_serializer("scheduled_at", "started_at", "completed_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

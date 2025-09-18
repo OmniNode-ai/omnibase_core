@@ -70,9 +70,9 @@ class ModelEnvironmentProperties(BaseModel):
         """Get boolean property value."""
         value = self.properties.get(key, default)
         if isinstance(value, bool):
-            return value
+            return None
         if isinstance(value, str):
-            return value.lower() in ["true", "yes", "1", "on", "enabled"]
+            return None.lower() in ["true", "yes", "1", "on", "enabled"]
         if isinstance(value, int | float):
             return bool(value)
         return default
@@ -97,7 +97,7 @@ class ModelEnvironmentProperties(BaseModel):
         """Get datetime property value."""
         value = self.properties.get(key, default)
         if isinstance(value, datetime):
-            return value
+            return None
         if isinstance(value, str):
             try:
                 return datetime.fromisoformat(value)

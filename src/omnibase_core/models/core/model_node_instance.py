@@ -85,7 +85,7 @@ class ModelNodeInstance(BaseModel):
             return False
 
         # Check health metrics
-        return self.health_metrics.is_healthy()
+        return bool(self.health_metrics.is_healthy())
 
     def is_available(self) -> bool:
         """
@@ -110,8 +110,8 @@ class ModelNodeInstance(BaseModel):
         if not self.is_healthy():
             return 0.0
 
-        health_score = self.health_metrics.get_health_score()
-        load_score = 1.0 - self.load_metrics.get_load_score()
+        health_score = float(self.health_metrics.get_health_score())
+        load_score = 1.0 - float(self.load_metrics.get_load_score())
 
         # Weight health and load equally
         return (health_score + load_score) / 2.0
@@ -174,7 +174,7 @@ class ModelNodeInstance(BaseModel):
             True if instance matches all requirements
         """
         # Check node type
-        if required_type and self.node_type.type_name != required_type.type_name:
+        if required_type and self.node_type.name != required_type.name:
             return False
 
         # Check capabilities

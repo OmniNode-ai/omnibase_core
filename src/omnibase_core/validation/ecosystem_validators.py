@@ -22,7 +22,7 @@ class ValidationResponse(NamedTuple):
 
 
 def validate_repository_structure(
-    repo_path: str = ".", repo_name: str = None
+    repo_path: str = ".", repo_name: str | None = None
 ) -> ValidationResponse:
     """
     Validate repository structure compliance.

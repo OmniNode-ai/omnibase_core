@@ -15,6 +15,8 @@ providing clean separation between node logic and routing behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from typing import Type
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -415,11 +417,11 @@ class ModelRoutingSubcontract(BaseModel):
     @field_validator("routes")
     @classmethod
     def validate_route_priorities_unique(
-        cls,
+        cls: Type["ModelRoutingSubcontract"],
         v: list[ModelRouteDefinition],
     ) -> list[ModelRouteDefinition]:
         """Validate that route priorities are unique within same pattern."""
-        pattern_priorities = {}
+        pattern_priorities: dict[tuple[str, str], int] = {}
         for route in v:
             key = (route.route_pattern, route.method or "*")
             if key in pattern_priorities and pattern_priorities[key] == route.priority:
@@ -432,7 +434,7 @@ class ModelRoutingSubcontract(BaseModel):
 
     @field_validator("trace_sampling_rate")
     @classmethod
-    def validate_sampling_rate(cls, v: float) -> float:
+    def validate_sampling_rate(cls: Type["ModelRoutingSubcontract"], v: float) -> float:
         """Validate sampling rate is reasonable."""
         if v > 0.5:
             msg = "Trace sampling rate above 50% may impact performance"

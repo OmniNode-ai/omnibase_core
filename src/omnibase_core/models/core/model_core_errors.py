@@ -516,7 +516,7 @@ class OnexError(Exception):
             data["timestamp"] = datetime.now(UTC)
 
         # Create the Pydantic model for validation and serialization
-        self._model = OnexErrorModel(**data)
+        self._model: ModelOnexErrorModel = ModelOnexErrorModel(**data)
 
         # Initialize Exception with message
         super().__init__(self._model.message)

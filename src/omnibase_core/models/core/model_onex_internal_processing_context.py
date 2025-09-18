@@ -40,7 +40,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
     )
 
     # Optional context data
-    additional_data: dict = Field(
+    additional_data: dict[str, str] = Field(
         default_factory=dict,
         description="Additional processing data",
     )
@@ -53,7 +53,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
         correlation_id: UUID | None = None,
         event_id: UUID | None = None,
         session_id: UUID | None = None,
-        **additional_data,
+        **additional_data: str,
     ) -> "ModelOnexInternalProcessingContext":
         """
         Create processing context for an operation, generating UUIDs as needed.

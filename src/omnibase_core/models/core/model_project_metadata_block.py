@@ -2,6 +2,8 @@
 Project metadata block model.
 """
 
+from typing import Any, Dict
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
@@ -48,7 +50,7 @@ class ModelProjectMetadataBlock(BaseModel):
         ),
     )
     meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.PROJECT)
-    tools: ModelToolCollection | None = None
+    tools: Dict[str, Any] | None = None
     copyright: str
     tree_generator: ModelTreeGeneratorConfig | None = None
     # Add project-specific fields as needed
@@ -59,7 +61,7 @@ class ModelProjectMetadataBlock(BaseModel):
     def _parse_entrypoint(cls, value) -> str:
         # Accept EntrypointBlock or URI string, always return URI string
         if isinstance(value, str) and "://" in value:
-            return value
+            return str(value) if value else ""
         if hasattr(value, "type") and hasattr(value, "target"):
             return f"{value.type}://{value.target}"
         msg = f"Entrypoint must be a URI string or EntrypointBlock, got: {value}"
@@ -79,9 +81,9 @@ class ModelProjectMetadataBlock(BaseModel):
                 raise ValueError(
                     msg,
                 )
-        # Convert tools to ModelToolCollection if needed
+        # Ensure tools is a proper dict if provided
         if TOOLS_KEY in data and isinstance(data[TOOLS_KEY], dict):
-            data[TOOLS_KEY] = ModelToolCollection(data[TOOLS_KEY])
+            data[TOOLS_KEY] = dict(data[TOOLS_KEY])
         # Convert version fields to ModelOnexVersionInfo
         version_fields = [
             METADATA_VERSION_KEY,

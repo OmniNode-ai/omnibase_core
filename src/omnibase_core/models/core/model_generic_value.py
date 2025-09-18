@@ -8,8 +8,10 @@ different data types in a type-safe manner for validation and testing.
 
 import json
 from enum import Enum
+from typing import Any, Type, assert_never
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic.fields import FieldInfo
 
 
 class EnumValueType(str, Enum):
@@ -53,7 +55,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("string_value")
     @classmethod
-    def validate_string_value(cls, v, info):
+    def validate_string_value(
+        cls: Type["ModelGenericValue"], v: str | None, info: Any
+    ) -> str | None:
         """Validate string value is set when type is STRING"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.STRING and v is None:
@@ -68,7 +72,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("integer_value")
     @classmethod
-    def validate_integer_value(cls, v, info):
+    def validate_integer_value(
+        cls: Type["ModelGenericValue"], v: int | None, info: Any
+    ) -> int | None:
         """Validate integer value is set when type is INTEGER"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.INTEGER and v is None:
@@ -83,7 +89,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("float_value")
     @classmethod
-    def validate_float_value(cls, v, info):
+    def validate_float_value(
+        cls: Type["ModelGenericValue"], v: float | None, info: Any
+    ) -> float | None:
         """Validate float value is set when type is FLOAT"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.FLOAT and v is None:
@@ -96,7 +104,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("boolean_value")
     @classmethod
-    def validate_boolean_value(cls, v, info):
+    def validate_boolean_value(
+        cls: Type["ModelGenericValue"], v: bool | None, info: Any
+    ) -> bool | None:
         """Validate boolean value is set when type is BOOLEAN"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.BOOLEAN and v is None:
@@ -111,7 +121,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("list_string_value")
     @classmethod
-    def validate_list_string_value(cls, v, info):
+    def validate_list_string_value(
+        cls: Type["ModelGenericValue"], v: list[str] | None, info: Any
+    ) -> list[str] | None:
         """Validate list string value is set when type is LIST_STRING"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_STRING and v is None:
@@ -128,7 +140,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("list_integer_value")
     @classmethod
-    def validate_list_integer_value(cls, v, info):
+    def validate_list_integer_value(
+        cls: Type["ModelGenericValue"], v: list[int] | None, info: Any
+    ) -> list[int] | None:
         """Validate list integer value is set when type is LIST_INTEGER"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
@@ -147,7 +161,9 @@ class ModelGenericValue(BaseModel):
 
     @field_validator("dict_value")
     @classmethod
-    def validate_dict_value(cls, v, info):
+    def validate_dict_value(
+        cls: Type["ModelGenericValue"], v: str | None, info: Any
+    ) -> str | None:
         """Validate dict value is set when type is DICT"""
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.DICT and v is None:
@@ -158,7 +174,7 @@ class ModelGenericValue(BaseModel):
             raise ValueError(msg)
         return v
 
-    def get_python_value(self):
+    def get_python_value(self) -> Any:
         """Get the actual Python value based on the type"""
         if self.value_type == EnumValueType.STRING:
             return self.string_value
@@ -176,11 +192,10 @@ class ModelGenericValue(BaseModel):
             return json.loads(self.dict_value) if self.dict_value else {}
         if self.value_type == EnumValueType.NULL:
             return None
-        msg = f"Unknown value type: {self.value_type}"
-        raise ValueError(msg)
+        assert_never(self.value_type)
 
     @classmethod
-    def from_python_value(cls, value):
+    def from_python_value(cls, value: Any) -> "ModelGenericValue":
         """Create ModelGenericValue from a Python value"""
         if value is None:
             return cls(value_type=EnumValueType.NULL)

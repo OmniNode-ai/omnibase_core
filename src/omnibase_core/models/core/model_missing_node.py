@@ -267,7 +267,7 @@ class ModelMissingNode(BaseModel):
     def analyze_error_category(self) -> dict[str, Any]:
         """Analyze the error category and provide insights."""
         return {
-            "category": self.reason_category.value,
+            "category": self.reason_category.value if self.reason_category else None,
             "is_recoverable": self._is_recoverable_error(),
             "requires_code_change": self._requires_code_change(),
             "requires_configuration": self._requires_configuration_change(),
@@ -512,9 +512,11 @@ class ModelMissingNode(BaseModel):
         """Get comprehensive metrics for monitoring systems."""
         return {
             "node_name": self.node_name,
-            "reason_category": self.reason_category.value,
-            "criticality": self.criticality.value,
-            "node_category": self.node_category.value,
+            "reason_category": (
+                self.reason_category.value if self.reason_category else None
+            ),
+            "criticality": self.criticality.value if self.criticality else None,
+            "node_category": self.node_category.value if self.node_category else None,
             "severity_level": self.get_severity_level(),
             "business_impact_score": self.calculate_business_impact_score(),
             "requires_immediate_attention": self.requires_immediate_attention(),
@@ -539,15 +541,17 @@ class ModelMissingNode(BaseModel):
             "node_details": {
                 "name": self.node_name,
                 "expected_type": self.expected_type,
-                "category": self.node_category.value,
-                "criticality": self.criticality.value,
+                "category": self.node_category.value if self.node_category else None,
+                "criticality": self.criticality.value if self.criticality else None,
             },
             "impact_assessment": self.assess_operational_impact(),
             "recovery_recommendations": self.get_recovery_recommendations()[
                 :3
             ],  # Top 3
             "metadata": {
-                "reason_category": self.reason_category.value,
+                "reason_category": (
+                    self.reason_category.value if self.reason_category else None
+                ),
                 "detection_count": self.detection_count,
                 "first_detected": self.first_detected,
             },

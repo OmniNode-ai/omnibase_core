@@ -3,6 +3,7 @@
 from typing import Any
 
 from pydantic import BaseModel, Field
+
 from .model_generic_metadata import ModelGenericMetadata
 
 

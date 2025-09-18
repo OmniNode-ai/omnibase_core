@@ -1,10 +1,27 @@
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
-from typing import Any
+from typing import Any, Type
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.core.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.core.model_semver import ModelSemVer
+
+
+def parse_semver_from_string(version_str: str) -> ModelSemVer:
+    """Parse a semver string into ModelSemVer instance."""
+    parts = version_str.split(".")
+    if len(parts) != 3:
+        msg = f"Invalid semantic version format: {version_str}"
+        raise ValueError(msg)
+
+    try:
+        major = int(parts[0])
+        minor = int(parts[1])
+        patch = int(parts[2])
+        return ModelSemVer(major=major, minor=minor, patch=patch)
+    except ValueError as e:
+        msg = f"Invalid semantic version format: {version_str}"
+        raise ValueError(msg) from e
 
 
 class ModelSemVerConstraint(BaseModel):
@@ -38,7 +55,7 @@ class ModelSemVerConstraint(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse_constraint_string(cls, v: Any) -> Any:
+    def parse_constraint_string(cls: Type["ModelSemVerConstraint"], v: Any) -> Any:
         """Parse constraint strings like '>=1.0.0,<2.0.0' into ModelSemVerConstraint fields."""
         if isinstance(v, str):
             # Parse common constraint patterns

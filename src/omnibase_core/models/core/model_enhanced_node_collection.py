@@ -348,15 +348,15 @@ class ModelNodeCollection(BaseModel):
         """Support dict-like assignment."""
         self.register_node(name, node_class)
 
-    def keys(self):
+    def keys(self) -> None:
         """Support dict-like keys() method."""
         return self.nodes.keys()
 
-    def values(self):
+    def values(self) -> None:
         """Support dict-like values() method."""
         return self.nodes.values()
 
-    def items(self):
+    def items(self) -> None:
         """Support dict-like items() method."""
         return self.nodes.items()
 

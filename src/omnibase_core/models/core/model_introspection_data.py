@@ -3,6 +3,7 @@ Introspection data model to replace Dict[str, object] usage for node introspecti
 """
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -96,10 +97,10 @@ class ModelIntrospectionData(BaseModel):
     model_config = ConfigDict()
 
     @field_serializer("last_updated")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None
 
 
 # Compatibility alias

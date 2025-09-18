@@ -7,6 +7,6 @@ class ModelOnexField(BaseModel):
     Use this for any field that may contain arbitrary or structured data in ONEX nodes.
     """
 
-    data: dict | None = Field(default=None, description="Arbitrary ONEX field data")
+    data: dict[str, str] | None = Field(default=None, description="Arbitrary ONEX field data")
 
     # Optionally, add more required methods or attributes as needed

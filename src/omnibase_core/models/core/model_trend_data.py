@@ -89,7 +89,7 @@ class ModelTrendData(BaseModel):
             ModelTrendPoint(timestamp=timestamp, value=value, label=label),
         )
 
-    def calculate_metrics(self):
+    def calculate_metrics(self) -> None:
         """Calculate trend metrics from data points."""
         if not self.data_points:
             return
@@ -130,7 +130,7 @@ class ModelTrendData(BaseModel):
         return ((values[-1] - values[0]) / values[0]) * 100
 
     @field_serializer("last_updated")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime) -> str:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return str(value) if value else ""

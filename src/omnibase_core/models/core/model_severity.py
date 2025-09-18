@@ -6,7 +6,7 @@ Phase 3I remediation: Eliminated all factory methods and conversion anti-pattern
 """
 
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, validator
 
@@ -75,14 +75,14 @@ class ModelSeverity(BaseModel):
 
     # ONEX validation constraints
     @validator("name")
-    def validate_name_consistency(cls, v, values):
+    def validate_name_consistency(cls, v: str, values: dict[str, Any]) -> str:
         """Ensure name and value are consistent."""
         if "value" in values and v.lower() != values["value"]:
             raise ValueError(f"Name '{v}' must match value '{values.get('value', '')}'")
         return v
 
     @validator("numeric_value")
-    def validate_severity_ranges(cls, v, values):
+    def validate_severity_ranges(cls, v: int, values: dict[str, Any]) -> int:
         """Validate numeric values align with severity expectations."""
         name = values.get("name", "")
         expected_ranges = {
@@ -103,7 +103,7 @@ class ModelSeverity(BaseModel):
         return v
 
     @validator("is_critical")
-    def validate_critical_consistency(cls, v, values):
+    def validate_critical_consistency(cls, v: bool, values: dict[str, Any]) -> bool:
         """Ensure critical flag aligns with severity level."""
         name = values.get("name", "")
         numeric = values.get("numeric_value", 0)
@@ -121,7 +121,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compliant string representation."""
         return self.value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """ONEX-compliant equality comparison - type-safe only."""
         if isinstance(other, ModelSeverity):
             return self.name == other.name and self.numeric_value == other.numeric_value

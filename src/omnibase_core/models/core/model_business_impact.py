@@ -4,6 +4,7 @@ Business impact model to replace dictionary usage for business metrics.
 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -132,7 +133,7 @@ class ModelBusinessImpact(BaseModel):
         return cls(**data)
 
     @field_serializer("assessment_timestamp")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime) -> str:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return str(value) if value else ""

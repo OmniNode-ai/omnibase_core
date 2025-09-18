@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class EnumHubCapability(str, Enum):
     """Hub capability types for different domains."""
@@ -69,11 +71,11 @@ class ModelHubServiceConfiguration(BaseModel):
         description="Whether hub runs as persistent service",
     )
     http_endpoints: list[ModelHubHttpEndpoint] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="HTTP endpoints provided by hub",
     )
     websocket_endpoints: list[ModelHubWebSocketEndpoint] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="WebSocket endpoints provided by hub",
     )
     default_port: int | None = Field(None, description="Default service port")
@@ -104,7 +106,7 @@ class ModelHubConfiguration(BaseModel):
     )
 
     capabilities: list[EnumHubCapability] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Hub capabilities",
     )
 
@@ -117,7 +119,7 @@ class ModelHubConfiguration(BaseModel):
 
     # Tool management
     managed_tools: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Tools managed by this hub",
     )
 
@@ -164,7 +166,7 @@ class ModelUnifiedHubContract(BaseModel):
 
     # Workflows (Generation hub format)
     orchestration_workflows: dict[str, Any] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Orchestration workflows",
     )
 
@@ -188,7 +190,7 @@ class ModelUnifiedHubContract(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_contract_format(cls, values):
+    def validate_contract_format(cls, values: Any) -> dict[str, Any]:
         """Validate that we have either hub_configuration or service_configuration."""
         if isinstance(values, dict):
             hub_config = values.get("hub_configuration")
@@ -200,7 +202,7 @@ class ModelUnifiedHubContract(BaseModel):
                     msg,
                 )
 
-        return values
+        return values if isinstance(values, dict) else {}
 
     def get_unified_config(self) -> ModelHubConfiguration:
         """
@@ -244,6 +246,11 @@ class ModelUnifiedHubContract(BaseModel):
             capabilities=capabilities,
             managed_tools=managed_tools,
             coordination_mode=EnumCoordinationMode.EVENT_ROUTER,
+            priority="normal",
+            docker_enabled=False,
+            introspection_timeout=30,
+            service_ttl=300,
+            auto_cleanup_interval=60,
         )
 
     def get_domain(self) -> str:
@@ -318,11 +325,13 @@ class ModelUnifiedHubContract(BaseModel):
             ModelUnifiedHubContract instance
         """
         from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
-from .model_generic_metadata import ModelGenericMetadata
 
         try:
             # Use centralized YAML loading with full Pydantic validation
-            return load_and_validate_yaml_model(contract_path, cls)
+            result = load_and_validate_yaml_model(contract_path, cls)
+            if isinstance(result, cls):
+                return result
+            return cls.model_validate(result)
         except Exception as e:
             raise ValueError(
                 f"Failed to load contract from {contract_path}: {e}"

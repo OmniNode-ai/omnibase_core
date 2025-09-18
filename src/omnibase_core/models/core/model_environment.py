@@ -178,7 +178,7 @@ class ModelEnvironment(BaseModel):
         if self.custom_properties.has_property(key):
             # Try to return the most appropriate type
             value = self.custom_properties.properties.get(key)
-            return value if value is not None else default
+            return str(value) if value else "" if value is not None else default
         return default
 
     def to_environment_dict(self) -> dict[str, str]:

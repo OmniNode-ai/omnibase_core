@@ -37,8 +37,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode
-from omnibase_core.exceptions import OnexError
+from omnibase_core.models.core.model_core_errors import CoreErrorCode, OnexError
 from omnibase_core.models.core.model_examples import ModelExamples
 from omnibase_core.models.metadata.metadata_constants import (
     CONTRACT_SCHEMA_VERSION_KEY,
@@ -170,8 +169,8 @@ class ModelStateContract(BaseModel):
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
-                f"Contract version must follow semantic versioning (x.y.z), got: {v}",
+                message=f"Contract version must follow semantic versioning (x.y.z), got: {v}",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -183,8 +182,8 @@ class ModelStateContract(BaseModel):
 
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
-                f"Node version must follow semantic versioning (x.y.z), got: {v}",
+                message=f"Node version must follow semantic versioning (x.y.z), got: {v}",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -193,15 +192,18 @@ class ModelStateContract(BaseModel):
     def validate_node_name(cls, v: str) -> str:
         """Validate that node name follows naming conventions."""
         if not v or not v.strip():
-            raise OnexError(CoreErrorCode.VALIDATION_ERROR, "Node name cannot be empty")
+            raise OnexError(
+                message="Node name cannot be empty",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
+            )
 
         # Check for valid node name pattern (lowercase, underscores)
         import re
 
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
-                f"Node name must follow pattern: lowercase, underscores. Got: {v}",
+                message=f"Node name must follow pattern: lowercase, underscores. Got: {v}",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -256,8 +258,8 @@ class ModelStateContract(BaseModel):
 
         except Exception as e:
             raise OnexError(
-                CoreErrorCode.VALIDATION_ERROR,
-                f"Failed to parse state contract: {e}",
+                message=f"Failed to parse state contract: {e}",
+                error_code=CoreErrorCode.VALIDATION_ERROR,
             ) from e
 
 
@@ -277,15 +279,22 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
     """
     from pathlib import Path
 
-    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
-
     try:
         path = Path(file_path)
 
-        # Use centralized YAML loading with full Pydantic validation
-        return load_and_validate_yaml_model(path, ModelStateContract)
+        with path.open("r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Use Pydantic YAML parsing then convert to ModelStateContract
+        from .model_generic_yaml import ModelGenericYaml
+
+        yaml_model = ModelGenericYaml.from_yaml(content)
+        raw_data = yaml_model.model_dump()
+
+        # Pydantic validation through specialized method
+        return ModelStateContract.from_yaml_dict(raw_data)
     except Exception as e:
         raise OnexError(
-            CoreErrorCode.FILE_READ_ERROR,
-            f"Failed to load contract from {file_path}: {e}",
+            message=f"Failed to load contract from {file_path}: {e}",
+            error_code=CoreErrorCode.FILE_READ_ERROR,
         ) from e

@@ -6,7 +6,7 @@ and monitoring systems throughout ONEX.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Type
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -27,7 +27,7 @@ class ModelHealthStatus(BaseModel):
 
     @field_validator("timestamp", mode="before")
     @classmethod
-    def validate_timestamp(cls, v: Any) -> str | None:
+    def validate_timestamp(cls: Type["ModelHealthStatus"], v: Any) -> str | None:
         """
         Convert datetime objects to ISO format strings.
 
@@ -44,7 +44,7 @@ class ModelHealthStatus(BaseModel):
         return str(v)
 
     details: ModelHealthDetails = Field(
-        default_factory=ModelHealthDetails,
+        default_factory=ModelHealthDetails,  # type: ignore[arg-type]
         description="Additional health details",
     )
     uptime_seconds: float | None = Field(

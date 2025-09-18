@@ -131,7 +131,7 @@ class ModelFeatureFlags(BaseModel):
 
     def get_flag_metadata(self, flag: str) -> ModelGenericMetadata | None:
         """Get metadata for a specific flag."""
-        return self.flag_metadata.get(flag)
+        return self.flag_metadata.get(flag, None)
 
     def set_flag_metadata(
         self, flag: str, metadata: ModelGenericMetadata | dict[str, Any]

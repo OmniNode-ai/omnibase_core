@@ -217,13 +217,13 @@ class ModelConnectionInfo(BaseModel):
         return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
 
     @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value):
+    def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
-        return value
+        return str(value) if value else ""
 
     @field_serializer("established_at", "last_used_at")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

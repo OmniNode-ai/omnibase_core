@@ -13,7 +13,7 @@ Phase 1 Components:
 Author: ONEX Framework Team
 """
 
-__version__ = "1.0.0"
+# Version managed by contract.yaml
 __status__ = "Phase 1 - Core Implementation"
 
 __all__ = [

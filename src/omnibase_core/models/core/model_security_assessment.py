@@ -165,7 +165,7 @@ class ModelSecurityAssessment(BaseModel):
         "last_security_review",
         "next_assessment_date",
     )
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

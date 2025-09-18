@@ -7,21 +7,43 @@ strongly typed contract content.
 Author: ONEX Framework Team
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.node import EnumNodeType
+from omnibase_core.models.core.model_contract_action import ModelContractAction
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
 from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
+from omnibase_core.models.core.model_io_operation import ModelIOOperation
+from omnibase_core.models.core.model_node_configs import (
+    ModelAggregationConfig,
+    ModelCachingConfig,
+    ModelConflictResolutionConfig,
+    ModelErrorHandlingConfig,
+    ModelEventTypeConfig,
+    ModelInterfaceConfig,
+    ModelMemoryManagementConfig,
+    ModelObservabilityConfig,
+    ModelRoutingConfig,
+    ModelStateManagementConfig,
+    ModelStreamingConfig,
+    ModelWorkflowRegistryConfig,
+)
 from omnibase_core.models.core.model_node_specification import ModelNodeSpecification
+from omnibase_core.models.core.model_performance_config import ModelPerformanceConfig
+from omnibase_core.models.core.model_reduction_operation import ModelReductionOperation
 from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.core.model_subcontract_reference import (
     ModelSubcontractReference,
 )
+from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
+from omnibase_core.models.core.model_validation_rule import (
+    ModelValidationRule,
+    ModelValidationRuleSet,
+)
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
+
 from .model_generic_metadata import ModelGenericMetadata
 
 
@@ -64,14 +86,14 @@ class ModelContractContent(BaseModel):
         None,
         description="Contract dependencies (can be ModelContractDependency objects or strings)",
     )
-    actions: list[dict[str, Any]] | None = Field(
+    actions: list[ModelContractAction] | None = Field(
         None,
         description="Available actions",
     )
     primary_actions: list[str] | None = Field(None, description="Primary actions")
-    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+    validation_rules: ModelValidationRuleSet | list[ModelValidationRule] | None = Field(
         None,
-        description="Validation rules (can be dict or list format)",
+        description="Validation rules (can be rule set or list format)",
     )
 
     # === INFRASTRUCTURE FIELDS ===
@@ -91,56 +113,56 @@ class ModelContractContent(BaseModel):
         None,
         description="Service resolution",
     )
-    performance: dict[str, Any] | None = Field(
+    performance: ModelPerformanceConfig | None = Field(
         None,
         description="Performance configuration",
     )
 
     # === NODE-SPECIFIC FIELDS ===
     # These should only appear in specific node types - architectural validation will catch violations
-    aggregation: dict[str, Any] | None = Field(
+    aggregation: ModelAggregationConfig | None = Field(
         None,
         description="Aggregation configuration - COMPUTE nodes should not have this",
     )
-    state_management: dict[str, Any] | None = Field(
+    state_management: ModelStateManagementConfig | None = Field(
         None,
         description="State management configuration - COMPUTE nodes should not have this",
     )
-    reduction_operations: list[dict[str, Any]] | None = Field(
+    reduction_operations: list[ModelReductionOperation] | None = Field(
         None,
         description="Reduction operations - Only REDUCER nodes",
     )
-    streaming: dict[str, Any] | None = Field(
+    streaming: ModelStreamingConfig | None = Field(
         None,
         description="Streaming configuration - Only REDUCER nodes",
     )
-    conflict_resolution: dict[str, Any] | None = Field(
+    conflict_resolution: ModelConflictResolutionConfig | None = Field(
         None,
         description="Conflict resolution - Only REDUCER nodes",
     )
-    memory_management: dict[str, Any] | None = Field(
+    memory_management: ModelMemoryManagementConfig | None = Field(
         None,
         description="Memory management - Only REDUCER nodes",
     )
-    state_transitions: dict[str, Any] | None = Field(
+    state_transitions: ModelStateManagementConfig | None = Field(
         None,
         description="State transitions - Only REDUCER nodes",
     )
-    routing: dict[str, Any] | None = Field(
+    routing: ModelRoutingConfig | None = Field(
         None,
         description="Routing configuration - Only ORCHESTRATOR nodes",
     )
-    workflow_registry: dict[str, Any] | None = Field(
+    workflow_registry: ModelWorkflowRegistryConfig | None = Field(
         None,
         description="Workflow registry - Only ORCHESTRATOR nodes",
     )
 
     # === EFFECT NODE FIELDS ===
-    io_operations: list[dict[str, Any]] | None = Field(
+    io_operations: list[ModelIOOperation] | None = Field(
         None,
         description="I/O operations - Only EFFECT nodes",
     )
-    interface: dict[str, Any] | None = Field(
+    interface: ModelInterfaceConfig | None = Field(
         None,
         description="Interface configuration - Only EFFECT nodes",
     )
@@ -156,16 +178,18 @@ class ModelContractContent(BaseModel):
         None,
         description="Algorithm configuration",
     )
-    caching: dict[str, Any] | None = Field(None, description="Caching configuration")
-    error_handling: dict[str, Any] | None = Field(
+    caching: ModelCachingConfig | None = Field(
+        None, description="Caching configuration"
+    )
+    error_handling: ModelErrorHandlingConfig | None = Field(
         None,
         description="Error handling configuration",
     )
-    observability: dict[str, Any] | None = Field(
+    observability: ModelObservabilityConfig | None = Field(
         None,
         description="Observability configuration",
     )
-    event_type: dict[str, Any] | None = Field(
+    event_type: ModelEventTypeConfig | None = Field(
         None,
         description="Event type configuration for publish/subscribe patterns",
     )
@@ -192,7 +216,7 @@ class ModelContractContent(BaseModel):
     )
 
     # === DEPRECATED/LEGACY FIELDS ===
-    original_dependencies: list[dict[str, Any]] | None = Field(
+    original_dependencies: list[ModelContractDependency] | None = Field(
         None,
         description="Original dependencies (deprecated)",
     )

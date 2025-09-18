@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
+
 from .model_generic_metadata import ModelGenericMetadata
 
 
