@@ -47,7 +47,7 @@ repos:
         types: [python]
         args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=skip, --config-file=mypy.ini]
         files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
-        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect).*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
