@@ -39,17 +39,16 @@ The introspection system enables:
 from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
+from omnibase_core.models.contracts.model_contract import ModelContract
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_command import ModelCLICommand
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
-from omnibase_core.models.contracts.model_contract import ModelContract
 from omnibase_core.models.core.model_dependencies import ModelDependencies
 from omnibase_core.models.core.model_error_code import ModelErrorCode
 from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 
 # Import all separated models
 from omnibase_core.models.core.model_event_channels import ModelEventChannels
-from .model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )
@@ -57,6 +56,8 @@ from omnibase_core.models.core.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_version_status import ModelVersionStatus
+
+from .model_node_metadata_info import ModelNodeMetadataInfo
 
 if TYPE_CHECKING:
     from .model_node_introspection_response import (
