@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelExecutionData(BaseModel):
@@ -28,7 +29,7 @@ class ModelExecutionData(BaseModel):
 
     # Output data
     output_text: str | None = Field(None, description="Text output from execution")
-    output_json: dict[str, Any] | None = Field(
+    output_json: ModelGenericMetadata | None = Field(
         None,
         description="Structured JSON output",
     )

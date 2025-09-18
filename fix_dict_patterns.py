@@ -30,6 +30,38 @@ FIELD_PATTERNS = [
         r"custom_data: dict\[str, Any\] \| None = Field\(",
         "custom_data: ModelGenericMetadata | None = Field(",
     ),
+    (
+        r"data: dict\[str, Any\] \| None = Field\(",
+        "data: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"raw_data: dict\[str, Any\] \| None = Field\(",
+        "raw_data: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"config_details: dict\[str, Any\] \| None = Field\(",
+        "config_details: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"output_json: dict\[str, Any\] \| None = Field\(",
+        "output_json: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"custom_parameters: dict\[str, Any\] = Field\(",
+        "custom_parameters: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"service_config: dict\[str, Any\] = Field\(",
+        "service_config: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"discovery_filters: dict\[str, Any\] = Field\(",
+        "discovery_filters: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"infrastructure: dict\[str, Any\] \| None = Field\(",
+        "infrastructure: ModelGenericMetadata | None = Field(",
+    ),
 ]
 
 # Fields that should use specific model types

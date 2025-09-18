@@ -10,6 +10,7 @@ from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelRegistryActionPayload(ModelActionPayloadBase):
@@ -19,12 +20,12 @@ class ModelRegistryActionPayload(ModelActionPayloadBase):
         None,
         description="Name of the service to register/unregister",
     )
-    service_config: dict[str, Any] = Field(
-        default_factory=dict,
+    service_config: ModelGenericMetadata | None = Field(
+        None,
         description="Service configuration",
     )
-    discovery_filters: dict[str, Any] = Field(
-        default_factory=dict,
+    discovery_filters: ModelGenericMetadata | None = Field(
+        None,
         description="Filters for service discovery",
     )
 

@@ -10,13 +10,14 @@ from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelCustomActionPayload(ModelActionPayloadBase):
     """Payload for custom actions that don't fit standard categories."""
 
-    custom_parameters: dict[str, Any] = Field(
-        default_factory=dict,
+    custom_parameters: ModelGenericMetadata | None = Field(
+        None,
         description="Custom parameters for the action",
     )
 

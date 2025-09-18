@@ -85,7 +85,7 @@ class ModelOnexEvent(BaseModel):
         None,
         description="Optional correlation ID for request/response patterns",
     )
-    data: dict[str, Any] | None = Field(None, description="Event payload data")
+    data: ModelGenericMetadata | None = Field(None, description="Event payload data")
 
     @field_validator("event_type")
     @classmethod
@@ -236,6 +236,7 @@ try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         from omnibase_core.enums.events import OnexEventTypeEnum
+from .model_generic_metadata import ModelGenericMetadata
 
     __all__ = [
         "ModelOnexEvent",
