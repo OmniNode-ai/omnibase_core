@@ -16,7 +16,7 @@ class ModelDataActionPayload(ModelActionPayloadBase):
     """Payload for data actions (read, write, create, update, delete, etc.)."""
 
     target_path: str | None = Field(None, description="Path to the data target")
-    data: dict[str, Any] | None = Field(None, description="Data to be processed")
+    data: ModelGenericMetadata | None = Field(None, description="Data to be processed")
     filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Filters for data operations",
@@ -29,6 +29,7 @@ class ModelDataActionPayload(ModelActionPayloadBase):
     def validate_data_action(cls, v: ModelNodeActionType) -> ModelNodeActionType:
         """Validate that action_type is a valid data action."""
         from omnibase_core.models.core.predefined_categories import OPERATION, QUERY
+from .model_generic_metadata import ModelGenericMetadata
 
         if v.category not in [OPERATION, QUERY]:
             msg = f"Invalid data action: {v.name}"

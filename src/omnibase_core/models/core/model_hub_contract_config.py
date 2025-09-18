@@ -181,7 +181,7 @@ class ModelUnifiedHubContract(BaseModel):
     )
 
     # Contract metadata
-    contract_metadata: dict[str, Any] | None = Field(
+    contract_metadata: ModelGenericMetadata | None = Field(
         None,
         description="Contract metadata",
     )
@@ -318,6 +318,7 @@ class ModelUnifiedHubContract(BaseModel):
             ModelUnifiedHubContract instance
         """
         from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from .model_generic_metadata import ModelGenericMetadata
 
         try:
             # Use centralized YAML loading with full Pydantic validation

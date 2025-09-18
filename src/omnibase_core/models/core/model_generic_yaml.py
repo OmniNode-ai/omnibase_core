@@ -12,6 +12,7 @@ from typing import Any, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
+from .model_generic_metadata import ModelGenericMetadata
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -75,7 +76,7 @@ class ModelYamlMetadata(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common metadata patterns
-    metadata: dict[str, Any] | None = Field(None, description="Metadata section")
+    metadata: ModelGenericMetadata | None = Field(None, description="Metadata section")
     title: str | None = Field(None, description="Optional title")
     description: str | None = Field(None, description="Optional description")
     author: str | None = Field(None, description="Optional author")
@@ -145,7 +146,7 @@ class ModelYamlState(BaseModel):
     # Common state patterns
     state: dict[str, Any] | None = Field(None, description="State section")
     status: str | None = Field(None, description="Status field")
-    data: dict[str, Any] | None = Field(None, description="Data section")
+    data: ModelGenericMetadata | None = Field(None, description="Data section")
 
 
 class ModelYamlList(BaseModel):

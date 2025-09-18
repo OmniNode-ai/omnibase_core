@@ -22,6 +22,7 @@ from omnibase_core.models.core.model_subcontract_reference import (
     ModelSubcontractReference,
 )
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelContractContent(BaseModel):
@@ -74,7 +75,7 @@ class ModelContractContent(BaseModel):
     )
 
     # === INFRASTRUCTURE FIELDS ===
-    infrastructure: dict[str, Any] | None = Field(
+    infrastructure: ModelGenericMetadata | None = Field(
         None,
         description="Infrastructure configuration",
     )
@@ -145,7 +146,7 @@ class ModelContractContent(BaseModel):
     )
 
     # === OPTIONAL METADATA FIELDS ===
-    metadata: dict[str, Any] | None = Field(None, description="Contract metadata")
+    metadata: ModelGenericMetadata | None = Field(None, description="Contract metadata")
     capabilities: list[str] | None = Field(None, description="Node capabilities")
     configuration: dict[str, Any] | None = Field(
         None,

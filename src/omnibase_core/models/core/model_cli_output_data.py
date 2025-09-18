@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.core.model_node_info import ModelNodeInfo
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from .model_generic_metadata import ModelGenericMetadata
 
 
 class ModelCliOutputData(BaseModel):
@@ -74,7 +75,7 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Config/settings output
-    config_details: dict[str, Any] | None = Field(
+    config_details: ModelGenericMetadata | None = Field(
         None,
         description="Configuration values",
     )
@@ -114,7 +115,7 @@ class ModelCliOutputData(BaseModel):
 
     # Compatibility field for truly dynamic data
     # This should only be used when the structure is genuinely unknown
-    raw_data: dict[str, Any] | None = Field(
+    raw_data: ModelGenericMetadata | None = Field(
         None,
         description="Raw unstructured data (use sparingly)",
     )
