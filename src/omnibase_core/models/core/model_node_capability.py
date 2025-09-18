@@ -218,7 +218,7 @@ class ModelNodeCapability(BaseModel):
         """String representation for current standards."""
         return self.value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
             return self.value == other or self.name == other.upper()

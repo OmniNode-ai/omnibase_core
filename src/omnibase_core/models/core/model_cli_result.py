@@ -1,12 +1,12 @@
 """
-CLI Result Model
+CLI Result Model.
 
 Universal CLI execution result model that captures the complete
-outcome of CLI command execution.
+outcome of CLI command execution with proper typing.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,6 +23,7 @@ class ModelCliResult(BaseModel):
 
     This model captures the complete outcome of CLI command execution
     including success/failure, output data, errors, and performance metrics.
+    Properly typed for MyPy compliance.
     """
 
     execution: ModelCliExecution = Field(
@@ -40,25 +41,25 @@ class ModelCliResult(BaseModel):
     )
 
     output_data: ModelCliOutputData = Field(
-        default_factory=ModelCliOutputData,
+        default_factory=lambda: ModelCliOutputData(),
         description="Structured output data from execution",
     )
 
-    output_text: str | None = Field(None, description="Human-readable output text")
+    output_text: Optional[str] = Field(None, description="Human-readable output text")
 
-    error_message: str | None = Field(
+    error_message: Optional[str] = Field(
         None,
         description="Primary error message if execution failed",
     )
 
-    error_details: str | None = Field(None, description="Detailed error information")
+    error_details: Optional[str] = Field(None, description="Detailed error information")
 
-    validation_errors: list[ModelValidationError] = Field(
+    validation_errors: List[ModelValidationError] = Field(
         default_factory=list,
         description="Validation errors encountered",
     )
 
-    warnings: list[str] = Field(default_factory=list, description="Warning messages")
+    warnings: List[str] = Field(default_factory=list, description="Warning messages")
 
     execution_time: ModelDuration = Field(..., description="Total execution time")
 
@@ -69,22 +70,22 @@ class ModelCliResult(BaseModel):
 
     retry_count: int = Field(default=0, description="Number of retries attempted", ge=0)
 
-    performance_metrics: dict[str, Any] = Field(
+    performance_metrics: Dict[str, Any] = Field(
         default_factory=dict,
         description="Performance metrics and timing data",
     )
 
-    debug_info: ModelGenericMetadata | None = Field(
+    debug_info: Optional[ModelGenericMetadata] = Field(
         None,
         description="Debug information (only included if debug enabled)",
     )
 
-    trace_data: dict[str, Any] = Field(
+    trace_data: Dict[str, Any] = Field(
         default_factory=dict,
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: ModelGenericMetadata | None = Field(
+    result_metadata: Optional[ModelGenericMetadata] = Field(
         None,
         description="Additional result metadata",
     )
@@ -111,13 +112,13 @@ class ModelCliResult(BaseModel):
 
     def get_duration_ms(self) -> int:
         """Get execution duration in milliseconds."""
-        return self.execution_time.total_milliseconds()
+        return int(self.execution_time.total_milliseconds())
 
     def get_duration_seconds(self) -> float:
         """Get execution duration in seconds."""
-        return self.execution_time.total_seconds()
+        return float(self.execution_time.total_seconds())
 
-    def get_primary_error(self) -> str | None:
+    def get_primary_error(self) -> Optional[str]:
         """Get the primary error message."""
         if self.error_message:
             return self.error_message
@@ -128,20 +129,20 @@ class ModelCliResult(BaseModel):
             return str(self.validation_errors[0].message)
         return None
 
-    def get_all_errors(self) -> list[str]:
+    def get_all_errors(self) -> List[str]:
         """Get all error messages."""
-        errors = []
+        errors: List[str] = []
         if self.error_message:
             errors.append(self.error_message)
         for validation_error in self.validation_errors:
             errors.append(validation_error.message)
         return errors
 
-    def get_critical_errors(self) -> list[ModelValidationError]:
+    def get_critical_errors(self) -> List[ModelValidationError]:
         """Get all critical validation errors."""
         return [error for error in self.validation_errors if error.is_critical()]
 
-    def get_non_critical_errors(self) -> list[ModelValidationError]:
+    def get_non_critical_errors(self) -> List[ModelValidationError]:
         """Get all non-critical validation errors."""
         return [error for error in self.validation_errors if not error.is_critical()]
 
@@ -210,7 +211,7 @@ class ModelCliResult(BaseModel):
 
         return ""
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> Dict[str, Any]:
         """Get result summary for logging/monitoring."""
         return {
             "execution_id": str(self.execution.execution_id),
@@ -235,9 +236,9 @@ class ModelCliResult(BaseModel):
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: dict[str, Any] | None = None,
-        output_text: str | None = None,
-        execution_time: ModelDuration | None = None,
+        output_data: Optional[Dict[str, Any]] = None,
+        output_text: Optional[str] = None,
+        execution_time: Optional[ModelDuration] = None,
     ) -> "ModelCliResult":
         """Create a successful result."""
         if execution_time is None:
@@ -247,16 +248,19 @@ class ModelCliResult(BaseModel):
         execution.mark_completed()
 
         # Convert dict to ModelCliOutputData if needed
+        output_data_obj: ModelCliOutputData
         if output_data is not None and not isinstance(output_data, ModelCliOutputData):
-            output_data = ModelCliOutputData.from_dict(output_data)
-        elif output_data is None:
-            output_data = ModelCliOutputData()
+            output_data_obj = ModelCliOutputData.from_dict(output_data)
+        elif isinstance(output_data, ModelCliOutputData):
+            output_data_obj = output_data
+        else:
+            output_data_obj = ModelCliOutputData()
 
         return cls(
             execution=execution,
             success=True,
             exit_code=0,
-            output_data=output_data,
+            output_data=output_data_obj,
             output_text=output_text,
             execution_time=execution_time,
         )
@@ -267,9 +271,9 @@ class ModelCliResult(BaseModel):
         execution: ModelCliExecution,
         error_message: str,
         exit_code: int = 1,
-        error_details: str | None = None,
-        validation_errors: list[ModelValidationError] | None = None,
-        execution_time: ModelDuration | None = None,
+        error_details: Optional[str] = None,
+        validation_errors: Optional[List[ModelValidationError]] = None,
+        execution_time: Optional[ModelDuration] = None,
     ) -> "ModelCliResult":
         """Create a failure result."""
         if execution_time is None:
@@ -292,8 +296,8 @@ class ModelCliResult(BaseModel):
     def create_validation_failure(
         cls,
         execution: ModelCliExecution,
-        validation_errors: list[ModelValidationError],
-        execution_time: ModelDuration | None = None,
+        validation_errors: List[ModelValidationError],
+        execution_time: Optional[ModelDuration] = None,
     ) -> "ModelCliResult":
         """Create a result for validation failures."""
         if execution_time is None:
@@ -314,3 +318,7 @@ class ModelCliResult(BaseModel):
             validation_errors=validation_errors,
             execution_time=execution_time,
         )
+
+
+# Export for use
+__all__ = ["ModelCliResult"]

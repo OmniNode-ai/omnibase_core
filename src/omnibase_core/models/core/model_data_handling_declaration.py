@@ -2,9 +2,9 @@
 Data handling declaration model.
 """
 
-from pydantic import BaseModel
+from typing import Literal
 
-from omnibase_core.enums import EnumDataClassification
+from pydantic import BaseModel
 
 
 class ModelDataHandlingDeclaration(BaseModel):
@@ -12,4 +12,6 @@ class ModelDataHandlingDeclaration(BaseModel):
 
     processes_sensitive_data: bool
     data_residency_required: str | None = None
-    data_classification: EnumDataClassification | None = None
+    data_classification: (
+        Literal["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"] | None
+    ) = None

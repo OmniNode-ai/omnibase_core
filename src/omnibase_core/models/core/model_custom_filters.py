@@ -1,8 +1,15 @@
-"""Collection of custom filters model."""
+"""
+Collection of custom filters model.
 
-from typing import Any
+Strongly typed collection replacing Dict[str, Any] for custom_filters fields.
+"""
+
+from datetime import datetime
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_filter_type import EnumFilterType
 
 from .model_complex_filter import ModelComplexFilter
 from .model_custom_filter_base import ModelCustomFilterBase
@@ -13,101 +20,233 @@ from .model_numeric_filter import ModelNumericFilter
 from .model_status_filter import ModelStatusFilter
 from .model_string_filter import ModelStringFilter
 
+# Type alias for filter union
+FilterType = Union[
+    ModelStringFilter,
+    ModelNumericFilter,
+    ModelDateTimeFilter,
+    ModelListFilter,
+    ModelMetadataFilter,
+    ModelStatusFilter,
+    ModelComplexFilter,
+]
+
 
 class ModelCustomFilters(BaseModel):
     """
     Collection of custom filters.
 
-    Replaces Dict[str, Any] for custom_filters fields with typed filters.
+    Strongly typed collection replacing Dict[str, Any] for custom_filters fields
+    with no magic strings or poorly typed dictionaries.
     """
 
-    filters: dict[
-        str,
-        ModelStringFilter
-        | ModelNumericFilter
-        | ModelDateTimeFilter
-        | ModelListFilter
-        | ModelMetadataFilter
-        | ModelStatusFilter
-        | ModelComplexFilter,
-    ] = Field(default_factory=dict, description="Named custom filters")
+    filters: Dict[str, FilterType] = Field(
+        default_factory=dict, description="Named custom filters with strong typing"
+    )
 
-    def add_string_filter(self, name: str, pattern: str, **kwargs) -> None:
-        """Add a string filter."""
-        self.filters[name] = ModelStringFilter(pattern=pattern, **kwargs)
-
-    def add_numeric_filter(self, name: str, **kwargs) -> None:
-        """Add a numeric filter."""
-        self.filters[name] = ModelNumericFilter(**kwargs)
-
-    def add_datetime_filter(self, name: str, **kwargs) -> None:
-        """Add a datetime filter."""
-        self.filters[name] = ModelDateTimeFilter(**kwargs)
-
-    def add_list_filter(self, name: str, values: list[Any], **kwargs) -> None:
-        """Add a list filter."""
-        self.filters[name] = ModelListFilter(values=values, **kwargs)
-
-    def add_metadata_filter(self, name: str, key: str, value: Any, **kwargs) -> None:
-        """Add a metadata filter."""
-        self.filters[name] = ModelMetadataFilter(
-            metadata_key=key,
-            metadata_value=value,
-            **kwargs,
+    def add_string_filter(
+        self,
+        name: str,
+        pattern: str,
+        enabled: bool = True,
+        priority: int = 0,
+        case_sensitive: bool = True,
+        regex: bool = False,
+        contains: bool = True,
+    ) -> None:
+        """Add a string filter with full type safety."""
+        self.filters[name] = ModelStringFilter(
+            pattern=pattern,
+            enabled=enabled,
+            priority=priority,
+            case_sensitive=case_sensitive,
+            regex=regex,
+            contains=contains,
+            filter_type=EnumFilterType.STRING,
         )
 
-    def add_status_filter(self, name: str, allowed: list[str], **kwargs) -> None:
-        """Add a status filter."""
-        self.filters[name] = ModelStatusFilter(allowed_statuses=allowed, **kwargs)
+    def add_numeric_filter(
+        self,
+        name: str,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        exact_value: float | None = None,
+        tolerance: float = 0.0,
+        enabled: bool = True,
+        priority: int = 0,
+    ) -> None:
+        """Add a numeric filter with full type safety."""
+        self.filters[name] = ModelNumericFilter(
+            min_value=min_value,
+            max_value=max_value,
+            exact_value=exact_value,
+            tolerance=tolerance,
+            enabled=enabled,
+            priority=priority,
+            filter_type=EnumFilterType.NUMERIC,
+        )
 
-    def get_filter(self, name: str) -> ModelCustomFilterBase | None:
-        """Get a filter by name."""
+    def add_datetime_filter(
+        self,
+        name: str,
+        after: datetime | None = None,
+        before: datetime | None = None,
+        on_date: datetime | None = None,
+        relative_days: int | None = None,
+        enabled: bool = True,
+        priority: int = 0,
+    ) -> None:
+        """Add a datetime filter with full type safety."""
+        self.filters[name] = ModelDateTimeFilter(
+            after=after,
+            before=before,
+            on_date=on_date,
+            relative_days=relative_days,
+            enabled=enabled,
+            priority=priority,
+            filter_type=EnumFilterType.DATETIME,
+        )
+
+    def add_list_filter(
+        self,
+        name: str,
+        values: List[str],
+        match_all: bool = False,
+        exclude: bool = False,
+        enabled: bool = True,
+        priority: int = 0,
+    ) -> None:
+        """Add a list filter with full type safety."""
+        self.filters[name] = ModelListFilter(
+            values=values,
+            match_all=match_all,
+            exclude=exclude,
+            enabled=enabled,
+            priority=priority,
+            filter_type=EnumFilterType.LIST,
+        )
+
+    def add_metadata_filter(
+        self,
+        name: str,
+        metadata_key: str,
+        metadata_value: str,
+        enabled: bool = True,
+        priority: int = 0,
+    ) -> None:
+        """Add a metadata filter with full type safety."""
+        self.filters[name] = ModelMetadataFilter(
+            metadata_key=metadata_key,
+            metadata_value=metadata_value,
+            enabled=enabled,
+            priority=priority,
+            filter_type=EnumFilterType.METADATA,
+        )
+
+    def add_status_filter(
+        self,
+        name: str,
+        allowed_statuses: List[str],
+        blocked_statuses: List[str] | None = None,
+        include_unknown: bool = False,
+        enabled: bool = True,
+        priority: int = 0,
+    ) -> None:
+        """Add a status filter with full type safety."""
+        self.filters[name] = ModelStatusFilter(
+            allowed_statuses=allowed_statuses,
+            blocked_statuses=blocked_statuses or [],
+            include_unknown=include_unknown,
+            enabled=enabled,
+            priority=priority,
+            filter_type=EnumFilterType.STATUS,
+        )
+
+    def get_filter(self, name: str) -> FilterType | None:
+        """Get a filter by name with strong typing."""
         return self.filters.get(name)
 
-    def remove_filter(self, name: str) -> None:
-        """Remove a filter by name."""
-        self.filters.pop(name, None)
+    def remove_filter(self, name: str) -> bool:
+        """Remove a filter by name, return True if removed."""
+        if name in self.filters:
+            del self.filters[name]
+            return True
+        return False
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary (for current standards)."""
-        # Custom transformation logic for filters dictionary
-        return {name: filter_obj.to_dict() for name, filter_obj in self.filters.items()}
+    def get_filter_names(self) -> List[str]:
+        """Get all filter names."""
+        return list(self.filters.keys())
+
+    def get_enabled_filters(self) -> Dict[str, FilterType]:
+        """Get only enabled filters."""
+        return {
+            name: filter_obj
+            for name, filter_obj in self.filters.items()
+            if hasattr(filter_obj, "enabled") and filter_obj.enabled
+        }
+
+    def filter_count(self) -> int:
+        """Get total number of filters."""
+        return len(self.filters)
+
+    def enabled_filter_count(self) -> int:
+        """Get number of enabled filters."""
+        return len(self.get_enabled_filters())
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary with strong typing preserved."""
+        return {
+            name: filter_obj.model_dump() for name, filter_obj in self.filters.items()
+        }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFilters":
-        """Create from dictionary (for migration)."""
-        filters = {}
+    def from_dict(cls, data: Dict[str, Any]) -> "ModelCustomFilters":
+        """Create from dictionary with strict type validation."""
+        filters: Dict[str, FilterType] = {}
 
         for name, filter_data in data.items():
-            if isinstance(filter_data, dict) and "filter_type" in filter_data:
-                filter_type = filter_data["filter_type"]
-
-                if filter_type == "string":
-                    filters[name] = ModelStringFilter(**filter_data)
-                elif filter_type == "numeric":
-                    filters[name] = ModelNumericFilter(**filter_data)
-                elif filter_type == "datetime":
-                    filters[name] = ModelDateTimeFilter(**filter_data)
-                elif filter_type == "list":
-                    filters[name] = ModelListFilter(**filter_data)
-                elif filter_type == "metadata":
-                    filters[name] = ModelMetadataFilter(**filter_data)
-                elif filter_type == "status":
-                    filters[name] = ModelStatusFilter(**filter_data)
-                elif filter_type == "complex":
-                    filters[name] = ModelComplexFilter(**filter_data)
-                else:
-                    # For unknown types, create a generic filter
-                    # This maintains compatibility
-                    filters[name] = ModelStringFilter(
-                        pattern=str(filter_data),
-                        filter_type="legacy",
-                    )
-            else:
-                # Legacy format - convert to string filter
-                filters[name] = ModelStringFilter(
-                    pattern=str(filter_data),
-                    filter_type="legacy",
+            if not isinstance(filter_data, dict):
+                raise ValueError(
+                    f"Filter {name} must be a dictionary, got {type(filter_data)}"
                 )
 
+            filter_type_value = filter_data.get("filter_type")
+            if not filter_type_value:
+                raise ValueError(f"Filter {name} missing required field 'filter_type'")
+
+            try:
+                filter_type = EnumFilterType(filter_type_value)
+            except ValueError:
+                raise ValueError(
+                    f"Filter {name} has invalid filter_type: {filter_type_value}"
+                )
+
+            # Create the appropriate filter type with validation
+            if filter_type == EnumFilterType.STRING:
+                filters[name] = ModelStringFilter(**filter_data)
+            elif filter_type == EnumFilterType.NUMERIC:
+                filters[name] = ModelNumericFilter(**filter_data)
+            elif filter_type == EnumFilterType.DATETIME:
+                filters[name] = ModelDateTimeFilter(**filter_data)
+            elif filter_type == EnumFilterType.LIST:
+                filters[name] = ModelListFilter(**filter_data)
+            elif filter_type == EnumFilterType.METADATA:
+                filters[name] = ModelMetadataFilter(**filter_data)
+            elif filter_type == EnumFilterType.STATUS:
+                filters[name] = ModelStatusFilter(**filter_data)
+            elif filter_type == EnumFilterType.COMPLEX:
+                filters[name] = ModelComplexFilter(**filter_data)
+            else:
+                # This should never happen due to enum validation above
+                raise ValueError(f"Unsupported filter type: {filter_type}")
+
         return cls(filters=filters)
+
+    @classmethod
+    def create_empty(cls) -> "ModelCustomFilters":
+        """Create an empty filter collection."""
+        return cls()
+
+
+# Export for use
+__all__ = ["ModelCustomFilters", "FilterType"]

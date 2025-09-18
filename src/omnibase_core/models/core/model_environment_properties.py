@@ -70,9 +70,9 @@ class ModelEnvironmentProperties(BaseModel):
         """Get boolean property value."""
         value = self.properties.get(key, default)
         if isinstance(value, bool):
-            return None
+            return value
         if isinstance(value, str):
-            return None.lower() in ["true", "yes", "1", "on", "enabled"]
+            return value.lower() in ["true", "yes", "1", "on", "enabled"]
         if isinstance(value, int | float):
             return bool(value)
         return default

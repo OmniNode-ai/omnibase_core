@@ -137,7 +137,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Custom properties
     custom_properties: ModelCustomConnectionProperties = Field(
-        default_factory=ModelCustomConnectionProperties,
+        default_factory=lambda: ModelCustomConnectionProperties(),
         description="Custom connection properties",
     )
 
@@ -216,13 +216,13 @@ class ModelConnectionInfo(BaseModel):
         """Check if connection uses secure protocols."""
         return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
 
-    @field_serializer("password", "api_key", "token")
+    @field_serializer("password", "api_key", "token")  # type: ignore[misc]
     def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return str(value) if value else ""
 
-    @field_serializer("established_at", "last_used_at")
+    @field_serializer("established_at", "last_used_at")  # type: ignore[misc]
     def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()

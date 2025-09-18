@@ -2,14 +2,14 @@
 Artifact type configuration model.
 """
 
-from pydantic import BaseModel
+from typing import Literal
 
-from omnibase_core.enums import ArtifactTypeEnum
+from pydantic import BaseModel
 
 
 class ModelArtifactTypeConfig(BaseModel):
     """Configuration for artifact types."""
 
-    name: ArtifactTypeEnum
+    name: Literal["TOOL", "VALIDATOR", "AGENT", "MODEL", "PLUGIN", "SCHEMA", "CONFIG"]
     metadata_file: str | None = None
     version_pattern: str | None = None

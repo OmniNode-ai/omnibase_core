@@ -64,8 +64,8 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
     """Extracts protocol signature for comparison."""
 
     def __init__(self) -> None:
-        self.methods = []
-        self.imports = []
+        self.methods: list[str] = []
+        self.imports: list[str] = []
         self.class_name = ""
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:

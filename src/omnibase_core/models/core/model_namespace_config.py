@@ -2,13 +2,13 @@
 Namespace configuration model.
 """
 
-from pydantic import BaseModel
+from typing import Literal
 
-from omnibase_core.enums import NamespaceStrategyEnum
+from pydantic import BaseModel
 
 
 class ModelNamespaceConfig(BaseModel):
     """Configuration for namespace handling."""
 
     enabled: bool = True
-    strategy: NamespaceStrategyEnum = NamespaceStrategyEnum.ONEX_DEFAULT
+    strategy: Literal["ONEX_DEFAULT", "EXPLICIT", "AUTO"] = "ONEX_DEFAULT"

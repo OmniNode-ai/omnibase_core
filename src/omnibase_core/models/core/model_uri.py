@@ -22,9 +22,9 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel, Field
+from typing import Literal
 
-from omnibase_core.enums import UriTypeEnum
+from pydantic import BaseModel, Field
 
 
 class ModelOnexUri(BaseModel):
@@ -33,9 +33,11 @@ class ModelOnexUri(BaseModel):
     See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for spec.
     """
 
-    type: UriTypeEnum = Field(
-        ...,
-        description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
+    type: Literal["tool", "validator", "agent", "model", "plugin", "schema", "node"] = (
+        Field(
+            ...,
+            description="ONEX URI type (tool, validator, agent, model, plugin, schema, node)",
+        )
     )
     namespace: str = Field(..., description="Namespace component of the URI")
     version_spec: str = Field(

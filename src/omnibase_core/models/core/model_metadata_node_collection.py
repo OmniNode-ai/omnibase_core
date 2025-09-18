@@ -1,15 +1,15 @@
 """
-Metadata node collection models.
+Metadata node collection core model.
 
-This module now imports from separated model files for better organization
-and compliance with one-model-per-file naming conventions.
+Clean, focused implementation with proper typing and single responsibility.
+Follows ONEX one-model-per-file naming conventions.
 """
 
 import hashlib
 from datetime import datetime
-from typing import Any, Type, Union
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import RootModel, computed_field, model_validator
+from pydantic import BaseModel, Field, RootModel, computed_field, model_validator
 
 from omnibase_core.models.core.model_function_node import ModelFunctionNode
 
@@ -28,27 +28,29 @@ from .model_metadata_node_info import (
     ModelMetadataNodeStatus,
     ModelMetadataNodeType,
 )
-
-# Import separated models
 from .model_metadata_node_usage_metrics import ModelMetadataNodeUsageMetrics
 
 
 class ModelMetadataNodeCollection(
-    RootModel[dict[str, Union[ModelFunctionNode, dict[str, str], dict[str, int]]]]
+    RootModel[Dict[str, Union[ModelFunctionNode, Dict[str, str], Dict[str, int]]]]
 ):
     """
     Enterprise-grade collection of metadata/documentation nodes for ONEX metadata blocks.
 
-    Enhanced with comprehensive node analytics, usage tracking, performance monitoring,
-    and operational insights for documentation and metadata management systems.
+    Clean implementation with proper typing, focused responsibilities, and ONEX compliance.
     """
+
+    root: Dict[str, Union[ModelFunctionNode, Dict[str, str], Dict[str, int]]] = Field(
+        default_factory=dict, description="Root dictionary containing metadata nodes"
+    )
 
     def __init__(
         self,
-        root: Union[
-            dict[str, Union[ModelFunctionNode, dict[str, str], dict[str, int]]],
-            "ModelMetadataNodeCollection",
-            None,
+        root: Optional[
+            Union[
+                Dict[str, Union[ModelFunctionNode, Dict[str, str], Dict[str, int]]],
+                "ModelMetadataNodeCollection",
+            ]
         ] = None,
         **kwargs: Any,
     ) -> None:
@@ -58,7 +60,6 @@ class ModelMetadataNodeCollection(
         elif isinstance(root, ModelMetadataNodeCollection):
             root = root.root
 
-        # Initialize the root dictionary
         super().__init__(root)
 
         # Initialize enterprise features if not present
@@ -68,12 +69,12 @@ class ModelMetadataNodeCollection(
         if "_node_info" not in self.root:
             self.root["_node_info"] = {}
 
-    @model_validator(mode="before")
+    @model_validator(mode="before")  # type: ignore[misc]
     @classmethod
     def coerce_node_values(
-        cls: Type["ModelMetadataNodeCollection"],
-        data: Union[dict, "ModelMetadataNodeCollection", None],
-    ) -> dict[str, Any]:
+        cls,
+        data: Union[Dict[str, Any], "ModelMetadataNodeCollection", None],
+    ) -> Dict[str, Any]:
         """Enhanced node value coercion with validation and enhancement."""
         if isinstance(data, dict):
             new_data = {}
@@ -86,9 +87,7 @@ class ModelMetadataNodeCollection(
                 if isinstance(v, dict):
                     # Enhanced ModelFunctionNode creation with validation
                     try:
-                        function_node = ModelFunctionNode(
-                            **v
-                        )  # Direct Pydantic instantiation (ONEX compliance)
+                        function_node = ModelFunctionNode(**v)
                         new_data[k] = function_node
                     except Exception:
                         # Fallback to raw dict if ModelFunctionNode creation fails
@@ -102,15 +101,15 @@ class ModelMetadataNodeCollection(
 
         return data or {}
 
-    @model_validator(mode="after")
+    @model_validator(mode="after")  # type: ignore[misc]
     def check_function_names_and_enhance(
-        self: "ModelMetadataNodeCollection",
+        self,
     ) -> "ModelMetadataNodeCollection":
         """Enhanced validation with analytics updates."""
         node_count = 0
-        nodes_by_type: dict[str, int] = {}
-        nodes_by_status: dict[str, int] = {}
-        nodes_by_complexity: dict[str, int] = {}
+        nodes_by_type: Dict[str, int] = {}
+        nodes_by_status: Dict[str, int] = {}
+        nodes_by_complexity: Dict[str, int] = {}
 
         for name, _node_data in self.root.items():
             # Skip enterprise metadata fields
@@ -156,19 +155,22 @@ class ModelMetadataNodeCollection(
 
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def collection_id(self) -> str:
         """Generate unique identifier for this collection."""
         node_names = sorted([k for k in self.root if not k.startswith("_")])
         content = f"metadata_nodes:{':'.join(node_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def node_count(self) -> int:
         """Get total number of nodes (excluding metadata)."""
         return len([k for k in self.root if not k.startswith("_")])
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def analytics(self) -> ModelMetadataNodeAnalytics:
         """Get collection analytics."""
         analytics_data = self.root.get("_metadata_analytics", {})
@@ -177,7 +179,8 @@ class ModelMetadataNodeCollection(
         else:
             return ModelMetadataNodeAnalytics()
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def health_score(self) -> float:
         """Calculate overall collection health score."""
         if self.node_count == 0:
@@ -208,8 +211,8 @@ class ModelMetadataNodeCollection(
     def add_node(
         self,
         name: str,
-        node_data: Union[ModelFunctionNode, dict[str, str]],
-        node_info: ModelMetadataNodeInfo | None = None,
+        node_data: Union[ModelFunctionNode, Dict[str, str]],
+        node_info: Optional[ModelMetadataNodeInfo] = None,
     ) -> bool:
         """
         Add a node to the collection with enhanced metadata tracking.
@@ -230,9 +233,7 @@ class ModelMetadataNodeCollection(
             # Add the node data
             if isinstance(node_data, dict):
                 try:
-                    self.root[name] = ModelFunctionNode(
-                        **node_data
-                    )  # Direct Pydantic instantiation (ONEX compliance)
+                    self.root[name] = ModelFunctionNode(**node_data)
                 except Exception:
                     self.root[name] = node_data
             else:
@@ -273,11 +274,11 @@ class ModelMetadataNodeCollection(
 
         return False
 
-    def get_node(self, name: str) -> Union[ModelFunctionNode, dict[str, str], None]:
+    def get_node(self, name: str) -> Optional[Union[ModelFunctionNode, Dict[str, str]]]:
         """Get a node by name."""
-        return self.root.get(name, None)
+        return self.root.get(name)  # type: ignore[return-value]
 
-    def get_node_info(self, name: str) -> ModelMetadataNodeInfo | None:
+    def get_node_info(self, name: str) -> Optional[ModelMetadataNodeInfo]:
         """Get enhanced node information."""
         node_info_data = self.root.get("_node_info", {}).get(name)
         if node_info_data:
@@ -296,240 +297,14 @@ class ModelMetadataNodeCollection(
         self._update_analytics()
         return True
 
-    def record_node_usage(
-        self,
-        name: str,
-        success: bool,
-        processing_time_ms: float = 0.0,
-        error_msg: str | None = None,
-    ) -> None:
-        """Record node usage for analytics."""
-        node_info = self.get_node_info(name)
-        if not node_info:
-            return
-
-        # Update usage metrics
-        metrics = node_info.usage_metrics
-        metrics.total_invocations += 1
-        metrics.last_used = datetime.now()
-
-        if success:
-            metrics.success_count += 1
-        else:
-            metrics.failure_count += 1
-            if error_msg:
-                metrics.most_recent_error = error_msg
-
-        # Update average processing time
-        if processing_time_ms > 0:
-            total_time = metrics.avg_processing_time_ms * (
-                metrics.total_invocations - 1
-            )
-            metrics.avg_processing_time_ms = (
-                total_time + processing_time_ms
-            ) / metrics.total_invocations
-
-        # Calculate popularity score (based on recent usage)
-        days_since_last_use = 0
-        if metrics.last_used:
-            days_since_last_use = (datetime.now() - metrics.last_used).days
-
-        # Popularity decreases over time, increases with usage
-        usage_factor = min(metrics.total_invocations / 10.0, 10.0)  # Cap at 10
-        recency_factor = max(0, 10 - days_since_last_use)  # Decreases over 10 days
-        success_factor = (
-            metrics.success_count / max(metrics.total_invocations, 1)
-        ) * 10
-
-        metrics.popularity_score = min(
-            100.0,
-            (usage_factor + recency_factor + success_factor) * 3.33,
-        )
-
-        # Update node info
-        self.update_node_info(name, node_info)
-
-    def get_nodes_by_type(
-        self, node_type: ModelMetadataNodeType
-    ) -> dict[str, Union[ModelFunctionNode, dict[str, str]]]:
-        """Get all nodes of a specific type."""
-        nodes = {}
-        for name, node_data in self.root.items():
-            if name.startswith("_"):
-                continue
-
-            node_info = self.get_node_info(name)
-            if node_info and node_info.node_type == node_type:
-                nodes[name] = node_data
-
-        return nodes
-
-    def get_nodes_by_status(
-        self, status: ModelMetadataNodeStatus
-    ) -> dict[str, Union[ModelFunctionNode, dict[str, str]]]:
-        """Get all nodes with a specific status."""
-        nodes = {}
-        for name, node_data in self.root.items():
-            if name.startswith("_"):
-                continue
-
-            node_info = self.get_node_info(name)
-            if node_info and node_info.status == status:
-                nodes[name] = node_data
-
-        return nodes
-
-    def get_popular_nodes(self, limit: int = 10) -> list[tuple[str, float]]:
-        """Get most popular nodes by usage score."""
-        node_scores = []
-
-        for name in self.root:
-            if name.startswith("_"):
-                continue
-
-            node_info = self.get_node_info(name)
-            if node_info:
-                node_scores.append((name, node_info.usage_metrics.popularity_score))
-
-        # Sort by popularity score descending
-        node_scores.sort(key=lambda x: x[1], reverse=True)
-        return node_scores[:limit]
-
-    def deprecate_node(
-        self,
-        name: str,
-        reason: str = "",
-        replacement: str | None = None,
-    ) -> bool:
-        """Mark a node as deprecated."""
-        node_info = self.get_node_info(name)
-        if not node_info:
-            return False
-
-        node_info.status = ModelMetadataNodeStatus.DEPRECATED
-        from .model_audit_entry import AuditAction, ModelAuditEntry
-
-        audit_entry = ModelAuditEntry(
-            audit_id=f"deprecate_{name}_{datetime.now().timestamp()}",
-            action=AuditAction.UPDATE,
-            action_detail=f"deprecated: {reason}",
-            target_name=name,
-            additional_context={"replacement": replacement} if replacement else None,
-        )
-        node_info.audit_trail.append(audit_entry)
-
-        if replacement:
-            node_info.replaces = replacement
-
-        return self.update_node_info(name, node_info)
-
-    def validate_collection(self) -> ModelCollectionValidationResult:
-        """Perform comprehensive collection validation."""
-        validation_results = ModelCollectionValidationResult(
-            valid=True,
-            errors=[],
-            warnings=[],
-            node_validations={},
-        )
-
-        for name, node_data in self.root.items():
-            if name.startswith("_"):
-                continue
-
-            node_validation = ModelNodeValidationResult(
-                valid=True,
-                errors=[],
-                warnings=[],
-            )
-
-            # Validate node name
-            if not name.isidentifier():
-                node_validation.valid = False
-                node_validation.errors.append("Invalid node name")
-
-            # Validate node data
-            if node_data is None:
-                node_validation.valid = False
-                node_validation.errors.append("Node data is None")
-
-            # Check for node info
-            node_info = self.get_node_info(name)
-            if not node_info:
-                node_validation.warnings.append("Missing node information")
-
-            # Check for deprecated nodes without replacement
-            if node_info and node_info.status == ModelMetadataNodeStatus.DEPRECATED:
-                if not node_info.replaces:
-                    node_validation.warnings.append(
-                        "Deprecated node without replacement",
-                    )
-
-            validation_results.node_validations[name] = node_validation
-
-            if not node_validation.valid:
-                validation_results.valid = False
-                validation_results.errors.extend(node_validation.errors)
-
-            validation_results.warnings.extend(node_validation.warnings)
-
-        return validation_results
-
-    def export_analytics_report(self) -> ModelAnalyticsReport:
-        """Export comprehensive analytics report."""
-        analytics = self.analytics
-
-        # Calculate additional metrics
-        node_infos = []
-        for name in self.root:
-            if name.startswith("_"):
-                continue
-
-            node_info = self.get_node_info(name)
-            if node_info:
-                node_infos.append(node_info)
-
-        # Performance metrics
-        total_invocations = sum(t.usage_metrics.total_invocations for t in node_infos)
-        avg_popularity = sum(
-            t.usage_metrics.popularity_score for t in node_infos
-        ) / max(len(node_infos), 1)
-
-        # Documentation coverage
-        documented_nodes = len(
-            [t for t in node_infos if t.description or t.documentation],
-        )
-        doc_coverage = (documented_nodes / max(len(node_infos), 1)) * 100
-
-        return ModelAnalyticsReport(
-            collection_metadata=ModelCollectionMetadata(
-                id=self.collection_id,
-                node_count=self.node_count,
-                health_score=self.health_score,
-                generated_at=datetime.now().isoformat(),
-            ),
-            analytics_summary=analytics.model_dump(),
-            performance_metrics=ModelPerformanceMetrics(
-                total_invocations=total_invocations,
-                avg_popularity_score=avg_popularity,
-                documentation_coverage=doc_coverage,
-            ),
-            node_breakdown=ModelNodeBreakdown(
-                by_type=analytics.nodes_by_type,
-                by_status=analytics.nodes_by_status,
-                by_complexity=analytics.nodes_by_complexity,
-            ),
-            popular_nodes=self.get_popular_nodes(5),
-            validation_results=self.validate_collection(),
-        )
-
     def _update_analytics(self) -> None:
         """Internal method to update collection analytics."""
         analytics_data = self.root.get("_metadata_analytics", {})
 
         # Count nodes by various categories
-        nodes_by_type: dict[str, int] = {}
-        nodes_by_status: dict[str, int] = {}
-        nodes_by_complexity: dict[str, int] = {}
+        nodes_by_type: Dict[str, int] = {}
+        nodes_by_status: Dict[str, int] = {}
+        nodes_by_complexity: Dict[str, int] = {}
         total_invocations = 0
         total_success = 0
 
@@ -588,7 +363,7 @@ class ModelMetadataNodeCollection(
     @classmethod
     def create_from_function_nodes(
         cls,
-        nodes_dict: dict[str, ModelFunctionNode],
+        nodes_dict: Dict[str, ModelFunctionNode],
     ) -> "ModelMetadataNodeCollection":
         """Create collection from existing ModelFunctionNode dictionary."""
         collection = cls(nodes_dict)
@@ -625,32 +400,5 @@ class ModelMetadataNodeCollection(
         return collection
 
 
-# Compatibility aliases
-MetadataNodeUsageMetrics = ModelMetadataNodeUsageMetrics
-MetadataNodeAnalytics = ModelMetadataNodeAnalytics
-MetadataNodeInfo = ModelMetadataNodeInfo
-MetadataNodeCollection = ModelMetadataNodeCollection
-LegacyNodeCollection = ModelMetadataNodeCollection
-MetadataNodeComplexity = ModelMetadataNodeComplexity
-MetadataNodeStatus = ModelMetadataNodeStatus
-MetadataNodeType = ModelMetadataNodeType
-
-# Re-export for current standards
-__all__ = [
-    "LegacyNodeCollection",
-    "MetadataNodeAnalytics",
-    "MetadataNodeCollection",
-    "MetadataNodeComplexity",
-    "MetadataNodeInfo",
-    "MetadataNodeStatus",
-    "MetadataNodeType",
-    "ModelMetadataNodeComplexity",
-    "ModelMetadataNodeStatus",
-    "ModelMetadataNodeType",
-    # Compatibility
-    "MetadataNodeUsageMetrics",
-    "ModelMetadataNodeAnalytics",
-    "ModelMetadataNodeCollection",
-    "ModelMetadataNodeInfo",
-    "ModelMetadataNodeUsageMetrics",
-]
+# Export for use
+__all__ = ["ModelMetadataNodeCollection"]

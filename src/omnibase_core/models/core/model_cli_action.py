@@ -5,6 +5,8 @@ Replaces hardcoded EnumNodeCliAction with extensible model that
 enables plugin extensibility and contract-driven action registration.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -32,7 +34,7 @@ class ModelCliAction(BaseModel):
         action_name: str,
         node_name: str,
         description: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliAction":
         """Factory method for creating actions from contract data."""
         return cls(

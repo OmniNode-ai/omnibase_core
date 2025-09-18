@@ -3,10 +3,9 @@ FileFilter model.
 """
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-
-from omnibase_core.enums import IgnorePatternSourceEnum, TraversalModeEnum
 
 
 class ModelFileFilter(BaseModel):
@@ -17,8 +16,8 @@ class ModelFileFilter(BaseModel):
     including patterns, traversal mode, and ignore sources.
     """
 
-    traversal_mode: TraversalModeEnum = Field(
-        default=TraversalModeEnum.RECURSIVE,
+    traversal_mode: Literal["RECURSIVE", "FLAT", "SINGLE"] = Field(
+        default="RECURSIVE",
         description="Mode for traversing directories",
     )
     include_patterns: list[str] = Field(
@@ -33,10 +32,10 @@ class ModelFileFilter(BaseModel):
         None,
         description="Path to ignore file (e.g., .onexignore)",
     )
-    ignore_pattern_sources: list[IgnorePatternSourceEnum] = Field(
+    ignore_pattern_sources: list[Literal["FILE", "DEFAULT", "ENVIRONMENT"]] = Field(
         default_factory=lambda: [
-            IgnorePatternSourceEnum.FILE,
-            IgnorePatternSourceEnum.DEFAULT,
+            "FILE",
+            "DEFAULT",
         ],
         description="Sources to look for ignore patterns",
     )

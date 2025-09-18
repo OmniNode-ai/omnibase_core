@@ -79,7 +79,7 @@ class ModelNodeInformation(BaseModel):
 
     # Node configuration
     configuration: ModelNodeConfiguration = Field(
-        default_factory=ModelNodeConfiguration,
+        default_factory=lambda: ModelNodeConfiguration(),
         description="Node configuration",
     )
 

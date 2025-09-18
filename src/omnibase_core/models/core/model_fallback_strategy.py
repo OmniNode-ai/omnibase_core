@@ -91,7 +91,7 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     metadata: ModelFallbackMetadata | None = Field(
-        default_factory=ModelFallbackMetadata,
+        default_factory=lambda: ModelFallbackMetadata(),
         description="Strongly-typed strategy-specific configuration",
     )
 

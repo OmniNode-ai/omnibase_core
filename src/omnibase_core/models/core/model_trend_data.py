@@ -83,7 +83,7 @@ class ModelTrendData(BaseModel):
         timestamp: datetime,
         value: float | int,
         label: str | None = None,
-    ):
+    ) -> None:
         """Add a new data point to the trend."""
         self.data_points.append(
             ModelTrendPoint(timestamp=timestamp, value=value, label=label),
@@ -129,7 +129,7 @@ class ModelTrendData(BaseModel):
             return None
         return ((values[-1] - values[0]) / values[0]) * 100
 
-    @field_serializer("last_updated")
+    @field_serializer("last_updated")  # type: ignore[misc]
     def serialize_datetime(self, value: datetime) -> str:
         if value and isinstance(value, datetime):
             return value.isoformat()

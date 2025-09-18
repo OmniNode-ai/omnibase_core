@@ -306,7 +306,7 @@ class ProtocolMigrator:
 
         return steps
 
-    def _update_spi_imports(self, protocol_file: Path):
+    def _update_spi_imports(self, protocol_file: Path) -> None:
         """Update imports in migrated protocol file for SPI context."""
         if not protocol_file.exists():
             return
@@ -332,7 +332,7 @@ class ProtocolMigrator:
 
     def _find_import_references(self, protocol: ProtocolInfo) -> List[str]:
         """Find files that import the given protocol."""
-        references = []
+        references: List[str] = []
 
         # Search in source repository for import references
         src_path = self.source_path / "src"
@@ -401,7 +401,7 @@ class ProtocolMigrator:
         except Exception as e:
             return ValidationResult(success=False, message=f"Rollback failed: {e}")
 
-    def print_migration_plan(self, plan: MigrationPlan):
+    def print_migration_plan(self, plan: MigrationPlan) -> None:
         """Print human-readable migration plan."""
         print(f"\n{'='*60}")
         print(f"🚀 PROTOCOL MIGRATION PLAN")
@@ -424,7 +424,7 @@ class ProtocolMigrator:
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:
             print(f"\n🎯 PROTOCOLS TO MIGRATE:")
-            by_category = {}
+            by_category: dict[str, list[ProtocolInfo]] = {}
             for protocol in plan.protocols_to_migrate:
                 category = suggest_spi_location(protocol)
                 if category not in by_category:
