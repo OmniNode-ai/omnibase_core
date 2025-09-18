@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelActionValidationResult(BaseModel):
     """Result of action validation with detailed information."""
@@ -34,7 +36,7 @@ class ModelActionValidationResult(BaseModel):
         default_factory=list,
         description="Recommendations for improvement",
     )
-    metadata: dict[str, Any] = Field(
+    metadata: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Additional validation metadata",
     )

@@ -130,27 +130,6 @@ class ModelParsedArguments(BaseModel):
             if error.is_critical():
                 self.parsed_successfully = False
 
-    def to_execution_dict(self) -> dict[str, Any]:
-        """Convert to dictionary suitable for node execution."""
-        if not self.is_valid():
-            msg = "Cannot convert invalid arguments to execution dict"
-            raise ValueError(msg)
-
-        # Start with the argument map dictionary
-        result = self.arguments.to_dict()
-
-        # Add command metadata
-        result["_command_name"] = self.command_definition.command_name
-        result["_target_node"] = self.target_node.node_name
-        result["_action"] = self.command_definition.action
-
-        # Add parsing metadata if available
-        if self.parse_metadata:
-            result["_parse_duration_ms"] = self.parse_metadata.parse_duration_ms
-            result["_parsing_strategy"] = self.parse_metadata.parsing_strategy
-
-        return result
-
     def get_argument_value(self, name: str, default: Any = None) -> Any:
         """Get argument value by name with optional default."""
         if self.arguments.has_argument(name):

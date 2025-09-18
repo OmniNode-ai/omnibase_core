@@ -9,6 +9,19 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
+
+class ModelFeatureFlagsSummary(BaseModel):
+    """Summary of feature flag state."""
+
+    total_flags: int = Field(description="Total number of defined flags")
+    enabled_flags: int = Field(description="Number of enabled flags")
+    disabled_flags: int = Field(description="Number of disabled flags")
+    default_enabled: bool = Field(description="Default state for undefined flags")
+    enabled_flag_names: list[str] = Field(description="Names of enabled flags")
+    disabled_flag_names: list[str] = Field(description="Names of disabled flags")
+
 
 class ModelFeatureFlags(BaseModel):
     """
@@ -23,7 +36,7 @@ class ModelFeatureFlags(BaseModel):
         description="Feature flag states (name -> enabled)",
     )
 
-    flag_metadata: dict[str, dict[str, Any]] = Field(
+    flag_metadata: dict[str, ModelGenericMetadata] = Field(
         default_factory=dict,
         description="Metadata for each feature flag",
     )
@@ -48,17 +61,31 @@ class ModelFeatureFlags(BaseModel):
             return self.flags[flag]
         return default if default is not None else self.default_enabled
 
-    def enable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
+    def enable(
+        self, flag: str, metadata: ModelGenericMetadata | dict[str, Any] | None = None
+    ) -> None:
         """Enable a feature flag with optional metadata."""
         self.flags[flag] = True
         if metadata:
-            self.flag_metadata[flag] = metadata
+            if isinstance(metadata, dict):
+                self.flag_metadata[flag] = (
+                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                )
+            else:
+                self.flag_metadata[flag] = metadata
 
-    def disable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
+    def disable(
+        self, flag: str, metadata: ModelGenericMetadata | dict[str, Any] | None = None
+    ) -> None:
         """Disable a feature flag with optional metadata."""
         self.flags[flag] = False
         if metadata:
-            self.flag_metadata[flag] = metadata
+            if isinstance(metadata, dict):
+                self.flag_metadata[flag] = (
+                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                )
+            else:
+                self.flag_metadata[flag] = metadata
 
     def toggle(self, flag: str) -> bool:
         """Toggle a feature flag and return the new state."""
@@ -71,12 +98,17 @@ class ModelFeatureFlags(BaseModel):
         self,
         flag: str,
         enabled: bool,
-        metadata: dict[str, Any] | None = None,
+        metadata: ModelGenericMetadata | dict[str, Any] | None = None,
     ) -> None:
         """Set a feature flag to a specific state."""
         self.flags[flag] = enabled
         if metadata:
-            self.flag_metadata[flag] = metadata
+            if isinstance(metadata, dict):
+                self.flag_metadata[flag] = (
+                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                )
+            else:
+                self.flag_metadata[flag] = metadata
 
     def remove_flag(self, flag: str) -> bool:
         """Remove a feature flag and return whether it existed."""
@@ -97,13 +129,20 @@ class ModelFeatureFlags(BaseModel):
         """Get list of all defined feature flags."""
         return list(self.flags.keys())
 
-    def get_flag_metadata(self, flag: str) -> dict[str, Any] | None:
+    def get_flag_metadata(self, flag: str) -> ModelGenericMetadata | None:
         """Get metadata for a specific flag."""
         return self.flag_metadata.get(flag)
 
-    def set_flag_metadata(self, flag: str, metadata: dict[str, Any]) -> None:
+    def set_flag_metadata(
+        self, flag: str, metadata: ModelGenericMetadata | dict[str, Any]
+    ) -> None:
         """Set metadata for a specific flag."""
-        self.flag_metadata[flag] = metadata
+        if isinstance(metadata, dict):
+            self.flag_metadata[flag] = (
+                ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+            )
+        else:
+            self.flag_metadata[flag] = metadata
 
     def has_flag(self, flag: str) -> bool:
         """Check if a flag is defined (regardless of state)."""
@@ -150,16 +189,16 @@ class ModelFeatureFlags(BaseModel):
             env_dict[env_var_name] = str(enabled).lower()
         return env_dict
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelFeatureFlagsSummary:
         """Get summary of feature flag state."""
-        return {
-            "total_flags": self.get_flag_count(),
-            "enabled_flags": self.get_enabled_count(),
-            "disabled_flags": self.get_disabled_count(),
-            "default_enabled": self.default_enabled,
-            "enabled_flag_names": self.get_enabled_flags(),
-            "disabled_flag_names": self.get_disabled_flags(),
-        }
+        return ModelFeatureFlagsSummary(
+            total_flags=self.get_flag_count(),
+            enabled_flags=self.get_enabled_count(),
+            disabled_flags=self.get_disabled_count(),
+            default_enabled=self.default_enabled,
+            enabled_flag_names=self.get_enabled_flags(),
+            disabled_flag_names=self.get_disabled_flags(),
+        )
 
     @classmethod
     def create_development(cls) -> "ModelFeatureFlags":

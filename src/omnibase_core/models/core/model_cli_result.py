@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_cli_execution import ModelCliExecution
 from omnibase_core.models.core.model_cli_output_data import ModelCliOutputData
 from omnibase_core.models.core.model_duration import ModelDuration
+from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
@@ -73,8 +74,8 @@ class ModelCliResult(BaseModel):
         description="Performance metrics and timing data",
     )
 
-    debug_info: dict[str, Any] = Field(
-        default_factory=dict,
+    debug_info: ModelGenericMetadata | None = Field(
+        None,
         description="Debug information (only included if debug enabled)",
     )
 
@@ -83,8 +84,8 @@ class ModelCliResult(BaseModel):
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: dict[str, Any] = Field(
-        default_factory=dict,
+    result_metadata: ModelGenericMetadata | None = Field(
+        None,
         description="Additional result metadata",
     )
 
@@ -160,7 +161,11 @@ class ModelCliResult(BaseModel):
     def add_debug_info(self, key: str, value: Any) -> None:
         """Add debug information."""
         if self.execution.is_debug_enabled():
-            self.debug_info[key] = value
+            if self.debug_info is None:
+                self.debug_info = ModelGenericMetadata()
+            if self.debug_info.custom_fields is None:
+                self.debug_info.custom_fields = {}
+            self.debug_info.custom_fields[key] = value
 
     def add_trace_data(self, key: str, value: Any) -> None:
         """Add trace data."""
@@ -169,11 +174,17 @@ class ModelCliResult(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add result metadata."""
-        self.result_metadata[key] = value
+        if self.result_metadata is None:
+            self.result_metadata = ModelGenericMetadata()
+        if self.result_metadata.custom_fields is None:
+            self.result_metadata.custom_fields = {}
+        self.result_metadata.custom_fields[key] = value
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get result metadata."""
-        return self.result_metadata.get(key, default)
+        if self.result_metadata is None or self.result_metadata.custom_fields is None:
+            return default
+        return self.result_metadata.custom_fields.get(key, default)
 
     def get_output_value(self, key: str, default: Any = None) -> Any:
         """Get a specific output value."""

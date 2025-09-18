@@ -10,6 +10,10 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, HttpUrl
 
+from omnibase_core.enums import EnumEnvironmentType, EnumLoggingLevel
+from omnibase_core.models.core.model_environment_defaults import (
+    ModelEnvironmentDefaults,
+)
 from omnibase_core.models.core.model_environment_properties import (
     ModelEnvironmentProperties,
 )
@@ -71,8 +75,8 @@ class ModelEnvironment(BaseModel):
         description="Whether monitoring is enabled",
     )
 
-    logging_level: str = Field(
-        default="INFO",
+    logging_level: EnumLoggingLevel = Field(
+        default=EnumLoggingLevel.INFO,
         description="Default logging level for this environment",
     )
 
@@ -93,11 +97,21 @@ class ModelEnvironment(BaseModel):
 
     def is_development(self) -> bool:
         """Check if this is a development environment."""
-        return self.name in ["development", "dev", "local"]
+        try:
+            env_type = EnumEnvironmentType(self.name)
+            return env_type.is_development()
+        except ValueError:
+            # Fallback for custom environment names
+            return self.name in ["development", "dev", "local"]
 
     def is_staging(self) -> bool:
         """Check if this is a staging environment."""
-        return self.name in ["staging", "stage", "test", "testing"]
+        try:
+            env_type = EnumEnvironmentType(self.name)
+            return env_type.is_staging()
+        except ValueError:
+            # Fallback for custom environment names
+            return self.name in ["staging", "stage", "test", "testing"]
 
     def is_secure(self) -> bool:
         """Check if this environment has high security requirements."""
@@ -114,19 +128,29 @@ class ModelEnvironment(BaseModel):
 
     def get_timeout_multiplier(self) -> float:
         """Get timeout multiplier for this environment."""
-        if self.is_production:
-            return 2.0  # Longer timeouts in production
-        if self.is_development():
-            return 0.5  # Shorter timeouts in development
-        return 1.0  # Default timeouts
+        try:
+            env_type = EnumEnvironmentType(self.name)
+            return env_type.get_default_timeout_multiplier()
+        except ValueError:
+            # Fallback for custom environment names
+            if self.is_production:
+                return 2.0
+            if self.is_development():
+                return 0.5
+            return 1.0
 
     def get_retry_multiplier(self) -> float:
         """Get retry multiplier for this environment."""
-        if self.is_production:
-            return 2.0  # More retries in production
-        if self.is_development():
-            return 0.5  # Fewer retries in development
-        return 1.0  # Default retries
+        try:
+            env_type = EnumEnvironmentType(self.name)
+            return env_type.get_default_retry_multiplier()
+        except ValueError:
+            # Fallback for custom environment names
+            if self.is_production:
+                return 2.0
+            if self.is_development():
+                return 0.5
+            return 1.0
 
     def add_environment_variable(self, key: str, value: str) -> None:
         """Add an environment variable."""
@@ -199,55 +223,33 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_default(cls, name: str = "development") -> "ModelEnvironment":
         """Create a default environment configuration."""
-        display_names = {
-            "development": "Development",
-            "dev": "Development",
-            "local": "Local Development",
-            "staging": "Staging",
-            "stage": "Staging",
-            "test": "Testing",
-            "testing": "Testing",
-            "production": "Production",
-            "prod": "Production",
-        }
-
-        display_name = display_names.get(name, name.title())
-        is_production = name in ["production", "prod"]
+        try:
+            env_type = EnumEnvironmentType(name)
+            display_name = EnumEnvironmentType.get_display_name(env_type)
+            is_production = env_type.is_production()
+            logging_level = EnumLoggingLevel.get_default_for_environment(name)
+        except ValueError:
+            # Fallback for custom environment names
+            display_name = name.title()
+            is_production = name in ["production", "prod"]
+            logging_level = EnumLoggingLevel.get_default_for_environment(name)
 
         # Set appropriate resource limits based on environment
         from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
-        if is_production:
-            resource_limits = ModelResourceLimits(
-                cpu_cores=8.0,
-                memory_mb=16384,
-                storage_gb=100.0,
-                max_connections=10000,
-                max_requests_per_second=1000.0,
-                max_processes=1000,
-                max_threads=10000,
-                network_bandwidth_mbps=1000.0,
-            )
-        elif name in ["staging", "stage", "test", "testing"]:
-            resource_limits = ModelResourceLimits(
-                cpu_cores=2.0,
-                memory_mb=2048,
-                storage_gb=10.0,
-                max_connections=1000,
-                max_requests_per_second=100.0,
-                max_processes=100,
-                max_threads=1000,
-            )
-        else:
-            resource_limits = ModelResourceLimits(
-                cpu_cores=1.0,
-                memory_mb=512,
-                storage_gb=1.0,
-                max_connections=100,
-                max_requests_per_second=10.0,
-            )
+        defaults = ModelEnvironmentDefaults.get_defaults_for_environment(name)
+        resource_limits = ModelResourceLimits(
+            cpu_cores=defaults.cpu_cores,
+            memory_mb=defaults.memory_mb,
+            storage_gb=defaults.storage_gb,
+            max_connections=defaults.max_connections,
+            max_requests_per_second=defaults.max_requests_per_second,
+            max_processes=defaults.max_processes,
+            max_threads=defaults.max_threads,
+            network_bandwidth_mbps=defaults.network_bandwidth_mbps,
+        )
 
         return cls(
             name=name,
@@ -255,9 +257,7 @@ class ModelEnvironment(BaseModel):
             is_production=is_production,
             monitoring_enabled=True,
             auto_scaling_enabled=is_production,
-            logging_level=(
-                "DEBUG" if name in ["development", "dev", "local"] else "INFO"
-            ),
+            logging_level=logging_level,
             resource_limits=resource_limits,
         )
 
@@ -271,13 +271,17 @@ class ModelEnvironment(BaseModel):
         env = cls.create_default("development")
         env.feature_flags.enable("debug_mode")
         env.feature_flags.enable("verbose_logging")
-        env.logging_level = "DEBUG"
+        env.logging_level = EnumLoggingLevel.DEBUG
+        defaults = ModelEnvironmentDefaults.DEVELOPMENT_DEFAULTS
         env.resource_limits = ModelResourceLimits(
-            cpu_cores=1.0,
-            memory_mb=512,
-            storage_gb=1.0,
-            max_connections=100,
-            max_requests_per_second=10.0,
+            cpu_cores=defaults.cpu_cores,
+            memory_mb=defaults.memory_mb,
+            storage_gb=defaults.storage_gb,
+            max_connections=defaults.max_connections,
+            max_requests_per_second=defaults.max_requests_per_second,
+            max_processes=defaults.max_processes,
+            max_threads=defaults.max_threads,
+            network_bandwidth_mbps=defaults.network_bandwidth_mbps,
         )
         return env
 
@@ -291,14 +295,16 @@ class ModelEnvironment(BaseModel):
         env = cls.create_default("staging")
         env.monitoring_enabled = True
         env.auto_scaling_enabled = True
+        defaults = ModelEnvironmentDefaults.STAGING_DEFAULTS
         env.resource_limits = ModelResourceLimits(
-            cpu_cores=2.0,
-            memory_mb=2048,
-            storage_gb=10.0,
-            max_connections=1000,
-            max_requests_per_second=100.0,
-            max_processes=100,
-            max_threads=1000,
+            cpu_cores=defaults.cpu_cores,
+            memory_mb=defaults.memory_mb,
+            storage_gb=defaults.storage_gb,
+            max_connections=defaults.max_connections,
+            max_requests_per_second=defaults.max_requests_per_second,
+            max_processes=defaults.max_processes,
+            max_threads=defaults.max_threads,
+            network_bandwidth_mbps=defaults.network_bandwidth_mbps,
         )
         return env
 
@@ -316,15 +322,16 @@ class ModelEnvironment(BaseModel):
         env.security_level = ModelSecurityLevel.create_high_security()
         env.monitoring_enabled = True
         env.auto_scaling_enabled = True
-        env.logging_level = "INFO"
+        env.logging_level = EnumLoggingLevel.INFO
+        defaults = ModelEnvironmentDefaults.PRODUCTION_DEFAULTS
         env.resource_limits = ModelResourceLimits(
-            cpu_cores=8.0,
-            memory_mb=16384,
-            storage_gb=100.0,
-            max_connections=10000,
-            max_requests_per_second=1000.0,
-            max_processes=1000,
-            max_threads=10000,
-            network_bandwidth_mbps=1000.0,
+            cpu_cores=defaults.cpu_cores,
+            memory_mb=defaults.memory_mb,
+            storage_gb=defaults.storage_gb,
+            max_connections=defaults.max_connections,
+            max_requests_per_second=defaults.max_requests_per_second,
+            max_processes=defaults.max_processes,
+            max_threads=defaults.max_threads,
+            network_bandwidth_mbps=defaults.network_bandwidth_mbps,
         )
         return env

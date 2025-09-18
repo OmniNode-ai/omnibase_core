@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .model_generic_metadata import ModelGenericMetadata
 from .model_onex_event import ModelOnexEvent
 from .model_route_hop import ModelRouteHop
 from .model_route_spec import ModelRouteSpec
@@ -66,7 +67,7 @@ class ModelEventEnvelope(BaseModel):
     delivery_attempts: int = Field(default=0, description="Number of delivery attempts")
 
     # Optional metadata
-    metadata: dict[str, Any] = Field(
+    metadata: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Additional envelope metadata",
     )

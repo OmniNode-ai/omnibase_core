@@ -5,6 +5,7 @@ Contract model for node introspection.
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
+from omnibase_core.models.core.model_semver import SemVerField
 
 
 class ModelContract(BaseModel):
@@ -19,4 +20,4 @@ class ModelContract(BaseModel):
         ...,
         description="CLI interface specification",
     )
-    protocol_version: str = Field(..., description="ONEX protocol version")
+    protocol_version: SemVerField = Field(..., description="ONEX protocol version")

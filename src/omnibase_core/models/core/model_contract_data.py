@@ -4,15 +4,18 @@ Contract Data Model.
 Node contract information structure.
 """
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_semver import SemVerField
 
 
 class ModelContractData(BaseModel):
     """Node contract information."""
 
-    contract_version: str | None = Field(None, description="Contract version")
+    contract_version: SemVerField | None = Field(None, description="Contract version")
     contract_name: str | None = Field(None, description="Contract name")
     contract_description: str | None = Field(
         None,
@@ -35,7 +38,7 @@ class ModelContractData(BaseModel):
 
     # Contract metadata
     hash: str | None = Field(None, description="Contract hash")
-    last_modified: str | None = Field(None, description="Last modification date")
+    last_modified: datetime | None = Field(None, description="Last modification date")
 
     # CLI interface
     cli_commands: list[str] = Field(

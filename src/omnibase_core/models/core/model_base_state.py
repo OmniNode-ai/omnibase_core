@@ -9,12 +9,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelBaseInputState(BaseModel):
     """Base model for all input states in ONEX"""
 
     # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool input data
-    metadata: dict[str, Any] = Field(
+    metadata: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Metadata for the input state",
     )
@@ -28,7 +30,7 @@ class ModelBaseOutputState(BaseModel):
     """Base model for all output states in ONEX"""
 
     # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool output data
-    metadata: dict[str, Any] = Field(
+    metadata: ModelGenericMetadata | None = Field(
         default_factory=dict,
         description="Metadata for the output state",
     )

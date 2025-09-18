@@ -14,9 +14,17 @@ from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
 from omnibase_core.models.core.model_execution_context import ModelExecutionContext
+from omnibase_core.models.core.model_execution_features import ModelExecutionFeatures
+from omnibase_core.models.core.model_execution_statistics import (
+    ModelExecutionStatistics,
+)
+from omnibase_core.models.core.model_execution_tags import ModelExecutionTags
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.core.model_onex_error import ModelOnexError
+from omnibase_core.models.core.model_onex_warning import ModelOnexWarning
 from omnibase_core.models.core.model_parsed_arguments import ModelParsedArguments
 from omnibase_core.models.core.model_schema_value import ModelSchemaValue
+from omnibase_core.models.core.model_semver import SemVerField
 
 
 class ModelExecutionMetadata(BaseModel):
@@ -27,7 +35,7 @@ class ModelExecutionMetadata(BaseModel):
         None,
         description="Source of command (user, script, api)",
     )
-    command_version: str | None = Field(
+    command_version: SemVerField | None = Field(
         None,
         description="Version of CLI interface used",
     )
@@ -35,8 +43,8 @@ class ModelExecutionMetadata(BaseModel):
 
     # Execution environment
     host_name: str | None = Field(None, description="Host executing the command")
-    process_id: int | None = Field(None, description="Process ID of execution")
-    thread_id: str | None = Field(None, description="Thread ID of execution")
+    process_id: UUID | None = Field(None, description="Process ID of execution")
+    thread_id: UUID | None = Field(None, description="Thread ID of execution")
 
     # Performance tracking
     queue_time_ms: int | None = Field(
@@ -59,23 +67,21 @@ class ModelExecutionMetadata(BaseModel):
         description="Average CPU usage percentage",
     )
 
-    # Error tracking
-    error_count: int = Field(0, description="Number of errors encountered")
-    warning_count: int = Field(0, description="Number of warnings encountered")
-    retry_count: int = Field(0, description="Number of retries performed")
+    # Execution statistics (errors, warnings, retries)
+    statistics: ModelExecutionStatistics = Field(
+        default_factory=ModelExecutionStatistics,
+        description="Execution statistics including errors, warnings, and retries",
+    )
 
     # Feature flags
-    features_enabled: list[str] = Field(
-        default_factory=list,
-        description="Enabled feature flags",
-    )
-    features_disabled: list[str] = Field(
-        default_factory=list,
-        description="Disabled feature flags",
+    features: ModelExecutionFeatures = Field(
+        default_factory=ModelExecutionFeatures, description="Feature flag configuration"
     )
 
     # Custom tags for filtering/grouping
-    tags: dict[str, str] = Field(default_factory=dict, description="Custom tags")
+    tags: ModelExecutionTags = Field(
+        default_factory=ModelExecutionTags, description="Custom execution tags"
+    )
 
     # Extensibility for command-specific data
     custom_metrics: dict[str, float] | None = Field(
@@ -267,39 +273,7 @@ class ModelCliExecution(BaseModel):
         """Check if retries are enabled on failure."""
         return self.execution_context.should_retry()
 
-    def to_execution_dict(self) -> dict:
-        """Convert to dictionary for node execution."""
-        # Get the base execution dictionary from parsed arguments
-        execution_dict = self.parsed_arguments.to_execution_dict()
-
-        # Add execution context information
-        execution_dict.update(
-            {
-                "execution_id": str(self.execution_id),
-                "correlation_id": str(self.correlation_id),
-                "start_time": self.start_time.isoformat(),
-                "user_id": self.user_id,
-                "session_id": self.session_id,
-                "is_dry_run": self.is_dry_run,
-                "is_test_execution": self.is_test_execution,
-                "priority": self.priority,
-                "debug_enabled": self.is_debug_enabled(),
-                "trace_enabled": self.is_trace_enabled(),
-                "timeout_ms": self.get_timeout_ms(),
-                "retry_attempts": self.execution_context.retry_attempts,
-            },
-        )
-
-        # Add environment variables from execution context
-        execution_dict.update(self.execution_context.to_environment_dict())
-
-        # Add execution metadata (excluding None values)
-        metadata_dict = self.execution_metadata.model_dump(exclude_none=True)
-        execution_dict.update(metadata_dict)
-
-        return execution_dict
-
-    def get_summary(self) -> dict:
+    def get_summary(self) -> dict[str, Any]:
         """Get execution summary for logging/monitoring."""
         return {
             "execution_id": str(self.execution_id),

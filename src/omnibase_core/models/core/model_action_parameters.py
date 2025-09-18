@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelActionParameters(BaseModel):
     """
@@ -43,8 +45,8 @@ class ModelActionParameters(BaseModel):
     )
 
     # For complex types requiring dynamic parameters
-    raw_params: dict[str, Any] = Field(
-        default_factory=dict,
+    raw_params: ModelGenericMetadata | None = Field(
+        None,
         description="Raw parameters for complex types (use sparingly)",
     )
 
@@ -63,8 +65,12 @@ class ModelActionParameters(BaseModel):
             return self.list_params[name]
         if name in self.nested_params:
             return self.nested_params[name]
-        if name in self.raw_params:
-            return self.raw_params[name]
+        if (
+            self.raw_params
+            and self.raw_params.custom_fields
+            and name in self.raw_params.custom_fields
+        ):
+            return self.raw_params.custom_fields[name]
         return None
 
     def set_parameter(self, name: str, value: Any) -> None:
@@ -83,7 +89,13 @@ class ModelActionParameters(BaseModel):
             self.nested_params[name] = value
         else:
             # Fall back to raw parameters for complex types
-            self.raw_params[name] = value
+            if not self.raw_params:
+                self.raw_params = ModelGenericMetadata()
+            # Use custom_fields for complex parameter storage
+            if not self.raw_params.custom_fields:
+                self.raw_params.custom_fields = {}
+            # Store complex values as string representation for now
+            self.raw_params.custom_fields[name] = str(value)
 
     def has_parameter(self, name: str) -> bool:
         """Check if parameter exists."""
@@ -100,9 +112,10 @@ class ModelActionParameters(BaseModel):
         result.update(self.list_params)
         result.update(self.nested_params)
         # Only include raw params that match our typing
-        for key, value in self.raw_params.items():
-            if isinstance(value, (str, int, float, bool, list, dict)):
-                result[key] = value
+        if self.raw_params and self.raw_params.custom_fields:
+            for key, value in self.raw_params.custom_fields.items():
+                if isinstance(value, (str, int, float, bool, list, dict)):
+                    result[key] = value
         return result
 
     @classmethod

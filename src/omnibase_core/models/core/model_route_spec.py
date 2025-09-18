@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from .model_generic_metadata import ModelGenericMetadata
+
 
 class ModelRouteSpec(BaseModel):
     """
@@ -37,8 +39,8 @@ class ModelRouteSpec(BaseModel):
     )
 
     # Routing constraints
-    constraints: dict[str, Any] = Field(
-        default_factory=dict,
+    constraints: ModelGenericMetadata | None = Field(
+        None,
         description="Routing constraints and preferences",
     )
 

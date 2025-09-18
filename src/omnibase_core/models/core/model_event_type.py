@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_json_schema import ModelJsonSchema
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 
@@ -34,7 +35,7 @@ class ModelEventType(BaseModel):
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Event schema version",
     )
-    payload_schema: dict[str, Any] | None = Field(
+    payload_schema: ModelJsonSchema | None = Field(
         None,
         description="Expected payload schema",
     )
