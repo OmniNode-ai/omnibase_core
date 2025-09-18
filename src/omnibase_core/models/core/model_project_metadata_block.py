@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-from omnibase_core.models.core.model_node_collection import ModelNodeCollection
+from omnibase_core.models.nodes.model_node_collection import ModelNodeCollection
 from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.metadata.metadata_constants import (
     COPYRIGHT_KEY,

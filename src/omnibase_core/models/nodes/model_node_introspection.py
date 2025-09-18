@@ -49,7 +49,7 @@ from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 
 # Import all separated models
 from omnibase_core.models.core.model_event_channels import ModelEventChannels
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from .model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )
@@ -59,7 +59,7 @@ from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_version_status import ModelVersionStatus
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core.model_node_introspection_response import (
+    from .model_node_introspection_response import (
         ModelNodeIntrospectionResponse,
     )
 
@@ -107,7 +107,7 @@ def create_node_introspection_response(
     Returns:
         ModelNodeIntrospectionResponse: Standardized introspection response
     """
-    from omnibase_core.models.core.model_node_introspection_response import (
+    from .model_node_introspection_response import (
         ModelNodeIntrospectionResponse,
     )
 

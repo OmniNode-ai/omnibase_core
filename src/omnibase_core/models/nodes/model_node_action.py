@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_action_category import ModelActionCategory
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from .model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.predefined_categories import LIFECYCLE, VALIDATION
 
 from .model_action_base import ModelActionBase

@@ -8,8 +8,8 @@ Integrates with node execution pipelines for comprehensive action validation.
 from omnibase_core.models.core.model_action_validation_result import (
     ModelActionValidationResult,
 )
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.models.core.model_node_action_validator import (
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.nodes.model_node_action_validator import (
     ModelNodeActionValidator,
 )
 

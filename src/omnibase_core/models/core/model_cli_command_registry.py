@@ -14,7 +14,7 @@ from omnibase_core.models.core.model_cli_command_definition import (
 )
 from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
 )

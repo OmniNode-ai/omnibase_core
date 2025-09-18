@@ -20,7 +20,7 @@ from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 from omnibase_core.models.core.model_function_node import ModelFunctionNode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_io_block import ModelIOBlock
-from omnibase_core.models.core.model_node_collection import ModelNodeCollection
+from .model_node_collection import ModelNodeCollection
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock

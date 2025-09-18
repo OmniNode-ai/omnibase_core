@@ -12,8 +12,8 @@ from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_action_validation_result import (
     ModelActionValidationResult,
 )
-from omnibase_core.models.core.model_node_action import ModelNodeAction
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from .model_node_action import ModelNodeAction
+from .model_node_action_type import ModelNodeActionType
 
 
 class ModelNodeActionValidator:

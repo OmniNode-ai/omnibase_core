@@ -20,7 +20,7 @@ from omnibase_core.models.core.model_execution_statistics import (
     ModelExecutionStatistics,
 )
 from omnibase_core.models.core.model_execution_tags import ModelExecutionTags
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_warning import ModelOnexWarning
 from omnibase_core.models.core.model_parsed_arguments import ModelParsedArguments

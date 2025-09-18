@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_performance_metrics import ModelPerformanceMetrics
 from omnibase_core.models.core.model_security_context import ModelSecurityContext
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel

@@ -16,7 +16,7 @@ from omnibase_core.models.core.model_contract_definitions import (
 )
 from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.models.core.model_io_operation import ModelIOOperation
-from omnibase_core.models.core.model_node_configs import (
+from omnibase_core.models.nodes.model_node_configs import (
     ModelAggregationConfig,
     ModelCachingConfig,
     ModelConflictResolutionConfig,
@@ -30,7 +30,7 @@ from omnibase_core.models.core.model_node_configs import (
     ModelStreamingConfig,
     ModelWorkflowRegistryConfig,
 )
-from omnibase_core.models.core.model_node_specification import ModelNodeSpecification
+from omnibase_core.models.nodes.model_node_specification import ModelNodeSpecification
 from omnibase_core.models.core.model_performance_config import ModelPerformanceConfig
 from omnibase_core.models.core.model_reduction_operation import ModelReductionOperation
 from omnibase_core.models.core.model_semver import ModelSemVer

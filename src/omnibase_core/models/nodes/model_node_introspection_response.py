@@ -9,7 +9,7 @@ from omnibase_core.models.core.model_contract import ModelContract
 from omnibase_core.models.core.model_dependencies import ModelDependencies
 from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 from omnibase_core.models.core.model_event_channels import ModelEventChannels
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from .model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_state_models import ModelStates
 
 

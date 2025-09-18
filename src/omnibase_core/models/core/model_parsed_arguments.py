@@ -13,7 +13,7 @@ from omnibase_core.models.core.model_argument_map import ModelArgumentMap
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_parse_metadata import ModelParseMetadata
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 

@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 
 
 class ModelActionPayloadBase(BaseModel):

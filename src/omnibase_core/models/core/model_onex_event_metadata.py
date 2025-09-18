@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from omnibase_core.models.core.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core.model_node_announce_metadata import (
+    from omnibase_core.models.nodes.model_node_announce_metadata import (
         ModelNodeAnnounceMetadata,
     )
 

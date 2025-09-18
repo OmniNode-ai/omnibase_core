@@ -13,8 +13,8 @@ from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.enums.enum_scenario_status import EnumScenarioStatus
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
-from omnibase_core.models.core.model_node_info import ModelNodeInfo
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.nodes.model_node_info import ModelNodeInfo
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 
 from .model_generic_metadata import ModelGenericMetadata
 from .model_test_results import ModelTestResults

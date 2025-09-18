@@ -7,7 +7,7 @@ Payload for filesystem actions (scan, watch, sync).
 from pydantic import Field, field_validator
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
-from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 
 
 class ModelFilesystemActionPayload(ModelActionPayloadBase):

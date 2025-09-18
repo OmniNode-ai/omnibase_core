@@ -13,8 +13,8 @@ from omnibase_core.enums.node import EnumNodeStatus
 from omnibase_core.models.configuration.model_load_metrics import ModelLoadMetrics
 from omnibase_core.models.core.model_capability import ModelCapability
 from omnibase_core.models.core.model_instance_metadata import ModelInstanceMetadata
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
-from omnibase_core.models.core.model_node_type import ModelNodeType
+from .model_node_reference import ModelNodeReference
+from .model_node_type import ModelNodeType
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
 
 

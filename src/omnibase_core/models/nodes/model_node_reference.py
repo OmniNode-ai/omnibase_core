@@ -8,7 +8,7 @@ to support local, remote, and third-party node references.
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_capability import ModelCapability
-from omnibase_core.models.core.model_node_metadata import (
+from .model_node_metadata import (
     NodeMetadataBlock as ModelNodeMetadata,
 )
 

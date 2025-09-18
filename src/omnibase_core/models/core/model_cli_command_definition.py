@@ -11,7 +11,7 @@ from omnibase_core.models.core.model_argument_description import (
     ModelArgumentDescription,
 )
 from omnibase_core.models.core.model_event_type import ModelEventType
-from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 
 
 class ModelCliCommandDefinition(BaseModel):
