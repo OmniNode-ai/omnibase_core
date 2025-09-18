@@ -79,15 +79,15 @@ class ModelContractContent(BaseModel):
         None,
         description="Infrastructure configuration",
     )
-    infrastructure_services: dict[str, Any] | None = Field(
+    infrastructure_services: ModelGenericMetadata | None = Field(
         None,
         description="Infrastructure services",
     )
-    service_configuration: dict[str, Any] | None = Field(
+    service_configuration: ModelGenericMetadata | None = Field(
         None,
         description="Service configuration",
     )
-    service_resolution: dict[str, Any] | None = Field(
+    service_resolution: ModelGenericMetadata | None = Field(
         None,
         description="Service resolution",
     )
@@ -148,11 +148,11 @@ class ModelContractContent(BaseModel):
     # === OPTIONAL METADATA FIELDS ===
     metadata: ModelGenericMetadata | None = Field(None, description="Contract metadata")
     capabilities: list[str] | None = Field(None, description="Node capabilities")
-    configuration: dict[str, Any] | None = Field(
+    configuration: ModelGenericMetadata | None = Field(
         None,
         description="General configuration",
     )
-    algorithm: dict[str, Any] | None = Field(
+    algorithm: ModelGenericMetadata | None = Field(
         None,
         description="Algorithm configuration",
     )

@@ -62,6 +62,34 @@ FIELD_PATTERNS = [
         r"infrastructure: dict\[str, Any\] \| None = Field\(",
         "infrastructure: ModelGenericMetadata | None = Field(",
     ),
+    (
+        r"infrastructure_services: dict\[str, Any\] \| None = Field\(",
+        "infrastructure_services: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"service_configuration: dict\[str, Any\] \| None = Field\(",
+        "service_configuration: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"service_resolution: dict\[str, Any\] \| None = Field\(",
+        "service_resolution: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"configuration: dict\[str, Any\] \| None = Field\(",
+        "configuration: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"algorithm: dict\[str, Any\] \| None = Field\(",
+        "algorithm: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"settings: dict\[str, Any\] \| None = Field\(",
+        "settings: ModelGenericMetadata | None = Field(",
+    ),
+    (
+        r"config: dict\[str, Any\] \| None = Field\(",
+        "config: ModelGenericMetadata | None = Field(",
+    ),
 ]
 
 # Fields that should use specific model types
