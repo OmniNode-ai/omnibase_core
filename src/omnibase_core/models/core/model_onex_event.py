@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.core.constants.event_types import normalize_legacy_event_type
 
 from .model_event_type import ModelEventType
+from .model_generic_metadata import ModelGenericMetadata
 from .model_onex_event_metadata import ModelOnexEventMetadata
 from .model_telemetry_operation_error_metadata import (
     ModelTelemetryOperationErrorMetadata,
@@ -113,7 +114,11 @@ class ModelOnexEvent(BaseModel):
 
         try:
             # Normalize legacy enum values to new string format
-            return normalize_legacy_event_type(v)
+            normalized = normalize_legacy_event_type(v)
+            # Ensure we return the correct type
+            if isinstance(normalized, ModelEventType):
+                return normalized
+            return str(normalized)
         except ValueError as e:
             msg = f"Invalid event type: {e}"
             raise ValueError(msg)
@@ -124,7 +129,7 @@ class ModelOnexEvent(BaseModel):
         event_type: str,
         node_id: str,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating core ONEX events.
@@ -152,7 +157,7 @@ class ModelOnexEvent(BaseModel):
         action: str,
         node_id: str,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating user-defined events.
@@ -182,7 +187,7 @@ class ModelOnexEvent(BaseModel):
         action: str,
         node_id: str,
         correlation_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelOnexEvent":
         """
         Factory method for creating plugin events.
@@ -236,7 +241,6 @@ try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         from omnibase_core.enums.events import OnexEventTypeEnum
-from .model_generic_metadata import ModelGenericMetadata
 
     __all__ = [
         "ModelOnexEvent",

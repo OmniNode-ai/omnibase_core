@@ -99,7 +99,7 @@ class ModelMonitoringMetrics(BaseModel):
         "end_time",
         "collection_timestamp",
     )
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return None

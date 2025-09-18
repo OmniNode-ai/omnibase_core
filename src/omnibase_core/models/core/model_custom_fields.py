@@ -46,7 +46,7 @@ class ModelCustomFields(BaseModel):
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
-            return value.lower() in ("true", "yes", "1", "on")
+            return str(value).lower() in ("true", "yes", "1", "on")
         return default
 
     def get_float(self, key: str, default: float = 0.0) -> float:

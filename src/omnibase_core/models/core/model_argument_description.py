@@ -88,7 +88,7 @@ class ModelArgumentDescription(BaseModel):
                 raise ValueError(
                     msg,
                 )
-            return value
+            return str(value) if value else ""
 
         if self.type == EnumArgumentType.INTEGER:
             try:
@@ -118,4 +118,4 @@ class ModelArgumentDescription(BaseModel):
 
         else:
             # Default to string
-            return value
+            return str(value) if value else ""

@@ -77,7 +77,7 @@ class ModelPerformanceSummary(BaseModel):
         return None
 
     @field_serializer("measurement_start", "measurement_end")
-    def serialize_datetime(self, value):
+    def serialize_datetime(self, value: datetime) -> str:
         if value and isinstance(value, datetime):
             return value.isoformat()
-        return value
+        return str(value) if value else ""

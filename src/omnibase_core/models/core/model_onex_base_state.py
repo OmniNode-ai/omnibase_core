@@ -18,6 +18,7 @@ complexity by ~85% (from 100+ lines to ~15 lines per node).
 """
 
 from datetime import datetime
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic import BaseModel, field_validator
@@ -49,12 +50,17 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_input_version(cls, v):
+    def parse_input_version(cls, v: Any) -> ModelSemVer:
         """Parse version from string, dict, or ModelSemVer"""
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            parts = v.split(".")
+            if len(parts) == 3:
+                return ModelSemVer(
+                    major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+                )
+            raise ValueError(f"Invalid version string format: {v}")
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "version must be a string, dict, or ModelSemVer"
@@ -62,14 +68,19 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("node_version", mode="before")
     @classmethod
-    def parse_input_node_version(cls, v):
+    def parse_input_node_version(cls, v: Any) -> ModelSemVer | None:
         """Parse node_version from string, dict, or ModelSemVer"""
         if v is None:
             return v
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
-            return ModelSemVer.parse(v)
+            parts = v.split(".")
+            if len(parts) == 3:
+                return ModelSemVer(
+                    major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+                )
+            raise ValueError(f"Invalid version string format: {v}")
         if isinstance(v, dict):
             return ModelSemVer(**v)
         msg = "node_version must be a string, dict, or ModelSemVer"
@@ -77,21 +88,21 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("event_id", "correlation_id")
     @classmethod
-    def validate_input_uuid_fields(cls, v):
+    def validate_input_uuid_fields(cls, v: Any) -> UUID | None:
         """Validate UUID fields - Pydantic handles UUID conversion automatically"""
         # Pydantic automatically converts string UUIDs to UUID objects
         # and validates format, so we just need to handle None
-        return v
+        return v if (v is None or isinstance(v, UUID)) else None
 
     @field_validator("timestamp")
     @classmethod
-    def validate_input_timestamp(cls, v):
+    def validate_input_timestamp(cls, v: Any) -> datetime | None:
         """Validate timestamp - Pydantic handles datetime conversion automatically"""
         # Pydantic automatically converts ISO8601 strings to datetime objects
         # and validates format, so we just need to handle None
-        return v
+        return v if (v is None or isinstance(v, datetime)) else None
 
-    def to_internal_state(self) -> "ModelOnexInternalInputState":
+    def to_internal_state(self) -> ModelOnexInternalInputState:
         """
         Convert boundary input state to internal state with required UUIDs.
 
@@ -102,7 +113,9 @@ class ModelOnexInputState(BaseModel):
             ModelOnexInternalInputState: Internal state with all required UUIDs populated
         """
         from omnibase_core.models.core.model_onex_internal_state import (
-            ModelOnexInternalInputState,
+            ModelOnexInternalInputState as InternalInputState,
         )
 
-        return ModelOnexInternalInputState.from_boundary_state(self)
+        return cast(
+            ModelOnexInternalInputState, InternalInputState.from_boundary_state(self)
+        )

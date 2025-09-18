@@ -1,5 +1,7 @@
 """Model for managing lists of strings."""
 
+from typing import Iterator
+
 from pydantic import BaseModel, Field
 
 
@@ -56,7 +58,7 @@ class ModelStringList(BaseModel):
         """Support len() function."""
         return len(self.items)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Support iteration."""
         return iter(self.items)
 

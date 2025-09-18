@@ -4,7 +4,7 @@ Action Category Model.
 Defines the categories of node actions as a proper Pydantic model.
 """
 
-from typing import ClassVar
+from typing import ClassVar, Type
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -28,7 +28,7 @@ class ModelActionCategory(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def validate_name_format(cls, v: str) -> str:
+    def validate_name_format(cls: Type["ModelActionCategory"], v: str) -> str:
         """Validate category name follows naming conventions."""
         if not v.islower():
             msg = "Category name must be lowercase"

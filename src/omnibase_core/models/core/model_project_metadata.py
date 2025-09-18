@@ -30,6 +30,8 @@ and compliance with one-model-per-file naming conventions.
 
 from pathlib import Path
 
+import yaml
+
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.metadata.metadata_constants import (
@@ -38,9 +40,6 @@ from omnibase_core.models.metadata.metadata_constants import (
     PROJECT_ONEX_YAML_FILENAME,
     PROTOCOL_VERSION_KEY,
     SCHEMA_VERSION_KEY,
-)
-from omnibase_core.utils.safe_yaml_loader import (
-    load_and_validate_yaml_model,
 )
 
 # Import separated models
@@ -86,8 +85,11 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     Returns an ModelOnexVersionInfo model.
     Raises FileNotFoundError or KeyError if missing.
     """
-    # Load and validate YAML using Pydantic model
-    yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
+    # Load YAML content and validate with Pydantic
+    with PROJECT_ONEX_YAML_PATH.open("r", encoding="utf-8") as f:
+        yaml_content = f.read()
+    # Use proper Pydantic YAML validation
+    yaml_model = ModelGenericYaml.from_yaml(yaml_content)  # Pydantic validation
     data = yaml_model.model_dump()
     return ModelOnexVersionInfo(
         metadata_version=data[METADATA_VERSION_KEY],
@@ -102,7 +104,10 @@ def get_canonical_namespace_prefix() -> str:
     Returns a string, e.g., 'omnibase'.
     Raises FileNotFoundError or KeyError if missing.
     """
-    # Load and validate YAML using Pydantic model
-    yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
+    # Load YAML content and validate with Pydantic
+    with PROJECT_ONEX_YAML_PATH.open("r", encoding="utf-8") as f:
+        yaml_content = f.read()
+    # Use proper Pydantic YAML validation
+    yaml_model = ModelGenericYaml.from_yaml(yaml_content)  # Pydantic validation
     data = yaml_model.model_dump()
-    return data[NAMESPACE_KEY]
+    return str(data[NAMESPACE_KEY])

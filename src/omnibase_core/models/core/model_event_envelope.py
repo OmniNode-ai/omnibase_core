@@ -68,7 +68,7 @@ class ModelEventEnvelope(BaseModel):
 
     # Optional metadata
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        None,
         description="Additional envelope metadata",
     )
 
@@ -82,7 +82,7 @@ class ModelEventEnvelope(BaseModel):
         payload: ModelOnexEvent,
         destination: str,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for direct routing to destination."""
         route_spec = ModelRouteSpec.create_direct_route(destination)
@@ -105,7 +105,7 @@ class ModelEventEnvelope(BaseModel):
         destination: str,
         hops: list[str],
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope with explicit routing path."""
         route_spec = ModelRouteSpec.create_explicit_route(destination, hops)
@@ -127,7 +127,7 @@ class ModelEventEnvelope(BaseModel):
         payload: ModelOnexEvent,
         service_pattern: str,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for anycast routing to service."""
         route_spec = ModelRouteSpec.create_anycast_route(service_pattern)
@@ -148,7 +148,7 @@ class ModelEventEnvelope(BaseModel):
         cls,
         payload: ModelOnexEvent,
         source_node_id: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventEnvelope":
         """Create envelope for broadcast routing."""
         route_spec = ModelRouteSpec.create_broadcast_route()
@@ -174,7 +174,7 @@ class ModelEventEnvelope(BaseModel):
         node_id: str,
         routing_decision: str,
         next_hop: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Add a router hop to the trace."""
         hop = ModelRouteHop.create_router_hop(
@@ -241,7 +241,23 @@ class ModelEventEnvelope(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add metadata to the envelope."""
-        self.metadata[key] = value
+        if self.metadata is None:
+            self.metadata = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
+        # Use the custom_fields for dynamic key-value pairs
+        if self.metadata.custom_fields is None:
+            self.metadata.custom_fields = {}
+        if isinstance(value, (str, int, float, bool)):
+            self.metadata.custom_fields[key] = value
+        else:
+            # Store as string if not a basic type
+            self.metadata.custom_fields[key] = str(value)
 
     def get_routing_path(self) -> list[str]:
         """Get the complete routing path from trace."""
@@ -281,7 +297,7 @@ class ModelEventEnvelope(BaseModel):
             route_spec=self.route_spec.model_copy(deep=True),
             source_node_id=self.source_node_id,
             correlation_id=self.correlation_id,
-            metadata=self.metadata.copy(),
+            metadata=self.metadata.model_copy(deep=True) if self.metadata else None,
         )
 
         # Copy trace but reset delivery state

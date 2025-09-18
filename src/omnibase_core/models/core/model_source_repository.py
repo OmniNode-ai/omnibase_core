@@ -25,4 +25,4 @@ class ModelSourceRepository(BaseModel):
     def _debug_commit_hash(value: Any) -> Any:
         if value is not None:
             value = value.strip() if isinstance(value, str) else value
-        return value
+        return str(value) if value else ""

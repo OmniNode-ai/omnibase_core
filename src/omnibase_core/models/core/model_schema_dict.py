@@ -285,7 +285,7 @@ class ModelSchemaDict(BaseModel):
                 if isinstance(value, bool):
                     kwargs["additional_properties"] = value  # type: ignore[assignment]
                 elif isinstance(value, dict):
-                    kwargs["additional_properties"] = cls.from_dict(value)  # type: ignore[assignment]
+                    kwargs["additional_properties"] = cls.from_dict(value)
             elif key == "definitions" and isinstance(value, dict):
                 kwargs["definitions"] = {k: cls.from_dict(v) for k, v in value.items()}  # type: ignore[assignment]
             elif key in ["allOf", "anyOf", "oneOf"] and isinstance(value, list):

@@ -35,10 +35,10 @@ class ModelContractDependencies(BaseModel):
         description="List of contract dependencies",
     )
 
-    def __iter__(self):
+    def __iter__(self) -> iter:
         """Allow iteration over dependencies."""
         return iter(self.dependencies)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return number of dependencies."""
         return len(self.dependencies)

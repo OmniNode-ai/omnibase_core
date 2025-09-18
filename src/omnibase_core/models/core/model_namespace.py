@@ -90,7 +90,7 @@ class ModelNamespace(BaseModel):
     def to_serializable_dict(self) -> str:
         return self.value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
     def model_dump(self, *args, **kwargs):

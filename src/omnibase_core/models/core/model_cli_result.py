@@ -124,8 +124,8 @@ class ModelCliResult(BaseModel):
         if self.validation_errors:
             critical_errors = [e for e in self.validation_errors if e.is_critical()]
             if critical_errors:
-                return critical_errors[0].message
-            return self.validation_errors[0].message
+                return str(critical_errors[0].message)
+            return str(self.validation_errors[0].message)
         return None
 
     def get_all_errors(self) -> list[str]:

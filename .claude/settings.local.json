@@ -50,7 +50,10 @@
       "Read(//Volumes/PRO-G40/Code/omnibase_spi/**)",
       "Bash(semgrep:*)",
       "Read(//Volumes/PRO-G40/Code/omnibase_infra/src/omnibase_infra/nodes/**)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_state_transition.py --no-error-summary)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_hub_contract_config.py --no-error-summary)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_metadata_node_collection.py --no-error-summary)"
     ],
     "deny": [],
     "ask": []

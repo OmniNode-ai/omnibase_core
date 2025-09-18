@@ -7,25 +7,35 @@ and compliance with one-model-per-file naming conventions.
 
 import hashlib
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Type, Union
 
 from pydantic import RootModel, computed_field, model_validator
 
 from omnibase_core.models.core.model_function_node import ModelFunctionNode
 
+from .model_metadata_collection_types import (
+    ModelAnalyticsReport,
+    ModelCollectionMetadata,
+    ModelCollectionValidationResult,
+    ModelNodeBreakdown,
+    ModelNodeValidationResult,
+    ModelPerformanceMetrics,
+)
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_info import (
-    MetadataNodeComplexity,
-    MetadataNodeStatus,
-    MetadataNodeType,
+    ModelMetadataNodeComplexity,
     ModelMetadataNodeInfo,
+    ModelMetadataNodeStatus,
+    ModelMetadataNodeType,
 )
 
 # Import separated models
 from .model_metadata_node_usage_metrics import ModelMetadataNodeUsageMetrics
 
 
-class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
+class ModelMetadataNodeCollection(
+    RootModel[dict[str, Union[ModelFunctionNode, dict[str, str], dict[str, int]]]]
+):
     """
     Enterprise-grade collection of metadata/documentation nodes for ONEX metadata blocks.
 
@@ -35,9 +45,13 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
     def __init__(
         self,
-        root: Union[dict[str, Any], "ModelMetadataNodeCollection", None] = None,
-        **kwargs,
-    ):
+        root: Union[
+            dict[str, Union[ModelFunctionNode, dict[str, str], dict[str, int]]],
+            "ModelMetadataNodeCollection",
+            None,
+        ] = None,
+        **kwargs: Any,
+    ) -> None:
         """Initialize with enhanced enterprise features."""
         if root is None:
             root = {}
@@ -56,7 +70,10 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
     @model_validator(mode="before")
     @classmethod
-    def coerce_node_values(cls, data):
+    def coerce_node_values(
+        cls: Type["ModelMetadataNodeCollection"],
+        data: Union[dict, "ModelMetadataNodeCollection", None],
+    ) -> dict[str, Any]:
         """Enhanced node value coercion with validation and enhancement."""
         if isinstance(data, dict):
             new_data = {}
@@ -86,12 +103,14 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
         return data or {}
 
     @model_validator(mode="after")
-    def check_function_names_and_enhance(self):
+    def check_function_names_and_enhance(
+        self: "ModelMetadataNodeCollection",
+    ) -> "ModelMetadataNodeCollection":
         """Enhanced validation with analytics updates."""
         node_count = 0
-        nodes_by_type = {}
-        nodes_by_status = {}
-        nodes_by_complexity = {}
+        nodes_by_type: dict[str, int] = {}
+        nodes_by_status: dict[str, int] = {}
+        nodes_by_complexity: dict[str, int] = {}
 
         for name, _node_data in self.root.items():
             # Skip enterprise metadata fields
@@ -107,11 +126,11 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
             # Update analytics if node info exists
             if name in self.root.get("_node_info", {}):
-                node_info = self.root["_node_info"][name]
-                if isinstance(node_info, dict):
-                    node_type = node_info.get("node_type", "function")
-                    node_status = node_info.get("status", "active")
-                    node_complexity = node_info.get("complexity", "simple")
+                node_info_data = self.root["_node_info"][name]
+                if isinstance(node_info_data, dict):
+                    node_type = node_info_data.get("node_type", "function")
+                    node_status = node_info_data.get("status", "active")
+                    node_complexity = node_info_data.get("complexity", "simple")
 
                     nodes_by_type[node_type] = nodes_by_type.get(node_type, 0) + 1
                     nodes_by_status[node_status] = (
@@ -122,43 +141,43 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
                     )
 
         # Update analytics
-        analytics = self.root.get("_metadata_analytics", {})
-        analytics.update(
-            {
-                "last_modified": datetime.now().isoformat(),
-                "total_nodes": node_count,
-                "nodes_by_type": nodes_by_type,
-                "nodes_by_status": nodes_by_status,
-                "nodes_by_complexity": nodes_by_complexity,
-            },
-        )
-        self.root["_metadata_analytics"] = analytics
+        analytics_data = self.root.get("_metadata_analytics", {})
+        if isinstance(analytics_data, dict):
+            analytics_data.update(
+                {
+                    "last_modified": datetime.now().isoformat(),
+                    "total_nodes": node_count,
+                    "nodes_by_type": nodes_by_type,
+                    "nodes_by_status": nodes_by_status,
+                    "nodes_by_complexity": nodes_by_complexity,
+                },
+            )
+        self.root["_metadata_analytics"] = analytics_data
 
         return self
 
-    @computed_field  # type: ignore[misc]
-    @property
+    @computed_field
     def collection_id(self) -> str:
         """Generate unique identifier for this collection."""
         node_names = sorted([k for k in self.root if not k.startswith("_")])
         content = f"metadata_nodes:{':'.join(node_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    @computed_field  # type: ignore[misc]
-    @property
+    @computed_field
     def node_count(self) -> int:
         """Get total number of nodes (excluding metadata)."""
         return len([k for k in self.root if not k.startswith("_")])
 
-    @computed_field  # type: ignore[misc]
-    @property
+    @computed_field
     def analytics(self) -> ModelMetadataNodeAnalytics:
         """Get collection analytics."""
         analytics_data = self.root.get("_metadata_analytics", {})
-        return ModelMetadataNodeAnalytics(**analytics_data)
+        if isinstance(analytics_data, dict):
+            return ModelMetadataNodeAnalytics(**analytics_data)
+        else:
+            return ModelMetadataNodeAnalytics()
 
-    @computed_field  # type: ignore[misc]
-    @property
+    @computed_field
     def health_score(self) -> float:
         """Calculate overall collection health score."""
         if self.node_count == 0:
@@ -189,7 +208,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
     def add_node(
         self,
         name: str,
-        node_data: Any,
+        node_data: Union[ModelFunctionNode, dict[str, str]],
         node_info: ModelMetadataNodeInfo | None = None,
     ) -> bool:
         """
@@ -254,9 +273,9 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
         return False
 
-    def get_node(self, name: str) -> Any:
+    def get_node(self, name: str) -> Union[ModelFunctionNode, dict[str, str], None]:
         """Get a node by name."""
-        return self.root.get(name)
+        return self.root.get(name, None)
 
     def get_node_info(self, name: str) -> ModelMetadataNodeInfo | None:
         """Get enhanced node information."""
@@ -330,7 +349,9 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
         # Update node info
         self.update_node_info(name, node_info)
 
-    def get_nodes_by_type(self, node_type: MetadataNodeType) -> dict[str, Any]:
+    def get_nodes_by_type(
+        self, node_type: ModelMetadataNodeType
+    ) -> dict[str, Union[ModelFunctionNode, dict[str, str]]]:
         """Get all nodes of a specific type."""
         nodes = {}
         for name, node_data in self.root.items():
@@ -343,7 +364,9 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
         return nodes
 
-    def get_nodes_by_status(self, status: MetadataNodeStatus) -> dict[str, Any]:
+    def get_nodes_by_status(
+        self, status: ModelMetadataNodeStatus
+    ) -> dict[str, Union[ModelFunctionNode, dict[str, str]]]:
         """Get all nodes with a specific status."""
         nodes = {}
         for name, node_data in self.root.items():
@@ -383,73 +406,75 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
         if not node_info:
             return False
 
-        node_info.status = MetadataNodeStatus.DEPRECATED
-        node_info.audit_trail.append(
-            {
-                "action": "deprecated",
-                "timestamp": datetime.now().isoformat(),
-                "reason": reason,
-                "replacement": replacement,
-            },
+        node_info.status = ModelMetadataNodeStatus.DEPRECATED
+        from .model_audit_entry import AuditAction, ModelAuditEntry
+
+        audit_entry = ModelAuditEntry(
+            audit_id=f"deprecate_{name}_{datetime.now().timestamp()}",
+            action=AuditAction.UPDATE,
+            action_detail=f"deprecated: {reason}",
+            target_name=name,
+            additional_context={"replacement": replacement} if replacement else None,
         )
+        node_info.audit_trail.append(audit_entry)
 
         if replacement:
             node_info.replaces = replacement
 
         return self.update_node_info(name, node_info)
 
-    def validate_collection(self) -> dict[str, Any]:
+    def validate_collection(self) -> ModelCollectionValidationResult:
         """Perform comprehensive collection validation."""
-        validation_results: dict[str, Any] = {
-            "valid": True,
-            "errors": [],
-            "warnings": [],
-            "node_validations": {},
-        }
+        validation_results = ModelCollectionValidationResult(
+            valid=True,
+            errors=[],
+            warnings=[],
+            node_validations={},
+        )
 
         for name, node_data in self.root.items():
             if name.startswith("_"):
                 continue
 
-            node_validation: dict[str, Any] = {
-                "valid": True,
-                "errors": [],
-                "warnings": [],
-            }
+            node_validation = ModelNodeValidationResult(
+                valid=True,
+                errors=[],
+                warnings=[],
+            )
 
             # Validate node name
             if not name.isidentifier():
-                node_validation["valid"] = False
-                node_validation["errors"].append("Invalid node name")
+                node_validation.valid = False
+                node_validation.errors.append("Invalid node name")
 
             # Validate node data
             if node_data is None:
-                node_validation["valid"] = False
-                node_validation["errors"].append("Node data is None")
+                node_validation.valid = False
+                node_validation.errors.append("Node data is None")
 
             # Check for node info
             node_info = self.get_node_info(name)
             if not node_info:
-                node_validation["warnings"].append("Missing node information")
+                node_validation.warnings.append("Missing node information")
 
             # Check for deprecated nodes without replacement
-            if node_info and node_info.status == MetadataNodeStatus.DEPRECATED:
+            if node_info and node_info.status == ModelMetadataNodeStatus.DEPRECATED:
                 if not node_info.replaces:
-                    node_validation["warnings"].append(
+                    node_validation.warnings.append(
                         "Deprecated node without replacement",
                     )
 
-            validation_results["node_validations"][name] = node_validation
+            validation_results.node_validations[name] = node_validation
 
-            if not node_validation["valid"]:
-                validation_results["valid"] = False
-                validation_results["errors"].extend(node_validation["errors"])
+            if not node_validation.valid:
+                validation_results.valid = False
+                validation_results.errors.extend(node_validation.errors)
 
-            validation_results["warnings"].extend(node_validation["warnings"])
+            validation_results.warnings.extend(node_validation.warnings)
 
         return validation_results
 
-    def export_analytics_report(self) -> dict[str, Any]:
+    def export_analytics_report(self) -> ModelAnalyticsReport:
         """Export comprehensive analytics report."""
         analytics = self.analytics
 
@@ -475,27 +500,27 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
         )
         doc_coverage = (documented_nodes / max(len(node_infos), 1)) * 100
 
-        return {
-            "collection_metadata": {
-                "id": self.collection_id,
-                "node_count": self.node_count,
-                "health_score": self.health_score,
-                "generated_at": datetime.now().isoformat(),
-            },
-            "analytics_summary": analytics.model_dump(),
-            "performance_metrics": {
-                "total_invocations": total_invocations,
-                "avg_popularity_score": avg_popularity,
-                "documentation_coverage": doc_coverage,
-            },
-            "node_breakdown": {
-                "by_type": analytics.nodes_by_type,
-                "by_status": analytics.nodes_by_status,
-                "by_complexity": analytics.nodes_by_complexity,
-            },
-            "popular_nodes": self.get_popular_nodes(5),
-            "validation_results": self.validate_collection(),
-        }
+        return ModelAnalyticsReport(
+            collection_metadata=ModelCollectionMetadata(
+                id=self.collection_id,
+                node_count=self.node_count,
+                health_score=self.health_score,
+                generated_at=datetime.now().isoformat(),
+            ),
+            analytics_summary=analytics.model_dump(),
+            performance_metrics=ModelPerformanceMetrics(
+                total_invocations=total_invocations,
+                avg_popularity_score=avg_popularity,
+                documentation_coverage=doc_coverage,
+            ),
+            node_breakdown=ModelNodeBreakdown(
+                by_type=analytics.nodes_by_type,
+                by_status=analytics.nodes_by_status,
+                by_complexity=analytics.nodes_by_complexity,
+            ),
+            popular_nodes=self.get_popular_nodes(5),
+            validation_results=self.validate_collection(),
+        )
 
     def _update_analytics(self) -> None:
         """Internal method to update collection analytics."""
@@ -574,7 +599,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
                 node_info = ModelMetadataNodeInfo(
                     name=name,
                     description=getattr(node, "description", ""),
-                    node_type=MetadataNodeType.FUNCTION,
+                    node_type=ModelMetadataNodeType.FUNCTION,
                 )
                 collection.update_node_info(name, node_info)
 
@@ -606,6 +631,9 @@ MetadataNodeAnalytics = ModelMetadataNodeAnalytics
 MetadataNodeInfo = ModelMetadataNodeInfo
 MetadataNodeCollection = ModelMetadataNodeCollection
 LegacyNodeCollection = ModelMetadataNodeCollection
+MetadataNodeComplexity = ModelMetadataNodeComplexity
+MetadataNodeStatus = ModelMetadataNodeStatus
+MetadataNodeType = ModelMetadataNodeType
 
 # Re-export for current standards
 __all__ = [
@@ -616,6 +644,9 @@ __all__ = [
     "MetadataNodeInfo",
     "MetadataNodeStatus",
     "MetadataNodeType",
+    "ModelMetadataNodeComplexity",
+    "ModelMetadataNodeStatus",
+    "ModelMetadataNodeType",
     # Compatibility
     "MetadataNodeUsageMetrics",
     "ModelMetadataNodeAnalytics",

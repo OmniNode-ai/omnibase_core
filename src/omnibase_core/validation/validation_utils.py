@@ -63,7 +63,7 @@ class DuplicationInfo:
 class ProtocolSignatureExtractor(ast.NodeVisitor):
     """Extracts protocol signature for comparison."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.methods = []
         self.imports = []
         self.class_name = ""
@@ -261,7 +261,7 @@ def is_protocol_file(file_path: Path) -> bool:
 
 def find_protocol_files(directory: Path) -> List[Path]:
     """Find all files that likely contain protocols."""
-    protocol_files = []
+    protocol_files: List[Path] = []
 
     if not directory.exists():
         return protocol_files

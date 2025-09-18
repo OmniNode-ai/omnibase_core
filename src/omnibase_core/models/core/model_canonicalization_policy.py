@@ -5,6 +5,7 @@ Strongly typed model for canonicalization policies.
 """
 
 from collections.abc import Callable
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +17,7 @@ class ModelCanonicalizationPolicy(BaseModel):
     Represents canonicalization configuration with proper type safety.
     """
 
-    canonicalize_body: Callable = Field(
+    canonicalize_body: Callable[[str], str] = Field(
         ...,
         description="Function to canonicalize body content",
     )
@@ -24,7 +25,7 @@ class ModelCanonicalizationPolicy(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def get_canonicalizer(self) -> Callable:
+    def get_canonicalizer(self) -> Callable[[str], str]:
         """Get the canonicalization function."""
         return self.canonicalize_body
 

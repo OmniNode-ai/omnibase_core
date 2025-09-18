@@ -10,7 +10,7 @@ Phase 1 Subreducers:
 Author: ONEX Framework Team
 """
 
-__version__ = "1.0.0"
+# Version managed by contract.yaml
 
 __all__ = [
     "ReducerDocumentRegenerationSubreducer",

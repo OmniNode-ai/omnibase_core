@@ -11,7 +11,7 @@ Implements the core reducer pattern engine with:
 Author: ONEX Framework Team
 """
 
-__version__ = "1.0.0"
+# Version managed by contract.yaml
 
 __all__ = [
     "engine",

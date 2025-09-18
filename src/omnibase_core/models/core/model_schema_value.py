@@ -5,6 +5,8 @@ This model replaces Any type usage in schema definitions by providing
 a structured representation of possible schema values.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -37,7 +39,7 @@ class ModelSchemaValue(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, value) -> "ModelSchemaValue":
+    def from_value(cls, value: Any) -> "ModelSchemaValue":
         """
         Create ModelSchemaValue from a Python value.
 
@@ -48,27 +50,77 @@ class ModelSchemaValue(BaseModel):
             ModelSchemaValue instance
         """
         if value is None:
-            return cls(value_type="null", null_value=True)
+            return cls(
+                value_type="null",
+                null_value=True,
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, bool):
-            return cls(value_type="boolean", boolean_value=value)
+            return cls(
+                value_type="boolean",
+                boolean_value=value,
+                string_value=None,
+                number_value=None,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, str):
-            return cls(value_type="string", string_value=value)
+            return cls(
+                value_type="string",
+                string_value=value,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, int | float):
-            return cls(value_type="number", number_value=value)
+            return cls(
+                value_type="number",
+                number_value=value,
+                string_value=None,
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
+                object_value=None,
+            )
         if isinstance(value, list):
             return cls(
                 value_type="array",
                 array_value=[cls.from_value(item) for item in value],
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
+                object_value=None,
             )
         if isinstance(value, dict):
             return cls(
                 value_type="object",
                 object_value={k: cls.from_value(v) for k, v in value.items()},
+                string_value=None,
+                number_value=None,
+                boolean_value=None,
+                null_value=None,
+                array_value=None,
             )
         # Convert to string representation for unknown types
-        return cls(value_type="string", string_value=str(value))
+        return cls(
+            value_type="string",
+            string_value=str(value),
+            number_value=None,
+            boolean_value=None,
+            null_value=None,
+            array_value=None,
+            object_value=None,
+        )
 
-    def to_value(self):
+    def to_value(self) -> Any:
         """
         Convert back to Python value.
 

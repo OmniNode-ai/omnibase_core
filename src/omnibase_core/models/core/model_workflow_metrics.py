@@ -45,10 +45,32 @@ class ModelWorkflowMetrics(BaseModel):
         description="Error message if workflow failed",
     )
     metrics: ModelWorkflowMetricsDetails = Field(
-        default_factory=ModelWorkflowMetricsDetails,
+        default_factory=lambda: ModelWorkflowMetricsDetails(
+            throughput_per_second=None,
+            success_rate=None,
+            average_latency_ms=None,
+            peak_latency_ms=None,
+            queue_time_ms=None,
+            retry_count=None,
+            timeout_count=None,
+            data_processed_bytes=None,
+            parallel_executions=None,
+            cache_hit_rate=None,
+        ),
         description="Additional workflow metrics",
     )
     resource_usage: ModelResourceUsageDetails = Field(
-        default_factory=ModelResourceUsageDetails,
+        default_factory=lambda: ModelResourceUsageDetails(
+            cpu_usage_percent=None,
+            memory_usage_mb=None,
+            disk_io_mb=None,
+            network_io_mb=None,
+            file_handles=None,
+            thread_count=None,
+            connection_count=None,
+            temp_files_created=None,
+            peak_memory_mb=None,
+            gc_collections=None,
+        ),
         description="Resource usage metrics",
     )

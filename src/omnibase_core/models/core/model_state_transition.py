@@ -6,9 +6,16 @@ to specify how state should change in response to actions.
 """
 
 from enum import Enum
-from typing import Any
+from typing import Union
 
 from pydantic import BaseModel, Field, model_validator
+
+from .model_state_transition_types import (
+    ModelConditionalBranch,
+    ModelDefaultTransition,
+    ModelStateUpdate,
+    ModelToolParameter,
+)
 
 
 class EnumTransitionType(str, Enum):
@@ -42,9 +49,9 @@ class ModelStateTransitionCondition(BaseModel):
 class ModelSimpleTransition(BaseModel):
     """Simple direct state field updates."""
 
-    updates: dict[str, Any] = Field(
+    updates: list[ModelStateUpdate] = Field(
         ...,
-        description="Field path to value mappings (e.g., {'user.name': 'John'})",
+        description="List of state updates to apply",
     )
 
     merge_strategy: str | None = Field(
@@ -61,12 +68,12 @@ class ModelToolBasedTransition(BaseModel):
         description="Name of the tool to invoke (e.g., 'tool_state_calculator')",
     )
 
-    tool_params: dict[str, Any] | None = Field(
+    tool_params: list[ModelToolParameter] | None = Field(
         None,
-        description="Additional parameters to pass to the tool",
+        description="Parameters to pass to the tool",
     )
 
-    fallback_updates: dict[str, Any] | None = Field(
+    fallback_updates: list[ModelStateUpdate] | None = Field(
         None,
         description="Updates to apply if tool invocation fails",
     )
@@ -80,12 +87,12 @@ class ModelToolBasedTransition(BaseModel):
 class ModelConditionalTransition(BaseModel):
     """Transition that applies different updates based on conditions."""
 
-    branches: list[dict[str, Any]] = Field(
+    branches: list[ModelConditionalBranch] = Field(
         ...,
-        description="List of condition/transition pairs",
+        description="List of conditional branches",
     )
 
-    default_transition: dict[str, Any] | None = Field(
+    default_transition: ModelDefaultTransition | None = Field(
         None,
         description="Transition to apply if no conditions match",
     )
@@ -222,16 +229,39 @@ class ModelStateTransition(BaseModel):
         cls,
         name: str,
         triggers: list[str],
-        updates: dict[str, Any],
+        updates: Union[
+            dict[str, Union[str, int, float, bool, None]], list[ModelStateUpdate]
+        ],
         description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for simple transitions."""
+        # Convert dict updates to ModelStateUpdate objects
+        update_objects = (
+            [
+                ModelStateUpdate(field_path=key, value=value)
+                for key, value in updates.items()
+                if isinstance(updates, dict)
+            ]
+            if isinstance(updates, dict)
+            else updates
+        )
+
         return cls(
             name=name,
             description=description,
             triggers=triggers,
             transition_type=EnumTransitionType.SIMPLE,
-            simple_config=ModelSimpleTransition(updates=updates),
+            simple_config=ModelSimpleTransition(
+                updates=update_objects, merge_strategy="replace"
+            ),
+            tool_config=None,
+            conditional_config=None,
+            composite_config=None,
+            preconditions=None,
+            postconditions=None,
+            emit_events=None,
+            on_error="fail",
+            max_retries=0,
         )
 
     @classmethod
@@ -240,19 +270,44 @@ class ModelStateTransition(BaseModel):
         name: str,
         triggers: list[str],
         tool_name: str,
-        tool_params: dict[str, Any] | None = None,
+        tool_params: Union[
+            dict[str, Union[str, int, float, bool, None]],
+            list[ModelToolParameter],
+            None,
+        ] = None,
         description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for tool-based transitions."""
+        # Convert dict tool_params to ModelToolParameter objects
+        param_objects = None
+        if tool_params:
+            if isinstance(tool_params, dict):
+                param_objects = [
+                    ModelToolParameter(name=key, value=value)
+                    for key, value in tool_params.items()
+                ]
+            else:
+                param_objects = tool_params
+
         return cls(
             name=name,
             description=description,
             triggers=triggers,
             transition_type=EnumTransitionType.TOOL_BASED,
+            simple_config=None,
             tool_config=ModelToolBasedTransition(
                 tool_name=tool_name,
-                tool_params=tool_params,
+                tool_params=param_objects,
+                fallback_updates=None,
+                timeout_ms=5000,
             ),
+            conditional_config=None,
+            composite_config=None,
+            preconditions=None,
+            postconditions=None,
+            emit_events=None,
+            on_error="fail",
+            max_retries=0,
         )
 
 
