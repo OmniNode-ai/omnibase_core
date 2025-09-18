@@ -64,8 +64,8 @@ class ModelYamlConfiguration(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common configuration patterns
-    config: dict[str, Any] | None = Field(None, description="Configuration section")
-    settings: dict[str, Any] | None = Field(None, description="Settings section")
+    config: ModelGenericMetadata | None = Field(None, description="Configuration section")
+    settings: ModelGenericMetadata | None = Field(None, description="Settings section")
     options: dict[str, Any] | None = Field(None, description="Options section")
     parameters: dict[str, Any] | None = Field(None, description="Parameters section")
 
