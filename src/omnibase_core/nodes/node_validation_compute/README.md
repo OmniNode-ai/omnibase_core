@@ -1,4 +1,4 @@
-# ONEX Validation Nodes
+# ONEX Validation Compute Nodes
 
 This directory contains ONEX validation nodes following the standardized node architecture pattern for centralized validation across the ONEX ecosystem.
 
