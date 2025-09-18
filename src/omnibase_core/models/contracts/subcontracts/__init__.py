@@ -16,11 +16,6 @@ providing clean separation between node logic and subcontract functionality.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-# Import workflow coordination subcontract from models directory
-from omnibase_core.models.subcontracts.model_workflow_coordination_subcontract import (
-    ModelWorkflowCoordinationSubcontract,
-)
-
 from .model_aggregation_subcontract import ModelAggregationSubcontract
 from .model_caching_subcontract import ModelCachingSubcontract
 from .model_configuration_subcontract import ModelConfigurationSubcontract
@@ -37,5 +32,4 @@ __all__ = [
     "ModelFSMSubcontract",
     "ModelRoutingSubcontract",
     "ModelStateManagementSubcontract",
-    "ModelWorkflowCoordinationSubcontract",
 ]

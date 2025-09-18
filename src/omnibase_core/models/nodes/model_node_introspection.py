@@ -42,7 +42,7 @@ from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_command import ModelCLICommand
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
-from omnibase_core.models.core.model_contract import ModelContract
+from omnibase_core.models.contracts.model_contract import ModelContract
 from omnibase_core.models.core.model_dependencies import ModelDependencies
 from omnibase_core.models.core.model_error_code import ModelErrorCode
 from omnibase_core.models.core.model_error_codes import ModelErrorCodes

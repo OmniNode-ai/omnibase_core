@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.core.model_contract_content import ModelContractContent
+from omnibase_core.models.contracts.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_registry_reference import ModelRegistryReference
 from omnibase_core.models.core.model_semver import ModelSemVer
 

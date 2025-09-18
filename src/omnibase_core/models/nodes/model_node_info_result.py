@@ -8,7 +8,7 @@ within the ONEX architecture.
 from pydantic import Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
-from omnibase_core.models.core.model_contract_data import ModelContractData
+from omnibase_core.models.contracts.model_contract_data import ModelContractData
 from .model_node_data import ModelNodeData
 
 

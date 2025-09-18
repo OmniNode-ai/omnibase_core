@@ -5,7 +5,7 @@ Node introspection response model for ONEX nodes.
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
-from omnibase_core.models.core.model_contract import ModelContract
+from omnibase_core.models.contracts.model_contract import ModelContract
 from omnibase_core.models.core.model_dependencies import ModelDependencies
 from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 from omnibase_core.models.core.model_event_channels import ModelEventChannels

@@ -45,8 +45,7 @@ from .model_onex_result import ModelOnexResult
 # Fundamental models - REQUIRED for all other models
 from .model_semver import ModelSemVer, SemVerField
 
-# Import subcontracts
-from .subcontracts import *
+# Subcontracts moved to omnibase_core.models.contracts.subcontracts
 
 __all__ = [
     # Fundamental types (REQUIRED)

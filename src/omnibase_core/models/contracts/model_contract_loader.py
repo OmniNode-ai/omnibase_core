@@ -11,9 +11,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_contract_cache import ModelContractCache
-from omnibase_core.models.core.model_contract_content import ModelContractContent
-from omnibase_core.models.core.model_contract_reference import ModelContractReference
+from .model_contract_cache import ModelContractCache
+from .model_contract_content import ModelContractContent
+from .model_contract_reference import ModelContractReference
 
 
 class ModelContractLoader(BaseModel):
