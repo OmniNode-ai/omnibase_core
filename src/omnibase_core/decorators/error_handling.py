@@ -10,8 +10,8 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
-from omnibase_core.core.errors.core_errors import CoreErrorCode
-from omnibase_core.exceptions import OnexError
+from ..core.errors.core_errors import CoreErrorCode
+from ..exceptions import OnexError
 
 
 def standard_error_handling(operation_name: str = "operation"):

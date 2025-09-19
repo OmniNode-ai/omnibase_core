@@ -46,8 +46,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.core_uuid_service import UUIDService
-from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from ..core_uuid_service import UUIDService
+from ...enums.enum_onex_status import EnumOnexStatus
 
 
 class CLIExitCode(int, Enum):

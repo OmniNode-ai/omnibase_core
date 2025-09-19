@@ -9,8 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.models.core.model_error_context import ModelErrorContext
+from ..enums.enum_onex_status import EnumOnexStatus
+from ..models.core.model_error_context import ModelErrorContext
 
 
 class ModelOnexError(BaseModel):
