@@ -18,12 +18,16 @@ Usage:
     # Mixed mode (files + directories)
     validate-no-backward-compatibility.py file1.py --dir src/ other_file.py
 """
+from __future__ import annotations
 
 import argparse
 import ast
 import re
 import sys
 from pathlib import Path
+
+# Constants
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent memory issues
 
 
 class BackwardCompatibilityDetector:
@@ -35,33 +39,100 @@ class BackwardCompatibilityDetector:
 
     def validate_python_file(self, py_path: Path) -> bool:
         """Check Python file for backward compatibility patterns."""
-        try:
-            with open(py_path, encoding="utf-8") as f:
-                content = f.read()
+        # Validate file existence and basic properties
+        if not py_path.exists():
+            self.errors.append(f"{py_path}: File does not exist")
+            return False
 
+        if not py_path.is_file():
+            self.errors.append(f"{py_path}: Path is not a regular file")
+            return False
+
+        if py_path.stat().st_size == 0:
+            # Empty files are valid, just skip them
             self.checked_files += 1
-            file_errors = []
-
-            # Check for backward compatibility patterns
-            self._check_backward_compatibility_patterns(content, py_path, file_errors)
-
-            # Check AST for compatibility code patterns
-            try:
-                tree = ast.parse(content, filename=str(py_path))
-                self._check_ast_for_compatibility(tree, py_path, file_errors)
-            except SyntaxError:
-                # Skip files with syntax errors - other tools will catch them
-                pass
-
-            if file_errors:
-                self.errors.extend([f"{py_path}: {error}" for error in file_errors])
-                return False
-
             return True
 
-        except Exception as e:
-            self.errors.append(f"{py_path}: Failed to parse file - {e!s}")
+        # Check if file is too large to prevent memory issues
+        if py_path.stat().st_size > MAX_FILE_SIZE:
+            self.errors.append(
+                f"{py_path}: File too large ({py_path.stat().st_size} bytes), skipping"
+            )
             return False
+
+        try:
+            # Try UTF-8 first, then fallback encodings
+            encodings_to_try = ["utf-8", "utf-8-sig", "latin1", "cp1252"]
+            content = None
+
+            for encoding in encodings_to_try:
+                try:
+                    with open(py_path, encoding=encoding) as f:
+                        content = f.read()
+                    break
+                except UnicodeDecodeError:
+                    if encoding == encodings_to_try[-1]:  # Last encoding failed
+                        self.errors.append(
+                            f"{py_path}: Unable to decode file with any supported encoding "
+                            f"(tried: {', '.join(encodings_to_try)})"
+                        )
+                        return False
+                    continue
+
+        except FileNotFoundError:
+            self.errors.append(f"{py_path}: File not found")
+            return False
+        except PermissionError:
+            self.errors.append(f"{py_path}: Permission denied - cannot read file")
+            return False
+        except OSError as e:
+            self.errors.append(f"{py_path}: OS error reading file - {e}")
+            return False
+        except IOError as e:
+            self.errors.append(f"{py_path}: IO error reading file - {e}")
+            return False
+
+        self.checked_files += 1
+        file_errors = []
+
+        # Check for backward compatibility patterns with error handling
+        try:
+            self._check_backward_compatibility_patterns(content, py_path, file_errors)
+        except Exception as e:
+            self.errors.append(f"{py_path}: Error during pattern analysis - {e}")
+            return False
+
+        # Check AST for compatibility code patterns with comprehensive error handling
+        try:
+            tree = ast.parse(content, filename=str(py_path))
+            try:
+                self._check_ast_for_compatibility(tree, py_path, file_errors)
+            except Exception as e:
+                self.errors.append(
+                    f"{py_path}: Error during AST compatibility analysis - {e}"
+                )
+                return False
+        except SyntaxError as e:
+            # Skip files with syntax errors but report for debugging
+            if hasattr(e, "lineno") and hasattr(e, "offset"):
+                self.errors.append(
+                    f"{py_path}: Python syntax error at line {e.lineno}, column {e.offset}: {e.msg}"
+                )
+            else:
+                self.errors.append(f"{py_path}: Python syntax error: {e.msg}")
+            return False
+        except ValueError as e:
+            self.errors.append(f"{py_path}: Invalid Python code - {e}")
+            return False
+        except MemoryError:
+            self.errors.append(f"{py_path}: File too large to parse in memory")
+            return False
+
+        if file_errors:
+            self.errors.extend([f"{py_path}: {error}" for error in file_errors])
+            return False
+
+        return True
 
     def _check_backward_compatibility_patterns(
         self,
@@ -191,10 +262,28 @@ class BackwardCompatibilityDetector:
                             # Check if there are comments nearby mentioning compatibility
                             source_lines = []
                             try:
-                                with open(self.file_path, "r") as f:
+                                with open(self.file_path, "r", encoding="utf-8") as f:
                                     source_lines = f.readlines()
-                            except:
-                                pass
+                            except FileNotFoundError:
+                                self.errors.append(
+                                    f"Error reading source file for context check: File not found"
+                                )
+                            except PermissionError:
+                                self.errors.append(
+                                    f"Error reading source file for context check: Permission denied"
+                                )
+                            except UnicodeDecodeError as e:
+                                self.errors.append(
+                                    f"Error reading source file for context check: Encoding error - {e}"
+                                )
+                            except OSError as e:
+                                self.errors.append(
+                                    f"Error reading source file for context check: OS error - {e}"
+                                )
+                            except IOError as e:
+                                self.errors.append(
+                                    f"Error reading source file for context check: IO error - {e}"
+                                )
 
                             # Check lines around this node for compatibility keywords
                             context_found = False

@@ -8,11 +8,11 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--formatter, retain_line_breaks=true]
-        exclude: ^work_tickets/
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -23,11 +23,12 @@ repos:
 
   # ONEX Python Development Hooks (from shared templates)
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
         name: Black Python Formatter
         args: [--line-length, "88", --target-version, py311]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
@@ -35,6 +36,7 @@ repos:
       - id: isort
         name: isort Import Sorter
         args: [--profile, black, --line-length, "88"]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
   # ONEX Framework Validation (from shared templates)
   - repo: local
@@ -57,7 +59,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
@@ -66,7 +68,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
@@ -74,7 +76,8 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        stages: [commit]
+        exclude: ^tests/fixtures/validation/
+        stages: [pre-commit]
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
@@ -84,7 +87,7 @@ repos:
         pass_filenames: false
         files: ^.*\.py$
         exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: validate-no-manual-yaml
         name: ONEX Manual YAML Prevention
@@ -92,8 +95,8 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^scripts/validation/validate-contracts\.py$
-        stages: [commit]
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|tests/fixtures/validation/)
+        stages: [pre-commit]
 
       # ONEX Python Pattern Validation (SHARED HOOKS)
       - id: validate-pydantic-patterns
@@ -103,7 +106,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: validate-union-usage
         name: ONEX Union Usage Validation
@@ -112,7 +115,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
-        stages: [commit]
+        stages: [pre-commit]
 
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
@@ -121,7 +124,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
@@ -130,7 +133,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation

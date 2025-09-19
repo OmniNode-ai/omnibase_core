@@ -12,10 +12,21 @@ Versions should only come from contracts, never from __init__.py files.
 Uses AST parsing for reliable detection of semantic version patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
+from __future__ import annotations
 
+import os
+import signal
 import sys
 from pathlib import Path
 from typing import Any
+
+import yaml
+
+# Constants
+MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks on Python files
+MAX_YAML_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks on YAML files
+DIRECTORY_SCAN_TIMEOUT = 30  # seconds
+VALIDATION_TIMEOUT = 600  # 10 minutes
 
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -42,31 +53,70 @@ class StringVersionValidator:
 
     def validate_python_file(self, python_path: Path) -> bool:
         """Validate a Python file for hardcoded __version__ strings."""
+        # Check file existence and basic properties
+        if not python_path.exists():
+            self.errors.append(f"{python_path}: File does not exist")
+            return False
+
+        if not python_path.is_file():
+            self.errors.append(f"{python_path}: Path is not a regular file")
+            return False
+
+        # Check file permissions
+        if not os.access(python_path, os.R_OK):
+            self.errors.append(f"{python_path}: Permission denied - cannot read file")
+            return False
+
+        # Check file size to prevent DoS attacks
+        try:
+            file_size = python_path.stat().st_size
+            if file_size > MAX_PYTHON_FILE_SIZE:
+                self.errors.append(
+                    f"{python_path}: File too large ({file_size} bytes), max allowed: {MAX_PYTHON_FILE_SIZE}"
+                )
+                return False
+        except OSError as e:
+            self.errors.append(f"{python_path}: Cannot check file size: {e}")
+            return False
+
+        # Read file content with proper error handling
         try:
             with open(python_path, encoding="utf-8") as f:
                 content = f.read()
+        except UnicodeDecodeError as e:
+            self.errors.append(f"{python_path}: File encoding error - {e}")
+            return False
+        except PermissionError as e:
+            self.errors.append(f"{python_path}: Permission denied - {e}")
+            return False
+        except OSError as e:
+            self.errors.append(f"{python_path}: OS error reading file - {e}")
+            return False
+        except IOError as e:
+            self.errors.append(f"{python_path}: IO error reading file - {e}")
+            return False
 
-            # Skip empty files
-            if not content.strip():
-                return True
+        # Skip empty files
+        if not content.strip():
+            return True
 
-            self.checked_files += 1
-            file_errors = []
+        self.checked_files += 1
+        file_errors = []
 
-            # Check for __version__ declarations
+        # Check for __version__ declarations with error handling
+        try:
             self._validate_python_version_declarations(
                 content, python_path, file_errors
             )
-
-            if file_errors:
-                self.errors.extend([f"{python_path}: {error}" for error in file_errors])
-                return False
-
-            return True
-
         except Exception as e:
-            # Skip files we can't parse instead of failing
-            return True
+            self.errors.append(f"{python_path}: Error during content validation - {e}")
+            return False
+
+        if file_errors:
+            self.errors.extend([f"{python_path}: {error}" for error in file_errors])
+            return False
+
+        return True
 
     def _validate_python_version_declarations(
         self,
@@ -100,43 +150,108 @@ class StringVersionValidator:
 
     def validate_yaml_file(self, yaml_path: Path) -> bool:
         """Validate a single YAML file for string version usage."""
+        # Check file existence and basic properties
+        if not yaml_path.exists():
+            self.errors.append(f"{yaml_path}: File does not exist")
+            return False
+
+        if not yaml_path.is_file():
+            self.errors.append(f"{yaml_path}: Path is not a regular file")
+            return False
+
+        # Check file permissions
+        if not os.access(yaml_path, os.R_OK):
+            self.errors.append(f"{yaml_path}: Permission denied - cannot read file")
+            return False
+
+        # Check file size to prevent DoS attacks
+        try:
+            file_size = yaml_path.stat().st_size
+            if file_size > MAX_YAML_FILE_SIZE:
+                self.errors.append(
+                    f"{yaml_path}: File too large ({file_size} bytes), max allowed: {MAX_YAML_FILE_SIZE}"
+                )
+                return False
+        except OSError as e:
+            self.errors.append(f"{yaml_path}: Cannot check file size: {e}")
+            return False
+
+        # Read file content with proper error handling
         try:
             with open(yaml_path, encoding="utf-8") as f:
                 content = f.read()
+        except UnicodeDecodeError as e:
+            self.errors.append(f"{yaml_path}: File encoding error - {e}")
+            return False
+        except PermissionError as e:
+            self.errors.append(f"{yaml_path}: Permission denied - {e}")
+            return False
+        except OSError as e:
+            self.errors.append(f"{yaml_path}: OS error reading file - {e}")
+            return False
+        except IOError as e:
+            self.errors.append(f"{yaml_path}: IO error reading file - {e}")
+            return False
 
-            # Skip empty files
-            if not content.strip():
-                return True
+        # Skip empty files
+        if not content.strip():
+            return True
 
-            # Parse YAML using Pydantic model validation if available
-            yaml_data = None
-            if PYDANTIC_MODELS_AVAILABLE:
-                try:
-                    yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
-                    yaml_data = yaml_model.model_dump()
-                except Exception:
-                    # If we can't parse with Pydantic, just use AST validation
-                    pass
+        # Parse YAML using Pydantic model validation if available
+        yaml_data = None
+        if PYDANTIC_MODELS_AVAILABLE:
+            try:
+                yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
+                yaml_data = yaml_model.model_dump()
+            except Exception as e:
+                # If we can't parse with Pydantic, log it but continue with AST validation
+                # This is not a fatal error since we have fallback validation
+                pass
 
-            self.checked_files += 1
-            file_errors = []
+        # Basic YAML syntax validation
+        try:
+            yaml.safe_load(content)
+        except yaml.YAMLError as e:
+            self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
+            return False
+        except yaml.constructor.ConstructorError as e:
+            self.errors.append(f"{yaml_path}: YAML constructor error - {e}")
+            return False
+        except yaml.parser.ParserError as e:
+            self.errors.append(f"{yaml_path}: YAML parser error - {e}")
+            return False
+        except yaml.scanner.ScannerError as e:
+            self.errors.append(f"{yaml_path}: YAML scanner error - {e}")
+            return False
+        except MemoryError:
+            self.errors.append(f"{yaml_path}: YAML file too large to parse in memory")
+            return False
 
-            # Use AST-based validation on the raw content (always runs)
+        self.checked_files += 1
+        file_errors = []
+
+        # Use AST-based validation on the raw content (always runs)
+        try:
             self._validate_yaml_content_ast(content, yaml_path, file_errors)
+        except Exception as e:
+            self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
+            return False
 
-            # Also validate the parsed structure if we have it
-            if yaml_data:
+        # Also validate the parsed structure if we have it
+        if yaml_data:
+            try:
                 self._validate_parsed_yaml(yaml_data, file_errors)
-
-            if file_errors:
-                self.errors.extend([f"{yaml_path}: {error}" for error in file_errors])
+            except Exception as e:
+                self.errors.append(
+                    f"{yaml_path}: Error during parsed YAML validation - {e}"
+                )
                 return False
 
-            return True
+        if file_errors:
+            self.errors.extend([f"{yaml_path}: {error}" for error in file_errors])
+            return False
 
-        except Exception as e:
-            # Skip files we can't parse instead of failing
-            return True
+        return True
 
     def _validate_yaml_content_ast(
         self,
@@ -269,24 +384,54 @@ class StringVersionValidator:
 
     def validate_all_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided files (YAML and Python)."""
+        if not file_paths:
+            return True
+
         success = True
 
         for file_path in file_paths:
-            if file_path.suffix.lower() in [".yaml", ".yml"]:
-                if not self.validate_yaml_file(file_path):
+            try:
+                if not isinstance(file_path, Path):
+                    self.errors.append(
+                        f"Invalid file path type: {type(file_path)} - {file_path}"
+                    )
                     success = False
-            elif file_path.suffix.lower() == ".py":
-                if not self.validate_python_file(file_path):
-                    success = False
+                    continue
+
+                suffix = file_path.suffix.lower()
+                if suffix in [".yaml", ".yml"]:
+                    if not self.validate_yaml_file(file_path):
+                        success = False
+                elif suffix == ".py":
+                    if not self.validate_python_file(file_path):
+                        success = False
+                # Silently skip files with other extensions
+            except Exception as e:
+                self.errors.append(f"Error processing file {file_path}: {e}")
+                success = False
 
         return success
 
     def validate_all_yaml_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided YAML files."""
+        if not file_paths:
+            return True
+
         success = True
 
         for yaml_path in file_paths:
-            if not self.validate_yaml_file(yaml_path):
+            try:
+                if not isinstance(yaml_path, Path):
+                    self.errors.append(
+                        f"Invalid YAML path type: {type(yaml_path)} - {yaml_path}"
+                    )
+                    success = False
+                    continue
+
+                if not self.validate_yaml_file(yaml_path):
+                    success = False
+            except Exception as e:
+                self.errors.append(f"Error processing YAML file {yaml_path}: {e}")
                 success = False
 
         return success
@@ -319,90 +464,203 @@ class StringVersionValidator:
             )
 
 
+def setup_timeout_handler():
+    """Setup timeout handler for long-running validations."""
+
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Validation operation timed out")
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+
+
 def main() -> int:
     """Main entry point for the validation hook."""
-    if len(sys.argv) < 2:
-        print("Usage: validate-string-versions.py [--dir] <path1> [path2] ...")
-        print("  --dir: Recursively scan directories for YAML and Python files")
-        print("  Without --dir: Treat arguments as individual YAML/Python files")
+    try:
+        if len(sys.argv) < 2:
+            print("Usage: validate-string-versions.py [--dir] <path1> [path2] ...")
+            print("  --dir: Recursively scan directories for YAML and Python files")
+            print("  Without --dir: Treat arguments as individual YAML/Python files")
+            return 1
+
+        try:
+            validator = StringVersionValidator()
+        except Exception as e:
+            print(f"Error: Failed to initialize validator: {e}")
+            return 1
+
+        # Check for directory scan mode
+        scan_dirs = False
+        args = sys.argv[1:]
+
+        try:
+            if args and args[0] == "--dir":
+                scan_dirs = True
+                args = args[1:]
+        except Exception as e:
+            print(f"Error: Failed to parse arguments: {e}")
+            return 1
+
+        if not args:
+            print("Error: No paths provided")
+            return 1
+
+        yaml_files = []
+
+        try:
+            if scan_dirs:
+                # Recursively scan directories for YAML and Python files
+                for arg in args:
+                    try:
+                        path = Path(arg)
+
+                        # Check if path exists
+                        if not path.exists():
+                            print(f"Warning: Path does not exist: {path}")
+                            continue
+
+                        if path.is_dir():
+                            # Check directory permissions
+                            if not os.access(path, os.R_OK):
+                                print(f"Warning: Cannot read directory: {path}")
+                                continue
+
+                            # Setup timeout for directory scanning (30 seconds)
+                            setup_timeout_handler()
+
+                            try:
+                                signal.alarm(DIRECTORY_SCAN_TIMEOUT)
+
+                                # Recursively find all YAML and Python files, but exclude non-ONEX directories
+                                exclude_patterns = [
+                                    "deployment",
+                                    ".github",
+                                    "docker-compose",
+                                    "prometheus",
+                                    "alerts.yml",
+                                    "grafana",
+                                    "kubernetes",
+                                    "ci-cd.yml",  # GitHub Actions CI file
+                                    "__pycache__",
+                                    ".mypy_cache",
+                                    ".pytest_cache",
+                                    "node_modules",
+                                ]
+
+                                try:
+                                    all_files = (
+                                        list(path.rglob("*.yaml"))
+                                        + list(path.rglob("*.yml"))
+                                        + list(path.rglob("*.py"))
+                                    )
+                                except PermissionError as e:
+                                    print(
+                                        f"Warning: Permission denied scanning directory {path}: {e}"
+                                    )
+                                    continue
+                                except OSError as e:
+                                    print(
+                                        f"Warning: OS error scanning directory {path}: {e}"
+                                    )
+                                    continue
+
+                                signal.alarm(0)  # Cancel timeout
+
+                                # Filter out excluded files using path components
+                                try:
+                                    for file_path in all_files:
+                                        try:
+                                            should_exclude = False
+                                            path_parts = file_path.parts
+                                            file_name = file_path.name
+
+                                            # Check if any path component or filename matches exclusion patterns
+                                            for pattern in exclude_patterns:
+                                                if (
+                                                    pattern in path_parts
+                                                    or file_name.startswith(pattern)
+                                                ):
+                                                    should_exclude = True
+                                                    break
+
+                                            if not should_exclude:
+                                                yaml_files.append(file_path)
+                                        except Exception as e:
+                                            print(
+                                                f"Warning: Error processing file {file_path}: {e}"
+                                            )
+                                            continue
+                                except Exception as e:
+                                    print(
+                                        f"Warning: Error filtering files in {path}: {e}"
+                                    )
+                                    continue
+
+                            except TimeoutError:
+                                print(f"Warning: Timeout scanning directory {path}")
+                                continue
+
+                        elif path.suffix.lower() in [".yaml", ".yml", ".py"]:
+                            if path.exists():
+                                yaml_files.append(path)
+                            else:
+                                print(f"Warning: File does not exist: {path}")
+                        else:
+                            print(f"Warning: Unsupported file type: {path}")
+                    except Exception as e:
+                        print(f"Warning: Error processing argument '{arg}': {e}")
+                        continue
+            else:
+                # Individual file mode
+                for arg in args:
+                    try:
+                        path = Path(arg)
+
+                        if not path.exists():
+                            print(f"Warning: File does not exist: {path}")
+                            continue
+
+                        if path.suffix.lower() in [".yaml", ".yml", ".py"]:
+                            yaml_files.append(path)
+                        else:
+                            print(f"Warning: Unsupported file type: {path}")
+                    except Exception as e:
+                        print(f"Warning: Error processing file argument '{arg}': {e}")
+                        continue
+        except Exception as e:
+            print(f"Error: Failed to process file arguments: {e}")
+            return 1
+
+        if not yaml_files:
+            # No files to check
+            print(
+                "✅ String Version Validation PASSED (no YAML or Python files to check)"
+            )
+            return 0
+
+        try:
+            # Setup timeout for validation (10 minutes)
+            setup_timeout_handler()
+            signal.alarm(VALIDATION_TIMEOUT)
+
+            success = validator.validate_all_files(yaml_files)
+            validator.print_results()
+
+            signal.alarm(0)  # Cancel timeout
+            return 0 if success else 1
+
+        except TimeoutError:
+            print("Error: Validation timeout after 10 minutes")
+            return 1
+        except Exception as e:
+            print(f"Error: Validation failed with unexpected error: {e}")
+            return 1
+
+    except KeyboardInterrupt:
+        print("\nError: Validation interrupted by user")
         return 1
-
-    validator = StringVersionValidator()
-
-    # Check for directory scan mode
-    scan_dirs = False
-    args = sys.argv[1:]
-
-    if args[0] == "--dir":
-        scan_dirs = True
-        args = args[1:]
-
-    if not args:
-        print("Error: No paths provided")
+    except Exception as e:
+        print(f"Error: Unexpected error in main function: {e}")
         return 1
-
-    yaml_files = []
-
-    if scan_dirs:
-        # Recursively scan directories for YAML and Python files
-        for arg in args:
-            path = Path(arg)
-            if path.is_dir():
-                # Recursively find all YAML and Python files, but exclude non-ONEX directories
-                exclude_patterns = [
-                    "deployment",
-                    ".github",
-                    "docker-compose",
-                    "prometheus",
-                    "alerts.yml",
-                    "grafana",
-                    "kubernetes",
-                    "ci-cd.yml",  # GitHub Actions CI file
-                    "__pycache__",
-                    ".mypy_cache",
-                    ".pytest_cache",
-                    "node_modules",
-                ]
-
-                all_files = (
-                    list(path.rglob("*.yaml"))
-                    + list(path.rglob("*.yml"))
-                    + list(path.rglob("*.py"))
-                )
-
-                # Filter out excluded files using path components
-                for file_path in all_files:
-                    should_exclude = False
-                    path_parts = file_path.parts
-                    file_name = file_path.name
-
-                    # Check if any path component or filename matches exclusion patterns
-                    for pattern in exclude_patterns:
-                        if pattern in path_parts or file_name.startswith(pattern):
-                            should_exclude = True
-                            break
-
-                    if not should_exclude:
-                        yaml_files.append(file_path)
-
-            elif path.suffix.lower() in [".yaml", ".yml", ".py"] and path.exists():
-                yaml_files.append(path)
-    else:
-        # Individual file mode
-        for arg in args:
-            path = Path(arg)
-            if path.suffix.lower() in [".yaml", ".yml", ".py"] and path.exists():
-                yaml_files.append(path)
-
-    if not yaml_files:
-        # No files to check
-        print("✅ String Version Validation PASSED (no YAML or Python files to check)")
-        return 0
-
-    success = validator.validate_all_files(yaml_files)
-    validator.print_results()
-
-    return 0 if success else 1
 
 
 if __name__ == "__main__":
