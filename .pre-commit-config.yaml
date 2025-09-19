@@ -115,7 +115,6 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|tests/fixtures/)
         stages: [pre-commit]
 
       # Repository-specific validation (omnibase_core only)
