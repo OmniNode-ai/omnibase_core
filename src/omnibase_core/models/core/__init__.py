@@ -34,6 +34,10 @@ from .model_trend_data import ModelTrendData
 # Utility models
 from .model_uri import ModelOnexUri
 
+# Function and advanced models
+from .model_function_node import ModelFunctionNode
+from .model_advanced_params import ModelAdvancedParams
+
 __all__ = [
     # Artifact and CLI
     "ModelArtifactTypeConfig",
@@ -58,4 +62,7 @@ __all__ = [
     "ModelTrendData",
     # Utility
     "ModelOnexUri",
+    # Function and advanced
+    "ModelFunctionNode",
+    "ModelAdvancedParams",
 ]

@@ -21,17 +21,22 @@ src/omnibase_core/
 ├── core/                           # Core framework components
 │   ├── infrastructure_service_bases.py  # Consolidated 4-node base class exports
 │   ├── node_effect_service.py           # EFFECT node base class
-│   ├── node_compute_service.py          # COMPUTE node base class  
+│   ├── node_compute_service.py          # COMPUTE node base class
 │   ├── node_reducer_service.py          # REDUCER node base class
 │   ├── node_orchestrator_service.py     # ORCHESTRATOR node base class
 │   ├── onex_container.py                # Protocol-driven DI container
 │   ├── monadic/                         # Result type and error handling
 │   └── mixins/                          # Reusable behavior mixins
-├── model/
+├── models/
 │   ├── core/                           # Core data models
 │   │   ├── model_event_envelope.py    # Event communication envelope
 │   │   ├── model_health_status.py     # Service health reporting
 │   │   └── model_semver.py            # Semantic versioning
+│   ├── nodes/                          # Node-specific models
+│   │   ├── model_node_information.py  # Node metadata and discovery
+│   │   ├── model_node_type.py         # Node type definitions
+│   │   ├── model_node_capability.py   # Node capability descriptions
+│   │   └── model_cli_node_execution_input.py # CLI execution models
 │   └── coordination/                   # Service coordination models
 ├── enums/                             # Core enumerations
 │   ├── enum_health_status.py         # Health status values
@@ -42,6 +47,8 @@ src/omnibase_core/
 │   └── model_onex_error.py           # Pydantic error model
 ├── decorators/                        # Utility decorators
 │   └── error_handling.py             # @standard_error_handling decorator
+├── nodes/                             # Simplified nodes module
+│   └── __init__.py                    # ONEX Four-Node Architecture exports
 └── examples/                          # Canonical node implementations
     ├── tool_infrastructure_consul_adapter_effect/     # EFFECT example
     ├── tool_infrastructure_message_aggregator_compute/ # COMPUTE example
@@ -292,6 +299,43 @@ class EventBusService(ProtocolEventBus):
 9. **Document canonical patterns** from example implementations
 10. **Create migration guide** for converting existing tools to new architecture
 
+## Nodes Domain Architecture
+
+The ONEX framework implements a **four-node architecture pattern** that provides standardized service implementation patterns:
+
+### 🎯 Four Node Archetypes
+
+| Node Type | Purpose | Characteristics | Base Class |
+|-----------|---------|----------------|------------|
+| **EFFECT** | External Interactions | API calls, database operations, file I/O | `NodeEffectService` |
+| **COMPUTE** | Data Processing | Pure computation, transformations, algorithms | `NodeComputeService` |
+| **REDUCER** | State Aggregation | State management, data consolidation, workflows | `NodeReducerService` |
+| **ORCHESTRATOR** | Workflow Coordination | Service orchestration, workflow management | `NodeOrchestratorService` |
+
+### 📚 Comprehensive Documentation
+
+The nodes domain includes extensive documentation for implementation and migration:
+
+- **[Migration Guide](docs/NODES_DOMAIN_MIGRATION_GUIDE.md)**: Complete guide for migrating from legacy nodes
+- **[Architecture Guide](docs/NODES_DOMAIN_ARCHITECTURE.md)**: Detailed four-node architecture documentation
+- **[API Compatibility](docs/NODES_API_COMPATIBILITY.md)**: Compatibility matrix and adapter patterns
+- **[Integration Examples](docs/NODES_INTEGRATION_EXAMPLES.md)**: Comprehensive implementation examples
+
+### ⚡ Quick Start Example
+
+```python
+from omnibase_core.core.infrastructure_service_bases import NodeComputeService
+
+class MyDataProcessor(NodeComputeService):
+    def __init__(self, container: ONEXContainer):
+        super().__init__(container)  # 80+ lines of boilerplate eliminated!
+
+    async def compute(self, input_data: ModelComputeInput) -> ModelComputeOutput:
+        # Your business logic here
+        processed_data = self.process_data(input_data.data)
+        return ModelComputeOutput(data=processed_data)
+```
+
 ## Architecture Benefits
 
 - **80+ Lines Less Code**: Base classes eliminate initialization boilerplate
@@ -299,6 +343,6 @@ class EventBusService(ProtocolEventBus):
 - **Event-Driven**: Scalable inter-service communication
 - **Structured Errors**: Consistent error handling with rich context
 - **Zero Registry Coupling**: Clean protocol-based dependencies
+- **Four-Node Pattern**: Standardized architecture for all services
 
 This repository provides the foundational layer that makes ONEX tool development fast, type-safe, and consistent across the entire ecosystem.
-# Test change
