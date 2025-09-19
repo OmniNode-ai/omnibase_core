@@ -2,12 +2,15 @@
 Generic metadata model for flexible data storage.
 """
 
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+# Type variable for generic metadata
+T = TypeVar("T")
 
-class ModelGenericMetadata(BaseModel):
+
+class ModelGenericMetadata(BaseModel, Generic[T]):
     """Generic metadata storage with flexible fields."""
 
     name: str | None = Field(
@@ -69,7 +72,7 @@ class ModelGenericMetadata(BaseModel):
         return result
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelGenericMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelGenericMetadata[T]":
         """Create from dictionary."""
         known_fields = set(cls.model_fields.keys())
         standard_data = {}

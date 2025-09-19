@@ -2,55 +2,16 @@
 Node information model.
 """
 
+import uuid
 from datetime import datetime
 from typing import Any, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
-class ModelNodeConfiguration(BaseModel):
-    """Configuration for a node."""
-
-    # Execution settings
-    max_retries: int | None = Field(default=None, description="Maximum retry attempts")
-    timeout_seconds: int | None = Field(default=None, description="Execution timeout")
-    batch_size: int | None = Field(default=None, description="Batch processing size")
-    parallel_execution: bool = Field(
-        default=False, description="Enable parallel execution"
-    )
-
-    # Resource limits
-    max_memory_mb: int | None = Field(
-        default=None, description="Maximum memory usage in MB"
-    )
-    max_cpu_percent: float | None = Field(
-        default=None,
-        description="Maximum CPU usage percentage",
-    )
-
-    # Feature flags
-    enable_caching: bool = Field(default=False, description="Enable result caching")
-    enable_monitoring: bool = Field(default=True, description="Enable monitoring")
-    enable_tracing: bool = Field(default=False, description="Enable detailed tracing")
-
-    # Connection settings
-    endpoint: str | None = Field(default=None, description="Service endpoint")
-    port: int | None = Field(default=None, description="Service port")
-    protocol: str | None = Field(default=None, description="Communication protocol")
-
-    # Custom configuration for extensibility
-    custom_settings: dict[str, str] | None = Field(
-        default=None,
-        description="Custom string settings",
-    )
-    custom_flags: dict[str, bool] | None = Field(
-        default=None,
-        description="Custom boolean flags",
-    )
-    custom_limits: dict[str, int] | None = Field(
-        default=None,
-        description="Custom numeric limits",
-    )
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
+from omnibase_core.models.core.model_node_configuration import ModelNodeConfiguration
 
 
 class ModelNodeInformation(BaseModel):
@@ -60,7 +21,10 @@ class ModelNodeInformation(BaseModel):
     """
 
     # Node identification
-    node_id: str = Field(..., description="Node identifier")
+    node_id: UUID = Field(
+        default_factory=uuid.uuid4,
+        description="Node identifier",
+    )
     node_name: str = Field(..., description="Node name")
     node_type: str = Field(..., description="Node type")
     node_version: str = Field(..., description="Node version")
@@ -88,8 +52,14 @@ class ModelNodeInformation(BaseModel):
     )
 
     # Node status
-    status: str = Field("active", description="Node status")
-    health: str = Field("healthy", description="Node health")
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE,
+        description="Node status",
+    )
+    health: EnumRegistryStatus = Field(
+        default=EnumRegistryStatus.HEALTHY,
+        description="Node health",
+    )
 
     # Performance metrics
     performance_metrics: dict[str, float] | None = Field(

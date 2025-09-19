@@ -185,7 +185,8 @@ class ModelMetadataNodeAnalytics(BaseModel):
         error_penalty = self.get_error_rate() * 0.5  # Error rate penalty
 
         self.health_score = max(
-            0.0, min(100.0, base_score - penalty + doc_bonus - error_penalty)
+            0.0,
+            min(100.0, base_score - penalty + doc_bonus - error_penalty),
         )
         return self.health_score
 

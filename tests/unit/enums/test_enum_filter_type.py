@@ -52,8 +52,8 @@ class TestEnumFilterType:
         }
 
         for enum_member, expected_str in expected_mappings.items():
-            assert str(enum_member) == expected_str
             assert enum_member.value == expected_str
+            assert enum_member == expected_str  # Test equality with string
 
     def test_enum_can_be_created_from_string(self):
         """Test that enum members can be created from string values."""

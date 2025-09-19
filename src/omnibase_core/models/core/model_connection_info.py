@@ -2,66 +2,23 @@
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
 """
 
+import uuid
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 
+from omnibase_core.enums.enum_auth_type import EnumAuthType
+from omnibase_core.enums.enum_connection_state import EnumConnectionState
+from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.models.core.model_connection_metrics import ModelConnectionMetrics
+from omnibase_core.models.core.model_custom_connection_properties import (
+    ModelCustomConnectionProperties,
+)
 
 # Compatibility alias
 ConnectionMetrics = ModelConnectionMetrics
-
-
-class ModelCustomConnectionProperties(BaseModel):
-    """Custom properties for connection configuration."""
-
-    # Database-specific
-    database_name: str | None = Field(default=None, description="Database name")
-    schema_name: str | None = Field(default=None, description="Schema name")
-    charset: str | None = Field(default=None, description="Character set")
-    collation: str | None = Field(default=None, description="Collation")
-
-    # Message queue specific
-    queue_name: str | None = Field(default=None, description="Queue/topic name")
-    exchange_name: str | None = Field(default=None, description="Exchange name")
-    routing_key: str | None = Field(default=None, description="Routing key")
-    durable: bool | None = Field(default=None, description="Durable queue/exchange")
-
-    # Cloud/service specific
-    region: str | None = Field(default=None, description="Cloud region")
-    availability_zone: str | None = Field(default=None, description="Availability zone")
-    service_name: str | None = Field(default=None, description="Service name")
-    instance_type: str | None = Field(default=None, description="Instance type")
-
-    # Performance tuning
-    max_connections: int | None = Field(default=None, description="Maximum connections")
-    connection_limit: int | None = Field(default=None, description="Connection limit")
-    command_timeout: int | None = Field(default=None, description="Command timeout")
-
-    # Compression and optimization
-    enable_compression: bool | None = Field(
-        default=None,
-        description="Enable compression",
-    )
-    compression_level: int | None = Field(default=None, description="Compression level")
-    enable_caching: bool | None = Field(default=None, description="Enable caching")
-
-    # Custom string properties
-    custom_strings: dict[str, str] | None = Field(
-        default=None,
-        description="Additional string properties",
-    )
-    # Custom numeric properties
-    custom_numbers: dict[str, float] | None = Field(
-        default=None,
-        description="Additional numeric properties",
-    )
-    # Custom boolean flags
-    custom_flags: dict[str, bool] | None = Field(
-        default=None,
-        description="Additional boolean flags",
-    )
 
 
 class ModelConnectionInfo(BaseModel):
@@ -71,8 +28,11 @@ class ModelConnectionInfo(BaseModel):
     """
 
     # Connection identification
-    connection_id: str = Field(..., description="Unique connection identifier")
-    connection_type: str = Field(
+    connection_id: UUID = Field(
+        default_factory=uuid.uuid4,
+        description="Unique connection identifier",
+    )
+    connection_type: EnumConnectionType = Field(
         ...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
@@ -84,7 +44,7 @@ class ModelConnectionInfo(BaseModel):
     path: str | None = Field(None, description="Connection path/endpoint")
 
     # Authentication
-    auth_type: str | None = Field(None, description="Authentication type")
+    auth_type: EnumAuthType | None = Field(None, description="Authentication type")
     username: str | None = Field(None, description="Username")
     password: SecretStr | None = Field(None, description="Password (encrypted)")
     api_key: SecretStr | None = Field(None, description="API key (encrypted)")
@@ -130,8 +90,8 @@ class ModelConnectionInfo(BaseModel):
         description="Connection establishment time",
     )
     last_used_at: datetime | None = Field(None, description="Last usage time")
-    connection_state: str = Field(
-        "disconnected",
+    connection_state: EnumConnectionState = Field(
+        default=EnumConnectionState.DISCONNECTED,
         description="Current connection state",
     )
 
@@ -185,7 +145,7 @@ class ModelConnectionInfo(BaseModel):
                 f"{data.get('host', 'unknown')}:{data.get('port', 0)}"
             )
         if "connection_type" not in data:
-            data["connection_type"] = "tcp"
+            data["connection_type"] = EnumConnectionType.TCP
 
         # Extract custom properties from flat dict
         known_fields = set(cls.model_fields.keys())
@@ -223,7 +183,11 @@ class ModelConnectionInfo(BaseModel):
 
     def is_secure(self) -> bool:
         """Check if connection uses secure protocols."""
-        return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
+        return self.use_ssl or self.auth_type in {
+            EnumAuthType.OAUTH2,
+            EnumAuthType.JWT,
+            EnumAuthType.MTLS,
+        }
 
     @field_serializer("password", "api_key", "token")
     def serialize_secret(self, value: Any) -> str:
