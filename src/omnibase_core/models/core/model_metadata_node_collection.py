@@ -96,10 +96,11 @@ class ModelMetadataNodeCollection(
                     new_data[k] = v
             return new_data
 
-        elif isinstance(data, ModelMetadataNodeCollection):
+        if isinstance(data, ModelMetadataNodeCollection):
             return data.root
 
-        return data or {}
+        # Handle None or any other unexpected type
+        return data if isinstance(data, dict) else {}  # type: ignore[unreachable]
 
     @model_validator(mode="after")
     def check_function_names_and_enhance(
