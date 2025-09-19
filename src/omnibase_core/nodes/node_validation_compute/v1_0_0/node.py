@@ -20,11 +20,7 @@ class ValidationComputeNode(IComputeNode):
         Returns:
             Dict containing validation results
         """
-        return {
-            "status": "success",
-            "validated": True,
-            "input_received": input_data
-        }
+        return {"status": "success", "validated": True, "input_received": input_data}
 
     def get_metadata(self) -> Dict[str, Any]:
         """Get node metadata.
@@ -36,5 +32,5 @@ class ValidationComputeNode(IComputeNode):
             "name": "validation_compute",
             "version": "1.0.0",
             "type": "compute",
-            "description": "Validation compute node for ONEX framework"
+            "description": "Validation compute node for ONEX framework",
         }

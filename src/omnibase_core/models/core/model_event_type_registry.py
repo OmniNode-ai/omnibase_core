@@ -8,6 +8,7 @@ enabling third-party plugins to register their own event types dynamically.
 from pathlib import Path
 
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
 )
@@ -177,7 +178,11 @@ class EventTypeRegistry:
                     event_name=event_name,
                     namespace="onex",
                     description=description,
+                    schema_version=ModelSemVer(major=1, minor=0, patch=0),
+                    payload_schema=None,
+                    deprecated=False,
                     category=category,
+                    severity=None,
                 )
                 self.register_event_type(event_type)
 

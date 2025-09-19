@@ -13,7 +13,8 @@ from typing import Any, TypeVar
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .model_contract_action import ModelContractAction
+from omnibase_core.models.contracts.model_contract_action import ModelContractAction
+
 from .model_generic_metadata import ModelGenericMetadata
 from .model_yaml_items import (
     ModelYamlCommand,
@@ -182,7 +183,7 @@ class ModelYamlList(BaseModel):
 
     def __init__(self, data: list[dict[str, str]] | None = None, **kwargs: Any) -> None:
         """Handle case where YAML root is a list."""
-        if isinstance(data, list):
+        if data is not None:
             super().__init__(root_list=data, **kwargs)
         else:
             super().__init__(**kwargs)

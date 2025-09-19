@@ -56,7 +56,7 @@ class ModelEventType(BaseModel):
         event_name: str,
         namespace: str = "onex",
         description: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelEventType":
         """
         ONEX-compliant factory method using Pydantic model_validate.
@@ -92,7 +92,7 @@ class ModelEventType(BaseModel):
         """String representation for current standards."""
         return self.event_name
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Enable comparison with strings for current standards."""
         if isinstance(other, str):
             return self.event_name == other

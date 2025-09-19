@@ -5,6 +5,8 @@ Type-safe execution capabilities and constraints for nodes,
 replacing Dict[str, Any] with structured configuration.
 """
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
@@ -65,7 +67,7 @@ class ModelExecutionCapabilities(BaseModel):
 
     def get_max_timeout_ms(self) -> int:
         """Get maximum timeout in milliseconds."""
-        timeout_ms = self.timeout.total_milliseconds()
+        timeout_ms = cast(int, self.timeout.total_milliseconds())
         if (
             self.performance_constraints
             and self.performance_constraints.max_execution_time_ms

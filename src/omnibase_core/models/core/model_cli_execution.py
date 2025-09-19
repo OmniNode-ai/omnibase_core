@@ -6,7 +6,7 @@ of command execution from start to finish.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -20,12 +20,12 @@ from omnibase_core.models.core.model_execution_statistics import (
     ModelExecutionStatistics,
 )
 from omnibase_core.models.core.model_execution_tags import ModelExecutionTags
-from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_warning import ModelOnexWarning
 from omnibase_core.models.core.model_parsed_arguments import ModelParsedArguments
 from omnibase_core.models.core.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_semver import SemVerField
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 
 
 class ModelExecutionMetadata(BaseModel):
@@ -70,18 +70,20 @@ class ModelExecutionMetadata(BaseModel):
 
     # Execution statistics (errors, warnings, retries)
     statistics: ModelExecutionStatistics = Field(
-        default_factory=ModelExecutionStatistics,
+        default_factory=lambda: ModelExecutionStatistics(),
         description="Execution statistics including errors, warnings, and retries",
     )
 
     # Feature flags
     features: ModelExecutionFeatures = Field(
-        default_factory=ModelExecutionFeatures, description="Feature flag configuration"
+        default_factory=lambda: ModelExecutionFeatures(),
+        description="Feature flag configuration",
     )
 
     # Custom tags for filtering/grouping
     tags: ModelExecutionTags = Field(
-        default_factory=ModelExecutionTags, description="Custom execution tags"
+        default_factory=lambda: ModelExecutionTags(),
+        description="Custom execution tags",
     )
 
     # Extensibility for command-specific data
@@ -161,7 +163,21 @@ class ModelCliExecution(BaseModel):
     )
 
     execution_metadata: ModelExecutionMetadata = Field(
-        default_factory=ModelExecutionMetadata,
+        default_factory=lambda: ModelExecutionMetadata(
+            command_source=None,
+            command_version=None,
+            command_group=None,
+            host_name=None,
+            process_id=None,
+            thread_id=None,
+            queue_time_ms=None,
+            init_time_ms=None,
+            validation_time_ms=None,
+            memory_usage_mb=None,
+            cpu_usage_percent=None,
+            custom_metrics=None,
+            custom_properties=None,
+        ),
         description="Execution metadata",
     )
 
@@ -236,7 +252,7 @@ class ModelCliExecution(BaseModel):
 
     def get_command_name(self) -> str:
         """Get the command name."""
-        return self.command_definition.command_name
+        return cast(str, self.command_definition.command_name)
 
     def get_target_node_name(self) -> str:
         """Get the target node name."""
@@ -244,7 +260,7 @@ class ModelCliExecution(BaseModel):
 
     def get_action_name(self) -> str:
         """Get the action name."""
-        return self.command_definition.action
+        return cast(str, self.command_definition.action)
 
     def is_high_priority(self) -> bool:
         """Check if this is a high priority execution."""
@@ -260,19 +276,19 @@ class ModelCliExecution(BaseModel):
 
     def is_debug_enabled(self) -> bool:
         """Check if debug mode is enabled."""
-        return self.execution_context.debug_enabled
+        return cast(bool, self.execution_context.debug_enabled)
 
     def is_trace_enabled(self) -> bool:
         """Check if tracing is enabled."""
-        return self.execution_context.trace_enabled
+        return cast(bool, self.execution_context.trace_enabled)
 
     def get_timeout_ms(self) -> int:
         """Get execution timeout in milliseconds."""
-        return self.execution_context.get_timeout_ms()
+        return cast(int, self.execution_context.get_timeout_ms())
 
     def should_retry_on_failure(self) -> bool:
         """Check if retries are enabled on failure."""
-        return self.execution_context.should_retry()
+        return cast(bool, self.execution_context.should_retry())
 
     def get_summary(self) -> dict[str, Any]:
         """Get execution summary for logging/monitoring."""
@@ -311,7 +327,7 @@ class ModelCliExecution(BaseModel):
         user_id: str | None = None,
         session_id: str | None = None,
         parent_execution_id: UUID | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelCliExecution":
         """Create execution for a specific command."""
         return cls(
@@ -342,6 +358,10 @@ class ModelCliExecution(BaseModel):
             is_test_execution=True,
             source_location="test",
             priority=10,  # Low priority for test executions
+            end_time=None,
+            parent_execution_id=None,
+            user_id=None,
+            session_id=None,
         )
 
     @classmethod
@@ -363,4 +383,8 @@ class ModelCliExecution(BaseModel):
             target_node=target_node,
             is_dry_run=True,
             source_location="cli_dry_run",
+            end_time=None,
+            parent_execution_id=None,
+            user_id=None,
+            session_id=None,
         )

@@ -29,7 +29,7 @@ from .model_contract_dependency import ModelContractDependency
 from .model_contract_loader import ModelContractLoader
 from .model_contract_reference import ModelContractReference
 from .model_generic_contract import ModelGenericContract
-from .model_hub_contract_config import ModelHubContractConfig
+from .model_hub_contract_config import ModelUnifiedHubContract
 from .model_introspection_contract_info import ModelIntrospectionContractInfo
 from .model_io_contract import ModelIOContract
 from .model_signature_contract import ModelSignatureContract
@@ -52,7 +52,7 @@ __all__ = [
     "ModelContractLoader",
     "ModelContractReference",
     "ModelGenericContract",
-    "ModelHubContractConfig",
+    "ModelUnifiedHubContract",
     "ModelIntrospectionContractInfo",
     "ModelIOContract",
     "ModelSignatureContract",

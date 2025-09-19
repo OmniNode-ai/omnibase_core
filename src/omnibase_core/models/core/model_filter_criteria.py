@@ -107,7 +107,10 @@ class ModelFilterCriteria(BaseModel):
                     conditions.append(
                         ModelFilterCondition(
                             field=key,
-                            operator=ModelFilterOperator(operator="eq", value=value),
+                            operator=ModelFilterOperator(
+                                operator="eq", value=value, case_sensitive=True
+                            ),
+                            negate=False,
                         ),
                     )
             data["conditions"] = conditions
@@ -120,12 +123,15 @@ class ModelFilterCriteria(BaseModel):
 
         return cls(**data)
 
-    def add_condition(self, field: str, operator: str, value: Any):
+    def add_condition(self, field: str, operator: str, value: Any) -> None:
         """Add a filter condition."""
         self.conditions.append(
             ModelFilterCondition(
                 field=field,
-                operator=ModelFilterOperator(operator=operator, value=value),
+                operator=ModelFilterOperator(
+                    operator=operator, value=value, case_sensitive=True
+                ),
+                negate=False,
             ),
         )
 

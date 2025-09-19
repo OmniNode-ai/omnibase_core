@@ -12,8 +12,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .model_contract_content import ModelContractContent
 from omnibase_core.models.types import EnvValue
+
+from .model_contract_content import ModelContractContent
 
 
 class ModelContractCache(BaseModel):

@@ -99,6 +99,16 @@ class NamingConventionValidator:
             if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
                 continue
 
+            # CRITICAL FIX: Files in /models/ directories should follow Model naming rules,
+            # not the naming rules for their subdirectory name
+            if "/models/" in str(file_path) and category != "models":
+                continue
+
+            # CRITICAL FIX: Files in /enums/ directories should follow Enum naming rules,
+            # not the naming rules for their subdirectory name
+            if "/enums/" in str(file_path) and category != "enums":
+                continue
+
             self._validate_file_naming(file_path, category, rules)
 
     def _validate_file_naming(self, file_path: Path, category: str, rules: Dict):

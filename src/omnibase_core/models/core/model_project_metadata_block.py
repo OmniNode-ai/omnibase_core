@@ -6,9 +6,8 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_metadata import Lifecycle, MetaTypeEnum
+from omnibase_core.enums.enum_metadata import EnumMetaType, Lifecycle
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-from omnibase_core.models.nodes.model_node_collection import ModelNodeCollection
 from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.metadata.metadata_constants import (
     COPYRIGHT_KEY,
@@ -19,6 +18,7 @@ from omnibase_core.models.metadata.metadata_constants import (
     SCHEMA_VERSION_KEY,
     TOOLS_KEY,
 )
+from omnibase_core.models.nodes.model_node_collection import ModelNodeCollection
 
 from .model_tree_generator_config import ModelTreeGeneratorConfig
 
@@ -27,7 +27,7 @@ class ModelProjectMetadataBlock(BaseModel):
     """
     Canonical ONEX project-level metadata block.
     - tools: ModelToolCollection (not dict[str, Any])
-    - meta_type: MetaTypeEnum (not str)
+    - meta_type: EnumMetaType (not str)
     - lifecycle: Lifecycle (not str)
     Entrypoint field must use the canonical URI format: '<type>://<target>'
     Example: 'python://main.py', 'yaml://project.onex.yaml', 'markdown://debug_log.md'
@@ -49,7 +49,7 @@ class ModelProjectMetadataBlock(BaseModel):
             target=PROJECT_ONEX_YAML_FILENAME,
         ),
     )
-    meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.PROJECT)
+    meta_type: EnumMetaType = Field(default=EnumMetaType.PROJECT)
     tools: Dict[str, Any] | None = None
     copyright: str
     tree_generator: ModelTreeGeneratorConfig | None = None
@@ -58,7 +58,7 @@ class ModelProjectMetadataBlock(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def _parse_entrypoint(cls, value) -> str:
+    def _parse_entrypoint(cls, value: Any) -> str:
         # Accept EntrypointBlock or URI string, always return URI string
         if isinstance(value, str) and "://" in value:
             return str(value) if value else ""

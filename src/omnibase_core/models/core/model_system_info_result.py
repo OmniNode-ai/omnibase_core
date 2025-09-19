@@ -21,7 +21,19 @@ class ModelSystemInfoResult(ModelBaseResult):
     """
 
     system_data: ModelSystemData = Field(
-        default_factory=lambda: ModelSystemData(),
+        default_factory=lambda: ModelSystemData(
+            system_id=None,
+            version=None,
+            environment=None,
+            uptime_seconds=None,
+            cpu_usage_percent=None,
+            memory_usage_mb=None,
+            disk_usage_percent=None,
+            node_count=None,
+            service_count=None,
+            custom_metrics=None,
+            custom_info=None,
+        ),
         description="System information data",
     )
     health_status: str = Field(

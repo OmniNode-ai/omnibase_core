@@ -254,9 +254,14 @@ class ModelEnvironment(BaseModel):
         return cls(
             name=name,
             display_name=display_name,
+            description=None,
+            configuration_url=None,
+            feature_flags=ModelFeatureFlags(),
+            security_level=None,
             is_production=is_production,
-            monitoring_enabled=True,
+            is_ephemeral=False,
             auto_scaling_enabled=is_production,
+            monitoring_enabled=True,
             logging_level=logging_level,
             resource_limits=resource_limits,
         )

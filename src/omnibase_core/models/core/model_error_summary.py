@@ -30,11 +30,11 @@ class ModelErrorSummary(BaseModel):
     # Error details
     stack_trace: str | None = Field(None, description="Stack trace if available")
     inner_errors: list[dict[str, str]] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Nested/inner errors",
     )
     context_data: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Additional context",
     )
 
@@ -44,11 +44,11 @@ class ModelErrorSummary(BaseModel):
         description="Impact level (low/medium/high/critical)",
     )
     affected_resources: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Affected resources",
     )
     suggested_actions: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Suggested resolution actions",
     )
 

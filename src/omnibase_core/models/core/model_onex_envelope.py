@@ -6,6 +6,7 @@ Provides request wrapping with metadata, correlation IDs, and security context.
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
@@ -94,7 +95,7 @@ class ModelOnexEnvelope(BaseModel, MixinLazyEvaluation):
     )
     retry_count: int = Field(default=0, description="Number of retry attempts")
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         """Initialize envelope with lazy evaluation capabilities."""
         super().__init__(**data)
         MixinLazyEvaluation.__init__(self)

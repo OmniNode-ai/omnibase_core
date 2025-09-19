@@ -10,10 +10,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_performance_metrics import ModelPerformanceMetrics
 from omnibase_core.models.core.model_security_context import ModelSecurityContext
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 
 
 class ModelActionMetadata(BaseModel):
@@ -52,7 +52,14 @@ class ModelActionMetadata(BaseModel):
         description="Rich trust level for action execution with verification support",
     )
     security_context: ModelSecurityContext = Field(
-        default_factory=ModelSecurityContext,
+        default_factory=lambda: ModelSecurityContext(
+            user_id=None,
+            role=None,
+            authentication_method=None,
+            ip_address=None,
+            user_agent=None,
+            session_token=None,
+        ),
         description="Structured security context and permissions",
     )
 
@@ -76,11 +83,11 @@ class ModelActionMetadata(BaseModel):
 
     # Execution context
     execution_context: dict[str, str | int | float | bool] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Execution environment and context",
     )
     parameters: dict[str, str | int | float | bool | list[str]] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Action parameters with strong typing",
     )
 
@@ -97,7 +104,7 @@ class ModelActionMetadata(BaseModel):
 
     # Tool-as-a-service metadata
     service_metadata: dict[str, str | int | float | bool | list[str]] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(
@@ -115,11 +122,19 @@ class ModelActionMetadata(BaseModel):
 
     # Performance tracking
     performance_metrics: ModelPerformanceMetrics = Field(
-        default_factory=ModelPerformanceMetrics,
+        default_factory=lambda: ModelPerformanceMetrics(
+            execution_time_ms=None,
+            memory_usage_mb=None,
+            cpu_usage_percent=None,
+            io_operations=None,
+            network_requests=None,
+            cache_hits=None,
+            cache_misses=None,
+        ),
         description="Structured performance metrics for this action",
     )
     resource_usage: dict[str, int | float] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Resource usage metrics",
     )
 

@@ -10,9 +10,9 @@ from typing import Any
 from pydantic import Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
-from .model_node_info import ModelNodeInfo
 
 from .model_generic_metadata import ModelGenericMetadata
+from .model_node_info import ModelNodeInfo
 
 
 class ModelNodeDiscoveryResult(ModelBaseResult):
@@ -36,7 +36,7 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
         description="Total nodes available in source",
     )
     discovery_metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Additional discovery metadata",
     )
     execution_time_ms: float | None = Field(

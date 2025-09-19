@@ -63,7 +63,19 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Advanced parameters (typed model for safety)
     advanced_params: ModelAdvancedParams = Field(
-        default_factory=lambda: ModelAdvancedParams(),
+        default_factory=lambda: ModelAdvancedParams(
+            parallel_execution=None,
+            max_workers=None,
+            retry_count=None,
+            retry_delay=None,
+            memory_limit_mb=None,
+            cpu_limit=None,
+            time_limit_seconds=None,
+            debug_mode=None,
+            log_level=None,
+            trace_enabled=None,
+            working_directory=None,
+        ),
         description="Advanced parameters specific to individual nodes",
     )
 

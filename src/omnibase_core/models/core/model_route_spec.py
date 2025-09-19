@@ -192,26 +192,66 @@ class ModelRouteSpec(BaseModel):
     def add_constraint(self, key: str, value: Any) -> None:
         """Add a routing constraint."""
         if self.constraints is None:
-            self.constraints = ModelGenericMetadata()
-        self.constraints[key] = value
+            self.constraints = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
+        # Use custom_fields for dynamic key-value pairs
+        if self.constraints.custom_fields is None:
+            self.constraints.custom_fields = {}
+        self.constraints.custom_fields[key] = value
 
     def set_latency_constraint(self, max_latency_ms: int) -> None:
         """Set maximum acceptable latency constraint."""
         if self.constraints is None:
-            self.constraints = ModelGenericMetadata()
-        self.constraints["max_latency_ms"] = max_latency_ms
+            self.constraints = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
+        # Use custom_fields for dynamic key-value pairs
+        if self.constraints.custom_fields is None:
+            self.constraints.custom_fields = {}
+        self.constraints.custom_fields["max_latency_ms"] = max_latency_ms
 
     def set_region_constraint(self, allowed_regions: list[str]) -> None:
         """Set allowed regions constraint."""
         if self.constraints is None:
-            self.constraints = ModelGenericMetadata()
-        self.constraints["allowed_regions"] = allowed_regions
+            self.constraints = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
+        # Use custom_fields for dynamic key-value pairs
+        if self.constraints.custom_fields is None:
+            self.constraints.custom_fields = {}
+        self.constraints.custom_fields["allowed_regions"] = allowed_regions
 
     def set_security_constraint(self, min_security_level: str) -> None:
         """Set minimum security level constraint."""
         if self.constraints is None:
-            self.constraints = ModelGenericMetadata()
-        self.constraints["min_security_level"] = min_security_level
+            self.constraints = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
+        # Use custom_fields for dynamic key-value pairs
+        if self.constraints.custom_fields is None:
+            self.constraints.custom_fields = {}
+        self.constraints.custom_fields["min_security_level"] = min_security_level
 
     def consume_next_hop(self) -> str | None:
         """Consume and return the next hop from remaining_hops."""

@@ -231,9 +231,73 @@ class ModelSchema(BaseModel):
             ):
                 # These are handled by the type mapper - return a basic schema
                 if "semver_model" in self.ref:
-                    return ModelSchema(schema_type="object", title="ModelSemVer")
+                    return ModelSchema(
+                        **{
+                            "type": "object",
+                            "title": "ModelSemVer",
+                            "description": None,
+                            "schema_version": "draft-07",
+                            "enum": None,
+                            "pattern": None,
+                            "format": None,
+                            "minLength": None,
+                            "maxLength": None,
+                        },
+                        minimum=None,
+                        maximum=None,
+                        multiple_of=None,
+                        items=None,
+                        min_items=None,
+                        max_items=None,
+                        unique_items=None,
+                        properties=None,
+                        required=None,
+                        additional_properties=None,
+                        min_properties=None,
+                        max_properties=None,
+                        nullable=False,
+                        default_value=None,
+                        definitions=None,
+                        all_of=None,
+                        any_of=None,
+                        one_of=None,
+                        examples=None,
+                        **{"$ref": None},
+                    )
                 if "onex_field_model" in self.ref:
-                    return ModelSchema(schema_type="object", title="ModelOnexField")
+                    return ModelSchema(
+                        **{
+                            "type": "object",
+                            "title": "ModelOnexField",
+                            "description": None,
+                            "schema_version": "draft-07",
+                            "enum": None,
+                            "pattern": None,
+                            "format": None,
+                            "minLength": None,
+                            "maxLength": None,
+                        },
+                        minimum=None,
+                        maximum=None,
+                        multiple_of=None,
+                        items=None,
+                        min_items=None,
+                        max_items=None,
+                        unique_items=None,
+                        properties=None,
+                        required=None,
+                        additional_properties=None,
+                        min_properties=None,
+                        max_properties=None,
+                        nullable=False,
+                        default_value=None,
+                        definitions=None,
+                        all_of=None,
+                        any_of=None,
+                        one_of=None,
+                        examples=None,
+                        **{"$ref": None},
+                    )
 
             # FAIL FAST: If we can't resolve the reference, throw an error instead of returning placeholder
             msg = f"FAIL_FAST: Unresolved schema reference: {self.ref}. Available definitions: {list(definitions.keys())}"
@@ -381,7 +445,9 @@ class ModelSchema(BaseModel):
             properties = {}
             for name, prop_data in data["properties"].items():
                 if isinstance(prop_data, dict):
-                    properties[name] = cls.from_dict(prop_data)
+                    parsed_prop = cls.from_dict(prop_data)
+                    if parsed_prop is not None:  # Filter out None values
+                        properties[name] = parsed_prop
 
         # Handle nested items
         items = None
@@ -394,31 +460,36 @@ class ModelSchema(BaseModel):
             definitions = {}
             for name, def_data in data["definitions"].items():
                 if isinstance(def_data, dict):
-                    definitions[name] = cls.from_dict(def_data)
+                    parsed_def = cls.from_dict(def_data)
+                    if parsed_def is not None:  # Filter out None values
+                        definitions[name] = parsed_def
 
         # Handle composition schemas
         all_of = None
         if "allOf" in data and isinstance(data["allOf"], list):
             all_of = [
-                cls.from_dict(schema_data)
+                parsed_schema
                 for schema_data in data["allOf"]
                 if schema_data
+                and (parsed_schema := cls.from_dict(schema_data)) is not None
             ]
 
         any_of = None
         if "anyOf" in data and isinstance(data["anyOf"], list):
             any_of = [
-                cls.from_dict(schema_data)
+                parsed_schema
                 for schema_data in data["anyOf"]
                 if schema_data
+                and (parsed_schema := cls.from_dict(schema_data)) is not None
             ]
 
         one_of = None
         if "oneOf" in data and isinstance(data["oneOf"], list):
             one_of = [
-                cls.from_dict(schema_data)
+                parsed_schema
                 for schema_data in data["oneOf"]
                 if schema_data
+                and (parsed_schema := cls.from_dict(schema_data)) is not None
             ]
 
         # Extract schema version from $schema field
@@ -430,7 +501,7 @@ class ModelSchema(BaseModel):
                 schema_version = "draft-07"
 
         # FIXED: Handle examples that can be strings or ModelExamples objects
-        examples = None
+        examples: list[ModelExamples] | None = None
         if "examples" in data:
             examples_data = data["examples"]
             if isinstance(examples_data, list):
@@ -439,24 +510,66 @@ class ModelSchema(BaseModel):
                 for example in examples_data:
                     if isinstance(example, str):
                         # Simple string example - convert to ModelExamples
-                        examples.append(
-                            ModelExamples(
-                                value=example,
-                                description=f"Example: {example}",
+                        from .model_example import ModelExample
+                        from .model_generic_metadata import ModelGenericMetadata
+
+                        example_obj = ModelExample(
+                            name=f"string_example_{len(examples)}",
+                            description=f"Example: {example}",
+                            input_data=ModelGenericMetadata(
+                                created_at=None,
+                                updated_at=None,
+                                created_by=None,
+                                updated_by=None,
+                                version=None,
+                                tags=None,
+                                labels=None,
+                                annotations=None,
+                                custom_fields={"example_value": example},
+                                extended_data=None,
                             ),
+                            output_data=None,
+                            context=None,
+                            tags=[],
+                            is_valid=True,
+                            validation_notes=None,
+                            created_at=None,
+                            updated_at=None,
                         )
+                        examples.append(ModelExamples(examples=[example_obj]))
                     elif isinstance(example, dict):
                         # Already a ModelExamples object or dict
                         examples.append(ModelExamples.model_validate(example))
                     # Skip invalid examples
             elif isinstance(examples_data, str | int | float | bool):
                 # Single example value
-                examples = [
-                    ModelExamples(
-                        value=examples_data,
-                        description=f"Example: {examples_data}",
+                from .model_example import ModelExample
+                from .model_generic_metadata import ModelGenericMetadata
+
+                example_obj = ModelExample(
+                    name="single_example",
+                    description=f"Example: {examples_data}",
+                    input_data=ModelGenericMetadata(
+                        created_at=None,
+                        updated_at=None,
+                        created_by=None,
+                        updated_by=None,
+                        version=None,
+                        tags=None,
+                        labels=None,
+                        annotations=None,
+                        custom_fields={"example_value": examples_data},
+                        extended_data=None,
                     ),
-                ]
+                    output_data=None,
+                    context=None,
+                    tags=[],
+                    is_valid=True,
+                    validation_notes=None,
+                    created_at=None,
+                    updated_at=None,
+                )
+                examples = [ModelExamples(examples=[example_obj])]
 
         # Log incoming data for debugging
         from omnibase_core.core.core_structured_logging import (
@@ -477,16 +590,15 @@ class ModelSchema(BaseModel):
 
         # Create the unified schema
         return cls(
-            schema_type=data.get("type", "object"),
+            type=data.get("type", "object"),
             schema_version=schema_version,
             title=data.get("title"),
             description=data.get("description"),
-            ref=data.get("$ref"),
-            enum_values=data.get("enum"),
+            enum=data.get("enum"),
             pattern=data.get("pattern"),
             format=data.get("format"),
-            min_length=data.get("minLength"),
-            max_length=data.get("maxLength"),
+            minLength=data.get("minLength"),
+            maxLength=data.get("maxLength"),
             minimum=data.get("minimum"),
             maximum=data.get("maximum"),
             multiple_of=data.get("multipleOf"),
@@ -496,6 +608,7 @@ class ModelSchema(BaseModel):
             unique_items=data.get("uniqueItems"),
             properties=properties,
             required=data.get("required"),
+            **{"$ref": data.get("$ref")},
             additional_properties=data.get("additionalProperties", True),
             min_properties=data.get("minProperties"),
             max_properties=data.get("maxProperties"),
@@ -543,6 +656,8 @@ class ModelTypedProperties(BaseModel):
         properties = {}
         for name, prop_data in data.items():
             if isinstance(prop_data, dict):
-                properties[name] = ModelSchema.from_dict(prop_data)
+                parsed_schema = ModelSchema.from_dict(prop_data)
+                if parsed_schema is not None:  # Filter out None values
+                    properties[name] = parsed_schema
 
         return cls(properties=properties)

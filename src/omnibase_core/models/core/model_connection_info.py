@@ -137,7 +137,29 @@ class ModelConnectionInfo(BaseModel):
 
     # Custom properties
     custom_properties: ModelCustomConnectionProperties = Field(
-        default_factory=lambda: ModelCustomConnectionProperties(),
+        default_factory=lambda: ModelCustomConnectionProperties(
+            database_name=None,
+            schema_name=None,
+            charset=None,
+            collation=None,
+            queue_name=None,
+            exchange_name=None,
+            routing_key=None,
+            durable=None,
+            region=None,
+            availability_zone=None,
+            service_name=None,
+            instance_type=None,
+            max_connections=None,
+            connection_limit=None,
+            command_timeout=None,
+            enable_compression=None,
+            compression_level=None,
+            enable_caching=None,
+            custom_strings=None,
+            custom_numbers=None,
+            custom_flags=None,
+        ),
         description="Custom connection properties",
     )
 
@@ -216,13 +238,13 @@ class ModelConnectionInfo(BaseModel):
         """Check if connection uses secure protocols."""
         return self.use_ssl or self.auth_type in ["oauth2", "jwt", "mtls"]
 
-    @field_serializer("password", "api_key", "token")  # type: ignore[misc]
+    @field_serializer("password", "api_key", "token")
     def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         return str(value) if value else ""
 
-    @field_serializer("established_at", "last_used_at")  # type: ignore[misc]
+    @field_serializer("established_at", "last_used_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()

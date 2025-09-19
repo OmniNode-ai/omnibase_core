@@ -21,7 +21,7 @@ class OnexInputState(BaseModel):
         default_factory=uuid4, description="Unique correlation identifier"
     )
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict, description="Additional metadata"
+        default=None, description="Additional metadata"
     )
     timestamp: float | None = Field(None, description="Optional timestamp")
 

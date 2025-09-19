@@ -72,7 +72,7 @@ def build_output_field_kwargs(input_state: dict, event_bus: Any) -> dict:
 
 
 class ModelComputeOutputFieldTool(OutputFieldTool):
-    def __call__(self, state, input_state_dict: dict[str, Any]) -> ModelOnexField:
+    def __call__(self, state: Any, input_state_dict: dict[str, Any]) -> ModelOnexField:
         # If 'output_field' is present in the input dict, always use it
         val = input_state_dict.get("output_field")
         if val is not None:
@@ -88,9 +88,14 @@ class ModelComputeOutputFieldTool(OutputFieldTool):
             getattr(state, "external_dependency", None) is True
             or input_state_dict.get("external_dependency") is True
         ):
-            return ModelOnexField(data={"integration": True})
+            return ModelOnexField(data={"integration": "true"})
         # Default: processed
-        return ModelOnexField(data={"processed": getattr(state, "input_field", None)})
+        processed_value = getattr(state, "input_field", None)
+        return ModelOnexField(
+            data={
+                "processed": str(processed_value) if processed_value is not None else ""
+            }
+        )
 
 
 # Compatibility alias

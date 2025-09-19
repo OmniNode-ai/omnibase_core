@@ -33,17 +33,17 @@ class ModelFallbackMetadata(BaseModel):
     )
 
     feature_flags: dict[str, bool] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Boolean feature flags for fallback behavior",
     )
 
     custom_properties: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="String-based custom configuration properties",
     )
 
     numeric_settings: dict[str, float] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Numeric configuration values",
     )
 
@@ -86,12 +86,14 @@ class ModelFallbackStrategy(BaseModel):
     )
 
     degraded_features: dict[str, bool] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Feature flags for degraded mode operation",
     )
 
     metadata: ModelFallbackMetadata | None = Field(
-        default_factory=lambda: ModelFallbackMetadata(),
+        default_factory=lambda: ModelFallbackMetadata(
+            timeout_multiplier=1.0, retry_backoff_seconds=5
+        ),
         description="Strongly-typed strategy-specific configuration",
     )
 

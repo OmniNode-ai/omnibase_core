@@ -19,37 +19,24 @@ from omnibase_core.models.core.model_enhanced_node_collection import (
     NodeRegistrationStatus,
     NodeValidationResult,
 )
+
+from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_collection import (
     ModelMetadataNodeCollection,
 )
-from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_info import (
-    ModelMetadataNodeComplexity,
+    EnumMetadataNodeComplexity,
+    EnumMetadataNodeStatus,
+    EnumMetadataNodeType,
     ModelMetadataNodeInfo,
-    ModelMetadataNodeStatus,
-    ModelMetadataNodeType,
 )
 from .model_metadata_node_usage_metrics import ModelMetadataNodeUsageMetrics
-
-# Create aliases for backward compatibility
-MetadataNodeAnalytics = ModelMetadataNodeAnalytics
-MetadataNodeComplexity = ModelMetadataNodeComplexity
-MetadataNodeInfo = ModelMetadataNodeInfo
-MetadataNodeStatus = ModelMetadataNodeStatus
-MetadataNodeType = ModelMetadataNodeType
-MetadataNodeUsageMetrics = ModelMetadataNodeUsageMetrics
 
 # Ensure all original functionality is available
 __all__ = [
     "LegacyNodeCollection",
-    "MetadataNodeAnalytics",
     "MetadataNodeCollection",
-    "MetadataNodeComplexity",
-    "MetadataNodeInfo",
-    "MetadataNodeStatus",
     # Enhanced enums and classes for MetadataNodeCollection
-    "MetadataNodeType",
-    "MetadataNodeUsageMetrics",
     "ModelMetadataNodeCollection",
     # Original models (enhanced)
     "ModelNodeCollection",

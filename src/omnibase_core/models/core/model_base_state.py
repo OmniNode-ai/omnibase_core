@@ -17,7 +17,7 @@ class ModelBaseInputState(BaseModel):
 
     # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool input data
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default=None,
         description="Metadata for the input state",
     )
     timestamp: datetime = Field(
@@ -31,7 +31,7 @@ class ModelBaseOutputState(BaseModel):
 
     # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool output data
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default=None,
         description="Metadata for the output state",
     )
     timestamp: datetime = Field(

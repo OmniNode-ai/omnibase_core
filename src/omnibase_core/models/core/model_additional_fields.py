@@ -4,6 +4,8 @@ Additional Fields Model for ONEX Configuration System.
 Strongly typed model for additional metadata fields.
 """
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 
@@ -38,7 +40,7 @@ class ModelAdditionalFields(BaseModel):
 
     def get_field(self, field_name: str) -> str | None:
         """Get a field value by name."""
-        return getattr(self, field_name, None)
+        return cast(str | None, getattr(self, field_name, None))
 
     def has_field(self, field_name: str) -> bool:
         """Check if field exists and is not None."""

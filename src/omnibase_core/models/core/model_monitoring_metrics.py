@@ -74,7 +74,7 @@ class ModelMonitoringMetrics(BaseModel):
 
     # Custom metrics (for extensibility)
     custom_metrics: dict[str, ModelMetricValue] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Custom metrics with values",
     )
 

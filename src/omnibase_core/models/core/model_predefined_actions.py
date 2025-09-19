@@ -8,7 +8,6 @@ in the ModelNodeActionType registry on import.
 from typing import Any
 
 from omnibase_core.models.core.model_action_category import ModelActionCategory
-from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.predefined_categories import (
     LIFECYCLE,
     MANAGEMENT,
@@ -17,6 +16,7 @@ from omnibase_core.models.core.predefined_categories import (
     TRANSFORMATION,
     VALIDATION,
 )
+from omnibase_core.models.nodes.model_node_action_type import ModelNodeActionType
 
 
 def _create_and_register_action(

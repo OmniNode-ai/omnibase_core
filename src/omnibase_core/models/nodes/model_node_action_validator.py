@@ -12,6 +12,7 @@ from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_action_validation_result import (
     ModelActionValidationResult,
 )
+
 from .model_node_action import ModelNodeAction
 from .model_node_action_type import ModelNodeActionType
 
@@ -265,9 +266,9 @@ class ModelNodeActionValidator:
                     "Consider requiring confirmation for destructive actions",
                 )
 
-            if metadata and metadata.trust_score < 0.8:
+            if metadata and metadata.trust_score.trust_score < 0.8:
                 result.validation_warnings.append(
-                    f"Destructive action with low trust score: {metadata.trust_score}",
+                    f"Destructive action with low trust score: {metadata.trust_score.trust_score}",
                 )
 
         result.security_checks["security_validated"] = True
@@ -293,7 +294,7 @@ class ModelNodeActionValidator:
 
         # Factor in metadata trust score
         if metadata:
-            base_score = min(base_score, metadata.trust_score)
+            base_score = min(base_score, metadata.trust_score.trust_score)
 
         # Factor in destructive actions
         if action.is_destructive:

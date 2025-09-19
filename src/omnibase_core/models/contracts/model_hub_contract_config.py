@@ -7,7 +7,7 @@ and provide a unified interface for contract-driven hub configuration.
 
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -331,7 +331,7 @@ class ModelUnifiedHubContract(BaseModel):
             result = load_and_validate_yaml_model(contract_path, cls)
             if isinstance(result, cls):
                 return result
-            return cls.model_validate(result)
+            return cast("ModelUnifiedHubContract", cls.model_validate(result))
         except Exception as e:
             raise ValueError(
                 f"Failed to load contract from {contract_path}: {e}"

@@ -5,12 +5,14 @@ Structured model for health status, used by health check mixins
 and monitoring systems throughout ONEX.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Type
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.node import EnumHealthStatus
+from omnibase_core.enums.nodes import EnumHealthStatus
 from omnibase_core.models.core.model_health_details import ModelHealthDetails
 
 
@@ -44,7 +46,7 @@ class ModelHealthStatus(BaseModel):
         return str(v)
 
     details: ModelHealthDetails = Field(
-        default_factory=ModelHealthDetails,  # type: ignore[arg-type]
+        default_factory=ModelHealthDetails,
         description="Additional health details",
     )
     uptime_seconds: float | None = Field(

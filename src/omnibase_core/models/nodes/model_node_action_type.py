@@ -5,10 +5,13 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
+from __future__ import annotations
+
 from typing import ClassVar, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.nodes.enum_security_level import EnumSecurityLevel
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 
 
@@ -40,8 +43,8 @@ class ModelNodeActionType(BaseModel):
     )
 
     # Security and permissions
-    security_level: str = Field(
-        default="standard",
+    security_level: EnumSecurityLevel = Field(
+        default=EnumSecurityLevel.STANDARD,
         description="Required security clearance level",
     )
     required_permissions: list[str] = Field(
@@ -66,15 +69,7 @@ class ModelNodeActionType(BaseModel):
     # Class-level registry for action type management
     _registry: ClassVar[dict[str, "ModelNodeActionType"]] = {}
 
-    @field_validator("security_level")
-    @classmethod
-    def validate_security_level(cls, v: str) -> str:
-        """Validate security level is from allowed values."""
-        allowed_levels = {"public", "standard", "elevated", "restricted", "classified"}
-        if v not in allowed_levels:
-            msg = f"Security level must be one of: {allowed_levels}"
-            raise ValueError(msg)
-        return v
+    # Note: security_level validation now handled by EnumSecurityLevel enum
 
     @field_validator("name")
     @classmethod
@@ -137,8 +132,13 @@ class ModelNodeActionType(BaseModel):
         return [action for action in cls._registry.values() if action.is_destructive]
 
     @classmethod
-    def get_by_security_level(cls, security_level: str) -> list["ModelNodeActionType"]:
+    def get_by_security_level(
+        cls, security_level: EnumSecurityLevel | str
+    ) -> list["ModelNodeActionType"]:
         """Get all action types requiring specific security level."""
+        # Convert string to enum if needed
+        if isinstance(security_level, str):
+            security_level = EnumSecurityLevel(security_level)
         return [
             action
             for action in cls._registry.values()
@@ -169,7 +169,7 @@ class ModelNodeActionType(BaseModel):
             "is_destructive": self.is_destructive,
             "requires_confirmation": self.requires_confirmation,
             "estimated_duration_ms": self.estimated_duration_ms,
-            "security_level": self.security_level,
+            "security_level": self.security_level.value,  # Return enum value for serialization
             "required_permissions": self.required_permissions,
             "mcp_compatible": self.mcp_compatible,
             "graphql_compatible": self.graphql_compatible,

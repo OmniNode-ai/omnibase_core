@@ -68,8 +68,15 @@ class ModelFeatureFlags(BaseModel):
         self.flags[flag] = True
         if metadata:
             if isinstance(metadata, dict):
-                self.flag_metadata[flag] = (
-                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                self.flag_metadata[flag] = ModelGenericMetadata.from_dict(
+                    metadata
+                ) or ModelGenericMetadata(
+                    created_at=None,
+                    updated_at=None,
+                    created_by=None,
+                    updated_by=None,
+                    version=None,
+                    extended_data=None,
                 )
             else:
                 self.flag_metadata[flag] = metadata
@@ -81,8 +88,15 @@ class ModelFeatureFlags(BaseModel):
         self.flags[flag] = False
         if metadata:
             if isinstance(metadata, dict):
-                self.flag_metadata[flag] = (
-                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                self.flag_metadata[flag] = ModelGenericMetadata.from_dict(
+                    metadata
+                ) or ModelGenericMetadata(
+                    created_at=None,
+                    updated_at=None,
+                    created_by=None,
+                    updated_by=None,
+                    version=None,
+                    extended_data=None,
                 )
             else:
                 self.flag_metadata[flag] = metadata
@@ -104,8 +118,15 @@ class ModelFeatureFlags(BaseModel):
         self.flags[flag] = enabled
         if metadata:
             if isinstance(metadata, dict):
-                self.flag_metadata[flag] = (
-                    ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+                self.flag_metadata[flag] = ModelGenericMetadata.from_dict(
+                    metadata
+                ) or ModelGenericMetadata(
+                    created_at=None,
+                    updated_at=None,
+                    created_by=None,
+                    updated_by=None,
+                    version=None,
+                    extended_data=None,
                 )
             else:
                 self.flag_metadata[flag] = metadata
@@ -138,8 +159,15 @@ class ModelFeatureFlags(BaseModel):
     ) -> None:
         """Set metadata for a specific flag."""
         if isinstance(metadata, dict):
-            self.flag_metadata[flag] = (
-                ModelGenericMetadata.from_dict(metadata) or ModelGenericMetadata()
+            self.flag_metadata[flag] = ModelGenericMetadata.from_dict(
+                metadata
+            ) or ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
             )
         else:
             self.flag_metadata[flag] = metadata

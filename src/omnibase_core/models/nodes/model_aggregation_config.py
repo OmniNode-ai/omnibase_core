@@ -4,15 +4,17 @@ Aggregation configuration model for nodes.
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.nodes import EnumAggregationStrategy
+
 
 class ModelAggregationConfig(BaseModel):
     """Aggregation configuration for nodes."""
 
     model_config = ConfigDict(extra="forbid")
 
-    strategy: str = Field(
+    strategy: EnumAggregationStrategy = Field(
         ...,
-        description="Aggregation strategy (sum, average, max, min, etc.)",
+        description="Aggregation strategy for processing node data",
     )
     window_size: int | None = Field(
         None,

@@ -41,11 +41,22 @@ class ModelActionBase(BaseModel):
 
     # Service metadata for tool-as-a-service with strong typing
     service_metadata: ModelGenericMetadata = Field(
-        default_factory=ModelGenericMetadata,
+        default_factory=lambda: ModelGenericMetadata(
+            created_at=None,
+            updated_at=None,
+            created_by=None,
+            updated_by=None,
+            version=None,
+            tags=None,
+            labels=None,
+            annotations=None,
+            custom_fields=None,
+            extended_data=None,
+        ),
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Tags for tool discovery and categorization",
     )
 

@@ -6,6 +6,7 @@ with flexible, third-party extensible capabilities.
 """
 
 from datetime import datetime
+from typing import cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -111,7 +112,7 @@ class ModelCapability(BaseModel):
         # Same capability with different versions may be incompatible
         if self.name == other.name and self.namespace == other.namespace:
             # For now, only exact version match is compatible
-            return self.version == other.version
+            return cast(bool, self.version == other.version)
 
         return True
 
@@ -139,6 +140,8 @@ class ModelCapability(BaseModel):
             display_name=name.replace("_", " ").title(),
             description=description,
             category="standard",
+            deprecation_message=None,
+            expires_at=None,
         )
 
     @classmethod
@@ -151,6 +154,8 @@ class ModelCapability(BaseModel):
             version=ModelSemVer(major=1, minor=0, patch=0),
             description=description,
             category="core",
+            deprecation_message=None,
+            expires_at=None,
         )
 
     # Common capability factories

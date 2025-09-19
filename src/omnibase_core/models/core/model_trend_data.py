@@ -95,13 +95,16 @@ class ModelTrendData(BaseModel):
             return
 
         values = [p.value for p in self.data_points]
+        avg_value = sum(values) / len(values)
+        std_deviation = (sum((x - avg_value) ** 2 for x in values) / len(values)) ** 0.5
         self.metrics = ModelTrendMetrics(
             min_value=min(values),
             max_value=max(values),
-            avg_value=sum(values) / len(values),
+            avg_value=avg_value,
             median_value=sorted(values)[len(values) // 2],
             trend_direction=self._calculate_trend_direction(values),
             change_percent=self._calculate_change_percent(values),
+            std_deviation=std_deviation,
         )
 
     def _calculate_trend_direction(self, values: list[float | int]) -> str:
@@ -129,7 +132,7 @@ class ModelTrendData(BaseModel):
             return None
         return ((values[-1] - values[0]) / values[0]) * 100
 
-    @field_serializer("last_updated")  # type: ignore[misc]
+    @field_serializer("last_updated")
     def serialize_datetime(self, value: datetime) -> str:
         if value and isinstance(value, datetime):
             return value.isoformat()

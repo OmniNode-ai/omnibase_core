@@ -9,11 +9,15 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_argument_description import (
+    ModelArgumentDescription,
+)
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
 from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_semver import ModelSemVer
 from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.utils.safe_yaml_loader import (
     load_and_validate_yaml_model,
@@ -180,7 +184,7 @@ class ModelCliCommandRegistry(BaseModel):
 
     def _create_command_from_contract(
         self,
-        command_data: dict,
+        command_data: dict | str,
         node_name: str,
     ) -> ModelCliCommandDefinition | None:
         """Create a command definition from contract data."""
@@ -196,8 +200,12 @@ class ModelCliCommandRegistry(BaseModel):
                 examples = []
             else:
                 # Object format with detailed information
-                command_name = command_data.get("command_name") or command_data.get(
-                    "name",
+                command_name = str(
+                    command_data.get("command_name")
+                    or command_data.get(
+                        "name",
+                    )
+                    or ""
                 )
                 if not command_name:
                     return None
@@ -219,11 +227,16 @@ class ModelCliCommandRegistry(BaseModel):
                 event_name=event_type_name,
                 namespace="onex",
                 description=f"Event for {command_name} command",
+                schema_version=ModelSemVer(major=1, minor=0, patch=0),
+                payload_schema=None,
+                deprecated=False,
+                category=None,
+                severity=None,
             )
 
             # Parse arguments (simplified for now)
-            required_args: list[str] = []
-            optional_args: list[str] = []
+            required_args: list[ModelArgumentDescription] = []
+            optional_args: list[ModelArgumentDescription] = []
 
             # Create command definition
             return ModelCliCommandDefinition(
@@ -236,6 +249,8 @@ class ModelCliCommandRegistry(BaseModel):
                 event_type=event_type,
                 examples=examples,
                 category=category,
+                deprecated=False,
+                deprecation_message=None,
             )
 
         except Exception:

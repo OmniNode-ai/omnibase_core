@@ -24,7 +24,21 @@ class ModelNodeInfoResult(ModelBaseResult):
     node_name: str = Field(..., description="Name of the node")
     node_version: str | None = Field(None, description="Version of the node")
     node_data: ModelNodeData = Field(
-        default_factory=lambda: ModelNodeData(),
+        default_factory=lambda: ModelNodeData(
+            node_id=None,
+            display_name=None,
+            description=None,
+            author=None,
+            status=None,
+            health=None,
+            enabled=True,
+            created_at=None,
+            updated_at=None,
+            execution_count=None,
+            success_rate=None,
+            avg_execution_time_ms=None,
+            custom_metadata=None,
+        ),
         description="Node information data",
     )
     capabilities: list[str] = Field(

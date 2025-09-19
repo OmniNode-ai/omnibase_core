@@ -195,8 +195,7 @@ class ModelOnexSecurityContext(BaseModel):
 
             ip_pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
             if not re.match(ip_pattern, v):
-                msg = "Invalid IP address format"
-                raise ValueError(msg)
+                raise ValueError("Invalid IP address format")
         return v
 
     def is_authenticated(self) -> bool:

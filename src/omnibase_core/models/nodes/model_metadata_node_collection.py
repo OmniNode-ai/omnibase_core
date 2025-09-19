@@ -11,22 +11,21 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, RootModel, computed_field, model_validator
 
+from omnibase_core.enums.nodes.enum_security_level import EnumSecurityLevel
 from omnibase_core.models.core.model_function_node import ModelFunctionNode
 
-from .model_metadata_collection_types import (
-    ModelAnalyticsReport,
-    ModelCollectionMetadata,
-    ModelCollectionValidationResult,
-    ModelNodeBreakdown,
-    ModelNodeValidationResult,
-    ModelPerformanceMetrics,
-)
+from .model_collection_analytics_report import ModelCollectionAnalyticsReport
+from .model_collection_metadata import ModelCollectionMetadata
+from .model_collection_node_breakdown import ModelCollectionNodeBreakdown
+from .model_collection_node_validation_result import ModelCollectionNodeValidationResult
+from .model_collection_performance_metrics import ModelCollectionPerformanceMetrics
+from .model_collection_validation_result import ModelCollectionValidationResult
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_info import (
-    ModelMetadataNodeComplexity,
+    EnumMetadataNodeComplexity,
+    EnumMetadataNodeStatus,
+    EnumMetadataNodeType,
     ModelMetadataNodeInfo,
-    ModelMetadataNodeStatus,
-    ModelMetadataNodeType,
 )
 from .model_metadata_node_usage_metrics import ModelMetadataNodeUsageMetrics
 
@@ -64,12 +63,20 @@ class ModelMetadataNodeCollection(
 
         # Initialize enterprise features if not present
         if "_metadata_analytics" not in self.root:
-            self.root["_metadata_analytics"] = ModelMetadataNodeAnalytics().model_dump()
+            self.root["_metadata_analytics"] = ModelMetadataNodeAnalytics(
+                total_nodes=0,
+                total_invocations=0,
+                overall_success_rate=100.0,
+                avg_collection_performance=0.0,
+                health_score=100.0,
+                documentation_coverage=0.0,
+                validation_compliance=100.0,
+            ).model_dump()
 
         if "_node_info" not in self.root:
             self.root["_node_info"] = {}
 
-    @model_validator(mode="before")  # type: ignore[misc]
+    @model_validator(mode="before")
     @classmethod
     def coerce_node_values(
         cls,
@@ -99,9 +106,10 @@ class ModelMetadataNodeCollection(
         if isinstance(data, ModelMetadataNodeCollection):
             return data.root
 
-        return data or {}
+        # Handle None case (only remaining possibility)
+        return {}  # type: ignore[unreachable]
 
-    @model_validator(mode="after")  # type: ignore[misc]
+    @model_validator(mode="after")
     def check_function_names_and_enhance(
         self,
     ) -> "ModelMetadataNodeCollection":
@@ -124,8 +132,9 @@ class ModelMetadataNodeCollection(
             node_count += 1
 
             # Update analytics if node info exists
-            if name in self.root.get("_node_info", {}):
-                node_info_data = self.root["_node_info"][name]
+            node_info_dict = self.root.get("_node_info", {})
+            if isinstance(node_info_dict, dict) and name in node_info_dict:
+                node_info_data = node_info_dict[name]
                 if isinstance(node_info_data, dict):
                     node_type = node_info_data.get("node_type", "function")
                     node_status = node_info_data.get("status", "active")
@@ -139,23 +148,50 @@ class ModelMetadataNodeCollection(
                         nodes_by_complexity.get(node_complexity, 0) + 1
                     )
 
-        # Update analytics
+        # Update analytics with proper type handling
         analytics_data = self.root.get("_metadata_analytics", {})
         if isinstance(analytics_data, dict):
-            analytics_data.update(
-                {
-                    "last_modified": datetime.now().isoformat(),
-                    "total_nodes": node_count,
-                    "nodes_by_type": nodes_by_type,
-                    "nodes_by_status": nodes_by_status,
-                    "nodes_by_complexity": nodes_by_complexity,
-                },
+            # Create a new ModelMetadataNodeAnalytics instance with updated data
+            updated_analytics = ModelMetadataNodeAnalytics(
+                total_nodes=node_count,
+                total_invocations=int(analytics_data.get("total_invocations", 0)),
+                overall_success_rate=float(
+                    analytics_data.get("overall_success_rate", 100.0)
+                ),
+                avg_collection_performance=float(
+                    analytics_data.get("avg_collection_performance", 0.0)
+                ),
+                health_score=float(analytics_data.get("health_score", 100.0)),
+                documentation_coverage=float(
+                    analytics_data.get("documentation_coverage", 0.0)
+                ),
+                validation_compliance=float(
+                    analytics_data.get("validation_compliance", 100.0)
+                ),
+                nodes_by_type=nodes_by_type,
+                nodes_by_status=nodes_by_status,
+                nodes_by_complexity=nodes_by_complexity,
             )
-        self.root["_metadata_analytics"] = analytics_data
+            self.root["_metadata_analytics"] = updated_analytics.model_dump()
+        else:
+            # Create new analytics if none exist
+            new_analytics = ModelMetadataNodeAnalytics(
+                total_nodes=node_count,
+                total_invocations=0,
+                overall_success_rate=100.0,
+                avg_collection_performance=0.0,
+                health_score=100.0,
+                documentation_coverage=0.0,
+                validation_compliance=100.0,
+                nodes_by_type=nodes_by_type,
+                nodes_by_status=nodes_by_status,
+                nodes_by_complexity=nodes_by_complexity,
+            )
+            self.root["_metadata_analytics"] = new_analytics.model_dump()
 
         return self
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def collection_id(self) -> str:
         """Generate unique identifier for this collection."""
@@ -163,13 +199,13 @@ class ModelMetadataNodeCollection(
         content = f"metadata_nodes:{':'.join(node_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def node_count(self) -> int:
         """Get total number of nodes (excluding metadata)."""
         return len([k for k in self.root if not k.startswith("_")])
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def analytics(self) -> ModelMetadataNodeAnalytics:
         """Get collection analytics."""
@@ -177,9 +213,17 @@ class ModelMetadataNodeCollection(
         if isinstance(analytics_data, dict):
             return ModelMetadataNodeAnalytics(**analytics_data)
         else:
-            return ModelMetadataNodeAnalytics()
+            return ModelMetadataNodeAnalytics(
+                total_nodes=0,
+                total_invocations=0,
+                overall_success_rate=100.0,
+                avg_collection_performance=0.0,
+                health_score=100.0,
+                documentation_coverage=0.0,
+                validation_compliance=100.0,
+            )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def health_score(self) -> float:
         """Calculate overall collection health score."""
@@ -243,13 +287,30 @@ class ModelMetadataNodeCollection(
             if node_info:
                 if "_node_info" not in self.root:
                     self.root["_node_info"] = {}
-                self.root["_node_info"][name] = node_info.model_dump()
-            elif name not in self.root.get("_node_info", {}):
-                # Create default node info
-                default_info = ModelMetadataNodeInfo(name=name)
-                if "_node_info" not in self.root:
-                    self.root["_node_info"] = {}
-                self.root["_node_info"][name] = default_info.model_dump()
+                node_info_dict = self.root["_node_info"]
+                if isinstance(node_info_dict, dict):
+                    node_info_dict[name] = node_info.model_dump()
+            else:
+                node_info_dict = self.root.get("_node_info", {})
+                if isinstance(node_info_dict, dict) and name not in node_info_dict:
+                    # Create default node info
+                    default_info = ModelMetadataNodeInfo(
+                        name=name,
+                        node_type=EnumMetadataNodeType.FUNCTION,
+                        status=EnumMetadataNodeStatus.ACTIVE,
+                        complexity=EnumMetadataNodeComplexity.SIMPLE,
+                        description="",
+                        documentation="",
+                        author="Unknown",
+                        version="1.0.0",
+                        replaces=None,
+                        security_level=EnumSecurityLevel.STANDARD,
+                    )
+                    if "_node_info" not in self.root:
+                        self.root["_node_info"] = {}
+                    node_info_dict = self.root["_node_info"]
+                    if isinstance(node_info_dict, dict):
+                        node_info_dict[name] = default_info.model_dump()
 
             # Update analytics
             self._update_analytics()
@@ -265,8 +326,9 @@ class ModelMetadataNodeCollection(
             del self.root[name]
 
             # Remove node info if exists
-            if "_node_info" in self.root and name in self.root["_node_info"]:
-                del self.root["_node_info"][name]
+            node_info_dict = self.root.get("_node_info")
+            if isinstance(node_info_dict, dict) and name in node_info_dict:
+                del node_info_dict[name]
 
             # Update analytics
             self._update_analytics()
@@ -276,13 +338,15 @@ class ModelMetadataNodeCollection(
 
     def get_node(self, name: str) -> Optional[Union[ModelFunctionNode, Dict[str, str]]]:
         """Get a node by name."""
-        return self.root.get(name)  # type: ignore[return-value]
+        return self.root.get(name)
 
     def get_node_info(self, name: str) -> Optional[ModelMetadataNodeInfo]:
         """Get enhanced node information."""
-        node_info_data = self.root.get("_node_info", {}).get(name)
-        if node_info_data:
-            return ModelMetadataNodeInfo(**node_info_data)
+        node_info_dict = self.root.get("_node_info", {})
+        if isinstance(node_info_dict, dict):
+            node_info_data = node_info_dict.get(name)
+            if node_info_data and isinstance(node_info_data, dict):
+                return ModelMetadataNodeInfo(**node_info_data)
         return None
 
     def update_node_info(self, name: str, node_info: ModelMetadataNodeInfo) -> bool:
@@ -293,13 +357,16 @@ class ModelMetadataNodeCollection(
         if "_node_info" not in self.root:
             self.root["_node_info"] = {}
 
-        self.root["_node_info"][name] = node_info.model_dump()
+        node_info_dict = self.root["_node_info"]
+        if isinstance(node_info_dict, dict):
+            node_info_dict[name] = node_info.model_dump()
         self._update_analytics()
         return True
 
     def _update_analytics(self) -> None:
         """Internal method to update collection analytics."""
-        analytics_data = self.root.get("_metadata_analytics", {})
+        analytics_dict = self.root.get("_metadata_analytics", {})
+        analytics_data = analytics_dict if isinstance(analytics_dict, dict) else {}
 
         # Count nodes by various categories
         nodes_by_type: Dict[str, int] = {}
@@ -338,19 +405,18 @@ class ModelMetadataNodeCollection(
             else 100.0
         )
 
-        # Update analytics
-        analytics_data.update(
-            {
-                "last_modified": datetime.now().isoformat(),
-                "total_nodes": node_count,
-                "nodes_by_type": nodes_by_type,
-                "nodes_by_status": nodes_by_status,
-                "nodes_by_complexity": nodes_by_complexity,
-                "total_invocations": total_invocations,
-                "overall_success_rate": overall_success_rate,
-                "health_score": self.health_score,
-            },
-        )
+        # Update analytics - mixed types in analytics data
+        update_dict = {
+            "last_modified": datetime.now().isoformat(),
+            "total_nodes": node_count,
+            "nodes_by_type": nodes_by_type,
+            "nodes_by_status": nodes_by_status,
+            "nodes_by_complexity": nodes_by_complexity,
+            "total_invocations": total_invocations,
+            "overall_success_rate": overall_success_rate,
+            "health_score": self.health_score,
+        }
+        analytics_data.update(update_dict)
 
         self.root["_metadata_analytics"] = analytics_data
 
@@ -374,7 +440,14 @@ class ModelMetadataNodeCollection(
                 node_info = ModelMetadataNodeInfo(
                     name=name,
                     description=getattr(node, "description", ""),
-                    node_type=ModelMetadataNodeType.FUNCTION,
+                    node_type=EnumMetadataNodeType.FUNCTION,
+                    status=EnumMetadataNodeStatus.ACTIVE,
+                    complexity=EnumMetadataNodeComplexity.SIMPLE,
+                    documentation="",
+                    author="Unknown",
+                    version="1.0.0",
+                    replaces=None,
+                    security_level=EnumSecurityLevel.STANDARD,
                 )
                 collection.update_node_info(name, node_info)
 

@@ -93,6 +93,34 @@ class ModelSemVer(BaseModel):
         """Hash function for use in sets and as dict keys."""
         return hash((self.major, self.minor, self.patch))
 
+    @classmethod
+    def parse(cls, version_str: str) -> "ModelSemVer":
+        """Parse semantic version string into ModelSemVer instance."""
+        if not isinstance(version_str, str):
+            msg = f"Version must be a string, got {type(version_str)}"  # type: ignore[unreachable]
+            raise ValueError(msg)
+
+        parts = version_str.strip().split(".")
+        if len(parts) != 3:
+            msg = f"Invalid semantic version format: {version_str}. Expected 'major.minor.patch'"
+            raise ValueError(msg)
+
+        try:
+            major = int(parts[0])
+            minor = int(parts[1])
+            patch = int(parts[2])
+        except ValueError as e:
+            msg = f"Invalid semantic version format: {version_str}. All parts must be integers"
+            raise ValueError(msg) from e
+
+        return cls(major=major, minor=minor, patch=patch)
+
+
+# Utility function for external modules
+def parse_semver_from_string(version_str: str) -> ModelSemVer:
+    """Parse semantic version string into ModelSemVer instance."""
+    return ModelSemVer.parse(version_str)
+
 
 # Type alias for use in models - enforce proper ModelSemVer instances only
 SemVerField = ModelSemVer

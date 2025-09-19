@@ -2,7 +2,7 @@
 Namespace model.
 """
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel
 
@@ -93,11 +93,13 @@ class ModelNamespace(BaseModel):
     def __str__(self) -> str:
         return self.value
 
-    def model_dump(self, *args, **kwargs):
+    def model_dump(self, *args: Any, **kwargs: Any) -> Any:
         # Always dump as a string for YAML/JSON
         return self.value
 
     @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema, handler):
+    def __get_pydantic_json_schema__(
+        cls, core_schema: Any, handler: Any
+    ) -> dict[str, str]:
         # Ensure schema is string, not object
         return {"type": "string"}

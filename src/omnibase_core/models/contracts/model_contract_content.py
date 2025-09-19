@@ -9,13 +9,20 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.node import EnumNodeType
-from .model_contract_action import ModelContractAction
-from .model_contract_definitions import (
-    ModelContractDefinitions,
-)
-from .model_contract_dependency import ModelContractDependency
+from omnibase_core.enums.nodes import EnumNodeType
 from omnibase_core.models.core.model_io_operation import ModelIOOperation
+from omnibase_core.models.core.model_performance_config import ModelPerformanceConfig
+from omnibase_core.models.core.model_reduction_operation import ModelReductionOperation
+from omnibase_core.models.core.model_semver import ModelSemVer
+from omnibase_core.models.core.model_subcontract_reference import (
+    ModelSubcontractReference,
+)
+from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
+from omnibase_core.models.core.model_validation_rule import (
+    ModelValidationRule,
+    ModelValidationRuleSet,
+)
+from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.models.nodes.model_node_configs import (
     ModelAggregationConfig,
     ModelCachingConfig,
@@ -31,19 +38,12 @@ from omnibase_core.models.nodes.model_node_configs import (
     ModelWorkflowRegistryConfig,
 )
 from omnibase_core.models.nodes.model_node_specification import ModelNodeSpecification
-from omnibase_core.models.core.model_performance_config import ModelPerformanceConfig
-from omnibase_core.models.core.model_reduction_operation import ModelReductionOperation
-from omnibase_core.models.core.model_semver import ModelSemVer
-from omnibase_core.models.core.model_subcontract_reference import (
-    ModelSubcontractReference,
-)
-from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
-from omnibase_core.models.core.model_validation_rule import (
-    ModelValidationRule,
-    ModelValidationRuleSet,
-)
-from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 
+from .model_contract_action import ModelContractAction
+from .model_contract_definitions import (
+    ModelContractDefinitions,
+)
+from .model_contract_dependency import ModelContractDependency
 from .model_generic_metadata import ModelGenericMetadata
 
 

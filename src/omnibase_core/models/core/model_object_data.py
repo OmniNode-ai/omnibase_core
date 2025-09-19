@@ -11,6 +11,6 @@ class ModelObjectData(BaseModel):
     """Generic objectdata model for common use."""
 
     data: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default=None,
         description="Arbitrary object data for flexible field content",
     )

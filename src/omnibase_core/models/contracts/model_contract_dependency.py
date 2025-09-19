@@ -6,6 +6,8 @@ This model supports dependency injection configuration in contracts.
 Author: ONEX Framework Team
 """
 
+from typing import Iterator
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -35,7 +37,7 @@ class ModelContractDependencies(BaseModel):
         description="List of contract dependencies",
     )
 
-    def __iter__(self) -> iter:
+    def iter_dependencies(self) -> Iterator[ModelContractDependency]:
         """Allow iteration over dependencies."""
         return iter(self.dependencies)
 

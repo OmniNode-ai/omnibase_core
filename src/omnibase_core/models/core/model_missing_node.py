@@ -133,12 +133,12 @@ class ModelMissingNode(BaseModel):
     )
 
     dependencies: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="List of dependencies required for this node",
     )
 
     alternative_nodes: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Alternative nodes that could provide similar functionality",
     )
 
@@ -154,12 +154,23 @@ class ModelMissingNode(BaseModel):
     )
 
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=lambda: ModelGenericMetadata(),
+        default_factory=lambda: ModelGenericMetadata(
+            created_at=None,
+            updated_at=None,
+            created_by=None,
+            updated_by=None,
+            version=None,
+            tags=None,
+            labels=None,
+            annotations=None,
+            custom_fields=None,
+            extended_data=None,
+        ),
         description="Additional metadata and context information",
     )
 
     affected_operations: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="List of operations affected by this missing node",
     )
 
@@ -188,9 +199,8 @@ class ModelMissingNode(BaseModel):
         # Check for valid Python identifier-like names
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v.strip()):
             # Allow some flexibility for node names with dots or hyphens
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):
-                msg = "Node name should be a valid identifier-like string"
-                raise ValueError(msg)
+            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_\.\-]*$", v.strip()):  # type: ignore[unreachable]
+                raise ValueError("Node name should be a valid identifier-like string")
 
         return v.strip()
 
@@ -431,7 +441,9 @@ class ModelMissingNode(BaseModel):
             NodeCriticality.LOW: 0.3,
             NodeCriticality.OPTIONAL: 0.1,
         }
-        score += criticality_scores.get(self.criticality, 0.5)
+        score += (
+            criticality_scores.get(self.criticality, 0.5) if self.criticality else 0.5
+        )
 
         # Adjust for node category
         category_multipliers = {
@@ -446,7 +458,11 @@ class ModelMissingNode(BaseModel):
             NodeCategory.EXTERNAL_SERVICE: 0.7,
             NodeCategory.UTILITY: 0.3,
         }
-        score *= category_multipliers.get(self.node_category, 0.5)
+        score *= (
+            category_multipliers.get(self.node_category, 0.5)
+            if self.node_category
+            else 0.5
+        )
 
         # Adjust for affected operations
         if self.affected_operations:

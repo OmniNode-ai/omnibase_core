@@ -5,15 +5,17 @@ Structured model for node actions that provides better metadata than simple enum
 Enhanced for node-as-a-service architecture with MCP/GraphQL compatibility.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import Field, field_validator
 
+from omnibase_core.models.core.model_action_base import ModelActionBase
 from omnibase_core.models.core.model_action_category import ModelActionCategory
-from .model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.predefined_categories import LIFECYCLE, VALIDATION
 
-from .model_action_base import ModelActionBase
+from .model_node_action_type import ModelNodeActionType
 
 
 class ModelNodeAction(ModelActionBase):
@@ -100,7 +102,7 @@ class ModelNodeAction(ModelActionBase):
 
     @field_validator("action_type")
     @classmethod
-    def validate_action_type(cls, v: ModelNodeActionType) -> ModelNodeActionType:
+    def validate_action_type(cls, v: Any) -> ModelNodeActionType:
         """Validate that action_type is a valid ModelNodeActionType."""
         if not isinstance(v, ModelNodeActionType):
             msg = f"action_type must be a ModelNodeActionType, got {type(v)}"
@@ -209,7 +211,7 @@ class ModelNodeAction(ModelActionBase):
             "graphql_endpoint": self.graphql_endpoint,
             "composition_compatible": self.composition_compatible,
             "service_dependencies": self.service_dependencies,
-            "tags": self.tags + self.node_discovery_tags,
+            "tags": self.tags,
             "estimated_duration_ms": self.estimated_duration_ms,
             "requires_confirmation": self.requires_confirmation,
             "is_destructive": self.is_destructive,

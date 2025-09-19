@@ -23,21 +23,21 @@ class ModelGenericMetadata(BaseModel):
 
     # Flexible fields for various use cases
     tags: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Associated tags",
     )
     labels: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Key-value labels",
     )
     annotations: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Key-value annotations",
     )
 
     # Additional flexible storage
     custom_fields: dict[str, str | int | float | bool | list[str]] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Custom fields with basic types",
     )
 

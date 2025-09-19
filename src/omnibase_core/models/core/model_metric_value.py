@@ -17,7 +17,7 @@ class ModelMetricValue(BaseModel):
         description="When the metric was captured",
     )
     labels: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Metric labels",
     )
 

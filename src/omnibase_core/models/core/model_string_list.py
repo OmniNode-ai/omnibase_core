@@ -58,8 +58,8 @@ class ModelStringList(BaseModel):
         """Support len() function."""
         return len(self.items)
 
-    def __iter__(self) -> Iterator[str]:
-        """Support iteration."""
+    def iter_items(self) -> Iterator[str]:
+        """Iterate over string items."""
         return iter(self.items)
 
     def __getitem__(self, index: int) -> str:

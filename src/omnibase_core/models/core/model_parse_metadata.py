@@ -95,17 +95,17 @@ class ModelParseMetadata(BaseModel):
     )
 
     environment_variables: dict[str, str] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Relevant environment variables during parsing",
     )
 
     parsing_context: dict[str, Any] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Additional parsing context",
     )
 
     debug_info: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default=None,
         description="Debug information for troubleshooting",
     )
 
@@ -118,7 +118,14 @@ class ModelParseMetadata(BaseModel):
 
     def add_debug_info(self, key: str, value: Any) -> None:
         """Add debug information."""
-        self.debug_info[key] = value
+        if self.debug_info is None:
+            self.debug_info = ModelGenericMetadata.from_dict({})
+
+        # Use custom_fields for key-value storage
+        assert self.debug_info is not None  # We just ensured it's not None above
+        if self.debug_info.custom_fields is None:
+            self.debug_info.custom_fields = {}
+        self.debug_info.custom_fields[key] = value
 
     def add_context(self, key: str, value: Any) -> None:
         """Add parsing context information."""
@@ -170,4 +177,6 @@ class ModelParseMetadata(BaseModel):
             command_definition_id=command_definition_id,
             contract_source=contract_source,
             argument_count=len(raw_args),
+            parse_end_time=None,
+            parse_duration_ms=0,
         )

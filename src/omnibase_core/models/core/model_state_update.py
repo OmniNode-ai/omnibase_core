@@ -6,6 +6,7 @@ as part of contract-driven state transitions.
 """
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -136,7 +137,7 @@ class ModelStateUpdate(BaseModel):
         self,
         field_path: str,
         operation: EnumStateUpdateOperation | str,
-        value: ModelSchemaValue | None = None,
+        value: Any = None,
         condition: str | None = None,
     ) -> None:
         """Add a field update to this state update."""
@@ -233,7 +234,16 @@ class ModelStateUpdate(BaseModel):
     @classmethod
     def create_empty(cls) -> "ModelStateUpdate":
         """Create an empty state update (no changes)."""
-        return cls(field_updates=[])
+        return cls(
+            field_updates=[],
+            update_id=None,
+            update_source=None,
+            update_timestamp=None,
+            validation_rules=None,
+            emit_events=None,
+            log_messages=None,
+            error_strategy=None,
+        )
 
     def is_empty(self) -> bool:
         """Check if this update has any field updates."""

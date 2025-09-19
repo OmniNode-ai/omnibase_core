@@ -274,7 +274,7 @@ class ModelSchemaDict(BaseModel):
 
         # Build kwargs
         kwargs = {}
-        additional_fields = {}
+        additional_fields: dict[str, ModelSchemaValue] = {}
 
         for key, value in data.items():
             if key == "items" and isinstance(value, dict):
@@ -324,4 +324,4 @@ class ModelSchemaDict(BaseModel):
                 additional_fields[key] = ModelSchemaValue.from_value(value)
 
         kwargs["additional_fields"] = additional_fields  # type: ignore[assignment]
-        return cls(**kwargs)  # type: ignore[arg-type]
+        return cls(**kwargs)

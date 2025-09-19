@@ -1,0 +1,111 @@
+"""
+Node metadata model.
+
+Provides comprehensive metadata for a registered node with strongly typed enums.
+"""
+
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.nodes.enum_node_capability_level import EnumNodeCapabilityLevel
+from omnibase_core.enums.nodes.enum_node_category import EnumNodeCategory
+from omnibase_core.enums.nodes.enum_node_compatibility_mode import (
+    EnumNodeCompatibilityMode,
+)
+from omnibase_core.enums.nodes.enum_node_registration_status import (
+    EnumNodeRegistrationStatus,
+)
+from omnibase_core.enums.nodes.enum_security_level import EnumSecurityLevel
+from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
+from omnibase_core.models.core.model_schema import ModelSchema
+
+from .model_node_performance_metrics import ModelNodePerformanceMetrics
+from .model_node_validation_result import ModelNodeValidationResult
+
+
+class ModelNodeMetadata(BaseModel):
+    """Comprehensive metadata for a registered node."""
+
+    name: str = Field(..., description="Node name")
+    node_class: str = Field(..., description="Node class name")
+    module_path: str = Field(..., description="Node module path")
+    registration_time: datetime = Field(
+        default_factory=datetime.now,
+        description="When node was registered",
+    )
+    status: EnumNodeRegistrationStatus = Field(
+        EnumNodeRegistrationStatus.REGISTERED,
+        description="Registration status",
+    )
+    category: EnumNodeCategory = Field(
+        EnumNodeCategory.UNKNOWN, description="Node category"
+    )
+    capability_level: EnumNodeCapabilityLevel = Field(
+        EnumNodeCapabilityLevel.BASIC,
+        description="Capability level",
+    )
+    compatibility_mode: EnumNodeCompatibilityMode = Field(
+        EnumNodeCompatibilityMode.COMPATIBLE,
+        description="Compatibility mode",
+    )
+
+    # Performance and usage tracking
+    performance_metrics: ModelNodePerformanceMetrics = Field(
+        default_factory=lambda: ModelNodePerformanceMetrics(
+            avg_execution_time_ms=0.0,
+            success_rate_percent=100.0,
+            error_rate_percent=0.0,
+            total_executions=0,
+            last_execution_time=None,
+            memory_usage_mb=0.0,
+            cpu_usage_percent=0.0,
+        ),
+        description="Performance metrics",
+    )
+    validation_result: ModelNodeValidationResult = Field(
+        default_factory=lambda: ModelNodeValidationResult(
+            is_valid=True,
+            interface_compliance=True,
+            signature_valid=True,
+            dependencies_satisfied=True,
+        ),
+        description="Validation results",
+    )
+
+    # Documentation and configuration
+    description: str = Field("", description="Node description")
+    version: str = Field("1.0.0", description="Node version")
+    author: str = Field("Unknown", description="Node author")
+    documentation_url: str | None = Field(None, description="Documentation URL")
+    configuration_schema: ModelSchema | None = Field(
+        default=None,
+        description="Configuration schema",
+    )
+
+    # Dependencies and requirements
+    dependencies: list[str] = Field(
+        default_factory=list,
+        description="Node dependencies",
+    )
+    required_protocols: list[str] = Field(
+        default_factory=list,
+        description="Required protocol interfaces",
+    )
+    optional_protocols: list[str] = Field(
+        default_factory=list,
+        description="Optional protocol interfaces",
+    )
+
+    # Security and compliance with strongly typed enum
+    security_level: EnumSecurityLevel = Field(
+        EnumSecurityLevel.STANDARD, description="Security clearance level"
+    )
+    compliance_tags: list[str] = Field(
+        default_factory=list,
+        description="Compliance tags",
+    )
+    audit_trail: list[ModelAuditEntry] = Field(
+        default_factory=list,
+        description="Audit trail entries",
+    )

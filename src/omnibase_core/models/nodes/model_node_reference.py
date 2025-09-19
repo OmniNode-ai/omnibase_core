@@ -8,9 +8,8 @@ to support local, remote, and third-party node references.
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_capability import ModelCapability
-from .model_node_metadata import (
-    NodeMetadataBlock as ModelNodeMetadata,
-)
+
+from .model_node_metadata import ModelNodeMetadata
 
 
 class ModelNodeReference(BaseModel):
@@ -76,8 +75,11 @@ class ModelNodeReference(BaseModel):
         """Create a local node reference."""
         return cls(
             node_name=node_name,
+            namespace=None,
             node_type="local",
+            endpoint=None,
             capabilities=capabilities or [],
+            metadata=None,
         )
 
     @classmethod
@@ -90,9 +92,11 @@ class ModelNodeReference(BaseModel):
         """Create a remote node reference."""
         return cls(
             node_name=node_name,
+            namespace=None,
             node_type="remote",
             endpoint=endpoint,
             capabilities=capabilities or [],
+            metadata=None,
         )
 
     @classmethod
@@ -107,5 +111,7 @@ class ModelNodeReference(BaseModel):
             node_name=node_name,
             namespace=namespace,
             node_type="plugin",
+            endpoint=None,
             capabilities=capabilities or [],
+            metadata=None,
         )

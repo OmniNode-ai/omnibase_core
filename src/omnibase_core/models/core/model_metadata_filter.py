@@ -16,6 +16,8 @@ class ModelMetadataFilter(ModelCustomFilterBase):
     metadata_key: str = Field(..., description="Metadata key to filter on")
     metadata_value: Any = Field(..., description="Expected metadata value")
     operator: ModelFilterOperator = Field(
-        default_factory=lambda: ModelFilterOperator(operator="eq", value=""),
+        default_factory=lambda: ModelFilterOperator(
+            operator="eq", value="", case_sensitive=True
+        ),
         description="Comparison operator",
     )

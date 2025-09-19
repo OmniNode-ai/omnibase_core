@@ -34,7 +34,7 @@ from .model_metadata_base import ModelMetadataBase
 
 # Node and base models
 from .model_node_base import ModelNodeBase
-from .model_onex_base_state import ModelOnexBaseState
+from .model_onex_base_state import ModelOnexInputState
 from .model_onex_envelope import ModelOnexEnvelope
 
 # Core ONEX models for system integration

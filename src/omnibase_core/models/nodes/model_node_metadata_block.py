@@ -4,11 +4,11 @@ Node metadata block model.
 
 import enum
 from pathlib import Path
-from typing import Annotated, ClassVar, Optional, TypeAlias, cast
+from typing import Annotated, Any, ClassVar, Optional, TypeAlias, cast
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
-from omnibase_core.enums import Lifecycle, MetaTypeEnum
+from omnibase_core.enums import EnumMetaType, Lifecycle
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
@@ -20,7 +20,6 @@ from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 from omnibase_core.models.core.model_function_node import ModelFunctionNode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_io_block import ModelIOBlock
-from .model_node_collection import ModelNodeCollection
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
@@ -33,6 +32,7 @@ from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
 from .model_logging_config import ModelLoggingConfig
 from .model_namespace import ModelNamespace
+from .model_node_collection import ModelNodeCollection
 from .model_signature_contract import ModelSignatureContract
 from .model_source_repository import ModelSourceRepository
 from .model_state_contract_block import ModelStateContractBlock
@@ -114,7 +114,7 @@ class ModelNodeMetadataBlock(BaseModel):
         ...,
         description="Namespace, e.g., <prefix>.nodes.<name>",
     )
-    meta_type: MetaTypeEnum = Field(default=MetaTypeEnum.NODE)
+    meta_type: EnumMetaType = Field(default=EnumMetaType.NODE)
     trust_score: float | None = None
     tags: list[str] | None = None
     capabilities: list[str] | None = None
@@ -178,7 +178,7 @@ class ModelNodeMetadataBlock(BaseModel):
         )
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
     @classmethod
@@ -196,9 +196,7 @@ class ModelNodeMetadataBlock(BaseModel):
     @classmethod
     def get_canonicalizer(cls) -> object | None:
         policy = cls.canonicalization_policy
-        if isinstance(policy, ModelCanonicalizationPolicy):
-            return policy.get_canonicalizer()
-        return None
+        return policy.get_canonicalizer()
 
     def some_function(self) -> None:
         # implementation
@@ -256,7 +254,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 d[k] = v.to_uri()
                 continue
             # Namespace as URI string (always)
-            if k == "namespace" and isinstance(v, Namespace):
+            if k == "namespace" and isinstance(v, Namespace):  # type: ignore[misc]
                 d[k] = str(v)
                 continue
             # PATCH: Omit nodes if None, empty dict, or empty NodeCollection (protocol rule)
@@ -274,7 +272,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, value):
+    def validate_entrypoint(cls, value: Any) -> str | EntrypointBlock:
         if isinstance(value, EntrypointBlock):
             return str(value) if value else ""
         if isinstance(value, str):
@@ -285,10 +283,10 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def validate_namespace_field(cls, value: object):
+    def validate_namespace_field(cls, value: object) -> Namespace:
         # Recursively flatten any dict or Namespace to a plain string
-        def flatten_namespace(val: object):
-            if isinstance(val, Namespace):
+        def flatten_namespace(val: object) -> str:
+            if isinstance(val, Namespace):  # type: ignore[misc]
                 return val.value
             if isinstance(val, str):
                 # Normalize scheme if present
@@ -305,12 +303,12 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("x_extensions", mode="before")
     @classmethod
-    def coerce_x_extensions(cls, v: object):
+    def coerce_x_extensions(cls, v: object) -> object | dict[str, ExtensionValueModel]:
         if not isinstance(v, dict):
             return v
         out = {}
         for k, val in v.items():
-            if isinstance(val, ExtensionValueModel):
+            if isinstance(val, ExtensionValueModel):  # type: ignore[misc]
                 out[k] = val
             elif isinstance(val, dict):
                 out[k] = ExtensionValueModel(**val)
@@ -318,7 +316,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ExtensionValueModel(value=val)
         return out
 
-    def model_dump(self, *args, **kwargs):
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d

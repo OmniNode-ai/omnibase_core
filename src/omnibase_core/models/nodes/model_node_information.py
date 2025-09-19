@@ -8,8 +8,8 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-class ModelNodeConfiguration(BaseModel):
-    """Configuration for a node."""
+class ModelNodeInformationConfig(BaseModel):
+    """Detailed configuration for node information."""
 
     # Execution settings
     max_retries: int | None = Field(None, description="Maximum retry attempts")
@@ -78,8 +78,24 @@ class ModelNodeInformation(BaseModel):
     )
 
     # Node configuration
-    configuration: ModelNodeConfiguration = Field(
-        default_factory=lambda: ModelNodeConfiguration(),
+    configuration: ModelNodeInformationConfig = Field(
+        default_factory=lambda: ModelNodeInformationConfig(
+            max_retries=None,
+            timeout_seconds=None,
+            batch_size=None,
+            parallel_execution=False,
+            max_memory_mb=None,
+            max_cpu_percent=None,
+            enable_caching=False,
+            enable_monitoring=True,
+            enable_tracing=False,
+            endpoint=None,
+            port=None,
+            protocol=None,
+            custom_settings=None,
+            custom_flags=None,
+            custom_limits=None,
+        ),
         description="Node configuration",
     )
 

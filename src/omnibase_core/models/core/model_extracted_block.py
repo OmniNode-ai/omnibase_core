@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING, Optional
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from omnibase_core.models.nodes.model_node_metadata import NodeMetadataBlock
+    from omnibase_core.models.nodes.model_node_metadata_block import (
+        ModelNodeMetadataBlock,
+    )
 
 
 class ModelExtractedBlock(BaseModel):
@@ -15,9 +17,9 @@ class ModelExtractedBlock(BaseModel):
     Result model for extract_block protocol method.
     """
 
-    metadata: Optional["NodeMetadataBlock"] = Field(
+    metadata: Optional["ModelNodeMetadataBlock"] = Field(
         None,
-        description="Extracted metadata block (NodeMetadataBlock or None)",
+        description="Extracted metadata block (ModelNodeMetadataBlock or None)",
     )
     body: str | None = Field(
         None,

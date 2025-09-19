@@ -49,14 +49,24 @@ class OnexException(Exception):
             error_code=self.error_code,
             correlation_id=self.correlation_id,
             timestamp=self.timestamp,
-            context=ModelErrorContext(properties=self.context),
+            context=ModelErrorContext(
+                file_path=None,
+                line_number=None,
+                column_number=None,
+                function_name=None,
+                module_name=None,
+                stack_trace=None,
+                additional_context={},
+            ),
         )
 
 
 class OnexValidationException(OnexException):
     """Exception for validation errors."""
 
-    def __init__(self, message: str, field_name: str | None = None, **kwargs) -> None:
+    def __init__(
+        self, message: str, field_name: str | None = None, **kwargs: Any
+    ) -> None:
         context = kwargs.get("context", {})
         if field_name:
             context["field_name"] = field_name
@@ -68,7 +78,9 @@ class OnexValidationException(OnexException):
 class OnexConfigurationException(OnexException):
     """Exception for configuration errors."""
 
-    def __init__(self, message: str, config_path: str | None = None, **kwargs) -> None:
+    def __init__(
+        self, message: str, config_path: str | None = None, **kwargs: Any
+    ) -> None:
         context = kwargs.get("context", {})
         if config_path:
             context["config_path"] = config_path
@@ -85,7 +97,7 @@ class OnexContractException(OnexException):
         message: str,
         contract_path: str | None = None,
         node_name: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         context = kwargs.get("context", {})
         if contract_path:
@@ -101,7 +113,7 @@ class OnexRegistryException(OnexException):
     """Exception for registry-related errors."""
 
     def __init__(
-        self, message: str, registry_type: str | None = None, **kwargs
+        self, message: str, registry_type: str | None = None, **kwargs: Any
     ) -> None:
         context = kwargs.get("context", {})
         if registry_type:

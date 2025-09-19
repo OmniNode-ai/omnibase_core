@@ -26,7 +26,7 @@ class ModelContextMetadata(BaseModel):
     auth_method: str | None = Field(None, description="Authentication method used")
     auth_provider: str | None = Field(None, description="Authentication provider")
     permissions: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Granted permissions",
     )
 
@@ -40,22 +40,22 @@ class ModelContextMetadata(BaseModel):
 
     # Feature flags
     enabled_features: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Enabled features",
     )
     disabled_features: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Disabled features",
     )
     experimental_features: list[str] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Experimental features",
     )
 
     # Monitoring and telemetry
     trace_flags: str | None = Field(None, description="Distributed tracing flags")
     baggage_items: dict[str, str] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="OpenTelemetry baggage",
     )
     parent_span_id: str | None = Field(
@@ -64,7 +64,9 @@ class ModelContextMetadata(BaseModel):
     )
 
     # Custom metadata for extensibility
-    custom_tags: dict[str, str] = Field(default_factory=dict, description="Custom tags")
+    custom_tags: dict[str, str] = Field(
+        default_factory=lambda: {}, description="Custom tags"
+    )
     custom_metrics: dict[str, float] | None = Field(
         None,
         description="Custom metrics",
@@ -124,12 +126,24 @@ class ModelExecutionContext(BaseModel):
     )
 
     environment_variables: dict[str, str] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Additional environment variables",
     )
 
     execution_metadata: ModelContextMetadata = Field(
-        default_factory=ModelContextMetadata,
+        default_factory=lambda: ModelContextMetadata(
+            request_id=None,
+            request_source=None,
+            request_timestamp=None,
+            auth_method=None,
+            auth_provider=None,
+            max_memory_mb=None,
+            max_cpu_percent=None,
+            priority_level=None,
+            trace_flags=None,
+            parent_span_id=None,
+            custom_metrics=None,
+        ),
         description="Execution metadata",
     )
 
@@ -203,7 +217,7 @@ class ModelExecutionContext(BaseModel):
         # Check custom tags
         return self.execution_metadata.custom_tags.get(key, default)
 
-    def create_child_context(self, **overrides) -> "ModelExecutionContext":
+    def create_child_context(self, **overrides: Any) -> "ModelExecutionContext":
         """Create a child context with optional overrides."""
         data = self.model_dump()
         data.update(overrides)
@@ -242,7 +256,14 @@ class ModelExecutionContext(BaseModel):
     ) -> "ModelExecutionContext":
         """Create a default execution context."""
         environment = ModelEnvironment.create_default(environment_name)
-        return cls(execution_mode=execution_mode, environment=environment)
+        return cls(
+            execution_mode=execution_mode,
+            environment=environment,
+            working_directory=None,
+            user_id=None,
+            session_id=None,
+            correlation_id=None,
+        )
 
     @classmethod
     def create_debug(
@@ -268,4 +289,8 @@ class ModelExecutionContext(BaseModel):
             environment=environment,
             timeout=ModelDuration(milliseconds=60000),  # Longer timeout for production
             retry_attempts=5,  # More retries for production
+            working_directory=None,
+            user_id=None,
+            session_id=None,
+            correlation_id=None,
         )

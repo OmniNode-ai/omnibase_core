@@ -74,7 +74,7 @@ class ModelAuditEntry(BaseModel):
         description="New state (for updates)",
     )
     changes_summary: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Summary of changes",
     )
 
@@ -107,7 +107,7 @@ class ModelAuditEntry(BaseModel):
     # Security and compliance
     risk_score: float | None = Field(None, description="Risk score of the action")
     compliance_tags: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Compliance-related tags",
     )
     requires_review: bool | None = Field(
@@ -122,7 +122,7 @@ class ModelAuditEntry(BaseModel):
 
     # Additional context
     additional_context: dict[str, str] | None = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Additional context as key-value pairs",
     )
 

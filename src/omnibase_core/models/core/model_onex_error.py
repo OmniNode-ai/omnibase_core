@@ -60,7 +60,14 @@ class ModelOnexError(BaseModel):
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
     context: ModelErrorContext = Field(
-        default_factory=ModelErrorContext,
+        default_factory=lambda: ModelErrorContext(
+            file_path=None,
+            line_number=None,
+            column_number=None,
+            function_name=None,
+            module_name=None,
+            stack_trace=None,
+        ),
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )

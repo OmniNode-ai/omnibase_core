@@ -7,14 +7,15 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_registry_execution_mode import RegistryExecutionModeEnum
-from omnibase_core.enums.node import EnumNodeStatus
+from omnibase_core.enums.nodes import EnumNodeStatus
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_io_block import ModelIOBlock
+    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
+
     from .model_node_metadata_block import (
         ModelNodeMetadataBlock,
     )
-    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 
 
 class ModelNodeAnnounceMetadata(BaseModel):
@@ -87,10 +88,11 @@ class ModelNodeAnnounceMetadata(BaseModel):
 try:
     # Import the models needed for forward references
     from omnibase_core.models.core.model_io_block import ModelIOBlock
+    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
+
     from .model_node_metadata_block import (
         ModelNodeMetadataBlock,
     )
-    from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 
     # Rebuild the model to resolve forward references
     ModelNodeAnnounceMetadata.model_rebuild()

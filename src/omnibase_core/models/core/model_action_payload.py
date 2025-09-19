@@ -29,11 +29,13 @@ class ModelActionPayload(ModelOnexInputState):
 
     action: ModelNodeAction = Field(..., description="The action to execute")
     parameters: ModelActionParameters = Field(
-        default_factory=ModelActionParameters,
+        default_factory=lambda: ModelActionParameters(
+            raw_params=None,
+        ),
         description="Action execution parameters with strong typing",
     )
     execution_context: dict[str, str | int | float | bool] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Execution context and environment metadata",
     )
 
@@ -53,7 +55,7 @@ class ModelActionPayload(ModelOnexInputState):
         description="Target service for action execution",
     )
     routing_metadata: dict[str, str | int | float] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Service routing and load balancing metadata",
     )
     trust_level: float = Field(
@@ -65,7 +67,14 @@ class ModelActionPayload(ModelOnexInputState):
 
     # Tool-as-a-Service metadata with strong typing
     service_metadata: ModelGenericMetadata = Field(
-        default_factory=ModelGenericMetadata,
+        default_factory=lambda: ModelGenericMetadata(
+            created_at=None,
+            updated_at=None,
+            created_by=None,
+            updated_by=None,
+            version=None,
+            extended_data=None,
+        ),
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(

@@ -29,7 +29,18 @@ class ModelActionPayloadBase(BaseModel):
         description="Correlation ID for tracking this action",
     )
     metadata: ModelGenericMetadata = Field(
-        default_factory=ModelGenericMetadata,
+        default_factory=lambda: ModelGenericMetadata(
+            created_at=None,
+            updated_at=None,
+            created_by=None,
+            updated_by=None,
+            version=None,
+            tags=None,
+            labels=None,
+            annotations=None,
+            custom_fields=None,
+            extended_data=None,
+        ),
         description="Additional metadata for the action",
     )
 

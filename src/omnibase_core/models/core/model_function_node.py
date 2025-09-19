@@ -3,19 +3,12 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_metadata import EnumFunctionLanguage
+
 
 class NodeTypeEnum(str, Enum):
     FUNCTION = "function"
     # Add other node types as needed
-
-
-class FunctionLanguageEnum(str, Enum):
-    PYTHON = "python"
-    JAVASCRIPT = "javascript"
-    TYPESCRIPT = "typescript"
-    BASH = "bash"
-    YAML = "yaml"
-    # Add other languages as needed
 
 
 class ModelFunctionNode(BaseModel):
@@ -28,7 +21,7 @@ class ModelFunctionNode(BaseModel):
         default=NodeTypeEnum.FUNCTION,
         description="Node type (always 'function')",
     )
-    language: FunctionLanguageEnum = Field(
+    language: EnumFunctionLanguage = Field(
         ...,
         description="Programming language (python, javascript, typescript, bash, yaml, etc.)",
     )

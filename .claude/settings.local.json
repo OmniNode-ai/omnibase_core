@@ -30,7 +30,6 @@
       "mcp__archon__list_projects",
       "mcp__serena__read_file",
       "mcp__serena__replace_regex",
-      "Bash(git commit:*)",
       "mcp__archon__health_check",
       "mcp__archon__create_project",
       "mcp__serena__execute_shell_command",
@@ -54,7 +53,11 @@
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_state_transition.py --no-error-summary)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_hub_contract_config.py --no-error-summary)",
       "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_metadata_node_collection.py --no-error-summary)",
-      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_examples_collection.py --no-error-summary)"
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/models/core/model_examples_collection.py --no-error-summary)",
+      "mcp__serena__check_onboarding_performed",
+      "Bash(for:*)",
+      "Bash(do sed -i.bak 's/default_factory=Model\\([A-Za-z]*\\),/default_factory=lambda: Model\\1(),/g' \"$file\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -90,7 +90,14 @@ class ModelActionParameters(BaseModel):
         else:
             # Fall back to raw parameters for complex types
             if not self.raw_params:
-                self.raw_params = ModelGenericMetadata()
+                self.raw_params = ModelGenericMetadata(
+                    created_at=None,
+                    updated_at=None,
+                    created_by=None,
+                    updated_by=None,
+                    version=None,
+                    extended_data=None,
+                )
             # Use custom_fields for complex parameter storage
             if not self.raw_params.custom_fields:
                 self.raw_params.custom_fields = {}
@@ -121,7 +128,9 @@ class ModelActionParameters(BaseModel):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelActionParameters":
         """Create from dictionary for data conversion."""
-        instance = cls()
+        instance = cls(
+            raw_params=None,
+        )
         for key, value in data.items():
             instance.set_parameter(key, value)
         return instance

@@ -29,7 +29,7 @@ class ModelBusinessImpact(BaseModel):
     severity: ImpactSeverity = Field(..., description="Overall impact severity")
     affected_users: int | None = Field(None, description="Number of affected users")
     affected_services: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="List of affected services",
     )
     revenue_impact_usd: float | None = Field(
@@ -66,7 +66,7 @@ class ModelBusinessImpact(BaseModel):
         description="Reputation risk assessment",
     )
     compliance_impact: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Compliance violations",
     )
 
@@ -84,7 +84,7 @@ class ModelBusinessImpact(BaseModel):
         description="Whether escalation was needed",
     )
     incident_ticket_ids: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Related incident tickets",
     )
 
@@ -102,15 +102,15 @@ class ModelBusinessImpact(BaseModel):
 
     # Recovery metrics
     recovery_actions_taken: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Recovery actions",
     )
     preventive_measures_implemented: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Preventive measures",
     )
     lessons_learned: list[str] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description="Lessons learned",
     )
 

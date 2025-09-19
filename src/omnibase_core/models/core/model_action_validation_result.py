@@ -25,7 +25,7 @@ class ModelActionValidationResult(BaseModel):
         description="List of validation warnings",
     )
     security_checks: dict[str, bool] = Field(
-        default_factory=dict,
+        default_factory=lambda: {},
         description="Security validation results",
     )
     trust_score: float = Field(
@@ -37,7 +37,7 @@ class ModelActionValidationResult(BaseModel):
         description="Recommendations for improvement",
     )
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=dict,
+        default=None,
         description="Additional validation metadata",
     )
     validated_at: datetime = Field(

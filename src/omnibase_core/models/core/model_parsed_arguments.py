@@ -13,8 +13,8 @@ from omnibase_core.models.core.model_argument_map import ModelArgumentMap
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
-from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_parse_metadata import ModelParseMetadata
+from omnibase_core.models.nodes.model_node_reference import ModelNodeReference
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
@@ -138,7 +138,7 @@ class ModelParsedArguments(BaseModel):
 
     def get_required_arguments(self) -> list[str]:
         """Get list of required argument names from command definition."""
-        return [arg.name for arg in self.command_definition.arguments if arg.required]
+        return [arg.name for arg in self.command_definition.required_args]
 
     def validate_required_arguments(self) -> list[ModelValidationError]:
         """Validate that all required arguments are present."""
@@ -167,7 +167,11 @@ class ModelParsedArguments(BaseModel):
             arguments=ModelArgumentMap(),
             command_definition=command_definition,
             target_node=target_node,
+            validation_errors=[],
+            validation_warnings=[],
+            parse_metadata=None,
             is_help_request=True,
+            is_version_request=False,
             raw_command_line=raw_command_line,
             parsed_successfully=True,
         )
@@ -184,6 +188,10 @@ class ModelParsedArguments(BaseModel):
             arguments=ModelArgumentMap(),
             command_definition=command_definition,
             target_node=target_node,
+            validation_errors=[],
+            validation_warnings=[],
+            parse_metadata=None,
+            is_help_request=False,
             is_version_request=True,
             raw_command_line=raw_command_line,
             parsed_successfully=True,
@@ -203,6 +211,10 @@ class ModelParsedArguments(BaseModel):
             command_definition=command_definition,
             target_node=target_node,
             validation_errors=errors,
+            validation_warnings=[],
+            parse_metadata=None,
+            is_help_request=False,
+            is_version_request=False,
             raw_command_line=raw_command_line,
             parsed_successfully=False,
         )

@@ -163,7 +163,14 @@ class ModelCliResult(BaseModel):
         """Add debug information."""
         if self.execution.is_debug_enabled():
             if self.debug_info is None:
-                self.debug_info = ModelGenericMetadata()
+                self.debug_info = ModelGenericMetadata(
+                    created_at=None,
+                    updated_at=None,
+                    created_by=None,
+                    updated_by=None,
+                    version=None,
+                    extended_data=None,
+                )
             if self.debug_info.custom_fields is None:
                 self.debug_info.custom_fields = {}
             self.debug_info.custom_fields[key] = value
@@ -176,7 +183,14 @@ class ModelCliResult(BaseModel):
     def add_metadata(self, key: str, value: Any) -> None:
         """Add result metadata."""
         if self.result_metadata is None:
-            self.result_metadata = ModelGenericMetadata()
+            self.result_metadata = ModelGenericMetadata(
+                created_at=None,
+                updated_at=None,
+                created_by=None,
+                updated_by=None,
+                version=None,
+                extended_data=None,
+            )
         if self.result_metadata.custom_fields is None:
             self.result_metadata.custom_fields = {}
         self.result_metadata.custom_fields[key] = value
@@ -236,7 +250,7 @@ class ModelCliResult(BaseModel):
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: Optional[Dict[str, Any]] = None,
+        output_data: Optional[Dict[str, Any] | ModelCliOutputData] = None,
         output_text: Optional[str] = None,
         execution_time: Optional[ModelDuration] = None,
     ) -> "ModelCliResult":
@@ -263,6 +277,10 @@ class ModelCliResult(BaseModel):
             output_data=output_data_obj,
             output_text=output_text,
             execution_time=execution_time,
+            error_message=None,
+            error_details=None,
+            debug_info=None,
+            result_metadata=None,
         )
 
     @classmethod
@@ -290,6 +308,9 @@ class ModelCliResult(BaseModel):
             error_details=error_details,
             validation_errors=validation_errors or [],
             execution_time=execution_time,
+            output_text=None,
+            debug_info=None,
+            result_metadata=None,
         )
 
     @classmethod
@@ -317,6 +338,10 @@ class ModelCliResult(BaseModel):
             error_message=primary_error,
             validation_errors=validation_errors,
             execution_time=execution_time,
+            output_text=None,
+            error_details=None,
+            debug_info=None,
+            result_metadata=None,
         )
 
 

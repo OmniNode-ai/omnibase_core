@@ -126,6 +126,10 @@ class ModelTrustLevel(BaseModel):
             trust_category="untrusted",
             display_name="Untrusted",
             revocable=False,
+            last_verified=None,
+            expires_at=None,
+            issuer=None,
+            renewal_period_days=None,
         )
 
     @classmethod
@@ -136,6 +140,10 @@ class ModelTrustLevel(BaseModel):
             trust_category="untrusted",
             display_name="Unknown",
             revocable=False,
+            last_verified=None,
+            expires_at=None,
+            issuer=None,
+            renewal_period_days=None,
         )
 
     @classmethod
@@ -149,9 +157,14 @@ class ModelTrustLevel(BaseModel):
                 ModelVerificationMethod(
                     method_name="automated_validation",
                     verifier=verifier,
+                    signature=None,
+                    details=None,
                 ),
             ],
             last_verified=datetime.now(UTC),
+            expires_at=None,
+            issuer=None,
+            renewal_period_days=None,
         )
 
     @classmethod
@@ -162,9 +175,17 @@ class ModelTrustLevel(BaseModel):
             trust_category="high",
             display_name="Trusted",
             verification_methods=[
-                ModelVerificationMethod(method_name="manual_review", verifier=verifier),
+                ModelVerificationMethod(
+                    method_name="manual_review",
+                    verifier=verifier,
+                    signature=None,
+                    details=None,
+                ),
             ],
             last_verified=datetime.now(UTC),
+            expires_at=None,
+            issuer=None,
+            renewal_period_days=None,
         )
 
     @classmethod
@@ -180,12 +201,14 @@ class ModelTrustLevel(BaseModel):
                     method_name="cryptographic_signature",
                     verifier=issuer,
                     signature=signature,
+                    details=None,
                 ),
             ],
             last_verified=datetime.now(UTC),
             revocable=True,
             requires_renewal=True,
             renewal_period_days=365,
+            expires_at=None,
         )
 
 
