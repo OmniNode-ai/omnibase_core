@@ -9,6 +9,7 @@ Usage:
     python tools/validation/validate_structure.py <repo_path> <repo_name>
     python tools/validation/validate_structure.py . omnibase_core
 """
+from __future__ import annotations
 
 import argparse
 import os
@@ -16,7 +17,6 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class ViolationLevel(Enum):
@@ -44,10 +44,10 @@ class OmniStructureValidator:
     def __init__(self, repo_path: str, repo_name: str):
         self.repo_path = Path(repo_path).resolve()
         self.repo_name = repo_name
-        self.violations: List[StructureViolation] = []
+        self.violations: list[StructureViolation] = []
         self.src_path = self.repo_path / "src" / repo_name
 
-    def validate_all(self) -> List[StructureViolation]:
+    def validate_all(self) -> list[StructureViolation]:
         """Run all structure validations."""
         print(f"🔍 Validating structure for repository: {self.repo_name}")
         print(f"📁 Repository path: {self.repo_path}")
@@ -380,7 +380,7 @@ class OmniStructureValidator:
                 )
 
 
-def print_validation_report(violations: List[StructureViolation], repo_name: str):
+def print_validation_report(violations: list[StructureViolation], repo_name: str):
     """Print formatted validation report."""
     print(f"\n🚨 Repository '{repo_name}' Structure Validation Report")
     print("=" * 60)
@@ -402,7 +402,7 @@ def print_validation_report(violations: List[StructureViolation], repo_name: str
     print()
 
     # Group violations by category
-    by_category: Dict[str, List[StructureViolation]] = {}
+    by_category: dict[str, list[StructureViolation]] = {}
     for violation in violations:
         if violation.category not in by_category:
             by_category[violation.category] = []

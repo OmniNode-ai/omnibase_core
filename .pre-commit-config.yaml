@@ -1,18 +1,18 @@
 # ONEX Core Pre-commit Configuration
-# Aligned with omnibase_3 parent project standards
+# Uses shared ONEX hook templates to demonstrate ecosystem integration
 
 repos:
-  # YAML formatting (matching parent)
+  # YAML formatting (standard across ecosystem)
   - repo: https://github.com/google/yamlfmt
     rev: v0.17.2
     hooks:
       - id: yamlfmt
         args: [--formatter, retain_line_breaks=true]
-        exclude: ^work_tickets/
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/)
 
-  # Essential file formatting (matching parent)
+  # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -21,120 +21,129 @@ repos:
       - id: check-added-large-files
         args: [--maxkb=1000]
 
-  # Python formatting (matching parent exactly)
+  # ONEX Python Development Hooks (from shared templates)
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
+        name: Black Python Formatter
         args: [--line-length, "88", --target-version, py311]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
-  # Python imports (matching parent exactly)
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
+        name: isort Import Sorter
         args: [--profile, black, --line-length, "88"]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
-  # Type checking with mypy using poetry environment (matching parent)
+  # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
+      # MyPy Type Checking
       - id: mypy-poetry
-        name: mypy via poetry
+        name: MyPy Type Checking (via Poetry)
         entry: poetry run mypy
         language: system
         types: [python]
         args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=skip, --config-file=mypy.ini]
-        # Focus on core framework components
         files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
-        # Exclude test files, examples, and problematic contract files until properly configured
-        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect).*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
-      # ONEX Contract Validation
-      - id: validate-contracts
-        name: ONEX Contract Validation
-        entry: poetry run python scripts/validate-contracts.py
-        language: system
-        pass_filenames: false
-        files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
-        stages: [commit]
-
-
-      # Union Usage Validation
-      - id: validate-union-usage
-        name: ONEX Union Usage Validation
-        entry: python scripts/validate-union-usage.py --max-unions 7000
-        language: system
-        pass_filenames: false
-        files: ^src/.*\.py$
-        stages: [commit]
-
-      # Pydantic Legacy Pattern Validation
-      - id: validate-pydantic-patterns
-        name: ONEX Pydantic Legacy Pattern Validation
-        entry: python scripts/validate-pydantic-patterns.py --allow-errors 13
-        language: system
-        pass_filenames: false
-        files: ^src/.*\.py$
-        stages: [commit]
-
-      # String Version Validation
-      - id: validate-string-versions
-        name: ONEX String Version Validation
-        entry: poetry run python scripts/validate-string-versions.py
-        language: system
-        pass_filenames: true
-        files: ^.*\.(yaml|yml)$
-        stages: [commit]
-
-      # Prevent Manual YAML Validation
-      - id: validate-no-manual-yaml
-        name: ONEX Prevent Manual YAML Validation
-        entry: poetry run python scripts/validate-no-manual-yaml.py
-        language: system
-        pass_filenames: true
-        files: ^.*\.py$
-        exclude: ^scripts/validate-contracts\.py$ # Deprecated script, contains legacy YAML validation
-        stages: [commit]
-
-      # Backward Compatibility Anti-Pattern Detection
-      - id: validate-no-backward-compatibility
-        name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: python scripts/validate-no-backward-compatibility.py
-        language: system
-        pass_filenames: true
-        files: ^.*\.py$
-        exclude: ^(scripts/validate-no-backward-compatibility\.py|archived/.*)$ # Exclude the validation script itself and archived directory
-        stages: [commit]
-
-      # Repository structure validation (NEW)
+      # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
-        name: Omni* Repository Structure Validation
-        entry: python scripts/validation/validate_structure.py
+        name: ONEX Repository Structure Validation
+        entry: poetry run python scripts/validation/validate_structure.py
         args: ['.', 'omnibase_core']
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
-      # Naming convention validation (NEW)
       - id: validate-naming-conventions
-        name: Omni* Naming Convention Validation
-        entry: python scripts/validation/validate_naming.py
+        name: ONEX Naming Convention Validation
+        entry: poetry run python scripts/validation/validate_naming.py
         args: ['.']
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
-      # Optional type usage audit (NEW)
+      - id: validate-string-versions
+        name: ONEX String Version Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-string-versions.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.(py|yaml|yml)$
+        exclude: ^tests/fixtures/validation/
+        stages: [pre-commit]
+
+      - id: validate-no-backward-compatibility
+        name: ONEX Backward Compatibility Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-no-backward-compatibility.py
+        args: ['-d', 'src/']
+        language: system
+        pass_filenames: false
+        files: ^.*\.py$
+        exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
+        stages: [pre-commit]
+
+      - id: validate-no-manual-yaml
+        name: ONEX Manual YAML Prevention
+        entry: poetry run python scripts/validation/validate-no-manual-yaml.py
+        language: system
+        pass_filenames: true
+        files: ^.*\.py$
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|tests/fixtures/validation/)
+        stages: [pre-commit]
+
+      # ONEX Python Pattern Validation (SHARED HOOKS)
+      - id: validate-pydantic-patterns
+        name: ONEX Pydantic Pattern Validation
+        entry: poetry run python scripts/validation/validate-pydantic-patterns.py
+        args: ['--allow-errors', '13']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [pre-commit]
+
+      - id: validate-union-usage
+        name: ONEX Union Usage Validation
+        entry: poetry run python scripts/validation/validate-union-usage.py
+        args: ['--max-unions', '7000']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [pre-commit]
+
+      # Repository-specific validation (omnibase_core only)
+      - id: validate-contracts
+        name: ONEX Contract Validation
+        entry: poetry run python scripts/validation/validate-contracts.py
+        language: system
+        pass_filenames: false
+        files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
+        stages: [pre-commit]
+
       - id: audit-optional-usage
-        name: Omni* Optional Type Usage Audit
-        entry: python scripts/validation/audit_optional.py
+        name: ONEX Optional Type Usage Audit
+        entry: poetry run python scripts/validation/audit_optional.py
         args: ['.']
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
+
+    # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
+    # This demonstrates how other repositories would use the shared validation
+    # - id: validate-onex-standards
+    #   name: ONEX Standards Comprehensive Validation
+    #   entry: python -c "from omnibase_core.validation import validate_onex_standards; import sys; result = validate_onex_standards('.'); sys.exit(0 if result['success'] else 1)"
+    #   language: system
+    #   always_run: true
+    #   pass_filenames: false
+    #   stages: [commit]
 
 # Configuration
 ci:

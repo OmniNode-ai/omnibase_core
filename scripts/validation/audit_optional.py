@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Optional type usage auditor for omni* ecosystem."""
+from __future__ import annotations
 
 import argparse
 import ast
@@ -7,9 +8,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 from typing import Optional as TypingOptional
-from typing import Set
 
 
 @dataclass
@@ -87,7 +86,7 @@ class OptionalUsageAuditor:
 
     def __init__(self, repo_path: Path):
         self.repo_path = repo_path
-        self.violations: List[OptionalViolation] = []
+        self.violations: list[OptionalViolation] = []
 
     def audit_optional_usage(self) -> bool:
         """Audit all Optional type usage."""
@@ -127,7 +126,7 @@ class OptionalUsageAuditor:
         except (SyntaxError, UnicodeDecodeError) as e:
             print(f"Warning: Could not parse {file_path}: {e}")
 
-    def _check_annotation(self, file_path: Path, node: ast.AnnAssign, lines: List[str]):
+    def _check_annotation(self, file_path: Path, node: ast.AnnAssign, lines: list[str]):
         """Check type annotations for Optional usage."""
         if hasattr(node, "annotation"):
             annotation_str = ast.unparse(node.annotation)
@@ -142,7 +141,7 @@ class OptionalUsageAuditor:
                 )
 
     def _check_function_annotations(
-        self, file_path: Path, node: ast.FunctionDef, lines: List[str]
+        self, file_path: Path, node: ast.FunctionDef, lines: list[str]
     ):
         """Check function parameter and return type annotations for Optional usage."""
         # Check return type
@@ -176,7 +175,7 @@ class OptionalUsageAuditor:
         line_num: int,
         var_name: str,
         annotation: str,
-        lines: List[str],
+        lines: list[str],
     ):
         """Evaluate whether Optional usage is justified."""
         line_content = lines[line_num - 1] if line_num <= len(lines) else ""

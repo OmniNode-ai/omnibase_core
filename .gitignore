@@ -241,3 +241,17 @@ docs_archived/
 # Codanna index files (keep configuration, ignore generated index data)
 .codanna/index/*
 .serena/cache/*
+
+# AI Tools and Generated Content
+.hive-mind/
+.swarm/
+.claude-flow/
+*.db
+*.sqlite
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*system-metrics.json
+*-metrics.json
+session-*.json
+*auto-save*.json
