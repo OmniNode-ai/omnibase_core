@@ -6,121 +6,21 @@ with usage metrics and performance tracking.
 """
 
 from datetime import UTC, datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.models.core.model_metadata_usage_metrics import (
+    ModelMetadataUsageMetrics,
+)
 
-class ModelMetadataNodeType(str, Enum):
-    """Metadata node type enumeration."""
-
-    FUNCTION = "function"
-    METHOD = "method"
-    CLASS = "class"
-    MODULE = "module"
-    PROPERTY = "property"
-    VARIABLE = "variable"
-    CONSTANT = "constant"
-    INTERFACE = "interface"
-    TYPE_ALIAS = "type_alias"
-    DOCUMENTATION = "documentation"
-    EXAMPLE = "example"
-    TEST = "test"
-
-
-class ModelMetadataNodeStatus(str, Enum):
-    """Metadata node status enumeration."""
-
-    ACTIVE = "active"
-    DEPRECATED = "deprecated"
-    DISABLED = "disabled"
-    EXPERIMENTAL = "experimental"
-    STABLE = "stable"
-    BETA = "beta"
-    ALPHA = "alpha"
-
-
-class ModelMetadataNodeComplexity(str, Enum):
-    """Metadata node complexity enumeration."""
-
-    SIMPLE = "simple"
-    MODERATE = "moderate"
-    COMPLEX = "complex"
-    ADVANCED = "advanced"
-
-
-class ModelMetadataUsageMetrics(BaseModel):
-    """Usage metrics for metadata nodes."""
-
-    total_invocations: int = Field(
-        default=0,
-        description="Total number of invocations",
-        ge=0,
-    )
-    success_count: int = Field(
-        default=0,
-        description="Number of successful invocations",
-        ge=0,
-    )
-    failure_count: int = Field(
-        default=0,
-        description="Number of failed invocations",
-        ge=0,
-    )
-    average_execution_time_ms: float = Field(
-        default=0.0,
-        description="Average execution time in milliseconds",
-        ge=0.0,
-    )
-    last_invocation: datetime | None = Field(
-        default=None,
-        description="Last invocation timestamp",
-    )
-    peak_memory_usage_mb: float = Field(
-        default=0.0,
-        description="Peak memory usage in MB",
-        ge=0.0,
-    )
-
-    def get_success_rate(self) -> float:
-        """Calculate success rate percentage."""
-        if self.total_invocations == 0:
-            return 100.0
-        return (self.success_count / self.total_invocations) * 100.0
-
-    def get_failure_rate(self) -> float:
-        """Calculate failure rate percentage."""
-        if self.total_invocations == 0:
-            return 0.0
-        return (self.failure_count / self.total_invocations) * 100.0
-
-    def record_invocation(
-        self,
-        success: bool,
-        execution_time_ms: float = 0.0,
-        memory_usage_mb: float = 0.0,
-    ) -> None:
-        """Record a new invocation."""
-        self.total_invocations += 1
-        if success:
-            self.success_count += 1
-        else:
-            self.failure_count += 1
-
-        # Update averages
-        if execution_time_ms > 0:
-            current_total = self.average_execution_time_ms * (
-                self.total_invocations - 1
-            )
-            self.average_execution_time_ms = (
-                current_total + execution_time_ms
-            ) / self.total_invocations
-
-        # Update peak memory usage
-        self.peak_memory_usage_mb = max(memory_usage_mb, self.peak_memory_usage_mb)
-
-        self.last_invocation = datetime.now(UTC)
+# Compatibility aliases for existing code
+ModelMetadataNodeType = EnumMetadataNodeType
+ModelMetadataNodeStatus = EnumMetadataNodeStatus
+ModelMetadataNodeComplexity = EnumMetadataNodeComplexity
 
 
 class ModelMetadataNodeInfo(BaseModel):
@@ -134,18 +34,18 @@ class ModelMetadataNodeInfo(BaseModel):
     # Core identification
     name: str = Field(..., description="Node name")
     description: str = Field(default="", description="Node description")
-    node_type: ModelMetadataNodeType = Field(
-        default=ModelMetadataNodeType.FUNCTION,
+    node_type: EnumMetadataNodeType = Field(
+        default=EnumMetadataNodeType.FUNCTION,
         description="Node type",
     )
 
     # Status and lifecycle
-    status: ModelMetadataNodeStatus = Field(
-        default=ModelMetadataNodeStatus.ACTIVE,
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    complexity: ModelMetadataNodeComplexity = Field(
-        default=ModelMetadataNodeComplexity.SIMPLE,
+    complexity: EnumMetadataNodeComplexity = Field(
+        default=EnumMetadataNodeComplexity.SIMPLE,
         description="Node complexity level",
     )
     version: str = Field(default="1.0.0", description="Node version")
@@ -206,25 +106,25 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status == ModelMetadataNodeStatus.ACTIVE
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_stable(self) -> bool:
         """Check if node is stable."""
-        return self.status == ModelMetadataNodeStatus.STABLE
+        return self.status == EnumMetadataNodeStatus.STABLE
 
     def is_experimental(self) -> bool:
         """Check if node is experimental."""
-        return self.status == ModelMetadataNodeStatus.EXPERIMENTAL
+        return self.status == EnumMetadataNodeStatus.EXPERIMENTAL
 
     def is_simple(self) -> bool:
         """Check if node is simple complexity."""
-        return self.complexity == ModelMetadataNodeComplexity.SIMPLE
+        return self.complexity == EnumMetadataNodeComplexity.SIMPLE
 
     def is_complex(self) -> bool:
         """Check if node is complex."""
         return self.complexity in [
-            ModelMetadataNodeComplexity.COMPLEX,
-            ModelMetadataNodeComplexity.ADVANCED,
+            EnumMetadataNodeComplexity.COMPLEX,
+            EnumMetadataNodeComplexity.ADVANCED,
         ]
 
     def has_good_documentation(self) -> bool:
@@ -241,10 +141,10 @@ class ModelMetadataNodeInfo(BaseModel):
     def get_complexity_score(self) -> int:
         """Get numeric complexity score."""
         complexity_scores = {
-            ModelMetadataNodeComplexity.SIMPLE: 1,
-            ModelMetadataNodeComplexity.MODERATE: 2,
-            ModelMetadataNodeComplexity.COMPLEX: 3,
-            ModelMetadataNodeComplexity.ADVANCED: 4,
+            EnumMetadataNodeComplexity.SIMPLE: 1,
+            EnumMetadataNodeComplexity.MODERATE: 2,
+            EnumMetadataNodeComplexity.COMPLEX: 3,
+            EnumMetadataNodeComplexity.ADVANCED: 4,
         }
         return complexity_scores.get(self.complexity, 1)
 
@@ -275,12 +175,12 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def mark_active(self) -> None:
         """Mark node as active."""
-        self.status = ModelMetadataNodeStatus.ACTIVE
+        self.status = EnumMetadataNodeStatus.ACTIVE
         self.update_timestamp()
 
     def mark_stable(self) -> None:
         """Mark node as stable."""
-        self.status = ModelMetadataNodeStatus.STABLE
+        self.status = EnumMetadataNodeStatus.STABLE
         self.update_timestamp()
 
     def update_timestamp(self) -> None:
@@ -345,7 +245,7 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-        node_type: ModelMetadataNodeType = ModelMetadataNodeType.FUNCTION,
+        node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
     ) -> "ModelMetadataNodeInfo":
         """Create a simple node info."""
         return cls(
@@ -359,13 +259,13 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-        complexity: ModelMetadataNodeComplexity = ModelMetadataNodeComplexity.SIMPLE,
+        complexity: EnumMetadataNodeComplexity = EnumMetadataNodeComplexity.SIMPLE,
     ) -> "ModelMetadataNodeInfo":
         """Create function node info."""
         return cls(
             name=name,
             description=description,
-            node_type=ModelMetadataNodeType.FUNCTION,
+            node_type=EnumMetadataNodeType.FUNCTION,
             complexity=complexity,
         )
 
@@ -379,7 +279,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return cls(
             name=name,
             description=description,
-            node_type=ModelMetadataNodeType.DOCUMENTATION,
+            node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
             documentation_quality="good",
         )

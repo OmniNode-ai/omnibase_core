@@ -34,32 +34,40 @@ class ModelNodeMetadataInfo(BaseModel):
     # Timestamps
     created_at: datetime | None = Field(default=None, description="Creation timestamp")
     updated_at: datetime | None = Field(
-        default=None, description="Last update timestamp"
+        default=None,
+        description="Last update timestamp",
     )
     last_accessed: datetime | None = Field(
-        default=None, description="Last access timestamp"
+        default=None,
+        description="Last access timestamp",
     )
 
     # Usage and performance
     usage_count: int = Field(default=0, description="Usage count", ge=0)
     error_count: int = Field(default=0, description="Error count", ge=0)
     success_rate: float = Field(
-        default=100.0, description="Success rate percentage", ge=0.0, le=100.0
+        default=100.0,
+        description="Success rate percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     # Configuration and capabilities
     capabilities: list[str] = Field(
-        default_factory=list, description="Node capabilities"
+        default_factory=list,
+        description="Node capabilities",
     )
     tags: list[str] = Field(default_factory=list, description="Node tags")
     categories: list[str] = Field(default_factory=list, description="Node categories")
 
     # Dependencies
     dependencies: list[str] = Field(
-        default_factory=list, description="Node dependencies"
+        default_factory=list,
+        description="Node dependencies",
     )
     dependents: list[str] = Field(
-        default_factory=list, description="Nodes that depend on this"
+        default_factory=list,
+        description="Nodes that depend on this",
     )
 
     # Custom metadata

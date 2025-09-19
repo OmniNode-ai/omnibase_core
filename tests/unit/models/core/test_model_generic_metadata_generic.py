@@ -1,0 +1,346 @@
+"""
+Unit tests for generic ModelGenericMetadata[T].
+
+Tests the generic type parameter functionality and type safety
+of the ModelGenericMetadata implementation.
+"""
+
+from typing import Any
+
+import pytest
+
+from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+
+
+class TestModelGenericMetadataGeneric:
+    """Test cases for generic ModelGenericMetadata[T] functionality."""
+
+    def test_generic_type_instantiation(self):
+        """Test that generic type can be instantiated with type parameters."""
+        # Test with string type
+        string_metadata = ModelGenericMetadata[str]()
+        assert isinstance(string_metadata, ModelGenericMetadata)
+
+        # Test with dict type
+        dict_metadata = ModelGenericMetadata[dict[str, Any]]()
+        assert isinstance(dict_metadata, ModelGenericMetadata)
+
+        # Test with list type
+        list_metadata = ModelGenericMetadata[list[str]]()
+        assert isinstance(list_metadata, ModelGenericMetadata)
+
+    def test_generic_type_with_standard_fields(self):
+        """Test that standard fields work with generic types."""
+        metadata = ModelGenericMetadata[str](
+            name="test_metadata",
+            description="Test description",
+            version="1.0.0",
+            tags=["test", "generic"],
+        )
+
+        assert metadata.name == "test_metadata"
+        assert metadata.description == "Test description"
+        assert metadata.version == "1.0.0"
+        assert metadata.tags == ["test", "generic"]
+
+    def test_generic_custom_fields_operations(self):
+        """Test custom fields operations with generic types."""
+        metadata = ModelGenericMetadata[dict[str, Any]]()
+
+        # Test setting custom fields
+        metadata.set_field("config", {"key": "value"})
+        metadata.set_field("count", 42)
+        metadata.set_field("enabled", True)
+
+        # Test getting custom fields
+        assert metadata.get_field("config") == {"key": "value"}
+        assert metadata.get_field("count") == 42
+        assert metadata.get_field("enabled") is True
+        assert metadata.get_field("nonexistent") is None
+        assert metadata.get_field("nonexistent", "default") == "default"
+
+    def test_generic_has_field_operation(self):
+        """Test has_field operation with generic types."""
+        metadata = ModelGenericMetadata[str]()
+
+        # Initially no custom fields
+        assert metadata.has_field("test") is False
+
+        # Add custom field
+        metadata.set_field("test", "value")
+        assert metadata.has_field("test") is True
+
+    def test_generic_remove_field_operation(self):
+        """Test remove_field operation with generic types."""
+        metadata = ModelGenericMetadata[int]()
+
+        # Add field and verify
+        metadata.set_field("count", 100)
+        assert metadata.has_field("count") is True
+
+        # Remove field
+        assert metadata.remove_field("count") is True
+        assert metadata.has_field("count") is False
+
+        # Try to remove non-existent field
+        assert metadata.remove_field("nonexistent") is False
+
+    def test_generic_to_dict_operation(self):
+        """Test to_dict operation with generic types."""
+        metadata = ModelGenericMetadata[dict[str, Any]](
+            name="test_metadata",
+            description="Test description",
+            version="1.0.0",
+            tags=["test"],
+        )
+
+        # Add custom fields
+        metadata.set_field("config", {"nested": "value"})
+        metadata.set_field("priority", 5)
+
+        # Test to_dict
+        result = metadata.to_dict()
+
+        # Should include standard fields
+        assert result["name"] == "test_metadata"
+        assert result["description"] == "Test description"
+        assert result["version"] == "1.0.0"
+        assert result["tags"] == ["test"]
+
+        # Should include custom fields that don't conflict with standard fields
+        assert result["config"] == {"nested": "value"}
+        assert result["priority"] == 5
+
+    def test_generic_from_dict_factory(self):
+        """Test from_dict factory method with generic types."""
+        data = {
+            "name": "test_metadata",
+            "description": "Test description",
+            "version": "2.0.0",
+            "tags": ["factory", "test"],
+            "custom_field": "custom_value",
+            "priority": 10,
+            "config": {"setting": "value"},
+        }
+
+        # Create from dict
+        metadata = ModelGenericMetadata[Any].from_dict(data)
+
+        # Verify standard fields
+        assert metadata.name == "test_metadata"
+        assert metadata.description == "Test description"
+        assert metadata.version == "2.0.0"
+        assert metadata.tags == ["factory", "test"]
+
+        # Verify custom fields
+        assert metadata.get_field("custom_field") == "custom_value"
+        assert metadata.get_field("priority") == 10
+        assert metadata.get_field("config") == {"setting": "value"}
+
+    def test_generic_pydantic_validation(self):
+        """Test Pydantic validation with generic types."""
+        # Test valid data
+        metadata = ModelGenericMetadata[str](
+            name="valid_metadata", tags=["tag1", "tag2"], custom_fields={"key": "value"}
+        )
+
+        assert metadata.name == "valid_metadata"
+        assert metadata.tags == ["tag1", "tag2"]
+        assert metadata.custom_fields == {"key": "value"}
+
+    def test_generic_json_serialization(self):
+        """Test JSON serialization with generic types."""
+        metadata = ModelGenericMetadata[dict[str, Any]](
+            name="json_test", description="JSON serialization test", version="1.0.0"
+        )
+
+        # Add custom fields
+        metadata.set_field("config", {"nested": {"deep": "value"}})
+        metadata.set_field("count", 42)
+
+        # Test JSON serialization
+        json_str = metadata.model_dump_json()
+        assert isinstance(json_str, str)
+
+        # Test JSON deserialization
+        restored = ModelGenericMetadata[dict[str, Any]].model_validate_json(json_str)
+
+        assert restored.name == "json_test"
+        assert restored.description == "JSON serialization test"
+        assert restored.version == "1.0.0"
+        assert restored.get_field("config") == {"nested": {"deep": "value"}}
+        assert restored.get_field("count") == 42
+
+    def test_generic_with_complex_types(self):
+        """Test generic types with complex type parameters."""
+        # Test with nested generic types
+        complex_metadata = ModelGenericMetadata[list[dict[str, Any]]]()
+
+        # Set complex data
+        complex_data = [
+            {"id": 1, "name": "item1"},
+            {"id": 2, "name": "item2", "config": {"setting": "value"}},
+        ]
+        complex_metadata.set_field("items", complex_data)
+
+        # Retrieve and verify
+        retrieved = complex_metadata.get_field("items")
+        assert retrieved == complex_data
+
+    def test_generic_custom_fields_none_handling(self):
+        """Test custom fields behavior when custom_fields is None."""
+        metadata = ModelGenericMetadata[str](name="test")
+
+        # custom_fields should initially be None
+        assert metadata.custom_fields is None
+
+        # Getting from None custom_fields should return default
+        assert metadata.get_field("test") is None
+        assert metadata.get_field("test", "default") == "default"
+
+        # has_field should return False for None custom_fields
+        assert metadata.has_field("test") is False
+
+        # remove_field should return False for None custom_fields
+        assert metadata.remove_field("test") is False
+
+        # Setting a field should initialize custom_fields
+        metadata.set_field("test", "value")
+        assert metadata.custom_fields is not None
+        assert metadata.get_field("test") == "value"
+
+    def test_generic_field_name_conflicts(self):
+        """Test handling of field name conflicts with standard fields."""
+        metadata = ModelGenericMetadata[Any]()
+
+        # Add custom field with same name as standard field
+        metadata.set_field("name", "custom_name_value")
+        metadata.set_field("description", "custom_description_value")
+
+        # Standard field access should work
+        assert metadata.name is None  # Standard field, not set
+
+        # Custom field access should work
+        assert metadata.get_field("name") == "custom_name_value"
+        assert metadata.get_field("description") == "custom_description_value"
+
+        # to_dict should not override standard fields with custom fields
+        metadata.name = "standard_name"
+        result = metadata.to_dict()
+        assert result["name"] == "standard_name"  # Standard field takes precedence
+
+    def test_generic_inheritance_behavior(self):
+        """Test that generic type inheritance behavior is preserved."""
+        # Test type parameter inheritance
+        base_metadata = ModelGenericMetadata[str]()
+        derived_metadata = ModelGenericMetadata[dict[str, Any]]()
+
+        # Both should support the same interface
+        base_metadata.set_field("test", "string_value")
+        derived_metadata.set_field("test", {"key": "value"})
+
+        assert base_metadata.get_field("test") == "string_value"
+        assert derived_metadata.get_field("test") == {"key": "value"}
+
+    def test_generic_type_safety(self):
+        """Test that generic types maintain type safety expectations."""
+        # While Python's runtime doesn't enforce generic type parameters,
+        # we can test that the typing works correctly for static analysis
+
+        string_metadata: ModelGenericMetadata[str] = ModelGenericMetadata()
+        dict_metadata: ModelGenericMetadata[dict[str, Any]] = ModelGenericMetadata()
+
+        # These should work without type errors
+        string_metadata.set_field("name", "value")
+        dict_metadata.set_field("config", {"key": "value"})
+
+        # The actual field access should work regardless of generic type
+        assert string_metadata.get_field("name") == "value"
+        assert dict_metadata.get_field("config") == {"key": "value"}
+
+    def test_generic_round_trip_operations(self):
+        """Test round-trip operations with generic types."""
+        original = ModelGenericMetadata[dict[str, list[int]]](
+            name="round_trip_test",
+            description="Testing round-trip operations",
+            version="1.0.0",
+            tags=["test", "round-trip"],
+        )
+
+        # Add complex custom fields
+        original.set_field(
+            "data_mapping",
+            {"numbers": [1, 2, 3], "values": [10, 20, 30], "results": [100, 200, 300]},
+        )
+        original.set_field("count", 42)
+
+        # Convert to dict and back
+        data = original.to_dict()
+        restored = ModelGenericMetadata[dict[str, list[int]]].from_dict(data)
+
+        # Verify all fields are preserved
+        assert restored.name == original.name
+        assert restored.description == original.description
+        assert restored.version == original.version
+        assert restored.tags == original.tags
+        assert restored.get_field("data_mapping") == original.get_field("data_mapping")
+        assert restored.get_field("count") == original.get_field("count")
+
+
+class TestModelGenericMetadataGenericEdgeCases:
+    """Test edge cases for generic ModelGenericMetadata[T]."""
+
+    def test_generic_with_none_type(self):
+        """Test generic behavior with None type parameter."""
+        metadata = ModelGenericMetadata[None]()
+
+        # Should still work for basic operations
+        metadata.set_field("test", "value")
+        assert metadata.get_field("test") == "value"
+
+    def test_generic_inheritance_compatibility(self):
+        """Test that generic types maintain inheritance compatibility."""
+        # Test that generic instances are compatible with base type
+        generic_metadata = ModelGenericMetadata[str]()
+        base_metadata = ModelGenericMetadata()
+
+        # Both should have the same interface
+        generic_metadata.set_field("test", "value")
+        base_metadata.set_field("test", "value")
+
+        assert generic_metadata.get_field("test") == base_metadata.get_field("test")
+
+    def test_generic_with_union_types(self):
+        """Test behavior when using union type parameters."""
+        from typing import Union
+
+        union_metadata = ModelGenericMetadata[Union[str, int, dict[str, Any]]]()
+
+        # Should work with any of the union types
+        union_metadata.set_field("string_field", "string_value")
+        union_metadata.set_field("int_field", 42)
+        union_metadata.set_field("dict_field", {"key": "value"})
+
+        assert union_metadata.get_field("string_field") == "string_value"
+        assert union_metadata.get_field("int_field") == 42
+        assert union_metadata.get_field("dict_field") == {"key": "value"}
+
+    def test_generic_custom_fields_initialization(self):
+        """Test custom_fields initialization behavior with generic types."""
+        # Test with explicit custom_fields initialization
+        metadata1 = ModelGenericMetadata[str](custom_fields={"initial": "value"})
+        assert metadata1.get_field("initial") == "value"
+
+        # Test with None custom_fields
+        metadata2 = ModelGenericMetadata[str](custom_fields=None)
+        assert metadata2.custom_fields is None
+        assert metadata2.get_field("test") is None
+
+        # Test with empty dict custom_fields
+        metadata3 = ModelGenericMetadata[str](custom_fields={})
+        assert metadata3.custom_fields == {}
+        assert metadata3.get_field("test") is None
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

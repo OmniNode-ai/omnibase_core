@@ -5,12 +5,15 @@ Flexible storage for custom fields with type validation
 and safe value retrieval for extensible models.
 """
 
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+# Type variable for generic custom fields
+T = TypeVar("T")
 
-class ModelCustomFields(BaseModel):
+
+class ModelCustomFields(BaseModel, Generic[T]):
     """
     Custom fields storage with type validation.
 
@@ -215,14 +218,14 @@ class ModelCustomFields(BaseModel):
         return result
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFields":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFields[T]":
         """Create from dictionary with type detection."""
         instance = cls()
         for key, value in data.items():
             instance.set_field(key, value)
         return instance
 
-    def merge_fields(self, other: "ModelCustomFields") -> None:
+    def merge_fields(self, other: "ModelCustomFields[T]") -> None:
         """Merge fields from another ModelCustomFields instance."""
         self.string_fields.update(other.string_fields)
         self.int_fields.update(other.int_fields)
@@ -230,7 +233,7 @@ class ModelCustomFields(BaseModel):
         self.bool_fields.update(other.bool_fields)
         self.list_fields.update(other.list_fields)
 
-    def copy_fields(self) -> "ModelCustomFields":
+    def copy_fields(self) -> "ModelCustomFields[T]":
         """Create a copy of this instance."""
         return ModelCustomFields(
             string_fields=self.string_fields.copy(),

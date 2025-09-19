@@ -11,6 +11,9 @@ from typing import Any, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_complexity import EnumComplexity
+from omnibase_core.enums.enum_function_status import EnumFunctionStatus
+
 
 class ModelFunctionNode(BaseModel):
     """
@@ -36,10 +39,12 @@ class ModelFunctionNode(BaseModel):
         description="Function parameters (list for signatures, dict for configuration)"
     )
     return_type: str | None = Field(
-        default=None, description="Function return type annotation"
+        default=None,
+        description="Function return type annotation",
     )
     parameter_types: dict[str, str] = Field(
-        default_factory=dict, description="Parameter type annotations"
+        default_factory=dict,
+        description="Parameter type annotations",
     )
 
     # Documentation
@@ -49,61 +54,75 @@ class ModelFunctionNode(BaseModel):
 
     # Metadata and source information
     module: str | None = Field(
-        default=None, description="Module containing the function"
+        default=None,
+        description="Module containing the function",
     )
     file_path: str | None = Field(default=None, description="Source file path")
     line_number: int | None = Field(
-        default=None, description="Line number in source file", ge=1
+        default=None,
+        description="Line number in source file",
+        ge=1,
     )
 
     # Status and versioning
-    status: str = Field(
-        default="active", description="Function status (active, deprecated, disabled)"
+    status: EnumFunctionStatus = Field(
+        default=EnumFunctionStatus.ACTIVE,
+        description="Function status (active, deprecated, disabled)",
     )
     version: str = Field(default="1.0.0", description="Function version")
     deprecated_since: str | None = Field(
-        default=None, description="Version when deprecated"
+        default=None,
+        description="Version when deprecated",
     )
     replacement: str | None = Field(
-        default=None, description="Replacement function if deprecated"
+        default=None,
+        description="Replacement function if deprecated",
     )
 
     # Performance and usage
-    complexity: str = Field(
-        default="simple", description="Function complexity (simple, moderate, complex)"
+    complexity: EnumComplexity = Field(
+        default=EnumComplexity.SIMPLE,
+        description="Function complexity (simple, moderate, complex)",
     )
     estimated_runtime: str | None = Field(
-        default=None, description="Estimated runtime category (fast, medium, slow)"
+        default=None,
+        description="Estimated runtime category (fast, medium, slow)",
     )
     memory_usage: str | None = Field(
-        default=None, description="Memory usage category (low, medium, high)"
+        default=None,
+        description="Memory usage category (low, medium, high)",
     )
 
     # Execution information (for backward compatibility)
-    async_execution: bool = Field(False, description="Whether function is async")
-    timeout_seconds: int | None = Field(None, description="Execution timeout")
+    async_execution: bool = Field(default=False, description="Whether function is async")
+    timeout_seconds: int | None = Field(default=None, description="Execution timeout")
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Creation timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Creation timestamp",
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Last update timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Last update timestamp",
     )
     last_validated: datetime | None = Field(
-        default=None, description="Last validation timestamp"
+        default=None,
+        description="Last validation timestamp",
     )
 
     # Tags and categorization (support both category and categories)
     tags: list[str] = Field(default_factory=list, description="Function tags")
     categories: list[str] = Field(
-        default_factory=list, description="Function categories"
+        default_factory=list,
+        description="Function categories",
     )
     category: str = Field(default="general", description="Primary function category")
 
     # Custom metadata for extensibility (includes HEAD version metadata field)
     custom_metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Custom metadata fields"
+        default_factory=dict,
+        description="Custom metadata fields",
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional function metadata"
@@ -111,10 +130,12 @@ class ModelFunctionNode(BaseModel):
 
     # Dependencies and relationships
     dependencies: list[str] = Field(
-        default_factory=list, description="Function dependencies"
+        default_factory=list,
+        description="Function dependencies",
     )
     related_functions: list[str] = Field(
-        default_factory=list, description="Related functions"
+        default_factory=list,
+        description="Related functions",
     )
 
     @field_validator('parameters')
@@ -140,17 +161,15 @@ class ModelFunctionNode(BaseModel):
         """Get parameters as list (for function signatures)."""
         if isinstance(self.parameters, list):
             return self.parameters
-        elif isinstance(self.parameters, dict):
+        else:  # Must be dict due to validator
             return list(self.parameters.keys())
-        return []
 
     def get_parameters_as_dict(self) -> dict[str, Any]:
         """Get parameters as dict (for configuration)."""
         if isinstance(self.parameters, dict):
             return self.parameters
-        elif isinstance(self.parameters, list):
+        else:  # Must be list due to validator
             return {param: None for param in self.parameters}
-        return {}
 
     def set_parameters_from_list(self, params: list[str]) -> None:
         """Set parameters from list format."""
@@ -165,18 +184,19 @@ class ModelFunctionNode(BaseModel):
     # Status and utility methods
     def is_active(self) -> bool:
         """Check if function is active."""
-        return self.status == "active"
+        return self.status == EnumFunctionStatus.ACTIVE
 
     def is_disabled(self) -> bool:
         """Check if function is disabled."""
-        return self.status == "disabled"
+        return self.status == EnumFunctionStatus.DISABLED
 
     def get_complexity_level(self) -> int:
         """Get numeric complexity level."""
         complexity_map = {
-            "simple": 1,
-            "moderate": 2,
-            "complex": 3,
+            EnumComplexity.SIMPLE: 1,
+            EnumComplexity.MODERATE: 2,
+            EnumComplexity.COMPLEX: 3,
+            EnumComplexity.VERY_COMPLEX: 4,
         }
         return complexity_map.get(self.complexity, 1)
 
@@ -225,12 +245,12 @@ class ModelFunctionNode(BaseModel):
 
     def mark_disabled(self) -> None:
         """Mark function as disabled."""
-        self.status = "disabled"
+        self.status = EnumFunctionStatus.DISABLED
         self.updated_at = datetime.now(UTC)
 
     def mark_active(self) -> None:
         """Mark function as active."""
-        self.status = "active"
+        self.status = EnumFunctionStatus.ACTIVE
         self.deprecated_since = None
         self.replacement = None
         self.updated_at = datetime.now(UTC)

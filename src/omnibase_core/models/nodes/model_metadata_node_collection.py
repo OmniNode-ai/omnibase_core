@@ -240,7 +240,8 @@ class ModelMetadataNodeCollection(
             else:
                 node_info_container = self.root.get("_node_info", {})
                 if name not in node_info_container or not isinstance(
-                    node_info_container, dict
+                    node_info_container,
+                    dict,
                 ):
                     # Create default node info
                     default_info = ModelMetadataNodeInfo(name=name)
@@ -384,7 +385,7 @@ class ModelMetadataNodeCollection(
         from typing import cast
 
         collection = cls(
-            cast(dict[str, ModelFunctionNode | dict[str, Any]], nodes_dict)
+            cast(dict[str, ModelFunctionNode | dict[str, Any]], nodes_dict),
         )
 
         # Add basic node info for each node

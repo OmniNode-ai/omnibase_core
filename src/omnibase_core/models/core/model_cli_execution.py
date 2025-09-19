@@ -8,8 +8,12 @@ and state tracking for comprehensive command execution management.
 import uuid
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_execution_status import EnumExecutionStatus
+from ...enums.enum_output_format import EnumOutputFormat
 
 
 class ModelCliExecution(BaseModel):
@@ -21,8 +25,8 @@ class ModelCliExecution(BaseModel):
     """
 
     # Execution identification
-    execution_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
+    execution_id: UUID = Field(
+        default_factory=uuid.uuid4,
         description="Unique execution identifier",
     )
 
@@ -84,7 +88,9 @@ class ModelCliExecution(BaseModel):
     end_time: datetime | None = Field(default=None, description="Execution end time")
 
     # Execution state
-    status: str = Field(default="pending", description="Execution status")
+    status: EnumExecutionStatus = Field(
+        default=EnumExecutionStatus.PENDING, description="Execution status"
+    )
     current_phase: str | None = Field(
         default=None,
         description="Current execution phase",
@@ -111,15 +117,17 @@ class ModelCliExecution(BaseModel):
     retry_count: int = Field(default=0, description="Current retry count", ge=0)
 
     # User and session information
-    user_id: str | None = Field(default=None, description="User identifier")
-    session_id: str | None = Field(default=None, description="Session identifier")
+    user_id: UUID | None = Field(default=None, description="User identifier")
+    session_id: UUID | None = Field(default=None, description="Session identifier")
 
     # Input/output configuration
     input_data: dict[str, Any] = Field(
         default_factory=dict,
         description="Input data for execution",
     )
-    output_format: str = Field(default="text", description="Expected output format")
+    output_format: EnumOutputFormat = Field(
+        default=EnumOutputFormat.TEXT, description="Expected output format"
+    )
     capture_output: bool = Field(default=True, description="Whether to capture output")
 
     # Custom metadata for extensibility
@@ -158,19 +166,22 @@ class ModelCliExecution(BaseModel):
 
     def is_running(self) -> bool:
         """Check if execution is currently running."""
-        return self.status == "running" and self.end_time is None
+        return self.status == EnumExecutionStatus.RUNNING and self.end_time is None
 
     def is_pending(self) -> bool:
         """Check if execution is pending."""
-        return self.status == "pending"
+        return self.status == EnumExecutionStatus.PENDING
 
     def is_failed(self) -> bool:
         """Check if execution failed."""
-        return self.status == "failed"
+        return self.status == EnumExecutionStatus.FAILED
 
     def is_successful(self) -> bool:
         """Check if execution was successful."""
-        return self.status == "success"
+        return self.status in {
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.COMPLETED,
+        }
 
     def is_timed_out(self) -> bool:
         """Check if execution timed out."""
@@ -180,25 +191,25 @@ class ModelCliExecution(BaseModel):
 
     def mark_started(self) -> None:
         """Mark execution as started."""
-        self.status = "running"
+        self.status = EnumExecutionStatus.RUNNING
         self.start_time = datetime.now(UTC)
 
     def mark_completed(self) -> None:
         """Mark execution as completed."""
         self.end_time = datetime.now(UTC)
-        if self.status == "running":
-            self.status = "success"
+        if self.status == EnumExecutionStatus.RUNNING:
+            self.status = EnumExecutionStatus.SUCCESS
 
     def mark_failed(self, reason: str | None = None) -> None:
         """Mark execution as failed."""
-        self.status = "failed"
+        self.status = EnumExecutionStatus.FAILED
         self.end_time = datetime.now(UTC)
         if reason:
             self.custom_context["failure_reason"] = reason
 
     def mark_cancelled(self) -> None:
         """Mark execution as cancelled."""
-        self.status = "cancelled"
+        self.status = EnumExecutionStatus.CANCELLED
         self.end_time = datetime.now(UTC)
 
     def set_phase(self, phase: str) -> None:

@@ -26,8 +26,8 @@ class TestModelCliExecution:
         execution = ModelCliExecution(command_name="test_command")
 
         assert execution.command_name == "test_command"
-        assert isinstance(execution.execution_id, str)
-        assert UUID(execution.execution_id)  # Should be valid UUID
+        assert isinstance(execution.execution_id, UUID)  # Should be UUID type
+        assert str(execution.execution_id)  # Should convert to valid string
         assert execution.command_args == []
         assert execution.command_options == {}
         assert execution.status == "pending"
@@ -43,7 +43,7 @@ class TestModelCliExecution:
         end_time = start_time + timedelta(minutes=5)
 
         execution = ModelCliExecution(
-            execution_id="test-id-123",
+            execution_id=UUID("12345678-1234-5678-9abc-123456789abc"),
             command_name="deploy",
             command_args=["--env", "prod"],
             command_options={"force": True, "timeout": 300},
@@ -65,8 +65,8 @@ class TestModelCliExecution:
             max_memory_mb=512,
             max_retries=3,
             retry_count=1,
-            user_id="user123",
-            session_id="session456",
+            user_id=UUID("11111111-2222-3333-4444-555555555555"),
+            session_id=UUID("66666666-7777-8888-9999-aaaaaaaaaaaa"),
             input_data={"config": "value"},
             output_format="json",
             capture_output=False,
@@ -74,7 +74,7 @@ class TestModelCliExecution:
             execution_tags=["production", "deployment"],
         )
 
-        assert execution.execution_id == "test-id-123"
+        assert execution.execution_id == UUID("12345678-1234-5678-9abc-123456789abc")
         assert execution.command_name == "deploy"
         assert execution.command_args == ["--env", "prod"]
         assert execution.command_options == {"force": True, "timeout": 300}
@@ -96,8 +96,8 @@ class TestModelCliExecution:
         assert execution.max_memory_mb == 512
         assert execution.max_retries == 3
         assert execution.retry_count == 1
-        assert execution.user_id == "user123"
-        assert execution.session_id == "session456"
+        assert execution.user_id == UUID("11111111-2222-3333-4444-555555555555")
+        assert execution.session_id == UUID("66666666-7777-8888-9999-aaaaaaaaaaaa")
         assert execution.input_data == {"config": "value"}
         assert execution.output_format == "json"
         assert execution.capture_output is False
@@ -544,7 +544,7 @@ class TestModelCliExecution:
         """Test model deserialization from dict."""
         start_time = datetime.now(UTC)
         data = {
-            "execution_id": "test-123",
+            "execution_id": "12345678-1234-5678-9abc-123456789abc",
             "command_name": "deploy",
             "command_args": ["--env", "prod"],
             "command_options": {"force": True},
@@ -558,7 +558,7 @@ class TestModelCliExecution:
 
         execution = ModelCliExecution.model_validate(data)
 
-        assert execution.execution_id == "test-123"
+        assert execution.execution_id == UUID("12345678-1234-5678-9abc-123456789abc")
         assert execution.command_name == "deploy"
         assert execution.command_args == ["--env", "prod"]
         assert execution.command_options == {"force": True}
@@ -588,7 +588,7 @@ class TestModelCliExecution:
 
     def test_model_equality(self):
         """Test model equality comparison."""
-        execution_id = "test-123"
+        execution_id = UUID("12345678-1234-5678-9abc-123456789abc")
         start_time = datetime.now(UTC)
 
         execution1 = ModelCliExecution(
@@ -600,7 +600,9 @@ class TestModelCliExecution:
         )
 
         execution3 = ModelCliExecution(
-            execution_id="different-id", command_name="deploy", start_time=start_time
+            execution_id=UUID("87654321-4321-8765-9abc-987654321abc"),
+            command_name="deploy",
+            start_time=start_time,
         )
 
         assert execution1 == execution2
@@ -687,14 +689,14 @@ class TestModelCliExecutionEdgeCases:
             command_args=["ärg1", "🚀"],
             target_node_name="node_ñ",
             working_directory="/päth/with/ünicode",
-            user_id="user_émoji_🎯",
+            user_id=UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
         )
 
         assert execution.command_name == "tést_çommänd"
         assert execution.command_args == ["ärg1", "🚀"]
         assert execution.target_node_name == "node_ñ"
         assert execution.working_directory == "/päth/with/ünicode"
-        assert execution.user_id == "user_émoji_🎯"
+        assert execution.user_id == UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
     def test_none_values_for_optional_fields(self):
         """Test explicit None values for optional fields."""
