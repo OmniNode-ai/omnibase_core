@@ -9,7 +9,15 @@ Follows domain-driven design principles for better organization.
 from .model_cli_node_execution_input import ModelCliNodeExecutionInput
 
 # Node metadata and collections
+from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_collection import ModelMetadataNodeCollection
+from .model_metadata_node_info import (
+    ModelMetadataNodeComplexity,
+    ModelMetadataNodeInfo,
+    ModelMetadataNodeStatus,
+    ModelMetadataNodeType,
+    ModelMetadataUsageMetrics,
+)
 
 # Node capability and information models
 from .model_node_capability import ModelNodeCapability
@@ -20,7 +28,13 @@ __all__ = [
     # CLI and execution
     "ModelCliNodeExecutionInput",
     # Metadata and collections
+    "ModelMetadataNodeAnalytics",
     "ModelMetadataNodeCollection",
+    "ModelMetadataNodeComplexity",
+    "ModelMetadataNodeInfo",
+    "ModelMetadataNodeStatus",
+    "ModelMetadataNodeType",
+    "ModelMetadataUsageMetrics",
     # Node capabilities and information
     "ModelNodeCapability",
     "ModelNodeInformation",
