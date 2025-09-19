@@ -2,7 +2,7 @@
 Trend data model to replace Dict[str, Any] usage for trends fields.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -45,7 +45,7 @@ class ModelTrendData(BaseModel):
     unit: str | None = Field(None, description="Unit of measurement")
     data_source: str | None = Field(None, description="Data source")
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last update time",
     )
 

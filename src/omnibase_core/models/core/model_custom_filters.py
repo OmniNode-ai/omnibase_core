@@ -5,14 +5,13 @@ Strongly typed collection replacing Dict[str, Any] for custom_filters fields.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_filter_type import EnumFilterType
 
 from .model_complex_filter import ModelComplexFilter
-from .model_custom_filter_base import ModelCustomFilterBase
 from .model_datetime_filter import ModelDateTimeFilter
 from .model_list_filter import ModelListFilter
 from .model_metadata_filter import ModelMetadataFilter
@@ -40,8 +39,9 @@ class ModelCustomFilters(BaseModel):
     with no magic strings or poorly typed dictionaries.
     """
 
-    filters: Dict[str, FilterType] = Field(
-        default_factory=dict, description="Named custom filters with strong typing"
+    filters: dict[str, FilterType] = Field(
+        default_factory=dict,
+        description="Named custom filters with strong typing",
     )
 
     def add_string_filter(
@@ -110,7 +110,7 @@ class ModelCustomFilters(BaseModel):
     def add_list_filter(
         self,
         name: str,
-        values: List[str],
+        values: list[str],
         match_all: bool = False,
         exclude: bool = False,
         enabled: bool = True,
@@ -146,8 +146,8 @@ class ModelCustomFilters(BaseModel):
     def add_status_filter(
         self,
         name: str,
-        allowed_statuses: List[str],
-        blocked_statuses: List[str] | None = None,
+        allowed_statuses: list[str],
+        blocked_statuses: list[str] | None = None,
         include_unknown: bool = False,
         enabled: bool = True,
         priority: int = 0,
@@ -173,11 +173,11 @@ class ModelCustomFilters(BaseModel):
             return True
         return False
 
-    def get_filter_names(self) -> List[str]:
+    def get_filter_names(self) -> list[str]:
         """Get all filter names."""
         return list(self.filters.keys())
 
-    def get_enabled_filters(self) -> Dict[str, FilterType]:
+    def get_enabled_filters(self) -> dict[str, FilterType]:
         """Get only enabled filters."""
         return {
             name: filter_obj
@@ -193,32 +193,35 @@ class ModelCustomFilters(BaseModel):
         """Get number of enabled filters."""
         return len(self.get_enabled_filters())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary with strong typing preserved."""
         return {
             name: filter_obj.model_dump() for name, filter_obj in self.filters.items()
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelCustomFilters":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFilters":
         """Create from dictionary with strict type validation."""
-        filters: Dict[str, FilterType] = {}
+        filters: dict[str, FilterType] = {}
 
         for name, filter_data in data.items():
             if not isinstance(filter_data, dict):
+                msg = f"Filter {name} must be a dictionary, got {type(filter_data)}"
                 raise ValueError(
-                    f"Filter {name} must be a dictionary, got {type(filter_data)}"
+                    msg,
                 )
 
             filter_type_value = filter_data.get("filter_type")
             if not filter_type_value:
-                raise ValueError(f"Filter {name} missing required field 'filter_type'")
+                msg = f"Filter {name} missing required field 'filter_type'"
+                raise ValueError(msg)
 
             try:
                 filter_type = EnumFilterType(filter_type_value)
             except ValueError:
+                msg = f"Filter {name} has invalid filter_type: {filter_type_value}"
                 raise ValueError(
-                    f"Filter {name} has invalid filter_type: {filter_type_value}"
+                    msg,
                 )
 
             # Create the appropriate filter type with validation
@@ -236,9 +239,6 @@ class ModelCustomFilters(BaseModel):
                 filters[name] = ModelStatusFilter(**filter_data)
             elif filter_type == EnumFilterType.COMPLEX:
                 filters[name] = ModelComplexFilter(**filter_data)
-            else:
-                # This should never happen due to enum validation above
-                raise ValueError(f"Unsupported filter type: {filter_type}")
 
         return cls(filters=filters)
 
@@ -249,4 +249,4 @@ class ModelCustomFilters(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelCustomFilters", "FilterType"]
+__all__ = ["FilterType", "ModelCustomFilters"]

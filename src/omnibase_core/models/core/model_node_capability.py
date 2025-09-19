@@ -73,7 +73,7 @@ class ModelNodeCapability(BaseModel):
 
     # Factory methods for standard capabilities
     @classmethod
-    def SUPPORTS_DRY_RUN(cls) -> "ModelNodeCapability":
+    def supports_dry_run(cls) -> "ModelNodeCapability":
         """Dry run support capability."""
         return cls(
             name="SUPPORTS_DRY_RUN",
@@ -85,7 +85,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_BATCH_PROCESSING(cls) -> "ModelNodeCapability":
+    def supports_batch_processing(cls) -> "ModelNodeCapability":
         """Batch processing support capability."""
         return cls(
             name="SUPPORTS_BATCH_PROCESSING",
@@ -98,7 +98,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_CUSTOM_HANDLERS(cls) -> "ModelNodeCapability":
+    def supports_custom_handlers(cls) -> "ModelNodeCapability":
         """Custom handlers support capability."""
         return cls(
             name="SUPPORTS_CUSTOM_HANDLERS",
@@ -111,7 +111,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def TELEMETRY_ENABLED(cls) -> "ModelNodeCapability":
+    def telemetry_enabled(cls) -> "ModelNodeCapability":
         """Telemetry capability."""
         return cls(
             name="TELEMETRY_ENABLED",
@@ -124,7 +124,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_CORRELATION_ID(cls) -> "ModelNodeCapability":
+    def supports_correlation_id(cls) -> "ModelNodeCapability":
         """Correlation ID support capability."""
         return cls(
             name="SUPPORTS_CORRELATION_ID",
@@ -136,7 +136,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_EVENT_BUS(cls) -> "ModelNodeCapability":
+    def supports_event_bus(cls) -> "ModelNodeCapability":
         """Event bus support capability."""
         return cls(
             name="SUPPORTS_EVENT_BUS",
@@ -150,7 +150,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_SCHEMA_VALIDATION(cls) -> "ModelNodeCapability":
+    def supports_schema_validation(cls) -> "ModelNodeCapability":
         """Schema validation support capability."""
         return cls(
             name="SUPPORTS_SCHEMA_VALIDATION",
@@ -162,7 +162,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_ERROR_RECOVERY(cls) -> "ModelNodeCapability":
+    def supports_error_recovery(cls) -> "ModelNodeCapability":
         """Error recovery support capability."""
         return cls(
             name="SUPPORTS_ERROR_RECOVERY",
@@ -175,7 +175,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def SUPPORTS_EVENT_DISCOVERY(cls) -> "ModelNodeCapability":
+    def supports_event_discovery(cls) -> "ModelNodeCapability":
         """Event discovery support capability."""
         return cls(
             name="SUPPORTS_EVENT_DISCOVERY",
@@ -192,15 +192,15 @@ class ModelNodeCapability(BaseModel):
         """Create ModelNodeCapability from string for current standards."""
         capability_upper = capability.upper().replace(".", "_")
         factory_map = {
-            "SUPPORTS_DRY_RUN": cls.SUPPORTS_DRY_RUN,
-            "SUPPORTS_BATCH_PROCESSING": cls.SUPPORTS_BATCH_PROCESSING,
-            "SUPPORTS_CUSTOM_HANDLERS": cls.SUPPORTS_CUSTOM_HANDLERS,
-            "TELEMETRY_ENABLED": cls.TELEMETRY_ENABLED,
-            "SUPPORTS_CORRELATION_ID": cls.SUPPORTS_CORRELATION_ID,
-            "SUPPORTS_EVENT_BUS": cls.SUPPORTS_EVENT_BUS,
-            "SUPPORTS_SCHEMA_VALIDATION": cls.SUPPORTS_SCHEMA_VALIDATION,
-            "SUPPORTS_ERROR_RECOVERY": cls.SUPPORTS_ERROR_RECOVERY,
-            "SUPPORTS_EVENT_DISCOVERY": cls.SUPPORTS_EVENT_DISCOVERY,
+            "SUPPORTS_DRY_RUN": cls.supports_dry_run,
+            "SUPPORTS_BATCH_PROCESSING": cls.supports_batch_processing,
+            "SUPPORTS_CUSTOM_HANDLERS": cls.supports_custom_handlers,
+            "TELEMETRY_ENABLED": cls.telemetry_enabled,
+            "SUPPORTS_CORRELATION_ID": cls.supports_correlation_id,
+            "SUPPORTS_EVENT_BUS": cls.supports_event_bus,
+            "SUPPORTS_SCHEMA_VALIDATION": cls.supports_schema_validation,
+            "SUPPORTS_ERROR_RECOVERY": cls.supports_error_recovery,
+            "SUPPORTS_EVENT_DISCOVERY": cls.supports_event_discovery,
         }
 
         factory = factory_map.get(capability_upper)

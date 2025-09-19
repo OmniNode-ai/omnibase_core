@@ -9,13 +9,9 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 from .exceptions import (
-    FileProcessingError,
     InputValidationError,
-    PathTraversalError,
-    ProtocolParsingError,
 )
 
 # Configure logger for this module
@@ -29,10 +25,10 @@ class ProtocolInfo:
     name: str
     file_path: str
     repository: str
-    methods: List[str]
+    methods: list[str]
     signature_hash: str
     line_count: int
-    imports: List[str]
+    imports: list[str]
 
 
 @dataclass
@@ -42,8 +38,8 @@ class ValidationResult:
     success: bool
     message: str
     protocols_found: int = 0
-    violations: Optional[List[str]] = None
-    recommendations: Optional[List[str]] = None
+    violations: list[str] | None = None
+    recommendations: list[str] | None = None
 
     def __post_init__(self) -> None:
         if self.violations is None:
@@ -57,7 +53,7 @@ class DuplicationInfo:
     """Information about protocol duplications."""
 
     signature_hash: str
-    protocols: List[ProtocolInfo]
+    protocols: list[ProtocolInfo]
     duplication_type: str  # "exact", "name_conflict", "signature_match"
     recommendation: str
 
@@ -75,10 +71,9 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
         # Check if this class actually inherits from Protocol or typing.Protocol
         is_protocol = False
         for base in node.bases:
-            if isinstance(base, ast.Name) and base.id == "Protocol":
-                is_protocol = True
-                break
-            elif isinstance(base, ast.Attribute) and base.attr == "Protocol":
+            if (isinstance(base, ast.Name) and base.id == "Protocol") or (
+                isinstance(base, ast.Attribute) and base.attr == "Protocol"
+            ):
                 is_protocol = True
                 break
 
@@ -92,7 +87,8 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
                     signature = f"{item.name}({', '.join(args)}) -> {returns}"
                     self.methods.append(signature)
                 elif isinstance(item, ast.Expr) and isinstance(
-                    item.value, ast.Constant
+                    item.value,
+                    ast.Constant,
                 ):
                     # Skip docstrings and ellipsis
                     continue
@@ -110,10 +106,10 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
                 self.imports.append(f"{node.module}.{alias.name}")
 
 
-def extract_protocol_signature(file_path: Path) -> Optional[ProtocolInfo]:
+def extract_protocol_signature(file_path: Path) -> ProtocolInfo | None:
     """Extract protocol signature from Python file."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
             tree = ast.parse(content)
 
@@ -137,19 +133,19 @@ def extract_protocol_signature(file_path: Path) -> Optional[ProtocolInfo]:
             imports=extractor.imports,
         )
 
-    except (IOError, OSError) as e:
-        logger.error(f"Error reading file {file_path}: {e}. Skipping file.")
+    except OSError as e:
+        logger.exception(f"Error reading file {file_path}: {e}. Skipping file.")
         return None
     except UnicodeDecodeError as e:
-        logger.error(f"Encoding error in file {file_path}: {e}. Skipping file.")
+        logger.exception(f"Encoding error in file {file_path}: {e}. Skipping file.")
         return None
     except SyntaxError as e:
         logger.warning(
             f"Skipping file with syntax error: {file_path}, "
-            f"line {e.lineno}, offset {e.offset}: {e.msg}"
+            f"line {e.lineno}, offset {e.offset}: {e.msg}",
         )
         return None
-    except Exception as e:
+    except Exception:
         # This is a safety net for truly unexpected errors.
         # logger.exception provides a full stack trace.
         logger.exception(f"Unexpected error processing {file_path}. Skipping file.")
@@ -186,58 +182,57 @@ def suggest_spi_location(protocol: ProtocolInfo) -> str:
         return "agent"
 
     # Workflow and task management
-    elif any(
+    if any(
         word in name_lower
         for word in ["workflow", "task", "execution", "work", "queue"]
     ):
         return "workflow"
 
     # File operations
-    elif any(
+    if any(
         word in name_lower for word in ["file", "reader", "writer", "storage", "stamp"]
     ):
         return "file_handling"
 
     # Event and messaging
-    elif any(
+    if any(
         word in name_lower
         for word in ["event", "bus", "message", "pub", "communication"]
     ):
         return "event_bus"
 
     # Monitoring and observability
-    elif any(
+    if any(
         word in name_lower
         for word in ["monitor", "metric", "observ", "trace", "health", "log"]
     ):
         return "monitoring"
 
     # Service integration
-    elif any(
+    if any(
         word in name_lower
         for word in ["service", "client", "integration", "bridge", "registry"]
     ):
         return "integration"
 
     # Core ONEX architecture
-    elif any(
+    if any(
         word in name_lower
         for word in ["reducer", "orchestrator", "compute", "effect", "onex"]
     ):
         return "core"
 
     # Testing and validation
-    elif any(word in name_lower for word in ["test", "validation", "check", "verify"]):
+    if any(word in name_lower for word in ["test", "validation", "check", "verify"]):
         return "testing"
 
     # Data processing
-    elif any(
+    if any(
         word in name_lower for word in ["data", "process", "transform", "serialize"]
     ):
         return "data"
 
-    else:
-        return "core"  # Default to core
+    return "core"  # Default to core
 
 
 def is_protocol_file(file_path: Path) -> bool:
@@ -245,7 +240,7 @@ def is_protocol_file(file_path: Path) -> bool:
     try:
         # Check filename
         if "protocol" in file_path.name.lower() or file_path.name.startswith(
-            "protocol_"
+            "protocol_",
         ):
             return True
 
@@ -253,7 +248,7 @@ def is_protocol_file(file_path: Path) -> bool:
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
         return "class Protocol" in content_sample
 
-    except (IOError, OSError) as e:
+    except OSError as e:
         logger.debug(f"Could not read file {file_path} for protocol check: {e}")
         return False
     except Exception as e:
@@ -261,7 +256,7 @@ def is_protocol_file(file_path: Path) -> bool:
         return False
 
 
-def find_protocol_files(directory: Path) -> List[Path]:
+def find_protocol_files(directory: Path) -> list[Path]:
     """Find all files that likely contain protocols."""
     protocol_files: list[Path] = []
 
@@ -293,23 +288,26 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
     try:
         resolved_path = directory_path.resolve()
     except (OSError, ValueError) as e:
-        raise InputValidationError(f"Invalid {context} path: {directory_path} ({e})")
+        msg = f"Invalid {context} path: {directory_path} ({e})"
+        raise InputValidationError(msg)
 
     # Check for potential directory traversal
     if ".." in str(directory_path):
         logger.warning(
-            f"Potential directory traversal in {context} path: {directory_path}"
+            f"Potential directory traversal in {context} path: {directory_path}",
         )
         # Allow but log suspicious paths - some legitimate cases use ..
 
     if not resolved_path.exists():
+        msg = f"{context.capitalize()} path does not exist: {resolved_path}"
         raise InputValidationError(
-            f"{context.capitalize()} path does not exist: {resolved_path}"
+            msg,
         )
 
     if not resolved_path.is_dir():
+        msg = f"{context.capitalize()} path is not a directory: {resolved_path}"
         raise InputValidationError(
-            f"{context.capitalize()} path is not a directory: {resolved_path}"
+            msg,
         )
 
     return resolved_path
@@ -332,22 +330,25 @@ def validate_file_path(file_path: Path, context: str = "file") -> Path:
     try:
         resolved_path = file_path.resolve()
     except (OSError, ValueError) as e:
-        raise InputValidationError(f"Invalid {context} path: {file_path} ({e})")
+        msg = f"Invalid {context} path: {file_path} ({e})"
+        raise InputValidationError(msg)
 
     if not resolved_path.exists():
+        msg = f"{context.capitalize()} does not exist: {resolved_path}"
         raise InputValidationError(
-            f"{context.capitalize()} does not exist: {resolved_path}"
+            msg,
         )
 
     if not resolved_path.is_file():
+        msg = f"{context.capitalize()} is not a file: {resolved_path}"
         raise InputValidationError(
-            f"{context.capitalize()} is not a file: {resolved_path}"
+            msg,
         )
 
     return resolved_path
 
 
-def extract_protocols_from_directory(directory: Path) -> List[ProtocolInfo]:
+def extract_protocols_from_directory(directory: Path) -> list[ProtocolInfo]:
     """Extract all protocols from a directory."""
     # Validate directory path first
     validated_directory = validate_directory_path(directory, "source directory")
@@ -356,7 +357,8 @@ def extract_protocols_from_directory(directory: Path) -> List[ProtocolInfo]:
     protocol_files = find_protocol_files(validated_directory)
 
     logger.info(
-        f"Found {len(protocol_files)} potential protocol files in {validated_directory}"
+        f"Found {len(protocol_files)} potential protocol files in "
+        f"{validated_directory}",
     )
 
     for protocol_file in protocol_files:
@@ -365,6 +367,6 @@ def extract_protocols_from_directory(directory: Path) -> List[ProtocolInfo]:
             protocols.append(protocol_info)
 
     logger.info(
-        f"Successfully extracted {len(protocols)} protocols from {validated_directory}"
+        f"Successfully extracted {len(protocols)} protocols from {validated_directory}",
     )
     return protocols

@@ -125,6 +125,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
+        exclude: ^tests/fixtures/validation/invalid/
         stages: [pre-commit]
 
       - id: audit-optional-usage

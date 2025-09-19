@@ -5,7 +5,7 @@ Structured model for CLI command execution output data,
 replacing Dict[str, Any] with strongly typed fields.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,11 +31,12 @@ class ModelCliOutputData(BaseModel):
     # Core output fields (always present)
     message: str = Field(default="", description="Human-readable output message")
     status: EnumCliStatus = Field(
-        default=EnumCliStatus.SUCCESS, description="Strongly typed status"
+        default=EnumCliStatus.SUCCESS,
+        description="Strongly typed status",
     )
 
     # Node-related output
-    nodes: List[ModelNodeInfo] = Field(
+    nodes: list[ModelNodeInfo] = Field(
         default_factory=list,
         description="List of nodes (for discovery/list commands)",
     )
@@ -88,17 +89,17 @@ class ModelCliOutputData(BaseModel):
     )
 
     # File operation results
-    files_processed: List[str] = Field(
+    files_processed: list[str] = Field(
         default_factory=list,
         description="List of processed files",
     )
 
-    files_created: List[str] = Field(
+    files_created: list[str] = Field(
         default_factory=list,
         description="List of created files",
     )
 
-    files_modified: List[str] = Field(
+    files_modified: list[str] = Field(
         default_factory=list,
         description="List of modified files",
     )
@@ -127,7 +128,8 @@ class ModelCliOutputData(BaseModel):
         # Check custom fields only if they exist
         if self.custom_fields:
             return self.custom_fields.get_string(
-                field_name, str(default) if default else ""
+                field_name,
+                str(default) if default else "",
             )
 
         return default
@@ -141,24 +143,28 @@ class ModelCliOutputData(BaseModel):
             if field_info:
                 setattr(self, field_name, value)
             else:
+                msg = f"Cannot set field {field_name}: field type validation failed"
                 raise ValueError(
-                    f"Cannot set field {field_name}: field type validation failed"
+                    msg,
                 )
         else:
             # Use custom fields for extension
             if not self.custom_fields:
                 self.custom_fields = ModelCustomFields()
             # Enforce allowed custom field types only
-            if isinstance(value, (str, int, bool, float, list)):
+            if isinstance(value, str | int | bool | float | list):
                 self.custom_fields.set_field(field_name, value)
             else:
-                raise ValueError(
+                msg = (
                     f"Custom field {field_name} must be str, int, bool, float, or list"
                 )
+                raise ValueError(
+                    msg,
+                )
 
-    def to_dict(self, include_none: bool = False) -> Dict[str, Any]:
+    def to_dict(self, *, include_none: bool = False) -> dict[str, Any]:
         """Convert to dictionary with strong typing preserved."""
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
 
         # Add all standard fields
         for field_name, field_value in self.model_dump().items():
@@ -175,11 +181,11 @@ class ModelCliOutputData(BaseModel):
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelCliOutputData":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCliOutputData":
         """Create from dictionary with strict type validation."""
         known_fields = set(cls.model_fields.keys())
-        standard_data: Dict[str, Any] = {}
-        custom_data: Dict[str, Any] = {}
+        standard_data: dict[str, Any] = {}
+        custom_data: dict[str, Any] = {}
 
         for key, value in data.items():
             if key in known_fields:
@@ -194,11 +200,12 @@ class ModelCliOutputData(BaseModel):
         if custom_data:
             instance.custom_fields = ModelCustomFields()
             for key, value in custom_data.items():
-                if isinstance(value, (str, int, bool, float, list)):
+                if isinstance(value, str | int | bool | float | list):
                     instance.custom_fields.set_field(key, value)
                 else:
-                    raise ValueError(
-                        f"Custom field {key} has invalid type: {type(value)}"
+                    msg = f"Custom field {key} has invalid type: {type(value)}"
+                    raise TypeError(
+                        msg,
                     )
 
         return instance
@@ -213,7 +220,7 @@ class ModelCliOutputData(BaseModel):
         return cls(message=message, status=status)
 
     @classmethod
-    def create_node_list(cls, nodes: List[ModelNodeInfo]) -> "ModelCliOutputData":
+    def create_node_list(cls, nodes: list[ModelNodeInfo]) -> "ModelCliOutputData":
         """Create output for node listing."""
         return cls(
             nodes=nodes,
@@ -226,6 +233,7 @@ class ModelCliOutputData(BaseModel):
     @classmethod
     def create_validation_result(
         cls,
+        *,
         passed: bool,
         message: str,
         test_results: ModelTestResults,

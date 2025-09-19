@@ -19,14 +19,14 @@ class ModelFallbackMetadata(BaseModel):
     """Strongly-typed metadata model for fallback strategy configuration."""
 
     timeout_multiplier: float | None = Field(
-        None,
+        default=1.0,
         description="Multiplier for timeout adjustments",
         ge=0.1,
         le=10.0,
     )
 
     retry_backoff_seconds: int | None = Field(
-        None,
+        default=5,
         description="Backoff time between retries in seconds",
         ge=1,
         le=300,

@@ -75,7 +75,19 @@ class OmniStructureValidator:
             ("protocol", "Use /protocols/ (plural) instead"),
         ]
 
+        # Directories to ignore during validation (cache directories, etc.)
+        ignore_dirs = {
+            ".mypy_cache",
+            "__pycache__",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".onex_cache",
+        }
+
         for root, dirs, _ in os.walk(self.src_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
             for dir_name in dirs:
                 for forbidden, suggestion in forbidden_patterns:
                     if dir_name == forbidden:
@@ -90,33 +102,43 @@ class OmniStructureValidator:
                             )
                         )
 
-        # Check for scattered model directories
+        # Check for scattered model directories (ignoring cache directories)
         for root, dirs, _ in os.walk(self.src_path):
-            if "models" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                path = Path(root) / "models"
-                self.violations.append(
-                    StructureViolation(
-                        level=ViolationLevel.ERROR,
-                        category="Scattered Models",
-                        message=f"Models directory found outside root: {path}",
-                        path=str(path.relative_to(self.repo_path)),
-                        suggestion="Move all models to src/{repo_name}/models/ organized by domain",
-                    )
-                )
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
 
-        # Check for scattered enum directories
-        for root, dirs, _ in os.walk(self.src_path):
-            if "enums" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
-                path = Path(root) / "enums"
-                self.violations.append(
-                    StructureViolation(
-                        level=ViolationLevel.ERROR,
-                        category="Scattered Enums",
-                        message=f"Enums directory found outside root: {path}",
-                        path=str(path.relative_to(self.repo_path)),
-                        suggestion="Move all enums to src/{repo_name}/enums/ organized by domain",
+            if "models" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
+                # Skip if this is inside a cache directory
+                if not any(ignore_dir in str(Path(root)) for ignore_dir in ignore_dirs):
+                    path = Path(root) / "models"
+                    self.violations.append(
+                        StructureViolation(
+                            level=ViolationLevel.ERROR,
+                            category="Scattered Models",
+                            message=f"Models directory found outside root: {path}",
+                            path=str(path.relative_to(self.repo_path)),
+                            suggestion="Move all models to src/{repo_name}/models/ organized by domain",
+                        )
                     )
-                )
+
+        # Check for scattered enum directories (ignoring cache directories)
+        for root, dirs, _ in os.walk(self.src_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
+            if "enums" in dirs and str(Path(root).relative_to(self.src_path)) != ".":
+                # Skip if this is inside a cache directory
+                if not any(ignore_dir in str(Path(root)) for ignore_dir in ignore_dirs):
+                    path = Path(root) / "enums"
+                    self.violations.append(
+                        StructureViolation(
+                            level=ViolationLevel.ERROR,
+                            category="Scattered Enums",
+                            message=f"Enums directory found outside root: {path}",
+                            path=str(path.relative_to(self.repo_path)),
+                            suggestion="Move all enums to src/{repo_name}/enums/ organized by domain",
+                        )
+                    )
 
     def validate_required_structure(self):
         """Validate presence of required directories."""
@@ -177,7 +199,17 @@ class OmniStructureValidator:
             )
 
         # Check model file naming
-        for root, _, files in os.walk(models_path):
+        ignore_dirs = {
+            ".mypy_cache",
+            "__pycache__",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".onex_cache",
+        }
+        for root, dirs, files in os.walk(models_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
                     if not file.startswith("model_"):
@@ -209,7 +241,17 @@ class OmniStructureValidator:
             return
 
         # Check enum file naming
-        for root, _, files in os.walk(enums_path):
+        ignore_dirs = {
+            ".mypy_cache",
+            "__pycache__",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".onex_cache",
+        }
+        for root, dirs, files in os.walk(enums_path):
+            # Filter out cache directories from dirs list to prevent walking into them
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
                     if not file.startswith("enum_"):
@@ -242,7 +284,17 @@ class OmniStructureValidator:
         # Count protocol files in non-SPI repositories
         if self.repo_name != "omnibase_spi":
             protocol_count = 0
-            for root, _, files in os.walk(self.src_path):
+            ignore_dirs = {
+                ".mypy_cache",
+                "__pycache__",
+                ".pytest_cache",
+                ".ruff_cache",
+                ".onex_cache",
+            }
+            for root, dirs, files in os.walk(self.src_path):
+                # Filter out cache directories from dirs list to prevent walking into them
+                dirs[:] = [d for d in dirs if d not in ignore_dirs]
+
                 for file in files:
                     if file.startswith("protocol_") and file.endswith(".py"):
                         protocol_count += 1
