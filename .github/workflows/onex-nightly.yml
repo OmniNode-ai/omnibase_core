@@ -1,0 +1,126 @@
+name: ONEX Nightly Review
+
+on:
+  schedule:
+    # Run at 22:00 America/New_York (02:00 or 03:00 UTC depending on DST)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Review mode'
+        required: true
+        default: 'nightly'
+        type: choice
+        options:
+          - nightly
+          - baseline
+
+jobs:
+  onex-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Run ONEX Review
+        id: onex
+        run: |
+          MODE="${{ github.event.inputs.mode || 'nightly' }}"
+          echo "Running ONEX in $MODE mode"
+
+          if [ "$MODE" = "baseline" ]; then
+            ./onex/scripts/baseline_producer.sh
+            LATEST_DIR=$(find .onex_baseline -type d -name "[0-9]*" | sort -r | head -n1)
+          else
+            ./onex/scripts/nightly_producer.sh
+            LATEST_DIR=$(find .onex_nightly/runs -type d -name "[0-9]*" 2>/dev/null | sort -r | head -n1)
+          fi
+
+          if [ -n "$LATEST_DIR" ]; then
+            python3 ./onex/scripts/onex_reviewer.py "$MODE" "$LATEST_DIR" ./onex/configs/policy.yaml > review_output.txt 2>&1 || true
+
+            # Extract findings and summary
+            awk '/---ONEX-SEP---/{flag=1;next}flag' review_output.txt > summary.md
+            awk '/---ONEX-SEP---/{exit}1' review_output.txt > findings.ndjson
+
+            # Count findings
+            ERROR_COUNT=$(grep -c '"severity":"error"' findings.ndjson || echo "0")
+            WARNING_COUNT=$(grep -c '"severity":"warning"' findings.ndjson || echo "0")
+
+            echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+            echo "warning_count=$WARNING_COUNT" >> $GITHUB_OUTPUT
+            echo "review_dir=$LATEST_DIR" >> $GITHUB_OUTPUT
+          else
+            echo "No changes to review"
+            echo "error_count=0" >> $GITHUB_OUTPUT
+            echo "warning_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload findings
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: onex-findings
+          path: |
+            findings.ndjson
+            summary.md
+            .onex_*/
+
+      - name: Create issue if errors found
+        if: steps.onex.outputs.error_count != '0'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('summary.md', 'utf8');
+            const errorCount = ${{ steps.onex.outputs.error_count }};
+            const warningCount = ${{ steps.onex.outputs.warning_count }};
+
+            const issueTitle = `ONEX: ${errorCount} errors, ${warningCount} warnings detected`;
+            const issueBody = `## ONEX Nightly Review Results
+
+            ${summary}
+
+            ---
+            Run: ${{ github.run_id }}
+            Mode: ${{ github.event.inputs.mode || 'nightly' }}
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['onex-review', 'automated']
+            });
+
+      - name: Post summary
+        if: always()
+        run: |
+          if [ -f summary.md ]; then
+            echo "## ONEX Review Summary" >> $GITHUB_STEP_SUMMARY
+            cat summary.md >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "Errors: ${{ steps.onex.outputs.error_count }}" >> $GITHUB_STEP_SUMMARY
+            echo "Warnings: ${{ steps.onex.outputs.warning_count }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No review summary available" >> $GITHUB_STEP_SUMMARY
+          fi

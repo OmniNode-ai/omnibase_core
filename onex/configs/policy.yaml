@@ -1,0 +1,65 @@
+ruleset_version: "0.1"
+repos:
+  omnibase-core:
+    forbids:
+      - "^from\\s+omniagent\\b"
+      - "^from\\s+omnimcp\\b"
+      - "^import\\s+omniagent\\b"
+      - "^import\\s+omnimcp\\b"
+
+  omnibase_core:
+    forbids:
+      - "^from\\s+omniagent\\b"
+      - "^from\\s+omnimcp\\b"
+      - "^import\\s+omniagent\\b"
+      - "^import\\s+omnimcp\\b"
+
+  omniagent:
+    forbids:
+      - "^from\\s+omnibase_core\\b"
+      - "^from\\s+omnibase_infra\\b"
+      - "^import\\s+omnibase_core\\b"
+      - "^import\\s+omnibase_infra\\b"
+
+  omnimcp:
+    forbids:
+      - "^from\\s+omnibase_core\\b"
+      - "^import\\s+omnibase_core\\b"
+
+  omnimemory:
+    forbids:
+      - "^from\\s+omnibase_core\\b"
+      - "^import\\s+omnibase_core\\b"
+
+  omnibase-spi:
+    forbids:
+      - "^import\\s+(os|pathlib|sqlite3)\\b"
+      - "^from\\s+(os|pathlib|sqlite3)\\b"
+      - "^from\\s+(requests|httpx)\\b"
+      - "^import\\s+(requests|httpx)\\b"
+      - "^from\\s+(socket)\\b"
+      - "^import\\s+(socket)\\b"
+
+  omnibase_spi:
+    forbids:
+      - "^import\\s+(os|pathlib|sqlite3)\\b"
+      - "^from\\s+(os|pathlib|sqlite3)\\b"
+      - "^from\\s+(requests|httpx)\\b"
+      - "^import\\s+(requests|httpx)\\b"
+      - "^from\\s+(socket)\\b"
+      - "^import\\s+(socket)\\b"
+
+# Default repository configuration (applies if specific repo not found)
+default:
+  forbids: []
+
+# Global settings
+settings:
+  max_diff_size_bytes: 524288  # 512KB
+  max_shard_size_bytes: 204800  # 200KB
+  context_lines: 1  # Lines of context in diffs
+  enable_waiver_checks: true
+  enable_type_checks: true
+  enable_naming_checks: true
+  enable_boundary_checks: true
+  enable_spi_purity_checks: true
