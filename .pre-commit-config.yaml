@@ -54,7 +54,7 @@ repos:
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
         name: ONEX Repository Structure Validation
-        entry: python scripts/validation/validate_structure.py
+        entry: poetry run python scripts/validation/validate_structure.py
         args: ['.', 'omnibase_core']
         language: system
         always_run: true
@@ -63,7 +63,7 @@ repos:
 
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
-        entry: python scripts/validation/validate_naming.py
+        entry: poetry run python scripts/validation/validate_naming.py
         args: ['.']
         language: system
         always_run: true
@@ -81,7 +81,7 @@ repos:
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: python scripts/validation/validate-no-backward-compatibility.py
+        entry: poetry run python scripts/validation/validate-no-backward-compatibility.py
         args: ['-d', 'src/']
         language: system
         pass_filenames: false
@@ -101,7 +101,7 @@ repos:
       # ONEX Python Pattern Validation (SHARED HOOKS)
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation
-        entry: python scripts/validation/validate-pydantic-patterns.py
+        entry: poetry run python scripts/validation/validate-pydantic-patterns.py
         args: ['--allow-errors', '13']
         language: system
         pass_filenames: false
@@ -110,7 +110,7 @@ repos:
 
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: python scripts/validation/validate-union-usage.py
+        entry: poetry run python scripts/validation/validate-union-usage.py
         args: ['--max-unions', '7000']
         language: system
         pass_filenames: false
@@ -128,7 +128,7 @@ repos:
 
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
-        entry: python scripts/validation/audit_optional.py
+        entry: poetry run python scripts/validation/audit_optional.py
         args: ['.']
         language: system
         always_run: true
