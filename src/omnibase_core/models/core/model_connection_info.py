@@ -4,6 +4,7 @@ Connection info model to replace Dict[str, Any] usage for connection_info fields
 
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -56,9 +57,9 @@ class ModelConnectionInfo(BaseModel):
         default=True,
         description="Whether to verify SSL certificates",
     )
-    ssl_cert_path: str | None = Field(None, description="SSL certificate path")
-    ssl_key_path: str | None = Field(None, description="SSL key path")
-    ssl_ca_path: str | None = Field(None, description="SSL CA bundle path")
+    ssl_cert_path: Path | None = Field(None, description="SSL certificate path")
+    ssl_key_path: Path | None = Field(None, description="SSL key path")
+    ssl_ca_path: Path | None = Field(None, description="SSL CA bundle path")
 
     # Connection parameters
     timeout_seconds: int = Field(30, description="Connection timeout")

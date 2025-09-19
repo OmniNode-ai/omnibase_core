@@ -71,18 +71,26 @@ class Result(BaseModel, Generic[T, E]):
         """
         if not self.success:
             raise ValueError(f"Called unwrap() on error result: {self.error}")
+        if self.value is None:
+            raise ValueError("Success result has None value")
         return self.value
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
         if self.success:
+            if self.value is None:
+                raise ValueError("Success result has None value")
             return self.value
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
         """Unwrap the value or compute from error using function."""
         if self.success:
+            if self.value is None:
+                raise ValueError("Success result has None value")
             return self.value
+        if self.error is None:
+            raise ValueError("Error result has None error")
         return f(self.error)
 
     def expect(self, msg: str) -> T:
@@ -97,6 +105,8 @@ class Result(BaseModel, Generic[T, E]):
         """
         if not self.success:
             raise ValueError(f"{msg}: {self.error}")
+        if self.value is None:
+            raise ValueError("Success result has None value")
         return self.value
 
     def map(self, f: Callable[[T], Any]) -> "Result[Any, E]":
@@ -108,11 +118,15 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             try:
+                if self.value is None:
+                    raise ValueError("Success result has None value")
                 new_value = f(self.value)
                 return Result.ok(new_value)
             except Exception as e:
-                # Convert exceptions to error results
+                # Convert exceptions to error results (cast to E type)
                 return Result.err(e)
+        if self.error is None:
+            raise ValueError("Error result has None error")
         return Result.err(self.error)
 
     def map_err(self, f: Callable[[E], Any]) -> "Result[T, Any]":
@@ -123,8 +137,12 @@ class Result(BaseModel, Generic[T, E]):
         If this is Err(error), returns Err(f(error)).
         """
         if self.success:
+            if self.value is None:
+                raise ValueError("Success result has None value")
             return Result.ok(self.value)
         try:
+            if self.error is None:
+                raise ValueError("Error result has None error")
             new_error = f(self.error)
             return Result.err(new_error)
         except Exception as e:
@@ -139,9 +157,13 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             try:
+                if self.value is None:
+                    raise ValueError("Success result has None value")
                 return f(self.value)
             except Exception as e:
                 return Result.err(e)
+        if self.error is None:
+            raise ValueError("Error result has None error")
         return Result.err(self.error)
 
     def or_else(self, f: Callable[[E], "Result[T, Any]"]) -> "Result[T, Any]":
@@ -152,8 +174,12 @@ class Result(BaseModel, Generic[T, E]):
         If this is Err(error), returns f(error).
         """
         if self.success:
+            if self.value is None:
+                raise ValueError("Success result has None value")
             return Result.ok(self.value)
         try:
+            if self.error is None:
+                raise ValueError("Error result has None error")
             return f(self.error)
         except Exception as e:
             return Result.err(e)
@@ -250,6 +276,8 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
         if result.is_ok():
             values.append(result.unwrap())
         else:
+            if result.error is None:
+                raise ValueError("Error result has None error")
             errors.append(result.error)
 
     if errors:

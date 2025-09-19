@@ -1,0 +1,127 @@
+"""
+Runtime Category Enumeration.
+
+Defines categories for estimated runtime durations.
+"""
+
+from enum import Enum
+
+
+class EnumRuntimeCategory(Enum):
+    """
+    Runtime category enumeration.
+
+    Represents different categories of expected runtime durations.
+    """
+
+    # Ultra-fast operations (sub-second)
+    INSTANT = "instant"  # < 100ms
+    VERY_FAST = "very_fast"  # 100ms - 1s
+
+    # Fast operations
+    FAST = "fast"  # 1-5 seconds
+    QUICK = "quick"  # 5-15 seconds
+
+    # Moderate operations
+    MODERATE = "moderate"  # 15 seconds - 1 minute
+    STANDARD = "standard"  # 1-5 minutes
+
+    # Longer operations
+    LONG = "long"  # 5-15 minutes
+    EXTENDED = "extended"  # 15-30 minutes
+
+    # Very long operations
+    VERY_LONG = "very_long"  # 30 minutes - 1 hour
+    BATCH = "batch"  # 1-3 hours
+
+    # Extreme durations
+    MARATHON = "marathon"  # 3+ hours
+    OVERNIGHT = "overnight"  # 8+ hours
+    UNKNOWN = "unknown"  # Cannot estimate
+
+    def __str__(self) -> str:
+        """Return string representation."""
+        return self.value
+
+    @property
+    def display_name(self) -> str:
+        """Get human-readable display name."""
+        return self.value.replace("_", " ").title()
+
+    @property
+    def estimated_seconds(self) -> tuple[float, float | None]:
+        """Get estimated duration range in seconds."""
+        ranges = {
+            self.INSTANT: (0, 0.1),
+            self.VERY_FAST: (0.1, 1),
+            self.FAST: (1, 5),
+            self.QUICK: (5, 15),
+            self.MODERATE: (15, 60),
+            self.STANDARD: (60, 300),
+            self.LONG: (300, 900),
+            self.EXTENDED: (900, 1800),
+            self.VERY_LONG: (1800, 3600),
+            self.BATCH: (3600, 10800),
+            self.MARATHON: (10800, None),
+            self.OVERNIGHT: (28800, None),
+            self.UNKNOWN: (0, None),
+        }
+        return ranges.get(self, (0, None))
+
+    @property
+    def estimated_minutes(self) -> tuple[float, float | None]:
+        """Get estimated duration range in minutes."""
+        seconds_range = self.estimated_seconds
+        min_mins = seconds_range[0] / 60
+        max_mins = seconds_range[1] / 60 if seconds_range[1] is not None else None
+        return (min_mins, max_mins)
+
+    @classmethod
+    def from_seconds(cls, seconds: float) -> "EnumRuntimeCategory":
+        """Determine category from duration in seconds."""
+        if seconds < 0.1:
+            return cls.INSTANT
+        elif seconds < 1:
+            return cls.VERY_FAST
+        elif seconds < 5:
+            return cls.FAST
+        elif seconds < 15:
+            return cls.QUICK
+        elif seconds < 60:
+            return cls.MODERATE
+        elif seconds < 300:
+            return cls.STANDARD
+        elif seconds < 900:
+            return cls.LONG
+        elif seconds < 1800:
+            return cls.EXTENDED
+        elif seconds < 3600:
+            return cls.VERY_LONG
+        elif seconds < 10800:
+            return cls.BATCH
+        elif seconds < 28800:
+            return cls.MARATHON
+        else:
+            return cls.OVERNIGHT
+
+    @classmethod
+    def get_fast_categories(cls) -> list["EnumRuntimeCategory"]:
+        """Get categories for fast operations."""
+        return [
+            cls.INSTANT,
+            cls.VERY_FAST,
+            cls.FAST,
+            cls.QUICK,
+        ]
+
+    @classmethod
+    def get_slow_categories(cls) -> list["EnumRuntimeCategory"]:
+        """Get categories for slow operations."""
+        return [
+            cls.MARATHON,
+            cls.OVERNIGHT,
+        ]
+
+
+# Export for use
+__all__ = ["EnumRuntimeCategory"]

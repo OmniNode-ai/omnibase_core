@@ -6,12 +6,15 @@ Used for metadata node collections and function documentation.
 """
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_complexity import EnumComplexity
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
+from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
+from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 
 
 class ModelFunctionNode(BaseModel):
@@ -54,7 +57,7 @@ class ModelFunctionNode(BaseModel):
         default=None,
         description="Module containing the function",
     )
-    file_path: str | None = Field(default=None, description="Source file path")
+    file_path: Path | None = Field(default=None, description="Source file path")
     line_number: int | None = Field(
         default=None,
         description="Line number in source file",
@@ -81,13 +84,13 @@ class ModelFunctionNode(BaseModel):
         default=EnumComplexity.SIMPLE,
         description="Function complexity (simple, moderate, complex)",
     )
-    estimated_runtime: str | None = Field(
+    estimated_runtime: EnumRuntimeCategory | None = Field(
         default=None,
-        description="Estimated runtime category (fast, medium, slow)",
+        description="Estimated runtime category",
     )
-    memory_usage: str | None = Field(
+    memory_usage: EnumMemoryUsage | None = Field(
         default=None,
-        description="Memory usage category (low, medium, high)",
+        description="Memory usage category",
     )
 
     # Timestamps

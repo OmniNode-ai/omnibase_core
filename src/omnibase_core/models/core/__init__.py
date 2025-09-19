@@ -4,6 +4,8 @@ from .model_cli_execution import ModelCliExecution
 from .model_cli_execution_result import ModelCliExecutionResult
 from .model_custom_connection_properties import ModelCustomConnectionProperties
 from .model_custom_fields import ModelCustomFields
+from .model_duration import ModelDuration
+from .model_environment_variables import ModelEnvironmentVariables
 from .model_function_node import ModelFunctionNode
 from .model_generic_metadata import ModelGenericMetadata
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
@@ -18,6 +20,7 @@ from .model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics as ModelMetadataUsageMetricsStandalone,
 )
 from .model_node_configuration import ModelNodeConfiguration
+from .model_progress import ModelProgress
 from .model_result import (
     BoolResult,
     DictResult,
@@ -30,12 +33,16 @@ from .model_result import (
     ok,
     try_result,
 )
+from .model_retry_policy import ModelRetryPolicy, RetryBackoffStrategy
+from .model_timeout import ModelTimeout
 
 __all__ = [
     "ModelCliExecution",
     "ModelCliExecutionResult",
     "ModelCustomConnectionProperties",
     "ModelCustomFields",
+    "ModelDuration",
+    "ModelEnvironmentVariables",
     "ModelFunctionNode",
     "ModelGenericMetadata",
     "ModelMetadataNodeAnalytics",
@@ -46,7 +53,11 @@ __all__ = [
     "ModelMetadataUsageMetrics",
     "ModelMetadataUsageMetricsStandalone",
     "ModelNodeConfiguration",
+    "ModelProgress",
+    "ModelRetryPolicy",
+    "ModelTimeout",
     "Result",
+    "RetryBackoffStrategy",
     "StrResult",
     "BoolResult",
     "IntResult",

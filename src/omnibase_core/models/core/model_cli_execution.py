@@ -7,11 +7,13 @@ and state tracking for comprehensive command execution management.
 
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_execution_status import EnumExecutionStatus
 from ...enums.enum_output_format import EnumOutputFormat
 
@@ -46,13 +48,13 @@ class ModelCliExecution(BaseModel):
         default=None,
         description="Target node name if applicable",
     )
-    target_path: str | None = Field(
+    target_path: Path | None = Field(
         default=None,
         description="Target file or directory path",
     )
 
     # Execution context
-    working_directory: str | None = Field(
+    working_directory: Path | None = Field(
         default=None,
         description="Working directory for execution",
     )
@@ -91,7 +93,7 @@ class ModelCliExecution(BaseModel):
     status: EnumExecutionStatus = Field(
         default=EnumExecutionStatus.PENDING, description="Execution status"
     )
-    current_phase: str | None = Field(
+    current_phase: EnumExecutionPhase | None = Field(
         default=None,
         description="Current execution phase",
     )
@@ -212,7 +214,7 @@ class ModelCliExecution(BaseModel):
         self.status = EnumExecutionStatus.CANCELLED
         self.end_time = datetime.now(UTC)
 
-    def set_phase(self, phase: str) -> None:
+    def set_phase(self, phase: EnumExecutionPhase) -> None:
         """Set current execution phase."""
         self.current_phase = phase
 

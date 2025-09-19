@@ -15,6 +15,9 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.models.core.model_cli_execution import ModelCliExecution
 
 
@@ -30,12 +33,12 @@ class TestModelCliExecution:
         assert str(execution.execution_id)  # Should convert to valid string
         assert execution.command_args == []
         assert execution.command_options == {}
-        assert execution.status == "pending"
+        assert execution.status == EnumExecutionStatus.PENDING
         assert execution.progress_percentage == 0.0
         assert execution.max_retries == 0
         assert execution.retry_count == 0
         assert execution.capture_output is True
-        assert execution.output_format == "text"
+        assert execution.output_format == EnumOutputFormat.TEXT
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
@@ -58,8 +61,8 @@ class TestModelCliExecution:
             is_verbose=True,
             start_time=start_time,
             end_time=end_time,
-            status="completed",
-            current_phase="deployment",
+            status=EnumExecutionStatus.COMPLETED,
+            current_phase=EnumExecutionPhase.EXECUTION,
             progress_percentage=100.0,
             timeout_seconds=300,
             max_memory_mb=512,
@@ -68,7 +71,7 @@ class TestModelCliExecution:
             user_id=UUID("11111111-2222-3333-4444-555555555555"),
             session_id=UUID("66666666-7777-8888-9999-aaaaaaaaaaaa"),
             input_data={"config": "value"},
-            output_format="json",
+            output_format=EnumOutputFormat.JSON,
             capture_output=False,
             custom_context={"metadata": "test"},
             execution_tags=["production", "deployment"],
@@ -79,8 +82,8 @@ class TestModelCliExecution:
         assert execution.command_args == ["--env", "prod"]
         assert execution.command_options == {"force": True, "timeout": 300}
         assert execution.target_node_name == "app_node"
-        assert execution.target_path == "/app/config"
-        assert execution.working_directory == "/workspace"
+        assert str(execution.target_path) == "/app/config"
+        assert str(execution.working_directory) == "/workspace"
         assert execution.environment_vars == {"ENV": "production"}
         assert execution.is_dry_run is True
         assert execution.is_test_execution is True
@@ -89,8 +92,8 @@ class TestModelCliExecution:
         assert execution.is_verbose is True
         assert execution.start_time == start_time
         assert execution.end_time == end_time
-        assert execution.status == "completed"
-        assert execution.current_phase == "deployment"
+        assert execution.status == EnumExecutionStatus.COMPLETED
+        assert execution.current_phase == EnumExecutionPhase.EXECUTION
         assert execution.progress_percentage == 100.0
         assert execution.timeout_seconds == 300
         assert execution.max_memory_mb == 512
@@ -99,7 +102,7 @@ class TestModelCliExecution:
         assert execution.user_id == UUID("11111111-2222-3333-4444-555555555555")
         assert execution.session_id == UUID("66666666-7777-8888-9999-aaaaaaaaaaaa")
         assert execution.input_data == {"config": "value"}
-        assert execution.output_format == "json"
+        assert execution.output_format == EnumOutputFormat.JSON
         assert execution.capture_output is False
         assert execution.custom_context == {"metadata": "test"}
         assert execution.execution_tags == ["production", "deployment"]
@@ -268,7 +271,7 @@ class TestModelCliExecution:
         execution.end_time = None
 
         # Test is_running
-        execution.status = "running"
+        execution.status = EnumExecutionStatus.RUNNING
         assert execution.is_running() is True
         execution.end_time = datetime.now(UTC)
         assert execution.is_running() is False
@@ -277,21 +280,21 @@ class TestModelCliExecution:
         execution.end_time = None
 
         # Test is_pending
-        execution.status = "pending"
+        execution.status = EnumExecutionStatus.PENDING
         assert execution.is_pending() is True
-        execution.status = "running"
+        execution.status = EnumExecutionStatus.RUNNING
         assert execution.is_pending() is False
 
         # Test is_failed
-        execution.status = "failed"
+        execution.status = EnumExecutionStatus.FAILED
         assert execution.is_failed() is True
-        execution.status = "success"
+        execution.status = EnumExecutionStatus.SUCCESS
         assert execution.is_failed() is False
 
         # Test is_successful
-        execution.status = "success"
+        execution.status = EnumExecutionStatus.SUCCESS
         assert execution.is_successful() is True
-        execution.status = "failed"
+        execution.status = EnumExecutionStatus.FAILED
         assert execution.is_successful() is False
 
     def test_is_timed_out_method(self):
@@ -317,26 +320,28 @@ class TestModelCliExecution:
 
         execution.mark_started()
 
-        assert execution.status == "running"
+        assert execution.status == EnumExecutionStatus.RUNNING
         assert execution.start_time >= original_start_time
 
     def test_mark_completed_method(self):
         """Test the mark_completed method."""
         execution = ModelCliExecution(command_name="test")
-        execution.status = "running"
+        execution.status = EnumExecutionStatus.RUNNING
 
         execution.mark_completed()
 
-        assert execution.status == "success"
+        assert execution.status == EnumExecutionStatus.SUCCESS
         assert execution.end_time is not None
         assert execution.is_completed() is True
 
         # Test with non-running status
         execution2 = ModelCliExecution(command_name="test2")
-        execution2.status = "pending"
+        execution2.status = EnumExecutionStatus.PENDING
         execution2.mark_completed()
 
-        assert execution2.status == "pending"  # Should not change to success
+        assert (
+            execution2.status == EnumExecutionStatus.PENDING
+        )  # Should not change to success
         assert execution2.end_time is not None
 
     def test_mark_failed_method(self):
@@ -346,7 +351,7 @@ class TestModelCliExecution:
         # Without reason
         execution.mark_failed()
 
-        assert execution.status == "failed"
+        assert execution.status == EnumExecutionStatus.FAILED
         assert execution.end_time is not None
         assert execution.is_completed() is True
 
@@ -354,7 +359,7 @@ class TestModelCliExecution:
         execution2 = ModelCliExecution(command_name="test2")
         execution2.mark_failed("Connection timeout")
 
-        assert execution2.status == "failed"
+        assert execution2.status == EnumExecutionStatus.FAILED
         assert execution2.end_time is not None
         assert execution2.custom_context["failure_reason"] == "Connection timeout"
 
@@ -364,7 +369,7 @@ class TestModelCliExecution:
 
         execution.mark_cancelled()
 
-        assert execution.status == "cancelled"
+        assert execution.status == EnumExecutionStatus.CANCELLED
         assert execution.end_time is not None
         assert execution.is_completed() is True
 
@@ -372,11 +377,11 @@ class TestModelCliExecution:
         """Test the set_phase method."""
         execution = ModelCliExecution(command_name="test")
 
-        execution.set_phase("initialization")
-        assert execution.current_phase == "initialization"
+        execution.set_phase(EnumExecutionPhase.INITIALIZATION)
+        assert execution.current_phase == EnumExecutionPhase.INITIALIZATION
 
-        execution.set_phase("execution")
-        assert execution.current_phase == "execution"
+        execution.set_phase(EnumExecutionPhase.EXECUTION)
+        assert execution.current_phase == EnumExecutionPhase.EXECUTION
 
     def test_set_progress_method(self):
         """Test the set_progress method."""
@@ -464,8 +469,8 @@ class TestModelCliExecution:
             target_node_name="app_node",
             start_time=start_time,
             end_time=end_time,
-            status="completed",
-            current_phase="deployment",
+            status=EnumExecutionStatus.COMPLETED,
+            current_phase=EnumExecutionPhase.EXECUTION,
             progress_percentage=100.0,
             retry_count=1,
             is_dry_run=True,
@@ -476,7 +481,7 @@ class TestModelCliExecution:
 
         assert summary["command_name"] == "deploy"
         assert summary["target_node_name"] == "app_node"
-        assert summary["status"] == "completed"
+        assert summary["status"] == EnumExecutionStatus.COMPLETED
         assert summary["start_time"] == start_time.isoformat()
         assert summary["end_time"] == end_time.isoformat()
         assert summary["elapsed_ms"] == 5000
@@ -484,7 +489,7 @@ class TestModelCliExecution:
         assert summary["is_dry_run"] is True
         assert summary["is_test_execution"] is True
         assert summary["progress_percentage"] == 100.0
-        assert summary["current_phase"] == "deployment"
+        assert summary["current_phase"] == EnumExecutionPhase.EXECUTION
         assert "execution_id" in summary
 
         # Test with no end_time
@@ -526,7 +531,7 @@ class TestModelCliExecution:
             command_name="test_command",
             command_args=["arg1", "arg2"],
             command_options={"option": "value"},
-            status="running",
+            status=EnumExecutionStatus.RUNNING,
             progress_percentage=50.0,
         )
 
@@ -535,7 +540,7 @@ class TestModelCliExecution:
         assert data["command_name"] == "test_command"
         assert data["command_args"] == ["arg1", "arg2"]
         assert data["command_options"] == {"option": "value"}
-        assert data["status"] == "running"
+        assert data["status"] == EnumExecutionStatus.RUNNING
         assert data["progress_percentage"] == 50.0
         assert "execution_id" in data
         assert "start_time" in data
@@ -562,7 +567,7 @@ class TestModelCliExecution:
         assert execution.command_name == "deploy"
         assert execution.command_args == ["--env", "prod"]
         assert execution.command_options == {"force": True}
-        assert execution.status == "completed"
+        assert execution.status == EnumExecutionStatus.COMPLETED
         assert execution.progress_percentage == 100.0
         assert execution.timeout_seconds == 300
         assert execution.max_retries == 3
@@ -571,7 +576,9 @@ class TestModelCliExecution:
     def test_model_json_serialization(self):
         """Test JSON serialization and deserialization."""
         execution = ModelCliExecution(
-            command_name="backup", target_node_name="data_node", status="running"
+            command_name="backup",
+            target_node_name="data_node",
+            status=EnumExecutionStatus.RUNNING,
         )
 
         # Serialize to JSON
@@ -695,7 +702,7 @@ class TestModelCliExecutionEdgeCases:
         assert execution.command_name == "tést_çommänd"
         assert execution.command_args == ["ärg1", "🚀"]
         assert execution.target_node_name == "node_ñ"
-        assert execution.working_directory == "/päth/with/ünicode"
+        assert str(execution.working_directory) == "/päth/with/ünicode"
         assert execution.user_id == UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
     def test_none_values_for_optional_fields(self):
