@@ -2,6 +2,8 @@
 Protocol auditor for detecting duplicates and violations across omni* ecosystem.
 """
 
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -355,7 +357,7 @@ class ProtocolAuditor:
                 return True
         return False
 
-    def print_audit_summary(self, result: AuditResult):
+    def print_audit_summary(self, result: AuditResult) -> None:
         """Print human-readable audit summary."""
         print(f"\n{'='*60}")
         print(f"🔍 PROTOCOL AUDIT SUMMARY - {result.repository}")
@@ -379,7 +381,7 @@ class ProtocolAuditor:
         status = "✅ PASSED" if result.success else "❌ FAILED"
         print(f"\n{status}")
 
-    def print_duplication_report(self, report: DuplicationReport):
+    def print_duplication_report(self, report: DuplicationReport) -> None:
         """Print human-readable duplication report."""
         print(f"\n{'='*60}")
         print(f"🔍 DUPLICATION REPORT")

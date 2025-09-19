@@ -3,16 +3,17 @@
 Generic YAML contract validation for omni* repositories.
 Validates that YAML contract files follow ONEX standards.
 """
+from __future__ import annotations
 
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
 
-def validate_yaml_file(file_path: Path) -> List[str]:
+def validate_yaml_file(file_path: Path) -> list[str]:
     """Validate a single YAML file."""
     errors = []
 

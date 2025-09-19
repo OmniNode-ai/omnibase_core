@@ -2,6 +2,8 @@
 Shared utilities for protocol validation across omni* ecosystem.
 """
 
+from __future__ import annotations
+
 import ast
 import hashlib
 import logging
@@ -63,9 +65,9 @@ class DuplicationInfo:
 class ProtocolSignatureExtractor(ast.NodeVisitor):
     """Extracts protocol signature for comparison."""
 
-    def __init__(self):
-        self.methods = []
-        self.imports = []
+    def __init__(self) -> None:
+        self.methods: list[str] = []
+        self.imports: list[str] = []
         self.class_name = ""
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -261,7 +263,7 @@ def is_protocol_file(file_path: Path) -> bool:
 
 def find_protocol_files(directory: Path) -> List[Path]:
     """Find all files that likely contain protocols."""
-    protocol_files = []
+    protocol_files: list[Path] = []
 
     if not directory.exists():
         return protocol_files

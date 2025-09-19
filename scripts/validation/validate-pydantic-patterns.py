@@ -15,19 +15,21 @@ Usage:
     python scripts/validate-pydantic-patterns.py --strict
 """
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Tuple
 
 
-class LegacyPattern(NamedTuple):
+class LegacyPattern:
     """Represents a legacy Pydantic pattern."""
 
-    pattern: str
-    description: str
-    replacement: str
-    severity: str  # 'error' or 'warning'
+    def __init__(self, pattern: str, description: str, replacement: str, severity: str):
+        self.pattern = pattern
+        self.description = description
+        self.replacement = replacement
+        self.severity = severity  # 'error' or 'warning'
 
 
 class PydanticPatternValidator:
@@ -134,7 +136,7 @@ class PydanticPatternValidator:
 
     def find_legacy_patterns_in_file(
         self, file_path: Path
-    ) -> List[Tuple[LegacyPattern, int, str]]:
+    ) -> list[tuple[LegacyPattern, int, str]]:
         """
         Find all legacy Pydantic patterns in a Python file.
 
@@ -252,7 +254,7 @@ class PydanticPatternValidator:
 
         total_errors = 0
         total_warnings = 0
-        files_with_issues: Dict[str, List[Tuple[LegacyPattern, int, str]]] = {}
+        files_with_issues: dict[str, list[tuple[LegacyPattern, int, str]]] = {}
 
         for py_file in python_files:
             findings = self.find_legacy_patterns_in_file(py_file)

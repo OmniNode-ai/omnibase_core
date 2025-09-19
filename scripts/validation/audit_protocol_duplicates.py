@@ -12,6 +12,7 @@ Usage:
     python scripts/validation/audit_protocol_duplicates.py --repos-root ../
     python scripts/validation/audit_protocol_duplicates.py --check-repo omniagent
 """
+from __future__ import annotations
 
 import argparse
 import ast
@@ -21,7 +22,6 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 @dataclass
@@ -31,10 +31,10 @@ class ProtocolInfo:
     name: str
     file_path: str
     repository: str
-    methods: List[str]
+    methods: list[str]
     signature_hash: str
     line_count: int
-    imports: List[str]
+    imports: list[str]
 
 
 class ProtocolSignatureExtractor(ast.NodeVisitor):
@@ -104,7 +104,7 @@ def extract_protocol_signature(file_path: Path) -> ProtocolInfo:
         return None
 
 
-def find_all_protocols(repos_root: Path) -> List[ProtocolInfo]:
+def find_all_protocols(repos_root: Path) -> list[ProtocolInfo]:
     """Find all protocols across all repositories."""
     protocols = []
 
@@ -140,7 +140,7 @@ def find_all_protocols(repos_root: Path) -> List[ProtocolInfo]:
     return protocols
 
 
-def analyze_duplicates(protocols: List[ProtocolInfo]) -> Dict[str, List[ProtocolInfo]]:
+def analyze_duplicates(protocols: list[ProtocolInfo]) -> dict[str, list[ProtocolInfo]]:
     """Group protocols by similarity for duplicate analysis."""
 
     # Group by exact signature hash
@@ -159,7 +159,7 @@ def analyze_duplicates(protocols: List[ProtocolInfo]) -> Dict[str, List[Protocol
     }
 
 
-def print_duplication_report(duplicates: Dict, protocols: List[ProtocolInfo]):
+def print_duplication_report(duplicates: dict, protocols: list[ProtocolInfo]):
     """Print comprehensive duplication analysis report."""
 
     print("\n" + "=" * 80)
@@ -280,7 +280,7 @@ def suggest_spi_location(protocol: ProtocolInfo) -> str:
         return "core"  # Default to core
 
 
-def generate_migration_plan(protocols: List[ProtocolInfo], duplicates: Dict) -> Dict:
+def generate_migration_plan(protocols: list[ProtocolInfo], duplicates: dict) -> dict:
     """Generate actionable migration plan."""
     plan = {"remove_duplicates": [], "migrate_to_spi": [], "resolve_conflicts": []}
 

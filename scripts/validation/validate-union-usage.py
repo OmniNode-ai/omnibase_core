@@ -3,12 +3,12 @@
 Generic Union type usage validation for omni* repositories.
 Validates that Union types are used properly according to ONEX standards.
 """
+from __future__ import annotations
 
 import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Set
 
 
 class UnionUsageChecker(ast.NodeVisitor):
@@ -38,7 +38,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_python_file(file_path: Path) -> tuple[int, List[str]]:
+def validate_python_file(file_path: Path) -> tuple[int, list[str]]:
     """Validate Union usage in a Python file."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:

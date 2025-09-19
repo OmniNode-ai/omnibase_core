@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Naming convention validation for omni* ecosystem."""
+from __future__ import annotations
 
 import argparse
 import ast
@@ -7,7 +8,6 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 
 @dataclass
@@ -72,7 +72,7 @@ class NamingConventionValidator:
 
     def __init__(self, repo_path: Path):
         self.repo_path = repo_path
-        self.violations: List[NamingViolation] = []
+        self.violations: list[NamingViolation] = []
 
     def validate_naming_conventions(self) -> bool:
         """Validate all naming conventions."""
@@ -81,7 +81,7 @@ class NamingConventionValidator:
 
         return len([v for v in self.violations if v.severity == "error"]) == 0
 
-    def _validate_category_files(self, category: str, rules: Dict):
+    def _validate_category_files(self, category: str, rules: dict[str, str]):
         """Validate naming conventions for a specific category."""
         # Find all files matching the prefix pattern
         for file_path in self.repo_path.rglob(f"{rules['file_prefix']}*.py"):
@@ -111,7 +111,9 @@ class NamingConventionValidator:
 
             self._validate_file_naming(file_path, category, rules)
 
-    def _validate_file_naming(self, file_path: Path, category: str, rules: Dict):
+    def _validate_file_naming(
+        self, file_path: Path, category: str, rules: dict[str, str]
+    ):
         """Validate naming conventions in a specific file."""
         try:
             with open(file_path, "r", encoding="utf-8") as f:

@@ -21,29 +21,91 @@ class ManualYamlValidationDetector:
 
     def validate_python_file(self, py_path: Path) -> bool:
         """Check Python file for manual YAML validation patterns."""
-        try:
-            with open(py_path, encoding="utf-8") as f:
-                content = f.read()
+        # Validate file existence and basic properties
+        if not py_path.exists():
+            self.errors.append(f"{py_path}: File does not exist")
+            return False
 
-            # Parse AST to detect problematic patterns
-            tree = ast.parse(content, filename=str(py_path))
+        if not py_path.is_file():
+            self.errors.append(f"{py_path}: Path is not a regular file")
+            return False
 
+        if py_path.stat().st_size == 0:
+            # Empty files are valid, just skip them
             self.checked_files += 1
-            file_errors = []
-
-            # Check for manual YAML validation patterns with context tracking
-            self._current_function = None
-            self._check_node_with_context(tree, py_path, file_errors)
-
-            if file_errors:
-                self.errors.extend([f"{py_path}: {error}" for error in file_errors])
-                return False
-
             return True
 
-        except Exception as e:
-            self.errors.append(f"{py_path}: Failed to parse Python file - {e!s}")
+        # Check if file is too large (> 10MB) to prevent memory issues
+        max_file_size = 10 * 1024 * 1024  # 10MB
+        if py_path.stat().st_size > max_file_size:
+            self.errors.append(
+                f"{py_path}: File too large ({py_path.stat().st_size} bytes), skipping"
+            )
             return False
+
+        content = None
+        try:
+            # Try UTF-8 first, then fallback encodings
+            encodings_to_try = ["utf-8", "utf-8-sig", "latin1", "cp1252"]
+
+            for encoding in encodings_to_try:
+                try:
+                    with open(py_path, encoding=encoding) as f:
+                        content = f.read()
+                    break
+                except UnicodeDecodeError:
+                    if encoding == encodings_to_try[-1]:  # Last encoding failed
+                        self.errors.append(
+                            f"{py_path}: Unable to decode file with any supported encoding "
+                            f"(tried: {', '.join(encodings_to_try)})"
+                        )
+                        return False
+                    continue
+
+        except FileNotFoundError:
+            self.errors.append(f"{py_path}: File not found")
+            return False
+        except PermissionError:
+            self.errors.append(f"{py_path}: Permission denied - cannot read file")
+            return False
+        except OSError as e:
+            self.errors.append(f"{py_path}: OS error reading file - {e}")
+            return False
+        except Exception as e:
+            self.errors.append(f"{py_path}: Unexpected error reading file - {e}")
+            return False
+
+        # Parse AST with comprehensive error handling
+        try:
+            tree = ast.parse(content, filename=str(py_path))
+        except SyntaxError as e:
+            self.errors.append(
+                f"{py_path}: Python syntax error at line {e.lineno}, column {e.offset}: {e.msg}"
+            )
+            return False
+        except ValueError as e:
+            self.errors.append(f"{py_path}: Invalid Python code - {e}")
+            return False
+        except Exception as e:
+            self.errors.append(f"{py_path}: Failed to parse Python AST - {e}")
+            return False
+
+        self.checked_files += 1
+        file_errors = []
+
+        # Check for manual YAML validation patterns with error handling
+        try:
+            self._current_function = None
+            self._check_node_with_context(tree, py_path, file_errors)
+        except Exception as e:
+            self.errors.append(f"{py_path}: Error during pattern analysis - {e}")
+            return False
+
+        if file_errors:
+            self.errors.extend([f"{py_path}: {error}" for error in file_errors])
+            return False
+
+        return True
 
     def _check_node_with_context(
         self,
@@ -52,24 +114,46 @@ class ManualYamlValidationDetector:
         errors: list[str],
     ) -> None:
         """Check AST node with function context tracking."""
-        # Track function context
-        if isinstance(node, ast.FunctionDef):
-            old_function = getattr(self, "_current_function", None)
-            self._current_function = node.name
+        try:
+            # Track function context
+            if isinstance(node, ast.FunctionDef):
+                old_function = getattr(self, "_current_function", None)
+                self._current_function = node.name
 
-            # Check children
-            for child in ast.iter_child_nodes(node):
-                self._check_node_with_context(child, file_path, errors)
+                # Check children with error handling
+                try:
+                    for child in ast.iter_child_nodes(node):
+                        self._check_node_with_context(child, file_path, errors)
+                except Exception as e:
+                    errors.append(
+                        f"Error analyzing function '{node.name}' at line {node.lineno}: {e}"
+                    )
 
-            # Restore previous context
-            self._current_function = old_function
-        else:
-            # Check this node for validation patterns
-            self._check_yaml_validation_patterns(node, file_path, errors)
+                # Restore previous context
+                self._current_function = old_function
+            else:
+                # Check this node for validation patterns
+                try:
+                    self._check_yaml_validation_patterns(node, file_path, errors)
+                except Exception as e:
+                    errors.append(
+                        f"Error checking patterns at line {getattr(node, 'lineno', 'unknown')}: {e}"
+                    )
 
-            # Check children
-            for child in ast.iter_child_nodes(node):
-                self._check_node_with_context(child, file_path, errors)
+                # Check children with error handling
+                try:
+                    for child in ast.iter_child_nodes(node):
+                        self._check_node_with_context(child, file_path, errors)
+                except Exception as e:
+                    errors.append(
+                        f"Error analyzing child nodes at line {getattr(node, 'lineno', 'unknown')}: {e}"
+                    )
+
+        except Exception as e:
+            # Catch-all for any unexpected errors in node traversal
+            errors.append(
+                f"Unexpected error during AST traversal at line {getattr(node, 'lineno', 'unknown')}: {e}"
+            )
 
     def _check_yaml_validation_patterns(
         self,
@@ -139,6 +223,7 @@ class ManualYamlValidationDetector:
             "utility_filesystem_reader.py",
             "real_file_io.py",
             "yaml_dict_loader.py",
+            "validate-string-versions.py",  # Validates YAML syntax for version detection
         }
         return file_path.name in yaml_utility_files
 
@@ -253,11 +338,29 @@ class ManualYamlValidationDetector:
 
     def validate_all_python_files(self, file_paths: list[Path]) -> bool:
         """Validate all provided Python files."""
+        if not file_paths:
+            return True
+
         success = True
+        processed_files = 0
 
         for py_path in file_paths:
-            if not self.validate_python_file(py_path):
+            try:
+                if not self.validate_python_file(py_path):
+                    success = False
+                processed_files += 1
+            except Exception as e:
+                self.errors.append(
+                    f"{py_path}: Unexpected error during validation - {e}"
+                )
                 success = False
+
+        # Sanity check: ensure we processed the expected number of files
+        if processed_files != len(file_paths):
+            self.errors.append(
+                f"Warning: Expected to process {len(file_paths)} files, "
+                f"but only processed {processed_files}"
+            )
 
         return success
 
@@ -299,27 +402,83 @@ class ManualYamlValidationDetector:
 
 def main() -> int:
     """Main entry point for the validation hook."""
-    if len(sys.argv) < 2:
-        print("Usage: validate-no-manual-yaml.py <path1.py> [path2.py] ...")
+    try:
+        # Handle help argument specially
+        if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
+            print("Usage: validate-no-manual-yaml.py <path1.py> [path2.py] ...")
+            print(
+                "\nPrecommit hook to prevent manual YAML validation bypassing Pydantic models."
+            )
+            print(
+                "\nThis hook ensures all contract validation goes through backing Pydantic models"
+            )
+            print(
+                "instead of direct YAML validation, maintaining consistency and catching"
+            )
+            print("real validation issues.")
+            print("\nArguments:")
+            print("  path1.py [path2.py] ...  Python files to validate")
+            return 0 if "--help" in sys.argv or "-h" in sys.argv else 1
+
+        detector = ManualYamlValidationDetector()
+
+        # Process all provided Python files with comprehensive error handling
+        python_files = []
+        invalid_args = []
+
+        for arg in sys.argv[1:]:
+            try:
+                path = Path(arg)
+
+                # Check if path exists
+                if not path.exists():
+                    invalid_args.append(f"File does not exist: {arg}")
+                    continue
+
+                # Check if it's a Python file
+                if path.suffix != ".py":
+                    invalid_args.append(f"Not a Python file: {arg}")
+                    continue
+
+                # Check if it's a regular file (not a directory or special file)
+                if not path.is_file():
+                    invalid_args.append(f"Not a regular file: {arg}")
+                    continue
+
+                python_files.append(path)
+
+            except Exception as e:
+                invalid_args.append(f"Error processing argument '{arg}': {e}")
+
+        # Report invalid arguments
+        if invalid_args:
+            print("❌ Argument Processing Errors:")
+            for error in invalid_args:
+                print(f"   • {error}")
+
+            # Continue with valid files if any exist
+            if not python_files:
+                print("\nNo valid Python files to process.")
+                return 1
+
+        if not python_files:
+            print("✅ Manual YAML Validation Check PASSED (no Python files to check)")
+            return 0
+
+        try:
+            success = detector.validate_all_python_files(python_files)
+            detector.print_results()
+            return 0 if success else 1
+        except Exception as e:
+            print(f"❌ Validation process failed: {e}")
+            return 1
+
+    except KeyboardInterrupt:
+        print("\n❌ Validation interrupted by user")
         return 1
-
-    detector = ManualYamlValidationDetector()
-
-    # Process all provided Python files
-    python_files = []
-    for arg in sys.argv[1:]:
-        path = Path(arg)
-        if path.suffix == ".py" and path.exists():
-            python_files.append(path)
-
-    if not python_files:
-        print("✅ Manual YAML Validation Check PASSED (no Python files to check)")
-        return 0
-
-    success = detector.validate_all_python_files(python_files)
-    detector.print_results()
-
-    return 0 if success else 1
+    except Exception as e:
+        print(f"❌ Unexpected error in main(): {e}")
+        return 1
 
 
 if __name__ == "__main__":

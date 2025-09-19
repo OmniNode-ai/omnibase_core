@@ -2,10 +2,12 @@
 Protocol migrator for safe migration of protocols to omnibase_spi.
 """
 
+from __future__ import annotations
+
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from .validation_utils import (
     ProtocolInfo,
@@ -24,8 +26,8 @@ class MigrationPlan:
     source_repository: str
     target_repository: str
     protocols_to_migrate: List[ProtocolInfo]
-    conflicts_detected: List[Dict]
-    migration_steps: List[Dict]
+    conflicts_detected: List[dict[str, Any]]
+    migration_steps: List[dict[str, Any]]
     estimated_time_minutes: int
     recommendations: List[str]
 
@@ -204,7 +206,7 @@ class ProtocolMigrator:
 
     def _detect_migration_conflicts(
         self, source_protocols: List[ProtocolInfo], spi_protocols: List[ProtocolInfo]
-    ) -> List[Dict]:
+    ) -> List[dict[str, Any]]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts = []
 
@@ -245,7 +247,9 @@ class ProtocolMigrator:
 
         return conflicts
 
-    def _generate_migration_steps(self, protocols: List[ProtocolInfo]) -> List[Dict]:
+    def _generate_migration_steps(
+        self, protocols: List[ProtocolInfo]
+    ) -> List[dict[str, Any]]:
         """Generate detailed migration steps."""
         steps = []
 
@@ -306,7 +310,7 @@ class ProtocolMigrator:
 
         return steps
 
-    def _update_spi_imports(self, protocol_file: Path):
+    def _update_spi_imports(self, protocol_file: Path) -> None:
         """Update imports in migrated protocol file for SPI context."""
         if not protocol_file.exists():
             return
@@ -332,7 +336,7 @@ class ProtocolMigrator:
 
     def _find_import_references(self, protocol: ProtocolInfo) -> List[str]:
         """Find files that import the given protocol."""
-        references = []
+        references: list[str] = []
 
         # Search in source repository for import references
         src_path = self.source_path / "src"
@@ -401,7 +405,7 @@ class ProtocolMigrator:
         except Exception as e:
             return ValidationResult(success=False, message=f"Rollback failed: {e}")
 
-    def print_migration_plan(self, plan: MigrationPlan):
+    def print_migration_plan(self, plan: MigrationPlan) -> None:
         """Print human-readable migration plan."""
         print(f"\n{'='*60}")
         print(f"🚀 PROTOCOL MIGRATION PLAN")
@@ -424,7 +428,7 @@ class ProtocolMigrator:
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:
             print(f"\n🎯 PROTOCOLS TO MIGRATE:")
-            by_category = {}
+            by_category: dict[str, list[ProtocolInfo]] = {}
             for protocol in plan.protocols_to_migrate:
                 category = suggest_spi_location(protocol)
                 if category not in by_category:
