@@ -1,7 +1,7 @@
 """
-ONEX Core Domain Models.
+OmniBase Core Domain Models.
 
-Core models that are foundational to the ONEX ecosystem.
+Core models that are foundational to the OmniBase ecosystem.
 These models provide basic functionality used across all domains.
 """
 
@@ -14,6 +14,7 @@ from .model_cli_result import ModelCliResult
 
 # Connection and data models
 from .model_connection_info import ModelConnectionInfo
+from .model_custom_fields import ModelCustomFields
 from .model_custom_filters import ModelCustomFilters
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
 
@@ -25,6 +26,14 @@ from .model_file_filter import ModelFileFilter
 
 # Metadata and information models
 from .model_metadata_field_info import ModelMetadataFieldInfo
+from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
+from .model_metadata_node_info import (
+    ModelMetadataNodeComplexity,
+    ModelMetadataNodeInfo,
+    ModelMetadataNodeStatus,
+    ModelMetadataNodeType,
+    ModelMetadataUsageMetrics,
+)
 from .model_namespace_config import ModelNamespaceConfig
 
 # Testing and analysis
@@ -47,6 +56,7 @@ __all__ = [
     "ModelCliResult",
     # Connection and data
     "ModelConnectionInfo",
+    "ModelCustomFields",
     "ModelCustomFilters",
     "ModelDataHandlingDeclaration",
     # Environment and configuration
@@ -56,6 +66,12 @@ __all__ = [
     "ModelFileFilter",
     # Metadata and information
     "ModelMetadataFieldInfo",
+    "ModelMetadataNodeAnalytics",
+    "ModelMetadataNodeInfo",
+    "ModelMetadataNodeType",
+    "ModelMetadataNodeStatus",
+    "ModelMetadataNodeComplexity",
+    "ModelMetadataUsageMetrics",
     "ModelNamespaceConfig",
     # Testing and analysis
     "ModelTestResults",

@@ -12,39 +12,43 @@ class ModelNodeConfiguration(BaseModel):
     """Configuration for a node."""
 
     # Execution settings
-    max_retries: int | None = Field(None, description="Maximum retry attempts")
-    timeout_seconds: int | None = Field(None, description="Execution timeout")
-    batch_size: int | None = Field(None, description="Batch processing size")
-    parallel_execution: bool = Field(False, description="Enable parallel execution")
+    max_retries: int | None = Field(default=None, description="Maximum retry attempts")
+    timeout_seconds: int | None = Field(default=None, description="Execution timeout")
+    batch_size: int | None = Field(default=None, description="Batch processing size")
+    parallel_execution: bool = Field(
+        default=False, description="Enable parallel execution"
+    )
 
     # Resource limits
-    max_memory_mb: int | None = Field(None, description="Maximum memory usage in MB")
+    max_memory_mb: int | None = Field(
+        default=None, description="Maximum memory usage in MB"
+    )
     max_cpu_percent: float | None = Field(
-        None,
+        default=None,
         description="Maximum CPU usage percentage",
     )
 
     # Feature flags
-    enable_caching: bool = Field(False, description="Enable result caching")
-    enable_monitoring: bool = Field(True, description="Enable monitoring")
-    enable_tracing: bool = Field(False, description="Enable detailed tracing")
+    enable_caching: bool = Field(default=False, description="Enable result caching")
+    enable_monitoring: bool = Field(default=True, description="Enable monitoring")
+    enable_tracing: bool = Field(default=False, description="Enable detailed tracing")
 
     # Connection settings
-    endpoint: str | None = Field(None, description="Service endpoint")
-    port: int | None = Field(None, description="Service port")
-    protocol: str | None = Field(None, description="Communication protocol")
+    endpoint: str | None = Field(default=None, description="Service endpoint")
+    port: int | None = Field(default=None, description="Service port")
+    protocol: str | None = Field(default=None, description="Communication protocol")
 
     # Custom configuration for extensibility
     custom_settings: dict[str, str] | None = Field(
-        None,
+        default=None,
         description="Custom string settings",
     )
     custom_flags: dict[str, bool] | None = Field(
-        None,
+        default=None,
         description="Custom boolean flags",
     )
     custom_limits: dict[str, int] | None = Field(
-        None,
+        default=None,
         description="Custom numeric limits",
     )
 
@@ -116,7 +120,8 @@ class ModelNodeInformation(BaseModel):
         normalized_data.setdefault("node_name", normalized_data.get("name", "unknown"))
         normalized_data.setdefault("node_type", normalized_data.get("type", "generic"))
         normalized_data.setdefault(
-            "node_version", normalized_data.get("version", "1.0.0")
+            "node_version",
+            normalized_data.get("version", "1.0.0"),
         )
 
         # Use Pydantic validation instead of manual validation

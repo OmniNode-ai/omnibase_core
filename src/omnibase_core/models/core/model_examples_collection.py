@@ -2,7 +2,7 @@
 Examples collection model.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class ModelExamples(BaseModel):
     with no magic strings or poorly typed dictionaries.
     """
 
-    examples: List[ModelExample] = Field(
+    examples: list[ModelExample] = Field(
         default_factory=list,
         description="List of example data with strong typing",
     )
@@ -30,7 +30,8 @@ class ModelExamples(BaseModel):
     )
 
     format: str = Field(
-        default="json", description="Format of examples (json/yaml/text)"
+        default="json",
+        description="Format of examples (json/yaml/text)",
     )
 
     schema_compliant: bool = Field(
@@ -44,7 +45,7 @@ class ModelExamples(BaseModel):
         output_data: ModelGenericMetadata | None = None,
         name: str | None = None,
         description: str | None = None,
-        tags: List[str] | None = None,
+        tags: list[str] | None = None,
         context: ModelGenericMetadata | None = None,
     ) -> None:
         """Add a new example with full type safety."""
@@ -82,11 +83,11 @@ class ModelExamples(BaseModel):
             return True
         return False
 
-    def get_example_names(self) -> List[str]:
+    def get_example_names(self) -> list[str]:
         """Get all example names."""
         return [example.name for example in self.examples if example.name]
 
-    def get_valid_examples(self) -> List[ModelExample]:
+    def get_valid_examples(self) -> list[ModelExample]:
         """Get only valid examples."""
         return [example for example in self.examples if example.is_valid]
 
@@ -98,7 +99,7 @@ class ModelExamples(BaseModel):
         """Get number of valid examples."""
         return len(self.get_valid_examples())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary with strong typing preserved."""
         return {
             "examples": [example.model_dump() for example in self.examples],
@@ -110,26 +111,29 @@ class ModelExamples(BaseModel):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelExamples":
+    def from_dict(cls, data: Any) -> "ModelExamples":
         """Create from dictionary with strict type validation."""
         if not isinstance(data, dict):
-            raise ValueError(f"Expected dictionary, got {type(data)}")
+            msg = f"Expected dictionary, got {type(data)}"
+            raise ValueError(msg)
 
-        examples: List[ModelExample] = []
+        examples: list[ModelExample] = []
 
         # Handle different input formats with validation
         if "examples" in data and isinstance(data["examples"], list):
             for example_data in data["examples"]:
                 if not isinstance(example_data, dict):
+                    msg = f"Example data must be a dictionary, got {type(example_data)}"
                     raise ValueError(
-                        f"Example data must be a dictionary, got {type(example_data)}"
+                        msg,
                     )
 
                 # Create ModelExample with proper validation
                 try:
                     examples.append(ModelExample(**example_data))
                 except Exception as e:
-                    raise ValueError(f"Failed to create ModelExample: {e}")
+                    msg = f"Failed to create ModelExample: {e}"
+                    raise ValueError(msg)
 
         # Create metadata if present
         metadata = None
@@ -137,7 +141,8 @@ class ModelExamples(BaseModel):
             if isinstance(data["metadata"], dict):
                 metadata = ModelExampleMetadata(**data["metadata"])
             else:
-                raise ValueError("Metadata must be a dictionary")
+                msg = "Metadata must be a dictionary"
+                raise ValueError(msg)
 
         return cls(
             examples=examples,

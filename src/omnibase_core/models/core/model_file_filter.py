@@ -33,10 +33,7 @@ class ModelFileFilter(BaseModel):
         description="Path to ignore file (e.g., .onexignore)",
     )
     ignore_pattern_sources: list[Literal["FILE", "DEFAULT", "ENVIRONMENT"]] = Field(
-        default_factory=lambda: [
-            "FILE",
-            "DEFAULT",
-        ],
+        default=["FILE", "DEFAULT"],
         description="Sources to look for ignore patterns",
     )
     max_file_size: int = Field(

@@ -9,8 +9,6 @@ in protocol validation, auditing, and migration operations.
 class ValidationFrameworkError(Exception):
     """Base exception for all validation framework errors."""
 
-    pass
-
 
 class ConfigurationError(ValidationFrameworkError):
     """
@@ -19,8 +17,6 @@ class ConfigurationError(ValidationFrameworkError):
     This implements fail-fast behavior for setup issues that prevent
     the validation framework from operating correctly.
     """
-
-    pass
 
 
 class FileProcessingError(ValidationFrameworkError):
@@ -32,7 +28,10 @@ class FileProcessingError(ValidationFrameworkError):
     """
 
     def __init__(
-        self, message: str, file_path: str, original_exception: Exception = None
+        self,
+        message: str,
+        file_path: str,
+        original_exception: Exception | None = None,
     ):
         self.file_path = file_path
         self.original_exception = original_exception
@@ -47,8 +46,6 @@ class ProtocolParsingError(FileProcessingError):
     errors or malformed Python code in protocol files.
     """
 
-    pass
-
 
 class AuditError(ValidationFrameworkError):
     """
@@ -57,8 +54,6 @@ class AuditError(ValidationFrameworkError):
     This covers issues like inconsistent protocol state,
     duplicate detection failures, or validation rule violations.
     """
-
-    pass
 
 
 class MigrationError(ValidationFrameworkError):
@@ -69,8 +64,6 @@ class MigrationError(ValidationFrameworkError):
     and rollback scenarios during protocol migration.
     """
 
-    pass
-
 
 class InputValidationError(ValidationFrameworkError):
     """
@@ -80,8 +73,6 @@ class InputValidationError(ValidationFrameworkError):
     all user-provided inputs before processing.
     """
 
-    pass
-
 
 class PathTraversalError(InputValidationError):
     """
@@ -89,5 +80,3 @@ class PathTraversalError(InputValidationError):
 
     This prevents security vulnerabilities from malicious or malformed paths.
     """
-
-    pass

@@ -5,6 +5,8 @@ Replaces primitive dict parameters with type-safe Pydantic models
 for CLI node execution operations.
 """
 
+from typing import Any, ClassVar
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
@@ -33,17 +35,17 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Input/output configuration
     include_metadata: bool = Field(
-        True,
+        default=True,
         description="Whether to include detailed metadata in results",
     )
     include_health_info: bool = Field(
-        True,
+        default=True,
         description="Whether to include health information",
     )
 
     # Filtering and selection
     health_filter: bool = Field(
-        True,
+        default=True,
         description="Only include healthy nodes in results",
     )
     category_filter: str | None = Field(None, description="Filter nodes by category")
@@ -59,7 +61,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         "default",
         description="Output format preference (default, json, table)",
     )
-    verbose: bool = Field(False, description="Enable verbose output")
+    verbose: bool = Field(default=False, description="Enable verbose output")
 
     # Advanced parameters (typed model for safety)
     advanced_params: ModelAdvancedParams = Field(
@@ -150,7 +152,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         """Pydantic configuration."""
 
         # Example for documentation
-        json_schema_extra: dict = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "action": "list_nodes",
                 "node_name": None,

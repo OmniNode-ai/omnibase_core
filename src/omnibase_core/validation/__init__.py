@@ -41,7 +41,8 @@ def audit_protocols(repository_path: str = ".") -> AuditResult:
 
 
 def check_against_spi(
-    repository_path: str = ".", spi_path: str = "../omnibase_spi"
+    repository_path: str = ".",
+    spi_path: str = "../omnibase_spi",
 ) -> DuplicationReport:
     """Check repository protocols against SPI for duplicates."""
     auditor = ProtocolAuditor(repository_path)
@@ -49,7 +50,8 @@ def check_against_spi(
 
 
 def create_migration_plan(
-    source_path: str = ".", spi_path: str = "../omnibase_spi"
+    source_path: str = ".",
+    spi_path: str = "../omnibase_spi",
 ) -> MigrationPlan:
     """Create migration plan for moving protocols to SPI."""
     migrator = ProtocolMigrator(source_path, spi_path)
@@ -57,25 +59,25 @@ def create_migration_plan(
 
 
 __all__ = [
-    # Core classes
-    "ProtocolAuditor",
-    "ProtocolMigrator",
+    "AuditError",
     # Result types
     "AuditResult",
+    "ConfigurationError",
     "DuplicationReport",
+    "FileProcessingError",
+    "InputValidationError",
+    "MigrationError",
     "MigrationPlan",
     "MigrationResult",
+    "PathTraversalError",
+    # Core classes
+    "ProtocolAuditor",
     "ProtocolInfo",
-    "ValidationResult",
+    "ProtocolMigrator",
+    "ProtocolParsingError",
     # Exceptions
     "ValidationFrameworkError",
-    "ConfigurationError",
-    "FileProcessingError",
-    "ProtocolParsingError",
-    "AuditError",
-    "MigrationError",
-    "InputValidationError",
-    "PathTraversalError",
+    "ValidationResult",
     # Convenience functions
     "audit_protocols",
     "check_against_spi",

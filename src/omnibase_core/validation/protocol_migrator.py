@@ -7,7 +7,7 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from .validation_utils import (
     ProtocolInfo,
@@ -25,11 +25,11 @@ class MigrationPlan:
     success: bool
     source_repository: str
     target_repository: str
-    protocols_to_migrate: List[ProtocolInfo]
-    conflicts_detected: List[dict[str, Any]]
-    migration_steps: List[dict[str, Any]]
+    protocols_to_migrate: list[ProtocolInfo]
+    conflicts_detected: list[dict[str, Any]]
+    migration_steps: list[dict[str, Any]]
     estimated_time_minutes: int
-    recommendations: List[str]
+    recommendations: list[str]
 
     def has_conflicts(self) -> bool:
         """Check if migration plan has conflicts."""
@@ -48,10 +48,10 @@ class MigrationResult:
     source_repository: str
     target_repository: str
     protocols_migrated: int
-    files_created: List[str]
-    files_deleted: List[str]
-    imports_updated: List[str]
-    conflicts_resolved: List[str]
+    files_created: list[str]
+    files_deleted: list[str]
+    imports_updated: list[str]
+    conflicts_resolved: list[str]
     execution_time_minutes: int
     rollback_available: bool
 
@@ -73,7 +73,8 @@ class ProtocolMigrator:
         self.source_repository = determine_repository_name(self.source_path)
 
     def create_migration_plan(
-        self, protocols: Optional[List[ProtocolInfo]] = None
+        self,
+        protocols: list[ProtocolInfo] | None = None,
     ) -> MigrationPlan:
         """
         Create a migration plan for moving protocols to omnibase_spi.
@@ -116,9 +117,9 @@ class ProtocolMigrator:
         if conflicts:
             recommendations.append("Resolve conflicts before proceeding with migration")
         if source_protocols:
-            recommendations.append(f"Backup source repository before migration")
+            recommendations.append("Backup source repository before migration")
             recommendations.append(
-                f"Update imports in dependent repositories after migration"
+                "Update imports in dependent repositories after migration",
             )
 
         return MigrationPlan(
@@ -133,7 +134,9 @@ class ProtocolMigrator:
         )
 
     def execute_migration(
-        self, plan: MigrationPlan, dry_run: bool = True
+        self,
+        plan: MigrationPlan,
+        dry_run: bool = True,
     ) -> MigrationResult:
         """
         Execute the migration plan.
@@ -205,8 +208,10 @@ class ProtocolMigrator:
         )
 
     def _detect_migration_conflicts(
-        self, source_protocols: List[ProtocolInfo], spi_protocols: List[ProtocolInfo]
-    ) -> List[dict[str, Any]]:
+        self,
+        source_protocols: list[ProtocolInfo],
+        spi_protocols: list[ProtocolInfo],
+    ) -> list[dict[str, Any]]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts = []
 
@@ -228,7 +233,7 @@ class ProtocolMigrator:
                             "source_signature": source_protocol.signature_hash,
                             "spi_signature": spi_protocol.signature_hash,
                             "recommendation": "Rename one of the protocols or merge if appropriate",
-                        }
+                        },
                     )
 
             # Check for exact signature duplicates
@@ -242,14 +247,15 @@ class ProtocolMigrator:
                         "spi_file": spi_protocol.file_path,
                         "signature_hash": source_protocol.signature_hash,
                         "recommendation": f"Skip migration - use existing SPI version: {spi_protocol.name}",
-                    }
+                    },
                 )
 
         return conflicts
 
     def _generate_migration_steps(
-        self, protocols: List[ProtocolInfo]
-    ) -> List[dict[str, Any]]:
+        self,
+        protocols: list[ProtocolInfo],
+    ) -> list[dict[str, Any]]:
         """Generate detailed migration steps."""
         steps = []
 
@@ -260,7 +266,7 @@ class ProtocolMigrator:
                 "action": "backup_source",
                 "description": "Create backup of source repository",
                 "estimated_minutes": 2,
-            }
+            },
         )
 
         steps.append(
@@ -269,7 +275,7 @@ class ProtocolMigrator:
                 "action": "validate_spi_structure",
                 "description": "Ensure SPI directory structure exists",
                 "estimated_minutes": 1,
-            }
+            },
         )
 
         # Protocol migration steps
@@ -286,7 +292,7 @@ class ProtocolMigrator:
                     "target_path": f"omnibase_spi/protocols/{spi_category}/",
                     "description": f"Migrate {protocol.name} to SPI {spi_category} category",
                     "estimated_minutes": 3,
-                }
+                },
             )
 
         # Post-migration steps
@@ -296,7 +302,7 @@ class ProtocolMigrator:
                 "action": "update_imports",
                 "description": "Update import statements in dependent files",
                 "estimated_minutes": 5,
-            }
+            },
         )
 
         steps.append(
@@ -305,7 +311,7 @@ class ProtocolMigrator:
                 "action": "run_tests",
                 "description": "Execute tests to verify migration success",
                 "estimated_minutes": 3,
-            }
+            },
         )
 
         return steps
@@ -334,7 +340,7 @@ class ProtocolMigrator:
 
         protocol_file.write_text(content, encoding="utf-8")
 
-    def _find_import_references(self, protocol: ProtocolInfo) -> List[str]:
+    def _find_import_references(self, protocol: ProtocolInfo) -> list[str]:
         """Find files that import the given protocol."""
         references: list[str] = []
 
@@ -407,27 +413,13 @@ class ProtocolMigrator:
 
     def print_migration_plan(self, plan: MigrationPlan) -> None:
         """Print human-readable migration plan."""
-        print(f"\n{'='*60}")
-        print(f"🚀 PROTOCOL MIGRATION PLAN")
-        print(f"   {plan.source_repository} → {plan.target_repository}")
-        print(f"{'='*60}")
-
-        print(f"\n📊 MIGRATION SUMMARY:")
-        print(f"   Protocols to migrate: {len(plan.protocols_to_migrate)}")
-        print(f"   Estimated time: {plan.estimated_time_minutes} minutes")
-        print(f"   Conflicts detected: {len(plan.conflicts_detected)}")
 
         if plan.conflicts_detected:
-            print(f"\n🚨 CONFLICTS DETECTED ({len(plan.conflicts_detected)}):")
             for conflict in plan.conflicts_detected:
-                print(f"   • {conflict['type'].upper()}: {conflict['protocol_name']}")
-                print(f"     Source: {conflict['source_file']}")
                 if "spi_file" in conflict:
-                    print(f"     SPI: {conflict['spi_file']}")
-                print(f"     Recommendation: {conflict['recommendation']}")
+                    pass
 
         if plan.protocols_to_migrate and not plan.conflicts_detected:
-            print(f"\n🎯 PROTOCOLS TO MIGRATE:")
             by_category: dict[str, list[ProtocolInfo]] = {}
             for protocol in plan.protocols_to_migrate:
                 category = suggest_spi_location(protocol)
@@ -436,19 +428,15 @@ class ProtocolMigrator:
                 by_category[category].append(protocol)
 
             for category, protocols in by_category.items():
-                print(f"\n   📁 {category}/ ({len(protocols)} protocols):")
                 for protocol in protocols:
-                    print(f"      • {protocol.name} ({len(protocol.methods)} methods)")
-                    print(f"        Source: {protocol.file_path}")
+                    pass
 
         if plan.recommendations:
-            print(f"\n💡 RECOMMENDATIONS:")
-            for recommendation in plan.recommendations:
-                print(f"   • {recommendation}")
+            for _recommendation in plan.recommendations:
+                pass
 
-        status = (
+        (
             "✅ READY TO PROCEED"
             if plan.can_proceed()
             else "❌ CONFLICTS MUST BE RESOLVED"
         )
-        print(f"\n{status}")

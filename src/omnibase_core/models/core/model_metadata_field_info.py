@@ -80,7 +80,7 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Factory methods for all metadata fields
     @classmethod
-    def METADATA_VERSION(cls) -> "ModelMetadataFieldInfo":
+    def metadata_version(cls) -> "ModelMetadataFieldInfo":
         """Metadata version field info."""
         return cls(
             name="METADATA_VERSION",
@@ -94,7 +94,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def PROTOCOL_VERSION(cls) -> "ModelMetadataFieldInfo":
+    def protocol_version(cls) -> "ModelMetadataFieldInfo":
         """Protocol version field info."""
         return cls(
             name="PROTOCOL_VERSION",
@@ -108,7 +108,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def NAME(cls) -> "ModelMetadataFieldInfo":
+    def name_field(cls) -> "ModelMetadataFieldInfo":
         """Name field info."""
         return cls(
             name="NAME",
@@ -121,7 +121,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def VERSION(cls) -> "ModelMetadataFieldInfo":
+    def version(cls) -> "ModelMetadataFieldInfo":
         """Version field info."""
         return cls(
             name="VERSION",
@@ -135,7 +135,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def UUID(cls) -> "ModelMetadataFieldInfo":
+    def uuid(cls) -> "ModelMetadataFieldInfo":
         """UUID field info."""
         return cls(
             name="UUID",
@@ -149,7 +149,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def AUTHOR(cls) -> "ModelMetadataFieldInfo":
+    def author(cls) -> "ModelMetadataFieldInfo":
         """Author field info."""
         return cls(
             name="AUTHOR",
@@ -162,7 +162,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def CREATED_AT(cls) -> "ModelMetadataFieldInfo":
+    def created_at(cls) -> "ModelMetadataFieldInfo":
         """Created at field info."""
         return cls(
             name="CREATED_AT",
@@ -175,7 +175,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def LAST_MODIFIED_AT(cls) -> "ModelMetadataFieldInfo":
+    def last_modified_at(cls) -> "ModelMetadataFieldInfo":
         """Last modified at field info."""
         return cls(
             name="LAST_MODIFIED_AT",
@@ -188,7 +188,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def HASH(cls) -> "ModelMetadataFieldInfo":
+    def hash(cls) -> "ModelMetadataFieldInfo":
         """Hash field info."""
         return cls(
             name="HASH",
@@ -202,7 +202,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def ENTRYPOINT(cls) -> "ModelMetadataFieldInfo":
+    def entrypoint(cls) -> "ModelMetadataFieldInfo":
         """Entrypoint field info."""
         return cls(
             name="ENTRYPOINT",
@@ -215,7 +215,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def NAMESPACE(cls) -> "ModelMetadataFieldInfo":
+    def namespace(cls) -> "ModelMetadataFieldInfo":
         """Namespace field info."""
         return cls(
             name="NAMESPACE",
@@ -232,17 +232,17 @@ class ModelMetadataFieldInfo(BaseModel):
         """Get all metadata field info objects."""
         # This would include all fields - abbreviated for brevity
         return [
-            cls.METADATA_VERSION(),
-            cls.PROTOCOL_VERSION(),
-            cls.NAME(),
-            cls.VERSION(),
-            cls.UUID(),
-            cls.AUTHOR(),
-            cls.CREATED_AT(),
-            cls.LAST_MODIFIED_AT(),
-            cls.HASH(),
-            cls.ENTRYPOINT(),
-            cls.NAMESPACE(),
+            cls.metadata_version(),
+            cls.protocol_version(),
+            cls.name_field(),
+            cls.version(),
+            cls.uuid(),
+            cls.author(),
+            cls.created_at(),
+            cls.last_modified_at(),
+            cls.hash(),
+            cls.entrypoint(),
+            cls.namespace(),
             # ... add all other fields
         ]
 
@@ -265,17 +265,17 @@ class ModelMetadataFieldInfo(BaseModel):
     def from_string(cls, field_name: str) -> "ModelMetadataFieldInfo":
         """Create ModelMetadataFieldInfo from string field name."""
         field_map = {
-            "METADATA_VERSION": cls.METADATA_VERSION,
-            "PROTOCOL_VERSION": cls.PROTOCOL_VERSION,
-            "NAME": cls.NAME,
-            "VERSION": cls.VERSION,
-            "UUID": cls.UUID,
-            "AUTHOR": cls.AUTHOR,
-            "CREATED_AT": cls.CREATED_AT,
-            "LAST_MODIFIED_AT": cls.LAST_MODIFIED_AT,
-            "HASH": cls.HASH,
-            "ENTRYPOINT": cls.ENTRYPOINT,
-            "NAMESPACE": cls.NAMESPACE,
+            "METADATA_VERSION": cls.metadata_version,
+            "PROTOCOL_VERSION": cls.protocol_version,
+            "NAME": cls.name_field,
+            "VERSION": cls.version,
+            "UUID": cls.uuid,
+            "AUTHOR": cls.author,
+            "CREATED_AT": cls.created_at,
+            "LAST_MODIFIED_AT": cls.last_modified_at,
+            "HASH": cls.hash,
+            "ENTRYPOINT": cls.entrypoint,
+            "NAMESPACE": cls.namespace,
             # ... add all fields
         }
 

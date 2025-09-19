@@ -4,8 +4,7 @@ Test Results Model.
 Strongly typed model for test execution results.
 """
 
-from datetime import datetime
-from typing import Dict, List
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -16,10 +15,13 @@ class ModelTestResult(BaseModel):
     test_name: str = Field(..., description="Name of the test")
     passed: bool = Field(..., description="Whether the test passed")
     duration_ms: int = Field(
-        default=0, description="Test execution duration in milliseconds", ge=0
+        default=0,
+        description="Test execution duration in milliseconds",
+        ge=0,
     )
     error_message: str | None = Field(
-        default=None, description="Error message if test failed"
+        default=None,
+        description="Error message if test failed",
     )
     details: str | None = Field(default=None, description="Additional test details")
 
@@ -27,17 +29,21 @@ class ModelTestResult(BaseModel):
 class ModelTestResults(BaseModel):
     """Collection of test results with summary."""
 
-    results: List[ModelTestResult] = Field(
-        default_factory=list, description="Individual test results"
+    results: list[ModelTestResult] = Field(
+        default_factory=list,
+        description="Individual test results",
     )
     total_tests: int = Field(default=0, description="Total number of tests", ge=0)
     passed_tests: int = Field(default=0, description="Number of passed tests", ge=0)
     failed_tests: int = Field(default=0, description="Number of failed tests", ge=0)
     total_duration_ms: int = Field(
-        default=0, description="Total execution time in milliseconds", ge=0
+        default=0,
+        description="Total execution time in milliseconds",
+        ge=0,
     )
     executed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When tests were executed"
+        default_factory=lambda: datetime.now(UTC),
+        description="When tests were executed",
     )
 
     @property
@@ -63,7 +69,7 @@ class ModelTestResults(BaseModel):
         self.total_duration_ms += test_result.duration_ms
 
     @classmethod
-    def from_dict(cls, test_data: Dict[str, bool]) -> "ModelTestResults":
+    def from_dict(cls, test_data: dict[str, bool]) -> "ModelTestResults":
         """Create from dictionary with strict type validation."""
         results = []
         for test_name, passed in test_data.items():

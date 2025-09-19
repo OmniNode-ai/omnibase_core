@@ -5,8 +5,8 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -45,47 +45,47 @@ class ModelCliResult(BaseModel):
         description="Structured output data from execution",
     )
 
-    output_text: Optional[str] = Field(None, description="Human-readable output text")
+    output_text: str | None = Field(None, description="Human-readable output text")
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         None,
         description="Primary error message if execution failed",
     )
 
-    error_details: Optional[str] = Field(None, description="Detailed error information")
+    error_details: str | None = Field(None, description="Detailed error information")
 
-    validation_errors: List[ModelValidationError] = Field(
+    validation_errors: list[ModelValidationError] = Field(
         default_factory=list,
         description="Validation errors encountered",
     )
 
-    warnings: List[str] = Field(default_factory=list, description="Warning messages")
+    warnings: list[str] = Field(default_factory=list, description="Warning messages")
 
     execution_time: ModelDuration = Field(..., description="Total execution time")
 
     end_time: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Execution completion time",
     )
 
     retry_count: int = Field(default=0, description="Number of retries attempted", ge=0)
 
-    performance_metrics: Dict[str, Any] = Field(
+    performance_metrics: dict[str, Any] = Field(
         default_factory=dict,
         description="Performance metrics and timing data",
     )
 
-    debug_info: Optional[ModelGenericMetadata] = Field(
+    debug_info: ModelGenericMetadata | None = Field(
         None,
         description="Debug information (only included if debug enabled)",
     )
 
-    trace_data: Dict[str, Any] = Field(
+    trace_data: dict[str, Any] = Field(
         default_factory=dict,
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: Optional[ModelGenericMetadata] = Field(
+    result_metadata: ModelGenericMetadata | None = Field(
         None,
         description="Additional result metadata",
     )
@@ -118,7 +118,7 @@ class ModelCliResult(BaseModel):
         """Get execution duration in seconds."""
         return float(self.execution_time.total_seconds())
 
-    def get_primary_error(self) -> Optional[str]:
+    def get_primary_error(self) -> str | None:
         """Get the primary error message."""
         if self.error_message:
             return self.error_message
@@ -129,20 +129,20 @@ class ModelCliResult(BaseModel):
             return str(self.validation_errors[0].message)
         return None
 
-    def get_all_errors(self) -> List[str]:
+    def get_all_errors(self) -> list[str]:
         """Get all error messages."""
-        errors: List[str] = []
+        errors: list[str] = []
         if self.error_message:
             errors.append(self.error_message)
         for validation_error in self.validation_errors:
             errors.append(validation_error.message)
         return errors
 
-    def get_critical_errors(self) -> List[ModelValidationError]:
+    def get_critical_errors(self) -> list[ModelValidationError]:
         """Get all critical validation errors."""
         return [error for error in self.validation_errors if error.is_critical()]
 
-    def get_non_critical_errors(self) -> List[ModelValidationError]:
+    def get_non_critical_errors(self) -> list[ModelValidationError]:
         """Get all non-critical validation errors."""
         return [error for error in self.validation_errors if not error.is_critical()]
 
@@ -161,7 +161,7 @@ class ModelCliResult(BaseModel):
 
     def add_debug_info(self, key: str, value: Any) -> None:
         """Add debug information."""
-        if self.execution.is_debug_enabled():
+        if self.execution.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelGenericMetadata()
             if self.debug_info.custom_fields is None:
@@ -170,7 +170,7 @@ class ModelCliResult(BaseModel):
 
     def add_trace_data(self, key: str, value: Any) -> None:
         """Add trace data."""
-        if self.execution.is_trace_enabled():
+        if self.execution.is_trace_enabled:
             self.trace_data[key] = value
 
     def add_metadata(self, key: str, value: Any) -> None:
@@ -211,7 +211,7 @@ class ModelCliResult(BaseModel):
 
         return ""
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get result summary for logging/monitoring."""
         return {
             "execution_id": str(self.execution.execution_id),
@@ -236,9 +236,9 @@ class ModelCliResult(BaseModel):
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: Optional[Dict[str, Any]] = None,
-        output_text: Optional[str] = None,
-        execution_time: Optional[ModelDuration] = None,
+        output_data: dict[str, Any] | ModelCliOutputData | None = None,
+        output_text: str | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a successful result."""
         if execution_time is None:
@@ -261,6 +261,10 @@ class ModelCliResult(BaseModel):
             exit_code=0,
             output_data=output_data_obj,
             output_text=output_text,
+            error_message=None,
+            error_details=None,
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time,
         )
 
@@ -270,9 +274,9 @@ class ModelCliResult(BaseModel):
         execution: ModelCliExecution,
         error_message: str,
         exit_code: int = 1,
-        error_details: Optional[str] = None,
-        validation_errors: Optional[List[ModelValidationError]] = None,
-        execution_time: Optional[ModelDuration] = None,
+        error_details: str | None = None,
+        validation_errors: list[ModelValidationError] | None = None,
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a failure result."""
         if execution_time is None:
@@ -288,6 +292,9 @@ class ModelCliResult(BaseModel):
             error_message=error_message,
             error_details=error_details,
             validation_errors=validation_errors or [],
+            output_text=None,
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time,
         )
 
@@ -295,8 +302,8 @@ class ModelCliResult(BaseModel):
     def create_validation_failure(
         cls,
         execution: ModelCliExecution,
-        validation_errors: List[ModelValidationError],
-        execution_time: Optional[ModelDuration] = None,
+        validation_errors: list[ModelValidationError],
+        execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
         """Create a result for validation failures."""
         if execution_time is None:
@@ -314,7 +321,11 @@ class ModelCliResult(BaseModel):
             success=False,
             exit_code=2,  # Exit code 2 for validation errors
             error_message=primary_error,
+            error_details=None,
             validation_errors=validation_errors,
+            output_text=None,
+            debug_info=None,
+            result_metadata=None,
             execution_time=execution_time,
         )
 

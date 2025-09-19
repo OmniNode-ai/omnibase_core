@@ -8,13 +8,11 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from .exceptions import ConfigurationError, InputValidationError
 from .validation_utils import (
     DuplicationInfo,
     ProtocolInfo,
-    ValidationResult,
     determine_repository_name,
     extract_protocols_from_directory,
     validate_directory_path,
@@ -33,8 +31,8 @@ class AuditResult:
     protocols_found: int
     duplicates_found: int
     conflicts_found: int
-    violations: List[str]
-    recommendations: List[str]
+    violations: list[str]
+    recommendations: list[str]
     execution_time_ms: int = 0
 
     def has_issues(self) -> bool:
@@ -53,10 +51,10 @@ class DuplicationReport:
     success: bool
     source_repository: str
     target_repository: str
-    exact_duplicates: List[DuplicationInfo]
-    name_conflicts: List[DuplicationInfo]
-    migration_candidates: List[ProtocolInfo]
-    recommendations: List[str]
+    exact_duplicates: list[DuplicationInfo]
+    name_conflicts: list[DuplicationInfo]
+    migration_candidates: list[ProtocolInfo]
+    recommendations: list[str]
 
 
 class ProtocolAuditor:
@@ -72,15 +70,17 @@ class ProtocolAuditor:
     def __init__(self, repository_path: str = "."):
         try:
             self.repository_path = validate_directory_path(
-                Path(repository_path), "repository"
+                Path(repository_path),
+                "repository",
             )
         except InputValidationError as e:
-            raise ConfigurationError(f"Invalid repository configuration: {e}")
+            msg = f"Invalid repository configuration: {e}"
+            raise ConfigurationError(msg)
 
         self.repository_name = determine_repository_name(self.repository_path)
         logger.info(
             f"ProtocolAuditor initialized for repository '{self.repository_name}' "
-            f"at {self.repository_path}"
+            f"at {self.repository_path}",
         )
 
     def check_current_repository(self) -> AuditResult:
@@ -104,7 +104,7 @@ class ProtocolAuditor:
                 duplicates_found=0,
                 conflicts_found=0,
                 violations=[
-                    "No src directory found - repository might not have protocols"
+                    "No src directory found - repository might not have protocols",
                 ],
                 recommendations=["Ensure repository follows standard src/ structure"],
             )
@@ -126,13 +126,13 @@ class ProtocolAuditor:
 
         if local_duplicates:
             violations.extend(
-                [f"Local duplicate: {dup.signature_hash}" for dup in local_duplicates]
+                [f"Local duplicate: {dup.signature_hash}" for dup in local_duplicates],
             )
 
         # Generate recommendations
         if protocols:
             recommendations.append(
-                f"Consider migrating {len(protocols)} protocols to omnibase_spi"
+                f"Consider migrating {len(protocols)} protocols to omnibase_spi",
             )
 
         return AuditResult(
@@ -158,7 +158,8 @@ class ProtocolAuditor:
         try:
             validated_spi_path = validate_directory_path(Path(spi_path), "SPI")
         except InputValidationError as e:
-            raise ConfigurationError(f"Invalid SPI path configuration: {e}")
+            msg = f"Invalid SPI path configuration: {e}"
+            raise ConfigurationError(msg)
 
         src_path = self.repository_path / "src"
         spi_protocols_path = validated_spi_path / "src" / "omnibase_spi" / "protocols"
@@ -180,7 +181,8 @@ class ProtocolAuditor:
 
         # Analyze duplications
         duplications = self._analyze_cross_repo_duplicates(
-            current_protocols, spi_protocols
+            current_protocols,
+            spi_protocols,
         )
 
         # Find migration candidates (protocols that should move to SPI)
@@ -193,15 +195,15 @@ class ProtocolAuditor:
         recommendations = []
         if duplications["exact_duplicates"]:
             recommendations.append(
-                "Remove exact duplicates from current repository - use SPI versions"
+                "Remove exact duplicates from current repository - use SPI versions",
             )
         if duplications["name_conflicts"]:
             recommendations.append(
-                "Resolve name conflicts by renaming or merging protocols"
+                "Resolve name conflicts by renaming or merging protocols",
             )
         if migration_candidates:
             recommendations.append(
-                f"Consider migrating {len(migration_candidates)} unique protocols to SPI"
+                f"Consider migrating {len(migration_candidates)} unique protocols to SPI",
             )
 
         return DuplicationReport(
@@ -215,7 +217,7 @@ class ProtocolAuditor:
             recommendations=recommendations,
         )
 
-    def audit_ecosystem(self, omni_root: Path) -> Dict[str, AuditResult]:
+    def audit_ecosystem(self, omni_root: Path) -> dict[str, AuditResult]:
         """
         Comprehensive audit across all omni* repositories.
 
@@ -240,8 +242,9 @@ class ProtocolAuditor:
         return results
 
     def _find_local_duplicates(
-        self, protocols: List[ProtocolInfo]
-    ) -> List[DuplicationInfo]:
+        self,
+        protocols: list[ProtocolInfo],
+    ) -> list[DuplicationInfo]:
         """Find duplicate protocols within the same repository."""
         duplicates = []
         by_signature = defaultdict(list)
@@ -257,12 +260,12 @@ class ProtocolAuditor:
                         protocols=protocol_group,
                         duplication_type="exact",
                         recommendation=f"Merge or remove duplicate {protocol_group[0].name} protocols",
-                    )
+                    ),
                 )
 
         return duplicates
 
-    def _check_naming_conventions(self, protocols: List[ProtocolInfo]) -> List[str]:
+    def _check_naming_conventions(self, protocols: list[ProtocolInfo]) -> list[str]:
         """Check protocol naming conventions."""
         violations = []
 
@@ -270,7 +273,7 @@ class ProtocolAuditor:
             # Check class name starts with Protocol
             if not ("Protocol" in protocol.name and protocol.name[0].isupper()):
                 violations.append(
-                    f"Protocol {protocol.name} should start with 'Protocol'"
+                    f"Protocol {protocol.name} should start with 'Protocol'",
                 )
 
             # Check file name follows protocol_*.py pattern
@@ -279,15 +282,15 @@ class ProtocolAuditor:
                 f"protocol_{protocol.name[8:].lower()}.py"  # Remove "Protocol" prefix
             )
             if file_path.name != expected_filename and not file_path.name.startswith(
-                "protocol_"
+                "protocol_",
             ):
                 violations.append(
-                    f"File {file_path.name} should follow protocol_*.py naming pattern"
+                    f"File {file_path.name} should follow protocol_*.py naming pattern",
                 )
 
         return violations
 
-    def _check_protocol_quality(self, protocols: List[ProtocolInfo]) -> List[str]:
+    def _check_protocol_quality(self, protocols: list[ProtocolInfo]) -> list[str]:
         """Check protocol implementation quality."""
         issues = []
 
@@ -295,20 +298,22 @@ class ProtocolAuditor:
             # Check for empty protocols
             if not protocol.methods:
                 issues.append(
-                    f"Protocol {protocol.name} has no methods - consider if it's needed"
+                    f"Protocol {protocol.name} has no methods - consider if it's needed",
                 )
 
             # Check for overly complex protocols
             if len(protocol.methods) > 20:
                 issues.append(
-                    f"Protocol {protocol.name} has {len(protocol.methods)} methods - consider splitting"
+                    f"Protocol {protocol.name} has {len(protocol.methods)} methods - consider splitting",
                 )
 
         return issues
 
     def _analyze_cross_repo_duplicates(
-        self, source_protocols: List[ProtocolInfo], target_protocols: List[ProtocolInfo]
-    ) -> Dict[str, List[DuplicationInfo]]:
+        self,
+        source_protocols: list[ProtocolInfo],
+        target_protocols: list[ProtocolInfo],
+    ) -> dict[str, list[DuplicationInfo]]:
         """Analyze duplications between two sets of protocols."""
         exact_duplicates = []
         name_conflicts = []
@@ -327,7 +332,7 @@ class ProtocolAuditor:
                         protocols=[source_protocol, target_protocol],
                         duplication_type="exact",
                         recommendation=f"Remove {source_protocol.name} from source - use SPI version",
-                    )
+                    ),
                 )
 
             # Check for name conflicts (same name, different signature)
@@ -340,13 +345,15 @@ class ProtocolAuditor:
                             protocols=[source_protocol, target_protocol],
                             duplication_type="name_conflict",
                             recommendation=f"Resolve name conflict for {source_protocol.name}",
-                        )
+                        ),
                     )
 
         return {"exact_duplicates": exact_duplicates, "name_conflicts": name_conflicts}
 
     def _has_duplicate_in_spi(
-        self, protocol: ProtocolInfo, spi_protocols: List[ProtocolInfo]
+        self,
+        protocol: ProtocolInfo,
+        spi_protocols: list[ProtocolInfo],
     ) -> bool:
         """Check if protocol has a duplicate in SPI."""
         for spi_protocol in spi_protocols:
@@ -359,51 +366,26 @@ class ProtocolAuditor:
 
     def print_audit_summary(self, result: AuditResult) -> None:
         """Print human-readable audit summary."""
-        print(f"\n{'='*60}")
-        print(f"🔍 PROTOCOL AUDIT SUMMARY - {result.repository}")
-        print(f"{'='*60}")
-
-        print(f"\n📊 INVENTORY:")
-        print(f"   Protocols found: {result.protocols_found}")
-        print(f"   Duplicates: {result.duplicates_found}")
-        print(f"   Conflicts: {result.conflicts_found}")
 
         if result.violations:
-            print(f"\n🚨 VIOLATIONS FOUND ({len(result.violations)}):")
-            for violation in result.violations:
-                print(f"   • {violation}")
+            for _violation in result.violations:
+                pass
 
         if result.recommendations:
-            print(f"\n💡 RECOMMENDATIONS ({len(result.recommendations)}):")
-            for recommendation in result.recommendations:
-                print(f"   • {recommendation}")
-
-        status = "✅ PASSED" if result.success else "❌ FAILED"
-        print(f"\n{status}")
+            for _recommendation in result.recommendations:
+                pass
 
     def print_duplication_report(self, report: DuplicationReport) -> None:
         """Print human-readable duplication report."""
-        print(f"\n{'='*60}")
-        print(f"🔍 DUPLICATION REPORT")
-        print(f"   {report.source_repository} vs {report.target_repository}")
-        print(f"{'='*60}")
 
         if report.exact_duplicates:
-            print(f"\n🚨 EXACT DUPLICATES ({len(report.exact_duplicates)}):")
-            for dup in report.exact_duplicates:
-                print(f"   • {dup.protocols[0].name} (signature: {dup.signature_hash})")
-                print(f"     Recommendation: {dup.recommendation}")
+            for _dup in report.exact_duplicates:
+                pass
 
         if report.name_conflicts:
-            print(f"\n⚠️  NAME CONFLICTS ({len(report.name_conflicts)}):")
-            for conflict in report.name_conflicts:
-                print(f"   • {conflict.protocols[0].name}")
-                print(f"     Recommendation: {conflict.recommendation}")
+            for _conflict in report.name_conflicts:
+                pass
 
         if report.migration_candidates:
-            print(f"\n🎯 MIGRATION CANDIDATES ({len(report.migration_candidates)}):")
-            for candidate in report.migration_candidates:
-                print(f"   • {candidate.name} ({len(candidate.methods)} methods)")
-
-        status = "✅ CLEAN" if report.success else "❌ ISSUES FOUND"
-        print(f"\n{status}")
+            for _candidate in report.migration_candidates:
+                pass

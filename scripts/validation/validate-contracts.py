@@ -165,12 +165,14 @@ def main():
         print(f"❌ Error during file discovery: {e}")
         return 1
 
-    # Filter out archived files
+    # Filter out archived files and invalid test fixtures
     try:
         yaml_files = [
             f
             for f in yaml_files
-            if "/archived/" not in str(f) and "archived" not in f.parts
+            if "/archived/" not in str(f)
+            and "archived" not in f.parts
+            and "tests/fixtures/validation/invalid/" not in str(f)
         ]
     except Exception as e:
         print(f"❌ Error filtering files: {e}")

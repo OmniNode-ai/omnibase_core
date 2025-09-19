@@ -5,7 +5,7 @@ Replaces hand-written result classes with proper Pydantic models
 for CLI tool execution operations.
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -116,7 +116,7 @@ class ModelCliExecutionResult(BaseModel):
         """Pydantic configuration."""
 
         # Example for documentation
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "success": True,
                 "error_message": None,
