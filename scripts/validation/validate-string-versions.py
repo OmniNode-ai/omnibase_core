@@ -12,36 +12,24 @@ Versions should only come from contracts, never from __init__.py files.
 Uses AST parsing for reliable detection of semantic version patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
+from __future__ import annotations
 
 import os
+import signal
 import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+# Constants
+MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks on Python files
+MAX_YAML_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks on YAML files
+DIRECTORY_SCAN_TIMEOUT = 30  # seconds
+VALIDATION_TIMEOUT = 600  # 10 minutes
+
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-
-class ValidationError(Exception):
-    """Custom exception for validation errors."""
-
-    def __init__(
-        self,
-        message: str,
-        file_path: Path | None = None,
-        original_error: Exception | None = None,
-    ):
-        super().__init__(message)
-        self.file_path = file_path
-        self.original_error = original_error
-
-    def __str__(self) -> str:
-        if self.file_path:
-            return f"{self.file_path}: {super().__str__()}"
-        return super().__str__()
-
 
 # Try to import Pydantic models if available (may not exist in empty package structure)
 try:
@@ -65,68 +53,70 @@ class StringVersionValidator:
 
     def validate_python_file(self, python_path: Path) -> bool:
         """Validate a Python file for hardcoded __version__ strings."""
+        # Check file existence and basic properties
+        if not python_path.exists():
+            self.errors.append(f"{python_path}: File does not exist")
+            return False
+
+        if not python_path.is_file():
+            self.errors.append(f"{python_path}: Path is not a regular file")
+            return False
+
+        # Check file permissions
+        if not os.access(python_path, os.R_OK):
+            self.errors.append(f"{python_path}: Permission denied - cannot read file")
+            return False
+
+        # Check file size to prevent DoS attacks
         try:
-            # Check if file exists first
-            if not python_path.exists():
-                self.errors.append(f"{python_path}: File not found")
-                return False
-
-            # Check if it's actually a file (not a directory)
-            if not python_path.is_file():
-                self.errors.append(f"{python_path}: Path is not a file")
-                return False
-
-            # Check file permissions
-            if not os.access(python_path, os.R_OK):
+            file_size = python_path.stat().st_size
+            if file_size > MAX_PYTHON_FILE_SIZE:
                 self.errors.append(
-                    f"{python_path}: Permission denied - cannot read file"
+                    f"{python_path}: File too large ({file_size} bytes), max allowed: {MAX_PYTHON_FILE_SIZE}"
                 )
                 return False
+        except OSError as e:
+            self.errors.append(f"{python_path}: Cannot check file size: {e}")
+            return False
 
-            # Read file content with proper error handling
-            try:
-                with open(python_path, encoding="utf-8") as f:
-                    content = f.read()
-            except UnicodeDecodeError as e:
-                self.errors.append(f"{python_path}: File encoding error - {e}")
-                return False
-            except PermissionError as e:
-                self.errors.append(f"{python_path}: Permission denied - {e}")
-                return False
-            except OSError as e:
-                self.errors.append(f"{python_path}: OS error reading file - {e}")
-                return False
+        # Read file content with proper error handling
+        try:
+            with open(python_path, encoding="utf-8") as f:
+                content = f.read()
+        except UnicodeDecodeError as e:
+            self.errors.append(f"{python_path}: File encoding error - {e}")
+            return False
+        except PermissionError as e:
+            self.errors.append(f"{python_path}: Permission denied - {e}")
+            return False
+        except OSError as e:
+            self.errors.append(f"{python_path}: OS error reading file - {e}")
+            return False
+        except IOError as e:
+            self.errors.append(f"{python_path}: IO error reading file - {e}")
+            return False
 
-            # Skip empty files
-            if not content.strip():
-                return True
-
-            self.checked_files += 1
-            file_errors = []
-
-            # Check for __version__ declarations with error handling
-            try:
-                self._validate_python_version_declarations(
-                    content, python_path, file_errors
-                )
-            except Exception as e:
-                self.errors.append(
-                    f"{python_path}: Error during content validation - {e}"
-                )
-                return False
-
-            if file_errors:
-                self.errors.extend([f"{python_path}: {error}" for error in file_errors])
-                return False
-
+        # Skip empty files
+        if not content.strip():
             return True
 
-        except Exception as e:
-            # Catch any unexpected errors
-            self.errors.append(
-                f"{python_path}: Unexpected error during validation - {e}"
+        self.checked_files += 1
+        file_errors = []
+
+        # Check for __version__ declarations with error handling
+        try:
+            self._validate_python_version_declarations(
+                content, python_path, file_errors
             )
+        except Exception as e:
+            self.errors.append(f"{python_path}: Error during content validation - {e}")
             return False
+
+        if file_errors:
+            self.errors.extend([f"{python_path}: {error}" for error in file_errors])
+            return False
+
+        return True
 
     def _validate_python_version_declarations(
         self,
@@ -135,131 +125,133 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Check Python content for hardcoded __version__ declarations."""
-        try:
-            lines = content.split("\n")
-        except Exception as e:
-            errors.append(f"Failed to split Python content into lines: {e}")
-            return
+        lines = content.split("\n")
 
-        try:
-            for line_num, line in enumerate(lines, 1):
-                try:
-                    stripped_line = line.strip()
+        for line_num, line in enumerate(lines, 1):
+            stripped_line = line.strip()
 
-                    # Skip comments and empty lines
-                    if not stripped_line or stripped_line.startswith("#"):
-                        continue
+            # Skip comments and empty lines
+            if not stripped_line or stripped_line.startswith("#"):
+                continue
 
-                    # Check for __version__ declarations
-                    if "__version__" in stripped_line and "=" in stripped_line:
-                        # Extract the assignment
-                        if stripped_line.startswith("__version__"):
-                            try:
-                                assignment_part = stripped_line.split("=", 1)[1].strip()
-                                # Remove quotes and check if it's a version string
-                                clean_value = assignment_part.strip().strip("\"'")
+            # Check for __version__ declarations
+            if "__version__" in stripped_line and "=" in stripped_line:
+                # Extract the assignment
+                if stripped_line.startswith("__version__"):
+                    assignment_part = stripped_line.split("=", 1)[1].strip()
+                    # Remove quotes and check if it's a version string
+                    clean_value = assignment_part.strip().strip("\"'")
 
-                                if self._is_semantic_version_ast(clean_value):
-                                    errors.append(
-                                        f"Line {line_num}: __version__ uses hardcoded string '{clean_value}' - "
-                                        f"versions should only come from contracts, not __init__.py files"
-                                    )
-                            except Exception as e:
-                                errors.append(
-                                    f"Line {line_num}: Error parsing __version__ assignment: {e}"
-                                )
-                except Exception as e:
-                    errors.append(f"Line {line_num}: Error processing line: {e}")
-        except Exception as e:
-            errors.append(f"Error during Python version declaration validation: {e}")
+                    if self._is_semantic_version_ast(clean_value):
+                        errors.append(
+                            f"Line {line_num}: __version__ uses hardcoded string '{clean_value}' - "
+                            f"versions should only come from contracts, not __init__.py files"
+                        )
 
     def validate_yaml_file(self, yaml_path: Path) -> bool:
         """Validate a single YAML file for string version usage."""
+        # Check file existence and basic properties
+        if not yaml_path.exists():
+            self.errors.append(f"{yaml_path}: File does not exist")
+            return False
+
+        if not yaml_path.is_file():
+            self.errors.append(f"{yaml_path}: Path is not a regular file")
+            return False
+
+        # Check file permissions
+        if not os.access(yaml_path, os.R_OK):
+            self.errors.append(f"{yaml_path}: Permission denied - cannot read file")
+            return False
+
+        # Check file size to prevent DoS attacks
         try:
-            # Check if file exists first
-            if not yaml_path.exists():
-                self.errors.append(f"{yaml_path}: File not found")
+            file_size = yaml_path.stat().st_size
+            if file_size > MAX_YAML_FILE_SIZE:
+                self.errors.append(
+                    f"{yaml_path}: File too large ({file_size} bytes), max allowed: {MAX_YAML_FILE_SIZE}"
+                )
                 return False
+        except OSError as e:
+            self.errors.append(f"{yaml_path}: Cannot check file size: {e}")
+            return False
 
-            # Check if it's actually a file (not a directory)
-            if not yaml_path.is_file():
-                self.errors.append(f"{yaml_path}: Path is not a file")
-                return False
+        # Read file content with proper error handling
+        try:
+            with open(yaml_path, encoding="utf-8") as f:
+                content = f.read()
+        except UnicodeDecodeError as e:
+            self.errors.append(f"{yaml_path}: File encoding error - {e}")
+            return False
+        except PermissionError as e:
+            self.errors.append(f"{yaml_path}: Permission denied - {e}")
+            return False
+        except OSError as e:
+            self.errors.append(f"{yaml_path}: OS error reading file - {e}")
+            return False
+        except IOError as e:
+            self.errors.append(f"{yaml_path}: IO error reading file - {e}")
+            return False
 
-            # Check file permissions
-            if not os.access(yaml_path, os.R_OK):
-                self.errors.append(f"{yaml_path}: Permission denied - cannot read file")
-                return False
-
-            # Read file content with proper error handling
-            try:
-                with open(yaml_path, encoding="utf-8") as f:
-                    content = f.read()
-            except UnicodeDecodeError as e:
-                self.errors.append(f"{yaml_path}: File encoding error - {e}")
-                return False
-            except PermissionError as e:
-                self.errors.append(f"{yaml_path}: Permission denied - {e}")
-                return False
-            except OSError as e:
-                self.errors.append(f"{yaml_path}: OS error reading file - {e}")
-                return False
-
-            # Skip empty files
-            if not content.strip():
-                return True
-
-            # Parse YAML using Pydantic model validation if available
-            yaml_data = None
-            if PYDANTIC_MODELS_AVAILABLE:
-                try:
-                    yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
-                    yaml_data = yaml_model.model_dump()
-                except Exception as e:
-                    # If we can't parse with Pydantic, log it but continue with AST validation
-                    # This is not a fatal error since we have fallback validation
-                    pass
-
-            # Basic YAML syntax validation
-            try:
-                yaml.safe_load(content)
-            except yaml.YAMLError as e:
-                self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
-                return False
-            except Exception as e:
-                self.errors.append(f"{yaml_path}: YAML parsing error - {e}")
-                return False
-
-            self.checked_files += 1
-            file_errors = []
-
-            # Use AST-based validation on the raw content (always runs)
-            try:
-                self._validate_yaml_content_ast(content, yaml_path, file_errors)
-            except Exception as e:
-                self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
-                return False
-
-            # Also validate the parsed structure if we have it
-            if yaml_data:
-                try:
-                    self._validate_parsed_yaml(yaml_data, file_errors)
-                except Exception as e:
-                    self.errors.append(
-                        f"{yaml_path}: Error during parsed YAML validation - {e}"
-                    )
-                    return False
-
-            if file_errors:
-                self.errors.extend([f"{yaml_path}: {error}" for error in file_errors])
-                return False
-
+        # Skip empty files
+        if not content.strip():
             return True
 
-        except Exception as e:
-            # Catch any unexpected errors
-            self.errors.append(f"{yaml_path}: Unexpected error during validation - {e}")
+        # Parse YAML using Pydantic model validation if available
+        yaml_data = None
+        if PYDANTIC_MODELS_AVAILABLE:
+            try:
+                yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
+                yaml_data = yaml_model.model_dump()
+            except Exception as e:
+                # If we can't parse with Pydantic, log it but continue with AST validation
+                # This is not a fatal error since we have fallback validation
+                pass
+
+        # Basic YAML syntax validation
+        try:
+            yaml.safe_load(content)
+        except yaml.YAMLError as e:
+            self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
             return False
+        except yaml.constructor.ConstructorError as e:
+            self.errors.append(f"{yaml_path}: YAML constructor error - {e}")
+            return False
+        except yaml.parser.ParserError as e:
+            self.errors.append(f"{yaml_path}: YAML parser error - {e}")
+            return False
+        except yaml.scanner.ScannerError as e:
+            self.errors.append(f"{yaml_path}: YAML scanner error - {e}")
+            return False
+        except MemoryError:
+            self.errors.append(f"{yaml_path}: YAML file too large to parse in memory")
+            return False
+
+        self.checked_files += 1
+        file_errors = []
+
+        # Use AST-based validation on the raw content (always runs)
+        try:
+            self._validate_yaml_content_ast(content, yaml_path, file_errors)
+        except Exception as e:
+            self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
+            return False
+
+        # Also validate the parsed structure if we have it
+        if yaml_data:
+            try:
+                self._validate_parsed_yaml(yaml_data, file_errors)
+            except Exception as e:
+                self.errors.append(
+                    f"{yaml_path}: Error during parsed YAML validation - {e}"
+                )
+                return False
+
+        if file_errors:
+            self.errors.extend([f"{yaml_path}: {error}" for error in file_errors])
+            return False
+
+        return True
 
     def _validate_yaml_content_ast(
         self,
@@ -268,11 +260,7 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
-        try:
-            lines = content.split("\n")
-        except Exception as e:
-            errors.append(f"Failed to split content into lines: {e}")
-            return
+        lines = content.split("\n")
 
         version_field_patterns = [
             "version:",
@@ -282,42 +270,29 @@ class StringVersionValidator:
             "protocol_version:",
         ]
 
-        try:
-            for line_num, line in enumerate(lines, 1):
-                try:
-                    stripped_line = line.strip()
+        for line_num, line in enumerate(lines, 1):
+            stripped_line = line.strip()
 
-                    # Skip comments and empty lines
-                    if not stripped_line or stripped_line.startswith("#"):
-                        continue
+            # Skip comments and empty lines
+            if not stripped_line or stripped_line.startswith("#"):
+                continue
 
-                    # Check for version field patterns
-                    for pattern in version_field_patterns:
-                        if pattern in stripped_line:
-                            # Extract the value after the colon
-                            if ":" in stripped_line:
-                                try:
-                                    field_name = stripped_line.split(":")[0].strip()
-                                    value_part = ":".join(
-                                        stripped_line.split(":")[1:]
-                                    ).strip()
+            # Check for version field patterns
+            for pattern in version_field_patterns:
+                if pattern in stripped_line:
+                    # Extract the value after the colon
+                    if ":" in stripped_line:
+                        field_name = stripped_line.split(":")[0].strip()
+                        value_part = ":".join(stripped_line.split(":")[1:]).strip()
 
-                                    # Remove quotes and check if it's a version string
-                                    clean_value = value_part.strip().strip("\"'")
+                        # Remove quotes and check if it's a version string
+                        clean_value = value_part.strip().strip("\"'")
 
-                                    if self._is_semantic_version_ast(clean_value):
-                                        errors.append(
-                                            f"Line {line_num}: Field '{field_name}' uses string version '{clean_value}' - "
-                                            f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
-                                        )
-                                except Exception as e:
-                                    errors.append(
-                                        f"Line {line_num}: Error parsing line content: {e}"
-                                    )
-                except Exception as e:
-                    errors.append(f"Line {line_num}: Error processing line: {e}")
-        except Exception as e:
-            errors.append(f"Error during line-by-line validation: {e}")
+                        if self._is_semantic_version_ast(clean_value):
+                            errors.append(
+                                f"Line {line_num}: Field '{field_name}' uses string version '{clean_value}' - "
+                                f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
+                            )
 
     def _validate_parsed_yaml(
         self,
@@ -325,10 +300,6 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Validate the parsed YAML structure for string versions."""
-        if not isinstance(yaml_data, dict):
-            errors.append(f"YAML data is not a dictionary: {type(yaml_data)}")
-            return
-
         version_fields = [
             "version",
             "contract_version",
@@ -338,28 +309,17 @@ class StringVersionValidator:
         ]
 
         # Check top-level fields
-        try:
-            for field in version_fields:
-                try:
-                    if field in yaml_data:
-                        value = yaml_data[field]
-                        if isinstance(value, str) and self._is_semantic_version_ast(
-                            value
-                        ):
-                            errors.append(
-                                f"Field '{field}' uses string version '{value}' - "
-                                f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
-                            )
-                except Exception as e:
-                    errors.append(f"Error validating field '{field}': {e}")
-        except Exception as e:
-            errors.append(f"Error during top-level field validation: {e}")
+        for field in version_fields:
+            if field in yaml_data:
+                value = yaml_data[field]
+                if isinstance(value, str) and self._is_semantic_version_ast(value):
+                    errors.append(
+                        f"Field '{field}' uses string version '{value}' - "
+                        f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
+                    )
 
         # Check nested version fields
-        try:
-            self._check_nested_versions(yaml_data, errors, [])
-        except Exception as e:
-            errors.append(f"Error during nested validation: {e}")
+        self._check_nested_versions(yaml_data, errors, [])
 
     def _check_nested_versions(
         self,
@@ -368,64 +328,26 @@ class StringVersionValidator:
         path: list[str],
     ) -> None:
         """Recursively check for version strings in nested structures."""
-        # Prevent infinite recursion by limiting depth
-        if len(path) > 10:
-            errors.append(f"Reached maximum nesting depth at path: {'.'.join(path)}")
-            return
+        if isinstance(data, dict):
+            for key, value in data.items():
+                current_path = path + [key]
 
-        try:
-            if isinstance(data, dict):
-                try:
-                    for key, value in data.items():
-                        try:
-                            current_path = path + [str(key)]
+                # If the key suggests it's a version field
+                if any(version_word in key.lower() for version_word in ["version"]):
+                    if isinstance(value, str) and self._is_semantic_version_ast(value):
+                        path_str = ".".join(current_path)
+                        errors.append(
+                            f"Field '{path_str}' uses string version '{value}' - "
+                            f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
+                        )
 
-                            # If the key suggests it's a version field
-                            if isinstance(key, str) and any(
-                                version_word in key.lower()
-                                for version_word in ["version"]
-                            ):
-                                if isinstance(
-                                    value, str
-                                ) and self._is_semantic_version_ast(value):
-                                    path_str = ".".join(current_path)
-                                    errors.append(
-                                        f"Field '{path_str}' uses string version '{value}' - "
-                                        f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
-                                    )
+                # Recurse into nested structures
+                self._check_nested_versions(value, errors, current_path)
 
-                            # Recurse into nested structures
-                            self._check_nested_versions(value, errors, current_path)
-                        except Exception as e:
-                            path_str = ".".join(path + [str(key)])
-                            errors.append(
-                                f"Error processing nested field '{path_str}': {e}"
-                            )
-                except Exception as e:
-                    path_str = ".".join(path)
-                    errors.append(
-                        f"Error iterating dictionary at path '{path_str}': {e}"
-                    )
-
-            elif isinstance(data, list):
-                try:
-                    for i, item in enumerate(data):
-                        try:
-                            current_path = path + [f"[{i}]"]
-                            self._check_nested_versions(item, errors, current_path)
-                        except Exception as e:
-                            path_str = ".".join(path + [f"[{i}]"])
-                            errors.append(
-                                f"Error processing list item at path '{path_str}': {e}"
-                            )
-                except Exception as e:
-                    path_str = ".".join(path)
-                    errors.append(f"Error iterating list at path '{path_str}': {e}")
-        except Exception as e:
-            path_str = ".".join(path) if path else "root"
-            errors.append(
-                f"Error during nested version check at path '{path_str}': {e}"
-            )
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                current_path = path + [f"[{i}]"]
+                self._check_nested_versions(item, errors, current_path)
 
     def _is_semantic_version_ast(self, value: str) -> bool:
         """
@@ -434,40 +356,30 @@ class StringVersionValidator:
         Checks if a string matches the semantic version pattern X.Y.Z
         where X, Y, Z are integers.
         """
+        if not isinstance(value, str) or not value:
+            return False
+
+        # Handle the most common patterns
+        if "." not in value:
+            return False
+
+        # Split on dots and validate each part
+        parts = value.split(".")
+
+        # Must be exactly 3 parts for semantic versioning
+        if len(parts) != 3:
+            return False
+
+        # Each part must be a valid integer (possibly with leading zeros)
         try:
-            if not isinstance(value, str) or not value:
-                return False
-
-            # Handle the most common patterns
-            if "." not in value:
-                return False
-
-            # Split on dots and validate each part
-            try:
-                parts = value.split(".")
-            except Exception:
-                return False
-
-            # Must be exactly 3 parts for semantic versioning
-            if len(parts) != 3:
-                return False
-
-            # Each part must be a valid integer (possibly with leading zeros)
-            try:
-                for part in parts:
-                    # Must be numeric and not empty
-                    if not part or not part.isdigit():
-                        return False
-                    # Convert to int to validate (handles leading zeros)
-                    try:
-                        int(part)
-                    except (ValueError, OverflowError):
-                        return False
-                return True
-            except (ValueError, TypeError, AttributeError):
-                return False
-        except Exception:
-            # If anything unexpected happens, assume it's not a semantic version
+            for part in parts:
+                # Must be numeric and not empty
+                if not part or not part.isdigit():
+                    return False
+                # Convert to int to validate (handles leading zeros)
+                int(part)
+            return True
+        except (ValueError, TypeError):
             return False
 
     def validate_all_files(self, file_paths: list[Path]) -> bool:
@@ -552,6 +464,15 @@ class StringVersionValidator:
             )
 
 
+def setup_timeout_handler():
+    """Setup timeout handler for long-running validations."""
+
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Validation operation timed out")
+
+    signal.signal(signal.SIGALRM, timeout_handler)
+
+
 def main() -> int:
     """Main entry point for the validation hook."""
     try:
@@ -603,65 +524,79 @@ def main() -> int:
                                 print(f"Warning: Cannot read directory: {path}")
                                 continue
 
-                            # Recursively find all YAML and Python files, but exclude non-ONEX directories
-                            exclude_patterns = [
-                                "deployment",
-                                ".github",
-                                "docker-compose",
-                                "prometheus",
-                                "alerts.yml",
-                                "grafana",
-                                "kubernetes",
-                                "ci-cd.yml",  # GitHub Actions CI file
-                                "__pycache__",
-                                ".mypy_cache",
-                                ".pytest_cache",
-                                "node_modules",
-                            ]
+                            # Setup timeout for directory scanning (30 seconds)
+                            setup_timeout_handler()
 
                             try:
-                                all_files = (
-                                    list(path.rglob("*.yaml"))
-                                    + list(path.rglob("*.yml"))
-                                    + list(path.rglob("*.py"))
-                                )
-                            except PermissionError as e:
-                                print(
-                                    f"Warning: Permission denied scanning directory {path}: {e}"
-                                )
-                                continue
-                            except OSError as e:
-                                print(
-                                    f"Warning: OS error scanning directory {path}: {e}"
-                                )
-                                continue
+                                signal.alarm(DIRECTORY_SCAN_TIMEOUT)
 
-                            # Filter out excluded files using path components
-                            try:
-                                for file_path in all_files:
-                                    try:
-                                        should_exclude = False
-                                        path_parts = file_path.parts
-                                        file_name = file_path.name
+                                # Recursively find all YAML and Python files, but exclude non-ONEX directories
+                                exclude_patterns = [
+                                    "deployment",
+                                    ".github",
+                                    "docker-compose",
+                                    "prometheus",
+                                    "alerts.yml",
+                                    "grafana",
+                                    "kubernetes",
+                                    "ci-cd.yml",  # GitHub Actions CI file
+                                    "__pycache__",
+                                    ".mypy_cache",
+                                    ".pytest_cache",
+                                    "node_modules",
+                                ]
 
-                                        # Check if any path component or filename matches exclusion patterns
-                                        for pattern in exclude_patterns:
-                                            if (
-                                                pattern in path_parts
-                                                or file_name.startswith(pattern)
-                                            ):
-                                                should_exclude = True
-                                                break
+                                try:
+                                    all_files = (
+                                        list(path.rglob("*.yaml"))
+                                        + list(path.rglob("*.yml"))
+                                        + list(path.rglob("*.py"))
+                                    )
+                                except PermissionError as e:
+                                    print(
+                                        f"Warning: Permission denied scanning directory {path}: {e}"
+                                    )
+                                    continue
+                                except OSError as e:
+                                    print(
+                                        f"Warning: OS error scanning directory {path}: {e}"
+                                    )
+                                    continue
 
-                                        if not should_exclude:
-                                            yaml_files.append(file_path)
-                                    except Exception as e:
-                                        print(
-                                            f"Warning: Error processing file {file_path}: {e}"
-                                        )
-                                        continue
-                            except Exception as e:
-                                print(f"Warning: Error filtering files in {path}: {e}")
+                                signal.alarm(0)  # Cancel timeout
+
+                                # Filter out excluded files using path components
+                                try:
+                                    for file_path in all_files:
+                                        try:
+                                            should_exclude = False
+                                            path_parts = file_path.parts
+                                            file_name = file_path.name
+
+                                            # Check if any path component or filename matches exclusion patterns
+                                            for pattern in exclude_patterns:
+                                                if (
+                                                    pattern in path_parts
+                                                    or file_name.startswith(pattern)
+                                                ):
+                                                    should_exclude = True
+                                                    break
+
+                                            if not should_exclude:
+                                                yaml_files.append(file_path)
+                                        except Exception as e:
+                                            print(
+                                                f"Warning: Error processing file {file_path}: {e}"
+                                            )
+                                            continue
+                                except Exception as e:
+                                    print(
+                                        f"Warning: Error filtering files in {path}: {e}"
+                                    )
+                                    continue
+
+                            except TimeoutError:
+                                print(f"Warning: Timeout scanning directory {path}")
                                 continue
 
                         elif path.suffix.lower() in [".yaml", ".yml", ".py"]:
@@ -703,9 +638,19 @@ def main() -> int:
             return 0
 
         try:
+            # Setup timeout for validation (10 minutes)
+            setup_timeout_handler()
+            signal.alarm(VALIDATION_TIMEOUT)
+
             success = validator.validate_all_files(yaml_files)
             validator.print_results()
+
+            signal.alarm(0)  # Cancel timeout
             return 0 if success else 1
+
+        except TimeoutError:
+            print("Error: Validation timeout after 10 minutes")
+            return 1
         except Exception as e:
             print(f"Error: Validation failed with unexpected error: {e}")
             return 1

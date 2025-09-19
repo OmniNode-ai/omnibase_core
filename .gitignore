@@ -242,7 +242,16 @@ docs_archived/
 .codanna/index/*
 .serena/cache/*
 
-# Claude Flow and Hive Mind artifacts
-.claude-flow/
+# AI Tools and Generated Content
 .hive-mind/
 .swarm/
+.claude-flow/
+*.db
+*.sqlite
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*system-metrics.json
+*-metrics.json
+session-*.json
+*auto-save*.json

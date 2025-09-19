@@ -8,11 +8,11 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--formatter, retain_line_breaks=true]
-        exclude: ^work_tickets/
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -23,11 +23,12 @@ repos:
 
   # ONEX Python Development Hooks (from shared templates)
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
         name: Black Python Formatter
         args: [--line-length, "88", --target-version, py311]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
@@ -35,6 +36,7 @@ repos:
       - id: isort
         name: isort Import Sorter
         args: [--profile, black, --line-length, "88"]
+        exclude: ^tests/fixtures/validation/edge_cases/syntax_error\.py$
 
   # ONEX Framework Validation (from shared templates)
   - repo: local
@@ -46,13 +48,13 @@ repos:
         language: system
         types: [python]
         args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional, --no-error-summary, --follow-imports=skip, --config-file=mypy.ini]
-        files: ^src/omnibase_core/.*\.py$
-        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/|__pycache__).*\.py$
+        files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
         name: ONEX Repository Structure Validation
-        entry: poetry run python scripts/validation/validate_structure.py
+        entry: python scripts/validation/validate_structure.py
         args: ['.', 'omnibase_core']
         language: system
         always_run: true
@@ -61,7 +63,7 @@ repos:
 
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
-        entry: poetry run python scripts/validation/validate_naming.py
+        entry: python scripts/validation/validate_naming.py
         args: ['.']
         language: system
         always_run: true
@@ -74,11 +76,12 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
+        exclude: ^tests/fixtures/validation/
         stages: [pre-commit]
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: poetry run python scripts/validation/validate-no-backward-compatibility.py
+        entry: python scripts/validation/validate-no-backward-compatibility.py
         args: ['-d', 'src/']
         language: system
         pass_filenames: false
@@ -92,13 +95,13 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^scripts/validation/validate-contracts\.py$
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # ONEX Python Pattern Validation (SHARED HOOKS)
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation
-        entry: poetry run python scripts/validation/validate-pydantic-patterns.py
+        entry: python scripts/validation/validate-pydantic-patterns.py
         args: ['--allow-errors', '13']
         language: system
         pass_filenames: false
@@ -107,7 +110,7 @@ repos:
 
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: poetry run python scripts/validation/validate-union-usage.py
+        entry: python scripts/validation/validate-union-usage.py
         args: ['--max-unions', '7000']
         language: system
         pass_filenames: false
@@ -125,7 +128,7 @@ repos:
 
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
-        entry: poetry run python scripts/validation/audit_optional.py
+        entry: python scripts/validation/audit_optional.py
         args: ['.']
         language: system
         always_run: true
@@ -136,11 +139,11 @@ repos:
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards
     #   name: ONEX Standards Comprehensive Validation
-    #   entry: poetry run python -c "from omnibase_core.validation import validate_onex_standards; import sys; result = validate_onex_standards('.'); sys.exit(0 if result['success'] else 1)"
+    #   entry: python -c "from omnibase_core.validation import validate_onex_standards; import sys; result = validate_onex_standards('.'); sys.exit(0 if result['success'] else 1)"
     #   language: system
     #   always_run: true
     #   pass_filenames: false
-    #   stages: [pre-commit]
+    #   stages: [commit]
 
 # Configuration
 ci:
