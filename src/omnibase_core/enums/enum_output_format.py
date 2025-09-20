@@ -16,6 +16,7 @@ class EnumOutputFormat(str, Enum):
     type safety and IDE support.
     """
 
+    DEFAULT = "default"  # Default format (typically table or text)
     TEXT = "text"  # Human-readable text format
     JSON = "json"  # JSON format for machine consumption
     YAML = "yaml"  # YAML format for machine consumption

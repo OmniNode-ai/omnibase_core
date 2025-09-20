@@ -14,6 +14,25 @@ T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
 
 
+class ModelResultDict(BaseModel):
+    """
+    Clean Pydantic model for Result serialization.
+
+    Represents the dictionary structure when converting Results
+    to/from dictionary format with proper type safety.
+    """
+
+    success: bool = Field(..., description="Whether the operation succeeded")
+    value: Any | None = Field(None, description="Success value (if success=True)")
+    error: Any | None = Field(None, description="Error value (if success=False)")
+
+    model_config = {"arbitrary_types_allowed": True}
+
+
+# Type alias for dictionary-based data structures
+ModelResultData = dict[str, str | int | bool]  # Restrictive dict for common data
+
+
 class Result(BaseModel, Generic[T, E]):
     """
     Generic Result[T, E] pattern for type-safe error handling.
@@ -188,30 +207,6 @@ class Result(BaseModel, Generic[T, E]):
         except Exception as e:
             return Result.err(e)
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
-        result: dict[str, Any] = {"success": self.success}
-        if self.success:
-            result["value"] = self.value
-        else:
-            result["error"] = self.error
-        return result
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Result[Any, Any]":
-        """Create Result from dictionary."""
-        success = data.get("success", False)
-        if success:
-            value = data.get("value")
-            if value is None:
-                raise ValueError("Success result from dict must have a value")
-            return cls.ok(value)
-        else:
-            error = data.get("error")
-            if error is None:
-                raise ValueError("Error result from dict must have an error")
-            return cls.err(error)
-
     def __repr__(self) -> str:
         """String representation."""
         if self.success:
@@ -235,7 +230,7 @@ class Result(BaseModel, Generic[T, E]):
 StrResult = Result[str, str]  # String success, string error
 BoolResult = Result[bool, str]  # Boolean success, string error
 IntResult = Result[int, str]  # Integer success, string error
-DictResult = Result[dict[str, Any], str]  # Dict success, string error
+DataResult = Result[ModelResultData, str]  # Clean dict success, string error
 ListResult = Result[list[Any], str]  # List success, string error
 
 
@@ -293,10 +288,12 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
 # Export for use
 __all__ = [
     "Result",
+    "ModelResultDict",
+    "ModelResultData",
     "StrResult",
     "BoolResult",
     "IntResult",
-    "DictResult",
+    "DataResult",
     "ListResult",
     "ok",
     "err",

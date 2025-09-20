@@ -10,13 +10,13 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
-from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-
+from ...enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from .model_node_info_summary import ModelNodeInfoSummary
 
 # Compatibility aliases for existing code
 ModelMetadataNodeType = EnumMetadataNodeType
@@ -100,7 +100,7 @@ class ModelMetadataNodeInfo(BaseModel):
     )
 
     # Custom metadata for extensibility
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
@@ -223,23 +223,31 @@ class ModelMetadataNodeInfo(BaseModel):
         """Get custom metadata value."""
         return self.custom_metadata.get(key, default)
 
-    def to_summary(self) -> dict[str, Any]:
-        """Get node summary for quick overview."""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "node_type": self.node_type.value,
-            "status": self.status.value,
-            "complexity": self.complexity.value,
-            "version": self.version,
-            "success_rate": self.get_success_rate(),
-            "has_documentation": self.has_documentation,
-            "has_examples": self.has_examples,
-            "total_invocations": self.usage_metrics.total_invocations,
-            "tags": self.tags,
-            "categories": self.categories,
-            "updated_at": self.updated_at.isoformat(),
-        }
+    def to_summary(self) -> ModelNodeInfoSummary:
+        """Get node summary with clean typing."""
+        return ModelNodeInfoSummary(
+            name=self.name,
+            description=self.description,
+            node_type=self.node_type.value,
+            status=self.status.value,
+            complexity=self.complexity.value,
+            version=self.version,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            last_validated=self.last_validated,
+            tags=self.tags,
+            categories=self.categories,
+            dependencies=self.dependencies,
+            related_nodes=self.related_nodes,
+            has_documentation=self.has_documentation,
+            has_examples=self.has_examples,
+            documentation_quality=self.documentation_quality,
+            usage_count=self.usage_metrics.total_invocations,
+            success_rate=self.get_success_rate(),
+            error_rate=1.0 - self.get_success_rate(),
+            average_execution_time_ms=self.usage_metrics.average_execution_time_ms,
+            memory_usage_mb=self.usage_metrics.peak_memory_usage_mb,
+        )
 
     @classmethod
     def create_simple(

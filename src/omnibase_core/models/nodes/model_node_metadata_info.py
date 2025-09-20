@@ -71,7 +71,7 @@ class ModelNodeMetadataInfo(BaseModel):
     )
 
     # Custom metadata
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
@@ -135,7 +135,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Update last accessed timestamp."""
         self.last_accessed = datetime.now(UTC)
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> dict[str, str | int | bool | float | list[str] | None]:
         """Get node metadata summary."""
         return {
             "node_id": self.node_id,

@@ -13,6 +13,12 @@ from pydantic import Field, RootModel, model_validator
 
 from ..nodes.model_function_node import ModelFunctionNode
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
+from .model_metadata_node_collection_types import (
+    AnalyticsData,
+    FunctionNodeData,
+    NodeInfoContainer,
+    NodeInfoData,
+)
 from .model_metadata_node_info import (
     ModelMetadataNodeInfo,
     ModelMetadataNodeType,
@@ -20,7 +26,7 @@ from .model_metadata_node_info import (
 
 
 class ModelMetadataNodeCollection(
-    RootModel[dict[str, ModelFunctionNode | dict[str, Any]]],
+    RootModel[dict[str, ModelFunctionNode | FunctionNodeData]],
 ):
     """
     Enterprise-grade collection of metadata/documentation nodes for ONEX metadata blocks.
@@ -28,7 +34,7 @@ class ModelMetadataNodeCollection(
     Clean implementation with proper typing, focused responsibilities, and ONEX compliance.
     """
 
-    root: dict[str, ModelFunctionNode | dict[str, Any]] = Field(
+    root: dict[str, ModelFunctionNode | FunctionNodeData] = Field(
         default_factory=dict,
         description="Root dictionary containing metadata nodes",
     )
@@ -37,7 +43,7 @@ class ModelMetadataNodeCollection(
         self,
         root: (
             Union[
-                dict[str, ModelFunctionNode | dict[str, Any]],
+                dict[str, ModelFunctionNode | FunctionNodeData],
                 "ModelMetadataNodeCollection",
             ]
             | None
@@ -54,17 +60,23 @@ class ModelMetadataNodeCollection(
 
         # Initialize enterprise features if not present
         if "_metadata_analytics" not in self.root:
-            self.root["_metadata_analytics"] = ModelMetadataNodeAnalytics().model_dump()
+            analytics_data = ModelMetadataNodeAnalytics().model_dump()
+            self.root["_metadata_analytics"] = analytics_data  # type: ignore[assignment]
 
         if "_node_info" not in self.root:
-            self.root["_node_info"] = {}
+            node_info_container: NodeInfoContainer = {}
+            self.root["_node_info"] = node_info_container  # type: ignore[assignment]
 
     @model_validator(mode="before")
     @classmethod
     def coerce_node_values(
         cls,
-        data: Union[dict[str, Any], "ModelMetadataNodeCollection", None],
-    ) -> dict[str, Any]:
+        data: Union[
+            dict[str, ModelFunctionNode | FunctionNodeData],
+            "ModelMetadataNodeCollection",
+            None,
+        ],
+    ) -> dict[str, ModelFunctionNode | FunctionNodeData]:
         """Enhanced node value coercion with validation and enhancement."""
         if data is None:
             return {}
@@ -86,8 +98,9 @@ class ModelMetadataNodeCollection(
                     function_node = ModelFunctionNode(**v)
                     new_data[k] = function_node
                 except Exception:
-                    # Fallback to raw dict if ModelFunctionNode creation fails
-                    new_data[k] = v
+                    # Fallback to FunctionNodeData for structured typing
+                    fallback_data = FunctionNodeData.from_legacy_dict(v)
+                    new_data[k] = fallback_data
             else:
                 new_data[k] = v
         return new_data
@@ -115,7 +128,7 @@ class ModelMetadataNodeCollection(
             node_count += 1
 
             # Update analytics if node info exists
-            node_info_container = self.root.get("_node_info", {})
+            node_info_container: NodeInfoContainer = self.root.get("_node_info", {})  # type: ignore[assignment]
             if name in node_info_container and isinstance(node_info_container, dict):
                 node_info_data = node_info_container[name]
                 if isinstance(node_info_data, dict):
@@ -133,8 +146,10 @@ class ModelMetadataNodeCollection(
 
         # Update analytics
         analytics_container = self.root.get("_metadata_analytics", {})
-        analytics_data: dict[str, Any] = (
-            analytics_container if isinstance(analytics_container, dict) else {}
+        analytics_data = (
+            analytics_container
+            if isinstance(analytics_container, dict)
+            else {"last_modified": datetime.now(UTC).isoformat()}
         )
         if isinstance(analytics_data, dict):
             analytics_data.update(
@@ -201,7 +216,7 @@ class ModelMetadataNodeCollection(
     def add_node(
         self,
         name: str,
-        node_data: ModelFunctionNode | dict[str, Any],
+        node_data: ModelFunctionNode | FunctionNodeData,
         node_info: ModelMetadataNodeInfo | None = None,
     ) -> bool:
         """
@@ -278,7 +293,7 @@ class ModelMetadataNodeCollection(
 
         return False
 
-    def get_node(self, name: str) -> ModelFunctionNode | dict[str, Any] | None:
+    def get_node(self, name: str) -> ModelFunctionNode | FunctionNodeData | None:
         """Get a node by name."""
         return self.root.get(name)
 
@@ -311,8 +326,10 @@ class ModelMetadataNodeCollection(
     def _update_analytics(self) -> None:
         """Internal method to update collection analytics."""
         analytics_container = self.root.get("_metadata_analytics", {})
-        analytics_data: dict[str, Any] = (
-            analytics_container if isinstance(analytics_container, dict) else {}
+        analytics_data = (
+            analytics_container
+            if isinstance(analytics_container, dict)
+            else {"last_modified": datetime.now(UTC).isoformat()}
         )
 
         # Count nodes by various categories
@@ -384,7 +401,7 @@ class ModelMetadataNodeCollection(
         from typing import cast
 
         collection = cls(
-            cast(dict[str, ModelFunctionNode | dict[str, Any]], nodes_dict),
+            cast(dict[str, ModelFunctionNode | FunctionNodeData], nodes_dict),
         )
 
         # Add basic node info for each node
@@ -413,6 +430,7 @@ class ModelMetadataNodeCollection(
             "collection_name": name,
             "collection_purpose": "documentation",
             "documentation_coverage": 0.0,
+            "last_modified": datetime.now(UTC).isoformat(),
         }
 
         collection.root["_metadata_analytics"] = analytics_data

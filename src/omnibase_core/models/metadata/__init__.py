@@ -13,6 +13,7 @@ from .model_metadata_node_info import (
     ModelMetadataNodeType,
 )
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
+from .model_semver import ModelSemVer
 
 __all__ = [
     "ModelGenericMetadata",
@@ -22,4 +23,5 @@ __all__ = [
     "ModelMetadataNodeInfo",
     "ModelMetadataNodeType",
     "ModelMetadataUsageMetrics",
+    "ModelSemVer",
 ]

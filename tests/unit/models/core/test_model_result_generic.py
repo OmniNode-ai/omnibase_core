@@ -9,9 +9,9 @@ from typing import Any
 
 import pytest
 
-from ..core.model_result import (
+from src.omnibase_core.models.infrastructure.model_result import (
     BoolResult,
-    DictResult,
+    DataResult,
     IntResult,
     ListResult,
     Result,
@@ -233,27 +233,6 @@ class TestResultGeneric:
         assert str(success) == "Success: value"
         assert str(failure) == "Error: error"
 
-    def test_result_serialization(self):
-        """Test result serialization and deserialization."""
-        # Success serialization
-        success = Result.ok({"key": "value"})
-        success_dict = success.to_dict()
-        assert success_dict == {"success": True, "value": {"key": "value"}}
-
-        # Error serialization
-        failure = Result.err("error message")
-        failure_dict = failure.to_dict()
-        assert failure_dict == {"success": False, "error": "error message"}
-
-        # Deserialization
-        success_restored = Result.from_dict(success_dict)
-        assert success_restored.is_ok()
-        assert success_restored.unwrap() == {"key": "value"}
-
-        failure_restored = Result.from_dict(failure_dict)
-        assert failure_restored.is_err()
-        assert failure_restored.error == "error message"
-
     def test_result_type_aliases(self):
         """Test predefined type aliases."""
         # StrResult
@@ -277,12 +256,12 @@ class TestResultGeneric:
         assert int_success.unwrap() == 42
         assert int_failure.error == "parse error"
 
-        # DictResult
-        dict_success: DictResult = Result.ok({"key": "value"})
-        dict_failure: DictResult = Result.err("invalid format")
+        # DataResult
+        data_success: DataResult = Result.ok({"key": "value"})
+        data_failure: DataResult = Result.err("invalid format")
 
-        assert dict_success.unwrap() == {"key": "value"}
-        assert dict_failure.error == "invalid format"
+        assert data_success.unwrap() == {"key": "value"}
+        assert data_failure.error == "invalid format"
 
         # ListResult
         list_success: ListResult = Result.ok([1, 2, 3])

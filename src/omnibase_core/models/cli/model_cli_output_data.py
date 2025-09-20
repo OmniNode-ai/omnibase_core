@@ -1,251 +1,108 @@
 """
-CLI Output Data Model.
+CLI output data model.
 
-Structured model for CLI command execution output data,
-replacing Dict[str, Any] with strongly typed fields.
+Clean, strongly-typed replacement for dict[str, Any] in CLI execution output.
+Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
-
-from omnibase_core.enums.enum_cli_status import EnumCliStatus
-from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-from omnibase_core.enums.enum_scenario_status import EnumScenarioStatus
-
-from ..data.model_custom_fields import ModelCustomFields
-from ..infrastructure.model_test_results import ModelTestResults
-from ..metadata.model_generic_metadata import ModelGenericMetadata
-from ..nodes.model_node_info import ModelNodeInfo
-from ..nodes.model_node_metadata_info import ModelNodeMetadataInfo
 
 
 class ModelCliOutputData(BaseModel):
     """
-    Structured output data from CLI command execution.
+    Clean model for CLI execution output data.
 
-    This model provides strongly typed fields for common CLI output patterns
-    with no magic strings or poorly typed dictionaries.
+    Replaces dict[str, Any] with structured data model.
     """
 
-    # Core output fields (always present)
-    message: str = Field(default="", description="Human-readable output message")
-    status: EnumCliStatus = Field(
-        default=EnumCliStatus.SUCCESS,
-        description="Strongly typed status",
+    # Core output fields
+    output_type: str = Field(default="execution", description="Type of output data")
+    format: str = Field(default="json", description="Output format")
+
+    # Standard output content
+    stdout: str | None = Field(None, description="Standard output content")
+    stderr: str | None = Field(None, description="Standard error content")
+
+    # Structured results
+    results: dict[str, str | int | bool | float] = Field(
+        default_factory=dict, description="Execution results with basic types"
     )
 
-    # Node-related output
-    nodes: list[ModelNodeInfo] = Field(
-        default_factory=list,
-        description="List of nodes (for discovery/list commands)",
+    # Metadata
+    metadata: dict[str, str | int | bool] = Field(
+        default_factory=dict, description="Output metadata with basic types"
     )
 
-    node_info: ModelNodeInfo | None = Field(
-        default=None,
-        description="Single node information (only when applicable)",
+    # Status and validation
+    status: str = Field(default="completed", description="Output status")
+    is_valid: bool = Field(default=True, description="Whether output is valid")
+
+    # Performance metrics
+    execution_time_ms: float | None = Field(
+        None, description="Execution time in milliseconds"
     )
+    memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
 
-    node_metadata: ModelNodeMetadataInfo | None = Field(
-        default=None,
-        description="Node metadata information (only when applicable)",
-    )
-
-    # Registry-related output
-    registry_count: int = Field(
-        default=0,
-        description="Number of items in registry",
-        ge=0,
-    )
-
-    registry_status: EnumRegistryStatus = Field(
-        default=EnumRegistryStatus.HEALTHY,
-        description="Strongly typed registry status",
-    )
-
-    # Validation/test results (strongly typed)
-    validation_passed: bool = Field(
-        default=True,
-        description="Whether validation passed",
-    )
-
-    test_results: ModelTestResults = Field(
-        default_factory=ModelTestResults,
-        description="Strongly typed test results",
-    )
-
-    # Scenario results
-    scenario_name: str = Field(default="", description="Name of executed scenario")
-
-    scenario_status: EnumScenarioStatus = Field(
-        default=EnumScenarioStatus.NOT_EXECUTED,
-        description="Strongly typed scenario status",
-    )
-
-    # Config/settings output (only when applicable)
-    config_details: ModelGenericMetadata[Any] | None = Field(
-        default=None,
-        description="Configuration values (only for config operations)",
-    )
-
-    # File operation results
-    files_processed: list[str] = Field(
-        default_factory=list,
-        description="List of processed files",
-    )
-
+    # File output information
     files_created: list[str] = Field(
-        default_factory=list,
-        description="List of created files",
+        default_factory=list, description="List of files created during execution"
     )
 
     files_modified: list[str] = Field(
-        default_factory=list,
-        description="List of modified files",
+        default_factory=list, description="List of files modified during execution"
     )
 
-    # Numeric results (always have defaults)
-    count: int = Field(default=0, description="Generic count value", ge=0)
-    total: int = Field(default=0, description="Total items", ge=0)
-    processed: int = Field(default=0, description="Items processed", ge=0)
-    failed: int = Field(default=0, description="Items failed", ge=0)
-    skipped: int = Field(default=0, description="Items skipped", ge=0)
+    def add_result(self, key: str, value: str | int | bool | float) -> None:
+        """Add a result value with type safety."""
+        self.results[key] = value
 
-    # Extended fields (only when truly needed)
-    custom_fields: ModelCustomFields[Any] | None = Field(
-        default=None,
-        description="Extensible custom fields (only when standard fields insufficient)",
-    )
+    def add_metadata(self, key: str, value: str | int | bool) -> None:
+        """Add metadata with type safety."""
+        self.metadata[key] = value
 
-    def get_field_value(self, field_name: str, default: Any = None) -> Any:
-        """Get a field value by name with strong typing."""
-        # Only check direct fields - no fallbacks to dictionaries
-        if hasattr(self, field_name):
-            value = getattr(self, field_name)
-            if value is not None:
-                return str(value) if value else ""
+    def add_file_created(self, file_path: str) -> None:
+        """Add a created file to the list."""
+        if file_path not in self.files_created:
+            self.files_created.append(file_path)
 
-        # Check custom fields only if they exist
-        if self.custom_fields:
-            return self.custom_fields.get_string(
-                field_name,
-                str(default) if default else "",
-            )
+    def add_file_modified(self, file_path: str) -> None:
+        """Add a modified file to the list."""
+        if file_path not in self.files_modified:
+            self.files_modified.append(file_path)
 
+    def get_field_value(
+        self, key: str, default: str | int | bool | float | None = None
+    ) -> str | int | bool | float | None:
+        """Get a field value from results or metadata."""
+        if key in self.results:
+            return self.results[key]
+        if key in self.metadata:
+            return self.metadata[key]
         return default
 
-    def set_field_value(self, field_name: str, value: Any) -> None:
-        """Set a field value with strong typing enforcement."""
-        # If it's a known field, set it directly with type validation
-        if hasattr(self, field_name) and field_name != "custom_fields":
-            # Validate the type matches the field definition
-            field_info = self.model_fields.get(field_name)
-            if field_info:
-                setattr(self, field_name, value)
-            else:
-                msg = f"Cannot set field {field_name}: field type validation failed"
-                raise ValueError(
-                    msg,
-                )
-        else:
-            # Use custom fields for extension
-            if not self.custom_fields:
-                self.custom_fields = ModelCustomFields()
-            # Enforce allowed custom field types only
-            if isinstance(value, str | int | bool | float | list):
-                self.custom_fields.set_field(field_name, value)
-            else:
-                msg = (
-                    f"Custom field {field_name} must be str, int, bool, float, or list"
-                )
-                raise ValueError(
-                    msg,
-                )
-
-    def to_dict(self, *, include_none: bool = False) -> dict[str, Any]:
-        """Convert to dictionary with strong typing preserved."""
-        data: dict[str, Any] = {}
-
-        # Add all standard fields
-        for field_name, field_value in self.model_dump().items():
-            if include_none or field_value is not None:
-                data[field_name] = field_value
-
-        # Merge custom fields if present
-        if self.custom_fields:
-            custom_data = self.custom_fields.to_dict()
-            for key, value in custom_data.items():
-                if key not in data:  # Don't override standard fields
-                    data[key] = value
-
-        return data
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelCliOutputData":
-        """Create from dictionary with strict type validation."""
-        known_fields = set(cls.model_fields.keys())
-        standard_data: dict[str, Any] = {}
-        custom_data: dict[str, Any] = {}
-
-        for key, value in data.items():
-            if key in known_fields:
-                standard_data[key] = value
-            else:
-                custom_data[key] = value
-
-        # Create instance with standard fields (Pydantic will validate types)
-        instance = cls(**standard_data)
-
-        # Add custom fields with type validation
-        if custom_data:
-            instance.custom_fields = ModelCustomFields()
-            for key, value in custom_data.items():
-                if isinstance(value, str | int | bool | float | list):
-                    instance.custom_fields.set_field(key, value)
-                else:
-                    msg = f"Custom field {key} has invalid type: {type(value)}"
-                    raise TypeError(
-                        msg,
-                    )
-
-        return instance
+    def set_field_value(self, key: str, value: str | int | bool | float) -> None:
+        """Set a field value in results."""
+        self.results[key] = value
 
     @classmethod
     def create_simple(
         cls,
-        message: str,
-        status: EnumCliStatus = EnumCliStatus.SUCCESS,
+        stdout: str | None = None,
+        stderr: str | None = None,
+        status: str = "completed",
     ) -> "ModelCliOutputData":
-        """Create a simple output with message and status."""
-        return cls(message=message, status=status)
+        """Create simple output data with just stdout/stderr."""
+        return cls(stdout=stdout, stderr=stderr, status=status)
 
     @classmethod
-    def create_node_list(cls, nodes: list[ModelNodeInfo]) -> "ModelCliOutputData":
-        """Create output for node listing."""
-        return cls(
-            nodes=nodes,
-            count=len(nodes),
-            total=len(nodes),
-            message=f"Found {len(nodes)} nodes",
-            status=EnumCliStatus.SUCCESS,
-        )
-
-    @classmethod
-    def create_validation_result(
-        cls,
-        *,
-        passed: bool,
-        message: str,
-        test_results: ModelTestResults,
+    def create_with_results(
+        cls, results: dict[str, str | int | bool | float], status: str = "completed"
     ) -> "ModelCliOutputData":
-        """Create output for validation results."""
-        return cls(
-            validation_passed=passed,
-            message=message,
-            status=EnumCliStatus.SUCCESS if passed else EnumCliStatus.FAILED,
-            test_results=test_results,
-        )
+        """Create output data with structured results."""
+        return cls(results=results, status=status)
 
 
-# Export for use
-__all__ = ["ModelCliOutputData"]
+# Export the model
+__all__ = [
+    "ModelCliOutputData",
+]

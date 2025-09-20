@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from ..core.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
 
 
 class TestModelGenericMetadataGeneric:
@@ -98,8 +98,8 @@ class TestModelGenericMetadataGeneric:
         metadata.set_field("config", {"nested": "value"})
         metadata.set_field("priority", 5)
 
-        # Test to_dict
-        result = metadata.to_dict()
+        # Test model_dump
+        result = metadata.model_dump(exclude_none=True)
 
         # Should include standard fields
         assert result["name"] == "test_metadata"
@@ -123,8 +123,18 @@ class TestModelGenericMetadataGeneric:
             "config": {"setting": "value"},
         }
 
-        # Create from dict
-        metadata = ModelGenericMetadata[Any].from_dict(data)
+        # Create from dict using BaseModel instantiation
+        # Since custom fields are mixed with standard fields, we need to separate them
+        standard_fields = {"name", "description", "version", "tags", "custom_fields"}
+        standard_data = {k: v for k, v in data.items() if k in standard_fields}
+        custom_data = {k: v for k, v in data.items() if k not in standard_fields}
+
+        # Create instance with standard fields and add custom fields
+        metadata = ModelGenericMetadata[Any](**standard_data)
+        if custom_data:
+            if metadata.custom_fields is None:
+                metadata.custom_fields = {}
+            metadata.custom_fields.update(custom_data)
 
         # Verify standard fields
         assert metadata.name == "test_metadata"
@@ -224,9 +234,9 @@ class TestModelGenericMetadataGeneric:
         assert metadata.get_field("name") == "custom_name_value"
         assert metadata.get_field("description") == "custom_description_value"
 
-        # to_dict should not override standard fields with custom fields
+        # model_dump should not override standard fields with custom fields
         metadata.name = "standard_name"
-        result = metadata.to_dict()
+        result = metadata.model_dump(exclude_none=True)
         assert result["name"] == "standard_name"  # Standard field takes precedence
 
     def test_generic_inheritance_behavior(self):
@@ -275,8 +285,8 @@ class TestModelGenericMetadataGeneric:
         original.set_field("count", 42)
 
         # Convert to dict and back
-        data = original.to_dict()
-        restored = ModelGenericMetadata[dict[str, list[int]]].from_dict(data)
+        data = original.model_dump(exclude_none=True)
+        restored = ModelGenericMetadata[dict[str, list[int]]](**data)
 
         # Verify all fields are preserved
         assert restored.name == original.name

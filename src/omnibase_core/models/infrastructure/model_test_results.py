@@ -68,19 +68,6 @@ class ModelTestResults(BaseModel):
             self.failed_tests += 1
         self.total_duration_ms += test_result.duration_ms
 
-    @classmethod
-    def from_dict(cls, test_data: dict[str, bool]) -> "ModelTestResults":
-        """Create from dictionary with strict type validation."""
-        results = []
-        for test_name, passed in test_data.items():
-            results.append(ModelTestResult(test_name=test_name, passed=passed))
-
-        instance = cls()
-        for result in results:
-            instance.add_result(result)
-
-        return instance
-
 
 # Export for use
 __all__ = ["ModelTestResult", "ModelTestResults"]

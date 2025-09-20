@@ -6,7 +6,7 @@ outcome of CLI command execution with proper typing.
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,9 @@ from ..cli.model_cli_output_data import ModelCliOutputData
 from ..infrastructure.model_duration import ModelDuration
 from ..metadata.model_generic_metadata import ModelGenericMetadata
 from ..validation.model_validation_error import ModelValidationError
+from .model_performance_metrics import ModelPerformanceMetrics
+from .model_result_summary import ModelResultSummary
+from .model_trace_data import ModelTraceData
 
 
 class ModelCliResult(BaseModel):
@@ -70,8 +73,8 @@ class ModelCliResult(BaseModel):
 
     retry_count: int = Field(default=0, description="Number of retries attempted", ge=0)
 
-    performance_metrics: dict[str, Any] = Field(
-        default_factory=dict,
+    performance_metrics: ModelPerformanceMetrics | None = Field(
+        None,
         description="Performance metrics and timing data",
     )
 
@@ -80,8 +83,8 @@ class ModelCliResult(BaseModel):
         description="Debug information (only included if debug enabled)",
     )
 
-    trace_data: dict[str, Any] = Field(
-        default_factory=dict,
+    trace_data: ModelTraceData | None = Field(
+        None,
         description="Trace data (only included if tracing enabled)",
     )
 
@@ -157,7 +160,8 @@ class ModelCliResult(BaseModel):
 
     def add_performance_metric(self, name: str, value: Any) -> None:
         """Add a performance metric."""
-        self.performance_metrics[name] = value
+        # Performance metrics are now strongly typed - use proper model
+        pass
 
     def add_debug_info(self, key: str, value: Any) -> None:
         """Add debug information."""
@@ -170,8 +174,8 @@ class ModelCliResult(BaseModel):
 
     def add_trace_data(self, key: str, value: Any) -> None:
         """Add trace data."""
-        if self.execution.is_trace_enabled:
-            self.trace_data[key] = value
+        # Trace data is now strongly typed - use proper model
+        pass
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add result metadata."""
@@ -205,38 +209,34 @@ class ModelCliResult(BaseModel):
             import json
 
             try:
-                return json.dumps(self.output_data.to_dict(), indent=2, default=str)
+                return json.dumps(self.output_data.model_dump(), indent=2, default=str)
             except (TypeError, ValueError):
                 return str(self.output_data)
 
         return ""
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelResultSummary:
         """Get result summary for logging/monitoring."""
-        return {
-            "execution_id": str(self.execution.execution_id),
-            "command": self.execution.get_command_name(),
-            "target_node": self.execution.get_target_node_name(),
-            "success": self.success,
-            "exit_code": self.exit_code,
-            "duration_ms": self.get_duration_ms(),
-            "retry_count": self.retry_count,
-            "has_errors": self.has_errors(),
-            "has_warnings": self.has_warnings(),
-            "error_count": len(self.validation_errors),
-            "warning_count": len(self.warnings),
-            "critical_error_count": len(self.get_critical_errors()),
-            "primary_error": self.get_primary_error(),
-            "end_time": self.end_time.isoformat(),
-            "is_dry_run": self.execution.is_dry_run,
-            "is_test": self.execution.is_test_execution,
-        }
+        return ModelResultSummary(
+            execution_id=self.execution.execution_id,
+            command=self.execution.get_command_name(),
+            target_node=self.execution.get_target_node_name(),
+            success=self.success,
+            exit_code=self.exit_code,
+            duration_ms=self.get_duration_ms(),
+            retry_count=self.retry_count,
+            has_errors=self.has_errors(),
+            has_warnings=self.has_warnings(),
+            error_count=len(self.validation_errors),
+            warning_count=len(self.warnings),
+            critical_error_count=len(self.get_critical_errors()),
+        )
 
     @classmethod
     def create_success(
         cls,
         execution: ModelCliExecution,
-        output_data: dict[str, Any] | ModelCliOutputData | None = None,
+        output_data: ModelCliOutputData | None = None,
         output_text: str | None = None,
         execution_time: ModelDuration | None = None,
     ) -> "ModelCliResult":
@@ -247,19 +247,16 @@ class ModelCliResult(BaseModel):
         # Mark execution as completed
         execution.mark_completed()
 
-        # Convert dict to ModelCliOutputData if needed
-        if isinstance(output_data, ModelCliOutputData):
-            output_data_obj = output_data
-        elif output_data is not None:
-            output_data_obj = ModelCliOutputData.from_dict(output_data)
-        else:
-            output_data_obj = ModelCliOutputData()
+        # Use provided output data or create empty one
+        output_data_obj = output_data or ModelCliOutputData()
 
         return cls(
             execution=execution,
             success=True,
             exit_code=0,
             output_data=output_data_obj,
+            performance_metrics=None,
+            trace_data=None,
             output_text=output_text,
             error_message=None,
             error_details=None,
@@ -296,6 +293,8 @@ class ModelCliResult(BaseModel):
             debug_info=None,
             result_metadata=None,
             execution_time=execution_time,
+            performance_metrics=None,
+            trace_data=None,
         )
 
     @classmethod
@@ -327,6 +326,8 @@ class ModelCliResult(BaseModel):
             debug_info=None,
             result_metadata=None,
             execution_time=execution_time,
+            performance_metrics=None,
+            trace_data=None,
         )
 
 

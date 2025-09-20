@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
+from .model_metrics_data import ModelMetricsData
 
 
 class ModelProgress(BaseModel):
@@ -89,9 +90,9 @@ class ModelProgress(BaseModel):
     )
 
     # Metadata
-    custom_metrics: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Custom progress metrics",
+    custom_metrics: ModelMetricsData = Field(
+        default_factory=ModelMetricsData,
+        description="Custom progress metrics with clean typing",
     )
     tags: list[str] = Field(
         default_factory=list,
@@ -306,7 +307,7 @@ class ModelProgress(BaseModel):
         self.completed_milestones.clear()
         self.custom_metrics.clear()
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> dict[str, str | int | bool | float | None]:
         """Get progress summary."""
         return {
             "percentage": self.percentage,

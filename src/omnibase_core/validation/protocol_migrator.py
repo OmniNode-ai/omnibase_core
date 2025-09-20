@@ -7,7 +7,7 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict, cast
 
 from .validation_utils import (
     ProtocolInfo,
@@ -18,6 +18,47 @@ from .validation_utils import (
 )
 
 
+class MigrationConflictBaseDict(TypedDict):
+    """Base type definition for migration conflict information."""
+
+    type: str
+    protocol_name: str
+    source_file: str
+    spi_file: str
+    recommendation: str
+
+
+class MigrationNameConflictDict(MigrationConflictBaseDict):
+    """Type definition for name conflict information."""
+
+    source_signature: str
+    spi_signature: str
+
+
+class MigrationDuplicateConflictDict(MigrationConflictBaseDict):
+    """Type definition for exact duplicate conflict information."""
+
+    signature_hash: str
+
+
+# Union type for all conflict types
+MigrationConflictDict = MigrationNameConflictDict | MigrationDuplicateConflictDict
+
+
+class MigrationStepDict(TypedDict, total=False):
+    """Type definition for migration step information."""
+
+    phase: str  # "preparation", "migration", "finalization"
+    action: str
+    description: str
+    estimated_minutes: int
+    # Optional fields for migration phase
+    protocol: str
+    source_file: str
+    target_category: str
+    target_path: str
+
+
 @dataclass
 class MigrationPlan:
     """Plan for migrating protocols to omnibase_spi."""
@@ -26,8 +67,8 @@ class MigrationPlan:
     source_repository: str
     target_repository: str
     protocols_to_migrate: list[ProtocolInfo]
-    conflicts_detected: list[dict[str, Any]]
-    migration_steps: list[dict[str, Any]]
+    conflicts_detected: list[MigrationConflictDict]
+    migration_steps: list[MigrationStepDict]
     estimated_time_minutes: int
     recommendations: list[str]
 
@@ -211,7 +252,7 @@ class ProtocolMigrator:
         self,
         source_protocols: list[ProtocolInfo],
         spi_protocols: list[ProtocolInfo],
-    ) -> list[dict[str, Any]]:
+    ) -> list[MigrationConflictDict]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts = []
 
@@ -225,29 +266,35 @@ class ProtocolMigrator:
                 spi_protocol = spi_by_name[source_protocol.name]
                 if source_protocol.signature_hash != spi_protocol.signature_hash:
                     conflicts.append(
-                        {
-                            "type": "name_conflict",
-                            "protocol_name": source_protocol.name,
-                            "source_file": source_protocol.file_path,
-                            "spi_file": spi_protocol.file_path,
-                            "source_signature": source_protocol.signature_hash,
-                            "spi_signature": spi_protocol.signature_hash,
-                            "recommendation": "Rename one of the protocols or merge if appropriate",
-                        },
+                        cast(
+                            MigrationConflictDict,
+                            {
+                                "type": "name_conflict",
+                                "protocol_name": source_protocol.name,
+                                "source_file": source_protocol.file_path,
+                                "spi_file": spi_protocol.file_path,
+                                "source_signature": source_protocol.signature_hash,
+                                "spi_signature": spi_protocol.signature_hash,
+                                "recommendation": "Rename one of the protocols or merge if appropriate",
+                            },
+                        )
                     )
 
             # Check for exact signature duplicates
             elif source_protocol.signature_hash in spi_by_signature:
                 spi_protocol = spi_by_signature[source_protocol.signature_hash]
                 conflicts.append(
-                    {
-                        "type": "exact_duplicate",
-                        "protocol_name": source_protocol.name,
-                        "source_file": source_protocol.file_path,
-                        "spi_file": spi_protocol.file_path,
-                        "signature_hash": source_protocol.signature_hash,
-                        "recommendation": f"Skip migration - use existing SPI version: {spi_protocol.name}",
-                    },
+                    cast(
+                        MigrationConflictDict,
+                        {
+                            "type": "exact_duplicate",
+                            "protocol_name": source_protocol.name,
+                            "source_file": source_protocol.file_path,
+                            "spi_file": spi_protocol.file_path,
+                            "signature_hash": source_protocol.signature_hash,
+                            "recommendation": f"Skip migration - use existing SPI version: {spi_protocol.name}",
+                        },
+                    )
                 )
 
         return conflicts
@@ -255,27 +302,33 @@ class ProtocolMigrator:
     def _generate_migration_steps(
         self,
         protocols: list[ProtocolInfo],
-    ) -> list[dict[str, Any]]:
+    ) -> list[MigrationStepDict]:
         """Generate detailed migration steps."""
         steps = []
 
         # Pre-migration steps
         steps.append(
-            {
-                "phase": "preparation",
-                "action": "backup_source",
-                "description": "Create backup of source repository",
-                "estimated_minutes": 2,
-            },
+            cast(
+                MigrationStepDict,
+                {
+                    "phase": "preparation",
+                    "action": "backup_source",
+                    "description": "Create backup of source repository",
+                    "estimated_minutes": 2,
+                },
+            )
         )
 
         steps.append(
-            {
-                "phase": "preparation",
-                "action": "validate_spi_structure",
-                "description": "Ensure SPI directory structure exists",
-                "estimated_minutes": 1,
-            },
+            cast(
+                MigrationStepDict,
+                {
+                    "phase": "preparation",
+                    "action": "validate_spi_structure",
+                    "description": "Ensure SPI directory structure exists",
+                    "estimated_minutes": 1,
+                },
+            )
         )
 
         # Protocol migration steps
@@ -283,35 +336,44 @@ class ProtocolMigrator:
             spi_category = suggest_spi_location(protocol)
 
             steps.append(
-                {
-                    "phase": "migration",
-                    "action": "migrate_protocol",
-                    "protocol": protocol.name,
-                    "source_file": protocol.file_path,
-                    "target_category": spi_category,
-                    "target_path": f"omnibase_spi/protocols/{spi_category}/",
-                    "description": f"Migrate {protocol.name} to SPI {spi_category} category",
-                    "estimated_minutes": 3,
-                },
+                cast(
+                    MigrationStepDict,
+                    {
+                        "phase": "migration",
+                        "action": "migrate_protocol",
+                        "protocol": protocol.name,
+                        "source_file": protocol.file_path,
+                        "target_category": spi_category,
+                        "target_path": f"omnibase_spi/protocols/{spi_category}/",
+                        "description": f"Migrate {protocol.name} to SPI {spi_category} category",
+                        "estimated_minutes": 3,
+                    },
+                )
             )
 
         # Post-migration steps
         steps.append(
-            {
-                "phase": "finalization",
-                "action": "update_imports",
-                "description": "Update import statements in dependent files",
-                "estimated_minutes": 5,
-            },
+            cast(
+                MigrationStepDict,
+                {
+                    "phase": "finalization",
+                    "action": "update_imports",
+                    "description": "Update import statements in dependent files",
+                    "estimated_minutes": 5,
+                },
+            )
         )
 
         steps.append(
-            {
-                "phase": "finalization",
-                "action": "run_tests",
-                "description": "Execute tests to verify migration success",
-                "estimated_minutes": 3,
-            },
+            cast(
+                MigrationStepDict,
+                {
+                    "phase": "finalization",
+                    "action": "run_tests",
+                    "description": "Execute tests to verify migration success",
+                    "estimated_minutes": 3,
+                },
+            )
         )
 
         return steps

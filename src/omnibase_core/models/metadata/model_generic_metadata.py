@@ -29,7 +29,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         default_factory=list,
         description="Metadata tags",
     )
-    custom_fields: dict[str, Any] | None = Field(
+    custom_fields: dict[str, str | int | bool | float] | None = Field(
         default=None,
         description="Custom metadata fields",
     )
@@ -60,32 +60,3 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             del self.custom_fields[key]
             return True
         return False
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
-        result = self.model_dump(exclude_none=True)
-        if self.custom_fields:
-            # Merge custom fields into the main dict
-            for key, value in self.custom_fields.items():
-                if key not in result:  # Don't override standard fields
-                    result[key] = value
-        return result
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelGenericMetadata[T]":
-        """Create from dictionary."""
-        known_fields = set(cls.model_fields.keys())
-        standard_data = {}
-        custom_data = {}
-
-        for key, value in data.items():
-            if key in known_fields:
-                standard_data[key] = value
-            else:
-                custom_data[key] = value
-
-        instance = cls(**standard_data)
-        if custom_data:
-            instance.custom_fields = custom_data
-
-        return instance

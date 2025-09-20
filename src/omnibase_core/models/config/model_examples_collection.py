@@ -2,26 +2,115 @@
 Examples collection model.
 """
 
+from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-# TODO: These models need to be implemented
-# from .model_example import ModelExample
-# from .model_example_metadata import ModelExampleMetadata
+from ..metadata.model_generic_metadata import ModelGenericMetadata
+from .model_examples_collection_summary import ModelExamplesCollectionSummary
 
 
-# Temporary placeholder classes until the actual models are implemented
 class ModelExample(BaseModel):
-    name: str = ""
-    description: str = ""
-    content: Any = None
+    """
+    Strongly typed example model with comprehensive fields.
+
+    Replaces placeholder implementation with proper validation and structure.
+    """
+
+    # Core identification
+    example_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique identifier for this example",
+    )
+
+    name: str = Field(
+        ...,
+        description="Name/title of the example",
+        min_length=1,
+    )
+
+    description: str | None = Field(
+        None,
+        description="Detailed description of what this example demonstrates",
+    )
+
+    # Data fields
+    input_data: ModelGenericMetadata[Any] | None = Field(
+        None,
+        description="Input data for the example with type safety",
+    )
+
+    output_data: ModelGenericMetadata[Any] | None = Field(
+        None,
+        description="Expected output data for the example",
+    )
+
+    context: ModelGenericMetadata[Any] | None = Field(
+        None,
+        description="Additional context information for the example",
+    )
+
+    # Metadata
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorizing and searching examples",
+    )
+
+    # Validation
+    is_valid: bool = Field(
+        default=True,
+        description="Whether this example passes validation",
+    )
+
+    validation_notes: str | None = Field(
+        None,
+        description="Notes about validation status or issues",
+    )
+
+    # Timestamps
+    created_at: datetime | None = Field(
+        None,
+        description="When this example was created",
+    )
+
+    updated_at: datetime | None = Field(
+        None,
+        description="When this example was last updated",
+    )
 
 
 class ModelExampleMetadata(BaseModel):
-    title: str = ""
-    tags: list[str] = Field(default_factory=list)
-    difficulty: str = "beginner"
+    """
+    Metadata for example collections with enhanced structure.
+    """
+
+    title: str = Field(
+        default="",
+        description="Title for the examples collection",
+    )
+
+    description: str | None = Field(
+        None,
+        description="Description of the examples collection",
+    )
+
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags for the entire collection",
+    )
+
+    difficulty: str = Field(
+        default="beginner",
+        description="Difficulty level (beginner, intermediate, advanced)",
+        pattern="^(beginner|intermediate|advanced)$",
+    )
+
+    category: str | None = Field(
+        None,
+        description="Category this collection belongs to",
+    )
 
 
 from ..metadata.model_generic_metadata import ModelGenericMetadata
@@ -66,7 +155,7 @@ class ModelExamples(BaseModel):
     ) -> None:
         """Add a new example with full type safety."""
         example = ModelExample(
-            name=name,
+            name=name or f"Example_{len(self.examples) + 1}",
             description=description,
             input_data=input_data,
             output_data=output_data,
@@ -74,8 +163,8 @@ class ModelExamples(BaseModel):
             tags=tags or [],
             is_valid=True,
             validation_notes=None,
-            created_at=None,
-            updated_at=None,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         self.examples.append(example)
 
@@ -115,56 +204,56 @@ class ModelExamples(BaseModel):
         """Get number of valid examples."""
         return len(self.get_valid_examples())
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary with strong typing preserved."""
-        return {
-            "examples": [example.model_dump() for example in self.examples],
-            "metadata": self.metadata.model_dump() if self.metadata else None,
-            "format": self.format,
-            "schema_compliant": self.schema_compliant,
-            "example_count": self.example_count(),
-            "valid_example_count": self.valid_example_count(),
-        }
+    def to_summary(self) -> ModelExamplesCollectionSummary:
+        """Convert to clean, strongly-typed summary model."""
+        from .model_examples_collection_summary import (
+            ModelExampleMetadataSummary,
+            ModelExampleSummary,
+        )
 
-    @classmethod
-    def from_dict(cls, data: Any) -> "ModelExamples":
-        """Create from dictionary with strict type validation."""
-        if not isinstance(data, dict):
-            msg = f"Expected dictionary, got {type(data)}"
-            raise ValueError(msg)
+        # Convert examples to summaries
+        example_summaries = []
+        for example in self.examples:
+            example_summaries.append(
+                ModelExampleSummary(
+                    example_id=str(example.example_id),
+                    name=example.name,
+                    description=example.description,
+                    is_valid=True,  # You can add validation logic here
+                    input_data=(
+                        example.input_data.model_dump() if example.input_data else None
+                    ),
+                    output_data=(
+                        example.output_data.model_dump()
+                        if example.output_data
+                        else None
+                    ),
+                )
+            )
 
-        examples: list[ModelExample] = []
+        # Convert metadata
+        metadata_summary = None
+        if self.metadata:
+            metadata_summary = ModelExampleMetadataSummary(
+                created_at=(
+                    str(self.metadata.created_at) if self.metadata.created_at else None
+                ),
+                updated_at=(
+                    str(self.metadata.updated_at) if self.metadata.updated_at else None
+                ),
+                version=self.metadata.version,
+                author=self.metadata.author,
+                tags=self.metadata.tags or [],
+                custom_fields=self.metadata.custom_fields or {},
+            )
 
-        # Handle different input formats with validation
-        if "examples" in data and isinstance(data["examples"], list):
-            for example_data in data["examples"]:
-                if not isinstance(example_data, dict):
-                    msg = f"Example data must be a dictionary, got {type(example_data)}"
-                    raise ValueError(
-                        msg,
-                    )
-
-                # Create ModelExample with proper validation
-                try:
-                    examples.append(ModelExample(**example_data))
-                except Exception as e:
-                    msg = f"Failed to create ModelExample: {e}"
-                    raise ValueError(msg)
-
-        # Create metadata if present
-        metadata = None
-        if data.get("metadata"):
-            if isinstance(data["metadata"], dict):
-                metadata = ModelExampleMetadata(**data["metadata"])
-            else:
-                msg = "Metadata must be a dictionary"
-                raise ValueError(msg)
-
-        return cls(
-            examples=examples,
-            metadata=metadata,
-            format=data.get("format", "json"),
-            schema_compliant=data.get("schema_compliant", True),
+        return ModelExamplesCollectionSummary(
+            examples=example_summaries,
+            metadata=metadata_summary,
+            format=self.format,
+            schema_compliant=self.schema_compliant,
+            example_count=self.example_count(),
+            valid_example_count=self.valid_example_count(),
         )
 
     @classmethod
@@ -181,7 +270,7 @@ class ModelExamples(BaseModel):
     ) -> "ModelExamples":
         """Create collection with a single example."""
         example = ModelExample(
-            name=name,
+            name=name or "Single Example",
             description=None,
             input_data=input_data,
             output_data=output_data,
@@ -189,7 +278,7 @@ class ModelExamples(BaseModel):
             tags=[],
             is_valid=True,
             validation_notes=None,
-            created_at=None,
-            updated_at=None,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         return cls(examples=[example])

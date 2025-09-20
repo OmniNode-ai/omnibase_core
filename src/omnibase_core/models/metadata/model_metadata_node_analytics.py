@@ -10,6 +10,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ..infrastructure.model_metrics_data import ModelMetricsData
+from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
+
 
 class ModelMetadataNodeAnalytics(BaseModel):
     """
@@ -97,9 +100,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
     )
 
     # Custom analytics for extensibility
-    custom_metrics: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Custom analytics metrics",
+    custom_metrics: ModelMetricsData = Field(
+        default_factory=ModelMetricsData,
+        description="Custom analytics metrics with clean typing",
     )
 
     def get_success_rate(self) -> float:
@@ -190,21 +193,25 @@ class ModelMetadataNodeAnalytics(BaseModel):
         )
         return self.health_score
 
-    def to_summary(self) -> dict[str, Any]:
-        """Get analytics summary."""
-        return {
-            "collection_name": self.collection_name,
-            "total_nodes": self.total_nodes,
-            "health_score": self.health_score,
-            "success_rate": self.overall_success_rate,
-            "documentation_coverage": self.documentation_coverage,
-            "active_nodes": self.get_active_node_count(),
-            "deprecated_nodes": self.get_deprecated_node_count(),
-            "disabled_nodes": self.get_disabled_node_count(),
-            "error_count": self.error_count,
-            "warning_count": self.warning_count,
-            "last_modified": self.last_modified,
-        }
+    def to_summary(self) -> ModelMetadataAnalyticsSummary:
+        """Get analytics summary with clean typing."""
+        return ModelMetadataAnalyticsSummary(
+            collection_name=self.collection_name,
+            total_nodes=self.total_nodes,
+            health_score=self.health_score,
+            success_rate=self.overall_success_rate,
+            documentation_coverage=self.documentation_coverage,
+            active_nodes=self.get_active_node_count(),
+            deprecated_nodes=self.get_deprecated_node_count(),
+            disabled_nodes=self.get_disabled_node_count(),
+            error_count=self.error_count,
+            warning_count=self.warning_count,
+            last_modified=self.last_modified,
+            average_execution_time_ms=self.average_execution_time_ms,
+            peak_memory_usage_mb=self.peak_memory_usage_mb,
+            total_invocations=self.total_invocations,
+            critical_error_count=self.critical_error_count,
+        )
 
     @classmethod
     def create_default(cls, collection_name: str = "") -> "ModelMetadataNodeAnalytics":

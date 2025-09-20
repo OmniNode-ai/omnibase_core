@@ -10,10 +10,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 
-from omnibase_core.enums.enum_auth_type import EnumAuthType
-from omnibase_core.enums.enum_connection_state import EnumConnectionState
-from omnibase_core.enums.enum_connection_type import EnumConnectionType
-
+from ...enums.enum_auth_type import EnumAuthType
+from ...enums.enum_connection_state import EnumConnectionState
+from ...enums.enum_connection_type import EnumConnectionType
 from ..connections.model_connection_metrics import ModelConnectionMetrics
 from ..connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
@@ -110,65 +109,6 @@ class ModelConnectionInfo(BaseModel):
     )
 
     model_config = ConfigDict()
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for current standards."""
-        # Use model_dump() as base and apply transformations
-        data = self.model_dump(exclude_none=True)
-
-        # Mask sensitive fields for security
-        if "password" in data:
-            data["password"] = "***MASKED***"
-        if "api_key" in data:
-            data["api_key"] = "***MASKED***"
-        if "token" in data:
-            data["token"] = "***MASKED***"
-
-        # Flatten custom_properties for current standards
-        if "custom_properties" in data and isinstance(data["custom_properties"], dict):
-            custom_props = data.pop("custom_properties")
-            # Merge non-None values back into main dict
-            for key, value in custom_props.items():
-                if value is not None and key not in [
-                    "custom_strings",
-                    "custom_numbers",
-                    "custom_flags",
-                ]:
-                    data[key] = value
-
-        return data
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelConnectionInfo":
-        """Create from dictionary for easy migration."""
-        # Handle legacy format
-        if "connection_id" not in data:
-            data["connection_id"] = (
-                f"{data.get('host', 'unknown')}:{data.get('port', 0)}"
-            )
-        if "connection_type" not in data:
-            data["connection_type"] = EnumConnectionType.TCP
-
-        # Extract custom properties from flat dict
-        known_fields = set(cls.model_fields.keys())
-        custom_props = {}
-        custom_fields_map = ModelCustomConnectionProperties.model_fields.keys()
-
-        # Move unknown fields to custom_properties
-        for key in list(data.keys()):
-            if (
-                key not in known_fields
-                and key != "custom_properties"
-                and key in custom_fields_map
-            ):
-                custom_props[key] = data.pop(key)
-
-        if custom_props and "custom_properties" not in data:
-            data["custom_properties"] = custom_props
-        elif custom_props and isinstance(data.get("custom_properties"), dict):
-            data["custom_properties"].update(custom_props)
-
-        return cls(**data)
 
     def get_connection_string(self) -> str:
         """Generate connection string."""

@@ -11,10 +11,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_complexity import EnumComplexity
-from omnibase_core.enums.enum_function_status import EnumFunctionStatus
-from omnibase_core.enums.enum_memory_usage import EnumMemoryUsage
-from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
+from ...enums.enum_complexity import EnumComplexity
+from ...enums.enum_function_status import EnumFunctionStatus
+from ...enums.enum_memory_usage import EnumMemoryUsage
+from ...enums.enum_runtime_category import EnumRuntimeCategory
+from .model_function_node_summary import ModelFunctionNodeSummary
 
 
 class ModelFunctionNode(BaseModel):
@@ -115,7 +116,7 @@ class ModelFunctionNode(BaseModel):
     )
 
     # Custom metadata for extensibility
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
@@ -209,23 +210,36 @@ class ModelFunctionNode(BaseModel):
         """Mark function as validated."""
         self.last_validated = datetime.now(UTC)
 
-    def to_summary(self) -> dict[str, Any]:
-        """Get function summary for quick overview."""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "function_type": self.function_type,
-            "status": self.status,
-            "complexity": self.complexity,
-            "parameter_count": self.get_parameter_count(),
-            "has_documentation": self.has_documentation(),
-            "has_examples": self.has_examples(),
-            "has_type_annotations": self.has_type_annotations(),
-            "tags": self.tags,
-            "categories": self.categories,
-            "version": self.version,
-            "updated_at": self.updated_at.isoformat(),
-        }
+    def to_summary(self) -> ModelFunctionNodeSummary:
+        """Get function summary with clean typing."""
+        return ModelFunctionNodeSummary(
+            name=self.name,
+            description=self.description,
+            function_type=self.function_type,
+            status=self.status,
+            complexity=self.complexity,
+            version=self.version,
+            parameter_count=self.get_parameter_count(),
+            return_type=self.return_type,
+            has_documentation=self.has_documentation(),
+            has_examples=self.has_examples(),
+            has_type_annotations=self.has_type_annotations(),
+            has_tests=self.has_tests(),
+            tags=self.tags,
+            categories=self.categories,
+            dependencies=self.dependencies,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            last_validated=self.last_validated,
+            execution_count=0,  # Add actual metrics if available
+            success_rate=0.0,  # Add actual metrics if available
+            average_execution_time_ms=0.0,  # Add actual metrics if available
+            memory_usage_mb=0.0,  # Add actual metrics if available
+            cyclomatic_complexity=1,  # Add actual complexity calculation if available
+            lines_of_code=(
+                len(self.implementation.split("\n")) if self.implementation else 0
+            ),
+        )
 
     @classmethod
     def create_simple(

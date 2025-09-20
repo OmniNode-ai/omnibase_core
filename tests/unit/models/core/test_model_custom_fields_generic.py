@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from ..core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 
 
 class TestModelCustomFieldsGeneric:
@@ -62,8 +62,8 @@ class TestModelCustomFieldsGeneric:
         """Test factory methods with generic types."""
         data = {"name": "test", "value": 123, "active": True, "tags": ["a", "b"]}
 
-        # Test from_dict with generic type
-        fields = ModelCustomFields[dict[str, Any]].from_dict(data)
+        # Test BaseModel instantiation with generic type
+        fields = ModelCustomFields[dict[str, Any]](**data)
 
         assert fields.get_string("name") == "test"
         assert fields.get_int("value") == 123
@@ -112,8 +112,8 @@ class TestModelCustomFieldsGeneric:
         fields.set_field("bool_val", True)
         fields.set_field("list_val", [1, 2, 3])
 
-        # Test to_dict
-        data = fields.to_dict()
+        # Test model_dump
+        data = fields.model_dump(exclude_none=True)
         expected = {
             "string_val": "test",
             "int_val": 42,
@@ -123,8 +123,8 @@ class TestModelCustomFieldsGeneric:
         assert data == expected
 
         # Test round-trip
-        restored = ModelCustomFields[Any].from_dict(data)
-        assert restored.to_dict() == expected
+        restored = ModelCustomFields[Any](**data)
+        assert restored.model_dump(exclude_none=True) == expected
 
     def test_generic_pydantic_validation(self):
         """Test Pydantic validation with generic types."""

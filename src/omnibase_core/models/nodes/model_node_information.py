@@ -4,14 +4,13 @@ Node information model.
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-
+from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...enums.enum_registry_status import EnumRegistryStatus
 from ..nodes.model_node_configuration import ModelNodeConfiguration
 
 
@@ -73,27 +72,3 @@ class ModelNodeInformation(BaseModel):
         default_factory=list,
         description="Node dependencies",
     )
-
-    @classmethod
-    def from_dict(
-        cls,
-        data: dict[str, Any] | None,
-    ) -> Optional["ModelNodeInformation"]:
-        """Create from dictionary for easy migration."""
-        if data is None:
-            return None
-
-        # Create a copy to avoid mutating original data
-        normalized_data = data.copy()
-
-        # Apply field mappings for current standards
-        normalized_data.setdefault("node_id", normalized_data.get("id", "unknown"))
-        normalized_data.setdefault("node_name", normalized_data.get("name", "unknown"))
-        normalized_data.setdefault("node_type", normalized_data.get("type", "generic"))
-        normalized_data.setdefault(
-            "node_version",
-            normalized_data.get("version", "1.0.0"),
-        )
-
-        # Use Pydantic validation instead of manual validation
-        return cls.model_validate(normalized_data)

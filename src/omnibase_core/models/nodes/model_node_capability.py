@@ -9,6 +9,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_performance_impact import EnumPerformanceImpact
+from ..metadata.model_semver import ModelSemVer
+
 
 class ModelNodeCapability(BaseModel):
     """
@@ -36,8 +39,8 @@ class ModelNodeCapability(BaseModel):
     )
 
     # Metadata fields
-    version_introduced: str = Field(
-        default="1.0.0",
+    version_introduced: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="ONEX version when this capability was introduced",
     )
 
@@ -51,10 +54,9 @@ class ModelNodeCapability(BaseModel):
         description="Whether this capability requires configuration",
     )
 
-    performance_impact: str = Field(
-        default="low",
-        description="Performance impact level (low, medium, high)",
-        pattern="^(low|medium|high)$",
+    performance_impact: EnumPerformanceImpact = Field(
+        default=EnumPerformanceImpact.LOW,
+        description="Performance impact level for this capability",
     )
 
     # Optional fields
@@ -68,7 +70,7 @@ class ModelNodeCapability(BaseModel):
         description="Replacement capability if deprecated",
     )
 
-    example_config: dict[str, Any] | None = Field(
+    example_config: dict[str, str | int | bool] | None = Field(
         default=None,
         description="Example configuration for this capability",
     )
@@ -81,9 +83,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_DRY_RUN",
             value="supports_dry_run",
             description="Node can simulate execution without side effects",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=False,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
         )
 
     @classmethod
@@ -93,9 +95,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_BATCH_PROCESSING",
             value="supports_batch_processing",
             description="Node can process multiple items in a single execution",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
-            performance_impact="medium",
+            performance_impact=EnumPerformanceImpact.MEDIUM,
             example_config={"batch_size": 100, "parallel_workers": 4},
         )
 
@@ -106,9 +108,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_CUSTOM_HANDLERS",
             value="supports_custom_handlers",
             description="Node accepts custom handler implementations",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
             dependencies=["SUPPORTS_SCHEMA_VALIDATION"],
         )
 
@@ -119,9 +121,9 @@ class ModelNodeCapability(BaseModel):
             name="TELEMETRY_ENABLED",
             value="telemetry_enabled",
             description="Node emits telemetry data for monitoring",
-            version_introduced="1.1.0",
+            version_introduced=ModelSemVer(major=1, minor=1, patch=0),
             configuration_required=True,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
             example_config={"telemetry_endpoint": "http://telemetry.example.com"},
         )
 
@@ -132,9 +134,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_CORRELATION_ID",
             value="supports_correlation_id",
             description="Node preserves correlation IDs across executions",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=False,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
         )
 
     @classmethod
@@ -144,9 +146,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_EVENT_BUS",
             value="supports_event_bus",
             description="Node can publish and consume events via event bus",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=True,
-            performance_impact="medium",
+            performance_impact=EnumPerformanceImpact.MEDIUM,
             dependencies=["SUPPORTS_CORRELATION_ID"],
             example_config={"event_bus_type": "kafka", "topic": "node-events"},
         )
@@ -158,9 +160,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_SCHEMA_VALIDATION",
             value="supports_schema_validation",
             description="Node validates input/output against JSON schemas",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             configuration_required=False,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
         )
 
     @classmethod
@@ -170,9 +172,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_ERROR_RECOVERY",
             value="supports_error_recovery",
             description="Node can recover from errors with retry logic",
-            version_introduced="1.1.0",
+            version_introduced=ModelSemVer(major=1, minor=1, patch=0),
             configuration_required=True,
-            performance_impact="medium",
+            performance_impact=EnumPerformanceImpact.MEDIUM,
             example_config={"max_retries": 3, "backoff_strategy": "exponential"},
         )
 
@@ -183,9 +185,9 @@ class ModelNodeCapability(BaseModel):
             name="SUPPORTS_EVENT_DISCOVERY",
             value="supports_event_discovery",
             description="Node can discover available events and their schemas",
-            version_introduced="1.2.0",
+            version_introduced=ModelSemVer(major=1, minor=2, patch=0),
             configuration_required=False,
-            performance_impact="low",
+            performance_impact=EnumPerformanceImpact.LOW,
             dependencies=["SUPPORTS_EVENT_BUS", "SUPPORTS_SCHEMA_VALIDATION"],
         )
 
@@ -213,7 +215,7 @@ class ModelNodeCapability(BaseModel):
             name=capability_upper,
             value=capability.lower(),
             description=f"Custom capability: {capability}",
-            version_introduced="1.0.0",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     def __str__(self) -> str:
@@ -228,7 +230,6 @@ class ModelNodeCapability(BaseModel):
             return self.name == other.name
         return False
 
-    def is_compatible_with_version(self, version: str) -> bool:
+    def is_compatible_with_version(self, version: ModelSemVer) -> bool:
         """Check if this capability is available in a given ONEX version."""
-        # Simple string comparison - could be enhanced with proper version parsing
         return self.version_introduced <= version

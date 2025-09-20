@@ -129,35 +129,6 @@ class ModelEnvironmentVariables(BaseModel):
             if name not in self.secure_variables
         }
 
-    def to_dict(self, include_secure: bool = True) -> dict[str, str]:
-        """
-        Convert to dictionary format.
-
-        Args:
-            include_secure: Whether to include secure variables
-
-        Returns:
-            Dictionary of environment variables
-        """
-        if include_secure:
-            return dict(self.variables)
-        return self.get_non_secure_variables()
-
-    def to_sanitized_dict(self) -> dict[str, str]:
-        """
-        Convert to dictionary with secure variables sanitized.
-
-        Returns:
-            Dictionary with secure values replaced with '[SECURE]'
-        """
-        result = {}
-        for name, value in self.variables.items():
-            if name in self.secure_variables:
-                result[name] = "[SECURE]"
-            else:
-                result[name] = value
-        return result
-
     def merge(self, other: "ModelEnvironmentVariables", override: bool = True) -> None:
         """
         Merge another environment variables model into this one.
@@ -197,25 +168,6 @@ class ModelEnvironmentVariables(BaseModel):
             List of missing required variables
         """
         return [var for var in required_vars if var not in self.variables]
-
-    @classmethod
-    def from_dict(
-        cls, env_dict: dict[str, str], secure_vars: list[str] | None = None
-    ) -> "ModelEnvironmentVariables":
-        """
-        Create from dictionary.
-
-        Args:
-            env_dict: Dictionary of environment variables
-            secure_vars: List of variable names to mark as secure
-
-        Returns:
-            New ModelEnvironmentVariables instance
-        """
-        instance = cls(variables=env_dict)
-        if secure_vars:
-            instance.secure_variables.update(secure_vars)
-        return instance
 
     @classmethod
     def from_system(
@@ -279,8 +231,7 @@ class ModelEnvironmentVariables(BaseModel):
 
     def __str__(self) -> str:
         """String representation with secure variables hidden."""
-        sanitized = self.to_sanitized_dict()
-        return f"ModelEnvironmentVariables({len(sanitized)} variables)"
+        return f"ModelEnvironmentVariables({len(self.variables)} variables)"
 
     def __repr__(self) -> str:
         """Detailed representation."""

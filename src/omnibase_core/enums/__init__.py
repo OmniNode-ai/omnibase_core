@@ -6,6 +6,7 @@ Enumeration definitions for ONEX architecture with strong typing support.
 
 from .enum_artifact_type import EnumArtifactType
 from .enum_auth_type import EnumAuthType
+from .enum_cli_action import EnumCliAction
 from .enum_cli_status import EnumCliStatus
 from .enum_complexity import EnumComplexity
 from .enum_connection_state import EnumConnectionState
@@ -19,6 +20,7 @@ from .enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from .enum_metadata_node_status import EnumMetadataNodeStatus
 from .enum_metadata_node_type import EnumMetadataNodeType
 from .enum_output_format import EnumOutputFormat
+from .enum_performance_impact import EnumPerformanceImpact
 from .enum_registry_status import EnumRegistryStatus
 from .enum_runtime_category import EnumRuntimeCategory
 from .enum_scenario_status import EnumScenarioStatus
@@ -27,6 +29,7 @@ from .enum_validation_severity import EnumValidationSeverity
 __all__ = [
     "EnumArtifactType",
     "EnumAuthType",
+    "EnumCliAction",
     "EnumCliStatus",
     "EnumComplexity",
     "EnumConnectionState",
@@ -40,6 +43,7 @@ __all__ = [
     "EnumMetadataNodeStatus",
     "EnumMetadataNodeType",
     "EnumOutputFormat",
+    "EnumPerformanceImpact",
     "EnumRegistryStatus",
     "EnumRuntimeCategory",
     "EnumScenarioStatus",

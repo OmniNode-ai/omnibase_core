@@ -10,6 +10,7 @@ from typing import Any, ClassVar
 from pydantic import BaseModel, ConfigDict, Field
 
 from ...core.decorators import allow_any_type, allow_dict_str_any
+from .model_cli_output_data import ModelCliOutputData
 
 
 @allow_dict_str_any("CLI execution results must handle diverse tool output types")
@@ -30,8 +31,8 @@ class ModelCliExecutionResult(BaseModel):
     )
 
     # Output data
-    output_data: dict[str, Any] = Field(
-        default_factory=dict,
+    output_data: ModelCliOutputData = Field(
+        default_factory=ModelCliOutputData,
         description="Tool execution output data",
     )
 
@@ -55,7 +56,7 @@ class ModelCliExecutionResult(BaseModel):
     @classmethod
     def create_success(
         cls,
-        output_data: dict[str, Any] | None = None,
+        output_data: ModelCliOutputData | None = None,
         tool_name: str | None = None,
         execution_time_ms: float | None = None,
         **kwargs: Any,
@@ -74,7 +75,7 @@ class ModelCliExecutionResult(BaseModel):
         """
         return cls(
             success=True,
-            output_data=output_data or {},
+            output_data=output_data or ModelCliOutputData(),
             tool_name=tool_name,
             execution_time_ms=execution_time_ms,
             status_code=0,
@@ -87,7 +88,7 @@ class ModelCliExecutionResult(BaseModel):
         error_message: str,
         tool_name: str | None = None,
         status_code: int = 1,
-        output_data: dict[str, Any] | None = None,
+        output_data: ModelCliOutputData | None = None,
         **kwargs: Any,
     ) -> "ModelCliExecutionResult":
         """
@@ -108,7 +109,7 @@ class ModelCliExecutionResult(BaseModel):
             error_message=error_message,
             tool_name=tool_name,
             status_code=status_code,
-            output_data=output_data or {},
+            output_data=output_data or ModelCliOutputData(),
             **kwargs,
         )
 

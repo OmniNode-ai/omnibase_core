@@ -61,7 +61,7 @@ class ModelTimeout(BaseModel):
         default=None,
         description="Human-readable timeout description",
     )
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Custom timeout metadata",
     )
@@ -261,23 +261,6 @@ class ModelTimeout(BaseModel):
             runtime_category=category,
             description=description,
         )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary representation."""
-        return {
-            "timeout_seconds": self.timeout_seconds,
-            "timeout_minutes": self.timeout_minutes,
-            "timeout_hours": self.timeout_hours,
-            "warning_threshold_seconds": self.warning_threshold_seconds,
-            "is_strict": self.is_strict,
-            "allow_extension": self.allow_extension,
-            "extension_limit_seconds": self.extension_limit_seconds,
-            "runtime_category": (
-                self.runtime_category.value if self.runtime_category else None
-            ),
-            "description": self.description,
-            "max_total_seconds": self.max_total_seconds,
-        }
 
 
 # Export for use

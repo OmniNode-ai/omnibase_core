@@ -139,7 +139,7 @@ class ModelRetryPolicy(BaseModel):
         default=None,
         description="Human-readable policy description",
     )
-    custom_metadata: dict[str, Any] = Field(
+    custom_metadata: dict[str, str | int | bool | float] = Field(
         default_factory=dict,
         description="Custom retry policy metadata",
     )
@@ -292,7 +292,7 @@ class ModelRetryPolicy(BaseModel):
         self.total_execution_time_seconds = 0.0
         self.successful_attempt = None
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> dict[str, str | int | bool | float | None]:
         """Get retry policy execution summary."""
         return {
             "max_retries": self.max_retries,

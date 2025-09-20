@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from ...enums.enum_validation_severity import EnumValidationSeverity
 
 # Compatibility alias for existing code
 ValidationSeverity = EnumValidationSeverity
@@ -28,7 +28,7 @@ class ModelValidationError(BaseModel):
         default=None,
         description="Error code for programmatic handling",
     )
-    details: dict[str, Any] | None = Field(
+    details: dict[str, str | int | bool] | None = Field(
         default=None,
         description="Additional error details",
     )

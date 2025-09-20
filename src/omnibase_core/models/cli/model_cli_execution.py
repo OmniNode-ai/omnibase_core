@@ -8,7 +8,6 @@ and state tracking for comprehensive command execution management.
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -16,6 +15,10 @@ from pydantic import BaseModel, Field
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_execution_status import EnumExecutionStatus
 from ...enums.enum_output_format import EnumOutputFormat
+from .model_cli_command_option import ModelCliCommandOption
+from .model_cli_execution_context import ModelCliExecutionContext
+from .model_cli_execution_input_data import ModelCliExecutionInputData
+from .model_cli_execution_summary import ModelCliExecutionSummary
 
 
 class ModelCliExecution(BaseModel):
@@ -38,7 +41,7 @@ class ModelCliExecution(BaseModel):
         default_factory=list,
         description="Command arguments",
     )
-    command_options: dict[str, Any] = Field(
+    command_options: dict[str, ModelCliCommandOption] = Field(
         default_factory=dict,
         description="Command options and flags",
     )
@@ -123,7 +126,7 @@ class ModelCliExecution(BaseModel):
     session_id: UUID | None = Field(default=None, description="Session identifier")
 
     # Input/output configuration
-    input_data: dict[str, Any] = Field(
+    input_data: dict[str, ModelCliExecutionInputData] = Field(
         default_factory=dict,
         description="Input data for execution",
     )
@@ -133,7 +136,7 @@ class ModelCliExecution(BaseModel):
     capture_output: bool = Field(default=True, description="Whether to capture output")
 
     # Custom metadata for extensibility
-    custom_context: dict[str, Any] = Field(
+    custom_context: dict[str, ModelCliExecutionContext] = Field(
         default_factory=dict,
         description="Custom execution context",
     )
@@ -207,7 +210,14 @@ class ModelCliExecution(BaseModel):
         self.status = EnumExecutionStatus.FAILED
         self.end_time = datetime.now(UTC)
         if reason:
-            self.custom_context["failure_reason"] = reason
+            failure_context = ModelCliExecutionContext(
+                key="failure_reason",
+                value=reason,
+                context_type="error",
+                source="system",
+                description="Execution failure reason",
+            )
+            self.custom_context["failure_reason"] = failure_context
 
     def mark_cancelled(self) -> None:
         """Mark execution as cancelled."""
@@ -232,38 +242,42 @@ class ModelCliExecution(BaseModel):
         if tag not in self.execution_tags:
             self.execution_tags.append(tag)
 
-    def add_context(self, key: str, value: Any) -> None:
+    def add_context(self, key: str, context: ModelCliExecutionContext) -> None:
         """Add custom context data."""
-        self.custom_context[key] = value
+        self.custom_context[key] = context
 
-    def get_context(self, key: str, default: Any = None) -> Any:
+    def get_context(
+        self, key: str, default: ModelCliExecutionContext | None = None
+    ) -> ModelCliExecutionContext | None:
         """Get custom context data."""
         return self.custom_context.get(key, default)
 
-    def add_input_data(self, key: str, value: Any) -> None:
+    def add_input_data(self, key: str, input_data: ModelCliExecutionInputData) -> None:
         """Add input data."""
-        self.input_data[key] = value
+        self.input_data[key] = input_data
 
-    def get_input_data(self, key: str, default: Any = None) -> Any:
+    def get_input_data(
+        self, key: str, default: ModelCliExecutionInputData | None = None
+    ) -> ModelCliExecutionInputData | None:
         """Get input data."""
         return self.input_data.get(key, default)
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelCliExecutionSummary:
         """Get execution summary."""
-        return {
-            "execution_id": self.execution_id,
-            "command_name": self.command_name,
-            "target_node_name": self.target_node_name,
-            "status": self.status,
-            "start_time": self.start_time.isoformat(),
-            "end_time": self.end_time.isoformat() if self.end_time else None,
-            "elapsed_ms": self.get_elapsed_ms(),
-            "retry_count": self.retry_count,
-            "is_dry_run": self.is_dry_run,
-            "is_test_execution": self.is_test_execution,
-            "progress_percentage": self.progress_percentage,
-            "current_phase": self.current_phase,
-        }
+        return ModelCliExecutionSummary(
+            execution_id=self.execution_id,
+            command_name=self.command_name,
+            target_node_name=self.target_node_name,
+            status=self.status,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            elapsed_ms=self.get_elapsed_ms(),
+            retry_count=self.retry_count,
+            is_dry_run=self.is_dry_run,
+            is_test_execution=self.is_test_execution,
+            progress_percentage=self.progress_percentage,
+            current_phase=self.current_phase,
+        )
 
     @classmethod
     def create_simple(
