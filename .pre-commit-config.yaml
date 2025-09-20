@@ -48,7 +48,7 @@ repos:
         language: system
         types: [python]
         args: [--config-file=mypy.ini, --show-error-codes, --no-error-summary]
-        files: ^src/omnibase_core/(core|model|enums|exceptions|decorators).*\.py$
+        files: ^src/omnibase_core/(core|models|enums|exceptions|decorators).*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
@@ -70,13 +70,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: validate-string-versions
-        name: ONEX String Version Anti-Pattern Detection
+      - id: validate-string-versions-and-ids
+        name: ONEX String Version & ID Type Validation (AST + Regex)
         entry: poetry run python scripts/validation/validate-string-versions.py
+        args: [--dir, src/omnibase_core/]
         language: system
-        pass_filenames: true
-        files: ^.*\.(py|yaml|yml)$
-        exclude: ^tests/fixtures/validation/
+        always_run: true
+        pass_filenames: false
+        exclude: ^(archive/|archived/|tests/fixtures/validation/)
         stages: [pre-commit]
 
       - id: validate-no-backward-compatibility
@@ -138,6 +139,16 @@ repos:
       - id: validate-no-dict-methods
         name: ONEX Dict Methods Anti-Pattern Detection (from_dict/to_dict banned)
         entry: poetry run python scripts/validation/validate-no-dict-methods.py
+        args: ['--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
+      - id: validate-anti-pattern-names
+        name: ONEX Anti-Pattern Name Detection (simple/mock/basic/wrapper banned)
+        entry: poetry run python scripts/validation/validate-anti-pattern-names.py
         args: ['--max-violations', '0']
         language: system
         pass_filenames: false

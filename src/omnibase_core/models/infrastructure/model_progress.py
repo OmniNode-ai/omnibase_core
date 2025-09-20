@@ -1,7 +1,8 @@
 """
-Progress Model.
+Progress Model (Updated).
 
 Specialized model for tracking and managing progress with validation and utilities.
+Updated to use ModelTimeBased for all timing aspects instead of raw datetime calculations.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -11,14 +12,15 @@ from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from .model_metrics_data import ModelMetricsData
+from .model_time_based import ModelTimeBased, TimeUnit
 
 
 class ModelProgress(BaseModel):
     """
-    Progress tracking model.
+    Progress tracking model with unified time-based operations.
 
     Provides comprehensive progress tracking with percentage validation,
-    phase management, and timing utilities.
+    phase management, and timing utilities using ModelTimeBased.
     """
 
     # Core progress tracking
@@ -65,7 +67,7 @@ class ModelProgress(BaseModel):
         max_length=2000,
     )
 
-    # Timing information
+    # Timing information using ModelTimeBased
     start_time: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="Progress tracking start time",
@@ -77,6 +79,16 @@ class ModelProgress(BaseModel):
     estimated_completion_time: datetime | None = Field(
         default=None,
         description="Estimated completion time",
+    )
+
+    # Time-based calculations using ModelTimeBased
+    estimated_total_duration: ModelTimeBased[float] | None = Field(
+        default=None,
+        description="Estimated total duration",
+    )
+    estimated_remaining_duration: ModelTimeBased[float] | None = Field(
+        default=None,
+        description="Estimated remaining duration",
     )
 
     # Progress milestones
@@ -91,7 +103,7 @@ class ModelProgress(BaseModel):
 
     # Metadata
     custom_metrics: ModelMetricsData = Field(
-        default_factory=ModelMetricsData,
+        default_factory=lambda: ModelMetricsData(collection_name="progress_metrics"),
         description="Custom progress metrics with clean typing",
     )
     tags: list[str] = Field(
@@ -124,6 +136,7 @@ class ModelProgress(BaseModel):
         """Post-initialization to update calculated fields."""
         self._update_percentage_from_steps()
         self._check_milestones()
+        self._update_time_estimates()
 
     def _update_percentage_from_steps(self) -> None:
         """Update percentage based on steps if available."""
@@ -144,6 +157,34 @@ class ModelProgress(BaseModel):
                 and name not in self.completed_milestones
             ):
                 self.completed_milestones.append(name)
+
+    def _update_time_estimates(self) -> None:
+        """Update time estimates using ModelTimeBased."""
+        if self.percentage <= 0.0:
+            self.estimated_total_duration = None
+            self.estimated_remaining_duration = None
+            return
+
+        elapsed_seconds = self.elapsed_seconds
+        estimated_total_seconds = (elapsed_seconds / self.percentage) * 100.0
+
+        self.estimated_total_duration = ModelTimeBased.from_seconds(
+            estimated_total_seconds
+        )
+
+        if self.is_completed:
+            self.estimated_remaining_duration = ModelTimeBased.from_seconds(0.0)
+        else:
+            remaining_seconds = estimated_total_seconds - elapsed_seconds
+            self.estimated_remaining_duration = ModelTimeBased.from_seconds(
+                max(0.0, remaining_seconds)
+            )
+
+        # Update estimated completion time
+        if self.estimated_remaining_duration and not self.is_completed:
+            self.estimated_completion_time = (
+                datetime.now(UTC) + self.estimated_remaining_duration.to_timedelta()
+            )
 
     @property
     def is_completed(self) -> bool:
@@ -171,26 +212,9 @@ class ModelProgress(BaseModel):
         return self.elapsed_seconds / 60.0
 
     @property
-    def estimated_total_duration(self) -> timedelta | None:
-        """Estimate total duration based on current progress."""
-        if self.percentage <= 0.0:
-            return None
-
-        elapsed = self.elapsed_time
-        estimated_total_seconds = (elapsed.total_seconds() / self.percentage) * 100.0
-        return timedelta(seconds=estimated_total_seconds)
-
-    @property
-    def estimated_remaining_duration(self) -> timedelta | None:
-        """Estimate remaining duration."""
-        if self.is_completed:
-            return timedelta(0)
-
-        total_duration = self.estimated_total_duration
-        if total_duration is None:
-            return None
-
-        return total_duration - self.elapsed_time
+    def elapsed_time_based(self) -> ModelTimeBased[float]:
+        """Get elapsed time as ModelTimeBased for consistent time operations."""
+        return ModelTimeBased.from_seconds(self.elapsed_seconds)
 
     @property
     def completion_rate_per_minute(self) -> float:
@@ -204,7 +228,7 @@ class ModelProgress(BaseModel):
         self.percentage = max(0.0, min(100.0, new_percentage))
         self.last_update_time = datetime.now(UTC)
         self._check_milestones()
-        self._update_estimated_completion()
+        self._update_time_estimates()
 
     def update_step(self, new_step: int) -> None:
         """Update current step and recalculate percentage."""
@@ -214,7 +238,7 @@ class ModelProgress(BaseModel):
         self.last_update_time = datetime.now(UTC)
         self._update_percentage_from_steps()
         self._check_milestones()
-        self._update_estimated_completion()
+        self._update_time_estimates()
 
     def increment_step(self, steps: int = 1) -> None:
         """Increment current step by specified amount."""
@@ -271,7 +295,7 @@ class ModelProgress(BaseModel):
 
     def add_custom_metric(self, key: str, value: Any) -> None:
         """Add custom progress metric."""
-        self.custom_metrics[key] = value
+        self.custom_metrics.add_metric(key, value)
         self.last_update_time = datetime.now(UTC)
 
     def add_tag(self, tag: str) -> None:
@@ -287,12 +311,6 @@ class ModelProgress(BaseModel):
         except ValueError:
             return False
 
-    def _update_estimated_completion(self) -> None:
-        """Update estimated completion time based on current progress."""
-        remaining = self.estimated_remaining_duration
-        if remaining is not None:
-            self.estimated_completion_time = datetime.now(UTC) + remaining
-
     def reset(self) -> None:
         """Reset progress to initial state."""
         self.percentage = 0.0
@@ -304,8 +322,28 @@ class ModelProgress(BaseModel):
         self.start_time = datetime.now(UTC)
         self.last_update_time = self.start_time
         self.estimated_completion_time = None
+        self.estimated_total_duration = None
+        self.estimated_remaining_duration = None
         self.completed_milestones.clear()
-        self.custom_metrics.clear()
+        self.custom_metrics.clear_all_metrics()
+
+    def get_time_remaining_formatted(self) -> str:
+        """Get formatted remaining time string."""
+        if self.estimated_remaining_duration is None:
+            return "Unknown"
+        if self.is_completed:
+            return "Completed"
+        return str(self.estimated_remaining_duration)
+
+    def get_elapsed_formatted(self) -> str:
+        """Get formatted elapsed time string."""
+        return str(self.elapsed_time_based)
+
+    def get_estimated_total_formatted(self) -> str:
+        """Get formatted estimated total time string."""
+        if self.estimated_total_duration is None:
+            return "Unknown"
+        return str(self.estimated_total_duration)
 
     def get_summary(self) -> dict[str, str | int | bool | float | None]:
         """Get progress summary."""
@@ -319,13 +357,16 @@ class ModelProgress(BaseModel):
             "is_completed": self.is_completed,
             "elapsed_seconds": self.elapsed_seconds,
             "estimated_remaining_seconds": (
-                self.estimated_remaining_duration.total_seconds()
+                self.estimated_remaining_duration.to_seconds()
                 if self.estimated_remaining_duration
                 else None
             ),
             "completed_milestones": len(self.completed_milestones),
             "total_milestones": len(self.milestones),
             "completion_rate_per_minute": self.completion_rate_per_minute,
+            "elapsed_formatted": self.get_elapsed_formatted(),
+            "remaining_formatted": self.get_time_remaining_formatted(),
+            "total_formatted": self.get_estimated_total_formatted(),
         }
 
     @classmethod

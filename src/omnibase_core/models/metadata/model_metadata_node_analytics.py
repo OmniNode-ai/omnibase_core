@@ -37,6 +37,11 @@ class ModelMetadataNodeAnalytics(BaseModel):
         description="Last modification timestamp",
     )
 
+    last_validated: datetime | None = Field(
+        default=None,
+        description="Last validation timestamp",
+    )
+
     # Node categorization
     nodes_by_type: dict[str, int] = Field(
         default_factory=dict,
@@ -101,7 +106,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     # Custom analytics for extensibility
     custom_metrics: ModelMetricsData = Field(
-        default_factory=ModelMetricsData,
+        default_factory=lambda: ModelMetricsData(collection_name="custom_analytics"),
         description="Custom analytics metrics with clean typing",
     )
 
@@ -157,11 +162,12 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def add_custom_metric(self, name: str, value: Any) -> None:
         """Add a custom metric."""
-        self.custom_metrics[name] = value
+        self.custom_metrics.add_metric(name, value)
 
     def get_custom_metric(self, name: str, default: Any = None) -> Any:
         """Get a custom metric value."""
-        return self.custom_metrics.get(name, default)
+        value = self.custom_metrics.get_metric_by_key(name)
+        return value if value is not None else default
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp."""
@@ -206,7 +212,12 @@ class ModelMetadataNodeAnalytics(BaseModel):
             disabled_nodes=self.get_disabled_node_count(),
             error_count=self.error_count,
             warning_count=self.warning_count,
-            last_modified=self.last_modified,
+            last_modified=(
+                datetime.fromisoformat(self.last_modified)
+                if self.last_modified
+                else None
+            ),
+            last_validated=self.last_validated,
             average_execution_time_ms=self.average_execution_time_ms,
             peak_memory_usage_mb=self.peak_memory_usage_mb,
             total_invocations=self.total_invocations,

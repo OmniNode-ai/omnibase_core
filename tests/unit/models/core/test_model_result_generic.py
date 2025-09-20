@@ -10,12 +10,7 @@ from typing import Any
 import pytest
 
 from src.omnibase_core.models.infrastructure.model_result import (
-    BoolResult,
-    DataResult,
-    IntResult,
-    ListResult,
     Result,
-    StrResult,
     collect_results,
     err,
     ok,
@@ -233,39 +228,39 @@ class TestResultGeneric:
         assert str(success) == "Success: value"
         assert str(failure) == "Error: error"
 
-    def test_result_type_aliases(self):
-        """Test predefined type aliases."""
-        # StrResult
-        str_success: StrResult = Result.ok("success")
-        str_failure: StrResult = Result.err("error")
+    def test_result_explicit_generic_types(self):
+        """Test explicit generic types following ONEX conventions."""
+        # Result[str, str] - String success, string error
+        str_success: Result[str, str] = Result.ok("success")
+        str_failure: Result[str, str] = Result.err("error")
 
         assert str_success.unwrap() == "success"
         assert str_failure.error == "error"
 
-        # BoolResult
-        bool_success: BoolResult = Result.ok(True)
-        bool_failure: BoolResult = Result.err("validation failed")
+        # Result[bool, str] - Boolean success, string error
+        bool_success: Result[bool, str] = Result.ok(True)
+        bool_failure: Result[bool, str] = Result.err("validation failed")
 
         assert bool_success.unwrap() is True
         assert bool_failure.error == "validation failed"
 
-        # IntResult
-        int_success: IntResult = Result.ok(42)
-        int_failure: IntResult = Result.err("parse error")
+        # Result[int, str] - Integer success, string error
+        int_success: Result[int, str] = Result.ok(42)
+        int_failure: Result[int, str] = Result.err("parse error")
 
         assert int_success.unwrap() == 42
         assert int_failure.error == "parse error"
 
-        # DataResult
-        data_success: DataResult = Result.ok({"key": "value"})
-        data_failure: DataResult = Result.err("invalid format")
+        # Result[dict[str, str], str] - Dictionary success, string error
+        data_success: Result[dict[str, str], str] = Result.ok({"key": "value"})
+        data_failure: Result[dict[str, str], str] = Result.err("invalid format")
 
         assert data_success.unwrap() == {"key": "value"}
         assert data_failure.error == "invalid format"
 
-        # ListResult
-        list_success: ListResult = Result.ok([1, 2, 3])
-        list_failure: ListResult = Result.err("empty list")
+        # Result[list[int], str] - List success, string error
+        list_success: Result[list[int], str] = Result.ok([1, 2, 3])
+        list_failure: Result[list[int], str] = Result.err("empty list")
 
         assert list_success.unwrap() == [1, 2, 3]
         assert list_failure.error == "empty list"

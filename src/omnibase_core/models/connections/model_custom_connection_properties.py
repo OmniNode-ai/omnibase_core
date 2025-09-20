@@ -3,6 +3,7 @@ Custom connection properties model for connection configuration.
 """
 
 from pydantic import BaseModel, Field
+from ..core.model_custom_properties import ModelCustomProperties
 
 
 class ModelCustomConnectionProperties(BaseModel):
@@ -39,18 +40,8 @@ class ModelCustomConnectionProperties(BaseModel):
     compression_level: int | None = Field(default=None, description="Compression level")
     enable_caching: bool | None = Field(default=None, description="Enable caching")
 
-    # Custom string properties
-    custom_strings: dict[str, str] | None = Field(
-        default=None,
-        description="Additional string properties",
-    )
-    # Custom numeric properties
-    custom_numbers: dict[str, float] | None = Field(
-        default=None,
-        description="Additional numeric properties",
-    )
-    # Custom boolean flags
-    custom_flags: dict[str, bool] | None = Field(
-        default=None,
-        description="Additional boolean flags",
+    # Generic custom properties
+    custom_properties: ModelCustomProperties = Field(
+        default_factory=ModelCustomProperties,
+        description="Additional custom properties with type safety",
     )

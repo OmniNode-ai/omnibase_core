@@ -6,6 +6,8 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+from .model_semver import ModelSemVer
+
 # Type variable for generic metadata
 T = TypeVar("T")
 
@@ -21,7 +23,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         default=None,
         description="Metadata description",
     )
-    version: str | None = Field(
+    version: ModelSemVer | None = Field(
         default=None,
         description="Metadata version",
     )

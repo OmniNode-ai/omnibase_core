@@ -17,8 +17,9 @@ from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
 from .model_node_info_summary import ModelNodeInfoSummary
+from .model_semver import ModelSemVer
 
-# Compatibility aliases for existing code
+# Type aliases for convenience
 ModelMetadataNodeType = EnumMetadataNodeType
 ModelMetadataNodeStatus = EnumMetadataNodeStatus
 ModelMetadataNodeComplexity = EnumMetadataNodeComplexity
@@ -49,7 +50,10 @@ class ModelMetadataNodeInfo(BaseModel):
         default=EnumMetadataNodeComplexity.SIMPLE,
         description="Node complexity level",
     )
-    version: str = Field(default="1.0.0", description="Node version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
 
     # Timestamps
     created_at: datetime = Field(

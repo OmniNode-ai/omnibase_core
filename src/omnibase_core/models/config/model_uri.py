@@ -45,7 +45,3 @@ class ModelOnexUri(BaseModel):
         description="Version specifier (semver or constraint)",
     )
     original: str = Field(..., description="Original URI string as provided")
-
-
-# Compatibility alias
-OnexUriModel = ModelOnexUri

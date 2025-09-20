@@ -8,9 +8,6 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_validation_severity import EnumValidationSeverity
 
-# Compatibility alias for existing code
-ValidationSeverity = EnumValidationSeverity
-
 
 class ModelValidationError(BaseModel):
     """Validation error information."""

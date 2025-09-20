@@ -15,6 +15,8 @@ from ...enums.enum_complexity import EnumComplexity
 from ...enums.enum_function_status import EnumFunctionStatus
 from ...enums.enum_memory_usage import EnumMemoryUsage
 from ...enums.enum_runtime_category import EnumRuntimeCategory
+from ..core.model_custom_properties import ModelCustomProperties
+from ..metadata.model_semver import ModelSemVer
 from .model_function_node_summary import ModelFunctionNodeSummary
 
 
@@ -70,7 +72,10 @@ class ModelFunctionNode(BaseModel):
         default=EnumFunctionStatus.ACTIVE,
         description="Function status (active, deprecated, disabled)",
     )
-    version: str = Field(default="1.0.0", description="Function version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Function version",
+    )
     deprecated_since: str | None = Field(
         default=None,
         description="Version when deprecated",
@@ -115,10 +120,10 @@ class ModelFunctionNode(BaseModel):
         description="Function categories",
     )
 
-    # Custom metadata for extensibility
-    custom_metadata: dict[str, str | int | bool | float] = Field(
-        default_factory=dict,
-        description="Custom metadata fields",
+    # Custom properties for extensibility
+    custom_properties: ModelCustomProperties = Field(
+        default_factory=ModelCustomProperties,
+        description="Custom properties with type safety",
     )
 
     # Dependencies and relationships
@@ -209,6 +214,17 @@ class ModelFunctionNode(BaseModel):
     def validate_function(self) -> None:
         """Mark function as validated."""
         self.last_validated = datetime.now(UTC)
+
+    def has_tests(self) -> bool:
+        """Check if function has tests (placeholder implementation)."""
+        # TODO: Implement actual test detection logic
+        return False
+
+    @property
+    def implementation(self) -> str:
+        """Get function implementation (placeholder)."""
+        # TODO: Implement actual function source code retrieval
+        return ""
 
     def to_summary(self) -> ModelFunctionNodeSummary:
         """Get function summary with clean typing."""

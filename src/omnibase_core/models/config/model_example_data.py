@@ -7,6 +7,8 @@ Follows ONEX one-model-per-file naming conventions.
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_semver import ModelSemVer
+
 
 class ModelExampleInputData(BaseModel):
     """
@@ -30,7 +32,7 @@ class ModelExampleInputData(BaseModel):
     )
 
     # Validation info
-    schema_version: str | None = Field(
+    schema_version: ModelSemVer | None = Field(
         None, description="Schema version for validation"
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")

@@ -41,10 +41,6 @@ class MigrationDuplicateConflictDict(MigrationConflictBaseDict):
     signature_hash: str
 
 
-# Union type for all conflict types
-MigrationConflictDict = MigrationNameConflictDict | MigrationDuplicateConflictDict
-
-
 class MigrationStepDict(TypedDict, total=False):
     """Type definition for migration step information."""
 
@@ -60,14 +56,14 @@ class MigrationStepDict(TypedDict, total=False):
 
 
 @dataclass
-class MigrationPlan:
+class ModelMigrationPlan:
     """Plan for migrating protocols to omnibase_spi."""
 
     success: bool
     source_repository: str
     target_repository: str
     protocols_to_migrate: list[ProtocolInfo]
-    conflicts_detected: list[MigrationConflictDict]
+    conflicts_detected: list[MigrationNameConflictDict | MigrationDuplicateConflictDict]
     migration_steps: list[MigrationStepDict]
     estimated_time_minutes: int
     recommendations: list[str]
@@ -82,7 +78,7 @@ class MigrationPlan:
 
 
 @dataclass
-class MigrationResult:
+class ModelMigrationResult:
     """Result of protocol migration operation."""
 
     success: bool
@@ -116,7 +112,7 @@ class ProtocolMigrator:
     def create_migration_plan(
         self,
         protocols: list[ProtocolInfo] | None = None,
-    ) -> MigrationPlan:
+    ) -> ModelMigrationPlan:
         """
         Create a migration plan for moving protocols to omnibase_spi.
 
@@ -124,7 +120,7 @@ class ProtocolMigrator:
             protocols: Specific protocols to migrate, or None for all
 
         Returns:
-            MigrationPlan with detailed migration strategy
+            ModelMigrationPlan with detailed migration strategy
         """
         # Get protocols from source repository
         src_path = self.source_path / "src"
@@ -163,7 +159,7 @@ class ProtocolMigrator:
                 "Update imports in dependent repositories after migration",
             )
 
-        return MigrationPlan(
+        return ModelMigrationPlan(
             success=len(conflicts) == 0,
             source_repository=self.source_repository,
             target_repository="omnibase_spi",
@@ -176,9 +172,9 @@ class ProtocolMigrator:
 
     def execute_migration(
         self,
-        plan: MigrationPlan,
+        plan: ModelMigrationPlan,
         dry_run: bool = True,
-    ) -> MigrationResult:
+    ) -> ModelMigrationResult:
         """
         Execute the migration plan.
 
@@ -187,10 +183,10 @@ class ProtocolMigrator:
             dry_run: If True, only simulate the migration
 
         Returns:
-            MigrationResult with detailed results
+            ModelMigrationResult with detailed results
         """
         if not plan.can_proceed():
-            return MigrationResult(
+            return ModelMigrationResult(
                 success=False,
                 source_repository=plan.source_repository,
                 target_repository=plan.target_repository,
@@ -235,7 +231,7 @@ class ProtocolMigrator:
             # Track what would be updated
             imports_updated.extend(self._find_import_references(protocol))
 
-        return MigrationResult(
+        return ModelMigrationResult(
             success=True,
             source_repository=plan.source_repository,
             target_repository=plan.target_repository,
@@ -252,7 +248,7 @@ class ProtocolMigrator:
         self,
         source_protocols: list[ProtocolInfo],
         spi_protocols: list[ProtocolInfo],
-    ) -> list[MigrationConflictDict]:
+    ) -> list[MigrationNameConflictDict | MigrationDuplicateConflictDict]:
         """Detect conflicts between source protocols and existing SPI protocols."""
         conflicts = []
 
@@ -267,7 +263,7 @@ class ProtocolMigrator:
                 if source_protocol.signature_hash != spi_protocol.signature_hash:
                     conflicts.append(
                         cast(
-                            MigrationConflictDict,
+                            MigrationNameConflictDict,
                             {
                                 "type": "name_conflict",
                                 "protocol_name": source_protocol.name,
@@ -285,7 +281,7 @@ class ProtocolMigrator:
                 spi_protocol = spi_by_signature[source_protocol.signature_hash]
                 conflicts.append(
                     cast(
-                        MigrationConflictDict,
+                        MigrationDuplicateConflictDict,
                         {
                             "type": "exact_duplicate",
                             "protocol_name": source_protocol.name,
@@ -441,7 +437,7 @@ class ProtocolMigrator:
 
         return references
 
-    def rollback_migration(self, result: MigrationResult) -> ValidationResult:
+    def rollback_migration(self, result: ModelMigrationResult) -> ValidationResult:
         """
         Rollback a migration if needed.
 
@@ -473,7 +469,7 @@ class ProtocolMigrator:
         except Exception as e:
             return ValidationResult(success=False, message=f"Rollback failed: {e}")
 
-    def print_migration_plan(self, plan: MigrationPlan) -> None:
+    def print_migration_plan(self, plan: ModelMigrationPlan) -> None:
         """Print human-readable migration plan."""
 
         if plan.conflicts_detected:

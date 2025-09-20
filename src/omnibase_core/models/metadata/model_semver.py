@@ -94,10 +94,6 @@ class ModelSemVer(BaseModel):
         return hash((self.major, self.minor, self.patch))
 
 
-# Type alias for use in models - enforce proper ModelSemVer instances only
-SemVerField = ModelSemVer
-
-
 def parse_semver_from_string(version_str: str) -> ModelSemVer:
     """
     Parse semantic version string into ModelSemVer using ONEX-compliant patterns.

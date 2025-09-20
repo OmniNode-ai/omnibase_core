@@ -9,6 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from .model_semver import ModelSemVer
+
 
 class ModelNodeInfoSummary(BaseModel):
     """
@@ -25,7 +27,10 @@ class ModelNodeInfoSummary(BaseModel):
     node_type: str = Field(default="unknown", description="Type of node")
     status: str = Field(default="active", description="Node status")
     complexity: str = Field(default="medium", description="Node complexity level")
-    version: str = Field(default="1.0.0", description="Node version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
 
     # Timestamps
     created_at: datetime | None = Field(None, description="Creation timestamp")

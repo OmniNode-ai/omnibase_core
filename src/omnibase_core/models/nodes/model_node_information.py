@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_registry_status import EnumRegistryStatus
+from ..metadata.model_semver import ModelSemVer
 from ..nodes.model_node_configuration import ModelNodeConfiguration
 
 
@@ -27,7 +28,7 @@ class ModelNodeInformation(BaseModel):
     )
     node_name: str = Field(..., description="Node name")
     node_type: str = Field(..., description="Node type")
-    node_version: str = Field(..., description="Node version")
+    node_version: ModelSemVer = Field(..., description="Node version")
 
     # Node metadata
     description: str | None = Field(None, description="Node description")

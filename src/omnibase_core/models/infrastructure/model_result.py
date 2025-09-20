@@ -226,12 +226,8 @@ class Result(BaseModel, Generic[T, E]):
         return self.success
 
 
-# Convenience type aliases for common Result patterns
-StrResult = Result[str, str]  # String success, string error
-BoolResult = Result[bool, str]  # Boolean success, string error
-IntResult = Result[int, str]  # Integer success, string error
-DataResult = Result[ModelResultData, str]  # Clean dict success, string error
-ListResult = Result[list[Any], str]  # List success, string error
+# Type aliases have been removed to follow ONEX conventions.
+# Use explicit generic types: Result[str, str], Result[bool, str], etc.
 
 
 # Factory functions for common patterns
@@ -290,11 +286,6 @@ __all__ = [
     "Result",
     "ModelResultDict",
     "ModelResultData",
-    "StrResult",
-    "BoolResult",
-    "IntResult",
-    "DataResult",
-    "ListResult",
     "ok",
     "err",
     "try_result",

@@ -9,6 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_semver import ModelSemVer
+
 
 class ModelFunctionNodeSummary(BaseModel):
     """
@@ -25,7 +27,10 @@ class ModelFunctionNodeSummary(BaseModel):
     function_type: str = Field(default="function", description="Type of function")
     status: str = Field(default="active", description="Function status")
     complexity: str = Field(default="medium", description="Function complexity level")
-    version: str = Field(default="1.0.0", description="Function version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Function version",
+    )
 
     # Function characteristics
     parameter_count: int = Field(default=0, description="Number of parameters")

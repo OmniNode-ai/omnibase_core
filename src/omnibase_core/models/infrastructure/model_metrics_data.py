@@ -10,28 +10,17 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class ModelStringMetric(BaseModel):
-    """Model for string-based metrics."""
+class ModelMetric(BaseModel):
+    """Universal metric model for any supported type."""
 
     key: str = Field(..., description="Metric key")
-    value: str = Field(..., description="String metric value")
-    description: str | None = Field(None, description="Metric description")
-
-
-class ModelNumericMetric(BaseModel):
-    """Model for numeric metrics."""
-
-    key: str = Field(..., description="Metric key")
-    value: int | float = Field(..., description="Numeric metric value")
-    unit: str | None = Field(None, description="Unit of measurement")
-    description: str | None = Field(None, description="Metric description")
-
-
-class ModelBooleanMetric(BaseModel):
-    """Model for boolean metrics."""
-
-    key: str = Field(..., description="Metric key")
-    value: bool = Field(..., description="Boolean metric value")
+    value: Any = Field(..., description="Metric value (string, int, float, or bool)")
+    metric_type: str = Field(
+        ..., description="Type of metric (string, numeric, boolean)"
+    )
+    unit: str | None = Field(
+        None, description="Unit of measurement (for numeric metrics)"
+    )
     description: str | None = Field(None, description="Metric description")
 
 
@@ -41,20 +30,12 @@ class ModelMetricsData(BaseModel):
 
     Eliminates: dict[str, str | int | bool | float]
 
-    With proper structured data using specific field types.
+    With proper structured data using a single generic metric type.
     """
 
-    # Organized metrics by type
-    string_metrics: list[ModelStringMetric] = Field(
-        default_factory=list, description="String-based metrics"
-    )
-
-    numeric_metrics: list[ModelNumericMetric] = Field(
-        default_factory=list, description="Numeric metrics"
-    )
-
-    boolean_metrics: list[ModelBooleanMetric] = Field(
-        default_factory=list, description="Boolean metrics"
+    # Single list of universal metrics
+    metrics: list[ModelMetric] = Field(
+        default_factory=list, description="Collection of typed metrics"
     )
 
     # Metadata
@@ -68,57 +49,45 @@ class ModelMetricsData(BaseModel):
         default_factory=list, description="Tags for organizing metrics"
     )
 
-    def add_string_metric(
-        self, key: str, value: str, description: str | None = None
-    ) -> None:
-        """Add a string metric."""
-        self.string_metrics.append(
-            ModelStringMetric(key=key, value=value, description=description)
-        )
-
-    def add_numeric_metric(
+    def add_metric(
         self,
         key: str,
-        value: int | float,
-        unit: str | None = None,
+        value: str | int | float | bool,
         description: str | None = None,
+        unit: str | None = None,
     ) -> None:
-        """Add a numeric metric."""
-        self.numeric_metrics.append(
-            ModelNumericMetric(key=key, value=value, unit=unit, description=description)
-        )
+        """Add a metric with automatic type detection."""
+        if isinstance(value, bool):  # Check bool first since bool is subclass of int
+            metric_type = "boolean"
+        elif isinstance(value, str):
+            metric_type = "string"
+        else:  # Must be int or float based on type annotation
+            metric_type = "numeric"
 
-    def add_boolean_metric(
-        self, key: str, value: bool, description: str | None = None
-    ) -> None:
-        """Add a boolean metric."""
-        self.boolean_metrics.append(
-            ModelBooleanMetric(key=key, value=value, description=description)
+        metric = ModelMetric(
+            key=key,
+            value=value,
+            metric_type=metric_type,
+            unit=unit,
+            description=description,
         )
+        self.metrics.append(metric)
 
     def get_metric_by_key(self, key: str) -> Any | None:
         """Get metric value by key."""
-        # Search string metrics
-        for string_metric in self.string_metrics:
-            if string_metric.key == key:
-                return string_metric.value
-
-        # Search numeric metrics
-        for numeric_metric in self.numeric_metrics:
-            if numeric_metric.key == key:
-                return numeric_metric.value
-
-        # Search boolean metrics
-        for boolean_metric in self.boolean_metrics:
-            if boolean_metric.key == key:
-                return boolean_metric.value
-
+        for metric in self.metrics:
+            if metric.key == key:
+                return metric.value
         return None
 
     def get_all_keys(self) -> list[str]:
         """Get all metric keys."""
-        keys = []
-        keys.extend([m.key for m in self.string_metrics])
-        keys.extend([m.key for m in self.numeric_metrics])
-        keys.extend([m.key for m in self.boolean_metrics])
-        return keys
+        return [metric.key for metric in self.metrics]
+
+    def clear_all_metrics(self) -> None:
+        """Clear all metrics."""
+        self.metrics.clear()
+
+    def get_metrics_by_type(self, metric_type: str) -> list[ModelMetric]:
+        """Get all metrics of a specific type."""
+        return [metric for metric in self.metrics if metric.metric_type == metric_type]

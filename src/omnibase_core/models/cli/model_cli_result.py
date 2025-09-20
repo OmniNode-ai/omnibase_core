@@ -44,7 +44,9 @@ class ModelCliResult(BaseModel):
     )
 
     output_data: ModelCliOutputData = Field(
-        default_factory=lambda: ModelCliOutputData(),
+        default_factory=lambda: ModelCliOutputData(
+            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+        ),
         description="Structured output data from execution",
     )
 
@@ -248,7 +250,9 @@ class ModelCliResult(BaseModel):
         execution.mark_completed()
 
         # Use provided output data or create empty one
-        output_data_obj = output_data or ModelCliOutputData()
+        output_data_obj = output_data or ModelCliOutputData(
+            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+        )
 
         return cls(
             execution=execution,

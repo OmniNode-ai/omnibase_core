@@ -13,7 +13,7 @@ class ModelNodeType(BaseModel):
     Node type with metadata and configuration.
 
     Replaces the EnumNodeType enum to provide richer information
-    about each node while maintaining compatibility.
+    about each node type.
     """
 
     # Core fields (required)

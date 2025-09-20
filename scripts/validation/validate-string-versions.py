@@ -1,26 +1,43 @@
 #!/usr/bin/env python3
 """
-String Version Validation Hook for ONEX Architecture
+Comprehensive ID and Version Validation Hook for ONEX Architecture
 
 Validates that:
 1. Contract YAML files use proper ModelSemVer format instead of string versions
 2. Python __init__.py files do not contain hardcoded __version__ strings
+3. Python models use UUID instead of str for ID fields
+4. Python models use ModelSemVer instead of str for version fields
 
 String versions like "1.0.0" should be ModelSemVer format like {major: 1, minor: 0, patch: 0}.
 Versions should only come from contracts, never from __init__.py files.
+ID fields should use UUID type instead of str for proper type safety.
 
-Uses AST parsing for reliable detection of semantic version patterns.
+Uses AST parsing for reliable detection of semantic version and ID patterns.
 This prevents runtime issues and ensures proper type compliance.
 """
 from __future__ import annotations
 
+import ast
 import os
+import re
 import signal
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, List, NamedTuple
 
 import yaml
+
+
+class ValidationViolation(NamedTuple):
+    """Represents a validation violation."""
+
+    file_path: str
+    line_number: int
+    column: int
+    field_name: str
+    violation_type: str
+    suggestion: str
+
 
 # Constants
 MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks on Python files
@@ -45,11 +62,188 @@ except ImportError:
     PYDANTIC_MODELS_AVAILABLE = False
 
 
+class PythonASTValidator(ast.NodeVisitor):
+    """AST visitor to validate ID and version field types in Python files."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.violations: List[ValidationViolation] = []
+        self.imports = set()
+
+        # Patterns for version fields that should use ModelSemVer
+        self.version_patterns = [
+            r"^version$",
+            r"^.*_version$",
+            r"^version_.*$",
+            r"^schema_version$",
+            r"^protocol_version$",
+            r"^node_version$",
+        ]
+
+        # Patterns for ID fields that should use UUID
+        self.id_patterns = [
+            r"^.*_id$",
+            r"^id$",
+            r"^execution_id$",
+            r"^request_id$",
+            r"^session_id$",
+            r"^node_id$",
+            r"^connection_id$",
+            r"^trace_id$",
+            r"^span_id$",
+            r"^parent_span_id$",
+            r"^example_id$",
+            r"^user_id$",
+        ]
+
+        # Exceptions - fields that can legitimately be strings
+        self.exceptions = {
+            "version_pattern",  # Regex patterns can be strings
+            "version_spec",  # Version specifications can be strings
+            "validation_pattern",  # Regex patterns
+            "version_compatibility",  # Compatibility strings
+            "execution_id",  # Some execution IDs may need to be strings for compatibility
+            "version_str",  # Parameter names for parsing functions
+        }
+
+    def visit_Import(self, node: ast.Import):
+        """Track imports to understand what types are available."""
+        for alias in node.names:
+            self.imports.add(alias.name)
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom):
+        """Track from imports to understand what types are available."""
+        if node.module:
+            for alias in node.names:
+                if alias.name == "*":
+                    # Handle star imports
+                    if node.module == "uuid":
+                        self.imports.add("UUID")
+                    elif "semver" in node.module:
+                        self.imports.add("ModelSemVer")
+                else:
+                    self.imports.add(alias.name)
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign):
+        """Visit annotated assignments (field definitions)."""
+        if isinstance(node.target, ast.Name):
+            field_name = node.target.id
+            self._check_field_annotation(
+                field_name, node.annotation, node.lineno, node.col_offset
+            )
+        self.generic_visit(node)
+
+    def visit_arg(self, node: ast.arg):
+        """Visit function arguments."""
+        if node.annotation:
+            self._check_field_annotation(
+                node.arg, node.annotation, node.lineno, node.col_offset
+            )
+        self.generic_visit(node)
+
+    def _check_field_annotation(
+        self, field_name: str, annotation: ast.AST, line_number: int, column: int
+    ):
+        """Check if a field annotation violates ID/version typing rules."""
+        # Skip exceptions
+        if field_name in self.exceptions:
+            return
+
+        annotation_str = self._get_annotation_string(annotation)
+
+        # Check version fields
+        if self._matches_patterns(field_name, self.version_patterns):
+            if self._is_string_type(annotation_str):
+                suggestion = "Use ModelSemVer instead of str for version fields"
+                self.violations.append(
+                    ValidationViolation(
+                        file_path=self.file_path,
+                        line_number=line_number,
+                        column=column,
+                        field_name=field_name,
+                        violation_type="string_version",
+                        suggestion=suggestion,
+                    )
+                )
+
+        # Check ID fields
+        elif self._matches_patterns(field_name, self.id_patterns):
+            if self._is_string_type(annotation_str):
+                suggestion = "Use UUID instead of str for ID fields"
+                self.violations.append(
+                    ValidationViolation(
+                        file_path=self.file_path,
+                        line_number=line_number,
+                        column=column,
+                        field_name=field_name,
+                        violation_type="string_id",
+                        suggestion=suggestion,
+                    )
+                )
+
+    def _matches_patterns(self, field_name: str, patterns: List[str]) -> bool:
+        """Check if field name matches any of the given regex patterns."""
+        return any(re.match(pattern, field_name) for pattern in patterns)
+
+    def _is_string_type(self, annotation_str: str) -> bool:
+        """Check if annotation represents a string type."""
+        # Direct string types
+        if annotation_str in ["str", "String"]:
+            return True
+
+        # Optional string types
+        if annotation_str in ["str | None", "Optional[str]", "Union[str, None]"]:
+            return True
+
+        # String unions (but not including UUID or ModelSemVer)
+        if (
+            "str" in annotation_str
+            and "UUID" not in annotation_str
+            and "ModelSemVer" not in annotation_str
+        ):
+            return True
+
+        return False
+
+    def _get_annotation_string(self, annotation: ast.AST) -> str:
+        """Convert AST annotation to string representation."""
+        try:
+            return ast.unparse(annotation)
+        except AttributeError:
+            # Fallback for older Python versions
+            return self._ast_to_string(annotation)
+
+    def _ast_to_string(self, node: ast.AST) -> str:
+        """Convert AST node to string (fallback implementation)."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Constant):
+            return repr(node.value)
+        elif isinstance(node, ast.Attribute):
+            return f"{self._ast_to_string(node.value)}.{node.attr}"
+        elif isinstance(node, ast.Subscript):
+            return (
+                f"{self._ast_to_string(node.value)}[{self._ast_to_string(node.slice)}]"
+            )
+        elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            return (
+                f"{self._ast_to_string(node.left)} | {self._ast_to_string(node.right)}"
+            )
+        elif isinstance(node, ast.Tuple):
+            elements = [self._ast_to_string(elt) for elt in node.elts]
+            return f"({', '.join(elements)})"
+        else:
+            return str(type(node).__name__)
+
+
 class StringVersionValidator:
-    """Validates that YAML contract files don't use string versions using AST parsing."""
+    """Validates that YAML contract files don't use string versions and Python files use proper ID/version types."""
 
     def __init__(self):
         self.errors: list[str] = []
+        self.ast_violations: List[ValidationViolation] = []
         self.checked_files = 0
 
     def validate_python_file(self, python_path: Path) -> bool:
@@ -111,6 +305,22 @@ class StringVersionValidator:
             )
         except Exception as e:
             self.errors.append(f"{python_path}: Error during content validation - {e}")
+            return False
+
+        # AST-based validation for ID and version field types
+        try:
+            tree = ast.parse(content, filename=str(python_path))
+            ast_validator = PythonASTValidator(str(python_path))
+            ast_validator.visit(tree)
+
+            # Add AST violations to our list
+            self.ast_violations.extend(ast_validator.violations)
+
+        except SyntaxError as e:
+            # Skip files with syntax errors - they'll be caught by other tools
+            pass
+        except Exception as e:
+            self.errors.append(f"{python_path}: Error during AST validation - {e}")
             return False
 
         if file_errors:
@@ -439,17 +649,39 @@ class StringVersionValidator:
 
     def print_results(self) -> None:
         """Print validation results."""
-        if self.errors:
-            print("❌ String Version Validation FAILED")
+        total_violations = len(self.errors) + len(self.ast_violations)
+
+        if self.errors or self.ast_violations:
+            print("❌ ID/Version Validation FAILED")
             print("=" * 50)
-            print(
-                f"Found {len(self.errors)} string version errors in {self.checked_files} files:\n",
-            )
 
-            for error in self.errors:
-                print(f"   • {error}")
+            if self.errors:
+                print(f"Found {len(self.errors)} string version errors:")
+                for error in self.errors:
+                    print(f"   • {error}")
+                print()
 
-            print("\n🔧 How to fix:")
+            if self.ast_violations:
+                print(f"Found {len(self.ast_violations)} AST validation errors:")
+
+                # Group by file
+                by_file = {}
+                for violation in self.ast_violations:
+                    if violation.file_path not in by_file:
+                        by_file[violation.file_path] = []
+                    by_file[violation.file_path].append(violation)
+
+                for file_path, file_violations in by_file.items():
+                    print(f"📁 {file_path}")
+                    for violation in file_violations:
+                        print(
+                            f"  ⚠️  Line {violation.line_number}:{violation.column} - "
+                            f"Field '{violation.field_name}' ({violation.violation_type})"
+                        )
+                        print(f"      💡 {violation.suggestion}")
+                    print()
+
+            print("🔧 How to fix:")
             print("   YAML files: Replace string versions with ModelSemVer format:")
             print('   version: "1.0.0"  →  version: {major: 1, minor: 0, patch: 0}')
             print(
@@ -458,10 +690,15 @@ class StringVersionValidator:
             print(
                 "   Python files: Remove __version__ from __init__.py - versions come from contracts only"
             )
+            print(
+                "   Python models: Use UUID for ID fields, ModelSemVer for version fields"
+            )
+            print("   Example: node_id: str  →  node_id: UUID")
+            print("   Example: version: str  →  version: ModelSemVer")
 
         else:
             print(
-                f"✅ String Version Validation PASSED ({self.checked_files} files checked)",
+                f"✅ ID/Version Validation PASSED ({self.checked_files} files checked)",
             )
 
 
@@ -545,6 +782,10 @@ def main() -> int:
                                     ".mypy_cache",
                                     ".pytest_cache",
                                     "node_modules",
+                                    "archive",  # Exclude archived code
+                                    "archived",  # Exclude archived code (alternative naming)
+                                    "tests",  # Exclude test files
+                                    "examples_validation_container_usage.py",  # Exclude specific example files
                                 ]
 
                                 try:
@@ -647,7 +888,10 @@ def main() -> int:
             validator.print_results()
 
             signal.alarm(0)  # Cancel timeout
-            return 0 if success else 1
+
+            # Consider both string version errors and AST violations
+            has_violations = bool(validator.errors or validator.ast_violations)
+            return 0 if success and not has_violations else 1
 
         except TimeoutError:
             print("Error: Validation timeout after 10 minutes")

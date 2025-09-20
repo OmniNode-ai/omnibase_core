@@ -10,6 +10,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_semver import ModelSemVer
+
 
 class ModelNodeMetadataInfo(BaseModel):
     """
@@ -25,7 +27,7 @@ class ModelNodeMetadataInfo(BaseModel):
 
     # Metadata details
     description: str | None = Field(default=None, description="Node description")
-    version: str | None = Field(default=None, description="Node version")
+    version: ModelSemVer | None = Field(default=None, description="Node version")
     author: str | None = Field(default=None, description="Node author")
 
     # Status information
@@ -144,7 +146,7 @@ class ModelNodeMetadataInfo(BaseModel):
             "node_type": self.node_type,
             "status": self.status,
             "health": self.health,
-            "version": self.version,
+            "version": str(self.version) if self.version else None,
             "usage_count": self.usage_count,
             "error_count": self.error_count,
             "success_rate": self.success_rate,

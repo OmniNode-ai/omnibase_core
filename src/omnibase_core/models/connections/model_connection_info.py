@@ -17,9 +17,7 @@ from ..connections.model_connection_metrics import ModelConnectionMetrics
 from ..connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
-
-# Compatibility alias
-ConnectionMetrics = ModelConnectionMetrics
+from ..metadata.model_semver import ModelSemVer
 
 
 class ModelConnectionInfo(BaseModel):
@@ -37,7 +35,7 @@ class ModelConnectionInfo(BaseModel):
         ...,
         description="Connection type (tcp/http/websocket/grpc)",
     )
-    protocol_version: str | None = Field(None, description="Protocol version")
+    protocol_version: ModelSemVer | None = Field(None, description="Protocol version")
 
     # Endpoint information
     host: str = Field(..., description="Host address")

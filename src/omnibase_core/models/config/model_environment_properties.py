@@ -10,17 +10,6 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-PropertyValue = Union[
-    str,
-    int,
-    bool,
-    float,
-    list[str],
-    list[int],
-    list[float],
-    datetime,
-]
-
 
 class ModelEnvironmentProperties(BaseModel):
     """
@@ -30,7 +19,9 @@ class ModelEnvironmentProperties(BaseModel):
     with type safety and helper methods for property access.
     """
 
-    properties: dict[str, PropertyValue] = Field(
+    properties: dict[
+        str, Union[str, int, bool, float, list[str], list[int], list[float], datetime]
+    ] = Field(
         default_factory=dict,
         description="Custom property values",
     )
@@ -97,7 +88,7 @@ class ModelEnvironmentProperties(BaseModel):
         """Get datetime property value."""
         value = self.properties.get(key, default)
         if isinstance(value, datetime):
-            return None
+            return value
         if isinstance(value, str):
             try:
                 return datetime.fromisoformat(value)
@@ -108,7 +99,9 @@ class ModelEnvironmentProperties(BaseModel):
     def set_property(
         self,
         key: str,
-        value: PropertyValue,
+        value: Union[
+            str, int, bool, float, list[str], list[int], list[float], datetime
+        ],
         description: str | None = None,
         source: str | None = None,
     ) -> None:
@@ -142,11 +135,19 @@ class ModelEnvironmentProperties(BaseModel):
         metadata = self.property_metadata.get(key, {})
         return metadata.get("source")
 
-    def get_all_properties(self) -> dict[str, PropertyValue]:
+    def get_all_properties(
+        self,
+    ) -> dict[
+        str, Union[str, int, bool, float, list[str], list[int], list[float], datetime]
+    ]:
         """Get all properties."""
         return self.properties.copy()
 
-    def get_properties_by_prefix(self, prefix: str) -> dict[str, PropertyValue]:
+    def get_properties_by_prefix(
+        self, prefix: str
+    ) -> dict[
+        str, Union[str, int, bool, float, list[str], list[int], list[float], datetime]
+    ]:
         """Get all properties with keys starting with a prefix."""
         return {
             key: value
@@ -175,7 +176,10 @@ class ModelEnvironmentProperties(BaseModel):
     @classmethod
     def create_from_dict(
         cls,
-        properties: dict[str, PropertyValue],
+        properties: dict[
+            str,
+            Union[str, int, bool, float, list[str], list[int], list[float], datetime],
+        ],
     ) -> "ModelEnvironmentProperties":
         """Create from a dictionary of properties."""
         return cls(properties=properties)

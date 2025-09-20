@@ -32,7 +32,9 @@ class ModelCliExecutionResult(BaseModel):
 
     # Output data
     output_data: ModelCliOutputData = Field(
-        default_factory=ModelCliOutputData,
+        default_factory=lambda: ModelCliOutputData(
+            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+        ),
         description="Tool execution output data",
     )
 
@@ -75,7 +77,10 @@ class ModelCliExecutionResult(BaseModel):
         """
         return cls(
             success=True,
-            output_data=output_data or ModelCliOutputData(),
+            output_data=output_data
+            or ModelCliOutputData(
+                stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+            ),
             tool_name=tool_name,
             execution_time_ms=execution_time_ms,
             status_code=0,
@@ -109,7 +114,10 @@ class ModelCliExecutionResult(BaseModel):
             error_message=error_message,
             tool_name=tool_name,
             status_code=status_code,
-            output_data=output_data or ModelCliOutputData(),
+            output_data=output_data
+            or ModelCliOutputData(
+                stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+            ),
             **kwargs,
         )
 

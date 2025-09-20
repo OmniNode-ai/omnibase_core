@@ -14,6 +14,7 @@ from .model_metadata_node_info import (
 )
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
 from .model_semver import ModelSemVer
+from .model_typed_metrics import ModelTypedMetrics
 
 __all__ = [
     "ModelGenericMetadata",
@@ -24,4 +25,5 @@ __all__ = [
     "ModelMetadataNodeType",
     "ModelMetadataUsageMetrics",
     "ModelSemVer",
+    "ModelTypedMetrics",
 ]

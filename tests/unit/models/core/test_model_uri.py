@@ -12,7 +12,7 @@ Tests all aspects of the ONEX URI model including:
 import pytest
 from pydantic import ValidationError
 
-from ..core.model_uri import ModelOnexUri, OnexUriModel
+from src.omnibase_core.models.config.model_uri import ModelOnexUri
 
 
 class TestModelOnexUri:
@@ -347,12 +347,10 @@ class TestModelOnexUri:
         assert uri1 == uri2
         assert uri1 != uri3
 
-    def test_compatibility_alias(self):
-        """Test that OnexUriModel is an alias for ModelOnexUri."""
-        assert OnexUriModel is ModelOnexUri
-
-        # Test that the alias works for instantiation
-        uri = OnexUriModel(
+    def test_model_instantiation_explicit_typing(self):
+        """Test that ModelOnexUri uses explicit typing without aliases."""
+        # Test direct instantiation
+        uri = ModelOnexUri(
             type="tool",
             namespace="test://namespace",
             version_spec="1.0.0",

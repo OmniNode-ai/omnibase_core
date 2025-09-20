@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from ..metadata.model_semver import ModelSemVer
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 
 
@@ -29,7 +30,7 @@ class ModelExampleMetadataSummary(BaseModel):
 
     created_at: str | None = Field(None, description="Creation timestamp")
     updated_at: str | None = Field(None, description="Update timestamp")
-    version: str | None = Field(None, description="Metadata version")
+    version: ModelSemVer | None = Field(None, description="Metadata version")
     author: str | None = Field(None, description="Author information")
     tags: list[str] = Field(default_factory=list, description="Associated tags")
     custom_fields: dict[str, str | int | bool | float] = Field(

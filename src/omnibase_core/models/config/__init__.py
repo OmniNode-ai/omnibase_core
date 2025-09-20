@@ -10,7 +10,7 @@ from .model_environment_properties import ModelEnvironmentProperties
 from .model_examples_collection import ModelExamples as ModelExamplesCollection
 from .model_fallback_strategy import ModelFallbackStrategy
 from .model_namespace_config import ModelNamespaceConfig
-from .model_uri import ModelOnexUri as ModelUri
+from .model_uri import ModelOnexUri
 
 __all__ = [
     "ModelArtifactTypeConfig",
@@ -19,5 +19,5 @@ __all__ = [
     "ModelExamplesCollection",
     "ModelFallbackStrategy",
     "ModelNamespaceConfig",
-    "ModelUri",
+    "ModelOnexUri",
 ]

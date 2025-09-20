@@ -5,14 +5,14 @@ Clean, strongly-typed replacement for the horrible FunctionNodeData union type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from typing import Any, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from .model_boolean_metrics import ModelBooleanMetrics
 from .model_nested_configuration import ModelNestedConfiguration
-from .model_numeric_metrics import ModelNumericMetrics
-from .model_string_metrics import ModelStringMetrics
+from .model_semver import ModelSemVer
+from .model_typed_metrics import ModelTypedMetrics
 
 
 class ModelFunctionNodeData(BaseModel):
@@ -36,22 +36,25 @@ class ModelFunctionNodeData(BaseModel):
     # Basic properties
     node_type: str = Field(default="function", description="Type of node")
     status: str = Field(default="active", description="Node status")
-    version: str = Field(default="1.0.0", description="Node version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
 
     # Structured data instead of horrible unions
     tags: list[str] = Field(
         default_factory=list, description="Tags associated with the node"
     )
 
-    string_properties: list[ModelStringMetrics] = Field(
+    string_properties: list[ModelTypedMetrics[str]] = Field(
         default_factory=list, description="String-based properties and metadata"
     )
 
-    numeric_properties: list[ModelNumericMetrics] = Field(
-        default_factory=list, description="Numeric properties and metrics"
-    )
+    numeric_properties: list[
+        Union[ModelTypedMetrics[int], ModelTypedMetrics[float]]
+    ] = Field(default_factory=list, description="Numeric properties and metrics")
 
-    boolean_properties: list[ModelBooleanMetrics] = Field(
+    boolean_properties: list[ModelTypedMetrics[bool]] = Field(
         default_factory=list, description="Boolean flags and states"
     )
 
@@ -59,17 +62,31 @@ class ModelFunctionNodeData(BaseModel):
         default_factory=list, description="Nested configuration objects"
     )
 
-    def add_string_property(self, name: str, value: str) -> None:
+    def add_string_property(self, name: str, value: str, **kwargs: Any) -> None:
         """Add a string property."""
-        self.string_properties.append(ModelStringMetrics(name=name, value=value))
+        self.string_properties.append(
+            ModelTypedMetrics.string_metric(name=name, value=value, **kwargs)
+        )
 
-    def add_numeric_property(self, name: str, value: int | float) -> None:
+    def add_numeric_property(
+        self, name: str, value: int | float, **kwargs: Any
+    ) -> None:
         """Add a numeric property."""
-        self.numeric_properties.append(ModelNumericMetrics(name=name, value=value))
+        if isinstance(value, int):
+            # Use int_metric for integer values
+            metric: Union[ModelTypedMetrics[int], ModelTypedMetrics[float]] = (
+                ModelTypedMetrics.int_metric(name=name, value=value, **kwargs)
+            )
+        else:
+            # Use float_metric for float values
+            metric = ModelTypedMetrics.float_metric(name=name, value=value, **kwargs)
+        self.numeric_properties.append(metric)
 
-    def add_boolean_property(self, name: str, value: bool) -> None:
+    def add_boolean_property(self, name: str, value: bool, **kwargs: Any) -> None:
         """Add a boolean property."""
-        self.boolean_properties.append(ModelBooleanMetrics(name=name, value=value))
+        self.boolean_properties.append(
+            ModelTypedMetrics.boolean_metric(name=name, value=value, **kwargs)
+        )
 
     def add_configuration(
         self,
