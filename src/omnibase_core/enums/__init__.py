@@ -11,6 +11,8 @@ from .enum_complexity import EnumComplexity
 from .enum_connection_state import EnumConnectionState
 from .enum_connection_type import EnumConnectionType
 from .enum_document_freshness_errors import EnumDocumentFreshnessErrorCodes
+# Export with the name used in imports
+EnumDocumentFreshnessErrors = EnumDocumentFreshnessErrorCodes
 from .enum_error_category import EnumErrorCategory
 from .enum_error_code import EnumErrorCode
 from .enum_example_category import EnumExampleCategory
@@ -43,6 +45,7 @@ __all__ = [
     "EnumConnectionState",
     "EnumConnectionType",
     "EnumDocumentFreshnessErrorCodes",
+    "EnumDocumentFreshnessErrors",
     "EnumErrorCategory",
     "EnumErrorCode",
     "EnumExampleCategory",

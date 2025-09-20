@@ -93,7 +93,7 @@ class UtilityDebugIntelligenceCapture:
 
         return problem_id
 
-    def query_similar_problems(
+    async def query_similar_problems(
         self,
         problem_description: str,
         problem_type: EnumProblemType | None = None,
