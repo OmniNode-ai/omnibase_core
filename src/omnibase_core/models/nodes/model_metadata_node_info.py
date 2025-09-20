@@ -10,9 +10,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.nodes.enum_metadata_node_complexity import ModelMetadataNodeComplexity
-from omnibase_core.models.nodes.enum_metadata_node_status import ModelMetadataNodeStatus
-from omnibase_core.models.nodes.enum_metadata_node_type import ModelMetadataNodeType
+from omnibase_core.models.nodes.enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from omnibase_core.models.nodes.enum_metadata_node_status import EnumMetadataNodeStatus
+from omnibase_core.models.nodes.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.models.nodes.model_metadata_usage_metrics import ModelMetadataUsageMetrics
 
 
@@ -32,18 +32,18 @@ class ModelMetadataNodeInfo(BaseModel):
     # Core identification
     name: str = Field(..., description="Node name")
     description: str = Field(default="", description="Node description")
-    node_type: ModelMetadataNodeType = Field(
-        default=ModelMetadataNodeType.FUNCTION,
+    node_type: EnumMetadataNodeType = Field(
+        default=EnumMetadataNodeType.FUNCTION,
         description="Node type",
     )
 
     # Status and lifecycle
-    status: ModelMetadataNodeStatus = Field(
-        default=ModelMetadataNodeStatus.ACTIVE,
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    complexity: ModelMetadataNodeComplexity = Field(
-        default=ModelMetadataNodeComplexity.SIMPLE,
+    complexity: EnumMetadataNodeComplexity = Field(
+        default=EnumMetadataNodeComplexity.SIMPLE,
         description="Node complexity level",
     )
     version: str = Field(default="1.0.0", description="Node version")
@@ -104,25 +104,25 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status == ModelMetadataNodeStatus.ACTIVE
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_stable(self) -> bool:
         """Check if node is stable."""
-        return self.status == ModelMetadataNodeStatus.STABLE
+        return self.status == EnumMetadataNodeStatus.STABLE
 
     def is_experimental(self) -> bool:
         """Check if node is experimental."""
-        return self.status == ModelMetadataNodeStatus.EXPERIMENTAL
+        return self.status == EnumMetadataNodeStatus.EXPERIMENTAL
 
     def is_simple(self) -> bool:
         """Check if node is simple complexity."""
-        return self.complexity == ModelMetadataNodeComplexity.SIMPLE
+        return self.complexity == EnumMetadataNodeComplexity.SIMPLE
 
     def is_complex(self) -> bool:
         """Check if node is complex."""
         return self.complexity in [
-            ModelMetadataNodeComplexity.COMPLEX,
-            ModelMetadataNodeComplexity.ADVANCED,
+            EnumMetadataNodeComplexity.COMPLEX,
+            EnumMetadataNodeComplexity.ADVANCED,
         ]
 
     def has_good_documentation(self) -> bool:
@@ -139,10 +139,10 @@ class ModelMetadataNodeInfo(BaseModel):
     def get_complexity_score(self) -> int:
         """Get numeric complexity score."""
         complexity_scores = {
-            ModelMetadataNodeComplexity.SIMPLE: 1,
-            ModelMetadataNodeComplexity.MODERATE: 2,
-            ModelMetadataNodeComplexity.COMPLEX: 3,
-            ModelMetadataNodeComplexity.ADVANCED: 4,
+            EnumMetadataNodeComplexity.SIMPLE: 1,
+            EnumMetadataNodeComplexity.MODERATE: 2,
+            EnumMetadataNodeComplexity.COMPLEX: 3,
+            EnumMetadataNodeComplexity.ADVANCED: 4,
         }
         return complexity_scores.get(self.complexity, 1)
 
@@ -173,12 +173,12 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def mark_active(self) -> None:
         """Mark node as active."""
-        self.status = ModelMetadataNodeStatus.ACTIVE
+        self.status = EnumMetadataNodeStatus.ACTIVE
         self.update_timestamp()
 
     def mark_stable(self) -> None:
         """Mark node as stable."""
-        self.status = ModelMetadataNodeStatus.STABLE
+        self.status = EnumMetadataNodeStatus.STABLE
         self.update_timestamp()
 
     def update_timestamp(self) -> None:
@@ -243,7 +243,7 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-        node_type: ModelMetadataNodeType = ModelMetadataNodeType.FUNCTION,
+        node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
     ) -> "ModelMetadataNodeInfo":
         """Create a simple node info."""
         return cls(
@@ -257,13 +257,13 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-        complexity: ModelMetadataNodeComplexity = ModelMetadataNodeComplexity.SIMPLE,
+        complexity: EnumMetadataNodeComplexity = EnumMetadataNodeComplexity.SIMPLE,
     ) -> "ModelMetadataNodeInfo":
         """Create function node info."""
         return cls(
             name=name,
             description=description,
-            node_type=ModelMetadataNodeType.FUNCTION,
+            node_type=EnumMetadataNodeType.FUNCTION,
             complexity=complexity,
         )
 
@@ -277,7 +277,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return cls(
             name=name,
             description=description,
-            node_type=ModelMetadataNodeType.DOCUMENTATION,
+            node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
             documentation_quality="good",
         )

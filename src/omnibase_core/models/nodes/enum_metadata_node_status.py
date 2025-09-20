@@ -7,7 +7,7 @@ Enumeration defining different status states for metadata nodes.
 from enum import Enum
 
 
-class ModelMetadataNodeStatus(str, Enum):
+class EnumMetadataNodeStatus(str, Enum):
     """Metadata node status enumeration."""
 
     ACTIVE = "active"
@@ -20,4 +20,4 @@ class ModelMetadataNodeStatus(str, Enum):
 
 
 # Export for use
-__all__ = ["ModelMetadataNodeStatus"]
+__all__ = ["EnumMetadataNodeStatus"]

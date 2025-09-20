@@ -14,9 +14,9 @@ from .model_metadata_node_collection import ModelMetadataNodeCollection
 from .model_metadata_node_info import ModelMetadataNodeInfo
 
 # Metadata node enums and supporting models
-from .enum_metadata_node_complexity import ModelMetadataNodeComplexity
-from .enum_metadata_node_status import ModelMetadataNodeStatus
-from .enum_metadata_node_type import ModelMetadataNodeType
+from .enum_metadata_node_complexity import EnumMetadataNodeComplexity
+from .enum_metadata_node_status import EnumMetadataNodeStatus
+from .enum_metadata_node_type import EnumMetadataNodeType
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
 
 # CLI command patterns and components
@@ -46,10 +46,10 @@ __all__ = [
     # Metadata and collections
     "ModelMetadataNodeAnalytics",
     "ModelMetadataNodeCollection",
-    "ModelMetadataNodeComplexity",
+    "EnumMetadataNodeComplexity",
     "ModelMetadataNodeInfo",
-    "ModelMetadataNodeStatus",
-    "ModelMetadataNodeType",
+    "EnumMetadataNodeStatus",
+    "EnumMetadataNodeType",
     "ModelMetadataUsageMetrics",
     # CLI command patterns and components
     "CliCommand",

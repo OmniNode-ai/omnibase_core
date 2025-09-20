@@ -16,8 +16,8 @@ from omnibase_core.models.core.model_function_node import ModelFunctionNode
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_info import (
     ModelMetadataNodeInfo,
-    ModelMetadataNodeType,
 )
+from .enum_metadata_node_type import EnumMetadataNodeType
 
 
 class ModelMetadataNodeCollection(
@@ -394,7 +394,7 @@ class ModelMetadataNodeCollection(
                 node_info = ModelMetadataNodeInfo(
                     name=name,
                     description=getattr(node, "description", ""),
-                    node_type=ModelMetadataNodeType.FUNCTION,
+                    node_type=EnumMetadataNodeType.FUNCTION,
                 )
                 collection.update_node_info(name, node_info)
 

@@ -7,7 +7,7 @@ Enumeration defining complexity levels for metadata nodes.
 from enum import Enum
 
 
-class ModelMetadataNodeComplexity(str, Enum):
+class EnumMetadataNodeComplexity(str, Enum):
     """Metadata node complexity enumeration."""
 
     SIMPLE = "simple"
@@ -17,4 +17,4 @@ class ModelMetadataNodeComplexity(str, Enum):
 
 
 # Export for use
-__all__ = ["ModelMetadataNodeComplexity"]
+__all__ = ["EnumMetadataNodeComplexity"]

@@ -7,7 +7,7 @@ Enumeration defining different types of metadata nodes.
 from enum import Enum
 
 
-class ModelMetadataNodeType(str, Enum):
+class EnumMetadataNodeType(str, Enum):
     """Metadata node type enumeration."""
 
     FUNCTION = "function"
@@ -25,4 +25,4 @@ class ModelMetadataNodeType(str, Enum):
 
 
 # Export for use
-__all__ = ["ModelMetadataNodeType"]
+__all__ = ["EnumMetadataNodeType"]
