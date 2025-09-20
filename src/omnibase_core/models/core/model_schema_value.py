@@ -74,6 +74,22 @@ class ModelSchemaValueFactory(Generic[T]):
     Generic factory for creating ModelSchemaValue instances from Python values.
 
     Provides type-safe conversion methods with generic support for custom types.
+    Includes recursion protection for extremely deep nested structures.
+
+    Example:
+        >>> factory = ModelSchemaValueFactory[dict]()
+        >>> result = factory.from_value({"key": "value"})
+        >>> isinstance(result, ModelSchemaValueObject)
+        True
+
+        >>> # Convert back to Python value
+        >>> original = factory.to_value(result)
+        >>> original == {"key": "value"}
+        True
+
+    Note:
+        The factory includes recursion protection to prevent stack overflow
+        with extremely deep nested structures (default limit: 100 levels).
     """
 
     # Type mappings for factory pattern
@@ -83,35 +99,64 @@ class ModelSchemaValueFactory(Generic[T]):
         str: lambda v: ModelSchemaValueString(string_value=v),
         int: lambda v: ModelSchemaValueNumber(number_value=v),
         float: lambda v: ModelSchemaValueNumber(number_value=v),
-        list: lambda v: ModelSchemaValueArray(
-            array_value=[ModelSchemaValueFactory.from_value(item) for item in v]
-        ),
-        dict: lambda v: ModelSchemaValueObject(
-            object_value={k: ModelSchemaValueFactory.from_value(val) for k, val in v.items()}
-        ),
+        # list and dict handlers are defined as class methods to access depth
     }
 
     # Custom type converters registry
     _CUSTOM_CONVERTERS: dict[type, Callable[[Any], ModelSchemaValue]] = {}
 
+    # Recursion protection
+    _MAX_RECURSION_DEPTH = 100
+
     @classmethod
-    def from_value(cls, value: Any) -> ModelSchemaValue:
+    def from_value(cls, value: Any, _depth: int = 0) -> ModelSchemaValue:
         """
         Create ModelSchemaValue from a Python value using factory pattern.
 
         Args:
             value: Python value to convert
+            _depth: Internal recursion depth counter (should not be set manually)
 
         Returns:
             ModelSchemaValue instance (discriminated union)
+
+        Raises:
+            RecursionError: If recursion depth exceeds the maximum limit (100)
+            ValueError: If value type cannot be converted
+
+        Example:
+            >>> factory = ModelSchemaValueFactory()
+            >>> result = factory.from_value("hello")
+            >>> result.value_type
+            'string'
+            >>> result.string_value
+            'hello'
         """
+        # Recursion protection
+        if _depth > cls._MAX_RECURSION_DEPTH:
+            raise RecursionError(
+                f"Maximum recursion depth ({cls._MAX_RECURSION_DEPTH}) exceeded "
+                "while converting nested structure to ModelSchemaValue. "
+                "Consider simplifying the data structure or increasing the limit."
+            )
         value_type = type(value)
 
         # Handle boolean first since bool is a subclass of int
         if isinstance(value, bool):
             return cls._TYPE_HANDLERS[bool](value)
 
-        # Check for direct type match
+        # Handle exact list and dict types with depth tracking
+        if value_type is list:
+            return ModelSchemaValueArray(
+                array_value=[cls.from_value(item, _depth + 1) for item in value]
+            )
+
+        if value_type is dict:
+            return ModelSchemaValueObject(
+                object_value={str(k): cls.from_value(v, _depth + 1) for k, v in value.items()}
+            )
+
+        # Check for direct type match (simple types only)
         if value_type in cls._TYPE_HANDLERS:
             return cls._TYPE_HANDLERS[value_type](value)
 
@@ -122,13 +167,13 @@ class ModelSchemaValueFactory(Generic[T]):
         # Handle list-like objects
         if hasattr(value, '__iter__') and not isinstance(value, (str, dict)):
             return ModelSchemaValueArray(
-                array_value=[cls.from_value(item) for item in value]
+                array_value=[cls.from_value(item, _depth + 1) for item in value]
             )
 
         # Handle dict-like objects
         if hasattr(value, 'items'):
             return ModelSchemaValueObject(
-                object_value={str(k): cls.from_value(v) for k, v in value.items()}
+                object_value={str(k): cls.from_value(v, _depth + 1) for k, v in value.items()}
             )
 
         # Check for custom converters
@@ -178,6 +223,19 @@ class ModelSchemaValueFactory(Generic[T]):
         Args:
             type_class: The type to register a converter for
             converter: Function to convert instances of type_class to ModelSchemaValue
+
+        Example:
+            >>> from datetime import date
+            >>> def date_converter(d: date) -> ModelSchemaValueString:
+            ...     return ModelSchemaValueString(string_value=d.isoformat())
+            >>> ModelSchemaValueFactory.register_converter(date, date_converter)
+            >>> result = ModelSchemaValueFactory.from_value(date(2024, 1, 15))
+            >>> result.string_value
+            '2024-01-15'
+
+        Note:
+            Custom converters should handle their own recursion protection
+            if they call from_value() internally.
         """
         cls._CUSTOM_CONVERTERS[type_class] = converter
 
@@ -300,13 +358,78 @@ class ModelSchemaValueFactory(Generic[T]):
         """
         return [cls.to_value(schema_value) for schema_value in schema_values]
 
+    @classmethod
+    def set_max_recursion_depth(cls, depth: int) -> None:
+        """
+        Set the maximum recursion depth for nested structure conversion.
+
+        Args:
+            depth: Maximum recursion depth (must be positive)
+
+        Raises:
+            ValueError: If depth is not positive
+
+        Example:
+            >>> ModelSchemaValueFactory.set_max_recursion_depth(200)
+            >>> ModelSchemaValueFactory.get_max_recursion_depth()
+            200
+        """
+        if depth <= 0:
+            raise ValueError("Recursion depth must be positive")
+        cls._MAX_RECURSION_DEPTH = depth
+
+    @classmethod
+    def get_max_recursion_depth(cls) -> int:
+        """
+        Get the current maximum recursion depth.
+
+        Returns:
+            Current maximum recursion depth
+
+        Example:
+            >>> ModelSchemaValueFactory.get_max_recursion_depth()
+            100
+        """
+        return cls._MAX_RECURSION_DEPTH
+
 
 # Convenience functions for backward compatibility
 def from_value(value: Any) -> ModelSchemaValue:
-    """Create ModelSchemaValue from Python value."""
+    """
+    Create ModelSchemaValue from Python value.
+
+    This is a convenience function that uses the ModelSchemaValueFactory.
+    For more advanced features like recursion depth control, use the factory directly.
+
+    Args:
+        value: Python value to convert
+
+    Returns:
+        ModelSchemaValue instance
+
+    Example:
+        >>> result = from_value({"key": "value"})
+        >>> result.value_type
+        'object'
+    """
     return ModelSchemaValueFactory.from_value(value)
 
 
 def to_value(schema_value: ModelSchemaValue) -> Any:
-    """Convert ModelSchemaValue to Python value."""
+    """
+    Convert ModelSchemaValue to Python value.
+
+    This is a convenience function that uses the ModelSchemaValueFactory.
+
+    Args:
+        schema_value: ModelSchemaValue to convert
+
+    Returns:
+        Python value
+
+    Example:
+        >>> schema_val = ModelSchemaValueString(string_value="hello")
+        >>> to_value(schema_val)
+        'hello'
+    """
     return ModelSchemaValueFactory.to_value(schema_value)
