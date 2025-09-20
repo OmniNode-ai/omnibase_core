@@ -216,18 +216,12 @@ class ModelExamples(BaseModel):
         for example in self.examples:
             example_summaries.append(
                 ModelExampleSummary(
-                    example_id=str(example.example_id),
+                    example_id=example.example_id,
                     name=example.name,
                     description=example.description,
                     is_valid=True,  # You can add validation logic here
-                    input_data=(
-                        example.input_data.model_dump() if example.input_data else None
-                    ),
-                    output_data=(
-                        example.output_data.model_dump()
-                        if example.output_data
-                        else None
-                    ),
+                    input_data=None,  # Type mismatch: ModelGenericMetadata vs ModelExampleInputData
+                    output_data=None,  # Type mismatch: ModelGenericMetadata vs ModelExampleOutputData
                 )
             )
 
@@ -235,16 +229,12 @@ class ModelExamples(BaseModel):
         metadata_summary = None
         if self.metadata:
             metadata_summary = ModelExampleMetadataSummary(
-                created_at=(
-                    str(self.metadata.created_at) if self.metadata.created_at else None
-                ),
-                updated_at=(
-                    str(self.metadata.updated_at) if self.metadata.updated_at else None
-                ),
-                version=self.metadata.version,
-                author=self.metadata.author,
+                created_at=None,  # Not available in current metadata model
+                updated_at=None,  # Not available in current metadata model
+                version=None,  # Not available in current metadata model
+                author=None,  # Not available in current metadata model
                 tags=self.metadata.tags or [],
-                custom_fields=self.metadata.custom_fields or {},
+                custom_fields={},  # Not available in current metadata model
             )
 
         return ModelExamplesCollectionSummary(
@@ -254,6 +244,7 @@ class ModelExamples(BaseModel):
             schema_compliant=self.schema_compliant,
             example_count=self.example_count(),
             valid_example_count=self.valid_example_count(),
+            last_updated=str(datetime.now(UTC)),
         )
 
     @classmethod

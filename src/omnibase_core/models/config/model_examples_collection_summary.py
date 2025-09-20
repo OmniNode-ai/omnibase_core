@@ -6,6 +6,7 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +16,7 @@ from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 class ModelExampleSummary(BaseModel):
     """Clean model for individual example summary data."""
 
-    example_id: str = Field(..., description="Example identifier")
+    example_id: UUID = Field(default_factory=uuid4, description="Example identifier")
     name: str = Field(..., description="Example name")
     description: str | None = Field(None, description="Example description")
     is_valid: bool = Field(default=True, description="Whether example is valid")
@@ -76,61 +77,3 @@ class ModelExamplesCollectionSummary(BaseModel):
             self.completion_rate = (self.valid_example_count / self.example_count) * 100
         else:
             self.completion_rate = 0.0
-
-    @classmethod
-    def from_legacy_dict(
-        cls,
-        data: dict[str, str | int | bool | list[dict[str, str | int | bool]] | None],
-    ) -> "ModelExamplesCollectionSummary":
-        """
-        Create from legacy dict data for migration.
-
-        This method helps migrate from the horrible union type to clean model.
-        """
-        # Extract examples data
-        examples_data = data.get("examples", [])
-        examples = []
-
-        if isinstance(examples_data, list):
-            for i, example_dict in enumerate(examples_data):
-                if isinstance(example_dict, dict):
-                    examples.append(
-                        ModelExampleSummary(
-                            example_id=example_dict.get("example_id", f"example_{i}"),
-                            name=example_dict.get("name", f"Example {i}"),
-                            description=example_dict.get("description"),
-                            is_valid=example_dict.get("is_valid", True),
-                            input_data=example_dict.get("input_data"),
-                            output_data=example_dict.get("output_data"),
-                        )
-                    )
-
-        # Extract metadata
-        metadata_data = data.get("metadata")
-        metadata = None
-        if isinstance(metadata_data, dict):
-            metadata = ModelExampleMetadataSummary(
-                created_at=metadata_data.get("created_at"),
-                updated_at=metadata_data.get("updated_at"),
-                version=metadata_data.get("version"),
-                author=metadata_data.get("author"),
-                tags=metadata_data.get("tags", []),
-                custom_fields=metadata_data.get("custom_fields", {}),
-            )
-
-        return cls(
-            examples=examples,
-            metadata=metadata,
-            format=str(data.get("format", "json")),
-            schema_compliant=bool(data.get("schema_compliant", True)),
-            example_count=int(data.get("example_count", len(examples))),
-            valid_example_count=int(data.get("valid_example_count", len(examples))),
-        )
-
-
-# Export the models
-__all__ = [
-    "ModelExamplesCollectionSummary",
-    "ModelExampleSummary",
-    "ModelExampleMetadataSummary",
-]

@@ -135,6 +135,16 @@ repos:
         exclude: ^(tests/|archive/|archived/).*\.py$
         stages: [pre-commit]
 
+      - id: validate-no-dict-methods
+        name: ONEX Dict Methods Anti-Pattern Detection (from_dict/to_dict banned)
+        entry: poetry run python scripts/validation/validate-no-dict-methods.py
+        args: ['--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
         name: ONEX Contract Validation

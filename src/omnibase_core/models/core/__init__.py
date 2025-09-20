@@ -18,7 +18,7 @@ from ..infrastructure.model_environment_variables import ModelEnvironmentVariabl
 from ..infrastructure.model_progress import ModelProgress
 from ..infrastructure.model_result import (
     BoolResult,
-    DictResult,
+    DataResult,
     IntResult,
     ListResult,
     Result,

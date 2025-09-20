@@ -6,6 +6,7 @@ Simple model for node metadata information used in CLI output.
 
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +19,7 @@ class ModelNodeMetadataInfo(BaseModel):
     """
 
     # Core metadata
-    node_id: str = Field(..., description="Node identifier")
+    node_id: UUID = Field(default_factory=uuid4, description="Node identifier")
     node_name: str = Field(..., description="Node name")
     node_type: str = Field(..., description="Node type")
 
@@ -138,7 +139,7 @@ class ModelNodeMetadataInfo(BaseModel):
     def get_summary(self) -> dict[str, str | int | bool | float | list[str] | None]:
         """Get node metadata summary."""
         return {
-            "node_id": self.node_id,
+            "node_id": str(self.node_id),
             "node_name": self.node_name,
             "node_type": self.node_type,
             "status": self.status,
@@ -157,7 +158,7 @@ class ModelNodeMetadataInfo(BaseModel):
     @classmethod
     def create_simple(
         cls,
-        node_id: str,
+        node_id: UUID,
         node_name: str,
         node_type: str = "generic",
     ) -> "ModelNodeMetadataInfo":
@@ -173,7 +174,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Create from node info object."""
         # Extract basic information
         return cls(
-            node_id=getattr(node_info, "node_id", "unknown"),
+            node_id=getattr(node_info, "node_id", uuid4()),
             node_name=getattr(node_info, "node_name", "unknown"),
             node_type=getattr(node_info, "node_type", "generic"),
             description=getattr(node_info, "description", None),

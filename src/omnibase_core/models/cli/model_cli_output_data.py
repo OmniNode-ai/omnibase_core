@@ -92,14 +92,27 @@ class ModelCliOutputData(BaseModel):
         status: str = "completed",
     ) -> "ModelCliOutputData":
         """Create simple output data with just stdout/stderr."""
-        return cls(stdout=stdout, stderr=stderr, status=status)
+        return cls(
+            stdout=stdout,
+            stderr=stderr,
+            status=status,
+            execution_time_ms=None,
+            memory_usage_mb=None,
+        )
 
     @classmethod
     def create_with_results(
         cls, results: dict[str, str | int | bool | float], status: str = "completed"
     ) -> "ModelCliOutputData":
         """Create output data with structured results."""
-        return cls(results=results, status=status)
+        return cls(
+            results=results,
+            status=status,
+            stdout=None,
+            stderr=None,
+            execution_time_ms=None,
+            memory_usage_mb=None,
+        )
 
 
 # Export the model

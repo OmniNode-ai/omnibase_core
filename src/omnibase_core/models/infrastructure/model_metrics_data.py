@@ -99,19 +99,19 @@ class ModelMetricsData(BaseModel):
     def get_metric_by_key(self, key: str) -> Any | None:
         """Get metric value by key."""
         # Search string metrics
-        for metric in self.string_metrics:
-            if metric.key == key:
-                return metric.value
+        for string_metric in self.string_metrics:
+            if string_metric.key == key:
+                return string_metric.value
 
         # Search numeric metrics
-        for metric in self.numeric_metrics:
-            if metric.key == key:
-                return metric.value
+        for numeric_metric in self.numeric_metrics:
+            if numeric_metric.key == key:
+                return numeric_metric.value
 
         # Search boolean metrics
-        for metric in self.boolean_metrics:
-            if metric.key == key:
-                return metric.value
+        for boolean_metric in self.boolean_metrics:
+            if boolean_metric.key == key:
+                return boolean_metric.value
 
         return None
 
@@ -122,50 +122,3 @@ class ModelMetricsData(BaseModel):
         keys.extend([m.key for m in self.numeric_metrics])
         keys.extend([m.key for m in self.boolean_metrics])
         return keys
-
-    @classmethod
-    def from_legacy_dict(
-        cls,
-        data: dict[str, str | int | bool | float],
-        collection_name: str | None = None,
-    ) -> "ModelMetricsData":
-        """
-        Create from legacy dict data for migration.
-
-        This method helps migrate from the horrible union type to clean model.
-        """
-        instance = cls(collection_name=collection_name)
-
-        for key, value in data.items():
-            if isinstance(value, str):
-                instance.add_string_metric(key, value)
-            elif isinstance(value, (int, float)):
-                instance.add_numeric_metric(key, value)
-            elif isinstance(value, bool):
-                instance.add_boolean_metric(key, value)
-
-        return instance
-
-    def to_legacy_dict(self) -> dict[str, str | int | bool | float]:
-        """Convert back to legacy dict format for compatibility."""
-        result = {}
-
-        for metric in self.string_metrics:
-            result[metric.key] = metric.value
-
-        for metric in self.numeric_metrics:
-            result[metric.key] = metric.value
-
-        for metric in self.boolean_metrics:
-            result[metric.key] = metric.value
-
-        return result
-
-
-# Export the models
-__all__ = [
-    "ModelMetricsData",
-    "ModelStringMetric",
-    "ModelNumericMetric",
-    "ModelBooleanMetric",
-]

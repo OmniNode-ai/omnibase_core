@@ -4,6 +4,8 @@ Semantic Version Model
 Pydantic model for semantic versioning following SemVer specification.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -52,7 +54,7 @@ class ModelSemVer(BaseModel):
     def __eq__(self, other: object) -> bool:
         """Check equality with another ModelSemVer."""
         if not isinstance(other, ModelSemVer):
-            return NotImplemented
+            return False
         return (
             self.major == other.major
             and self.minor == other.minor
@@ -62,7 +64,7 @@ class ModelSemVer(BaseModel):
     def __lt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is less than another."""
         if not isinstance(other, ModelSemVer):
-            return NotImplemented
+            raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
         return (self.major, self.minor, self.patch) < (
             other.major,
             other.minor,
@@ -76,7 +78,7 @@ class ModelSemVer(BaseModel):
     def __gt__(self, other: "ModelSemVer") -> bool:
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
-            return NotImplemented
+            raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
         return (self.major, self.minor, self.patch) > (
             other.major,
             other.minor,
@@ -136,7 +138,9 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     )
 
 
-def parse_input_state_version(input_state: dict) -> "ModelSemVer":
+def parse_input_state_version(
+    input_state: dict[str, str | int | ModelSemVer | dict[str, int]],
+) -> "ModelSemVer":
     """
     Parse a version from an input state dict, requiring structured dictionary format.
 

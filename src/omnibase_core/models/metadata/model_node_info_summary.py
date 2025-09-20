@@ -66,49 +66,6 @@ class ModelNodeInfoSummary(BaseModel):
 
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
 
-    @classmethod
-    def from_legacy_dict(cls, data: dict[str, any]) -> "ModelNodeInfoSummary":
-        """
-        Create from legacy dict data for migration.
-
-        This method helps migrate from the horrible union type to clean model.
-        """
-        return cls(
-            name=str(data.get("name", "unknown")),
-            description=data.get("description"),
-            node_type=str(data.get("node_type", "unknown")),
-            status=str(data.get("status", "active")),
-            complexity=str(data.get("complexity", "medium")),
-            version=str(data.get("version", "1.0.0")),
-            created_at=data.get("created_at"),
-            updated_at=data.get("updated_at"),
-            last_validated=data.get("last_validated"),
-            tags=data.get("tags", []) if isinstance(data.get("tags"), list) else [],
-            categories=(
-                data.get("categories", [])
-                if isinstance(data.get("categories"), list)
-                else []
-            ),
-            dependencies=(
-                data.get("dependencies", [])
-                if isinstance(data.get("dependencies"), list)
-                else []
-            ),
-            related_nodes=(
-                data.get("related_nodes", [])
-                if isinstance(data.get("related_nodes"), list)
-                else []
-            ),
-            has_documentation=bool(data.get("has_documentation", False)),
-            has_examples=bool(data.get("has_examples", False)),
-            documentation_quality=str(data.get("documentation_quality", "unknown")),
-            usage_count=int(data.get("usage_count", 0)),
-            success_rate=float(data.get("success_rate", 0.0)),
-            error_rate=float(data.get("error_rate", 0.0)),
-            average_execution_time_ms=float(data.get("average_execution_time_ms", 0.0)),
-            memory_usage_mb=float(data.get("memory_usage_mb", 0.0)),
-        )
-
 
 # Export the model
 __all__ = ["ModelNodeInfoSummary"]

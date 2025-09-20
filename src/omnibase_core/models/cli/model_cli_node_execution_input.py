@@ -21,7 +21,7 @@ class ModelCliInputDict(TypedDict, total=False):
     action: str
     output_format: str
     verbose: bool
-    request_id: str
+    request_id: UUID
     execution_context: str | None
     target_node: str | None
     category_filter: str | None
