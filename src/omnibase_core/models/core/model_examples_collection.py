@@ -41,12 +41,12 @@ class ModelExamples(BaseModel):
 
     def add_example(
         self,
-        input_data: ModelGenericMetadata,
-        output_data: ModelGenericMetadata | None = None,
+        input_data: ModelGenericMetadata[Any],
+        output_data: ModelGenericMetadata[Any] | None = None,
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
-        context: ModelGenericMetadata | None = None,
+        context: ModelGenericMetadata[Any] | None = None,
     ) -> None:
         """Add a new example with full type safety."""
         example = ModelExample(
@@ -159,8 +159,8 @@ class ModelExamples(BaseModel):
     @classmethod
     def create_single_example(
         cls,
-        input_data: ModelGenericMetadata,
-        output_data: ModelGenericMetadata | None = None,
+        input_data: ModelGenericMetadata[Any],
+        output_data: ModelGenericMetadata[Any] | None = None,
         name: str | None = None,
     ) -> "ModelExamples":
         """Create collection with a single example."""

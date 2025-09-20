@@ -4,6 +4,7 @@ Omnibase Core - Enumerations
 Enumeration definitions for ONEX architecture with strong typing support.
 """
 
+from .enum_artifact_type import EnumArtifactType
 from .enum_auth_type import EnumAuthType
 from .enum_cli_status import EnumCliStatus
 from .enum_complexity import EnumComplexity
@@ -24,6 +25,7 @@ from .enum_scenario_status import EnumScenarioStatus
 from .enum_validation_severity import EnumValidationSeverity
 
 __all__ = [
+    "EnumArtifactType",
     "EnumAuthType",
     "EnumCliStatus",
     "EnumComplexity",

@@ -75,7 +75,7 @@ class ModelCliResult(BaseModel):
         description="Performance metrics and timing data",
     )
 
-    debug_info: ModelGenericMetadata | None = Field(
+    debug_info: ModelGenericMetadata[Any] | None = Field(
         None,
         description="Debug information (only included if debug enabled)",
     )
@@ -85,7 +85,7 @@ class ModelCliResult(BaseModel):
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: ModelGenericMetadata | None = Field(
+    result_metadata: ModelGenericMetadata[Any] | None = Field(
         None,
         description="Additional result metadata",
     )

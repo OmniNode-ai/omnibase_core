@@ -7,7 +7,7 @@ for CLI node execution operations.
 
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 
@@ -79,7 +79,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Request identifier for tracking",
     )
 
-    def to_legacy_dict(self) -> dict:
+    def to_legacy_dict(self) -> dict[str, Any]:
         """
         Convert to legacy dictionary format for current standards.
 
@@ -113,7 +113,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         return base_dict
 
     @classmethod
-    def from_legacy_dict(cls, data: dict) -> "ModelCliNodeExecutionInput":
+    def from_legacy_dict(cls, data: dict[str, Any]) -> "ModelCliNodeExecutionInput":
         """
         Create instance from legacy dictionary format.
 
@@ -148,11 +148,8 @@ class ModelCliNodeExecutionInput(BaseModel):
 
         return cls(advanced_params=advanced_params, **base_params)
 
-    class Config:
-        """Pydantic configuration."""
-
-        # Example for documentation
-        json_schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "action": "list_nodes",
                 "node_name": None,
@@ -169,3 +166,4 @@ class ModelCliNodeExecutionInput(BaseModel):
                 "request_id": "req_123456",
             },
         }
+    )

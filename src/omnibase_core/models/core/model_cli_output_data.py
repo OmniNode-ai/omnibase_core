@@ -83,7 +83,7 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Config/settings output (only when applicable)
-    config_details: ModelGenericMetadata | None = Field(
+    config_details: ModelGenericMetadata[Any] | None = Field(
         default=None,
         description="Configuration values (only for config operations)",
     )
@@ -112,7 +112,7 @@ class ModelCliOutputData(BaseModel):
     skipped: int = Field(default=0, description="Items skipped", ge=0)
 
     # Extended fields (only when truly needed)
-    custom_fields: ModelCustomFields | None = Field(
+    custom_fields: ModelCustomFields[Any] | None = Field(
         default=None,
         description="Extensible custom fields (only when standard fields insufficient)",
     )

@@ -5,6 +5,8 @@ Replaces EnumNodeCapability with a proper model that includes metadata,
 descriptions, and dependencies for each capability.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -66,7 +68,7 @@ class ModelNodeCapability(BaseModel):
         description="Replacement capability if deprecated",
     )
 
-    example_config: dict | None = Field(
+    example_config: dict[str, Any] | None = Field(
         default=None,
         description="Example configuration for this capability",
     )

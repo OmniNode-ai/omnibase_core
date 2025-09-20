@@ -7,7 +7,7 @@ for CLI tool execution operations.
 
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
 
@@ -112,11 +112,8 @@ class ModelCliExecutionResult(BaseModel):
             **kwargs,
         )
 
-    class Config:
-        """Pydantic configuration."""
-
-        # Example for documentation
-        json_schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "error_message": None,
@@ -127,3 +124,4 @@ class ModelCliExecutionResult(BaseModel):
                 "warning_message": None,
             },
         }
+    )

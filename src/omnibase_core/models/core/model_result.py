@@ -5,7 +5,7 @@ Generic Result[T, E] pattern for CLI operations providing type-safe
 success/error handling with proper MyPy compliance.
 """
 
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, Union, cast
 
 from pydantic import BaseModel, Field
 
@@ -109,7 +109,7 @@ class Result(BaseModel, Generic[T, E]):
             raise ValueError("Success result has None value")
         return self.value
 
-    def map(self, f: Callable[[T], Any]) -> "Result[Any, E]":
+    def map(self, f: Callable[[T], Any]) -> "Result[Any, Union[E, Exception]]":
         """
         Map function over the success value.
 
@@ -123,7 +123,7 @@ class Result(BaseModel, Generic[T, E]):
                 new_value = f(self.value)
                 return Result.ok(new_value)
             except Exception as e:
-                # Convert exceptions to error results (cast to E type)
+                # Convert exceptions to error results
                 return Result.err(e)
         if self.error is None:
             raise ValueError("Error result has None error")
@@ -148,7 +148,9 @@ class Result(BaseModel, Generic[T, E]):
         except Exception as e:
             return Result.err(e)
 
-    def and_then(self, f: Callable[[T], "Result[Any, E]"]) -> "Result[Any, E]":
+    def and_then(
+        self, f: Callable[[T], "Result[Any, E]"]
+    ) -> "Result[Any, Union[E, Exception]]":
         """
         Flat map (bind) operation for chaining Results.
 
@@ -159,7 +161,9 @@ class Result(BaseModel, Generic[T, E]):
             try:
                 if self.value is None:
                     raise ValueError("Success result has None value")
-                return f(self.value)
+                result = f(self.value)
+                # Cast the result to the expected type since we know it's compatible
+                return cast("Result[Any, Union[E, Exception]]", result)
             except Exception as e:
                 return Result.err(e)
         if self.error is None:

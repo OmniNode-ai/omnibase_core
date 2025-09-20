@@ -171,11 +171,11 @@ class ModelProcessor{i:03d}(BaseModel):
         result = {{}}
         for key, value in input_data.items():
             if isinstance(value, str):
-                result[f"processed_{key}_{i}"] = value.upper()
+                result[f"processed_{{key}}_{i}"] = value.upper()
             elif isinstance(value, (int, float)):
-                result[f"processed_{key}_{i}"] = value * {i + 1}
+                result[f"processed_{{key}}_{i}"] = value * {i + 1}
             else:
-                result[f"processed_{key}_{i}"] = str(value)
+                result[f"processed_{{key}}_{i}"] = str(value)
         return result
 
     def validate_input_{i}(self, data: Dict[str, Any]) -> bool:
