@@ -10,6 +10,7 @@ Prevents usage of anti-pattern names in class, function, and variable names:
 - "tmp" - indicates technical debt
 - "wrapper" - usually indicates poor design
 - "helper" - often indicates poor organization
+- "main" - indicates poor module organization
 
 This enforces proper naming conventions in the ONEX framework.
 """
@@ -38,6 +39,7 @@ class AntiPatternNameDetector(ast.NodeVisitor):
             "helper",
             "dummy",
             "fake",
+            "main",
         ]
         self.in_enum_class = False
         self.current_class_name = None
@@ -153,6 +155,32 @@ class AntiPatternNameDetector(ast.NodeVisitor):
 
 def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, str]]:
     """Check a single Python file for anti-pattern names."""
+    violations = []
+
+    # Check filename itself for anti-patterns
+    filename = filepath.stem  # Get filename without extension
+    banned_words = [
+        "simple",
+        "mock",
+        "basic",
+        "temp",
+        "tmp",
+        "wrapper",
+        "helper",
+        "dummy",
+        "fake",
+        "main",
+    ]
+    for banned_word in banned_words:
+        if banned_word in filename.lower():
+            violations.append(
+                (
+                    0,
+                    f"Filename contains banned word '{banned_word}': {filepath.name}",
+                    "Filename",
+                )
+            )
+
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
@@ -162,7 +190,8 @@ def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, st
         detector = AntiPatternNameDetector(str(filepath))
         detector.visit(tree)
 
-        return detector.violations
+        violations.extend(detector.violations)
+        return violations
 
     except SyntaxError as e:
         return [(e.lineno or 0, f"Syntax error: {e.msg}", "")]
