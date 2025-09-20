@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_test_result import ModelTestResult
+from .model_test_result import ModelTestResult
 
 
 class ModelTestResults(BaseModel):

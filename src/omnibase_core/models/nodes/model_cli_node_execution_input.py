@@ -9,8 +9,8 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_cli_action import EnumCliAction
-from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
+from ...enums.enum_cli_action import EnumCliAction
+from ..core.model_advanced_params import ModelAdvancedParams
 
 
 def _create_advanced_params() -> ModelAdvancedParams:

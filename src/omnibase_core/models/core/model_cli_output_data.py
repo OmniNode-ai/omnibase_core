@@ -9,14 +9,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_cli_status import EnumCliStatus
-from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-from omnibase_core.enums.enum_scenario_status import EnumScenarioStatus
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
-from omnibase_core.models.core.model_node_info import ModelNodeInfo
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
-from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-from omnibase_core.models.core.model_test_results import ModelTestResults
+from ...enums.enum_cli_status import EnumCliStatus
+from ...enums.enum_registry_status import EnumRegistryStatus
+from ...enums.enum_scenario_status import EnumScenarioStatus
+from .model_custom_fields import ModelCustomFields
+from .model_node_info import ModelNodeInfo
+from .model_node_metadata_info import ModelNodeMetadataInfo
+from .model_generic_metadata import ModelGenericMetadata
+from .model_test_results import ModelTestResults
 
 
 def _create_test_results() -> ModelTestResults:
