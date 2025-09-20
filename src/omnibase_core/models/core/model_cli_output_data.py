@@ -15,9 +15,13 @@ from omnibase_core.enums.enum_scenario_status import EnumScenarioStatus
 from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.core.model_node_info import ModelNodeInfo
 from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.core.model_test_results import ModelTestResults
 
-from .model_generic_metadata import ModelGenericMetadata
-from .model_test_results import ModelTestResults
+
+def _create_test_results() -> ModelTestResults:
+    """Create default ModelTestResults instance."""
+    return ModelTestResults()
 
 
 class ModelCliOutputData(BaseModel):
@@ -70,7 +74,7 @@ class ModelCliOutputData(BaseModel):
     )
 
     test_results: ModelTestResults = Field(
-        default_factory=ModelTestResults,
+        default_factory=_create_test_results,
         description="Strongly typed test results",
     )
 

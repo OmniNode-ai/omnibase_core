@@ -10,11 +10,11 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
-from ..core.errors.core_errors import CoreErrorCode
-from ..exceptions import OnexError
+from omnibase_core.core.errors.core_errors import CoreErrorCode
+from omnibase_core.exceptions import OnexError
 
 
-def standard_error_handling(operation_name: str = "operation"):
+def standard_error_handling(operation_name: str = "operation") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator that provides standard error handling pattern for ONEX tools.
 
@@ -48,7 +48,7 @@ def standard_error_handling(operation_name: str = "operation"):
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except OnexError:
@@ -58,8 +58,8 @@ def standard_error_handling(operation_name: str = "operation"):
                 # Convert generic exceptions to OnexError with proper chaining
                 msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    msg,
                     CoreErrorCode.OPERATION_FAILED,
+                    msg,
                 ) from e
 
         return wrapper
@@ -67,7 +67,7 @@ def standard_error_handling(operation_name: str = "operation"):
     return decorator
 
 
-def validation_error_handling(operation_name: str = "validation"):
+def validation_error_handling(operation_name: str = "validation") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for validation operations that may throw ValidationError.
 
@@ -89,7 +89,7 @@ def validation_error_handling(operation_name: str = "validation"):
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except OnexError:
@@ -100,14 +100,14 @@ def validation_error_handling(operation_name: str = "validation"):
                 if hasattr(e, "errors") or "validation" in str(e).lower():
                     msg = f"{operation_name} failed: {e!s}"
                     raise OnexError(
-                        msg,
                         CoreErrorCode.VALIDATION_ERROR,
+                        msg,
                     ) from e
                 # Generic operation failure
                 msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    msg,
                     CoreErrorCode.OPERATION_FAILED,
+                    msg,
                 ) from e
 
         return wrapper
@@ -115,7 +115,7 @@ def validation_error_handling(operation_name: str = "validation"):
     return decorator
 
 
-def io_error_handling(operation_name: str = "I/O operation"):
+def io_error_handling(operation_name: str = "I/O operation") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for I/O operations (file/network) with appropriate error codes.
 
@@ -134,7 +134,7 @@ def io_error_handling(operation_name: str = "I/O operation"):
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except OnexError:
@@ -144,19 +144,19 @@ def io_error_handling(operation_name: str = "I/O operation"):
                 # File system errors
                 msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    msg,
                     (
                         CoreErrorCode.FILE_NOT_FOUND
                         if isinstance(e, FileNotFoundError)
-                        else CoreErrorCode.FILESYSTEM_ERROR
+                        else CoreErrorCode.PERMISSION_DENIED
                     ),
+                    msg,
                 ) from e
             except Exception as e:
                 # Generic I/O failure
                 msg = f"{operation_name} failed: {e!s}"
                 raise OnexError(
-                    msg,
                     CoreErrorCode.OPERATION_FAILED,
+                    msg,
                 ) from e
 
         return wrapper

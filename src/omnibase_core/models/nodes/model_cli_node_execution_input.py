@@ -12,6 +12,29 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 
 
+def _create_advanced_params() -> ModelAdvancedParams:
+    """Create default ModelAdvancedParams instance."""
+    return ModelAdvancedParams(
+        parallel_execution=None,
+        max_workers=None,
+        retry_count=None,
+        retry_delay=None,
+        memory_limit_mb=None,
+        cpu_limit=None,
+        time_limit_seconds=None,
+        debug_mode=None,
+        log_level=None,
+        trace_enabled=None,
+        working_directory=None,
+        environment_vars={},
+        feature_flags={},
+        config_overrides={},
+        string_params={},
+        numeric_params={},
+        list_params={},
+    )
+
+
 class ModelCliNodeExecutionInput(BaseModel):
     """
     Model for CLI node execution input parameters.
@@ -65,7 +88,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Advanced parameters (typed model for safety)
     advanced_params: ModelAdvancedParams = Field(
-        default_factory=lambda: ModelAdvancedParams(),
+        default_factory=_create_advanced_params,
         description="Advanced parameters specific to individual nodes",
     )
 

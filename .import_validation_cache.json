@@ -1,312 +1,292 @@
 {
   "uuid": {
     "valid": true,
-    "mtime": 1758311939.0428355,
-    "timestamp": 1758314050.2755249
-  },
-  "collections.abc": {
-    "valid": true,
-    "mtime": 1758311939.0139475,
-    "timestamp": 1758314050.1811714
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1785998
   },
   "typing": {
     "valid": true,
-    "mtime": 1758312070.6534321,
-    "timestamp": 1758314050.2680576
+    "mtime": 1758317823.4535944,
+    "timestamp": 1758317831.1614068
+  },
+  "omnibase_core.enums.enum_log_level": {
+    "valid": true,
+    "mtime": 1758317704.967099,
+    "timestamp": 1758317831.0093102
+  },
+  "collections.abc": {
+    "valid": true,
+    "mtime": 1758314417.8185134,
+    "timestamp": 1758317831.0129273
   },
   "functools": {
     "valid": true,
-    "mtime": 1758308009.0203118,
-    "timestamp": 1758314050.182841
-  },
-  "omnibase_core.core.errors.core_errors": {
-    "valid": true,
-    "mtime": 1758308109.527378,
-    "timestamp": 1758314050.1994965
-  },
-  "omnibase_core.exceptions": {
-    "valid": true,
-    "mtime": 1758308009.0203118,
-    "timestamp": 1758314050.1842294
+    "mtime": 1758314417.8179643,
+    "timestamp": 1758317831.0114589
   },
   "enum": {
     "valid": true,
-    "mtime": 1758311939.025152,
-    "timestamp": 1758314050.1893575
+    "mtime": 1758317516.8752015,
+    "timestamp": 1758317831.0204055
   },
   "datetime": {
     "valid": true,
-    "mtime": 1758312070.6534321,
-    "timestamp": 1758314050.2680552
+    "mtime": 1758317823.9316123,
+    "timestamp": 1758317831.171425
   },
   "pydantic": {
     "valid": true,
-    "mtime": 1758313975.877562,
-    "timestamp": 1758314050.249763
+    "mtime": 1758317823.9316123,
+    "timestamp": 1758317831.1714287
   },
-  "omnibase_core.enums.enum_onex_status": {
+  "omnibase_core.core.errors.core_errors": {
     "valid": true,
-    "mtime": 1758308110.554267,
-    "timestamp": 1758314050.198173
-  },
-  "omnibase_core.models.core.model_error_context": {
-    "valid": true,
-    "mtime": 1758308110.554267,
-    "timestamp": 1758314050.1982157
+    "mtime": 1758314417.820365,
+    "timestamp": 1758317831.1346014
   },
   "__future__": {
     "valid": true,
-    "mtime": 1758308619.3268704,
-    "timestamp": 1758314050.2058973
+    "mtime": 1758314380.5099933,
+    "timestamp": 1758317831.1413069
   },
   "shutil": {
     "valid": true,
-    "mtime": 1758308619.3257756,
-    "timestamp": 1758314050.2033184
+    "mtime": 1758314380.5088344,
+    "timestamp": 1758317831.1380198
   },
   "dataclasses": {
     "valid": true,
-    "mtime": 1758308619.3268704,
-    "timestamp": 1758314050.2059202
+    "mtime": 1758314380.5099933,
+    "timestamp": 1758317831.1413114
   },
   "pathlib": {
     "valid": true,
-    "mtime": 1758308619.3268704,
-    "timestamp": 1758314050.205921
+    "mtime": 1758314380.5099933,
+    "timestamp": 1758317831.141312
   },
   "ast": {
     "valid": true,
-    "mtime": 1758308619.3268704,
-    "timestamp": 1758314050.2058995
+    "mtime": 1758314380.5099933,
+    "timestamp": 1758317831.141309
   },
   "hashlib": {
     "valid": true,
-    "mtime": 1758311939.0415046,
-    "timestamp": 1758314050.2724938
+    "mtime": 1758314417.833286,
+    "timestamp": 1758317831.2405944
   },
   "logging": {
     "valid": true,
-    "mtime": 1758308619.3268704,
-    "timestamp": 1758314050.2059004
+    "mtime": 1758314380.5099933,
+    "timestamp": 1758317831.1413102
   },
   "collections": {
     "valid": true,
-    "mtime": 1758308619.3246498,
-    "timestamp": 1758314050.2083776
-  },
-  "omnibase_core.decorators": {
-    "valid": true,
-    "mtime": 1758308008.024034,
-    "timestamp": 1758314050.209635
+    "mtime": 1758314380.507801,
+    "timestamp": 1758317831.143401
   },
   "re": {
     "valid": true,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.2153716
+    "mtime": 1758314417.8143106,
+    "timestamp": 1758317831.150353
   },
-  "omnibase_core.core.core_uuid_service": {
+  "omnibase_core.models.core.model_error_context": {
     "valid": true,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.2154517
+    "mtime": 1758317588.7103105,
+    "timestamp": 1758317831.1664
   },
   "omnibase_core.models.core.model_schema_value": {
     "valid": true,
-    "mtime": 1758308145.4568174,
-    "timestamp": 1758314050.2243092
+    "mtime": 1758315447.9559836,
+    "timestamp": 1758317831.1649945
   },
   "omnibase_core.models.core.model_onex_error": {
-    "valid": false,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.216152
+    "valid": true,
+    "mtime": 1758314417.8143106,
+    "timestamp": 1758317831.157627
   },
   "sys": {
     "valid": true,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.2161622
+    "mtime": 1758314417.8143106,
+    "timestamp": 1758317831.1576288
   },
   "omnibase_core.core.core_bootstrap": {
-    "valid": false,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.2165744
-  },
-  "omnibase_core.enums.enum_log_level": {
-    "valid": false,
-    "mtime": 1758308025.6575935,
-    "timestamp": 1758314050.2171574
+    "valid": true,
+    "mtime": 1758314417.8143106,
+    "timestamp": 1758317831.1576502
   },
   "omnibase_core.core.errors.onex_error": {
     "valid": true,
-    "mtime": 1758308025.6582181,
-    "timestamp": 1758314050.2191422
+    "mtime": 1758314417.8147516,
+    "timestamp": 1758317831.159065
   },
   "omnibase_core.enums.enum_document_freshness_errors": {
-    "valid": false,
-    "mtime": 1758308025.6582181,
-    "timestamp": 1758314050.2195215
+    "valid": true,
+    "mtime": 1758314417.8147516,
+    "timestamp": 1758317831.159068
   },
   "omnibase_core.models.docs.model_error_details": {
-    "valid": false,
-    "mtime": 1758308025.6582181,
-    "timestamp": 1758314050.2203157
+    "valid": true,
+    "mtime": 1758314417.8147516,
+    "timestamp": 1758317831.1609278
   },
   "omnibase_core.models.core.model_trend_metrics": {
-    "valid": false,
-    "mtime": 1758308619.3099108,
-    "timestamp": 1758314050.2219791
+    "valid": true,
+    "mtime": 1758314380.503205,
+    "timestamp": 1758317831.16297
   },
   "omnibase_core.models.core.model_trend_point": {
-    "valid": false,
-    "mtime": 1758308619.3099108,
-    "timestamp": 1758314050.2223554
+    "valid": true,
+    "mtime": 1758314380.503205,
+    "timestamp": 1758317831.1629934
+  },
+  "omnibase_core.enums.enum_onex_status": {
+    "valid": true,
+    "mtime": 1758317588.7103105,
+    "timestamp": 1758317831.1663673
   },
   "omnibase_core.enums.enum_cli_status": {
     "valid": true,
-    "mtime": 1758308619.2939398,
-    "timestamp": 1758314050.2344975
+    "mtime": 1758314380.476211,
+    "timestamp": 1758317831.1763327
   },
   "omnibase_core.enums.enum_registry_status": {
     "valid": true,
-    "mtime": 1758311939.0428355,
-    "timestamp": 1758314050.2756038
+    "mtime": 1758314417.8374057,
+    "timestamp": 1758317831.2428582
   },
   "omnibase_core.enums.enum_scenario_status": {
     "valid": true,
-    "mtime": 1758308619.2939398,
-    "timestamp": 1758314050.2345524
+    "mtime": 1758314380.476211,
+    "timestamp": 1758317831.1763363
   },
   "omnibase_core.models.core.model_custom_fields": {
     "valid": true,
-    "mtime": 1758308619.2939398,
-    "timestamp": 1758314050.2345822
+    "mtime": 1758314380.476211,
+    "timestamp": 1758317831.176387
   },
   "omnibase_core.models.core.model_node_info": {
     "valid": true,
-    "mtime": 1758308619.2939398,
-    "timestamp": 1758314050.2346084
+    "mtime": 1758314380.476211,
+    "timestamp": 1758317831.1764154
   },
   "omnibase_core.models.core.model_node_metadata_info": {
     "valid": true,
-    "mtime": 1758308619.2939398,
-    "timestamp": 1758314050.2346363
+    "mtime": 1758314380.476211,
+    "timestamp": 1758317831.176432
   },
   "omnibase_core.enums.enum_auth_type": {
     "valid": true,
-    "mtime": 1758311939.0291579,
-    "timestamp": 1758314050.2364085
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1786087
   },
   "omnibase_core.enums.enum_connection_state": {
     "valid": true,
-    "mtime": 1758311939.0291579,
-    "timestamp": 1758314050.2364404
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1786118
   },
   "omnibase_core.enums.enum_connection_type": {
     "valid": true,
-    "mtime": 1758311939.0291579,
-    "timestamp": 1758314050.2364657
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1786149
   },
   "omnibase_core.models.core.model_connection_metrics": {
     "valid": true,
-    "mtime": 1758311939.0291579,
-    "timestamp": 1758314050.236496
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1786425
   },
   "omnibase_core.models.core.model_custom_connection_properties": {
     "valid": true,
-    "mtime": 1758311939.0291579,
-    "timestamp": 1758314050.2365243
+    "mtime": 1758315447.9540894,
+    "timestamp": 1758317831.1786652
   },
   "omnibase_core.enums.enum_metadata_node_complexity": {
     "valid": true,
-    "mtime": 1758311939.035782,
-    "timestamp": 1758314050.2435334
+    "mtime": 1758314380.4922874,
+    "timestamp": 1758317831.1858428
   },
   "omnibase_core.enums.enum_metadata_node_status": {
     "valid": true,
-    "mtime": 1758311939.0428355,
-    "timestamp": 1758314050.275576
+    "mtime": 1758314417.8374057,
+    "timestamp": 1758317831.2428558
   },
   "omnibase_core.enums.enum_metadata_node_type": {
     "valid": true,
-    "mtime": 1758311939.035782,
-    "timestamp": 1758314050.2435935
+    "mtime": 1758314380.4922874,
+    "timestamp": 1758317831.1858466
   },
   "omnibase_core.models.core.model_metadata_usage_metrics": {
     "valid": true,
-    "mtime": 1758311939.035782,
-    "timestamp": 1758314050.2436235
+    "mtime": 1758314380.4922874,
+    "timestamp": 1758317831.1858752
   },
   "omnibase_core.models.nodes.model_node_information": {
     "valid": true,
-    "mtime": 1758314006.5375016,
-    "timestamp": 1758314050.2557483
+    "mtime": 1758314417.8282533,
+    "timestamp": 1758317831.222466
   },
   "omnibase_core.models.core.model_cli_execution": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.259804
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.2280483
   },
   "omnibase_core.models.core.model_cli_output_data": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.2598507
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.2280655
   },
   "omnibase_core.models.core.model_duration": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.2598803
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.2280822
   },
   "omnibase_core.models.core.model_generic_metadata": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.2599084
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.228099
   },
   "omnibase_core.models.validation.model_validation_error": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.2599368
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.2302058
   },
   "json": {
     "valid": true,
-    "mtime": 1758308619.2949986,
-    "timestamp": 1758314050.259938
-  },
-  "omnibase_core.core.decorators": {
-    "valid": true,
-    "mtime": 1758308619.2930045,
-    "timestamp": 1758314050.262003
+    "mtime": 1758314380.477371,
+    "timestamp": 1758317831.2302089
   },
   "omnibase_core.enums.enum_filter_type": {
     "valid": true,
-    "mtime": 1758308619.2987008,
-    "timestamp": 1758314050.264246
+    "mtime": 1758314417.82568,
+    "timestamp": 1758317831.2342515
   },
   "omnibase_core.enums.enum_complexity": {
     "valid": true,
-    "mtime": 1758312070.6534321,
-    "timestamp": 1758314050.268128
+    "mtime": 1758315447.9571486,
+    "timestamp": 1758317831.2364645
   },
   "omnibase_core.enums.enum_function_status": {
     "valid": true,
-    "mtime": 1758312070.6534321,
-    "timestamp": 1758314050.2681606
+    "mtime": 1758315447.9571486,
+    "timestamp": 1758317831.236467
   },
   "omnibase_core.models.core.model_function_node": {
     "valid": true,
-    "mtime": 1758311939.0415046,
-    "timestamp": 1758314050.2725885
+    "mtime": 1758314417.833286,
+    "timestamp": 1758317831.240601
   },
   "omnibase_core.models.core.model_advanced_params": {
     "valid": true,
-    "mtime": 1758308619.3114989,
-    "timestamp": 1758314050.274678
+    "mtime": 1758314417.8314676,
+    "timestamp": 1758317831.2419548
   },
   "omnibase_core.models.core.model_node_configuration": {
     "valid": true,
-    "mtime": 1758311939.0428355,
-    "timestamp": 1758314050.275635
+    "mtime": 1758314417.8374057,
+    "timestamp": 1758317831.2428598
   },
   "omnibase_core.enums.enum_validation_severity": {
     "valid": true,
-    "mtime": 1758311939.0444195,
-    "timestamp": 1758314050.2851868
+    "mtime": 1758314380.504976,
+    "timestamp": 1758317831.2541795
   }
 }

@@ -6,33 +6,31 @@ These models provide basic functionality used across all domains.
 """
 
 # Artifact and CLI models
-# TODO: Temporarily disabled due to import dependencies with decorators
-# from .model_artifact_type_config import ModelArtifactTypeConfig
-# from .model_cli_action import ModelCliAction
-# from .model_cli_execution import ModelCliExecution
-# from .model_cli_execution_result import ModelCliExecutionResult
-# from .model_cli_output_data import ModelCliOutputData
-# from .model_cli_result import ModelCliResult
+from .model_artifact_type_config import ModelArtifactTypeConfig
+from .model_cli_action import ModelCliAction
+from .model_cli_output_data import ModelCliOutputData
+from .model_cli_result import ModelCliResult
+from .model_cli_execution import ModelCliExecution
+from .model_cli_execution_result import ModelCliExecutionResult
 
 # Connection and data models
-# TODO: Temporarily disabled due to import dependencies
+from .model_custom_fields import ModelCustomFields
+from .model_custom_filters import ModelCustomFilters
+from .model_data_handling_declaration import ModelDataHandlingDeclaration
+# TODO: Temporarily disabled due to missing dependencies
 # from .model_connection_info import ModelConnectionInfo
 # from .model_custom_connection_properties import ModelCustomConnectionProperties
-# from .model_custom_fields import ModelCustomFields
-# from .model_custom_filters import ModelCustomFilters
-# from .model_data_handling_declaration import ModelDataHandlingDeclaration
 
 # Environment and configuration
-# TODO: Temporarily disabled due to import dependencies
-# from .model_environment_properties import ModelEnvironmentProperties
-# from .model_examples_collection import ModelExamples
-# from .model_fallback_strategy import ModelFallbackStrategy
-# from .model_file_filter import ModelFileFilter
+from .model_environment_properties import ModelEnvironmentProperties
+from .model_examples_collection import ModelExamples
+from .model_fallback_strategy import ModelFallbackStrategy
+from .model_file_filter import ModelFileFilter
 
 # Function and advanced models
-# TODO: Temporarily disabled due to import dependencies
+from .model_advanced_params import ModelAdvancedParams
+# TODO: Temporarily disabled due to missing dependencies
 # from .model_function_node import ModelFunctionNode
-# from .model_advanced_params import ModelAdvancedParams
 
 # Generic and metadata models
 # TODO: Temporarily disabled due to import dependencies
@@ -73,43 +71,47 @@ from .model_result import (
 from .model_schema_value import ModelSchemaValue
 
 # Testing and analysis
-# TODO: Temporarily disabled due to import dependencies
-# from .model_test_results import ModelTestResults
-# from .model_trend_data import ModelTrendData
+from .model_test_results import ModelTestResults
+from .model_trend_data import ModelTrendData
+from .model_trend_metrics import ModelTrendMetrics
+from .model_trend_point import ModelTrendPoint
+
+# Examples and error handling
+from .model_error_context import ModelErrorContext
+from .model_example import ModelExample
+from .model_example_metadata import ModelExampleMetadata
+from .model_onex_error import ModelOnexError
 
 # Utility models
-# TODO: Temporarily disabled due to import dependencies
-# from .model_uri import ModelOnexUri
+from .model_uri import ModelOnexUri
 
 __all__ = [
     # Artifact and CLI models
-    # TODO: Temporarily disabled due to import dependencies with decorators
-    # "ModelArtifactTypeConfig",
-    # "ModelCliAction",
-    # "ModelCliExecution",
-    # "ModelCliExecutionResult",
-    # "ModelCliOutputData",
-    # "ModelCliResult",
+    "ModelArtifactTypeConfig",
+    "ModelCliAction",
+    "ModelCliOutputData",
+    "ModelCliResult",
+    "ModelCliExecution",
+    "ModelCliExecutionResult",
 
     # Connection and data models
-    # TODO: Temporarily disabled due to import dependencies
+    "ModelCustomFields",
+    "ModelCustomFilters",
+    "ModelDataHandlingDeclaration",
+    # TODO: Temporarily disabled due to missing dependencies
     # "ModelConnectionInfo",
     # "ModelCustomConnectionProperties",
-    # "ModelCustomFields",
-    # "ModelCustomFilters",
-    # "ModelDataHandlingDeclaration",
 
     # Environment and configuration
-    # TODO: Temporarily disabled due to import dependencies
-    # "ModelEnvironmentProperties",
-    # "ModelExamples",
-    # "ModelFallbackStrategy",
-    # "ModelFileFilter",
+    "ModelEnvironmentProperties",
+    "ModelExamples",
+    "ModelFallbackStrategy",
+    "ModelFileFilter",
 
     # Function and advanced models
-    # TODO: Temporarily disabled due to import dependencies
+    "ModelAdvancedParams",
+    # TODO: Temporarily disabled due to missing dependencies
     # "ModelFunctionNode",
-    # "ModelAdvancedParams",
 
     # Generic and metadata models
     # TODO: Temporarily disabled due to import dependencies
@@ -144,11 +146,17 @@ __all__ = [
     "collect_results",
 
     # Testing and analysis
-    # TODO: Temporarily disabled due to import dependencies
-    # "ModelTestResults",
-    # "ModelTrendData",
+    "ModelTestResults",
+    "ModelTrendData",
+    "ModelTrendMetrics",
+    "ModelTrendPoint",
+
+    # Examples and error handling
+    "ModelErrorContext",
+    "ModelExample",
+    "ModelExampleMetadata",
+    "ModelOnexError",
 
     # Utility models
-    # TODO: Temporarily disabled due to import dependencies
-    # "ModelOnexUri",
+    "ModelOnexUri",
 ]

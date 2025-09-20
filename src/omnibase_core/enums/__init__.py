@@ -9,9 +9,11 @@ from .enum_cli_status import EnumCliStatus
 from .enum_complexity import EnumComplexity
 from .enum_connection_state import EnumConnectionState
 from .enum_connection_type import EnumConnectionType
+from .enum_document_freshness_errors import EnumDocumentFreshnessErrorCodes
 from .enum_execution_status import EnumExecutionStatus
 from .enum_filter_type import EnumFilterType
 from .enum_function_status import EnumFunctionStatus
+from .enum_log_level import EnumLogLevel
 from .enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from .enum_metadata_node_status import EnumMetadataNodeStatus
 from .enum_metadata_node_type import EnumMetadataNodeType
@@ -26,9 +28,11 @@ __all__ = [
     "EnumComplexity",
     "EnumConnectionState",
     "EnumConnectionType",
+    "EnumDocumentFreshnessErrorCodes",
     "EnumExecutionStatus",
     "EnumFilterType",
     "EnumFunctionStatus",
+    "EnumLogLevel",
     "EnumMetadataNodeComplexity",
     "EnumMetadataNodeStatus",
     "EnumMetadataNodeType",

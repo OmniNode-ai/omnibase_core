@@ -10,22 +10,26 @@ from .model_onex_error import ModelOnexError
 # Import error code functions
 try:
     from omnibase_core.core.errors.core_errors import (
+        OnexErrorCode,
         get_error_codes_for_component,
         list_registered_components,
         register_error_codes,
     )
 except ImportError:
 
-    def get_error_codes_for_component(component: str):
+    def get_error_codes_for_component(component: str) -> type["OnexErrorCode"]:
         """Fallback implementation."""
-        return
+        # Raise an error to match the actual implementation behavior
+        msg = f"No error codes registered for component: {component}"
+        raise RuntimeError(msg)
 
-    def list_registered_components():
+    def list_registered_components() -> list[str]:
         """Fallback implementation."""
         return []
 
-    def register_error_codes(component: str, error_code_enum):
+    def register_error_codes(component: str, error_code_enum: type["OnexErrorCode"]) -> None:
         """Fallback implementation."""
+        pass
 
 
 __all__ = [

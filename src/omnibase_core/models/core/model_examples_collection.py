@@ -52,9 +52,9 @@ class ModelExamples(BaseModel):
         example = ModelExample(
             name=name,
             description=description,
-            input_data=input_data,
-            output_data=output_data,
-            context=context,
+            input_data=input_data.to_dict() if input_data else None,
+            output_data=output_data.to_dict() if output_data else None,
+            context=context.to_dict() if context else None,
             tags=tags or [],
             is_valid=True,
             validation_notes=None,
@@ -167,8 +167,8 @@ class ModelExamples(BaseModel):
         example = ModelExample(
             name=name,
             description=None,
-            input_data=input_data,
-            output_data=output_data,
+            input_data=input_data.to_dict() if input_data else None,
+            output_data=output_data.to_dict() if output_data else None,
             context=None,
             tags=[],
             is_valid=True,

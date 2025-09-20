@@ -1,7 +1,7 @@
 """Core decorators - alias to main decorators package."""
 
 # Re-export from main decorators package
-from ...decorators import (
+from omnibase_core.decorators import (
     allow_any_type,
     allow_dict_str_any,
     allow_legacy_pattern,

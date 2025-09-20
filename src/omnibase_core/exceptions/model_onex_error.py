@@ -9,8 +9,21 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums.enum_onex_status import EnumOnexStatus
-from ..models.core.model_error_context import ModelErrorContext
+from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.models.core.model_error_context import ModelErrorContext
+
+
+def _create_error_context() -> ModelErrorContext:
+    """Create default ModelErrorContext instance."""
+    return ModelErrorContext(
+        file_path=None,
+        line_number=None,
+        column_number=None,
+        function_name=None,
+        module_name=None,
+        stack_trace=None,
+        additional_context={},
+    )
 
 
 class ModelOnexError(BaseModel):
@@ -60,7 +73,7 @@ class ModelOnexError(BaseModel):
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
     context: ModelErrorContext = Field(
-        default_factory=ModelErrorContext,
+        default_factory=_create_error_context,
         description="Additional context information for the error",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )

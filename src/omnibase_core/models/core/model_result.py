@@ -71,18 +71,26 @@ class Result(BaseModel, Generic[T, E]):
         """
         if not self.success:
             raise ValueError(f"Called unwrap() on error result: {self.error}")
+        # Type assertion: we know value is not None when success=True due to validation
+        assert self.value is not None, "Success result must have a value"
         return self.value
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
         if self.success:
+            # Type assertion: we know value is not None when success=True due to validation
+            assert self.value is not None, "Success result must have a value"
             return self.value
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
         """Unwrap the value or compute from error using function."""
         if self.success:
+            # Type assertion: we know value is not None when success=True due to validation
+            assert self.value is not None, "Success result must have a value"
             return self.value
+        # Type assertion: we know error is not None when success=False due to validation
+        assert self.error is not None, "Error result must have an error"
         return f(self.error)
 
     def expect(self, msg: str) -> T:
@@ -97,6 +105,8 @@ class Result(BaseModel, Generic[T, E]):
         """
         if not self.success:
             raise ValueError(f"{msg}: {self.error}")
+        # Type assertion: we know value is not None when success=True due to validation
+        assert self.value is not None, "Success result must have a value"
         return self.value
 
     def map(self, f: Callable[[T], Any]) -> "Result[Any, E]":
@@ -108,11 +118,16 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             try:
+                # Type assertion: we know value is not None when success=True due to validation
+                assert self.value is not None, "Success result must have a value"
                 new_value = f(self.value)
                 return Result.ok(new_value)
             except Exception as e:
                 # Convert exceptions to error results
-                return Result.err(e)
+                # Type: ignore because we're converting Exception to E
+                return Result.err(e)  # type: ignore[arg-type]
+        # Type assertion: we know error is not None when success=False due to validation
+        assert self.error is not None, "Error result must have an error"
         return Result.err(self.error)
 
     def map_err(self, f: Callable[[E], Any]) -> "Result[T, Any]":
@@ -123,8 +138,12 @@ class Result(BaseModel, Generic[T, E]):
         If this is Err(error), returns Err(f(error)).
         """
         if self.success:
+            # Type assertion: we know value is not None when success=True due to validation
+            assert self.value is not None, "Success result must have a value"
             return Result.ok(self.value)
         try:
+            # Type assertion: we know error is not None when success=False due to validation
+            assert self.error is not None, "Error result must have an error"
             new_error = f(self.error)
             return Result.err(new_error)
         except Exception as e:
@@ -139,9 +158,14 @@ class Result(BaseModel, Generic[T, E]):
         """
         if self.success:
             try:
+                # Type assertion: we know value is not None when success=True due to validation
+                assert self.value is not None, "Success result must have a value"
                 return f(self.value)
             except Exception as e:
-                return Result.err(e)
+                # Type: ignore because we're converting Exception to E
+                return Result.err(e)  # type: ignore[arg-type]
+        # Type assertion: we know error is not None when success=False due to validation
+        assert self.error is not None, "Error result must have an error"
         return Result.err(self.error)
 
     def or_else(self, f: Callable[[E], "Result[T, Any]"]) -> "Result[T, Any]":
@@ -152,8 +176,12 @@ class Result(BaseModel, Generic[T, E]):
         If this is Err(error), returns f(error).
         """
         if self.success:
+            # Type assertion: we know value is not None when success=True due to validation
+            assert self.value is not None, "Success result must have a value"
             return Result.ok(self.value)
         try:
+            # Type assertion: we know error is not None when success=False due to validation
+            assert self.error is not None, "Error result must have an error"
             return f(self.error)
         except Exception as e:
             return Result.err(e)
@@ -250,6 +278,8 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
         if result.is_ok():
             values.append(result.unwrap())
         else:
+            # Type assertion: we know error is not None when success=False due to validation
+            assert result.error is not None, "Error result must have an error"
             errors.append(result.error)
 
     if errors:

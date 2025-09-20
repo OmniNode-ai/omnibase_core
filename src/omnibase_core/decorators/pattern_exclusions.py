@@ -41,7 +41,7 @@ class ONEXPatternExclusion:
         if not hasattr(target, "_onex_pattern_exclusions"):
             setattr(target, "_onex_pattern_exclusions", set())
 
-        existing_exclusions = getattr(target, "_onex_pattern_exclusions", set())
+        existing_exclusions: set[str] = getattr(target, "_onex_pattern_exclusions", set())
         existing_exclusions.update(self.excluded_patterns)
         setattr(target, "_onex_pattern_exclusions", existing_exclusions)
         setattr(target, "_onex_exclusion_reason", self.reason)
@@ -51,7 +51,7 @@ class ONEXPatternExclusion:
         return target
 
 
-def allow_any_type(reason: str, reviewer: str | None = None):
+def allow_any_type(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
     """
     Allow usage of Any type annotation.
 
@@ -71,7 +71,7 @@ def allow_any_type(reason: str, reviewer: str | None = None):
     )
 
 
-def allow_dict_str_any(reason: str, reviewer: str | None = None):
+def allow_dict_str_any(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
     """
     Allow usage of Dict[str, Any] type annotation.
 
@@ -91,7 +91,7 @@ def allow_dict_str_any(reason: str, reviewer: str | None = None):
     )
 
 
-def allow_mixed_types(reason: str, reviewer: str | None = None):
+def allow_mixed_types(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
     """
     Allow usage of both Any and Dict[str, Any] patterns.
 
@@ -111,7 +111,7 @@ def allow_mixed_types(reason: str, reviewer: str | None = None):
     )
 
 
-def allow_legacy_pattern(pattern: str, reason: str, reviewer: str | None = None):
+def allow_legacy_pattern(pattern: str, reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
     """
     Allow specific legacy pattern that doesn't conform to ONEX standards.
 
@@ -136,7 +136,7 @@ def exclude_from_onex_standards(
     *patterns: str,
     reason: str,
     reviewer: str | None = None,
-):
+) -> ONEXPatternExclusion:
     """
     Generic exclusion decorator for multiple ONEX standard patterns.
 

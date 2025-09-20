@@ -17,6 +17,11 @@ from omnibase_core.models.core.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
 
+
+def _create_usage_metrics() -> ModelMetadataUsageMetrics:
+    """Create default ModelMetadataUsageMetrics instance."""
+    return ModelMetadataUsageMetrics()
+
 # Compatibility aliases for existing code
 ModelMetadataNodeType = EnumMetadataNodeType
 ModelMetadataNodeStatus = EnumMetadataNodeStatus
@@ -94,7 +99,7 @@ class ModelMetadataNodeInfo(BaseModel):
 
     # Usage and performance metrics
     usage_metrics: ModelMetadataUsageMetrics = Field(
-        default_factory=ModelMetadataUsageMetrics,
+        default_factory=_create_usage_metrics,
         description="Usage and performance metrics",
     )
 

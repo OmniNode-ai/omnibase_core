@@ -7,8 +7,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.core.model_trend_metrics import ModelTrendMetrics
-from omnibase_core.models.core.model_trend_point import ModelTrendPoint
+from .model_trend_metrics import ModelTrendMetrics
+from .model_trend_point import ModelTrendPoint
 
 # Compatibility aliases
 TrendPoint = ModelTrendPoint
@@ -95,11 +95,18 @@ class ModelTrendData(BaseModel):
             return
 
         values = [p.value for p in self.data_points]
+
+        # Calculate standard deviation
+        avg = sum(values) / len(values)
+        variance = sum((x - avg) ** 2 for x in values) / len(values)
+        std_dev = variance ** 0.5
+
         self.metrics = ModelTrendMetrics(
             min_value=min(values),
             max_value=max(values),
-            avg_value=sum(values) / len(values),
+            avg_value=avg,
             median_value=sorted(values)[len(values) // 2],
+            std_deviation=std_dev,
             trend_direction=self._calculate_trend_direction(values),
             change_percent=self._calculate_change_percent(values),
         )

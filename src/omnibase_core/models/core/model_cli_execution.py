@@ -12,8 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_execution_status import EnumExecutionStatus
-from ...enums.enum_output_format import EnumOutputFormat
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
 
 
 class ModelCliExecution(BaseModel):

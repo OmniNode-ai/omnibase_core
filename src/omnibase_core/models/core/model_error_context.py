@@ -7,7 +7,7 @@ a structured representation of error context data.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_schema_value import ModelSchemaValue
+from .model_schema_value import ModelSchemaValue
 
 
 class ModelErrorContext(BaseModel):

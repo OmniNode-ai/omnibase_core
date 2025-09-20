@@ -12,6 +12,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+def _create_usage_metrics() -> "ModelMetadataUsageMetrics":
+    """Create default ModelMetadataUsageMetrics instance."""
+    return ModelMetadataUsageMetrics()
+
+
 class ModelMetadataNodeType(str, Enum):
     """Metadata node type enumeration."""
 
@@ -194,7 +199,7 @@ class ModelMetadataNodeInfo(BaseModel):
 
     # Usage and performance metrics
     usage_metrics: ModelMetadataUsageMetrics = Field(
-        default_factory=ModelMetadataUsageMetrics,
+        default_factory=_create_usage_metrics,
         description="Usage and performance metrics",
     )
 

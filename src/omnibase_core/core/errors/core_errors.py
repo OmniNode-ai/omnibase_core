@@ -42,6 +42,7 @@ Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
 import re
 from datetime import datetime
 from enum import Enum
+from typing import Any, Union
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -505,72 +506,19 @@ class OnexError(Exception):
             except ValueError:
                 # If string is not a valid UUID, generate a new one
                 final_correlation_id = str(UUIDService.generate_correlation_id())
-        else:
-            # Invalid type, generate new UUID
-            final_correlation_id = str(UUIDService.generate_correlation_id())
+        # Note: The above conditions cover all possible types (None, UUID, str)
+        # so no else clause is needed
 
         # Create the Pydantic model for structured data
-        # Check if ModelOnexError expects ModelErrorContext (newer version) or dict (older version)
-        try:
-            # Try to import ModelErrorContext to detect if we're using the newer ModelOnexError
-            from omnibase_core.models.core.model_error_context import ModelErrorContext
-
-            # Convert dictionary context to ModelErrorContext for new ModelOnexError
-            if isinstance(context, dict):
-                # ONEX-compliant boundary-layer transformation
-                # Extract known fields from dict for direct construction
-                known_fields = {
-                    k: v
-                    for k, v in {
-                        "file_path": context.get("file_path"),
-                        "line_number": context.get("line_number"),
-                        "column_number": context.get("column_number"),
-                        "function_name": context.get("function_name"),
-                        "module_name": context.get("module_name"),
-                        "stack_trace": context.get("stack_trace"),
-                    }.items()
-                    if v is not None
-                }
-
-                # Convert remaining fields to schema values for additional_context
-                from omnibase_core.models.core.model_schema_value import (
-                    ModelSchemaValue,
-                )
-
-                additional_context = {}
-                for key, value in context.items():
-                    if key not in known_fields:
-                        additional_context[key] = ModelSchemaValue.from_value(value)
-
-                context_model = ModelErrorContext(
-                    **known_fields, additional_context=additional_context
-                )
-            else:
-                context_model = context or ModelErrorContext()
-
-            # Use newer ModelOnexError from model package
-            from omnibase_core.models.core.model_onex_error import (
-                ModelOnexError as NewModelOnexError,
-            )
-
-            self.model = NewModelOnexError(
-                message=message,
-                error_code=error_code,
-                status=status,
-                correlation_id=final_correlation_id,
-                timestamp=timestamp or datetime.utcnow(),
-                context=context_model,
-            )
-        except ImportError:
-            # Fall back to older ModelOnexError that expects dict context
-            self.model = ModelOnexError(
-                message=message,
-                error_code=error_code,
-                status=status,
-                correlation_id=final_correlation_id,
-                timestamp=timestamp or datetime.utcnow(),
-                context=context,
-            )
+        # Always use local ModelOnexError for type consistency
+        self.model = ModelOnexError(
+            message=message,
+            error_code=error_code,
+            status=status,
+            correlation_id=final_correlation_id,
+            timestamp=timestamp or datetime.utcnow(),
+            context=context,
+        )
 
     @classmethod
     def with_correlation_id(
@@ -673,12 +621,12 @@ class OnexError(Exception):
     def context(self) -> dict[str, str | int | bool | float]:
         """Get the context information."""
         # Handle both old dict format and new ModelErrorContext format
-        if hasattr(self.model.context, "model_dump"):
+        if self.model.context is not None and hasattr(self.model.context, "model_dump"):
             # ONEX-compliant pattern: Use model_dump() with boundary-layer transformation
             context_data = self.model.context.model_dump()
 
             # Transform to expected error context format
-            result: dict[str, str | int] = {}
+            result: dict[str, str | int | bool | float] = {}
 
             # Add known fields if present
             for field in [
@@ -702,10 +650,10 @@ class OnexError(Exception):
                     result[key] = value_obj
 
             return result
-        # Old dict format
-        return self.model.context
+        # Old dict format - handle None case
+        return self.model.context or {}
 
-    def _extract_schema_value(self, value_obj: dict) -> any:
+    def _extract_schema_value(self, value_obj: dict[str, Any]) -> Any:
         """
         Extract the actual value from a ModelSchemaValue structure.
 
@@ -742,8 +690,7 @@ class OnexError(Exception):
             else:
                 # Fallback: try "value" key or return as-is
                 return value_obj.get("value", value_obj)
-
-        return value_obj
+        # Note: All paths above return, so this point is never reached
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""
@@ -826,28 +773,29 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.core.core_bootstrap import get_logging_service
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         exit_code = get_exit_code_for_status(status)
 
         if message:
+            logging_service = get_logging_service()
             if status in (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN):
-                emit_log_event_sync(
+                logging_service.emit_log_event_sync(
                     level=LogLevel.ERROR,
                     message=message,
                     event_type="cli_exit_error",
                     data={"status": status.value, "exit_code": exit_code},
                 )
             elif status == EnumOnexStatus.WARNING:
-                emit_log_event_sync(
+                logging_service.emit_log_event_sync(
                     level=LogLevel.WARNING,
                     message=message,
                     event_type="cli_exit_warning",
                     data={"status": status.value, "exit_code": exit_code},
                 )
             else:
-                emit_log_event_sync(
+                logging_service.emit_log_event_sync(
                     level=LogLevel.INFO,
                     message=message,
                     event_type="cli_exit_info",
@@ -866,11 +814,12 @@ class CLIAdapter:
         """
         import sys
 
-        from omnibase_core.core.core_bootstrap import emit_log_event_sync
+        from omnibase_core.core.core_bootstrap import get_logging_service
         from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
         exit_code = error.get_exit_code()
-        emit_log_event_sync(
+        logging_service = get_logging_service()
+        logging_service.emit_log_event_sync(
             level=LogLevel.ERROR,
             message=str(error),
             event_type="cli_exit_with_error",
