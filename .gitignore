@@ -246,6 +246,11 @@ docs_archived/
 .hive-mind/
 .swarm/
 .claude-flow/
+claude-flow.config.json
+claude-flow.ps1
+claude-flow.bat
+claude-flow
+memory/claude-flow-data.json
 *.db
 *.sqlite
 *.db-wal
