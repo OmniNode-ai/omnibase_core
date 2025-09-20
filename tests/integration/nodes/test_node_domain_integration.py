@@ -14,7 +14,7 @@ from omnibase_core.models.nodes import (
     ModelCliNodeExecutionInput,
     ModelMetadataNodeCollection,
     ModelNodeCapability,
-    ModelNodeInformation,
+    ModelMetadataNodeInfo,
     ModelNodeType,
 )
 
@@ -43,16 +43,11 @@ class TestNodeDomainIntegration:
         # 3. Create node information for each type
         node_infos = []
         for i, (node_type, capability) in enumerate(zip(node_types, capabilities)):
-            node_info = ModelNodeInformation(
-                node_id=str(uuid.uuid4()),
-                node_name=node_type.name,
-                node_type=node_type.category,
-                node_version="1.0.0",
+            node_info = ModelMetadataNodeInfo(
+                name=node_type.name,
                 description=node_type.description,
-                capabilities=[capability.value],
-                supported_operations=["execute", "validate"],
-                status="active",
-                health="healthy",
+                version="1.0.0",
+                tags=[capability.value],
             )
             node_infos.append(node_info)
 
@@ -60,24 +55,24 @@ class TestNodeDomainIntegration:
         collection = ModelMetadataNodeCollection.create_empty_collection()
         for node_info in node_infos:
             node_data = {
-                "name": node_info.node_name,
+                "name": node_info.name,
                 "description": node_info.description,
                 "type": node_info.node_type,
             }
-            success = collection.add_node(node_info.node_name, node_data, None)
-            assert success, f"Failed to add {node_info.node_name}"
+            success = collection.add_node(node_info.name, node_data, None)
+            assert success, f"Failed to add {node_info.name}"
 
         # 5. Create CLI execution inputs for each node
         cli_inputs = []
         for node_info in node_infos:
             cli_input = ModelCliNodeExecutionInput(
                 action="run_node",
-                node_name=node_info.node_name,
+                node_name=node_info.name,
                 include_metadata=True,
                 include_health_info=True,
                 verbose=True,
                 execution_context="integration_test",
-                request_id=f"req_{node_info.node_id}",
+                request_id=f"req_{node_info.name}",
             )
             cli_inputs.append(cli_input)
 
@@ -135,14 +130,11 @@ class TestNodeDomainIntegration:
             archetype = workflow_node["archetype"]
 
             # Create node information
-            node_info = ModelNodeInformation(
-                node_id=str(uuid.uuid4()),
-                node_name=node_type.name,
-                node_type=archetype,
-                node_version="2.0.0",
+            node_info = ModelMetadataNodeInfo(
+                name=node_type.name,
                 description=f"{archetype.title()} archetype: {node_type.description}",
-                capabilities=[capability.value],
-                supported_operations=self._get_archetype_operations(archetype),
+                version="2.0.0",
+                tags=[capability.value],
                 dependencies=self._get_archetype_dependencies(archetype),
             )
 
@@ -188,12 +180,11 @@ class TestNodeDomainIntegration:
 
         for node_name, category, capabilities in nodes_to_add:
             node_type = ModelNodeType.from_string(node_name)
-            node_info = ModelNodeInformation(
-                node_id=str(uuid.uuid4()),
-                node_name=node_name,
-                node_type=category,
-                node_version="1.0.0",
-                capabilities=capabilities,
+            node_info = ModelMetadataNodeInfo(
+                name=node_name,
+                description=f"Node for {category}",
+                version="1.0.0",
+                tags=capabilities,
             )
 
             node_data = {"name": node_name, "category": category}
@@ -224,7 +215,7 @@ class TestNodeDomainIntegration:
 
                 node_info = collection.get_node_info(target_node)
                 assert node_info is not None
-                assert node_info.node_name == target_node
+                assert node_info.name == target_node
 
             # Test legacy dict conversion
             legacy_dict = cli_input.to_legacy_dict()
@@ -250,38 +241,35 @@ class TestNodeDomainIntegration:
         collection = ModelMetadataNodeCollection.create_empty_collection()
 
         # Base node with fundamental capability
-        base_node_info = ModelNodeInformation(
-            node_id=str(uuid.uuid4()),
-            node_name="SCHEMA_VALIDATOR",
-            node_type="validator",
-            node_version="1.0.0",
-            capabilities=[base_capability.value],
+        base_node_info = ModelMetadataNodeInfo(
+            name="SCHEMA_VALIDATOR",
+            description="Schema validation node",
+            version="1.0.0",
+            tags=[base_capability.value],
         )
 
         # Dependent node
-        dependent_node_info = ModelNodeInformation(
-            node_id=str(uuid.uuid4()),
-            node_name="CUSTOM_HANDLER",
-            node_type="handler",
-            node_version="1.0.0",
-            capabilities=[dependent_capability.value],
+        dependent_node_info = ModelMetadataNodeInfo(
+            name="CUSTOM_HANDLER",
+            description="Custom handler node",
+            version="1.0.0",
+            tags=[dependent_capability.value],
             dependencies=["SCHEMA_VALIDATOR"],
         )
 
         # Complex node with multiple dependencies
-        complex_node_info = ModelNodeInformation(
-            node_id=str(uuid.uuid4()),
-            node_name="EVENT_DISCOVERER",
-            node_type="discovery",
-            node_version="1.0.0",
-            capabilities=[complex_capability.value],
+        complex_node_info = ModelMetadataNodeInfo(
+            name="EVENT_DISCOVERER",
+            description="Event discovery node",
+            version="1.0.0",
+            tags=[complex_capability.value],
             dependencies=["SCHEMA_VALIDATOR", "EVENT_BUS"],
         )
 
         # Add to collection
         for node_info in [base_node_info, dependent_node_info, complex_node_info]:
-            node_data = {"name": node_info.node_name, "type": node_info.node_type}
-            success = collection.add_node(node_info.node_name, node_data, None)
+            node_data = {"name": node_info.name, "type": "default"}
+            success = collection.add_node(node_info.name, node_data, node_info)
             assert success
 
         # Verify dependency resolution
@@ -303,20 +291,16 @@ class TestNodeDomainIntegration:
 
         for node_type, capability, should_be_compatible in compatibility_matrix:
             # Create node information combining type and capability
-            node_info = ModelNodeInformation(
-                node_id=str(uuid.uuid4()),
-                node_name=node_type.name,
-                node_type=node_type.category,
-                node_version="1.0.0",
+            node_info = ModelMetadataNodeInfo(
+                name=node_type.name,
                 description=f"{node_type.description} with {capability.description}",
-                capabilities=[capability.value],
-                supported_operations=["execute"],
+                version="1.0.0",
+                tags=[capability.value],
             )
 
             # Verify compatibility
             if should_be_compatible:
-                assert capability.value in node_info.capabilities
-                assert node_info.node_type == node_type.category
+                assert capability.value in node_info.tags
 
             # Test CLI execution for this combination
             cli_input = ModelCliNodeExecutionInput(
@@ -342,13 +326,10 @@ class TestNodeDomainIntegration:
         ]
 
         for node_name, archetype, status, health in archetype_data:
-            node_info = ModelNodeInformation(
-                node_id=node_name.lower(),
-                node_name=node_name,
-                node_type=archetype,
-                node_version="1.0.0",
-                status=status,
-                health=health,
+            node_info = ModelMetadataNodeInfo(
+                name=node_name,
+                description=f"{archetype} node",
+                version="1.0.0",
             )
 
             node_data = {"name": node_name, "archetype": archetype}
@@ -419,12 +400,11 @@ class TestNodeDomainIntegration:
         # Create instances of all models
         node_type = ModelNodeType.CONTRACT_TO_MODEL()
         capability = ModelNodeCapability.supports_dry_run()
-        node_info = ModelNodeInformation(
-            node_id=str(uuid.uuid4()),
-            node_name="SERIAL_NODE",
-            node_type="compute",
-            node_version="1.0.0",
-            capabilities=[capability.value],
+        node_info = ModelMetadataNodeInfo(
+            name="SERIAL_NODE",
+            description="Serialization test node",
+            version="1.0.0",
+            tags=[capability.value],
         )
         cli_input = ModelCliNodeExecutionInput(
             action="test_serialization",

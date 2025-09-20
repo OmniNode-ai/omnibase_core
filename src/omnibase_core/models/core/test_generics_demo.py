@@ -26,7 +26,7 @@ from .model_generic_container import (
 )
 from .model_schema_value import ModelSchemaValue, ModelSchemaValueFactory, ConvertibleToSchema
 from .model_result import Result, collect_results
-from ..core.core_uuid_service import UUIDService
+from omnibase_core.core.core_uuid_service import UUIDService
 
 
 class DemoUser:

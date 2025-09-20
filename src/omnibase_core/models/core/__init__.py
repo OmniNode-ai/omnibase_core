@@ -39,9 +39,8 @@ from .model_generic_container import (
     create_key_value_container,
     create_caching_container,
 )
-# TODO: Temporarily disabled due to missing dependencies
-# from .model_connection_info import ModelConnectionInfo
-# from .model_custom_connection_properties import ModelCustomConnectionProperties
+from .model_connection_info import ModelConnectionInfo
+from .model_custom_connection_properties import ModelCustomConnectionProperties
 
 # Environment and configuration
 from .model_environment_properties import ModelEnvironmentProperties
@@ -51,29 +50,26 @@ from .model_file_filter import ModelFileFilter
 
 # Function and advanced models
 from .model_advanced_params import ModelAdvancedParams
-# TODO: Temporarily disabled due to missing dependencies
-# from .model_function_node import ModelFunctionNode
+from .model_function_node import ModelFunctionNode
 
 # Generic and metadata models
-# TODO: Temporarily disabled due to import dependencies
-# from .model_generic_metadata import ModelGenericMetadata
-# from .model_metadata_field_info import ModelMetadataFieldInfo
-# from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
-# from .model_metadata_node_info import (
-#     ModelMetadataNodeComplexity,
-#     ModelMetadataNodeInfo,
-#     ModelMetadataNodeStatus,
-#     ModelMetadataNodeType,
-#     ModelMetadataUsageMetrics,
-# )
-# from .model_metadata_usage_metrics import (
-#     ModelMetadataUsageMetrics as ModelMetadataUsageMetricsStandalone,
-# )
+from .model_generic_metadata import ModelGenericMetadata
+from .model_metadata_field_info import ModelMetadataFieldInfo
+from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
+from .model_metadata_node_info import (
+    ModelMetadataNodeComplexity,
+    ModelMetadataNodeInfo,
+    ModelMetadataNodeStatus,
+    ModelMetadataNodeType,
+    ModelMetadataUsageMetrics,
+)
+from .model_metadata_usage_metrics import (
+    ModelMetadataUsageMetrics as ModelMetadataUsageMetricsStandalone,
+)
 
 # Configuration and namespace models
-# TODO: Temporarily disabled due to import dependencies
-# from .model_namespace_config import ModelNamespaceConfig
-# from .model_node_configuration import ModelNodeConfiguration
+from .model_namespace_config import ModelNamespaceConfig
+from .model_node_configuration import ModelNodeConfiguration
 
 # Result handling models
 from .model_result import (
@@ -135,9 +131,8 @@ __all__ = [
     "ModelCustomFields",
     "ModelCustomFilters",
     "ModelDataHandlingDeclaration",
-    # TODO: Temporarily disabled due to missing dependencies
-    # "ModelConnectionInfo",
-    # "ModelCustomConnectionProperties",
+    "ModelConnectionInfo",
+    "ModelCustomConnectionProperties",
 
     # Environment and configuration
     "ModelEnvironmentProperties",
@@ -147,25 +142,22 @@ __all__ = [
 
     # Function and advanced models
     "ModelAdvancedParams",
-    # TODO: Temporarily disabled due to missing dependencies
-    # "ModelFunctionNode",
+    "ModelFunctionNode",
 
     # Generic and metadata models
-    # TODO: Temporarily disabled due to import dependencies
-    # "ModelGenericMetadata",
-    # "ModelMetadataFieldInfo",
-    # "ModelMetadataNodeAnalytics",
-    # "ModelMetadataNodeComplexity",
-    # "ModelMetadataNodeInfo",
-    # "ModelMetadataNodeStatus",
-    # "ModelMetadataNodeType",
-    # "ModelMetadataUsageMetrics",
-    # "ModelMetadataUsageMetricsStandalone",
+    "ModelGenericMetadata",
+    "ModelMetadataFieldInfo",
+    "ModelMetadataNodeAnalytics",
+    "ModelMetadataNodeComplexity",
+    "ModelMetadataNodeInfo",
+    "ModelMetadataNodeStatus",
+    "ModelMetadataNodeType",
+    "ModelMetadataUsageMetrics",
+    "ModelMetadataUsageMetricsStandalone",
 
     # Configuration and namespace models
-    # TODO: Temporarily disabled due to import dependencies
-    # "ModelNamespaceConfig",
-    # "ModelNodeConfiguration",
+    "ModelNamespaceConfig",
+    "ModelNodeConfiguration",
 
     # Schema models
     "ModelSchemaValue",

@@ -1,7 +1,7 @@
-"""Core decorators - alias to main decorators package."""
+"""Core decorators - direct imports to avoid circular dependencies."""
 
-# Re-export from main decorators package
-from omnibase_core.decorators import (
+# Import directly from pattern exclusions to avoid circular import
+from omnibase_core.decorators.pattern_exclusions import (
     allow_any_type,
     allow_dict_str_any,
     allow_legacy_pattern,

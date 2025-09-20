@@ -202,7 +202,7 @@ class ModelMetadataNodeCollection(
     def add_node(
         self,
         name: str,
-        node_data: ModelFunctionNode | dict[str, Any],
+        node_data: ModelFunctionNode | dict[str, Any] | None,
         node_info: ModelMetadataNodeInfo | None = None,
     ) -> bool:
         """
@@ -219,6 +219,10 @@ class ModelMetadataNodeCollection(
         try:
             # Validate node name
             if not name.isidentifier():
+                return False
+
+            # Validate node data
+            if node_data is None:
                 return False
 
             # Add the node data
