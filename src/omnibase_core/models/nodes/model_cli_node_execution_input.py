@@ -9,6 +9,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_cli_action import EnumCliAction
 from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 
 
@@ -45,6 +46,10 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Core execution parameters
     action: str = Field(..., description="Action to perform with the node")
+    action_enum: EnumCliAction | None = Field(
+        None,
+        description="Enum representation of action for type safety",
+    )
     node_name: str | None = Field(
         None,
         description="Specific node name for targeted operations",
@@ -101,6 +106,40 @@ class ModelCliNodeExecutionInput(BaseModel):
         None,
         description="Request identifier for tracking",
     )
+
+    def get_action_enum(self) -> EnumCliAction | None:
+        """
+        Get enum representation of action.
+
+        Returns:
+            Action enum or None if action string is invalid
+        """
+        if self.action_enum:
+            return self.action_enum
+
+        try:
+            return EnumCliAction(self.action)
+        except ValueError:
+            return None
+
+    def validate_action(self) -> bool:
+        """
+        Validate that action is a supported CLI action.
+
+        Returns:
+            True if action is valid
+        """
+        return self.get_action_enum() is not None
+
+    def set_action_from_enum(self, action_enum: EnumCliAction) -> None:
+        """
+        Set action from enum value.
+
+        Args:
+            action_enum: CLI action enum
+        """
+        self.action = action_enum.value
+        self.action_enum = action_enum
 
     def to_legacy_dict(self) -> dict:
         """
@@ -169,7 +208,37 @@ class ModelCliNodeExecutionInput(BaseModel):
         # Create ModelAdvancedParams from the remaining parameters
         advanced_params = ModelAdvancedParams.from_dict(advanced_dict)
 
-        return cls(advanced_params=advanced_params, **base_params)
+        instance = cls(advanced_params=advanced_params, **base_params)
+
+        # Set action enum if possible
+        if "action" in base_params:
+            try:
+                instance.action_enum = EnumCliAction(base_params["action"])
+            except ValueError:
+                # Invalid action, leave action_enum as None
+                pass
+
+        return instance
+
+    @classmethod
+    def from_action_enum(
+        cls,
+        action_enum: EnumCliAction,
+        **kwargs: Any,
+    ) -> "ModelCliNodeExecutionInput":
+        """
+        Create instance from action enum.
+
+        Args:
+            action_enum: CLI action enum
+            **kwargs: Additional parameters
+
+        Returns:
+            ModelCliNodeExecutionInput instance
+        """
+        kwargs["action"] = action_enum.value
+        kwargs["action_enum"] = action_enum
+        return cls(**kwargs)
 
     class Config:
         """Pydantic configuration."""
@@ -178,6 +247,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "action": "list_nodes",
+                "action_enum": None,
                 "node_name": None,
                 "target_node": None,
                 "include_metadata": True,

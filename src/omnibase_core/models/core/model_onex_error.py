@@ -7,9 +7,11 @@ serialization, and schema generation capabilities across all ONEX components.
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_error_code import EnumErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_context import ModelErrorContext
 
@@ -26,7 +28,7 @@ class ModelOnexError(BaseModel):
         json_schema_extra={
             "example": {
                 "message": "File not found: config.yaml",
-                "error_code": "ONEX_CORE_021_FILE_NOT_FOUND",
+                "error_code": "ONEX_CORE_011_FILE_NOT_FOUND",
                 "status": "error",
                 "correlation_id": "req-123e4567-e89b-12d3-a456-426614174000",
                 "context": {
@@ -47,12 +49,9 @@ class ModelOnexError(BaseModel):
         max_length=512
     )
 
-    error_code: str = Field(
+    error_code: EnumErrorCode = Field(
         ...,
-        description="Machine-readable error code following ONEX conventions",
-        pattern="^[A-Z_][A-Z0-9_]*$",
-        min_length=1,
-        max_length=128
+        description="Machine-readable error code following ONEX conventions"
     )
 
     status: EnumOnexStatus = Field(
@@ -61,11 +60,9 @@ class ModelOnexError(BaseModel):
     )
 
     # Optional context and metadata
-    correlation_id: str | None = Field(
-        None,
-        description="Correlation ID for request tracing",
-        min_length=1,
-        max_length=128
+    correlation_id: UUID | None = Field(
+        default_factory=uuid4,
+        description="Correlation ID for request tracing"
     )
 
     context: ModelErrorContext | None = Field(
@@ -88,13 +85,13 @@ class ModelOnexError(BaseModel):
         """Convert to dictionary representation."""
         result: dict[str, Any] = {
             "message": self.message,
-            "error_code": self.error_code,
+            "error_code": self.error_code.value,
             "status": self.status.value,
             "timestamp": self.timestamp.isoformat()
         }
 
         if self.correlation_id:
-            result["correlation_id"] = self.correlation_id
+            result["correlation_id"] = str(self.correlation_id)
 
         if self.context:
             result["context"] = self.context.model_dump() if hasattr(self.context, 'model_dump') else dict(self.context)
@@ -109,7 +106,7 @@ class ModelOnexError(BaseModel):
         parts = [f"{self.error_code}: {self.message}"]
 
         if self.correlation_id:
-            parts.append(f"[{self.correlation_id}]")
+            parts.append(f"[{str(self.correlation_id)}]")
 
         if self.context:
             parts.append(f"Context: {self.context}")
@@ -118,4 +115,4 @@ class ModelOnexError(BaseModel):
 
     def __repr__(self) -> str:
         """Detailed representation for debugging."""
-        return f"ModelOnexError(error_code='{self.error_code}', message='{self.message}', status='{self.status.value}')"
+        return f"ModelOnexError(error_code='{self.error_code.value}', message='{self.message}', status='{self.status.value}')"

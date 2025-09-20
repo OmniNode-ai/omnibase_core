@@ -780,27 +780,28 @@ class CLIAdapter:
 
         if message:
             logging_service = get_logging_service()
-            if status in (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN):
-                logging_service.emit_log_event_sync(
-                    level=LogLevel.ERROR,
-                    message=message,
-                    event_type="cli_exit_error",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
-            elif status == EnumOnexStatus.WARNING:
-                logging_service.emit_log_event_sync(
-                    level=LogLevel.WARNING,
-                    message=message,
-                    event_type="cli_exit_warning",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
-            else:
-                logging_service.emit_log_event_sync(
-                    level=LogLevel.INFO,
-                    message=message,
-                    event_type="cli_exit_info",
-                    data={"status": status.value, "exit_code": exit_code},
-                )
+            if logging_service is not None:
+                if status in (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN):
+                    logging_service.emit_log_event_sync(
+                        level=LogLevel.ERROR,
+                        message=message,
+                        event_type="cli_exit_error",
+                        data={"status": status.value, "exit_code": exit_code},
+                    )
+                elif status == EnumOnexStatus.WARNING:
+                    logging_service.emit_log_event_sync(
+                        level=LogLevel.WARNING,
+                        message=message,
+                        event_type="cli_exit_warning",
+                        data={"status": status.value, "exit_code": exit_code},
+                    )
+                else:
+                    logging_service.emit_log_event_sync(
+                        level=LogLevel.INFO,
+                        message=message,
+                        event_type="cli_exit_info",
+                        data={"status": status.value, "exit_code": exit_code},
+                    )
 
         sys.exit(exit_code)
 
@@ -819,17 +820,18 @@ class CLIAdapter:
 
         exit_code = error.get_exit_code()
         logging_service = get_logging_service()
-        logging_service.emit_log_event_sync(
-            level=LogLevel.ERROR,
-            message=str(error),
-            event_type="cli_exit_with_error",
-            correlation_id=error.correlation_id,
-            data={
-                "error_code": str(error.error_code) if error.error_code else None,
-                "exit_code": exit_code,
-                "context": error.context,
-            },
-        )
+        if logging_service is not None:
+            logging_service.emit_log_event_sync(
+                level=LogLevel.ERROR,
+                message=str(error),
+                event_type="cli_exit_with_error",
+                correlation_id=error.correlation_id,
+                data={
+                    "error_code": str(error.error_code) if error.error_code else None,
+                    "exit_code": exit_code,
+                    "context": error.context,
+                },
+            )
         sys.exit(exit_code)
 
 

@@ -9,21 +9,29 @@ All complex functionality has been moved to service nodes following the
 registry-centric architecture pattern.
 """
 
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
+from omnibase_core.core.protocols_service_creation import (
+    ProtocolLoggingService,
+    ProtocolRegistryService,
+)
+from omnibase_core.core.service_creation_factory import ServiceCreationFactory
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 # Type variable for protocol types
 T = TypeVar("T")
+
+# Global service creation factory instance
+_service_factory = ServiceCreationFactory()
 
 
 def get_service(protocol_type: type[T]) -> T | None:
     """
     Get a service implementation for the given protocol type.
 
-    This is the main entry point for service discovery in ONEX. It attempts
-    to find the registry node and use it for service resolution, with fallback
-    mechanisms for bootstrap scenarios.
+    This is the main entry point for service discovery in ONEX. It uses
+    the strategy pattern to try different service creation approaches
+    based on availability and protocol requirements.
 
     Args:
         protocol_type: The protocol interface to resolve
@@ -32,21 +40,19 @@ def get_service(protocol_type: type[T]) -> T | None:
         Service implementation or None if not found
     """
     try:
-        # Try to get service through registry node
+        # Update factory with current registry state
         registry = _get_registry_node()
-        if registry:
-            service = registry.get_service(protocol_type)
-            # Type annotation hint for mypy - registry should return correct type
-            return cast(T, service) if service is not None else None
+        _service_factory.set_registry(registry)
+
+        # Use factory to get service
+        return _service_factory.get_service(protocol_type)
     except Exception:
-        # Registry not available, try fallback
-        pass
-
-    # Try fallback implementations
-    return _get_fallback_service(protocol_type)
+        # Fallback to factory without registry
+        _service_factory.set_registry(None)
+        return _service_factory.get_service(protocol_type)
 
 
-def get_logging_service() -> Any:
+def get_logging_service() -> ProtocolLoggingService | None:
     """
     Get the logging service with special bootstrap handling.
 
@@ -54,53 +60,19 @@ def get_logging_service() -> Any:
         Logging service implementation
     """
     try:
-        # Use registry-based logging access instead of direct imports
+        # Update factory with current registry state
         registry = _get_registry_node()
-        if registry:
-            logger_protocol = registry.get_protocol("logger")
-            if logger_protocol:
-                # Return service with protocol-based access
-                class LoggingService:
-                    def __init__(self, protocol: Any) -> None:
-                        self._protocol = protocol
+        _service_factory.set_registry(registry)
 
-                    def emit_log_event(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event(*args, **kwargs)
-
-                    def emit_log_event_sync(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event_sync(*args, **kwargs)
-
-                    def emit_log_event_async(self, *args: Any, **kwargs: Any) -> Any:
-                        return self._protocol.emit_log_event_async(*args, **kwargs)
-
-                    def trace_function_lifecycle(self, func: Any) -> Any:
-                        return self._protocol.trace_function_lifecycle(func)
-
-                    @property
-                    def ToolLoggerCodeBlock(self) -> Any:
-                        return self._protocol.ToolLoggerCodeBlock
-
-                    def tool_logger_performance_metrics(
-                        self,
-                        *args: Any,
-                        **kwargs: Any,
-                    ) -> Any:
-                        return self._protocol.tool_logger_performance_metrics(
-                            *args,
-                            **kwargs,
-                        )
-
-                return LoggingService(logger_protocol)
-
-        # Fallback to minimal logging if registry unavailable
-        return _get_minimal_logging_service()
-
+        # Use factory to get logging service
+        return _service_factory.get_logging_service()
     except Exception:
-        # Fallback to minimal logging
-        return _get_minimal_logging_service()
+        # Fallback to factory without registry
+        _service_factory.set_registry(None)
+        return _service_factory.get_logging_service()
 
 
-def _get_registry_node() -> Any:
+def _get_registry_node() -> ProtocolRegistryService | None:
     """
     Get the registry node for service discovery.
 
@@ -112,54 +84,31 @@ def _get_registry_node() -> Any:
     return None
 
 
-def _get_fallback_service(protocol_type: type[T]) -> T | None:
+def get_available_service_strategies() -> list[str]:
     """
-    Get fallback service implementation.
-
-    Args:
-        protocol_type: The protocol interface to resolve
+    Get list of currently available service creation strategies.
 
     Returns:
-        Fallback implementation or None
+        List of available strategy names for debugging/monitoring
     """
-    # Fallback implementations for common services
-    # This allows the system to function even when registry is unavailable
-    return None
+    try:
+        registry = _get_registry_node()
+        _service_factory.set_registry(registry)
+        return _service_factory.get_available_strategies()
+    except Exception:
+        return []
 
 
-def _get_minimal_logging_service() -> Any:
+def get_available_logging_strategies() -> list[str]:
     """
-    Get minimal logging service for fallback scenarios.
+    Get list of currently available logging service strategies.
 
     Returns:
-        Minimal logging service implementation
+        List of available logging strategy names for debugging/monitoring
     """
-    class MinimalLoggingService:
-        """Minimal logging service for bootstrap scenarios."""
-
-        def emit_log_event(self, level: LogLevel, message: str, **kwargs: Any) -> None:
-            """Emit log event with minimal implementation."""
-            print(f"[{level.value.upper()}] {message}")
-
-        def emit_log_event_sync(self, level: LogLevel, message: str, **kwargs: Any) -> None:
-            """Emit log event synchronously."""
-            self.emit_log_event(level, message, **kwargs)
-
-        def emit_log_event_async(self, level: LogLevel, message: str, **kwargs: Any) -> None:
-            """Emit log event asynchronously."""
-            self.emit_log_event(level, message, **kwargs)
-
-        def trace_function_lifecycle(self, func: Any) -> Any:
-            """Trace function lifecycle."""
-            return func  # No-op for minimal implementation
-
-        @property
-        def ToolLoggerCodeBlock(self) -> Any:
-            """Tool logger code block."""
-            return None
-
-        def tool_logger_performance_metrics(self, *args: Any, **kwargs: Any) -> Any:
-            """Tool logger performance metrics."""
-            return None
-
-    return MinimalLoggingService()
+    try:
+        registry = _get_registry_node()
+        _service_factory.set_registry(registry)
+        return _service_factory.get_available_logging_strategies()
+    except Exception:
+        return []

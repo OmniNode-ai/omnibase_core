@@ -15,7 +15,20 @@ from omnibase_core.models.core.model_error_context import ModelErrorContext
 
 def _create_error_context() -> ModelErrorContext:
     """Create default ModelErrorContext instance."""
+    from omnibase_core.enums.enum_error_category import EnumErrorCategory
+    from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+
+    from uuid import uuid4
+
     return ModelErrorContext(
+        category=EnumErrorCategory.UNKNOWN,
+        severity=EnumValidationSeverity.ERROR,
+        class_name="ModelOnexError",
+        error_message="Default error context",
+        operation_name="unknown",
+        operation_id=uuid4(),
+        user_id="unknown",
+        session_id="unknown",
         file_path=None,
         line_number=None,
         column_number=None,

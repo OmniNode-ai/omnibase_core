@@ -17,6 +17,28 @@ from .model_cli_execution_result import ModelCliExecutionResult
 from .model_custom_fields import ModelCustomFields
 from .model_custom_filters import ModelCustomFilters
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
+
+# Generic collection and container models
+from .model_generic_collection import (
+    ModelGenericCollection,
+    ModelIdentifiableCollection,
+    ModelSearchableCollection,
+    Identifiable,
+    SearchableItem,
+    create_collection,
+    create_identifiable_collection,
+    create_searchable_collection,
+)
+from .model_generic_container import (
+    ModelGenericContainer,
+    ModelKeyValueContainer,
+    ModelCachingContainer,
+    Serializable,
+    Cacheable,
+    create_container,
+    create_key_value_container,
+    create_caching_container,
+)
 # TODO: Temporarily disabled due to missing dependencies
 # from .model_connection_info import ModelConnectionInfo
 # from .model_custom_connection_properties import ModelCustomConnectionProperties
@@ -67,10 +89,23 @@ from .model_result import (
     try_result,
 )
 
-# Schema models
-from .model_schema_value import ModelSchemaValue
+# Schema models with enhanced generics
+from .model_schema_value import (
+    ModelSchemaValue,
+    ModelSchemaValueFactory,
+    ModelSchemaValueString,
+    ModelSchemaValueNumber,
+    ModelSchemaValueBoolean,
+    ModelSchemaValueNull,
+    ConvertibleToSchema,
+    ModelSchemaValueArray,
+    ModelSchemaValueObject,
+    from_value,
+    to_value,
+)
 
 # Testing and analysis
+from .model_test_result import ModelTestResult
 from .model_test_results import ModelTestResults
 from .model_trend_data import ModelTrendData
 from .model_trend_metrics import ModelTrendMetrics
@@ -79,7 +114,9 @@ from .model_trend_point import ModelTrendPoint
 # Examples and error handling
 from .model_error_context import ModelErrorContext
 from .model_example import ModelExample
+from .model_example_input import ModelExampleInput
 from .model_example_metadata import ModelExampleMetadata
+from .model_example_output import ModelExampleOutput
 from .model_onex_error import ModelOnexError
 
 # Utility models
@@ -132,6 +169,15 @@ __all__ = [
 
     # Schema models
     "ModelSchemaValue",
+    "ModelSchemaValueFactory",
+    "ModelSchemaValueString",
+    "ModelSchemaValueNumber",
+    "ModelSchemaValueBoolean",
+    "ModelSchemaValueNull",
+    "ModelSchemaValueArray",
+    "ModelSchemaValueObject",
+    "from_value",
+    "to_value",
 
     # Result handling models
     "Result",
@@ -146,6 +192,7 @@ __all__ = [
     "collect_results",
 
     # Testing and analysis
+    "ModelTestResult",
     "ModelTestResults",
     "ModelTrendData",
     "ModelTrendMetrics",
@@ -154,7 +201,9 @@ __all__ = [
     # Examples and error handling
     "ModelErrorContext",
     "ModelExample",
+    "ModelExampleInput",
     "ModelExampleMetadata",
+    "ModelExampleOutput",
     "ModelOnexError",
 
     # Utility models

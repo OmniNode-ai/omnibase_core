@@ -16,6 +16,7 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.models.core.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from omnibase_core.models.core.status_dispatch_registry import StatusDispatchRegistry
 
 
 def _create_usage_metrics() -> ModelMetadataUsageMetrics:
@@ -109,28 +110,93 @@ class ModelMetadataNodeInfo(BaseModel):
         description="Custom metadata fields",
     )
 
+    def __post_init__(self) -> None:
+        """Initialize status dispatch registry after model creation."""
+        self._status_registry = StatusDispatchRegistry()
+        self._setup_status_checks()
+
+    def _setup_status_checks(self) -> None:
+        """Setup status check functions in registry."""
+        # Register status checks
+        self._status_registry.register_status_check(
+            EnumMetadataNodeStatus.ACTIVE,
+            lambda: self.status == EnumMetadataNodeStatus.ACTIVE
+        )
+        self._status_registry.register_status_check(
+            EnumMetadataNodeStatus.STABLE,
+            lambda: self.status == EnumMetadataNodeStatus.STABLE
+        )
+        self._status_registry.register_status_check(
+            EnumMetadataNodeStatus.EXPERIMENTAL,
+            lambda: self.status == EnumMetadataNodeStatus.EXPERIMENTAL
+        )
+
+        # Register complexity checks
+        self._status_registry.register_complexity_check(
+            EnumMetadataNodeComplexity.SIMPLE,
+            lambda: self.complexity == EnumMetadataNodeComplexity.SIMPLE
+        )
+        self._status_registry.register_complexity_check(
+            EnumMetadataNodeComplexity.COMPLEX,
+            lambda: self.complexity == EnumMetadataNodeComplexity.COMPLEX
+        )
+        self._status_registry.register_complexity_check(
+            EnumMetadataNodeComplexity.ADVANCED,
+            lambda: self.complexity == EnumMetadataNodeComplexity.ADVANCED
+        )
+
+    def check_status(self, status: EnumMetadataNodeStatus) -> bool:
+        """Check if node has the specified status using enum dispatch."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.check_status(status)
+
+    def check_complexity(self, complexity: EnumMetadataNodeComplexity) -> bool:
+        """Check if node has the specified complexity using enum dispatch."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.check_complexity(complexity)
+
+    def check_status_group(self, group_name: str) -> bool:
+        """Check if node status is in the specified group."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.check_status_group(group_name)
+
+    def check_complexity_group(self, group_name: str) -> bool:
+        """Check if node complexity is in the specified group."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.check_complexity_group(group_name)
+
+    # Backward compatibility methods using enum dispatch
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status == EnumMetadataNodeStatus.ACTIVE
+        return self.check_status(EnumMetadataNodeStatus.ACTIVE)
 
     def is_stable(self) -> bool:
         """Check if node is stable."""
-        return self.status == EnumMetadataNodeStatus.STABLE
+        return self.check_status(EnumMetadataNodeStatus.STABLE)
 
     def is_experimental(self) -> bool:
         """Check if node is experimental."""
-        return self.status == EnumMetadataNodeStatus.EXPERIMENTAL
+        return self.check_status(EnumMetadataNodeStatus.EXPERIMENTAL)
 
     def is_simple(self) -> bool:
         """Check if node is simple complexity."""
-        return self.complexity == EnumMetadataNodeComplexity.SIMPLE
+        return self.check_complexity(EnumMetadataNodeComplexity.SIMPLE)
 
     def is_complex(self) -> bool:
-        """Check if node is complex."""
-        return self.complexity in [
-            EnumMetadataNodeComplexity.COMPLEX,
-            EnumMetadataNodeComplexity.ADVANCED,
-        ]
+        """Check if node is complex (complex or advanced)."""
+        return self.check_complexity_group("complex")
+
+    def is_operational(self) -> bool:
+        """Check if node is operational (active or stable)."""
+        return self.check_status_group("operational")
 
     def has_good_documentation(self) -> bool:
         """Check if node has good documentation."""
@@ -138,6 +204,20 @@ class ModelMetadataNodeInfo(BaseModel):
             "good",
             "excellent",
         ]
+
+    def get_available_status_groups(self) -> list[str]:
+        """Get list of available status groups for checking."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.get_available_status_groups()
+
+    def get_available_complexity_groups(self) -> list[str]:
+        """Get list of available complexity groups for checking."""
+        if not hasattr(self, '_status_registry'):
+            self._status_registry = StatusDispatchRegistry()
+            self._setup_status_checks()
+        return self._status_registry.get_available_complexity_groups()
 
     def get_success_rate(self) -> float:
         """Get node success rate."""
