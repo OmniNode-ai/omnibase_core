@@ -6,6 +6,7 @@ and integrate properly with the rest of the system.
 """
 
 import pytest
+import uuid
 from datetime import datetime
 from typing import Dict, Any, List
 
@@ -33,17 +34,17 @@ class TestNodeDomainIntegration:
 
         # 2. Create capabilities for the nodes
         capabilities = [
-            ModelNodeCapability.SUPPORTS_DRY_RUN(),
-            ModelNodeCapability.SUPPORTS_BATCH_PROCESSING(),
-            ModelNodeCapability.SUPPORTS_ERROR_RECOVERY(),
-            ModelNodeCapability.TELEMETRY_ENABLED(),
+            ModelNodeCapability.supports_dry_run(),
+            ModelNodeCapability.supports_batch_processing(),
+            ModelNodeCapability.supports_error_recovery(),
+            ModelNodeCapability.telemetry_enabled(),
         ]
 
         # 3. Create node information for each type
         node_infos = []
         for i, (node_type, capability) in enumerate(zip(node_types, capabilities)):
             node_info = ModelNodeInformation(
-                node_id=f"node_{i:03d}",
+                node_id=str(uuid.uuid4()),
                 node_name=node_type.name,
                 node_type=node_type.category,
                 node_version="1.0.0",
@@ -63,7 +64,7 @@ class TestNodeDomainIntegration:
                 "description": node_info.description,
                 "type": node_info.node_type,
             }
-            success = collection.add_node(node_info.node_name, node_data, node_info)
+            success = collection.add_node(node_info.node_name, node_data, None)
             assert success, f"Failed to add {node_info.node_name}"
 
         # 5. Create CLI execution inputs for each node
@@ -92,7 +93,7 @@ class TestNodeDomainIntegration:
 
             node_info = collection.get_node_info(cli_input.node_name)
             assert node_info is not None
-            assert node_info.node_name == cli_input.node_name
+            assert node_info.name == cli_input.node_name
 
     def test_archetype_based_workflow(self):
         """Test workflow based on the four node archetypes."""
@@ -100,25 +101,25 @@ class TestNodeDomainIntegration:
         workflow_nodes = [
             {
                 "type": ModelNodeType.NODE_MANAGER_RUNNER(),
-                "capability": ModelNodeCapability.TELEMETRY_ENABLED(),
+                "capability": ModelNodeCapability.telemetry_enabled(),
                 "archetype": "orchestrator",
                 "priority": 100,
             },
             {
                 "type": ModelNodeType.CONTRACT_TO_MODEL(),
-                "capability": ModelNodeCapability.SUPPORTS_DRY_RUN(),
+                "capability": ModelNodeCapability.supports_dry_run(),
                 "archetype": "compute",
                 "priority": 50,
             },
             {
                 "type": ModelNodeType.FILE_GENERATOR(),
-                "capability": ModelNodeCapability.SUPPORTS_BATCH_PROCESSING(),
+                "capability": ModelNodeCapability.supports_batch_processing(),
                 "archetype": "effect",
                 "priority": 40,
             },
             {
                 "type": ModelNodeType.VALIDATION_ENGINE(),
-                "capability": ModelNodeCapability.SUPPORTS_ERROR_RECOVERY(),
+                "capability": ModelNodeCapability.supports_error_recovery(),
                 "archetype": "reducer",
                 "priority": 80,
             },
@@ -135,7 +136,7 @@ class TestNodeDomainIntegration:
 
             # Create node information
             node_info = ModelNodeInformation(
-                node_id=f"{archetype}_{i:03d}",
+                node_id=str(uuid.uuid4()),
                 node_name=node_type.name,
                 node_type=archetype,
                 node_version="2.0.0",
@@ -188,7 +189,7 @@ class TestNodeDomainIntegration:
         for node_name, category, capabilities in nodes_to_add:
             node_type = ModelNodeType.from_string(node_name)
             node_info = ModelNodeInformation(
-                node_id=f"cli_{node_name.lower()}",
+                node_id=str(uuid.uuid4()),
                 node_name=node_name,
                 node_type=category,
                 node_version="1.0.0",
@@ -236,9 +237,9 @@ class TestNodeDomainIntegration:
     def test_capability_dependency_resolution(self):
         """Test capability dependency resolution across models."""
         # Create capabilities with dependencies
-        base_capability = ModelNodeCapability.SUPPORTS_SCHEMA_VALIDATION()
-        dependent_capability = ModelNodeCapability.SUPPORTS_CUSTOM_HANDLERS()
-        complex_capability = ModelNodeCapability.SUPPORTS_EVENT_DISCOVERY()
+        base_capability = ModelNodeCapability.supports_schema_validation()
+        dependent_capability = ModelNodeCapability.supports_custom_handlers()
+        complex_capability = ModelNodeCapability.supports_event_discovery()
 
         # Verify dependency chain
         assert "SUPPORTS_SCHEMA_VALIDATION" in dependent_capability.dependencies
@@ -250,7 +251,7 @@ class TestNodeDomainIntegration:
 
         # Base node with fundamental capability
         base_node_info = ModelNodeInformation(
-            node_id="base_001",
+            node_id=str(uuid.uuid4()),
             node_name="SCHEMA_VALIDATOR",
             node_type="validator",
             node_version="1.0.0",
@@ -259,7 +260,7 @@ class TestNodeDomainIntegration:
 
         # Dependent node
         dependent_node_info = ModelNodeInformation(
-            node_id="dependent_001",
+            node_id=str(uuid.uuid4()),
             node_name="CUSTOM_HANDLER",
             node_type="handler",
             node_version="1.0.0",
@@ -269,7 +270,7 @@ class TestNodeDomainIntegration:
 
         # Complex node with multiple dependencies
         complex_node_info = ModelNodeInformation(
-            node_id="complex_001",
+            node_id=str(uuid.uuid4()),
             node_name="EVENT_DISCOVERER",
             node_type="discovery",
             node_version="1.0.0",
@@ -280,7 +281,7 @@ class TestNodeDomainIntegration:
         # Add to collection
         for node_info in [base_node_info, dependent_node_info, complex_node_info]:
             node_data = {"name": node_info.node_name, "type": node_info.node_type}
-            success = collection.add_node(node_info.node_name, node_data, node_info)
+            success = collection.add_node(node_info.node_name, node_data, None)
             assert success
 
         # Verify dependency resolution
@@ -294,16 +295,16 @@ class TestNodeDomainIntegration:
         """Test compatibility between node types and capabilities."""
         compatibility_matrix = [
             # (node_type, capability, should_be_compatible)
-            (ModelNodeType.CONTRACT_TO_MODEL(), ModelNodeCapability.SUPPORTS_DRY_RUN(), True),
-            (ModelNodeType.FILE_GENERATOR(), ModelNodeCapability.SUPPORTS_BATCH_PROCESSING(), True),
-            (ModelNodeType.VALIDATION_ENGINE(), ModelNodeCapability.SUPPORTS_ERROR_RECOVERY(), True),
-            (ModelNodeType.NODE_MANAGER_RUNNER(), ModelNodeCapability.TELEMETRY_ENABLED(), True),
+            (ModelNodeType.CONTRACT_TO_MODEL(), ModelNodeCapability.supports_dry_run(), True),
+            (ModelNodeType.FILE_GENERATOR(), ModelNodeCapability.supports_batch_processing(), True),
+            (ModelNodeType.VALIDATION_ENGINE(), ModelNodeCapability.supports_error_recovery(), True),
+            (ModelNodeType.NODE_MANAGER_RUNNER(), ModelNodeCapability.telemetry_enabled(), True),
         ]
 
         for node_type, capability, should_be_compatible in compatibility_matrix:
             # Create node information combining type and capability
             node_info = ModelNodeInformation(
-                node_id=f"compat_{node_type.name.lower()}",
+                node_id=str(uuid.uuid4()),
                 node_name=node_type.name,
                 node_type=node_type.category,
                 node_version="1.0.0",
@@ -409,7 +410,7 @@ class TestNodeDomainIntegration:
         assert cli_input.target_node == "NON_EXISTENT_NODE"
 
         # Test capability with invalid versions
-        capability = ModelNodeCapability.TELEMETRY_ENABLED()
+        capability = ModelNodeCapability.telemetry_enabled()
         assert not capability.is_compatible_with_version("0.9.0")  # Too old
         assert capability.is_compatible_with_version("1.1.0")     # Compatible
 
@@ -417,9 +418,9 @@ class TestNodeDomainIntegration:
         """Test serialization integration across all models."""
         # Create instances of all models
         node_type = ModelNodeType.CONTRACT_TO_MODEL()
-        capability = ModelNodeCapability.SUPPORTS_DRY_RUN()
+        capability = ModelNodeCapability.supports_dry_run()
         node_info = ModelNodeInformation(
-            node_id="serial_001",
+            node_id=str(uuid.uuid4()),
             node_name="SERIAL_NODE",
             node_type="compute",
             node_version="1.0.0",
