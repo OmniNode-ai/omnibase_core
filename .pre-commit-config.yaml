@@ -116,6 +116,15 @@ repos:
         files: ^src/.*\.py$
         stages: [pre-commit]
 
+      - id: validate-dict-any-usage
+        name: ONEX Dict[str, Any] Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-dict-any-usage.py
+        args: ['--max-violations', '0']
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        stages: [pre-commit]
+
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
         name: ONEX Contract Validation

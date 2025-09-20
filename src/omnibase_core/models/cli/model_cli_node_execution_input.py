@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
+from ..data.model_custom_fields import ModelCustomFields
 
 
 class ModelCliNodeExecutionInput(BaseModel):
@@ -64,8 +64,8 @@ class ModelCliNodeExecutionInput(BaseModel):
     verbose: bool = Field(default=False, description="Enable verbose output")
 
     # Advanced parameters (typed model for safety)
-    advanced_params: ModelAdvancedParams = Field(
-        default_factory=lambda: ModelAdvancedParams(),
+    advanced_params: ModelCustomFields = Field(
+        default_factory=lambda: ModelCustomFields(),
         description="Advanced parameters specific to individual nodes",
     )
 
@@ -143,8 +143,10 @@ class ModelCliNodeExecutionInput(BaseModel):
         base_params = {k: v for k, v in data.items() if k in known_fields}
         advanced_dict = {k: v for k, v in data.items() if k not in known_fields}
 
-        # Create ModelAdvancedParams from the remaining parameters
-        advanced_params = ModelAdvancedParams.from_dict(advanced_dict)
+        # Create ModelCustomFields from the remaining parameters
+        advanced_params = ModelCustomFields()
+        for key, value in advanced_dict.items():
+            advanced_params.set_field(key, value)
 
         return cls(advanced_params=advanced_params, **base_params)
 

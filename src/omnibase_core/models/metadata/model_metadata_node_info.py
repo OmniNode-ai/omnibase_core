@@ -13,7 +13,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.models.core.model_metadata_usage_metrics import (
+
+from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
 

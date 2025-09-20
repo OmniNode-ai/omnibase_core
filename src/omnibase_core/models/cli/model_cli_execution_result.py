@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.core.decorators import allow_any_type, allow_dict_str_any
+from ...core.decorators import allow_any_type, allow_dict_str_any
 
 
 @allow_dict_str_any("CLI execution results must handle diverse tool output types")

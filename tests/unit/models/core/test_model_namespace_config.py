@@ -12,7 +12,7 @@ Tests all aspects of the namespace configuration model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_namespace_config import ModelNamespaceConfig
+from ..core.model_namespace_config import ModelNamespaceConfig
 
 
 class TestModelNamespaceConfig:

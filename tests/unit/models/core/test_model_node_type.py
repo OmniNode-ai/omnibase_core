@@ -12,7 +12,7 @@ Tests all aspects of the node type model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_node_type import ModelNodeType
+from ..core.model_node_type import ModelNodeType
 
 
 class TestModelNodeType:

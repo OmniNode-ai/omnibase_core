@@ -11,8 +11,7 @@ from typing import Any, Union
 
 from pydantic import Field, RootModel, model_validator
 
-from omnibase_core.models.core.model_function_node import ModelFunctionNode
-
+from ..nodes.model_function_node import ModelFunctionNode
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_metadata_node_info import (
     ModelMetadataNodeInfo,

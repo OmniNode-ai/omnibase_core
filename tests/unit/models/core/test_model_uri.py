@@ -12,7 +12,7 @@ Tests all aspects of the ONEX URI model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_uri import ModelOnexUri, OnexUriModel
+from ..core.model_uri import ModelOnexUri, OnexUriModel
 
 
 class TestModelOnexUri:

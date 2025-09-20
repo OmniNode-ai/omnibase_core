@@ -10,11 +10,11 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_cli_execution import ModelCliExecution
-from omnibase_core.models.core.model_cli_output_data import ModelCliOutputData
-from omnibase_core.models.core.model_duration import ModelDuration
-from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
-from omnibase_core.models.validation.model_validation_error import ModelValidationError
+from ..cli.model_cli_execution import ModelCliExecution
+from ..cli.model_cli_output_data import ModelCliOutputData
+from ..infrastructure.model_duration import ModelDuration
+from ..metadata.model_generic_metadata import ModelGenericMetadata
+from ..validation.model_validation_error import ModelValidationError
 
 
 class ModelCliResult(BaseModel):

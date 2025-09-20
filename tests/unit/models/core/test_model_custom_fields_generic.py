@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from ..core.model_custom_fields import ModelCustomFields
 
 
 class TestModelCustomFieldsGeneric:

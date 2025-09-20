@@ -13,8 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
-from omnibase_core.models.core.model_connection_metrics import ModelConnectionMetrics
-from omnibase_core.models.core.model_custom_connection_properties import (
+
+from ..connections.model_connection_metrics import ModelConnectionMetrics
+from ..connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
 

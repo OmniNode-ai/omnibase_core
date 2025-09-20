@@ -11,7 +11,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-from omnibase_core.models.core.model_node_configuration import ModelNodeConfiguration
+
+from ..nodes.model_node_configuration import ModelNodeConfiguration
 
 
 class ModelNodeInformation(BaseModel):

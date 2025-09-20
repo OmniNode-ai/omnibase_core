@@ -12,7 +12,7 @@ Tests all aspects of the CLI action model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.core.model_cli_action import ModelCliAction
+from ..core.model_cli_action import ModelCliAction
 
 
 class TestModelCliAction:

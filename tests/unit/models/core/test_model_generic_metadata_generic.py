@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+from ..core.model_generic_metadata import ModelGenericMetadata
 
 
 class TestModelGenericMetadataGeneric:

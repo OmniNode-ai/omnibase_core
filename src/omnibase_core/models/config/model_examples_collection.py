@@ -6,9 +6,25 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .model_example import ModelExample
-from .model_example_metadata import ModelExampleMetadata
-from .model_generic_metadata import ModelGenericMetadata
+# TODO: These models need to be implemented
+# from .model_example import ModelExample
+# from .model_example_metadata import ModelExampleMetadata
+
+
+# Temporary placeholder classes until the actual models are implemented
+class ModelExample(BaseModel):
+    name: str = ""
+    description: str = ""
+    content: Any = None
+
+
+class ModelExampleMetadata(BaseModel):
+    title: str = ""
+    tags: list[str] = Field(default_factory=list)
+    difficulty: str = "beginner"
+
+
+from ..metadata.model_generic_metadata import ModelGenericMetadata
 
 
 class ModelExamples(BaseModel):
