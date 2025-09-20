@@ -269,8 +269,8 @@ class ModelProgress(BaseModel):
         next_name = min(uncompleted, key=lambda name: uncompleted[name])
         return (next_name, uncompleted[next_name])
 
-    def add_custom_metric(self, key: str, value: Any) -> None:
-        """Add custom progress metric."""
+    def add_custom_metric(self, key: str, value: str | int | float | bool) -> None:
+        """Add custom progress metric with proper typing."""
         self.custom_metrics.add_metric(key, value)
         self.last_update_time = datetime.now(UTC)
 

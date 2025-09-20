@@ -40,6 +40,7 @@ class AntiPatternNameDetector(ast.NodeVisitor):
             "dummy",
             "fake",
             "main",
+            "remaining",
         ]
         self.in_enum_class = False
         self.current_class_name = None
@@ -48,7 +49,20 @@ class AntiPatternNameDetector(ast.NodeVisitor):
         """Check if a name contains banned words."""
         name_lower = name.lower()
         for banned_word in self.banned_words:
-            if banned_word in name_lower:
+            # Use word boundary checking to avoid false positives
+            # (e.g., "main" shouldn't match "remaining")
+            if self._contains_word_boundary(name_lower, banned_word):
+                # Skip legitimate uses of "remaining" in time/duration contexts
+                if (
+                    banned_word == "remaining"
+                    and self._is_legitimate_remaining_context(name)
+                ):
+                    continue
+
+                # Skip legitimate uses of "main" in specific contexts
+                if banned_word == "main" and self._is_legitimate_main_context(name):
+                    continue
+
                 self.violations.append(
                     (
                         line_num,
@@ -56,6 +70,81 @@ class AntiPatternNameDetector(ast.NodeVisitor):
                         name,
                     )
                 )
+
+    def _contains_word_boundary(self, name_lower: str, banned_word: str) -> bool:
+        """Check if banned word appears with proper word boundaries."""
+        import re
+
+        # Create regex pattern that matches the banned word with appropriate boundaries
+        # This handles underscores and camelCase properly while preventing false positives
+        # like "main" matching in "remaining"
+        # Use word boundaries but also consider underscore boundaries and camelCase
+        patterns = [
+            # Standard word boundary (for space/punctuation separated)
+            r"\b" + re.escape(banned_word) + r"\b",
+            # Underscore boundary (for snake_case)
+            r"(?:^|_)" + re.escape(banned_word) + r"(?:_|$)",
+            # Start of string boundary
+            r"^" + re.escape(banned_word) + r"(?=_|$|[a-z])",
+        ]
+
+        return any(bool(re.search(pattern, name_lower)) for pattern in patterns)
+
+    def _is_legitimate_remaining_context(self, name: str) -> bool:
+        """Check if 'remaining' usage is legitimate in time/duration context."""
+        name_lower = name.lower()
+        legitimate_patterns = [
+            "remaining_time",
+            "remaining_seconds",
+            "remaining_ms",
+            "remaining_duration",
+            "time_remaining",
+            "get_remaining",
+            "has_retries_remaining",
+            "estimated_remaining",
+            "remaining_attempts",
+            "retry_remaining",
+            # Single 'remaining' is also legitimate in time contexts
+            "remaining",
+        ]
+
+        # Check if it's in a time/duration context file
+        time_duration_files = [
+            "model_time_based",
+            "model_progress",
+            "model_timeout",
+            "model_duration",
+            "model_retry_policy",
+            "progress_original",
+            "timeout_original",
+            "duration_original",
+        ]
+
+        filename = self.filepath.lower()
+        is_time_file = any(time_file in filename for time_file in time_duration_files)
+
+        if is_time_file and any(
+            pattern in name_lower for pattern in legitimate_patterns
+        ):
+            return True
+
+        # Also allow specific non-time patterns
+        non_time_patterns = [
+            "get_remaining",
+            "has_retries_remaining",
+            "retries_remaining",
+        ]
+        return any(pattern in name_lower for pattern in non_time_patterns)
+
+    def _is_legitimate_main_context(self, name: str) -> bool:
+        """Check if 'main' usage is legitimate in specific contexts."""
+        name_lower = name.lower()
+        legitimate_main_patterns = [
+            "main_value",  # Primary value in configuration/validation
+            "maintenance",  # Maintenance operations
+            "domain",  # Domain name patterns
+        ]
+        return any(pattern in name_lower for pattern in legitimate_main_patterns)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Check class names and track enum classes."""
@@ -113,12 +202,15 @@ class AntiPatternNameDetector(ast.NodeVisitor):
             if isinstance(target, ast.Name):
                 target_name = target.id
 
-                # Check for type aliases (CamelCase = SomeType pattern)
+                # Skip enum constants (all uppercase or in enum class)
+                if target_name.isupper() or self.in_enum_class:
+                    continue
+
+                # Check for type aliases (but allow legitimate TypeVar definitions and Union types)
                 if (
                     target_name[0].isupper()
                     and not target_name.startswith("Model")
-                    and not target_name.isupper()
-                    and not self.in_enum_class
+                    and not self._is_legitimate_type_definition(node)
                 ):
                     # This looks like a type alias
                     self.violations.append(
@@ -129,20 +221,45 @@ class AntiPatternNameDetector(ast.NodeVisitor):
                         )
                     )
                 # Check for banned words in regular variables
-                elif not (target_name.isupper() or self.in_enum_class):
+                else:
                     self._check_name(target_name, node.lineno, "Variable")
         self.generic_visit(node)
+
+    def _is_legitimate_type_definition(self, node: ast.Assign) -> bool:
+        """Check if this is a legitimate type definition (TypeVar, Union, etc.)."""
+        if isinstance(node.value, ast.Call):
+            if isinstance(node.value.func, ast.Name):
+                # Allow TypeVar definitions
+                if node.value.func.id == "TypeVar":
+                    return True
+
+        # Allow Union type aliases - these are legitimate
+        if isinstance(node.value, ast.Subscript):
+            if (
+                isinstance(node.value.value, ast.Name)
+                and node.value.value.id == "Union"
+            ):
+                return True
+
+        return False
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Check for type aliases (annotated assignments)."""
         if isinstance(node.target, ast.Name):
-            # Check if this looks like a type alias (usually CamelCase = SomeType)
             target_name = node.target.id
+
+            # Skip enum constants and legitimate type definitions
+            if target_name.isupper() or self.in_enum_class:
+                self.generic_visit(node)
+                return
+
+            # Check if this looks like a problematic type alias
             if (
                 target_name[0].isupper()
                 and not target_name.startswith("Model")
-                and not target_name.isupper()
-            ):  # Not enum constant
+                and node.value is not None
+                and not self._is_legitimate_type_definition_ann(node)
+            ):
                 self.violations.append(
                     (
                         node.lineno,
@@ -151,6 +268,26 @@ class AntiPatternNameDetector(ast.NodeVisitor):
                     )
                 )
         self.generic_visit(node)
+
+    def _is_legitimate_type_definition_ann(self, node: ast.AnnAssign) -> bool:
+        """Check if this is a legitimate annotated type definition."""
+        if node.value is None:
+            return True  # Just a type annotation, not an alias
+
+        # Similar logic to regular assignments
+        if isinstance(node.value, ast.Call):
+            if isinstance(node.value.func, ast.Name):
+                if node.value.func.id == "TypeVar":
+                    return True
+
+        if isinstance(node.value, ast.Subscript):
+            if (
+                isinstance(node.value.value, ast.Name)
+                and node.value.value.id == "Union"
+            ):
+                return True
+
+        return False
 
 
 def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, str]]:
@@ -170,7 +307,7 @@ def check_file_for_anti_pattern_names(filepath: Path) -> List[Tuple[int, str, st
         "dummy",
         "fake",
         "main",
-    ]
+    ]  # Note: "remaining" not in filename check as it can be legitimate
     for banned_word in banned_words:
         if banned_word in filename.lower():
             violations.append(

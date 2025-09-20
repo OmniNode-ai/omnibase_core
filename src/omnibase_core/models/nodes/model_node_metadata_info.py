@@ -5,12 +5,23 @@ Simple model for node metadata information used in CLI output.
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Protocol
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ..metadata.model_semver import ModelSemVer
+
+
+class NodeInfoLike(Protocol):
+    """Protocol for objects that can be converted to ModelNodeMetadataInfo."""
+
+    def __getattr__(
+        self, name: str
+    ) -> str | UUID | EnumMetadataNodeStatus | ModelSemVer | None:
+        """Allow attribute access for node info properties."""
+        ...
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -31,7 +42,9 @@ class ModelNodeMetadataInfo(BaseModel):
     author: str | None = Field(default=None, description="Node author")
 
     # Status information
-    status: str = Field(default="active", description="Node status")
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
+    )
     health: str = Field(default="healthy", description="Node health")
 
     # Timestamps
@@ -81,7 +94,7 @@ class ModelNodeMetadataInfo(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status == "active"
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
@@ -172,7 +185,7 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     @classmethod
-    def from_node_info(cls, node_info: Any) -> "ModelNodeMetadataInfo":
+    def from_node_info(cls, node_info: NodeInfoLike) -> "ModelNodeMetadataInfo":
         """Create from node info object."""
         # Extract basic information
         return cls(
@@ -181,7 +194,7 @@ class ModelNodeMetadataInfo(BaseModel):
             node_type=getattr(node_info, "node_type", "generic"),
             description=getattr(node_info, "description", None),
             version=getattr(node_info, "version", None),
-            status=getattr(node_info, "status", "active"),
+            status=getattr(node_info, "status", EnumMetadataNodeStatus.ACTIVE),
             health=getattr(node_info, "health", "healthy"),
         )
 

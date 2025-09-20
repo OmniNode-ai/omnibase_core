@@ -52,9 +52,9 @@ class ModelMetadataFieldInfo(BaseModel):
         description="Python type of the field (str, int, datetime, etc.)",
     )
 
-    default_value: Any | None = Field(
+    default_value: str | int | float | bool | None = Field(
         default=None,
-        description="Default value for optional fields",
+        description="Default value for optional fields (restricted to basic types)",
     )
 
     description: str = Field(

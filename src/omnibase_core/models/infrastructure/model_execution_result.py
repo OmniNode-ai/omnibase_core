@@ -7,7 +7,7 @@ timing, metadata, and execution tracking capabilities.
 
 from datetime import UTC, datetime
 from typing import Any, Callable, Generic, TypeVar
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ from .model_result import Result
 class ModelExecutionSummary(BaseModel):
     """Execution summary model with typed fields."""
 
-    execution_id: str = Field(description="Execution identifier")
+    execution_id: UUID = Field(description="Execution identifier")
     success: bool = Field(description="Whether execution was successful")
     duration_ms: int | None = Field(description="Duration in milliseconds")
     warning_count: int = Field(description="Number of warnings")
@@ -30,8 +30,16 @@ class ModelCliResultData(BaseModel):
     """CLI result data model with typed fields."""
 
     success: bool = Field(description="Whether execution was successful")
-    execution_id: str = Field(description="Execution identifier")
-    output_data: Any = Field(description="Output data if successful")
+    execution_id: UUID = Field(description="Execution identifier")
+    output_data: (
+        str
+        | int
+        | float
+        | bool
+        | dict[str, str | int | float | bool]
+        | list[str | int | float | bool]
+        | None
+    ) = Field(description="Output data if successful")
     error_message: str | None = Field(description="Error message if failed")
     tool_name: str | None = Field(description="Tool name if available")
     execution_time_ms: int | None = Field(description="Execution time in milliseconds")
@@ -83,8 +91,8 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     - CLI execution result formatting
     """
 
-    execution_id: str = Field(
-        default_factory=lambda: str(uuid4()), description="Unique execution identifier"
+    execution_id: UUID = Field(
+        default_factory=uuid4, description="Unique execution identifier"
     )
 
     start_time: datetime = Field(
@@ -120,7 +128,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     def ok(
         cls,
         value: T,
-        execution_id: str | None = None,
+        execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
         **kwargs: Any,
     ) -> "ModelExecutionResult[T, E]":
@@ -129,7 +137,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             success=True,
             value=value,
             error=None,
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata or ModelCustomProperties(),
             **kwargs,
         )
@@ -138,7 +146,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     def err(
         cls,
         error: E,
-        execution_id: str | None = None,
+        execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
         **kwargs: Any,
     ) -> "ModelExecutionResult[T, E]":
@@ -147,7 +155,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             success=False,
             value=None,
             error=error,
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata or ModelCustomProperties(),
             **kwargs,
         )
@@ -156,7 +164,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     def create_cli_success(
         cls,
         output_data: Any,
-        execution_id: str | None = None,
+        execution_id: UUID | None = None,
         tool_name: str | None = None,
         **kwargs: Any,
     ) -> "ModelExecutionResult[Any, str]":
@@ -175,7 +183,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             success=True,
             value=output_data,
             error=None,
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata,
             **kwargs,
         )
@@ -185,7 +193,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     def create_cli_failure(
         cls,
         error_message: str,
-        execution_id: str | None = None,
+        execution_id: UUID | None = None,
         tool_name: str | None = None,
         status_code: int = 1,
         **kwargs: Any,
@@ -207,7 +215,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             success=False,
             value=None,
             error=error_message,
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata,
             **kwargs,
         )
@@ -284,10 +292,27 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         """
         Convert to CLI result data format.
         """
+        # Type cast for CLI result data compatibility
+        output_data: (
+            str
+            | int
+            | float
+            | bool
+            | dict[str, str | int | float | bool]
+            | list[str | int | float | bool]
+            | None
+        ) = None
+        if self.success and self.value is not None:
+            # Convert value to supported CLI output data type
+            if isinstance(self.value, (str, int, float, bool, dict, list)):
+                output_data = self.value
+            else:
+                output_data = str(self.value)
+
         return ModelCliResultData(
             success=self.success,
             execution_id=self.execution_id,
-            output_data=self.value if self.success else None,
+            output_data=output_data,
             error_message=(
                 str(self.error) if not self.success and self.error is not None else None
             ),
@@ -319,7 +344,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
 # Factory functions for common execution patterns
 def execution_ok(
     value: T,
-    execution_id: str | None = None,
+    execution_id: UUID | None = None,
     tool_name: str | None = None,
     **kwargs: Any,
 ) -> ModelExecutionResult[T, str]:
@@ -338,7 +363,7 @@ def execution_ok(
 
 def execution_err(
     error: str,
-    execution_id: str | None = None,
+    execution_id: UUID | None = None,
     tool_name: str | None = None,
     status_code: int = 1,
     **kwargs: Any,
@@ -360,7 +385,7 @@ def execution_err(
 
 def try_execution(
     f: Callable[[], Any],
-    execution_id: str | None = None,
+    execution_id: UUID | None = None,
     tool_name: str | None = None,
     **kwargs: Any,
 ) -> ModelExecutionResult[Any, str]:
@@ -389,7 +414,7 @@ def try_execution(
             success=True,
             value=value,
             error=None,
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata,
             **kwargs,
         )
@@ -400,7 +425,7 @@ def try_execution(
             success=False,
             value=None,
             error=str(e),
-            execution_id=execution_id or str(uuid4()),
+            execution_id=execution_id or uuid4(),
             metadata=metadata,
             **kwargs,
         )

@@ -9,6 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from .model_semver import ModelSemVer
 
 
@@ -25,7 +26,9 @@ class ModelNodeInfoSummary(BaseModel):
     name: str = Field(..., description="Node name")
     description: str | None = Field(None, description="Node description")
     node_type: str = Field(default="unknown", description="Type of node")
-    status: str = Field(default="active", description="Node status")
+    status: EnumMetadataNodeStatus = Field(
+        default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
+    )
     complexity: str = Field(default="medium", description="Node complexity level")
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),

@@ -5,7 +5,7 @@ Type-safe environment variable management with validation and security.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Any
+from typing import Any, Iterator
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -225,7 +225,7 @@ class ModelEnvironmentVariables(BaseModel):
         del self.variables[name]
         self.secure_variables.discard(name)
 
-    def __iter__(self) -> Any:
+    def __iter__(self) -> "Iterator[str]":
         """Iterate over variable names."""
         return iter(self.variables)
 

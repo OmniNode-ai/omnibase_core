@@ -5,17 +5,30 @@ Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
-from typing import Any, Dict, Generic, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Optional, TypedDict, TypeVar, Union, cast
 
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
 
+# TypedDict for field values to replace loose Any typing
+class FieldValue(TypedDict, total=False):
+    """Typed dictionary for field values."""
+
+    string_value: str
+    int_value: int
+    float_value: float
+    bool_value: bool
+    list_value: list[str]
+
+
 class ModelFieldAccessor(BaseModel):
     """Generic field accessor with dot notation support and type safety."""
 
-    def get_field(self, path: str, default: Any = None) -> Any:
+    def get_field(
+        self, path: str, default: str | int | float | bool | list[str] | None = None
+    ) -> str | int | float | bool | list[str] | None:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:
             obj: Any = self
@@ -34,7 +47,7 @@ class ModelFieldAccessor(BaseModel):
         except (AttributeError, KeyError, TypeError):
             return default
 
-    def set_field(self, path: str, value: Any) -> bool:
+    def set_field(self, path: str, value: str | int | float | bool | list[str]) -> bool:
         """Set field using dot notation."""
         try:
             parts = path.split(".")
@@ -239,13 +252,17 @@ class ModelResultAccessor(ModelFieldAccessor):
 class ModelCustomFieldsAccessor(ModelFieldAccessor):
     """Specialized accessor for custom fields with initialization."""
 
-    def get_custom_field(self, key: str, default: Any = None) -> Any:
+    def get_custom_field(
+        self, key: str, default: str | int | float | bool | list[str] | None = None
+    ) -> str | int | float | bool | list[str] | None:
         """Get a custom field value, initializing custom_fields if needed."""
         if not self.has_field("custom_fields"):
             return default
         return self.get_field(f"custom_fields.{key}", default)
 
-    def set_custom_field(self, key: str, value: Any) -> bool:
+    def set_custom_field(
+        self, key: str, value: str | int | float | bool | list[str]
+    ) -> bool:
         """Set a custom field value, initializing custom_fields if needed."""
         # Initialize custom_fields if it doesn't exist
         if not self.has_field("custom_fields"):

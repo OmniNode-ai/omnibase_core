@@ -6,9 +6,43 @@ outcome of CLI command execution with proper typing.
 """
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict
+from typing import Any, TypedDict, TypeVar, Union
+
+# Type variable for generic metadata access
+T = TypeVar("T")
 
 from pydantic import BaseModel, Field
+
+
+# TypedDict for performance metrics to replace loose Any typing
+class ModelPerformanceMetricData(TypedDict, total=False):
+    """Typed dictionary for performance metric values."""
+
+    name: str
+    value: Union[int, float]
+    unit: str
+    category: str
+
+
+# TypedDict for debug info to replace loose Any typing
+class ModelDebugInfoData(TypedDict, total=False):
+    """Typed dictionary for debug information."""
+
+    key: str
+    value: Union[str, int, float, bool]
+    timestamp: str
+    category: str
+
+
+# TypedDict for trace data to replace loose Any typing
+class ModelTraceInfoData(TypedDict, total=False):
+    """Typed dictionary for trace information."""
+
+    key: str
+    value: Union[str, int, float, bool]
+    timestamp: str
+    operation: str
+
 
 from ..cli.model_cli_execution import ModelCliExecution
 from ..cli.model_cli_output_data import ModelCliOutputData
@@ -160,45 +194,83 @@ class ModelCliResult(BaseModel):
         """Add a validation error."""
         self.validation_errors.append(error)
 
-    def add_performance_metric(self, name: str, value: Any) -> None:
-        """Add a performance metric."""
+    def add_performance_metric(
+        self, name: str, value: int | float, unit: str = "", category: str = "general"
+    ) -> None:
+        """Add a performance metric with proper typing."""
         # Performance metrics are now strongly typed - use proper model
-        pass
+        if self.performance_metrics is None:
+            from .model_performance_metrics import ModelPerformanceMetrics
 
-    def add_debug_info(self, key: str, value: Any) -> None:
-        """Add debug information."""
+            self.performance_metrics = ModelPerformanceMetrics(
+                execution_time_ms=0.0,
+                memory_usage_mb=None,
+                cpu_usage_percent=None,
+                io_operations=None,
+                network_calls=None,
+            )
+        # Add through the performance metrics model's typed interface
+        if hasattr(self.performance_metrics, "add_metric"):
+            self.performance_metrics.add_metric(name, value, unit, category)
+
+    def add_debug_info(self, key: str, value: str | int | float | bool) -> None:
+        """Add debug information with proper typing."""
         if self.execution.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelGenericMetadata()
-            if self.debug_info.custom_fields is None:
-                self.debug_info.custom_fields = {}
-            self.debug_info.custom_fields[key] = value
+            self.debug_info.set_field(key, value)
 
-    def add_trace_data(self, key: str, value: Any) -> None:
-        """Add trace data."""
-        # Trace data is now strongly typed - use proper model
-        pass
+    def add_trace_data(
+        self, key: str, value: str | int | float | bool, operation: str = ""
+    ) -> None:
+        """Add trace data with proper typing."""
+        if self.trace_data is None:
+            from datetime import UTC, datetime
+            from uuid import uuid4
 
-    def add_metadata(self, key: str, value: Any) -> None:
-        """Add result metadata."""
+            now = datetime.now(UTC).isoformat()
+            self.trace_data = ModelTraceData(
+                trace_id=uuid4(),
+                span_id=uuid4(),
+                parent_span_id=None,
+                start_time=now,
+                end_time=now,
+                duration_ms=0.0,
+            )
+        # Add through the trace data model's typed interface
+        if hasattr(self.trace_data, "add_trace_info"):
+            self.trace_data.add_trace_info(key, value, operation)
+
+    def add_metadata(self, key: str, value: str | int | float | bool) -> None:
+        """Add result metadata with proper typing."""
         if self.result_metadata is None:
             self.result_metadata = ModelGenericMetadata()
-        if self.result_metadata.custom_fields is None:
-            self.result_metadata.custom_fields = {}
-        self.result_metadata.custom_fields[key] = value
+        self.result_metadata.set_typed_field(key, value)
 
-    def get_metadata(self, key: str, default: Any = None) -> Any:
-        """Get result metadata."""
-        if self.result_metadata is None or self.result_metadata.custom_fields is None:
+    def get_metadata(
+        self, key: str, default: str | int | float | bool | None = None
+    ) -> str | int | float | bool | None:
+        """Get result metadata with proper typing."""
+        if self.result_metadata is None:
             return default
-        return self.result_metadata.custom_fields.get(key, default)
+        return self.result_metadata.get_field(key, default)
 
-    def get_output_value(self, key: str, default: Any = None) -> Any:
-        """Get a specific output value."""
+    def get_typed_metadata(
+        self, key: str, field_type: type[T], default: T | None = None
+    ) -> T | None:
+        """Get result metadata with specific type checking."""
+        if self.result_metadata is None:
+            return default
+        return self.result_metadata.get_typed_field(key, field_type, default)
+
+    def get_output_value(
+        self, key: str, default: str | int | float | bool | None = None
+    ) -> str | int | float | bool | None:
+        """Get a specific output value with proper typing."""
         return self.output_data.get_field_value(key, default)
 
-    def set_output_value(self, key: str, value: Any) -> None:
-        """Set a specific output value."""
+    def set_output_value(self, key: str, value: str | int | float | bool) -> None:
+        """Set a specific output value with proper typing."""
         self.output_data.set_field_value(key, value)
 
     def get_formatted_output(self) -> str:

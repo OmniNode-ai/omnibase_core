@@ -6,7 +6,6 @@ with usage metrics and performance tracking.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +17,9 @@ from ..metadata.model_metadata_usage_metrics import (
 )
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_semver import ModelSemVer
+
+# Removed Any import - replaced with specific types
+
 
 # Type aliases for convenience
 ModelMetadataNodeType = EnumMetadataNodeType
@@ -218,12 +220,14 @@ class ModelMetadataNodeInfo(BaseModel):
             self.has_documentation = True
             self.update_timestamp()
 
-    def add_custom_metadata(self, key: str, value: Any) -> None:
+    def add_custom_metadata(self, key: str, value: str | int | float | bool) -> None:
         """Add custom metadata."""
         self.custom_metadata[key] = value
         self.update_timestamp()
 
-    def get_custom_metadata(self, key: str, default: Any = None) -> Any:
+    def get_custom_metadata(
+        self, key: str, default: str | int | float | bool | None = None
+    ) -> str | int | float | bool | None:
         """Get custom metadata value."""
         return self.custom_metadata.get(key, default)
 

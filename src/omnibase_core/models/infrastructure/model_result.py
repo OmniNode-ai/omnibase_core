@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
+U = TypeVar("U")  # Mapped type for transformations
+F = TypeVar("F")  # Mapped error type for transformations
 
 
 class ModelResultDict(BaseModel):
@@ -23,8 +25,18 @@ class ModelResultDict(BaseModel):
     """
 
     success: bool = Field(..., description="Whether the operation succeeded")
-    value: Any | None = Field(None, description="Success value (if success=True)")
-    error: Any | None = Field(None, description="Error value (if success=False)")
+    value: (
+        str
+        | int
+        | float
+        | bool
+        | dict[str, str | int | float | bool]
+        | list[str | int | float | bool]
+        | None
+    ) = Field(None, description="Success value (if success=True)")
+    error: str | Exception | None = Field(
+        None, description="Error value (if success=False)"
+    )
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -128,7 +140,7 @@ class Result(BaseModel, Generic[T, E]):
             raise ValueError("Success result has None value")
         return self.value
 
-    def map(self, f: Callable[[T], Any]) -> "Result[Any, Union[E, Exception]]":
+    def map(self, f: Callable[[T], U]) -> "Result[U, Union[E, Exception]]":
         """
         Map function over the success value.
 
@@ -148,7 +160,7 @@ class Result(BaseModel, Generic[T, E]):
             raise ValueError("Error result has None error")
         return Result.err(self.error)
 
-    def map_err(self, f: Callable[[E], Any]) -> "Result[T, Any]":
+    def map_err(self, f: Callable[[E], F]) -> "Result[T, Union[F, Exception]]":
         """
         Map function over the error value.
 
@@ -168,8 +180,8 @@ class Result(BaseModel, Generic[T, E]):
             return Result.err(e)
 
     def and_then(
-        self, f: Callable[[T], "Result[Any, E]"]
-    ) -> "Result[Any, Union[E, Exception]]":
+        self, f: Callable[[T], "Result[U, E]"]
+    ) -> "Result[U, Union[E, Exception]]":
         """
         Flat map (bind) operation for chaining Results.
 
@@ -182,14 +194,16 @@ class Result(BaseModel, Generic[T, E]):
                     raise ValueError("Success result has None value")
                 result = f(self.value)
                 # Cast the result to the expected type since we know it's compatible
-                return cast("Result[Any, Union[E, Exception]]", result)
+                return cast("Result[U, Union[E, Exception]]", result)
             except Exception as e:
                 return Result.err(e)
         if self.error is None:
             raise ValueError("Error result has None error")
         return Result.err(self.error)
 
-    def or_else(self, f: Callable[[E], "Result[T, Any]"]) -> "Result[T, Any]":
+    def or_else(
+        self, f: Callable[[E], "Result[T, F]"]
+    ) -> "Result[T, Union[F, Exception]]":
         """
         Alternative operation for error recovery.
 
@@ -203,7 +217,8 @@ class Result(BaseModel, Generic[T, E]):
         try:
             if self.error is None:
                 raise ValueError("Error result has None error")
-            return f(self.error)
+            result = f(self.error)
+            return cast("Result[T, Union[F, Exception]]", result)
         except Exception as e:
             return Result.err(e)
 
@@ -231,13 +246,13 @@ class Result(BaseModel, Generic[T, E]):
 
 
 # Factory functions for common patterns
-def ok(value: T) -> Result[T, Any]:
-    """Create successful result."""
+def ok(value: T) -> Result[T, str]:
+    """Create successful result with string error type."""
     return Result.ok(value)
 
 
-def err(error: E) -> Result[Any, E]:
-    """Create error result."""
+def err(error: E) -> Result[str, E]:
+    """Create error result with string success type."""
     return Result.err(error)
 
 

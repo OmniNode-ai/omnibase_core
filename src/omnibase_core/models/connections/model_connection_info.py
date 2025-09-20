@@ -8,7 +8,14 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    field_serializer,
+    model_validator,
+)
 
 from ...enums.enum_auth_type import EnumAuthType
 from ...enums.enum_connection_state import EnumConnectionState
@@ -38,16 +45,36 @@ class ModelConnectionInfo(BaseModel):
     protocol_version: ModelSemVer | None = Field(None, description="Protocol version")
 
     # Endpoint information
-    host: str = Field(..., description="Host address")
-    port: int = Field(..., description="Port number")
-    path: str | None = Field(None, description="Connection path/endpoint")
+    host: str = Field(
+        ...,
+        description="Host address (IP or hostname)",
+        min_length=1,
+        max_length=255,
+        pattern=r"^[a-zA-Z0-9.-]+$",
+    )
+    port: int = Field(..., description="Port number", ge=1, le=65535)
+    path: str | None = Field(
+        None, description="Connection path/endpoint", max_length=2048, pattern=r"^/.*$"
+    )
 
     # Authentication
     auth_type: EnumAuthType | None = Field(None, description="Authentication type")
-    username: str | None = Field(None, description="Username")
-    password: SecretStr | None = Field(None, description="Password (encrypted)")
-    api_key: SecretStr | None = Field(None, description="API key (encrypted)")
-    token: SecretStr | None = Field(None, description="Auth token (encrypted)")
+    username: str | None = Field(
+        None,
+        description="Username",
+        min_length=1,
+        max_length=255,
+        pattern=r"^[a-zA-Z0-9._@-]+$",
+    )
+    password: SecretStr | None = Field(
+        None, description="Password (encrypted)", min_length=1
+    )
+    api_key: SecretStr | None = Field(
+        None, description="API key (encrypted)", min_length=1
+    )
+    token: SecretStr | None = Field(
+        None, description="Auth token (encrypted)", min_length=1
+    )
 
     # SSL/TLS
     use_ssl: bool = Field(default=False, description="Whether to use SSL/TLS")
@@ -60,18 +87,27 @@ class ModelConnectionInfo(BaseModel):
     ssl_ca_path: Path | None = Field(None, description="SSL CA bundle path")
 
     # Connection parameters
-    timeout_seconds: int = Field(30, description="Connection timeout")
-    retry_count: int = Field(3, description="Number of retry attempts")
-    retry_delay_seconds: int = Field(1, description="Delay between retries")
+    timeout_seconds: int = Field(
+        30, description="Connection timeout in seconds", ge=1, le=3600
+    )
+    retry_count: int = Field(3, description="Number of retry attempts", ge=0, le=10)
+    retry_delay_seconds: int = Field(
+        1, description="Delay between retries in seconds", ge=0, le=60
+    )
     keepalive_interval: int | None = Field(
-        None,
-        description="Keepalive interval in seconds",
+        None, description="Keepalive interval in seconds", ge=1, le=300
     )
 
     # Connection pooling
-    pool_size: int | None = Field(None, description="Connection pool size")
-    pool_timeout: int | None = Field(None, description="Pool timeout in seconds")
-    max_overflow: int | None = Field(None, description="Maximum pool overflow")
+    pool_size: int | None = Field(
+        None, description="Connection pool size", ge=1, le=1000
+    )
+    pool_timeout: int | None = Field(
+        None, description="Pool timeout in seconds", ge=1, le=3600
+    )
+    max_overflow: int | None = Field(
+        None, description="Maximum pool overflow", ge=0, le=100
+    )
 
     # Headers and metadata
     headers: dict[str, str] = Field(
@@ -107,6 +143,50 @@ class ModelConnectionInfo(BaseModel):
     )
 
     model_config = ConfigDict()
+
+    @model_validator(mode="after")
+    def validate_connection_consistency(self) -> "ModelConnectionInfo":
+        """Validate connection configuration consistency."""
+        # SSL path validation
+        if self.use_ssl:
+            if self.ssl_cert_path and not self.ssl_cert_path.exists():
+                raise ValueError(
+                    f"SSL certificate path does not exist: {self.ssl_cert_path}"
+                )
+            if self.ssl_key_path and not self.ssl_key_path.exists():
+                raise ValueError(f"SSL key path does not exist: {self.ssl_key_path}")
+            if self.ssl_ca_path and not self.ssl_ca_path.exists():
+                raise ValueError(
+                    f"SSL CA bundle path does not exist: {self.ssl_ca_path}"
+                )
+
+        # Authentication validation
+        if self.auth_type == EnumAuthType.BASIC:
+            if not self.username or not self.password:
+                raise ValueError(
+                    "Basic authentication requires both username and password"
+                )
+        elif self.auth_type == EnumAuthType.BEARER:
+            if not self.token:
+                raise ValueError("Bearer authentication requires a token")
+        elif self.auth_type == EnumAuthType.API_KEY:
+            if not self.api_key:
+                raise ValueError("API key authentication requires an api_key")
+
+        # Pool configuration validation
+        if self.pool_size and self.max_overflow:
+            if self.max_overflow > self.pool_size:
+                raise ValueError("max_overflow cannot exceed pool_size")
+
+        # Path validation for connection types
+        if self.connection_type in [
+            EnumConnectionType.HTTP,
+            EnumConnectionType.WEBSOCKET,
+        ]:
+            if self.path and not self.path.startswith("/"):
+                raise ValueError("HTTP/WebSocket path must start with '/'")
+
+        return self
 
     def get_connection_string(self) -> str:
         """Generate connection string."""

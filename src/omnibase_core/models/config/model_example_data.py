@@ -7,6 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_cli_status import EnumCliStatus
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -55,7 +56,9 @@ class ModelExampleOutputData(BaseModel):
     )
 
     # Status information
-    status: str = Field(default="success", description="Output status")
+    status: EnumCliStatus = Field(
+        default=EnumCliStatus.SUCCESS, description="Output status"
+    )
 
     # Metrics
     processing_time_ms: float | None = Field(

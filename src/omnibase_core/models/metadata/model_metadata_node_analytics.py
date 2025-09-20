@@ -6,12 +6,13 @@ performance tracking and health monitoring.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ..infrastructure.model_metrics_data import ModelMetricsData
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
+
+# Removed Any import - replaced with specific types
 
 
 class ModelMetadataNodeAnalytics(BaseModel):
@@ -160,11 +161,13 @@ class ModelMetadataNodeAnalytics(BaseModel):
             return 0.0
         return (self.error_count / self.total_invocations) * 100.0
 
-    def add_custom_metric(self, name: str, value: Any) -> None:
+    def add_custom_metric(self, name: str, value: str | int | float | bool) -> None:
         """Add a custom metric."""
         self.custom_metrics.add_metric(name, value)
 
-    def get_custom_metric(self, name: str, default: Any = None) -> Any:
+    def get_custom_metric(
+        self, name: str, default: str | int | float | bool | None = None
+    ) -> str | int | float | bool | None:
         """Get a custom metric value."""
         value = self.custom_metrics.get_metric_by_key(name)
         return value if value is not None else default

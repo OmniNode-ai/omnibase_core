@@ -9,6 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_function_status import EnumFunctionStatus
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -25,7 +26,9 @@ class ModelFunctionNodeSummary(BaseModel):
     name: str = Field(..., description="Function name")
     description: str | None = Field(None, description="Function description")
     function_type: str = Field(default="function", description="Type of function")
-    status: str = Field(default="active", description="Function status")
+    status: EnumFunctionStatus = Field(
+        default=EnumFunctionStatus.ACTIVE, description="Function status"
+    )
     complexity: str = Field(default="medium", description="Function complexity level")
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),

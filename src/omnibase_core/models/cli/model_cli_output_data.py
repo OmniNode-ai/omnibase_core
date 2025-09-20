@@ -7,6 +7,8 @@ Follows ONEX one-model-per-file naming conventions.
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_cli_status import EnumCliStatus
+
 
 class ModelCliOutputData(BaseModel):
     """
@@ -34,7 +36,9 @@ class ModelCliOutputData(BaseModel):
     )
 
     # Status and validation
-    status: str = Field(default="completed", description="Output status")
+    status: EnumCliStatus = Field(
+        default=EnumCliStatus.SUCCESS, description="Output status"
+    )
     is_valid: bool = Field(default=True, description="Whether output is valid")
 
     # Performance metrics
@@ -89,7 +93,7 @@ class ModelCliOutputData(BaseModel):
         cls,
         stdout: str | None = None,
         stderr: str | None = None,
-        status: str = "completed",
+        status: EnumCliStatus = EnumCliStatus.SUCCESS,
     ) -> "ModelCliOutputData":
         """Create simple output data with just stdout/stderr."""
         return cls(
@@ -102,7 +106,9 @@ class ModelCliOutputData(BaseModel):
 
     @classmethod
     def create_with_results(
-        cls, results: dict[str, str | int | bool | float], status: str = "completed"
+        cls,
+        results: dict[str, str | int | bool | float],
+        status: EnumCliStatus = EnumCliStatus.SUCCESS,
     ) -> "ModelCliOutputData":
         """Create output data with structured results."""
         return cls(

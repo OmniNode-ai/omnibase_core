@@ -12,7 +12,9 @@ from ...enums.enum_validation_severity import EnumValidationSeverity
 class ModelValidationError(BaseModel):
     """Validation error information."""
 
-    message: str = Field(..., description="Error message")
+    message: str = Field(
+        ..., description="Error message", min_length=1, max_length=1000
+    )
     severity: EnumValidationSeverity = Field(
         default=EnumValidationSeverity.ERROR,
         description="Error severity level",
@@ -20,22 +22,26 @@ class ModelValidationError(BaseModel):
     field_name: str | None = Field(
         default=None,
         description="Field name that caused the error",
+        min_length=1,
+        max_length=255,
+        pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$",
     )
     error_code: str | None = Field(
         default=None,
         description="Error code for programmatic handling",
+        min_length=1,
+        max_length=50,
+        pattern=r"^[A-Z][A-Z0-9_]*$",
     )
     details: dict[str, str | int | bool] | None = Field(
         default=None,
         description="Additional error details",
     )
     line_number: int | None = Field(
-        default=None,
-        description="Line number where error occurred",
+        default=None, description="Line number where error occurred", ge=1, le=1000000
     )
     column_number: int | None = Field(
-        default=None,
-        description="Column number where error occurred",
+        default=None, description="Column number where error occurred", ge=1, le=10000
     )
 
     def is_critical(self) -> bool:

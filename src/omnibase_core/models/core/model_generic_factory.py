@@ -5,9 +5,51 @@ Provides a consistent, type-safe factory pattern to replace repetitive
 factory methods across CLI, Config, Nodes, and Validation domains.
 """
 
-from typing import Any, Callable, Generic, Type, TypeVar, Union
+from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Union, Unpack
 
 from pydantic import BaseModel
+
+
+# TypedDict for factory kwargs to replace loose **kwargs: Any
+class FactoryKwargs(TypedDict, total=False):
+    """Typed dictionary for factory method parameters."""
+
+    success: bool
+    exit_code: int
+    error_message: str | None
+    data: str | int | float | bool | None
+    name: str
+    value: str
+    description: str
+    deprecated: bool
+    experimental: bool
+    message: str
+    severity: str
+
+
+# TypedDict for result factory specific kwargs
+class ResultFactoryKwargs(TypedDict, total=False):
+    """Typed dictionary for result factory parameters."""
+
+    success: bool
+    exit_code: int
+    error_message: str | None
+    data: str | int | float | bool | None
+    output_text: str | None
+    warnings: list[str]
+
+
+# TypedDict for capability factory specific kwargs
+class CapabilityFactoryKwargs(TypedDict, total=False):
+    """Typed dictionary for capability factory parameters."""
+
+    name: str
+    value: str
+    description: str
+    deprecated: bool
+    experimental: bool
+    enabled: bool
+
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -81,13 +123,13 @@ class ModelGenericFactory(Generic[T]):
             raise ValueError(f"Unknown factory: {name} for {self.model_class.__name__}")
         return self._factories[name]()
 
-    def build(self, name: str, **kwargs: Any) -> T:
+    def build(self, name: str, **kwargs: Unpack[FactoryKwargs]) -> T:
         """
         Build instance using registered builder method.
 
         Args:
             name: Builder name to use
-            **kwargs: Arguments to pass to the builder
+            **kwargs: Typed arguments to pass to the builder
 
         Returns:
             New instance of T
@@ -116,7 +158,12 @@ class ModelGenericFactory(Generic[T]):
         return name in self._builders
 
     @classmethod
-    def create_success_result(cls, model_class: Type[T], data: Any, **kwargs: Any) -> T:
+    def create_success_result(
+        cls,
+        model_class: Type[T],
+        data: str | int | float | bool | None,
+        **kwargs: Unpack[FactoryKwargs],
+    ) -> T:
         """
         Generic success result factory.
 
@@ -134,7 +181,9 @@ class ModelGenericFactory(Generic[T]):
         return model_class(success=True, data=data, **kwargs)
 
     @classmethod
-    def create_error_result(cls, model_class: Type[T], error: str, **kwargs: Any) -> T:
+    def create_error_result(
+        cls, model_class: Type[T], error: str, **kwargs: Unpack[FactoryKwargs]
+    ) -> T:
         """
         Generic error result factory.
 
@@ -169,7 +218,7 @@ class ResultFactory(ModelGenericFactory[T]):
         self.register_builder("error", self._build_error_result)
         self.register_builder("validation_error", self._build_validation_error_result)
 
-    def _build_success_result(self, **kwargs: Any) -> T:
+    def _build_success_result(self, **kwargs: Unpack[ResultFactoryKwargs]) -> T:
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
         filtered_kwargs = {
@@ -182,7 +231,7 @@ class ResultFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_error_result(self, **kwargs: Any) -> T:
+    def _build_error_result(self, **kwargs: Unpack[ResultFactoryKwargs]) -> T:
         """Build an error result with standard fields."""
         # Remove conflicting fields and set standard error values
         filtered_kwargs = {
@@ -197,7 +246,9 @@ class ResultFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_validation_error_result(self, **kwargs: Any) -> T:
+    def _build_validation_error_result(
+        self, **kwargs: Unpack[ResultFactoryKwargs]
+    ) -> T:
         """Build a validation error result with standard fields."""
         # Remove conflicting fields and set standard validation error values
         filtered_kwargs = {
@@ -230,7 +281,9 @@ class CapabilityFactory(ModelGenericFactory[T]):
         self.register_builder("deprecated", self._build_deprecated_capability)
         self.register_builder("experimental", self._build_experimental_capability)
 
-    def _build_standard_capability(self, **kwargs: Any) -> T:
+    def _build_standard_capability(
+        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+    ) -> T:
         """Build a standard capability with consistent naming."""
         name = kwargs.get("name", "UNKNOWN")
         value = kwargs.get("value", name.lower())
@@ -247,13 +300,17 @@ class CapabilityFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_deprecated_capability(self, **kwargs: Any) -> T:
+    def _build_deprecated_capability(
+        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+    ) -> T:
         """Build a deprecated capability with warning metadata."""
         # Ensure deprecated flag is set
         kwargs["deprecated"] = True
         return self._build_standard_capability(**kwargs)
 
-    def _build_experimental_capability(self, **kwargs: Any) -> T:
+    def _build_experimental_capability(
+        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+    ) -> T:
         """Build an experimental capability with appropriate metadata."""
         # Set experimental flag if the model supports it
         if "experimental" not in kwargs:
@@ -279,7 +336,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
         self.register_builder("critical", self._build_critical)
         self.register_builder("info", self._build_info)
 
-    def _build_error(self, **kwargs: Any) -> T:
+    def _build_error(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a standard error with ERROR severity."""
         # Import here to avoid circular dependency issues
         try:
@@ -300,7 +357,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_warning(self, **kwargs: Any) -> T:
+    def _build_warning(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a warning with WARNING severity."""
         # Import here to avoid circular dependency issues
         try:
@@ -323,7 +380,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_critical(self, **kwargs: Any) -> T:
+    def _build_critical(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a critical error with CRITICAL severity."""
         # Import here to avoid circular dependency issues
         try:
@@ -346,7 +403,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_info(self, **kwargs: Any) -> T:
+    def _build_info(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build an info message with INFO severity."""
         # Import here to avoid circular dependency issues
         try:

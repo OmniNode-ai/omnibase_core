@@ -6,12 +6,32 @@ can replace ad-hoc collection operations found across Config, Data, and other do
 """
 
 from datetime import UTC, datetime
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    Protocol,
+    TypeVar,
+    runtime_checkable,
+)
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-T = TypeVar("T", bound=BaseModel)
+
+# Define protocols for collection items to ensure proper constraints
+@runtime_checkable
+class CollectionItem(Protocol):
+    """Protocol for items that can be stored in collections."""
+
+    def model_dump(self) -> dict[str, str | int | bool | float]: ...
+
+
+# More constrained TypeVar for collection items
+T = TypeVar(
+    "T", bound=BaseModel
+)  # Keep BaseModel bound for now, can be made more specific
 
 
 class ModelGenericCollectionSummary(BaseModel):
@@ -42,7 +62,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         T: The type of items stored in the collection (must be a BaseModel)
     """
 
-    items: List[T] = Field(
+    items: list[T] = Field(
         default_factory=list, description="Collection items with strong typing"
     )
 
@@ -147,7 +167,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             return self.items[index]
         return None
 
-    def filter_items(self, predicate: Callable[[T], bool]) -> List[T]:
+    def filter_items(self, predicate: Callable[[T], bool]) -> list[T]:
         """
         Filter items by a predicate function.
 
@@ -159,7 +179,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         """
         return [item for item in self.items if predicate(item)]
 
-    def get_enabled_items(self) -> List[T]:
+    def get_enabled_items(self) -> list[T]:
         """
         Get items that have enabled=True.
 
@@ -168,7 +188,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         """
         return self.filter_items(lambda item: getattr(item, "enabled", True))
 
-    def get_valid_items(self) -> List[T]:
+    def get_valid_items(self) -> list[T]:
         """
         Get items that have is_valid=True or valid=True.
 
@@ -180,7 +200,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             and getattr(item, "valid", True)
         )
 
-    def get_items_by_tag(self, tag: str) -> List[T]:
+    def get_items_by_tag(self, tag: str) -> list[T]:
         """
         Get items that have a specific tag in their 'tags' attribute.
 
@@ -258,7 +278,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         )
         self.updated_at = datetime.now(UTC)
 
-    def get_item_names(self) -> List[str]:
+    def get_item_names(self) -> list[str]:
         """
         Get list of all item names.
 
@@ -308,7 +328,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             has_items=self.item_count() > 0,
         )
 
-    def extend_items(self, items: List[T]) -> None:
+    def extend_items(self, items: list[T]) -> None:
         """
         Add multiple items to the collection.
 
@@ -318,7 +338,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         self.items.extend(items)
         self.updated_at = datetime.now(UTC)
 
-    def find_items(self, **kwargs: str | int | bool | float) -> List[T]:
+    def find_items(self, **kwargs: str | int | bool | float) -> list[T]:
         """
         Find items by attribute values.
 
@@ -379,7 +399,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
     @classmethod
     def create_from_items(
-        cls, items: List[T], collection_name: str = ""
+        cls, items: list[T], collection_name: str = ""
     ) -> "ModelGenericCollection[T]":
         """
         Create a collection from a list of items.
