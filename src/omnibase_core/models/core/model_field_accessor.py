@@ -41,7 +41,10 @@ class ModelFieldAccessor(BaseModel):
                     obj = obj[part]
                 else:
                     return default
-            return obj
+            # Type checking for return value
+            if isinstance(obj, (str, int, float, bool, list)):
+                return obj
+            return default
         except (AttributeError, KeyError, TypeError):
             return default
 
