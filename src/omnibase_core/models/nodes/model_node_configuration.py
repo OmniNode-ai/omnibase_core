@@ -5,6 +5,8 @@ Restructured to use focused sub-models for better organization.
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from pydantic import BaseModel, Field
 
 from ..core.model_custom_properties import ModelCustomProperties
@@ -12,6 +14,17 @@ from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
+
+
+class NodeConfigurationSummary(TypedDict):
+    """Type-safe dictionary for node configuration summary."""
+    execution: dict[str, str | int | float | bool | None]
+    resources: dict[str, str | int | float | bool | None]
+    features: dict[str, str | int | float | bool | None]
+    connection: dict[str, str | int | float | bool | None]
+    is_production_ready: bool
+    is_performance_optimized: bool
+    has_custom_settings: bool
 
 
 class ModelNodeConfiguration(BaseModel):
@@ -164,6 +177,7 @@ class ModelNodeConfiguration(BaseModel):
             self.connection.protocol = None
         else:
             from ...enums.enum_protocol_type import EnumProtocolType
+
             try:
                 self.connection.protocol = EnumProtocolType(value)
             except ValueError:
@@ -222,7 +236,7 @@ class ModelNodeConfiguration(BaseModel):
         else:
             self.custom_properties.numeric_properties.clear()
 
-    def get_configuration_summary(self) -> dict[str, any]:
+    def get_configuration_summary(self) -> NodeConfigurationSummary:
         """Get comprehensive configuration summary."""
         return {
             "execution": self.execution.get_execution_summary(),
@@ -236,10 +250,7 @@ class ModelNodeConfiguration(BaseModel):
 
     def is_production_ready(self) -> bool:
         """Check if configuration is production-ready."""
-        return (
-            self.features.is_production_ready()
-            and self.features.enable_monitoring
-        )
+        return self.features.is_production_ready() and self.features.enable_monitoring
 
     def is_performance_optimized(self) -> bool:
         """Check if configuration is performance-optimized."""

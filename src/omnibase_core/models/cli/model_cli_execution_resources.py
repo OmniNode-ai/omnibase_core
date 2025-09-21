@@ -49,7 +49,7 @@ class ModelCliExecutionResources(BaseModel):
         self.retry_count += 1
         return self.retry_count <= self.max_retries
 
-    def has_retries_remaining(self) -> bool:
+    def can_attempt_retry(self) -> bool:
         """Check if retries are still available."""
         return self.retry_count < self.max_retries
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_function_status import EnumFunctionStatus
 from ...enums.enum_node_type import EnumNodeType
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
@@ -34,11 +34,15 @@ class ModelFunctionNodeData(BaseModel):
     node_id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the function node"
     )
-    node_display_name: str | None = Field(None, description="Human-readable function node name")
+    node_display_name: str | None = Field(
+        None, description="Human-readable function node name"
+    )
     description: str | None = Field(None, description="Node description")
 
     # Basic properties
-    node_type: EnumNodeType = Field(default=EnumNodeType.FUNCTION, description="Type of node")
+    node_type: EnumNodeType = Field(
+        default=EnumNodeType.FUNCTION, description="Type of node"
+    )
     status: EnumFunctionStatus = Field(
         default=EnumFunctionStatus.ACTIVE, description="Node status"
     )

@@ -22,8 +22,12 @@ class ModelCliOutputData(BaseModel):
     """
 
     # Core output fields
-    output_type: EnumOutputType = Field(default=EnumOutputType.CONSOLE, description="Type of output data")
-    format: EnumOutputFormat = Field(default=EnumOutputFormat.JSON, description="Output format")
+    output_type: EnumOutputType = Field(
+        default=EnumOutputType.CONSOLE, description="Type of output data"
+    )
+    format: EnumOutputFormat = Field(
+        default=EnumOutputFormat.JSON, description="Output format"
+    )
 
     # Standard output content
     stdout: str | None = Field(None, description="Standard output content")

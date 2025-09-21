@@ -16,9 +16,10 @@ from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_registry_status import EnumRegistryStatus
 from ..metadata.model_semver import ModelSemVer
-from .model_node_basic_info import ModelNodeBasicInfo
+from .model_node_core_info import ModelNodeCoreInfo
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
 from .model_node_configuration import ModelNodeConfiguration
+from .model_node_information_summary import ModelNodeInformationSummary
 
 
 class ModelNodeInformation(BaseModel):
@@ -30,9 +31,9 @@ class ModelNodeInformation(BaseModel):
     """
 
     # Composed sub-models (3 primary components)
-    basic_info: ModelNodeBasicInfo = Field(
+    core_info: ModelNodeCoreInfo = Field(
         ...,
-        description="Basic node information",
+        description="Core node information",
     )
     capabilities: ModelNodeCapabilitiesInfo = Field(
         default_factory=ModelNodeCapabilitiesInfo,
@@ -46,103 +47,103 @@ class ModelNodeInformation(BaseModel):
     # Backward compatibility properties
     @property
     def node_id(self) -> UUID:
-        """Node identifier (delegated to basic_info)."""
-        return self.basic_info.node_id
+        """Node identifier (delegated to core_info)."""
+        return self.core_info.node_id
 
     @node_id.setter
     def node_id(self, value: UUID) -> None:
         """Set node identifier."""
-        self.basic_info.node_id = value
+        self.core_info.node_id = value
 
     @property
     def node_name(self) -> str:
-        """Node name (delegated to basic_info)."""
-        return self.basic_info.node_name
+        """Node name (delegated to core_info)."""
+        return self.core_info.node_name
 
     @node_name.setter
     def node_name(self, value: str) -> None:
         """Set node name."""
-        self.basic_info.node_name = value
+        self.core_info.node_name = value
 
     @property
     def node_type(self) -> EnumMetadataNodeType:
-        """Node type (delegated to basic_info)."""
-        return self.basic_info.node_type
+        """Node type (delegated to core_info)."""
+        return self.core_info.node_type
 
     @node_type.setter
     def node_type(self, value: EnumMetadataNodeType) -> None:
         """Set node type."""
-        self.basic_info.node_type = value
+        self.core_info.node_type = value
 
     @property
     def node_version(self) -> ModelSemVer:
-        """Node version (delegated to basic_info)."""
-        return self.basic_info.node_version
+        """Node version (delegated to core_info)."""
+        return self.core_info.node_version
 
     @node_version.setter
     def node_version(self, value: ModelSemVer) -> None:
         """Set node version."""
-        self.basic_info.node_version = value
+        self.core_info.node_version = value
 
     @property
     def description(self) -> str | None:
-        """Node description (delegated to basic_info)."""
-        return self.basic_info.description
+        """Node description (delegated to core_info)."""
+        return self.core_info.description
 
     @description.setter
     def description(self, value: str | None) -> None:
         """Set node description."""
-        self.basic_info.description = value
+        self.core_info.description = value
 
     @property
     def author(self) -> str | None:
-        """Node author (delegated to basic_info)."""
-        return self.basic_info.author
+        """Node author (delegated to core_info)."""
+        return self.core_info.author
 
     @author.setter
     def author(self, value: str | None) -> None:
         """Set node author."""
-        self.basic_info.author = value
+        self.core_info.author = value
 
     @property
     def created_at(self) -> datetime | None:
-        """Creation timestamp (delegated to basic_info)."""
-        return self.basic_info.created_at
+        """Creation timestamp (delegated to core_info)."""
+        return self.core_info.created_at
 
     @created_at.setter
     def created_at(self, value: datetime | None) -> None:
         """Set creation timestamp."""
-        self.basic_info.created_at = value
+        self.core_info.created_at = value
 
     @property
     def updated_at(self) -> datetime | None:
-        """Update timestamp (delegated to basic_info)."""
-        return self.basic_info.updated_at
+        """Update timestamp (delegated to core_info)."""
+        return self.core_info.updated_at
 
     @updated_at.setter
     def updated_at(self, value: datetime | None) -> None:
         """Set update timestamp."""
-        self.basic_info.updated_at = value
+        self.core_info.updated_at = value
 
     @property
     def status(self) -> EnumMetadataNodeStatus:
-        """Node status (delegated to basic_info)."""
-        return self.basic_info.status
+        """Node status (delegated to core_info)."""
+        return self.core_info.status
 
     @status.setter
     def status(self, value: EnumMetadataNodeStatus) -> None:
         """Set node status."""
-        self.basic_info.status = value
+        self.core_info.status = value
 
     @property
     def health(self) -> EnumRegistryStatus:
-        """Node health (delegated to basic_info)."""
-        return self.basic_info.health
+        """Node health (delegated to core_info)."""
+        return self.core_info.health
 
     @health.setter
     def health(self, value: EnumRegistryStatus) -> None:
         """Set node health."""
-        self.basic_info.health = value
+        self.core_info.health = value
 
     @property
     def supported_operations(self) -> list[str]:
@@ -166,11 +167,11 @@ class ModelNodeInformation(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.basic_info.is_active()
+        return self.core_info.is_active()
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
-        return self.basic_info.is_healthy()
+        return self.core_info.is_healthy()
 
     def has_capabilities(self) -> bool:
         """Check if node has capabilities."""
@@ -188,23 +189,25 @@ class ModelNodeInformation(BaseModel):
         """Add a dependency."""
         self.capabilities.add_dependency(dependency)
 
-    def get_information_summary(self) -> dict[str, Any]:
+    def get_information_summary(self) -> ModelNodeInformationSummary:
         """Get comprehensive node information summary."""
-        basic_summary = self.basic_info.get_basic_summary()
+        core_summary = self.core_info.get_core_summary()
         capabilities_summary = self.capabilities.get_capabilities_summary()
         config_summary = self.configuration.get_configuration_summary()
 
-        return {
-            "basic_info": basic_summary,
+        summary_dict = {
+            "core_info": core_summary,
             "capabilities": capabilities_summary,
             "configuration": config_summary,
             "is_fully_configured": self.is_fully_configured(),
         }
 
+        return ModelNodeInformationSummary.create_from_dict(summary_dict)
+
     def is_fully_configured(self) -> bool:
         """Check if node is fully configured."""
         return (
-            self.basic_info.has_description()
+            self.core_info.has_description()
             and self.capabilities.has_capabilities()
             and self.configuration.is_production_ready()
         )
@@ -218,13 +221,13 @@ class ModelNodeInformation(BaseModel):
         description: str | None = None,
     ) -> ModelNodeInformation:
         """Create simple node information."""
-        basic_info = ModelNodeBasicInfo.create_simple(
+        core_info = ModelNodeCoreInfo.create_streamlined(
             node_name=node_name,
             node_type=node_type,
             node_version=node_version,
             description=description,
         )
-        return cls(basic_info=basic_info)
+        return cls(core_info=core_info)
 
     @classmethod
     def create_with_capabilities(
@@ -236,7 +239,7 @@ class ModelNodeInformation(BaseModel):
         operations: list[str] | None = None,
     ) -> ModelNodeInformation:
         """Create node information with capabilities."""
-        basic_info = ModelNodeBasicInfo.create_simple(
+        core_info = ModelNodeCoreInfo.create_streamlined(
             node_name=node_name,
             node_type=node_type,
             node_version=node_version,
@@ -245,7 +248,7 @@ class ModelNodeInformation(BaseModel):
             capabilities=capabilities,
             operations=operations,
         )
-        return cls(basic_info=basic_info, capabilities=caps_info)
+        return cls(core_info=core_info, capabilities=caps_info)
 
 
 # Export for use

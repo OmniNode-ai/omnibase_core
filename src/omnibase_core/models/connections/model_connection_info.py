@@ -116,7 +116,9 @@ class ModelConnectionInfo(BaseModel):
         if self.auth.username and self.auth.password:
             auth = f"{self.auth.username}:***@"
 
-        return self.endpoint.get_base_url(self.security.use_ssl) + (auth if auth else "")
+        return self.endpoint.get_base_url(self.security.use_ssl) + (
+            auth if auth else ""
+        )
 
     def is_secure(self) -> bool:
         """Check if connection uses secure protocols."""

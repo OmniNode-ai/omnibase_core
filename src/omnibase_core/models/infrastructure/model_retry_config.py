@@ -7,8 +7,9 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
 from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_retry_backoff_strategy import RetryBackoffStrategy
 

@@ -10,12 +10,13 @@ from __future__ import annotations
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_instance_type import EnumInstanceType
 from ..core.model_custom_properties import ModelCustomProperties
+from .model_cloud_service_properties import ModelCloudServiceProperties
 from .model_database_properties import ModelDatabaseProperties
 from .model_message_queue_properties import ModelMessageQueueProperties
-from .model_cloud_service_properties import ModelCloudServiceProperties
 from .model_performance_properties import ModelPerformanceProperties
-from ...enums.enum_instance_type import EnumInstanceType
 
 
 class ModelCustomConnectionProperties(BaseModel):
@@ -28,22 +29,22 @@ class ModelCustomConnectionProperties(BaseModel):
     # Grouped properties by concern
     database: ModelDatabaseProperties = Field(
         default_factory=ModelDatabaseProperties,
-        description="Database-specific properties"
+        description="Database-specific properties",
     )
 
     message_queue: ModelMessageQueueProperties = Field(
         default_factory=ModelMessageQueueProperties,
-        description="Message queue/broker properties"
+        description="Message queue/broker properties",
     )
 
     cloud_service: ModelCloudServiceProperties = Field(
         default_factory=ModelCloudServiceProperties,
-        description="Cloud/service-specific properties"
+        description="Cloud/service-specific properties",
     )
 
     performance: ModelPerformanceProperties = Field(
         default_factory=ModelPerformanceProperties,
-        description="Performance tuning properties"
+        description="Performance tuning properties",
     )
 
     # Generic custom properties for extensibility
@@ -60,14 +61,14 @@ class ModelCustomConnectionProperties(BaseModel):
         schema_name: str | None = None,
         charset: str | None = None,
         collation: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ModelCustomConnectionProperties:
         """Create database connection properties with backward compatibility."""
         database_props = ModelDatabaseProperties(
             database_display_name=database_name,
             schema_display_name=schema_name,
             charset=charset,
-            collation=collation
+            collation=collation,
         )
         return cls(database=database_props, **kwargs)
 
@@ -78,14 +79,14 @@ class ModelCustomConnectionProperties(BaseModel):
         exchange_name: str | None = None,
         routing_key: str | None = None,
         durable: bool | None = None,
-        **kwargs
+        **kwargs,
     ) -> ModelCustomConnectionProperties:
         """Create message queue connection properties with backward compatibility."""
         queue_props = ModelMessageQueueProperties(
             queue_display_name=queue_name,
             exchange_display_name=exchange_name,
             routing_key=routing_key,
-            durable=durable
+            durable=durable,
         )
         return cls(message_queue=queue_props, **kwargs)
 
@@ -96,7 +97,7 @@ class ModelCustomConnectionProperties(BaseModel):
         instance_type: str | EnumInstanceType | None = None,
         region: str | None = None,
         availability_zone: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> ModelCustomConnectionProperties:
         """Create service connection properties with backward compatibility."""
         # Handle string instance types for backward compatibility
@@ -114,7 +115,9 @@ class ModelCustomConnectionProperties(BaseModel):
                         "xlarge": EnumInstanceType.XLARGE,
                         "xxlarge": EnumInstanceType.XXLARGE,
                     }
-                    enum_instance_type = size_mapping.get(instance_type.lower(), EnumInstanceType.MEDIUM)
+                    enum_instance_type = size_mapping.get(
+                        instance_type.lower(), EnumInstanceType.MEDIUM
+                    )
             else:
                 enum_instance_type = instance_type
 
@@ -122,7 +125,7 @@ class ModelCustomConnectionProperties(BaseModel):
             service_display_name=service_name,
             instance_type=enum_instance_type,
             region=region,
-            availability_zone=availability_zone
+            availability_zone=availability_zone,
         )
         return cls(cloud_service=cloud_props, **kwargs)
 

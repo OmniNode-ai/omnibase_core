@@ -5,6 +5,7 @@ Test coverage for node type enumeration and helper methods.
 """
 
 import pytest
+
 from src.omnibase_core.enums import EnumNodeType
 
 
@@ -14,8 +15,14 @@ class TestEnumNodeType:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "COMPUTE", "GATEWAY", "ORCHESTRATOR", "REDUCER",
-            "EFFECT", "VALIDATOR", "TRANSFORMER", "AGGREGATOR"
+            "COMPUTE",
+            "GATEWAY",
+            "ORCHESTRATOR",
+            "REDUCER",
+            "EFFECT",
+            "VALIDATOR",
+            "TRANSFORMER",
+            "AGGREGATOR",
         }
         actual_values = {node_type.value for node_type in EnumNodeType}
         assert actual_values == expected_values

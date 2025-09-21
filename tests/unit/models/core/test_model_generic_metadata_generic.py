@@ -314,9 +314,9 @@ class TestModelGenericMetadataGenericEdgeCases:
 
     def test_generic_with_union_types(self):
         """Test behavior when using union type parameters."""
-        from typing import Union
+        from typing import Any
 
-        union_metadata = ModelGenericMetadata[Union[str, int, bool]]()
+        union_metadata = ModelGenericMetadata[Any]()
 
         # Should work with any of the union types
         union_metadata.set_field("string_field", "string_value")

@@ -105,8 +105,13 @@ class EnumInstanceType(str, Enum):
     def is_azure_instance(cls, instance_type: EnumInstanceType) -> bool:
         """Check if the instance type is an Azure instance."""
         azure_instances = {
-            cls.AZURE_B1S, cls.AZURE_B1MS, cls.AZURE_B2S, cls.AZURE_B2MS,
-            cls.AZURE_D2S_V3, cls.AZURE_D4S_V3, cls.AZURE_D8S_V3
+            cls.AZURE_B1S,
+            cls.AZURE_B1MS,
+            cls.AZURE_B2S,
+            cls.AZURE_B2MS,
+            cls.AZURE_D2S_V3,
+            cls.AZURE_D4S_V3,
+            cls.AZURE_D8S_V3,
         }
         return instance_type in azure_instances
 
@@ -130,16 +135,32 @@ class EnumInstanceType(str, Enum):
     def get_size_category(cls, instance_type: EnumInstanceType) -> str:
         """Get the general size category for the instance."""
         micro_instances = {
-            cls.T2_NANO, cls.T2_MICRO, cls.T3_MICRO,
-            cls.GCP_F1_MICRO, cls.DB_T2_MICRO, cls.DB_T3_MICRO
+            cls.T2_NANO,
+            cls.T2_MICRO,
+            cls.T3_MICRO,
+            cls.GCP_F1_MICRO,
+            cls.DB_T2_MICRO,
+            cls.DB_T3_MICRO,
         }
         small_instances = {
-            cls.T2_SMALL, cls.T3_SMALL, cls.GCP_G1_SMALL,
-            cls.DB_T2_SMALL, cls.DB_T3_SMALL, cls.CONTAINER_SMALL, cls.SMALL
+            cls.T2_SMALL,
+            cls.T3_SMALL,
+            cls.GCP_G1_SMALL,
+            cls.DB_T2_SMALL,
+            cls.DB_T3_SMALL,
+            cls.CONTAINER_SMALL,
+            cls.SMALL,
         }
         medium_instances = {
-            cls.T2_MEDIUM, cls.T3_MEDIUM, cls.M5_LARGE, cls.C5_LARGE, cls.R5_LARGE,
-            cls.DB_T2_MEDIUM, cls.DB_T3_MEDIUM, cls.CONTAINER_MEDIUM, cls.MEDIUM
+            cls.T2_MEDIUM,
+            cls.T3_MEDIUM,
+            cls.M5_LARGE,
+            cls.C5_LARGE,
+            cls.R5_LARGE,
+            cls.DB_T2_MEDIUM,
+            cls.DB_T3_MEDIUM,
+            cls.CONTAINER_MEDIUM,
+            cls.MEDIUM,
         }
 
         if instance_type in micro_instances:

@@ -29,10 +29,11 @@ class ModelFunctionNodeCore(BaseModel):
 
     # Core function information - Entity reference with UUID
     function_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the function entity"
+        default_factory=uuid4, description="Unique identifier for the function entity"
     )
-    function_display_name: str | None = Field(None, description="Human-readable function name")
+    function_display_name: str | None = Field(
+        None, description="Human-readable function name"
+    )
     description: str = Field(default="", description="Function description")
     function_type: EnumFunctionType = Field(
         default=EnumFunctionType.COMPUTE,
@@ -97,7 +98,9 @@ class ModelFunctionNodeCore(BaseModel):
 
     def get_full_name(self) -> str:
         """Get full qualified function name."""
-        function_name = self.function_display_name or f"function_{str(self.function_id)[:8]}"
+        function_name = (
+            self.function_display_name or f"function_{str(self.function_id)[:8]}"
+        )
         if self.module:
             return f"{self.module}.{function_name}"
         return function_name
@@ -118,7 +121,9 @@ class ModelFunctionNodeCore(BaseModel):
 
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()
-        function_id = UUID(f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}")
+        function_id = UUID(
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+        )
 
         return cls(
             function_id=function_id,
@@ -140,7 +145,9 @@ class ModelFunctionNodeCore(BaseModel):
 
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()
-        function_id = UUID(f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}")
+        function_id = UUID(
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+        )
 
         return cls(
             function_id=function_id,
@@ -164,7 +171,9 @@ class ModelFunctionNodeCore(BaseModel):
 
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()
-        function_id = UUID(f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}")
+        function_id = UUID(
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+        )
 
         return cls(
             function_id=function_id,
@@ -189,8 +198,11 @@ class ModelFunctionNodeCore(BaseModel):
     def function_name(self, value: str) -> None:
         """Backward compatibility setter for function_name."""
         import hashlib
+
         function_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.function_id = UUID(f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}")
+        self.function_id = UUID(
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+        )
         self.function_display_name = value
 
 

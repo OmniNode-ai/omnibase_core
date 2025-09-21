@@ -5,6 +5,7 @@ Test coverage for return type enumeration and helper methods.
 """
 
 import pytest
+
 from src.omnibase_core.enums import EnumReturnType
 
 
@@ -14,8 +15,15 @@ class TestEnumReturnType:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "MODELS", "FILES", "REPORTS", "ENUMS", "TEXT",
-            "METADATA", "BINARY", "JSON", "XML"
+            "MODELS",
+            "FILES",
+            "REPORTS",
+            "ENUMS",
+            "TEXT",
+            "METADATA",
+            "BINARY",
+            "JSON",
+            "XML",
         }
         actual_values = {return_type.value for return_type in EnumReturnType}
         assert actual_values == expected_values
@@ -38,7 +46,9 @@ class TestEnumReturnType:
         for return_type in EnumReturnType:
             expected = return_type in structured_types
             actual = EnumReturnType.is_structured_data(return_type)
-            assert actual == expected, f"{return_type} structured data classification failed"
+            assert (
+                actual == expected
+            ), f"{return_type} structured data classification failed"
 
     def test_is_file_based(self):
         """Test file-based classification."""
@@ -98,7 +108,9 @@ class TestEnumReturnType:
 
         for return_type, expected_mime in mime_type_map.items():
             actual_mime = EnumReturnType.get_mime_type(return_type)
-            assert actual_mime == expected_mime, f"{return_type} MIME type mapping failed"
+            assert (
+                actual_mime == expected_mime
+            ), f"{return_type} MIME type mapping failed"
 
     def test_str_representation(self):
         """Test string representation."""

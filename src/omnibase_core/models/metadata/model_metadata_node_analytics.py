@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_collection_purpose import EnumCollectionPurpose
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 from ..infrastructure.model_metrics_data import ModelMetricsData
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
 
@@ -31,9 +31,16 @@ class ModelMetadataNodeAnalytics(BaseModel):
     """
 
     # Collection identification - UUID-based entity references
-    collection_id: UUID = Field(default_factory=lambda: uuid_from_string("default", "collection"), description="Unique identifier for the collection")
-    collection_display_name: str = Field(default="", description="Human-readable collection name")
-    collection_purpose: EnumCollectionPurpose = Field(default=EnumCollectionPurpose.GENERAL, description="Collection purpose")
+    collection_id: UUID = Field(
+        default_factory=lambda: uuid_from_string("default", "collection"),
+        description="Unique identifier for the collection",
+    )
+    collection_display_name: str = Field(
+        default="", description="Human-readable collection name"
+    )
+    collection_purpose: EnumCollectionPurpose = Field(
+        default=EnumCollectionPurpose.GENERAL, description="Collection purpose"
+    )
     collection_created: str = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),
         description="Collection creation timestamp",
@@ -239,7 +246,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
     @property
     def collection_name(self) -> str:
         """Get collection name with fallback for backward compatibility."""
-        return self.collection_display_name or f"collection_{str(self.collection_id)[:8]}"
+        return (
+            self.collection_display_name or f"collection_{str(self.collection_id)[:8]}"
+        )
 
     @collection_name.setter
     def collection_name(self, value: str) -> None:

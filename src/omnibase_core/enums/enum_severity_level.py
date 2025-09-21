@@ -19,19 +19,19 @@ class EnumSeverityLevel(str, Enum):
     """
 
     # Standard severity levels (RFC 5424 inspired)
-    EMERGENCY = "emergency"    # System is unusable
-    ALERT = "alert"           # Action must be taken immediately
-    CRITICAL = "critical"     # Critical conditions
-    ERROR = "error"           # Error conditions
-    WARNING = "warning"       # Warning conditions
-    NOTICE = "notice"         # Normal but significant conditions
-    INFO = "info"             # Informational messages
-    DEBUG = "debug"           # Debug-level messages
+    EMERGENCY = "emergency"  # System is unusable
+    ALERT = "alert"  # Action must be taken immediately
+    CRITICAL = "critical"  # Critical conditions
+    ERROR = "error"  # Error conditions
+    WARNING = "warning"  # Warning conditions
+    NOTICE = "notice"  # Normal but significant conditions
+    INFO = "info"  # Informational messages
+    DEBUG = "debug"  # Debug-level messages
 
     # Additional common levels
-    TRACE = "trace"           # Very detailed debug information
-    FATAL = "fatal"           # Fatal error (alias for EMERGENCY)
-    WARN = "warn"             # Short form of WARNING
+    TRACE = "trace"  # Very detailed debug information
+    FATAL = "fatal"  # Fatal error (alias for EMERGENCY)
+    WARN = "warn"  # Short form of WARNING
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

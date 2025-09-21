@@ -219,7 +219,11 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def set_documentation_quality(self, quality: EnumValidationLevel) -> None:
         """Set documentation quality level."""
-        valid_levels = [EnumValidationLevel.BASIC, EnumValidationLevel.GOOD, EnumValidationLevel.EXCELLENT]
+        valid_levels = [
+            EnumValidationLevel.BASIC,
+            EnumValidationLevel.GOOD,
+            EnumValidationLevel.EXCELLENT,
+        ]
         if quality in valid_levels:
             self.documentation_quality = quality
             self.has_documentation = True
@@ -274,7 +278,9 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
-        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+        node_id = UUID(
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+        )
 
         return cls(
             node_id=node_id,
@@ -295,7 +301,9 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
-        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+        node_id = UUID(
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+        )
 
         return cls(
             node_id=node_id,
@@ -316,7 +324,9 @@ class ModelMetadataNodeInfo(BaseModel):
 
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
-        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+        node_id = UUID(
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+        )
 
         return cls(
             node_id=node_id,
@@ -336,8 +346,11 @@ class ModelMetadataNodeInfo(BaseModel):
     def name(self, value: str) -> None:
         """Backward compatibility setter for name."""
         import hashlib
+
         node_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+        self.node_id = UUID(
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+        )
         self.node_display_name = value
 
 

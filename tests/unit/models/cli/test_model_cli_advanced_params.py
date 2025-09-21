@@ -7,11 +7,11 @@ Tests the clean, strongly-typed replacement for ModelCustomFields[Any] in CLI ad
 import pytest
 from pydantic import ValidationError
 
+from src.omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from src.omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from src.omnibase_core.models.cli.model_cli_advanced_params import (
     ModelCliAdvancedParams,
 )
-from src.omnibase_core.enums.enum_debug_level import EnumDebugLevel
-from src.omnibase_core.enums.enum_security_level import EnumSecurityLevel
 
 
 class TestModelCliAdvancedParams:
@@ -218,7 +218,12 @@ class TestModelCliAdvancedParams:
     def test_debug_level_validation(self):
         """Test debug_level enum validation."""
         # Valid debug levels
-        valid_levels = [EnumDebugLevel.DEBUG, EnumDebugLevel.INFO, EnumDebugLevel.WARN, EnumDebugLevel.ERROR]
+        valid_levels = [
+            EnumDebugLevel.DEBUG,
+            EnumDebugLevel.INFO,
+            EnumDebugLevel.WARN,
+            EnumDebugLevel.ERROR,
+        ]
         for level in valid_levels:
             params = ModelCliAdvancedParams(debug_level=level)
             assert params.debug_level == level
@@ -233,7 +238,11 @@ class TestModelCliAdvancedParams:
     def test_security_level_validation(self):
         """Test security_level enum validation."""
         # Valid security levels
-        valid_levels = [EnumSecurityLevel.MINIMAL, EnumSecurityLevel.STANDARD, EnumSecurityLevel.STRICT]
+        valid_levels = [
+            EnumSecurityLevel.MINIMAL,
+            EnumSecurityLevel.STANDARD,
+            EnumSecurityLevel.STRICT,
+        ]
         for level in valid_levels:
             params = ModelCliAdvancedParams(security_level=level)
             assert params.security_level == level
@@ -554,7 +563,9 @@ class TestModelCliAdvancedParams:
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
         params = ModelCliAdvancedParams(
-            timeout_seconds=90.0, parallel_execution=True, debug_level=EnumDebugLevel.INFO
+            timeout_seconds=90.0,
+            parallel_execution=True,
+            debug_level=EnumDebugLevel.INFO,
         )
 
         # Test JSON serialization

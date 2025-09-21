@@ -9,13 +9,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_context_type import EnumContextType
 from ...enums.enum_context_source import EnumContextSource
+from ...enums.enum_context_type import EnumContextType
 
 
 class ModelCliExecutionContext(BaseModel):
@@ -28,8 +28,8 @@ class ModelCliExecutionContext(BaseModel):
 
     # Context identification
     key: str = Field(..., description="Context key identifier")
-    value: Union[str, int, bool, float, datetime, Path, UUID, list[str]] = Field(
-        ..., description="Context value with restricted types"
+    value: Any = Field(
+        ..., description="Context value - supports str, int, bool, float, datetime, Path, UUID, list[str]"
     )
 
     # Context metadata
@@ -47,7 +47,9 @@ class ModelCliExecutionContext(BaseModel):
 
     # Validation
     description: str = Field(default="", description="Context description")
-    source: EnumContextSource = Field(default=EnumContextSource.USER, description="Context data source")
+    source: EnumContextSource = Field(
+        default=EnumContextSource.USER, description="Context data source"
+    )
 
     def get_string_value(self) -> str:
         """Get value as string representation."""
@@ -59,9 +61,7 @@ class ModelCliExecutionContext(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(
-        self,
-    ) -> Union[str, int, bool, float, datetime, Path, UUID, list[str]]:
+    def get_typed_value(self) -> Any:
         """Get the properly typed value."""
         return self.value
 
@@ -77,9 +77,7 @@ class ModelCliExecutionContext(BaseModel):
         """Check if this is a UUID value."""
         return isinstance(self.value, UUID)
 
-    def update_value(
-        self, new_value: Union[str, int, bool, float, datetime, Path, UUID, list[str]]
-    ) -> None:
+    def update_value(self, new_value: Any) -> None:
         """Update the context value and timestamp."""
         self.value = new_value
         self.updated_at = datetime.now()

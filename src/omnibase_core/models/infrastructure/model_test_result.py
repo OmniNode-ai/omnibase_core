@@ -48,6 +48,7 @@ class ModelTestResult(BaseModel):
             Test result with generated UUID and display_name set
         """
         from uuid import uuid4
+
         return cls(
             test_id=uuid4(),
             test_display_name=test_name,

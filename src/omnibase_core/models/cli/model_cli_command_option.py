@@ -7,12 +7,12 @@ Replaces dict[str, Any] for command options with structured typing.
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 
 
 class ModelCliCommandOption(BaseModel):
@@ -25,9 +25,11 @@ class ModelCliCommandOption(BaseModel):
 
     # Option identification - UUID-based entity references
     option_id: UUID = Field(..., description="Unique identifier for the option")
-    option_display_name: str | None = Field(None, description="Human-readable option name (e.g., '--verbose', '-v')")
-    value: Union[str, int, bool, float, list[str], UUID] = Field(
-        ..., description="Option value with restricted types"
+    option_display_name: str | None = Field(
+        None, description="Human-readable option name (e.g., '--verbose', '-v')"
+    )
+    value: Any = Field(
+        ..., description="Option value - supports str, int, bool, float, list[str], UUID"
     )
 
     # Option metadata
@@ -49,7 +51,7 @@ class ModelCliCommandOption(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(self) -> Union[str, int, bool, float, list[str], UUID]:
+    def get_typed_value(self) -> Any:
         """Get the properly typed value."""
         return self.value
 
@@ -73,7 +75,7 @@ class ModelCliCommandOption(BaseModel):
     def create_legacy(
         cls,
         option_name: str,
-        value: Union[str, int, bool, float, list[str], UUID],
+        value: Any,
         **kwargs,
     ) -> "ModelCliCommandOption":
         """Create option with legacy name parameter for backward compatibility."""

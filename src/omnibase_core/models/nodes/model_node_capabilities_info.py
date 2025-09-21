@@ -56,7 +56,9 @@ class ModelNodeCapabilitiesInfo(BaseModel):
 
     def has_performance_metrics(self) -> bool:
         """Check if node has performance metrics."""
-        return self.performance_metrics is not None and len(self.performance_metrics) > 0
+        return (
+            self.performance_metrics is not None and len(self.performance_metrics) > 0
+        )
 
     def add_capability(self, capability: str) -> None:
         """Add a capability if not already present."""
@@ -96,7 +98,9 @@ class ModelNodeCapabilitiesInfo(BaseModel):
             "has_dependencies": self.has_dependencies(),
             "has_performance_metrics": self.has_performance_metrics(),
             "primary_capability": self.capabilities[0] if self.capabilities else None,
-            "metrics_count": len(self.performance_metrics) if self.performance_metrics else 0,
+            "metrics_count": (
+                len(self.performance_metrics) if self.performance_metrics else 0
+            ),
         }
 
     @classmethod

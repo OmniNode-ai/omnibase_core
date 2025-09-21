@@ -23,7 +23,9 @@ class ModelExampleOutputData(BaseModel):
     """
 
     # Core data fields
-    data_type: EnumIOType = Field(default=EnumIOType.OUTPUT, description="Type of output data")
+    data_type: EnumIOType = Field(
+        default=EnumIOType.OUTPUT, description="Type of output data"
+    )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Output results

@@ -56,9 +56,7 @@ class ModelNodeResourceLimits(BaseModel):
 
     def is_memory_constrained(self, threshold_mb: int = 1024) -> bool:
         """Check if memory is constrained below threshold."""
-        return (
-            self.max_memory_mb is not None and self.max_memory_mb < threshold_mb
-        )
+        return self.max_memory_mb is not None and self.max_memory_mb < threshold_mb
 
     def is_cpu_constrained(self, threshold_percent: float = 50.0) -> bool:
         """Check if CPU is constrained below threshold."""

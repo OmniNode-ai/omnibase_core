@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
 from ...enums.enum_node_health_status import EnumNodeHealthStatus
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -29,7 +29,9 @@ class ModelNodeCoreMetadata(BaseModel):
     """
 
     # Core identification - UUID-based entity references
-    node_id: UUID = Field(default_factory=uuid4, description="Unique identifier for the node entity")
+    node_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the node entity"
+    )
     node_display_name: str | None = Field(None, description="Human-readable node name")
     node_type: EnumMetadataNodeType = Field(..., description="Node type")
 

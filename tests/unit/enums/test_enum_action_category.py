@@ -140,8 +140,14 @@ class TestEnumActionCategory:
 
         category_values = [cat.value for cat in categories]
         expected_values = [
-            "lifecycle", "validation", "introspection", "configuration",
-            "execution", "registry", "workflow", "system"
+            "lifecycle",
+            "validation",
+            "introspection",
+            "configuration",
+            "execution",
+            "registry",
+            "workflow",
+            "system",
         ]
 
         assert set(category_values) == set(expected_values)

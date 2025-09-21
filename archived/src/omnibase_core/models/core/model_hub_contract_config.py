@@ -121,14 +121,18 @@ class ModelHubConfiguration(BaseModel):
 
         # Generate UUID for domain
         domain_hash = hashlib.sha256(domain_name.encode()).hexdigest()
-        domain_id = UUID(f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}")
+        domain_id = UUID(
+            f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}"
+        )
 
         # Generate UUIDs for managed tools
         managed_tool_ids = []
         tool_display_names = managed_tool_names or []
         for tool_name in tool_display_names:
             tool_hash = hashlib.sha256(tool_name.encode()).hexdigest()
-            tool_id = UUID(f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}")
+            tool_id = UUID(
+                f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}"
+            )
             managed_tool_ids.append(tool_id)
 
         return cls(
@@ -307,13 +311,17 @@ class ModelUnifiedHubContract(BaseModel):
 
         # Generate UUID for domain
         domain_hash = hashlib.sha256(domain.encode()).hexdigest()
-        domain_id = UUID(f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}")
+        domain_id = UUID(
+            f"{domain_hash[:8]}-{domain_hash[8:12]}-{domain_hash[12:16]}-{domain_hash[16:20]}-{domain_hash[20:32]}"
+        )
 
         # Generate UUIDs for managed tools
         managed_tool_ids = []
         for tool in managed_tools:
             tool_hash = hashlib.sha256(tool.encode()).hexdigest()
-            tool_id = UUID(f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}")
+            tool_id = UUID(
+                f"{tool_hash[:8]}-{tool_hash[8:12]}-{tool_hash[12:16]}-{tool_hash[16:20]}-{tool_hash[20:32]}"
+            )
             managed_tool_ids.append(tool_id)
 
         return ModelHubConfiguration(

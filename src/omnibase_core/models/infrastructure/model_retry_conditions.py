@@ -71,10 +71,7 @@ class ModelRetryConditions(BaseModel):
 
     def is_permissive(self) -> bool:
         """Check if conditions are permissive (many trigger conditions)."""
-        return (
-            len(self.retry_on_exceptions) > 5
-            or len(self.retry_on_status_codes) > 5
-        )
+        return len(self.retry_on_exceptions) > 5 or len(self.retry_on_status_codes) > 5
 
     @classmethod
     def create_http_only(cls) -> ModelRetryConditions:

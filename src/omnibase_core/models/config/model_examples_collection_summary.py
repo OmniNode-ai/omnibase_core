@@ -33,7 +33,9 @@ class ModelExamplesCollectionSummary(BaseModel):
         None, description="Collection metadata summary"
     )
 
-    format: EnumDataFormat = Field(default=EnumDataFormat.JSON, description="Collection format")
+    format: EnumDataFormat = Field(
+        default=EnumDataFormat.JSON, description="Collection format"
+    )
 
     schema_compliant: bool = Field(
         default=True, description="Whether collection is schema compliant"

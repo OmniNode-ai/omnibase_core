@@ -481,9 +481,7 @@ class TestModelGenericCollection:
 
         # But we can specify the same ID if needed
         shared_id = uuid4()
-        collection3 = ModelGenericCollection.create_empty(
-            collection_id=shared_id
-        )
+        collection3 = ModelGenericCollection.create_empty(collection_id=shared_id)
         collection4 = ModelGenericCollection.create_from_items(
             [], collection_id=shared_id
         )

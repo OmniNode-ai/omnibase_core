@@ -6,18 +6,25 @@ Part of the connection properties restructuring to reduce string field violation
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ModelDatabaseProperties(BaseModel):
     """Database-specific connection properties."""
 
     # Entity references with UUID + display name pattern
-    database_id: UUID | None = Field(default=None, description="Database UUID reference")
-    database_display_name: str | None = Field(default=None, description="Database display name")
+    database_id: UUID | None = Field(
+        default=None, description="Database UUID reference"
+    )
+    database_display_name: str | None = Field(
+        default=None, description="Database display name"
+    )
     schema_id: UUID | None = Field(default=None, description="Schema UUID reference")
-    schema_display_name: str | None = Field(default=None, description="Schema display name")
+    schema_display_name: str | None = Field(
+        default=None, description="Schema display name"
+    )
 
     # Database configuration (non-string)
     charset: str | None = Field(default=None, description="Character set")

@@ -23,7 +23,7 @@ def uuid_from_string(input_string: str, namespace: str = "omnibase") -> UUID:
     combined_string = f"{namespace}:{input_string}"
 
     # Generate SHA-256 hash
-    hash_object = hashlib.sha256(combined_string.encode('utf-8'))
+    hash_object = hashlib.sha256(combined_string.encode("utf-8"))
     hex_digest = hash_object.hexdigest()
 
     # Use first 32 characters to create UUID

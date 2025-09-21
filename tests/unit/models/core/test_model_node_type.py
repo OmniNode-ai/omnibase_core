@@ -12,8 +12,8 @@ Tests all aspects of the node type model including:
 import pytest
 from pydantic import ValidationError
 
-from src.omnibase_core.models.nodes.model_node_type import ModelNodeType
 from src.omnibase_core.enums.enum_return_type import EnumReturnType
+from src.omnibase_core.models.nodes.model_node_type import ModelNodeType
 
 
 class TestModelNodeType:
@@ -22,7 +22,9 @@ class TestModelNodeType:
     def test_model_instantiation_minimal_data(self):
         """Test that model can be instantiated with minimal required data."""
         node_type = ModelNodeType(
-            type_name="TEST_NODE", description="Test node description", category="testing"
+            type_name="TEST_NODE",
+            description="Test node description",
+            category="testing",
         )
 
         assert node_type.type_name == "TEST_NODE"
@@ -200,7 +202,9 @@ class TestModelNodeType:
         """Test that field types are properly validated."""
         # Test non-string name
         with pytest.raises(ValidationError):
-            ModelNodeType(type_name=123, description="Test description", category="testing")
+            ModelNodeType(
+                type_name=123, description="Test description", category="testing"
+            )
 
         # Test non-string description
         with pytest.raises(ValidationError):
@@ -554,7 +558,9 @@ class TestModelNodeTypeEdgeCases:
         """Test behavior with empty string fields."""
         # Empty name should fail pattern validation
         with pytest.raises(ValidationError):
-            ModelNodeType(type_name="", description="Test description", category="testing")
+            ModelNodeType(
+                type_name="", description="Test description", category="testing"
+            )
 
         # Empty description should be valid (no min_length constraint)
         node_type = ModelNodeType(name="TEST_NODE", description="", category="testing")
@@ -562,7 +568,9 @@ class TestModelNodeTypeEdgeCases:
 
         # Empty category should fail pattern validation
         with pytest.raises(ValidationError):
-            ModelNodeType(type_name="TEST_NODE", description="Test description", category="")
+            ModelNodeType(
+                type_name="TEST_NODE", description="Test description", category=""
+            )
 
     def test_whitespace_handling(self):
         """Test handling of whitespace in fields."""

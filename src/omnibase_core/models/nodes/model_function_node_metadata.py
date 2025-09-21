@@ -8,6 +8,7 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +16,16 @@ from ..core.model_custom_properties import ModelCustomProperties
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
+
+
+class FunctionMetadataSummary(TypedDict):
+    """Type-safe dictionary for function metadata summary."""
+    documentation: dict[str, str | bool | int | None]
+    deprecation: dict[str, str | bool | None]
+    relationships: dict[str, int | bool | list[str] | None]
+    documentation_quality_score: float
+    is_fully_documented: bool
+    deprecation_status: str
 
 
 class ModelFunctionNodeMetadata(BaseModel):
@@ -83,7 +94,11 @@ class ModelFunctionNodeMetadata(BaseModel):
     @property
     def deprecated_since(self) -> str | None:
         """Deprecated since version (backward compatible string)."""
-        return str(self.deprecation.deprecated_since) if self.deprecation.deprecated_since else None
+        return (
+            str(self.deprecation.deprecated_since)
+            if self.deprecation.deprecated_since
+            else None
+        )
 
     @deprecated_since.setter
     def deprecated_since(self, value: str | None) -> None:
@@ -92,19 +107,26 @@ class ModelFunctionNodeMetadata(BaseModel):
             self.deprecation.deprecated_since = None
         else:
             from ..metadata.model_semver import ModelSemVer
+
             try:
                 # Try to parse as semver
-                parts = value.split('.')
+                parts = value.split(".")
                 if len(parts) >= 2:
                     major = int(parts[0])
                     minor = int(parts[1])
                     patch = int(parts[2]) if len(parts) > 2 else 0
-                    self.deprecation.deprecated_since = ModelSemVer(major=major, minor=minor, patch=patch)
+                    self.deprecation.deprecated_since = ModelSemVer(
+                        major=major, minor=minor, patch=patch
+                    )
                 else:
                     # Fallback for simple version strings
-                    self.deprecation.deprecated_since = ModelSemVer(major=1, minor=0, patch=0)
+                    self.deprecation.deprecated_since = ModelSemVer(
+                        major=1, minor=0, patch=0
+                    )
             except (ValueError, IndexError):
-                self.deprecation.deprecated_since = ModelSemVer(major=1, minor=0, patch=0)
+                self.deprecation.deprecated_since = ModelSemVer(
+                    major=1, minor=0, patch=0
+                )
 
     @property
     def replacement(self) -> str | None:
@@ -197,12 +219,15 @@ class ModelFunctionNodeMetadata(BaseModel):
             rel_score += 0.2
 
         # Relationships
-        if self.relationships.has_dependencies() or self.relationships.has_related_functions():
+        if (
+            self.relationships.has_dependencies()
+            or self.relationships.has_related_functions()
+        ):
             rel_score += 0.2
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> dict[str, any]:
+    def get_metadata_summary(self) -> FunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
@@ -248,7 +273,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         # Parse version string
         try:
-            parts = deprecated_since.split('.')
+            parts = deprecated_since.split(".")
             major = int(parts[0])
             minor = int(parts[1]) if len(parts) > 1 else 0
             patch = int(parts[2]) if len(parts) > 2 else 0

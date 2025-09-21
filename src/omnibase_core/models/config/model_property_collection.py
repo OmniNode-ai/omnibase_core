@@ -16,10 +16,8 @@ from ...protocols.protocol_supported_property_value import (
     ProtocolSupportedPropertyValue,
 )
 from .model_property_metadata import ModelPropertyMetadata
-from .model_typed_property import (
-    ModelTypedProperty,
-    PropertyValue,
-)
+from typing import Any
+from .model_typed_property import ModelTypedProperty
 
 # Type variable for generic property handling
 T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
@@ -35,7 +33,7 @@ class ModelPropertyCollection(BaseModel):
     def add_property(
         self,
         key: str,
-        value: PropertyValue,
+        value: Any,
         property_type: PropertyTypeEnum,
         description: str | None = None,
         required: bool = False,

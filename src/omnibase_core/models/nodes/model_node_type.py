@@ -27,8 +27,7 @@ class ModelNodeType(BaseModel):
 
     # Core fields (required) - Entity reference with UUID
     type_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the node type entity"
+        default_factory=uuid4, description="Unique identifier for the node type entity"
     )
     type_name: EnumTypeName = Field(
         ...,
@@ -458,10 +457,16 @@ class ModelNodeType(BaseModel):
         # Try to create from known enum values, otherwise create generic
         try:
             enum_value = EnumTypeName(name)
-            return cls(type_name=enum_value, description=f"Node: {name}", category=EnumConfigCategory.UNKNOWN)
+            return cls(
+                type_name=enum_value,
+                description=f"Node: {name}",
+                category=EnumConfigCategory.UNKNOWN,
+            )
         except ValueError:
             # If name is not in enum, we can't create it - this maintains type safety
-            raise ValueError(f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}")
+            raise ValueError(
+                f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}"
+            )
 
     @classmethod
     def create_legacy(
@@ -477,7 +482,9 @@ class ModelNodeType(BaseModel):
             try:
                 type_name_enum = EnumTypeName(name)
             except ValueError:
-                raise ValueError(f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}")
+                raise ValueError(
+                    f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}"
+                )
         else:
             type_name_enum = name
 

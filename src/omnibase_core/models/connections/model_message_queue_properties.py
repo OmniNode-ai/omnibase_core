@@ -6,8 +6,9 @@ Part of the connection properties restructuring to reduce string field violation
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ModelMessageQueueProperties(BaseModel):
@@ -15,9 +16,15 @@ class ModelMessageQueueProperties(BaseModel):
 
     # Entity references with UUID + display name pattern
     queue_id: UUID | None = Field(default=None, description="Queue UUID reference")
-    queue_display_name: str | None = Field(default=None, description="Queue display name")
-    exchange_id: UUID | None = Field(default=None, description="Exchange UUID reference")
-    exchange_display_name: str | None = Field(default=None, description="Exchange display name")
+    queue_display_name: str | None = Field(
+        default=None, description="Queue display name"
+    )
+    exchange_id: UUID | None = Field(
+        default=None, description="Exchange UUID reference"
+    )
+    exchange_display_name: str | None = Field(
+        default=None, description="Exchange display name"
+    )
 
     # Queue configuration
     routing_key: str | None = Field(default=None, description="Routing key")

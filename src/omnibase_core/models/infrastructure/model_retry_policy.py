@@ -68,9 +68,9 @@ class ModelRetryPolicy(BaseModel):
 
     # Delegate properties to appropriate sub-models
     @property
-    def has_retries_remaining(self) -> bool:
+    def can_attempt_retry(self) -> bool:
         """Check if retries are still available."""
-        return self.execution.has_attempts_remaining(self.config.max_retries)
+        return self.execution.can_retry(self.config.max_retries)
 
     @property
     def is_exhausted(self) -> bool:
@@ -163,7 +163,9 @@ class ModelRetryPolicy(BaseModel):
         execution_time_seconds: float = 0.0,
     ) -> None:
         """Record the result of an attempt."""
-        self.execution.record_attempt(success, error, status_code, execution_time_seconds)
+        self.execution.record_attempt(
+            success, error, status_code, execution_time_seconds
+        )
 
     def get_next_attempt_time(self) -> datetime:
         """Get timestamp for next retry attempt."""

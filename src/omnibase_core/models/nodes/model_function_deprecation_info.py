@@ -54,7 +54,9 @@ class ModelFunctionDeprecationInfo(BaseModel):
         return {
             "is_deprecated": self.is_deprecated(),
             "has_replacement": self.has_replacement(),
-            "deprecated_since": str(self.deprecated_since) if self.deprecated_since else None,
+            "deprecated_since": (
+                str(self.deprecated_since) if self.deprecated_since else None
+            ),
             "replacement": self.replacement,
             "status": self.get_deprecation_status(),
         }

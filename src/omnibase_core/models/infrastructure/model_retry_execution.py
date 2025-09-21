@@ -50,7 +50,7 @@ class ModelRetryExecution(BaseModel):
         description="Attempt number that succeeded (if any)",
     )
 
-    def has_attempts_remaining(self, max_retries: int) -> bool:
+    def can_retry(self, max_retries: int) -> bool:
         """Check if retries are still available."""
         return self.current_attempt < max_retries
 

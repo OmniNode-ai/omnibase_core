@@ -211,7 +211,9 @@ class ModelCliExecution(BaseModel):
         target_node_name: str | None = None,
     ) -> ModelCliExecution:
         """Create a simple execution context."""
-        core = ModelCliExecutionCore.create_simple(command_name, target_node_id, target_node_name)
+        core = ModelCliExecutionCore.create_simple(
+            command_name, target_node_id, target_node_name
+        )
         return cls(core=core)
 
     @classmethod
@@ -222,7 +224,9 @@ class ModelCliExecution(BaseModel):
         target_node_name: str | None = None,
     ) -> ModelCliExecution:
         """Create a dry run execution context."""
-        core = ModelCliExecutionCore.create_simple(command_name, target_node_id, target_node_name)
+        core = ModelCliExecutionCore.create_simple(
+            command_name, target_node_id, target_node_name
+        )
         config = ModelCliExecutionConfig(is_dry_run=True)
         return cls(core=core, config=config)
 
@@ -234,7 +238,9 @@ class ModelCliExecution(BaseModel):
         target_node_name: str | None = None,
     ) -> ModelCliExecution:
         """Create a test execution context."""
-        core = ModelCliExecutionCore.create_simple(command_name, target_node_id, target_node_name)
+        core = ModelCliExecutionCore.create_simple(
+            command_name, target_node_id, target_node_name
+        )
         config = ModelCliExecutionConfig.create_test()
         return cls(core=core, config=config)
 
@@ -249,7 +255,9 @@ class ModelCliExecution(BaseModel):
         target_node_name: str | None = None,
     ) -> ModelCliExecution:
         """Create execution with custom configuration."""
-        core = ModelCliExecutionCore.create_simple(command_name, target_node_id, target_node_name)
+        core = ModelCliExecutionCore.create_simple(
+            command_name, target_node_id, target_node_name
+        )
         return cls(
             core=core,
             config=config or ModelCliExecutionConfig(),

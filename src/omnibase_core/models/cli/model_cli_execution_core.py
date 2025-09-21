@@ -35,7 +35,9 @@ class ModelCliExecutionCore(BaseModel):
 
     # Command information
     command_name_id: UUID = Field(..., description="UUID for command name")
-    command_display_name: str | None = Field(None, description="Human-readable command name")
+    command_display_name: str | None = Field(
+        None, description="Human-readable command name"
+    )
     command_args: list[str] = Field(
         default_factory=list,
         description="Command arguments",
@@ -168,8 +170,11 @@ class ModelCliExecutionCore(BaseModel):
     def command_name(self, value: str) -> None:
         """Backward compatibility setter for command_name."""
         import hashlib
+
         command_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.command_name_id = UUID(f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}")
+        self.command_name_id = UUID(
+            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}"
+        )
         self.command_display_name = value
 
     @property
@@ -194,7 +199,9 @@ class ModelCliExecutionCore(BaseModel):
 
         # Generate UUID from command name
         command_hash = hashlib.sha256(command_name.encode()).hexdigest()
-        command_name_id = UUID(f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}")
+        command_name_id = UUID(
+            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}"
+        )
 
         return cls(
             command_name_id=command_name_id,

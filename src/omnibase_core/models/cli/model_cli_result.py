@@ -168,7 +168,11 @@ class ModelCliResult(BaseModel):
         self.validation_errors.append(error)
 
     def add_performance_metric(
-        self, name: str, value: int | float, unit: str = "", category: EnumConfigCategory = EnumConfigCategory.GENERAL
+        self,
+        name: str,
+        value: int | float,
+        unit: str = "",
+        category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
         """Add a performance metric with proper typing."""
         # Performance metrics are now strongly typed - use proper model

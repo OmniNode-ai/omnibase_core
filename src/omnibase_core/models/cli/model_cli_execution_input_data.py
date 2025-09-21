@@ -8,7 +8,7 @@ Replaces dict[str, Any] for input data with structured typing.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,8 +26,8 @@ class ModelCliExecutionInputData(BaseModel):
 
     # Data identification
     key: str = Field(..., description="Input data key identifier")
-    value: Union[str, int, bool, float, Path, UUID, list[str]] = Field(
-        ..., description="Input data value with restricted types"
+    value: Any = Field(
+        ..., description="Input data value - supports str, int, bool, float, Path, UUID, list[str]"
     )
 
     # Data metadata
@@ -49,7 +49,7 @@ class ModelCliExecutionInputData(BaseModel):
             return ",".join(str(v) for v in self.value)
         return str(self.value)
 
-    def get_typed_value(self) -> Union[str, int, bool, float, Path, UUID, list[str]]:
+    def get_typed_value(self) -> Any:
         """Get the properly typed value."""
         return self.value
 

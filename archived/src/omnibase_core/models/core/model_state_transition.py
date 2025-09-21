@@ -285,8 +285,11 @@ class ModelStateTransition(BaseModel):
         """Legacy factory method for tool-based transitions using tool name."""
         # Generate a UUID from the tool name for backward compatibility
         import hashlib
+
         name_hash = hashlib.sha256(tool_name.encode()).hexdigest()
-        tool_id = UUID(f"{name_hash[:8]}-{name_hash[8:12]}-{name_hash[12:16]}-{name_hash[16:20]}-{name_hash[20:32]}")
+        tool_id = UUID(
+            f"{name_hash[:8]}-{name_hash[8:12]}-{name_hash[12:16]}-{name_hash[16:20]}-{name_hash[20:32]}"
+        )
 
         return cls.create_tool_based(
             name=name,

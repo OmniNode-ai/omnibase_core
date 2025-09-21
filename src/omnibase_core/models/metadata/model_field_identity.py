@@ -7,6 +7,7 @@ Part of the metadata field info restructuring to reduce string field violations.
 from __future__ import annotations
 
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -46,11 +47,12 @@ class ModelFieldIdentity(BaseModel):
 
     def matches_name(self, name: str) -> bool:
         """Check if this field matches the given name."""
-        identity_name = self.identity_display_name or f"identity_{str(self.identity_id)[:8]}"
+        identity_name = (
+            self.identity_display_name or f"identity_{str(self.identity_id)[:8]}"
+        )
         field_name = self.field_display_name or f"field_{str(self.field_id)[:8]}"
         return (
-            identity_name.upper() == name.upper()
-            or field_name.lower() == name.lower()
+            identity_name.upper() == name.upper() or field_name.lower() == name.lower()
         )
 
     @property
@@ -62,8 +64,11 @@ class ModelFieldIdentity(BaseModel):
     def name(self, value: str) -> None:
         """Backward compatibility setter for name."""
         import hashlib
+
         identity_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.identity_id = UUID(f"{identity_hash[:8]}-{identity_hash[8:12]}-{identity_hash[12:16]}-{identity_hash[16:20]}-{identity_hash[20:32]}")
+        self.identity_id = UUID(
+            f"{identity_hash[:8]}-{identity_hash[8:12]}-{identity_hash[12:16]}-{identity_hash[16:20]}-{identity_hash[20:32]}"
+        )
         self.identity_display_name = value
 
     @property
@@ -75,8 +80,11 @@ class ModelFieldIdentity(BaseModel):
     def field_name(self, value: str) -> None:
         """Backward compatibility setter for field_name."""
         import hashlib
+
         field_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+        self.field_id = UUID(
+            f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+        )
         self.field_display_name = value
 
 

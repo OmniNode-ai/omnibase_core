@@ -68,6 +68,7 @@ class ModelFieldValidationRules(BaseModel):
 
         if self.validation_pattern is not None:
             import re
+
             try:
                 return bool(re.match(self.validation_pattern, value))
             except re.error:

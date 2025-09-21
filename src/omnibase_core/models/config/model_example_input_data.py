@@ -23,7 +23,9 @@ class ModelExampleInputData(BaseModel):
     """
 
     # Core data fields
-    data_type: EnumIOType = Field(default=EnumIOType.INPUT, description="Type of input data")
+    data_type: EnumIOType = Field(
+        default=EnumIOType.INPUT, description="Type of input data"
+    )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Input parameters

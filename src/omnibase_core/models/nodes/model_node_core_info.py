@@ -1,5 +1,5 @@
 """
-Node Basic Information Model.
+Node Core Information Model.
 
 Core identification and metadata for nodes.
 Part of the ModelNodeInformation restructuring.
@@ -19,13 +19,13 @@ from ...enums.enum_registry_status import EnumRegistryStatus
 from ..metadata.model_semver import ModelSemVer
 
 
-class ModelNodeBasicInfo(BaseModel):
+class ModelNodeCoreInfo(BaseModel):
     """
-    Basic node identification and metadata.
+    Core node identification and metadata.
 
     Contains core node information:
     - Identity (ID, name, type, version)
-    - Basic metadata (description, author)
+    - Core metadata (description, author)
     - Status information
     - Timestamps
     """
@@ -42,7 +42,9 @@ class ModelNodeBasicInfo(BaseModel):
     # Basic metadata (3 fields)
     description: str | None = Field(None, description="Node description")
     author_id: UUID | None = Field(None, description="UUID for node author")
-    author_display_name: str | None = Field(None, description="Human-readable node author")
+    author_display_name: str | None = Field(
+        None, description="Human-readable node author"
+    )
 
     # Status information (2 fields)
     status: EnumMetadataNodeStatus = Field(
@@ -74,8 +76,8 @@ class ModelNodeBasicInfo(BaseModel):
         """Check if node has an author."""
         return bool(self.author)
 
-    def get_basic_summary(self) -> dict[str, str | bool | None]:
-        """Get basic node information summary."""
+    def get_core_summary(self) -> dict[str, str | bool | None]:
+        """Get core node information summary."""
         return {
             "node_id": str(self.node_id),
             "node_name": self.node_name,
@@ -90,14 +92,14 @@ class ModelNodeBasicInfo(BaseModel):
         }
 
     @classmethod
-    def create_simple(
+    def create_streamlined(
         cls,
         node_name: str,
         node_type: EnumMetadataNodeType,
         node_version: ModelSemVer,
         description: str | None = None,
-    ) -> ModelNodeBasicInfo:
-        """Create simple node basic info."""
+    ) -> ModelNodeCoreInfo:
+        """Create streamlined node core info."""
         return cls(
             node_display_name=node_name,
             node_type=node_type,
@@ -125,12 +127,15 @@ class ModelNodeBasicInfo(BaseModel):
         """Backward compatibility setter for author."""
         if value:
             import hashlib
+
             author_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.author_id = UUID(f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}")
+            self.author_id = UUID(
+                f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}"
+            )
         else:
             self.author_id = None
         self.author_display_name = value
 
 
 # Export for use
-__all__ = ["ModelNodeBasicInfo"]
+__all__ = ["ModelNodeCoreInfo"]

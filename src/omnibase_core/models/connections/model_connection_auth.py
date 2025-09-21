@@ -7,9 +7,10 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from uuid import UUID
-from pydantic import BaseModel, Field, SecretStr, field_serializer
 from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 from ...enums.enum_auth_type import EnumAuthType
 
@@ -61,10 +62,7 @@ class ModelConnectionAuth(BaseModel):
     def has_credentials(self) -> bool:
         """Check if any credentials are configured."""
         return bool(
-            self.user_display_name
-            or self.password
-            or self.api_key
-            or self.token
+            self.user_display_name or self.password or self.api_key or self.token
         )
 
     def get_auth_header(self) -> dict[str, str] | None:
@@ -102,8 +100,11 @@ class ModelConnectionAuth(BaseModel):
         """Backward compatibility setter for username."""
         if value:
             import hashlib
+
             user_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.user_id = UUID(f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}")
+            self.user_id = UUID(
+                f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
+            )
         else:
             self.user_id = None
         self.user_display_name = value
@@ -116,17 +117,19 @@ class ModelConnectionAuth(BaseModel):
         return str(value) if value else ""
 
     @classmethod
-    def create_basic_auth(
+    def create_password_auth(
         cls,
         username: str,
         password: str,
     ) -> ModelConnectionAuth:
-        """Create basic authentication."""
+        """Create password-based authentication."""
         import hashlib
 
         # Generate UUID from username
         user_hash = hashlib.sha256(username.encode()).hexdigest()
-        user_id = UUID(f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}")
+        user_id = UUID(
+            f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
+        )
 
         return cls(
             auth_type=EnumAuthType.BASIC,

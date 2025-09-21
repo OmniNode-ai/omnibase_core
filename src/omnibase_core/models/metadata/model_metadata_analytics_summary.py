@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 
 
 class ModelMetadataAnalyticsSummary(BaseModel):
@@ -25,8 +25,13 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     """
 
     # Core collection info - UUID-based entity references
-    collection_id: UUID = Field(default_factory=lambda: uuid_from_string("default", "collection"), description="Unique identifier for the collection")
-    collection_display_name: str | None = Field(None, description="Human-readable collection name")
+    collection_id: UUID = Field(
+        default_factory=lambda: uuid_from_string("default", "collection"),
+        description="Unique identifier for the collection",
+    )
+    collection_display_name: str | None = Field(
+        None, description="Human-readable collection name"
+    )
 
     # Node counts
     total_nodes: int = Field(default=0, description="Total number of nodes")

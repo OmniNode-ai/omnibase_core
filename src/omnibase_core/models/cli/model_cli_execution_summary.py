@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_execution_status import EnumExecutionStatus
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 
 
 class ModelCliExecutionSummary(BaseModel):
@@ -29,7 +29,9 @@ class ModelCliExecutionSummary(BaseModel):
     # Core execution information - UUID-based entity references
     execution_id: UUID = Field(..., description="Unique execution identifier")
     command_id: UUID = Field(..., description="UUID identifier for the CLI command")
-    command_display_name: str | None = Field(None, description="Human-readable command name")
+    command_display_name: str | None = Field(
+        None, description="Human-readable command name"
+    )
     target_node_id: Optional[UUID] = Field(
         default=None, description="Target node UUID for precise identification"
     )

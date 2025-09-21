@@ -9,12 +9,13 @@ Tests all aspects of the CLI action model including:
 - Edge cases and error conditions
 """
 
-import pytest
-from pydantic import ValidationError
 from uuid import UUID, uuid4
 
-from src.omnibase_core.models.cli.model_cli_action import ModelCliAction
+import pytest
+from pydantic import ValidationError
+
 from src.omnibase_core.enums.enum_action_category import EnumActionCategory
+from src.omnibase_core.models.cli.model_cli_action import ModelCliAction
 
 
 class TestModelCliAction:
@@ -66,22 +67,34 @@ class TestModelCliAction:
 
         # Missing action_name
         with pytest.raises(ValidationError) as exc_info:
-            ModelCliAction(node_id=node_id, node_name="test_node", description="Test description")
+            ModelCliAction(
+                node_id=node_id, node_name="test_node", description="Test description"
+            )
         assert "action_name" in str(exc_info.value)
 
         # Missing node_id
         with pytest.raises(ValidationError) as exc_info:
-            ModelCliAction(action_name="test_action", node_name="test_node", description="Test description")
+            ModelCliAction(
+                action_name="test_action",
+                node_name="test_node",
+                description="Test description",
+            )
         assert "node_id" in str(exc_info.value)
 
         # Missing node_name
         with pytest.raises(ValidationError) as exc_info:
-            ModelCliAction(action_name="test_action", node_id=node_id, description="Test description")
+            ModelCliAction(
+                action_name="test_action",
+                node_id=node_id,
+                description="Test description",
+            )
         assert "node_name" in str(exc_info.value)
 
         # Missing description
         with pytest.raises(ValidationError) as exc_info:
-            ModelCliAction(action_name="test_action", node_id=node_id, node_name="test_node")
+            ModelCliAction(
+                action_name="test_action", node_id=node_id, node_name="test_node"
+            )
         assert "description" in str(exc_info.value)
 
     def test_action_name_pattern_validation(self):
@@ -99,7 +112,10 @@ class TestModelCliAction:
         node_id = uuid4()
         for name in valid_names:
             action = ModelCliAction(
-                action_name=name, node_id=node_id, node_name="test_node", description="Test description"
+                action_name=name,
+                node_id=node_id,
+                node_name="test_node",
+                description="Test description",
             )
             assert action.action_name == name
 
@@ -134,25 +150,37 @@ class TestModelCliAction:
         # Test non-string action_name
         with pytest.raises(ValidationError):
             ModelCliAction(
-                action_name=123, node_id=node_id, node_name="test_node", description="Test description"
+                action_name=123,
+                node_id=node_id,
+                node_name="test_node",
+                description="Test description",
             )
 
         # Test invalid node_id type
         with pytest.raises(ValidationError):
             ModelCliAction(
-                action_name="test_action", node_id="not-a-uuid", node_name="test_node", description="Test description"
+                action_name="test_action",
+                node_id="not-a-uuid",
+                node_name="test_node",
+                description="Test description",
             )
 
         # Test non-string node_name
         with pytest.raises(ValidationError):
             ModelCliAction(
-                action_name="test_action", node_id=node_id, node_name=123, description="Test description"
+                action_name="test_action",
+                node_id=node_id,
+                node_name=123,
+                description="Test description",
             )
 
         # Test non-string description
         with pytest.raises(ValidationError):
             ModelCliAction(
-                action_name="test_action", node_id=node_id, node_name="test_node", description=123
+                action_name="test_action",
+                node_id=node_id,
+                node_name="test_node",
+                description=123,
             )
 
         # Test non-coercible deprecated value (Pydantic V2 can coerce some strings)
@@ -216,7 +244,10 @@ class TestModelCliAction:
         """Test the get_qualified_name method."""
         node_id = uuid4()
         action = ModelCliAction(
-            action_name="deploy", node_id=node_id, node_name="app_node", description="Deploy application"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="app_node",
+            description="Deploy application",
         )
 
         qualified_name = action.get_qualified_name()
@@ -231,7 +262,7 @@ class TestModelCliAction:
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
-            description="Deploy application"
+            description="Deploy application",
         )
 
         unique_id = action.get_globally_unique_id()
@@ -241,7 +272,10 @@ class TestModelCliAction:
         """Test the matches method."""
         node_id = uuid4()
         action = ModelCliAction(
-            action_name="deploy", node_id=node_id, node_name="app_node", description="Deploy application"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="app_node",
+            description="Deploy application",
         )
 
         # Test positive matches
@@ -258,7 +292,10 @@ class TestModelCliAction:
         node_id = uuid4()
         other_node_id = uuid4()
         action = ModelCliAction(
-            action_name="deploy", node_id=node_id, node_name="app_node", description="Deploy application"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="app_node",
+            description="Deploy application",
         )
 
         # Test positive match
@@ -277,7 +314,7 @@ class TestModelCliAction:
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
-            description="Deploy application"
+            description="Deploy application",
         )
 
         # Test positive match
@@ -342,7 +379,10 @@ class TestModelCliAction:
         """Test JSON serialization and deserialization."""
         node_id = uuid4()
         action = ModelCliAction(
-            action_name="backup", node_id=node_id, node_name="data_node", description="Backup data"
+            action_name="backup",
+            node_id=node_id,
+            node_name="data_node",
+            description="Backup data",
         )
 
         # Serialize to JSON
@@ -370,7 +410,7 @@ class TestModelCliAction:
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
-            description="Deploy application"
+            description="Deploy application",
         )
 
         action2 = ModelCliAction(
@@ -378,7 +418,7 @@ class TestModelCliAction:
             action_name="deploy",
             node_id=node_id,
             node_name="app_node",
-            description="Deploy application"
+            description="Deploy application",
         )
 
         action3 = ModelCliAction(
@@ -395,7 +435,10 @@ class TestModelCliAction:
         """Test model string representation."""
         node_id = uuid4()
         action = ModelCliAction(
-            action_name="deploy", node_id=node_id, node_name="app_node", description="Deploy application"
+            action_name="deploy",
+            node_id=node_id,
+            node_name="app_node",
+            description="Deploy application",
         )
 
         repr_str = repr(action)
@@ -461,18 +504,27 @@ class TestModelCliActionEdgeCases:
         # Empty action_name should fail pattern validation
         with pytest.raises(ValidationError):
             ModelCliAction(
-                action_name="", node_id=node_id, node_name="test_node", description="Test description"
+                action_name="",
+                node_id=node_id,
+                node_name="test_node",
+                description="Test description",
             )
 
         # Empty node_name is currently allowed by the model
         action = ModelCliAction(
-            action_name="test_action", node_id=node_id, node_name="", description="Test description"
+            action_name="test_action",
+            node_id=node_id,
+            node_name="",
+            description="Test description",
         )
         assert action.node_name == ""
 
         # Empty description is currently allowed by the model
         action = ModelCliAction(
-            action_name="test_action", node_id=node_id, node_name="test_node", description=""
+            action_name="test_action",
+            node_id=node_id,
+            node_name="test_node",
+            description="",
         )
         assert action.description == ""
 
@@ -509,7 +561,10 @@ class TestModelCliActionEdgeCases:
         node_id = uuid4()
 
         action = ModelCliAction(
-            action_name="test_action", node_id=node_id, node_name=long_string, description=long_string
+            action_name="test_action",
+            node_id=node_id,
+            node_name=long_string,
+            description=long_string,
         )
 
         assert len(action.node_name) == 1000

@@ -84,8 +84,11 @@ class ModelValidationError(BaseModel):
         field_id = None
         if field_name:
             import hashlib
+
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
-            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+            field_id = UUID(
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+            )
 
         return cls(
             message=message,
@@ -106,8 +109,11 @@ class ModelValidationError(BaseModel):
         field_id = None
         if field_name:
             import hashlib
+
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
-            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+            field_id = UUID(
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+            )
 
         return cls(
             message=message,
@@ -128,8 +134,11 @@ class ModelValidationError(BaseModel):
         field_id = None
         if field_name:
             import hashlib
+
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
-            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+            field_id = UUID(
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+            )
 
         return cls(
             message=message,
@@ -149,8 +158,11 @@ class ModelValidationError(BaseModel):
         """Backward compatibility setter for field_name."""
         if value:
             import hashlib
+
             field_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+            self.field_id = UUID(
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+            )
         else:
             self.field_id = None
         self.field_display_name = value

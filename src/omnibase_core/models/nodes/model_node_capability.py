@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ...enums.enum_performance_impact import EnumPerformanceImpact
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -27,8 +27,7 @@ class ModelNodeCapability(BaseModel):
 
     # Core fields (required) - UUID-based entity references
     capability_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the capability entity"
+        default_factory=uuid4, description="Unique identifier for the capability entity"
     )
     capability_display_name: str | None = Field(
         None,
@@ -86,7 +85,9 @@ class ModelNodeCapability(BaseModel):
     @property
     def capability_name(self) -> str:
         """Get capability name with fallback to UUID-based name."""
-        return self.capability_display_name or f"capability_{str(self.capability_id)[:8]}"
+        return (
+            self.capability_display_name or f"capability_{str(self.capability_id)[:8]}"
+        )
 
     @capability_name.setter
     def capability_name(self, value: str) -> None:

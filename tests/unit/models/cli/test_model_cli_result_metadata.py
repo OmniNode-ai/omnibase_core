@@ -9,12 +9,12 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
+from src.omnibase_core.enums.enum_result_category import EnumResultCategory
+from src.omnibase_core.enums.enum_result_type import EnumResultType
 from src.omnibase_core.models.cli.model_cli_result_metadata import (
     ModelCliResultMetadata,
 )
 from src.omnibase_core.models.metadata.model_semver import ModelSemVer
-from src.omnibase_core.enums.enum_result_category import EnumResultCategory
-from src.omnibase_core.enums.enum_result_type import EnumResultType
 
 
 class TestModelCliResultMetadata:
@@ -432,7 +432,9 @@ class TestModelCliResultMetadata:
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
         metadata = ModelCliResultMetadata(
-            result_type=EnumResultType.INFO, tags=["json", "serialization"], quality_score=0.89
+            result_type=EnumResultType.INFO,
+            tags=["json", "serialization"],
+            quality_score=0.89,
         )
 
         # Test JSON serialization

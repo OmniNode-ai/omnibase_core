@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,8 +18,8 @@ class ModelMetric(BaseModel):
     """Universal metric model for any supported type."""
 
     key: str = Field(..., description="Metric key")
-    value: Union[str, int, float, bool] = Field(
-        ..., description="Metric value (string, int, float, or bool)"
+    value: Any = Field(
+        ..., description="Metric value - supports str, int, float, bool as determined by metric_type"
     )
     metric_type: EnumMetricDataType = Field(
         ..., description="Data type of metric (string, numeric, boolean)"

@@ -5,6 +5,7 @@ Test coverage for parameter type enumeration and helper methods.
 """
 
 import pytest
+
 from src.omnibase_core.enums import EnumParameterType
 
 
@@ -14,8 +15,14 @@ class TestEnumParameterType:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "STRING", "INTEGER", "FLOAT", "BOOLEAN",
-            "OBJECT", "ARRAY", "UUID", "ENUM"
+            "STRING",
+            "INTEGER",
+            "FLOAT",
+            "BOOLEAN",
+            "OBJECT",
+            "ARRAY",
+            "UUID",
+            "ENUM",
         }
         actual_values = {param_type.value for param_type in EnumParameterType}
         assert actual_values == expected_values
@@ -117,7 +124,9 @@ class TestEnumParameterType:
         for param_type in EnumParameterType:
             expected = param_type in null_support_types
             actual = EnumParameterType.supports_null(param_type)
-            assert actual == expected, f"{param_type} null support classification failed"
+            assert (
+                actual == expected
+            ), f"{param_type} null support classification failed"
 
     def test_str_representation(self):
         """Test string representation."""

@@ -44,10 +44,11 @@ class ModelOnexUri(BaseModel):
 
     # Entity reference - UUID-based with display name
     namespace_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the namespace entity"
+        default_factory=uuid4, description="Unique identifier for the namespace entity"
     )
-    namespace_display_name: str | None = Field(None, description="Human-readable namespace component of the URI")
+    namespace_display_name: str | None = Field(
+        None, description="Human-readable namespace component of the URI"
+    )
 
     version_spec: str = Field(
         ...,
@@ -58,7 +59,9 @@ class ModelOnexUri(BaseModel):
     @classmethod
     def create_legacy(
         cls,
-        type_value: Literal["tool", "validator", "agent", "model", "plugin", "schema", "node"],
+        type_value: Literal[
+            "tool", "validator", "agent", "model", "plugin", "schema", "node"
+        ],
         namespace: str,
         version_spec: str,
         original: str,
@@ -68,7 +71,9 @@ class ModelOnexUri(BaseModel):
 
         # Generate UUID from namespace
         namespace_hash = hashlib.sha256(namespace.encode()).hexdigest()
-        namespace_id = UUID(f"{namespace_hash[:8]}-{namespace_hash[8:12]}-{namespace_hash[12:16]}-{namespace_hash[16:20]}-{namespace_hash[20:32]}")
+        namespace_id = UUID(
+            f"{namespace_hash[:8]}-{namespace_hash[8:12]}-{namespace_hash[12:16]}-{namespace_hash[16:20]}-{namespace_hash[20:32]}"
+        )
 
         return cls(
             type=type_value,
@@ -92,6 +97,9 @@ class ModelOnexUri(BaseModel):
     def namespace_name(self, value: str) -> None:
         """Backward compatibility setter for namespace_name."""
         import hashlib
+
         namespace_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.namespace_id = UUID(f"{namespace_hash[:8]}-{namespace_hash[8:12]}-{namespace_hash[12:16]}-{namespace_hash[16:20]}-{namespace_hash[20:32]}")
+        self.namespace_id = UUID(
+            f"{namespace_hash[:8]}-{namespace_hash[8:12]}-{namespace_hash[12:16]}-{namespace_hash[16:20]}-{namespace_hash[20:32]}"
+        )
         self.namespace_display_name = value

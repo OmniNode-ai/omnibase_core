@@ -61,7 +61,9 @@ class ModelCliNodeExecutionInput(BaseModel):
         default=True,
         description="Only include healthy nodes in results",
     )
-    category_filter: EnumCategoryFilter | None = Field(None, description="Filter nodes by category")
+    category_filter: EnumCategoryFilter | None = Field(
+        None, description="Filter nodes by category"
+    )
 
     # Performance and timeouts
     timeout_seconds: float | None = Field(

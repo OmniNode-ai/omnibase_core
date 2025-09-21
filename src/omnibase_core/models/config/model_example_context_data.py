@@ -24,11 +24,15 @@ class ModelExampleContextData(BaseModel):
     """
 
     # Core context fields
-    context_type: EnumContextType = Field(default=EnumContextType.USER, description="Type of context")
+    context_type: EnumContextType = Field(
+        default=EnumContextType.USER, description="Type of context"
+    )
     environment: str | None = Field(None, description="Environment context")
 
     # Execution context
-    execution_mode: EnumExecutionMode = Field(default=EnumExecutionMode.AUTO, description="Execution mode")
+    execution_mode: EnumExecutionMode = Field(
+        default=EnumExecutionMode.AUTO, description="Execution mode"
+    )
     timeout_seconds: float | None = Field(None, description="Timeout in seconds")
 
     # Environment variables and settings
@@ -58,7 +62,9 @@ class ModelExampleContextData(BaseModel):
     @property
     def user_context(self) -> str | None:
         """Backward compatibility property for user_context."""
-        return self.user_display_name or (f"user_{str(self.user_id)[:8]}" if self.user_id else None)
+        return self.user_display_name or (
+            f"user_{str(self.user_id)[:8]}" if self.user_id else None
+        )
 
     @user_context.setter
     def user_context(self, value: str | None) -> None:
@@ -80,7 +86,9 @@ class ModelExampleContextData(BaseModel):
 
         # Generate UUID for user
         user_hash = hashlib.sha256(user_name.encode()).hexdigest()
-        user_id = UUID(f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}")
+        user_id = UUID(
+            f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
+        )
 
         return cls(
             context_type=context_type,

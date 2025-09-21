@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from .model_typed_property import PropertyValue
+from typing import Any
 
 
 class ModelEnvironmentProperties(BaseModel):
@@ -22,7 +22,7 @@ class ModelEnvironmentProperties(BaseModel):
     with type safety and helper methods for property access.
     """
 
-    properties: dict[str, PropertyValue] = Field(
+    properties: dict[str, Any] = Field(
         default_factory=dict,
         description="Custom property values",
     )
@@ -100,7 +100,7 @@ class ModelEnvironmentProperties(BaseModel):
     def set_property(
         self,
         key: str,
-        value: PropertyValue,
+        value: Any,
         description: str | None = None,
         source: str | None = None,
     ) -> None:
@@ -136,11 +136,11 @@ class ModelEnvironmentProperties(BaseModel):
 
     def get_all_properties(
         self,
-    ) -> dict[str, PropertyValue]:
+    ) -> dict[str, Any]:
         """Get all properties."""
         return self.properties.copy()
 
-    def get_properties_by_prefix(self, prefix: str) -> dict[str, PropertyValue]:
+    def get_properties_by_prefix(self, prefix: str) -> dict[str, Any]:
         """Get all properties with keys starting with a prefix."""
         return {
             key: value
@@ -171,7 +171,7 @@ class ModelEnvironmentProperties(BaseModel):
         cls,
         properties: dict[
             str,
-            PropertyValue,
+            Any,
         ],
     ) -> ModelEnvironmentProperties:
         """Create from a dictionary of properties."""

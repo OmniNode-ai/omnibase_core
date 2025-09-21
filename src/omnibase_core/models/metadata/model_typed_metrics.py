@@ -19,7 +19,9 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     """Generic metrics model replacing type-specific variants."""
 
     metric_id: UUID = Field(..., description="UUID for metric identifier")
-    metric_display_name: str | None = Field(None, description="Human-readable metric name")
+    metric_display_name: str | None = Field(
+        None, description="Human-readable metric name"
+    )
     value: T = Field(..., description="Typed metric value")
     unit: str | None = Field(None, description="Unit of measurement")
     description: str | None = Field(None, description="Metric description")
@@ -35,11 +37,19 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     ) -> ModelTypedMetrics[str]:
         """Create a string metric."""
         import hashlib
+
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
-        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        metric_id = UUID(
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+        )
 
         return ModelTypedMetrics[str](
-            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id,
+            metric_display_name=name,
+            value=value,
+            unit=unit,
+            description=description,
+            **kwargs,
         )
 
     @classmethod
@@ -53,11 +63,19 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
         import hashlib
+
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
-        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        metric_id = UUID(
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+        )
 
         return ModelTypedMetrics[int](
-            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id,
+            metric_display_name=name,
+            value=value,
+            unit=unit,
+            description=description,
+            **kwargs,
         )
 
     @classmethod
@@ -71,11 +89,19 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
         import hashlib
+
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
-        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        metric_id = UUID(
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+        )
 
         return ModelTypedMetrics[float](
-            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id,
+            metric_display_name=name,
+            value=value,
+            unit=unit,
+            description=description,
+            **kwargs,
         )
 
     @classmethod
@@ -89,11 +115,19 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
         import hashlib
+
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
-        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        metric_id = UUID(
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+        )
 
         return ModelTypedMetrics[bool](
-            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id,
+            metric_display_name=name,
+            value=value,
+            unit=unit,
+            description=description,
+            **kwargs,
         )
 
     @property
@@ -105,8 +139,11 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
     def name(self, value: str) -> None:
         """Backward compatibility setter for name."""
         import hashlib
+
         metric_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        self.metric_id = UUID(
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+        )
         self.metric_display_name = value
 
 

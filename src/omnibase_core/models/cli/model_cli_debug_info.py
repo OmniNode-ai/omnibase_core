@@ -22,7 +22,9 @@ class ModelCliDebugInfo(BaseModel):
     """
 
     # Core debug fields
-    debug_level: EnumDebugLevel = Field(default=EnumDebugLevel.INFO, description="Debug level")
+    debug_level: EnumDebugLevel = Field(
+        default=EnumDebugLevel.INFO, description="Debug level"
+    )
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC), description="Debug timestamp"
     )

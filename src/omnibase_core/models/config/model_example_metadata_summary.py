@@ -21,7 +21,9 @@ class ModelExampleMetadataSummary(BaseModel):
     updated_at: str | None = Field(None, description="Update timestamp")
     version: ModelSemVer | None = Field(None, description="Metadata version")
     author_id: UUID | None = Field(None, description="UUID of the author")
-    author_display_name: str | None = Field(None, description="Human-readable author name")
+    author_display_name: str | None = Field(
+        None, description="Human-readable author name"
+    )
     tags: list[str] = Field(default_factory=list, description="Associated tags")
     custom_fields: dict[str, str | int | bool | float] = Field(
         default_factory=dict, description="Custom metadata fields with basic types only"
@@ -52,7 +54,9 @@ class ModelExampleMetadataSummary(BaseModel):
 
         # Generate UUID for author
         author_hash = hashlib.sha256(author_name.encode()).hexdigest()
-        author_id = UUID(f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}")
+        author_id = UUID(
+            f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}"
+        )
 
         return cls(
             created_at=created_at,

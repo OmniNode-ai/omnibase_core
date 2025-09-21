@@ -5,6 +5,7 @@ Test coverage for category filter enumeration and helper methods.
 """
 
 import pytest
+
 from src.omnibase_core.enums import EnumCategoryFilter
 
 
@@ -14,7 +15,12 @@ class TestEnumCategoryFilter:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
-            "PRIMARY", "SECONDARY", "TERTIARY", "ALL", "CUSTOM", "ARCHIVED"
+            "PRIMARY",
+            "SECONDARY",
+            "TERTIARY",
+            "ALL",
+            "CUSTOM",
+            "ARCHIVED",
         }
         actual_values = {filter_type.value for filter_type in EnumCategoryFilter}
         assert actual_values == expected_values
@@ -35,7 +41,9 @@ class TestEnumCategoryFilter:
         for filter_type in EnumCategoryFilter:
             expected = filter_type in hierarchical_filters
             actual = EnumCategoryFilter.is_hierarchical(filter_type)
-            assert actual == expected, f"{filter_type} hierarchical classification failed"
+            assert (
+                actual == expected
+            ), f"{filter_type} hierarchical classification failed"
 
     def test_is_inclusive(self):
         """Test inclusive classification."""
@@ -76,7 +84,7 @@ class TestEnumCategoryFilter:
         expected_filters = [
             EnumCategoryFilter.PRIMARY,
             EnumCategoryFilter.SECONDARY,
-            EnumCategoryFilter.TERTIARY
+            EnumCategoryFilter.TERTIARY,
         ]
         actual_filters = EnumCategoryFilter.get_hierarchical_filters()
         assert actual_filters == expected_filters
@@ -86,7 +94,9 @@ class TestEnumCategoryFilter:
         for filter_type in EnumCategoryFilter:
             expected = filter_type != EnumCategoryFilter.ARCHIVED
             actual = EnumCategoryFilter.is_active_filter(filter_type)
-            assert actual == expected, f"{filter_type} active filter classification failed"
+            assert (
+                actual == expected
+            ), f"{filter_type} active filter classification failed"
 
     def test_str_representation(self):
         """Test string representation."""

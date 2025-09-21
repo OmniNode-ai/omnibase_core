@@ -12,12 +12,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ..metadata.model_semver import ModelSemVer
+from ...enums.enum_data_classification import EnumDataClassification
 from ...enums.enum_result_category import EnumResultCategory
 from ...enums.enum_result_type import EnumResultType
-from ...enums.enum_data_classification import EnumDataClassification
 from ...enums.enum_retention_policy import EnumRetentionPolicy
-from ...utils.uuid_helpers import uuid_from_string
+from ...utils.uuid_utilities import uuid_from_string
+from ..metadata.model_semver import ModelSemVer
 
 
 class ModelCliResultMetadata(BaseModel):
@@ -34,8 +34,12 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Result identification
-    result_type: EnumResultType = Field(default=EnumResultType.INFO, description="Type of result")
-    result_category: EnumResultCategory | None = Field(None, description="Result category")
+    result_type: EnumResultType = Field(
+        default=EnumResultType.INFO, description="Type of result"
+    )
+    result_category: EnumResultCategory | None = Field(
+        None, description="Result category"
+    )
 
     # Source information
     source_command: str | None = Field(None, description="Source command")
@@ -60,12 +64,19 @@ class ModelCliResultMetadata(BaseModel):
     data_classification: EnumDataClassification = Field(
         default=EnumDataClassification.INTERNAL, description="Data classification level"
     )
-    retention_policy: EnumRetentionPolicy | None = Field(None, description="Data retention policy")
+    retention_policy: EnumRetentionPolicy | None = Field(
+        None, description="Data retention policy"
+    )
 
     # Tags and labels - UUID-based entity references
     tags: list[str] = Field(default_factory=list, description="Result tags")
-    label_ids: dict[UUID, str] = Field(default_factory=dict, description="Label UUID to value mapping")
-    _label_names: dict[str, UUID] = Field(default_factory=dict, description="Label name to UUID mapping for backward compatibility")
+    label_ids: dict[UUID, str] = Field(
+        default_factory=dict, description="Label UUID to value mapping"
+    )
+    label_names: dict[str, UUID] = Field(
+        default_factory=dict,
+        description="Label name to UUID mapping for backward compatibility",
+    )
 
     # Performance metrics
     processing_time_ms: float | None = Field(
@@ -97,7 +108,7 @@ class ModelCliResultMetadata(BaseModel):
     def labels(self) -> dict[str, str]:
         """Get labels as string-to-string mapping for backward compatibility."""
         result = {}
-        for name, uuid_id in self._label_names.items():
+        for name, uuid_id in self.label_names.items():
             if uuid_id in self.label_ids:
                 result[name] = self.label_ids[uuid_id]
         return result
@@ -106,31 +117,31 @@ class ModelCliResultMetadata(BaseModel):
     def labels(self, value: dict[str, str]) -> None:
         """Set labels from string-to-string mapping for backward compatibility."""
         self.label_ids.clear()
-        self._label_names.clear()
+        self.label_names.clear()
         for name, label_value in value.items():
             uuid_id = uuid_from_string(name, "label")
             self.label_ids[uuid_id] = label_value
-            self._label_names[name] = uuid_id
+            self.label_names[name] = uuid_id
 
     def add_label(self, key: str, value: str) -> None:
         """Add a label to the result."""
         uuid_id = uuid_from_string(key, "label")
         self.label_ids[uuid_id] = value
-        self._label_names[key] = uuid_id
+        self.label_names[key] = uuid_id
 
     def get_label(self, key: str) -> str | None:
         """Get label value by name."""
-        uuid_id = self._label_names.get(key)
+        uuid_id = self.label_names.get(key)
         if uuid_id:
             return self.label_ids.get(uuid_id)
         return None
 
     def remove_label(self, key: str) -> bool:
         """Remove label by name. Returns True if removed, False if not found."""
-        uuid_id = self._label_names.get(key)
+        uuid_id = self.label_names.get(key)
         if uuid_id:
             self.label_ids.pop(uuid_id, None)
-            self._label_names.pop(key, None)
+            self.label_names.pop(key, None)
             return True
         return False
 

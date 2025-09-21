@@ -27,7 +27,7 @@ import signal
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Set, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 # Constants
 MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
@@ -79,139 +79,192 @@ class ValidationConfig:
     strict_mode: bool
 
     @classmethod
-    def default(cls) -> 'ValidationConfig':
+    def default(cls) -> "ValidationConfig":
         """Create default configuration."""
         return cls(
             allowed_string_fields={
                 # Legitimate string content
-                'description', 'content', 'text', 'message', 'notes', 'comment',
-                'summary', 'details', 'body', 'title', 'label', 'caption',
-
+                "description",
+                "content",
+                "text",
+                "message",
+                "notes",
+                "comment",
+                "summary",
+                "details",
+                "body",
+                "title",
+                "label",
+                "caption",
                 # Paths and URLs
-                'path', 'url', 'uri', 'file_path', 'directory_path', 'endpoint',
-                'address', 'location', 'source', 'destination', 'target',
-
+                "path",
+                "url",
+                "uri",
+                "file_path",
+                "directory_path",
+                "endpoint",
+                "address",
+                "location",
+                "source",
+                "destination",
+                "target",
                 # Patterns and templates
-                'pattern', 'template', 'format', 'expression', 'regex',
-                'query', 'command', 'script', 'code',
-
+                "pattern",
+                "template",
+                "format",
+                "expression",
+                "regex",
+                "query",
+                "command",
+                "script",
+                "code",
                 # Metadata and configuration
-                'metadata', 'config', 'settings', 'options', 'parameters',
-                'args', 'kwargs', 'data', 'payload', 'raw_data',
-
+                "metadata",
+                "config",
+                "settings",
+                "options",
+                "parameters",
+                "args",
+                "kwargs",
+                "data",
+                "payload",
+                "raw_data",
                 # Version and compatibility strings (when justified)
-                'version_pattern', 'version_spec', 'compatibility_string',
-                'version_range', 'constraint',
-
+                "version_pattern",
+                "version_spec",
+                "compatibility_string",
+                "version_range",
+                "constraint",
                 # Human-readable identifiers (when UUID is not appropriate)
-                'display_name', 'human_readable_name', 'friendly_name',
-                'short_name', 'alias', 'nickname',
-
+                "display_name",
+                "human_readable_name",
+                "friendly_name",
+                "short_name",
+                "alias",
+                "nickname",
                 # External system identifiers (when not under our control)
-                'external_id', 'third_party_id', 'legacy_id', 'system_id',
-
+                "external_id",
+                "third_party_id",
+                "legacy_id",
+                "system_id",
                 # Specific justified cases
-                'encoding', 'charset', 'locale', 'timezone', 'language',
-                'mime_type', 'content_type', 'media_type',
+                "encoding",
+                "charset",
+                "locale",
+                "timezone",
+                "language",
+                "mime_type",
+                "content_type",
+                "media_type",
             },
-
             excluded_models={
                 # Base classes and abstract models
-                'BaseModel', 'ModelFieldAccessor', 'ModelTypedAccessor',
-
+                "BaseModel",
+                "ModelFieldAccessor",
+                "ModelTypedAccessor",
                 # Test models
-                'TestModel', 'MockModel', 'SampleModel',
-
+                "TestModel",
+                "MockModel",
+                "SampleModel",
                 # Legacy models (temporary exclusions)
-                'LegacyModel',
+                "LegacyModel",
             },
-
             excluded_files={
                 # Test files
-                'test_*.py', '*_test.py', 'tests.py',
-
+                "test_*.py",
+                "*_test.py",
+                "tests.py",
                 # Example files
-                'example*.py', '*_example.py', 'examples.py',
-
+                "example*.py",
+                "*_example.py",
+                "examples.py",
                 # Legacy and archived files
-                'legacy_*.py', '*_legacy.py', 'archived_*.py',
-
+                "legacy_*.py",
+                "*_legacy.py",
+                "archived_*.py",
                 # Base classes and mixins
-                'base_*.py', '*_base.py', 'mixin*.py', '*_mixin.py',
+                "base_*.py",
+                "*_base.py",
+                "mixin*.py",
+                "*_mixin.py",
             },
-
             uuid_patterns=[
-                r'^.*_id$',
-                r'^id$',
-                r'^execution_id$',
-                r'^request_id$',
-                r'^session_id$',
-                r'^node_id$',
-                r'^connection_id$',
-                r'^trace_id$',
-                r'^span_id$',
-                r'^parent_span_id$',
-                r'^example_id$',
-                r'^user_id$',
-                r'^entity_id$',
-                r'^object_id$',
-                r'^resource_id$',
-                r'^task_id$',
-                r'^job_id$',
-                r'^workflow_id$',
-                r'^process_id$',
-                r'^instance_id$',
-                r'^reference_id$',
-                r'^correlation_id$',
+                r"^.*_id$",
+                r"^id$",
+                r"^execution_id$",
+                r"^request_id$",
+                r"^session_id$",
+                r"^node_id$",
+                r"^connection_id$",
+                r"^trace_id$",
+                r"^span_id$",
+                r"^parent_span_id$",
+                r"^example_id$",
+                r"^user_id$",
+                r"^entity_id$",
+                r"^object_id$",
+                r"^resource_id$",
+                r"^task_id$",
+                r"^job_id$",
+                r"^workflow_id$",
+                r"^process_id$",
+                r"^instance_id$",
+                r"^reference_id$",
+                r"^correlation_id$",
             ],
-
             enum_patterns={
-                'status': ['active', 'inactive', 'pending', 'completed', 'failed', 'running'],
-                'state': ['new', 'processing', 'finished', 'error', 'cancelled'],
-                'type': ['user', 'admin', 'system', 'guest', 'service'],
-                'category': ['primary', 'secondary', 'tertiary', 'other'],
-                'priority': ['low', 'medium', 'high', 'critical', 'urgent'],
-                'level': ['debug', 'info', 'warning', 'error', 'critical'],
-                'mode': ['auto', 'manual', 'hybrid', 'disabled'],
-                'role': ['read', 'write', 'admin', 'owner', 'viewer'],
-                'visibility': ['public', 'private', 'internal', 'restricted'],
-                'format': ['json', 'xml', 'yaml', 'csv', 'text'],
+                "status": [
+                    "active",
+                    "inactive",
+                    "pending",
+                    "completed",
+                    "failed",
+                    "running",
+                ],
+                "state": ["new", "processing", "finished", "error", "cancelled"],
+                "type": ["user", "admin", "system", "guest", "service"],
+                "category": ["primary", "secondary", "tertiary", "other"],
+                "priority": ["low", "medium", "high", "critical", "urgent"],
+                "level": ["debug", "info", "warning", "error", "critical"],
+                "mode": ["auto", "manual", "hybrid", "disabled"],
+                "role": ["read", "write", "admin", "owner", "viewer"],
+                "visibility": ["public", "private", "internal", "restricted"],
+                "format": ["json", "xml", "yaml", "csv", "text"],
             },
-
             max_string_fields_per_model=5,
             strict_mode=False,
         )
 
     @classmethod
-    def from_file(cls, config_path: Path) -> 'ValidationConfig':
+    def from_file(cls, config_path: Path) -> "ValidationConfig":
         """Load configuration from JSON file."""
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             # Convert sets and lists from JSON
             config = cls.default()
 
-            if 'allowed_string_fields' in data:
-                config.allowed_string_fields = set(data['allowed_string_fields'])
+            if "allowed_string_fields" in data:
+                config.allowed_string_fields = set(data["allowed_string_fields"])
 
-            if 'excluded_models' in data:
-                config.excluded_models = set(data['excluded_models'])
+            if "excluded_models" in data:
+                config.excluded_models = set(data["excluded_models"])
 
-            if 'excluded_files' in data:
-                config.excluded_files = set(data['excluded_files'])
+            if "excluded_files" in data:
+                config.excluded_files = set(data["excluded_files"])
 
-            if 'uuid_patterns' in data:
-                config.uuid_patterns = data['uuid_patterns']
+            if "uuid_patterns" in data:
+                config.uuid_patterns = data["uuid_patterns"]
 
-            if 'enum_patterns' in data:
-                config.enum_patterns = data['enum_patterns']
+            if "enum_patterns" in data:
+                config.enum_patterns = data["enum_patterns"]
 
-            if 'max_string_fields_per_model' in data:
-                config.max_string_fields_per_model = data['max_string_fields_per_model']
+            if "max_string_fields_per_model" in data:
+                config.max_string_fields_per_model = data["max_string_fields_per_model"]
 
-            if 'strict_mode' in data:
-                config.strict_mode = data['strict_mode']
+            if "strict_mode" in data:
+                config.strict_mode = data["strict_mode"]
 
             return config
 
@@ -280,9 +333,11 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign):
         """Visit annotated assignments (field definitions)."""
-        if (self.is_pydantic_model and
-            isinstance(node.target, ast.Name) and
-            self.current_class):
+        if (
+            self.is_pydantic_model
+            and isinstance(node.target, ast.Name)
+            and self.current_class
+        ):
 
             field_name = node.target.id
             annotation_str = self._get_annotation_string(node.annotation)
@@ -292,10 +347,7 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 
             # Check individual field patterns
             self._check_field_annotation(
-                field_name,
-                annotation_str,
-                node.lineno,
-                node.col_offset
+                field_name, annotation_str, node.lineno, node.col_offset
             )
 
         self.generic_visit(node)
@@ -308,23 +360,20 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
                 return True
             elif isinstance(base, ast.Attribute):
                 # Handle pydantic.BaseModel
-                if (isinstance(base.value, ast.Name) and
-                    base.value.id == "pydantic" and
-                    base.attr == "BaseModel"):
+                if (
+                    isinstance(base.value, ast.Name)
+                    and base.value.id == "pydantic"
+                    and base.attr == "BaseModel"
+                ):
                     return True
 
         # Check if BaseModel is in imports and used
         return "BaseModel" in self.imports and any(
-            isinstance(base, ast.Name) and base.id == "BaseModel"
-            for base in node.bases
+            isinstance(base, ast.Name) and base.id == "BaseModel" for base in node.bases
         )
 
     def _check_field_annotation(
-        self,
-        field_name: str,
-        annotation_str: str,
-        line_number: int,
-        column: int
+        self, field_name: str, annotation_str: str, line_number: int, column: int
     ):
         """Check if a field annotation violates string typing rules."""
         # Skip allowed string fields
@@ -337,48 +386,54 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 
         # Check UUID patterns
         if self._matches_uuid_patterns(field_name):
-            self.violations.append(StringTypingViolation(
-                file_path=self.file_path,
-                line_number=line_number,
-                column=column,
-                field_name=field_name,
-                violation_type="string_id",
-                severity="error",
-                current_annotation=annotation_str,
-                suggested_fix="UUID",
-                explanation=f"Field '{field_name}' appears to be an identifier and should use UUID type for proper type safety and validation"
-            ))
+            self.violations.append(
+                StringTypingViolation(
+                    file_path=self.file_path,
+                    line_number=line_number,
+                    column=column,
+                    field_name=field_name,
+                    violation_type="string_id",
+                    severity="error",
+                    current_annotation=annotation_str,
+                    suggested_fix="UUID",
+                    explanation=f"Field '{field_name}' appears to be an identifier and should use UUID type for proper type safety and validation",
+                )
+            )
             return
 
         # Check enum patterns
         enum_suggestion = self._check_enum_patterns(field_name)
         if enum_suggestion:
-            self.violations.append(StringTypingViolation(
-                file_path=self.file_path,
-                line_number=line_number,
-                column=column,
-                field_name=field_name,
-                violation_type="string_enum",
-                severity="warning" if not self.config.strict_mode else "error",
-                current_annotation=annotation_str,
-                suggested_fix=f"Enum{field_name.title()}",
-                explanation=f"Field '{field_name}' appears to represent a categorical value and should use an enum. Common values: {', '.join(enum_suggestion[:3])}{'...' if len(enum_suggestion) > 3 else ''}"
-            ))
+            self.violations.append(
+                StringTypingViolation(
+                    file_path=self.file_path,
+                    line_number=line_number,
+                    column=column,
+                    field_name=field_name,
+                    violation_type="string_enum",
+                    severity="warning" if not self.config.strict_mode else "error",
+                    current_annotation=annotation_str,
+                    suggested_fix=f"Enum{field_name.title()}",
+                    explanation=f"Field '{field_name}' appears to represent a categorical value and should use an enum. Common values: {', '.join(enum_suggestion[:3])}{'...' if len(enum_suggestion) > 3 else ''}",
+                )
+            )
             return
 
         # Check for entity reference patterns
         if self._is_entity_reference(field_name):
-            self.violations.append(StringTypingViolation(
-                file_path=self.file_path,
-                line_number=line_number,
-                column=column,
-                field_name=field_name,
-                violation_type="string_entity_reference",
-                severity="warning" if not self.config.strict_mode else "error",
-                current_annotation=annotation_str,
-                suggested_fix="UUID + display_name: str (separate fields)",
-                explanation=f"Field '{field_name}' appears to reference an entity. Consider using a UUID for the reference and a separate display_name field for human-readable text"
-            ))
+            self.violations.append(
+                StringTypingViolation(
+                    file_path=self.file_path,
+                    line_number=line_number,
+                    column=column,
+                    field_name=field_name,
+                    violation_type="string_entity_reference",
+                    severity="warning" if not self.config.strict_mode else "error",
+                    current_annotation=annotation_str,
+                    suggested_fix="UUID + display_name: str (separate fields)",
+                    explanation=f"Field '{field_name}' appears to reference an entity. Consider using a UUID for the reference and a separate display_name field for human-readable text",
+                )
+            )
 
     def _analyze_model_string_usage(self):
         """Analyze the overall string usage in a model."""
@@ -386,9 +441,11 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 
         # Count fields that are likely to be strings based on their names
         for field_name in self.current_model_fields:
-            if (field_name not in self.config.allowed_string_fields and
-                not self._matches_uuid_patterns(field_name) and
-                not self._check_enum_patterns(field_name)):
+            if (
+                field_name not in self.config.allowed_string_fields
+                and not self._matches_uuid_patterns(field_name)
+                and not self._check_enum_patterns(field_name)
+            ):
                 string_field_count += 1
 
         # Check if the model has too many string fields
@@ -397,22 +454,27 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
             violation_line = 1
             violation_col = 0
 
-            self.violations.append(StringTypingViolation(
-                file_path=self.file_path,
-                line_number=violation_line,
-                column=violation_col,
-                field_name=self.current_class or "Unknown",
-                violation_type="excessive_string_fields",
-                severity="warning",
-                current_annotation="",
-                suggested_fix="Use more specific types (UUID, enums, separate models)",
-                explanation=f"Model '{self.current_class}' has {string_field_count} string fields (limit: {self.config.max_string_fields_per_model}). Consider using more specific types or breaking into multiple models"
-            ))
+            self.violations.append(
+                StringTypingViolation(
+                    file_path=self.file_path,
+                    line_number=violation_line,
+                    column=violation_col,
+                    field_name=self.current_class or "Unknown",
+                    violation_type="excessive_string_fields",
+                    severity="warning",
+                    current_annotation="",
+                    suggested_fix="Use more specific types (UUID, enums, separate models)",
+                    explanation=f"Model '{self.current_class}' has {string_field_count} string fields (limit: {self.config.max_string_fields_per_model}). Consider using more specific types or breaking into multiple models",
+                )
+            )
 
     def _matches_uuid_patterns(self, field_name: str) -> bool:
         """Check if field name matches UUID patterns."""
         import re
-        return any(re.match(pattern, field_name) for pattern in self.config.uuid_patterns)
+
+        return any(
+            re.match(pattern, field_name) for pattern in self.config.uuid_patterns
+        )
 
     def _check_enum_patterns(self, field_name: str) -> Optional[List[str]]:
         """Check if field name matches enum patterns and return suggested values."""
@@ -426,16 +488,16 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 
     def _is_entity_reference(self, field_name: str) -> bool:
         """Check if field appears to reference an entity."""
-        entity_patterns = [
-            '_name', 'name', '_title', 'title', '_label', 'label'
-        ]
+        entity_patterns = ["_name", "name", "_title", "title", "_label", "label"]
 
         # Check if it's a name field but not a display name
         field_lower = field_name.lower()
-        return (any(pattern in field_lower for pattern in entity_patterns) and
-                'display' not in field_lower and
-                'human' not in field_lower and
-                'friendly' not in field_lower)
+        return (
+            any(pattern in field_lower for pattern in entity_patterns)
+            and "display" not in field_lower
+            and "human" not in field_lower
+            and "friendly" not in field_lower
+        )
 
     def _is_string_type(self, annotation_str: str) -> bool:
         """Check if annotation represents a string type."""
@@ -448,9 +510,11 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
             return True
 
         # String unions (but not including UUID or enums)
-        if ("str" in annotation_str and
-            "UUID" not in annotation_str and
-            "Enum" not in annotation_str):
+        if (
+            "str" in annotation_str
+            and "UUID" not in annotation_str
+            and "Enum" not in annotation_str
+        ):
             return True
 
         return False
@@ -472,9 +536,13 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
         elif isinstance(node, ast.Attribute):
             return f"{self._ast_to_string(node.value)}.{node.attr}"
         elif isinstance(node, ast.Subscript):
-            return f"{self._ast_to_string(node.value)}[{self._ast_to_string(node.slice)}]"
+            return (
+                f"{self._ast_to_string(node.value)}[{self._ast_to_string(node.slice)}]"
+            )
         elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
-            return f"{self._ast_to_string(node.left)} | {self._ast_to_string(node.right)}"
+            return (
+                f"{self._ast_to_string(node.left)} | {self._ast_to_string(node.right)}"
+            )
         elif isinstance(node, ast.Tuple):
             elements = [self._ast_to_string(elt) for elt in node.elts]
             return f"({', '.join(elements)})"
@@ -624,7 +692,9 @@ class StringTypingValidator:
 
                     for violation in file_violations:
                         severity_icon = "❌" if violation.severity == "error" else "⚠️"
-                        print(f"  {severity_icon} Line {violation.line_number}:{violation.column} - {violation.field_name}")
+                        print(
+                            f"  {severity_icon} Line {violation.line_number}:{violation.column} - {violation.field_name}"
+                        )
                         print(f"      Type: {violation.violation_type}")
                         print(f"      Current: {violation.current_annotation}")
                         print(f"      Suggested: {violation.suggested_fix}")
@@ -634,8 +704,12 @@ class StringTypingValidator:
                 print("🔧 Quick Fix Guide:")
                 print("   1. ID fields: user_id: str → user_id: UUID")
                 print("   2. Status fields: status: str → status: StatusEnum")
-                print("   3. Entity names: user_name: str → user_id: UUID + display_name: str")
-                print("   4. Too many strings: Break model into smaller, more specific models")
+                print(
+                    "   3. Entity names: user_name: str → user_id: UUID + display_name: str"
+                )
+                print(
+                    "   4. Too many strings: Break model into smaller, more specific models"
+                )
                 print()
 
             if len(errors) > 0:
@@ -646,7 +720,9 @@ class StringTypingValidator:
                 print("⚠️  VALIDATION PASSED (warnings only)")
 
         else:
-            print(f"✅ String Typing Validation PASSED ({self.checked_files} files checked)")
+            print(
+                f"✅ String Typing Validation PASSED ({self.checked_files} files checked)"
+            )
 
     def has_errors(self) -> bool:
         """Check if there are any validation errors."""
@@ -658,6 +734,7 @@ class StringTypingValidator:
 
 def setup_timeout_handler():
     """Setup timeout handler for long-running validations."""
+
     def timeout_handler(signum, frame):
         raise TimeoutError("Validation operation timed out")
 
@@ -667,14 +744,16 @@ def setup_timeout_handler():
 def main() -> int:
     """Main entry point for the validation hook."""
     try:
-        if len(sys.argv) < 2 or '--help' in sys.argv or '-h' in sys.argv:
-            print("Usage: validate-string-typing.py [--config CONFIG] [--strict] [--dir] <path1> [path2] ...")
+        if len(sys.argv) < 2 or "--help" in sys.argv or "-h" in sys.argv:
+            print(
+                "Usage: validate-string-typing.py [--config CONFIG] [--strict] [--dir] <path1> [path2] ..."
+            )
             print("  --config: Path to configuration JSON file")
             print("  --strict: Treat warnings as errors")
             print("  --dir: Recursively scan directories for Python files")
             print("  Without --dir: Treat arguments as individual Python files")
             print("  --help, -h: Show this help message")
-            return 0 if '--help' in sys.argv or '-h' in sys.argv else 1
+            return 0 if "--help" in sys.argv or "-h" in sys.argv else 1
 
         # Parse arguments
         args = sys.argv[1:]

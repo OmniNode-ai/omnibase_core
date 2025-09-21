@@ -5,13 +5,14 @@ Tests the refactored connection properties model with UUID references
 and backward compatibility factory methods.
 """
 
-import pytest
 from uuid import UUID, uuid4
 
+import pytest
+
+from src.omnibase_core.enums.enum_instance_type import EnumInstanceType
 from src.omnibase_core.models.connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
-from src.omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 
 class TestModelCustomConnectionProperties:
@@ -40,7 +41,7 @@ class TestModelCustomConnectionProperties:
             database_name="test_db",
             schema_name="test_schema",
             charset="utf8",
-            collation="utf8_general_ci"
+            collation="utf8_general_ci",
         )
 
         assert props.database_display_name == "test_db"
@@ -55,7 +56,7 @@ class TestModelCustomConnectionProperties:
             queue_name="test_queue",
             exchange_name="test_exchange",
             routing_key="test.key",
-            durable=True
+            durable=True,
         )
 
         assert props.queue_display_name == "test_queue"
@@ -69,7 +70,7 @@ class TestModelCustomConnectionProperties:
         props = ModelCustomConnectionProperties.create_service_connection(
             service_name="test_service",
             instance_type=EnumInstanceType.T3_MEDIUM,
-            region="us-west-2"
+            region="us-west-2",
         )
 
         assert props.service_display_name == "test_service"
@@ -80,8 +81,7 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_string(self):
         """Test creating service connection with string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service",
-            instance_type="t3.medium"
+            service_name="test_service", instance_type="t3.medium"
         )
 
         assert props.service_display_name == "test_service"
@@ -90,8 +90,7 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_generic_string(self):
         """Test creating service connection with generic string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service",
-            instance_type="large"
+            service_name="test_service", instance_type="large"
         )
 
         assert props.service_display_name == "test_service"
@@ -100,8 +99,7 @@ class TestModelCustomConnectionProperties:
     def test_service_connection_factory_with_unknown_string(self):
         """Test creating service connection with unknown string instance type."""
         props = ModelCustomConnectionProperties.create_service_connection(
-            service_name="test_service",
-            instance_type="custom_unknown_type"
+            service_name="test_service", instance_type="custom_unknown_type"
         )
 
         assert props.service_display_name == "test_service"
@@ -125,7 +123,7 @@ class TestModelCustomConnectionProperties:
             exchange_id=exchange_id,
             exchange_display_name="Display Exchange",
             service_id=service_id,
-            service_display_name="Display Service"
+            service_display_name="Display Service",
         )
 
         assert props.database_id == database_id
@@ -141,7 +139,7 @@ class TestModelCustomConnectionProperties:
             schema_display_name="test_schema",
             queue_display_name="test_queue",
             exchange_display_name="test_exchange",
-            service_display_name="test_service"
+            service_display_name="test_service",
         )
 
         assert props.get_database_identifier() == "test_db"
@@ -163,7 +161,7 @@ class TestModelCustomConnectionProperties:
             schema_id=schema_id,
             queue_id=queue_id,
             exchange_id=exchange_id,
-            service_id=service_id
+            service_id=service_id,
         )
 
         assert props.get_database_identifier() == str(database_id)
@@ -191,7 +189,7 @@ class TestModelCustomConnectionProperties:
             database_id=database_id,
             database_display_name="display_db",
             schema_id=schema_id,
-            schema_display_name="display_schema"
+            schema_display_name="display_schema",
         )
 
         # Display names should take priority
@@ -200,9 +198,7 @@ class TestModelCustomConnectionProperties:
 
     def test_instance_type_enum_validation(self):
         """Test that instance type properly validates enum values."""
-        props = ModelCustomConnectionProperties(
-            instance_type=EnumInstanceType.T3_LARGE
-        )
+        props = ModelCustomConnectionProperties(instance_type=EnumInstanceType.T3_LARGE)
 
         assert props.instance_type == EnumInstanceType.T3_LARGE
         assert str(props.instance_type) == "t3.large"
@@ -213,7 +209,7 @@ class TestModelCustomConnectionProperties:
             database_display_name="test_db",
             instance_type=EnumInstanceType.T3_MEDIUM,
             max_connections=100,
-            enable_compression=True
+            enable_compression=True,
         )
 
         # Test dict conversion (Pydantic serialization)
@@ -225,9 +221,7 @@ class TestModelCustomConnectionProperties:
 
     def test_custom_properties_integration(self):
         """Test integration with custom properties."""
-        props = ModelCustomConnectionProperties(
-            database_display_name="test_db"
-        )
+        props = ModelCustomConnectionProperties(database_display_name="test_db")
 
         # Custom properties should be initialized
         assert props.custom_properties is not None

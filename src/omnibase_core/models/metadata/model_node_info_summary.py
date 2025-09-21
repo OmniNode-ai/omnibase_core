@@ -12,11 +12,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
-from ...enums.enum_node_type import EnumNodeType
 from ...enums.enum_complexity_level import EnumComplexityLevel
 from ...enums.enum_documentation_quality import EnumDocumentationQuality
-from ...utils.uuid_helpers import uuid_from_string
+from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...enums.enum_node_type import EnumNodeType
+from ...utils.uuid_utilities import uuid_from_string
 from .model_semver import ModelSemVer
 
 
@@ -30,14 +30,21 @@ class ModelNodeInfoSummary(BaseModel):
     """
 
     # Core node info - UUID-based entity references
-    node_id: UUID = Field(default_factory=lambda: uuid_from_string("default", "node"), description="Unique identifier for the node")
+    node_id: UUID = Field(
+        default_factory=lambda: uuid_from_string("default", "node"),
+        description="Unique identifier for the node",
+    )
     node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str | None = Field(None, description="Node description")
-    node_type: EnumNodeType = Field(default=EnumNodeType.UNKNOWN, description="Type of node")
+    node_type: EnumNodeType = Field(
+        default=EnumNodeType.UNKNOWN, description="Type of node"
+    )
     status: EnumMetadataNodeStatus = Field(
         default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
     )
-    complexity: EnumComplexityLevel = Field(default=EnumComplexityLevel.MEDIUM, description="Node complexity level")
+    complexity: EnumComplexityLevel = Field(
+        default=EnumComplexityLevel.MEDIUM, description="Node complexity level"
+    )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Node version",
@@ -62,7 +69,8 @@ class ModelNodeInfoSummary(BaseModel):
     has_documentation: bool = Field(default=False, description="Has documentation")
     has_examples: bool = Field(default=False, description="Has examples")
     documentation_quality: EnumDocumentationQuality = Field(
-        default=EnumDocumentationQuality.UNKNOWN, description="Documentation quality level"
+        default=EnumDocumentationQuality.UNKNOWN,
+        description="Documentation quality level",
     )
 
     # Metrics

@@ -23,14 +23,20 @@ class ModelCliAction(BaseModel):
     to register their own actions dynamically.
     """
 
-    action_id: UUID = Field(default_factory=uuid4, description="Globally unique action identifier")
+    action_id: UUID = Field(
+        default_factory=uuid4, description="Globally unique action identifier"
+    )
     action_name_id: UUID = Field(..., description="UUID for action name")
-    action_display_name: str | None = Field(None, description="Human-readable action name")
+    action_display_name: str | None = Field(
+        None, description="Human-readable action name"
+    )
     node_id: UUID = Field(..., description="UUID-based node reference")
     node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
-    category: EnumActionCategory | None = Field(None, description="Action category for grouping")
+    category: EnumActionCategory | None = Field(
+        None, description="Action category for grouping"
+    )
 
     @classmethod
     def from_contract_action(
@@ -46,7 +52,9 @@ class ModelCliAction(BaseModel):
 
         # Generate UUIDs from names
         action_hash = hashlib.sha256(action_name.encode()).hexdigest()
-        action_name_id = UUID(f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}")
+        action_name_id = UUID(
+            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
+        )
 
         return cls(
             action_name_id=action_name_id,
@@ -70,8 +78,11 @@ class ModelCliAction(BaseModel):
     def action_name(self, value: str) -> None:
         """Backward compatibility setter for action_name."""
         import hashlib
+
         action_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.action_name_id = UUID(f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}")
+        self.action_name_id = UUID(
+            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
+        )
         self.action_display_name = value
 
     @property
@@ -90,7 +101,9 @@ class ModelCliAction(BaseModel):
 
     def matches(self, action_name: str) -> bool:
         """Check if this action matches the given action name."""
-        return self.action_display_name == action_name or self.action_name == action_name
+        return (
+            self.action_display_name == action_name or self.action_name == action_name
+        )
 
     def matches_node_id(self, node_id: UUID) -> bool:
         """Check if this action belongs to the specified node ID."""

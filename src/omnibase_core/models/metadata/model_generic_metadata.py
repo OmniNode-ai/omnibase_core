@@ -110,8 +110,11 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         """Backward compatibility setter for name."""
         if value:
             import hashlib
+
             metadata_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.metadata_id = UUID(f"{metadata_hash[:8]}-{metadata_hash[8:12]}-{metadata_hash[12:16]}-{metadata_hash[16:20]}-{metadata_hash[20:32]}")
+            self.metadata_id = UUID(
+                f"{metadata_hash[:8]}-{metadata_hash[8:12]}-{metadata_hash[12:16]}-{metadata_hash[16:20]}-{metadata_hash[20:32]}"
+            )
         else:
             self.metadata_id = None
         self.metadata_display_name = value

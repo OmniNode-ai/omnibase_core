@@ -8,6 +8,7 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metric_data_type import EnumMetricDataType
@@ -96,8 +97,11 @@ class ModelMetricsData(BaseModel):
         """Backward compatibility setter for collection_name."""
         if value:
             import hashlib
+
             collection_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.collection_id = UUID(f"{collection_hash[:8]}-{collection_hash[8:12]}-{collection_hash[12:16]}-{collection_hash[16:20]}-{collection_hash[20:32]}")
+            self.collection_id = UUID(
+                f"{collection_hash[:8]}-{collection_hash[8:12]}-{collection_hash[12:16]}-{collection_hash[16:20]}-{collection_hash[20:32]}"
+            )
         else:
             self.collection_id = None
         self.collection_display_name = value

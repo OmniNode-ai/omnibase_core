@@ -5,6 +5,7 @@ Defines sources of context data in CLI operations.
 """
 
 from __future__ import annotations
+
 from enum import Enum
 
 

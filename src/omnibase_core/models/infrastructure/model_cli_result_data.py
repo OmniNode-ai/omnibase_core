@@ -31,7 +31,9 @@ class ModelCliResultData(BaseModel):
     error_message: str | None = Field(description="Error message if failed")
     # Entity reference with UUID
     tool_id: UUID | None = Field(description="Unique identifier of the tool")
-    tool_display_name: str | None = Field(description="Human-readable tool name if available")
+    tool_display_name: str | None = Field(
+        description="Human-readable tool name if available"
+    )
     execution_time_ms: int | None = Field(description="Execution time in milliseconds")
     status_code: int = Field(description="Status code")
     warnings: list[str] = Field(description="Warning messages")

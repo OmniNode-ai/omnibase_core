@@ -10,9 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_field_type import EnumFieldType
 from .model_field_identity import ModelFieldIdentity
 from .model_field_validation_rules import ModelFieldValidationRules
-from ...enums.enum_field_type import EnumFieldType
 
 
 class ModelMetadataFieldInfo(BaseModel):
@@ -25,8 +26,7 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Grouped properties by concern
     identity: ModelFieldIdentity = Field(
-        ...,
-        description="Field identity and naming information"
+        ..., description="Field identity and naming information"
     )
 
     # Field properties (non-string)
@@ -59,7 +59,7 @@ class ModelMetadataFieldInfo(BaseModel):
     # Validation rules (grouped)
     validation: ModelFieldValidationRules = Field(
         default_factory=ModelFieldValidationRules,
-        description="Validation rules for the field"
+        description="Validation rules for the field",
     )
 
     # Backward compatibility properties
@@ -100,7 +100,7 @@ class ModelMetadataFieldInfo(BaseModel):
         identity = ModelFieldIdentity(
             name="METADATA_VERSION",
             field_name="metadata_version",
-            description="Version of the metadata schema"
+            description="Version of the metadata schema",
         )
         return cls(
             identity=identity,
@@ -117,7 +117,7 @@ class ModelMetadataFieldInfo(BaseModel):
         identity = ModelFieldIdentity(
             name="PROTOCOL_VERSION",
             field_name="protocol_version",
-            description="Version of the ONEX protocol"
+            description="Version of the ONEX protocol",
         )
         return cls(
             identity=identity,
@@ -132,9 +132,7 @@ class ModelMetadataFieldInfo(BaseModel):
     def name_field(cls) -> ModelMetadataFieldInfo:
         """Name field info."""
         identity = ModelFieldIdentity(
-            name="NAME",
-            field_name="name",
-            description="Name of the node/tool"
+            name="NAME", field_name="name", description="Name of the node/tool"
         )
         return cls(
             identity=identity,
@@ -148,9 +146,7 @@ class ModelMetadataFieldInfo(BaseModel):
     def version(cls) -> ModelMetadataFieldInfo:
         """Version field info."""
         identity = ModelFieldIdentity(
-            name="VERSION",
-            field_name="version",
-            description="Version of the node/tool"
+            name="VERSION", field_name="version", description="Version of the node/tool"
         )
         return cls(
             identity=identity,
@@ -165,9 +161,7 @@ class ModelMetadataFieldInfo(BaseModel):
     def uuid(cls) -> ModelMetadataFieldInfo:
         """UUID field info."""
         identity = ModelFieldIdentity(
-            name="UUID",
-            field_name="uuid",
-            description="Unique identifier"
+            name="UUID", field_name="uuid", description="Unique identifier"
         )
         validation = ModelFieldValidationRules(
             validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

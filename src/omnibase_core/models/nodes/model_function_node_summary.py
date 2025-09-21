@@ -13,11 +13,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_function_status import EnumFunctionStatus
-from ...enums.enum_return_type import EnumReturnType
 from ...enums.enum_action_category import EnumActionCategory
 from ...enums.enum_complexity_level import EnumComplexityLevel
-from ...utils.uuid_helpers import uuid_from_string
+from ...enums.enum_function_status import EnumFunctionStatus
+from ...enums.enum_return_type import EnumReturnType
+from ...utils.uuid_utilities import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -31,15 +31,18 @@ class ModelFunctionNodeSummary(BaseModel):
 
     # Essential function info - UUID-based entity references
     function_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for the function entity"
+        default_factory=uuid4, description="Unique identifier for the function entity"
     )
-    function_display_name: str | None = Field(None, description="Human-readable function name")
+    function_display_name: str | None = Field(
+        None, description="Human-readable function name"
+    )
     description: str | None = Field(None, description="Function description")
     status: EnumFunctionStatus = Field(
         default=EnumFunctionStatus.ACTIVE, description="Function status"
     )
-    complexity: EnumComplexityLevel = Field(default=EnumComplexityLevel.SIMPLE, description="Function complexity level")
+    complexity: EnumComplexityLevel = Field(
+        default=EnumComplexityLevel.SIMPLE, description="Function complexity level"
+    )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Function version",
@@ -47,7 +50,9 @@ class ModelFunctionNodeSummary(BaseModel):
 
     # Function signature summary
     parameter_count: int = Field(default=0, description="Number of parameters")
-    return_type: EnumReturnType | None = Field(None, description="Return type annotation")
+    return_type: EnumReturnType | None = Field(
+        None, description="Return type annotation"
+    )
 
     # Quality indicators (condensed)
     quality_score: float = Field(
@@ -166,7 +171,11 @@ class ModelFunctionNodeSummary(BaseModel):
             performance_score=min(performance_score, 1.0),
             execution_count=execution_count,
             updated_at=updated_at,
-            primary_category=EnumActionCategory(categories[0]) if categories and categories[0] in [e.value for e in EnumActionCategory] else None,
+            primary_category=(
+                EnumActionCategory(categories[0])
+                if categories and categories[0] in [e.value for e in EnumActionCategory]
+                else None
+            ),
             tag_count=len(tags),
         )
 
