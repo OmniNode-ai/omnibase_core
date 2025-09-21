@@ -4,6 +4,8 @@ Environment field accessor with type coercion.
 Specialized accessor for environment properties with automatic type conversion.
 """
 
+from __future__ import annotations
+
 from .model_field_accessor import ModelFieldAccessor
 
 

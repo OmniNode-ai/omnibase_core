@@ -5,6 +5,8 @@ Duration model for execution tracking without complex dependencies.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 

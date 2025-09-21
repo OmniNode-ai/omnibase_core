@@ -5,6 +5,8 @@ This module provides the ModelFallbackMetadata for strongly-typed
 metadata configuration for fallback strategies.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 

@@ -5,6 +5,8 @@ Typed data model for ModelTimeout serialization.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_runtime_category import EnumRuntimeCategory

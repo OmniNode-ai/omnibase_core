@@ -2,7 +2,10 @@
 Generic metadata model for flexible data storage.
 """
 
+from __future__ import annotations
+
 from typing import Generic, TypeVar
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -16,9 +19,13 @@ T = TypeVar("T", str, int, bool, float)
 class ModelGenericMetadata(BaseModel, Generic[T]):
     """Generic metadata storage with flexible fields."""
 
-    name: str | None = Field(
+    metadata_id: UUID | None = Field(
         default=None,
-        description="Metadata name or identifier",
+        description="UUID for metadata identifier",
+    )
+    metadata_display_name: str | None = Field(
+        default=None,
+        description="Human-readable metadata name",
     )
     description: str | None = Field(
         default=None,
@@ -92,3 +99,19 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             del self.custom_fields[key]
             return True
         return False
+
+    @property
+    def name(self) -> str | None:
+        """Backward compatibility property for name."""
+        return self.metadata_display_name
+
+    @name.setter
+    def name(self, value: str | None) -> None:
+        """Backward compatibility setter for name."""
+        if value:
+            import hashlib
+            metadata_hash = hashlib.sha256(value.encode()).hexdigest()
+            self.metadata_id = UUID(f"{metadata_hash[:8]}-{metadata_hash[8:12]}-{metadata_hash[12:16]}-{metadata_hash[16:20]}-{metadata_hash[20:32]}")
+        else:
+            self.metadata_id = None
+        self.metadata_display_name = value

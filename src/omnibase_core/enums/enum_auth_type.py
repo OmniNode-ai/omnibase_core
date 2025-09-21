@@ -5,6 +5,8 @@ Provides strongly typed authentication type values for security configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -31,22 +33,22 @@ class EnumAuthType(str, Enum):
         return self.value
 
     @classmethod
-    def requires_credentials(cls, auth_type: "EnumAuthType") -> bool:
+    def requires_credentials(cls, auth_type: EnumAuthType) -> bool:
         """Check if the auth type requires credentials."""
         return auth_type != cls.NONE
 
     @classmethod
-    def is_token_based(cls, auth_type: "EnumAuthType") -> bool:
+    def is_token_based(cls, auth_type: EnumAuthType) -> bool:
         """Check if the auth type is token-based."""
         return auth_type in {cls.BEARER, cls.OAUTH2, cls.JWT, cls.API_KEY}
 
     @classmethod
-    def is_certificate_based(cls, auth_type: "EnumAuthType") -> bool:
+    def is_certificate_based(cls, auth_type: EnumAuthType) -> bool:
         """Check if the auth type is certificate-based."""
         return auth_type == cls.MTLS
 
     @classmethod
-    def supports_refresh(cls, auth_type: "EnumAuthType") -> bool:
+    def supports_refresh(cls, auth_type: EnumAuthType) -> bool:
         """Check if the auth type supports token refresh."""
         return auth_type in {cls.OAUTH2, cls.JWT}
 

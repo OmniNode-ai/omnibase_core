@@ -5,7 +5,13 @@ Clean, strongly-typed replacement for ModelCustomFields[Any] in CLI advanced par
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
+
+from ...enums.enum_debug_level import EnumDebugLevel
+from ...enums.enum_security_level import EnumSecurityLevel
+from .model_output_format_options import ModelOutputFormatOptions
 
 
 class ModelCliAdvancedParams(BaseModel):
@@ -47,10 +53,9 @@ class ModelCliAdvancedParams(BaseModel):
     )
 
     # Debug and logging parameters
-    debug_level: str = Field(
-        default="info",
+    debug_level: EnumDebugLevel = Field(
+        default=EnumDebugLevel.INFO,
         description="Debug level",
-        pattern="^(debug|info|warn|error)$",
     )
     enable_profiling: bool = Field(
         default=False, description="Enable performance profiling"
@@ -58,18 +63,17 @@ class ModelCliAdvancedParams(BaseModel):
     enable_tracing: bool = Field(default=False, description="Enable execution tracing")
 
     # Output formatting parameters
-    output_format_options: dict[str, str] = Field(
-        default_factory=dict, description="Output format options"
+    output_format_options: ModelOutputFormatOptions = Field(
+        default_factory=ModelOutputFormatOptions, description="Output format options"
     )
     compression_enabled: bool = Field(
         default=False, description="Enable output compression"
     )
 
     # Security parameters
-    security_level: str = Field(
-        default="standard",
+    security_level: EnumSecurityLevel = Field(
+        default=EnumSecurityLevel.STANDARD,
         description="Security level",
-        pattern="^(minimal|standard|strict)$",
     )
     enable_sandbox: bool = Field(
         default=False, description="Enable sandboxed execution"
@@ -128,7 +132,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     def enable_debug_mode(self) -> None:
         """Enable full debug mode."""
-        self.debug_level = "debug"
+        self.debug_level = EnumDebugLevel.DEBUG
         self.enable_profiling = True
         self.enable_tracing = True
 
@@ -140,7 +144,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     def enable_security_mode(self) -> None:
         """Enable strict security mode."""
-        self.security_level = "strict"
+        self.security_level = EnumSecurityLevel.STRICT
         self.enable_sandbox = True
 
 

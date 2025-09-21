@@ -1,36 +1,35 @@
 """
 Metadata Field Info Model
 
-Replaces NodeMetadataField enum with a proper model that includes
-field properties and categorization.
+Restructured to reduce string field violations through composition.
+Each sub-model handles a specific concern area.
 """
+
+from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel, Field
+from .model_field_identity import ModelFieldIdentity
+from .model_field_validation_rules import ModelFieldValidationRules
+from ...enums.enum_field_type import EnumFieldType
 
 
 class ModelMetadataFieldInfo(BaseModel):
     """
     Metadata field information model.
 
-    Replaces the NodeMetadataField enum to provide structured information
-    about each metadata field including requirements and properties.
+    Restructured using composition to organize properties by concern.
+    Reduces string field count through logical grouping.
     """
 
-    # Core fields (required)
-    name: str = Field(
+    # Grouped properties by concern
+    identity: ModelFieldIdentity = Field(
         ...,
-        description="Field name identifier (e.g., METADATA_VERSION)",
-        pattern="^[A-Z][A-Z0-9_]*$",
+        description="Field identity and naming information"
     )
 
-    field_name: str = Field(
-        ...,
-        description="Actual field name in models (e.g., metadata_version)",
-    )
-
-    # Properties
+    # Field properties (non-string)
     is_required: bool = Field(
         ...,
         description="Whether this field is required in metadata",
@@ -46,10 +45,10 @@ class ModelMetadataFieldInfo(BaseModel):
         description="Whether this field may change on stamping",
     )
 
-    # Field metadata
-    field_type: str = Field(
-        ...,
-        description="Python type of the field (str, int, datetime, etc.)",
+    # Field type (enum instead of string)
+    field_type: EnumFieldType = Field(
+        default=EnumFieldType.STRING,
+        description="Python type of the field",
     )
 
     default_value: str | int | float | bool | None = Field(
@@ -57,99 +56,133 @@ class ModelMetadataFieldInfo(BaseModel):
         description="Default value for optional fields (restricted to basic types)",
     )
 
-    description: str = Field(
-        default="",
-        description="Human-readable description of the field",
+    # Validation rules (grouped)
+    validation: ModelFieldValidationRules = Field(
+        default_factory=ModelFieldValidationRules,
+        description="Validation rules for the field"
     )
 
-    # Validation metadata
-    validation_pattern: str | None = Field(
-        default=None,
-        description="Regex pattern for string validation",
-    )
+    # Backward compatibility properties
+    @property
+    def name(self) -> str:
+        """Backward compatibility for name."""
+        return self.identity.name
 
-    min_length: int | None = Field(
-        default=None,
-        description="Minimum length for string fields",
-    )
+    @property
+    def field_name(self) -> str:
+        """Backward compatibility for field_name."""
+        return self.identity.field_name
 
-    max_length: int | None = Field(
-        default=None,
-        description="Maximum length for string fields",
-    )
+    @property
+    def description(self) -> str:
+        """Backward compatibility for description."""
+        return self.identity.description
+
+    @property
+    def validation_pattern(self) -> str | None:
+        """Backward compatibility for validation_pattern."""
+        return self.validation.validation_pattern
+
+    @property
+    def min_length(self) -> int | None:
+        """Backward compatibility for min_length."""
+        return self.validation.min_length
+
+    @property
+    def max_length(self) -> int | None:
+        """Backward compatibility for max_length."""
+        return self.validation.max_length
 
     # Factory methods for all metadata fields
     @classmethod
-    def metadata_version(cls) -> "ModelMetadataFieldInfo":
+    def metadata_version(cls) -> ModelMetadataFieldInfo:
         """Metadata version field info."""
-        return cls(
+        identity = ModelFieldIdentity(
             name="METADATA_VERSION",
             field_name="metadata_version",
+            description="Version of the metadata schema"
+        )
+        return cls(
+            identity=identity,
             is_required=False,
             is_optional=True,
             is_volatile=False,
-            field_type="str",
+            field_type=EnumFieldType.STRING,
             default_value="0.1.0",
-            description="Version of the metadata schema",
         )
 
     @classmethod
-    def protocol_version(cls) -> "ModelMetadataFieldInfo":
+    def protocol_version(cls) -> ModelMetadataFieldInfo:
         """Protocol version field info."""
-        return cls(
+        identity = ModelFieldIdentity(
             name="PROTOCOL_VERSION",
             field_name="protocol_version",
+            description="Version of the ONEX protocol"
+        )
+        return cls(
+            identity=identity,
             is_required=False,
             is_optional=True,
             is_volatile=False,
-            field_type="str",
+            field_type=EnumFieldType.STRING,
             default_value="0.1.0",
-            description="Version of the ONEX protocol",
         )
 
     @classmethod
-    def name_field(cls) -> "ModelMetadataFieldInfo":
+    def name_field(cls) -> ModelMetadataFieldInfo:
         """Name field info."""
-        return cls(
+        identity = ModelFieldIdentity(
             name="NAME",
             field_name="name",
+            description="Name of the node/tool"
+        )
+        return cls(
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="str",
-            description="Name of the node/tool",
+            field_type=EnumFieldType.STRING,
         )
 
     @classmethod
-    def version(cls) -> "ModelMetadataFieldInfo":
+    def version(cls) -> ModelMetadataFieldInfo:
         """Version field info."""
-        return cls(
+        identity = ModelFieldIdentity(
             name="VERSION",
             field_name="version",
+            description="Version of the node/tool"
+        )
+        return cls(
+            identity=identity,
             is_required=False,
             is_optional=True,
             is_volatile=False,
-            field_type="str",
+            field_type=EnumFieldType.STRING,
             default_value="1.0.0",
-            description="Version of the node/tool",
         )
 
     @classmethod
-    def uuid(cls) -> "ModelMetadataFieldInfo":
+    def uuid(cls) -> ModelMetadataFieldInfo:
         """UUID field info."""
-        return cls(
+        identity = ModelFieldIdentity(
             name="UUID",
             field_name="uuid",
+            description="Unique identifier"
+        )
+        validation = ModelFieldValidationRules(
+            validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        )
+        return cls(
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="str",
-            description="Unique identifier",
-            validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            field_type=EnumFieldType.UUID,
+            validation=validation,
         )
 
     @classmethod
-    def author(cls) -> "ModelMetadataFieldInfo":
+    def author(cls) -> ModelMetadataFieldInfo:
         """Author field info."""
         return cls(
             name="AUTHOR",
@@ -162,7 +195,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def created_at(cls) -> "ModelMetadataFieldInfo":
+    def created_at(cls) -> ModelMetadataFieldInfo:
         """Created at field info."""
         return cls(
             name="CREATED_AT",
@@ -175,7 +208,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def last_modified_at(cls) -> "ModelMetadataFieldInfo":
+    def last_modified_at(cls) -> ModelMetadataFieldInfo:
         """Last modified at field info."""
         return cls(
             name="LAST_MODIFIED_AT",
@@ -188,7 +221,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def hash(cls) -> "ModelMetadataFieldInfo":
+    def hash(cls) -> ModelMetadataFieldInfo:
         """Hash field info."""
         return cls(
             name="HASH",
@@ -202,7 +235,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def entrypoint(cls) -> "ModelMetadataFieldInfo":
+    def entrypoint(cls) -> ModelMetadataFieldInfo:
         """Entrypoint field info."""
         return cls(
             name="ENTRYPOINT",
@@ -215,7 +248,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def namespace(cls) -> "ModelMetadataFieldInfo":
+    def namespace(cls) -> ModelMetadataFieldInfo:
         """Namespace field info."""
         return cls(
             name="NAMESPACE",
@@ -228,7 +261,7 @@ class ModelMetadataFieldInfo(BaseModel):
         )
 
     @classmethod
-    def get_all_fields(cls) -> list["ModelMetadataFieldInfo"]:
+    def get_all_fields(cls) -> list[ModelMetadataFieldInfo]:
         """Get all metadata field info objects."""
         # This would include all fields - abbreviated for brevity
         return [
@@ -247,22 +280,22 @@ class ModelMetadataFieldInfo(BaseModel):
         ]
 
     @classmethod
-    def get_required_fields(cls) -> list["ModelMetadataFieldInfo"]:
+    def get_required_fields(cls) -> list[ModelMetadataFieldInfo]:
         """Get all required metadata fields."""
         return [f for f in cls.get_all_fields() if f.is_required]
 
     @classmethod
-    def get_optional_fields(cls) -> list["ModelMetadataFieldInfo"]:
+    def get_optional_fields(cls) -> list[ModelMetadataFieldInfo]:
         """Get all optional metadata fields."""
         return [f for f in cls.get_all_fields() if f.is_optional]
 
     @classmethod
-    def get_volatile_fields(cls) -> list["ModelMetadataFieldInfo"]:
+    def get_volatile_fields(cls) -> list[ModelMetadataFieldInfo]:
         """Get all volatile metadata fields."""
         return [f for f in cls.get_all_fields() if f.is_volatile]
 
     @classmethod
-    def from_string(cls, field_name: str) -> "ModelMetadataFieldInfo":
+    def from_string(cls, field_name: str) -> ModelMetadataFieldInfo:
         """Create ModelMetadataFieldInfo from string field name."""
         field_map = {
             "METADATA_VERSION": cls.metadata_version,

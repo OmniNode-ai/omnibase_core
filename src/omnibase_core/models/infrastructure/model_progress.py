@@ -5,12 +5,15 @@ Specialized model for tracking and managing progress with validation and utiliti
 Updated to use ModelTimeBased for all timing aspects instead of raw datetime calculations.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
+from ...enums.enum_status_message import EnumStatusMessage
 from .model_metrics_data import ModelMetricsData
 from .model_time_based import ModelTimeBased
 
@@ -56,10 +59,9 @@ class ModelProgress(BaseModel):
     )
 
     # Status and description
-    status_message: str | None = Field(
+    status_message: EnumStatusMessage | None = Field(
         default=None,
-        description="Current progress status message",
-        max_length=500,
+        description="Current progress status",
     )
     detailed_info: str | None = Field(
         default=None,
@@ -257,9 +259,11 @@ class ModelProgress(BaseModel):
         self.phase_percentage = max(0.0, min(100.0, percentage))
         self.last_update_time = datetime.now(UTC)
 
-    def set_status(self, message: str, detailed_info: str | None = None) -> None:
-        """Set status message and optional detailed info."""
-        self.status_message = message
+    def set_status(
+        self, status: EnumStatusMessage, detailed_info: str | None = None
+    ) -> None:
+        """Set status and optional detailed info."""
+        self.status_message = status
         if detailed_info is not None:
             self.detailed_info = detailed_info
         self.last_update_time = datetime.now(UTC)
@@ -370,7 +374,7 @@ class ModelProgress(BaseModel):
         }
 
     @classmethod
-    def create_simple(cls, total_steps: int | None = None) -> "ModelProgress":
+    def create_simple(cls, total_steps: int | None = None) -> ModelProgress:
         """Create simple progress tracker."""
         return cls(total_steps=total_steps)
 
@@ -379,7 +383,7 @@ class ModelProgress(BaseModel):
         cls,
         milestones: dict[str, float],
         total_steps: int | None = None,
-    ) -> "ModelProgress":
+    ) -> ModelProgress:
         """Create progress tracker with predefined milestones."""
         return cls(
             total_steps=total_steps,
@@ -391,7 +395,7 @@ class ModelProgress(BaseModel):
         cls,
         phases: list[EnumExecutionPhase],
         total_steps: int | None = None,
-    ) -> "ModelProgress":
+    ) -> ModelProgress:
         """Create progress tracker with phase milestones."""
         milestones = {}
         phase_increment = 100.0 / len(phases)

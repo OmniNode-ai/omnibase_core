@@ -5,6 +5,8 @@ Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
+from __future__ import annotations
+
 from typing import Any, TypedDict
 
 from pydantic import BaseModel

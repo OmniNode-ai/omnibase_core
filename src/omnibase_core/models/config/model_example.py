@@ -5,6 +5,8 @@ This module provides the ModelExample class for strongly typed
 example data with comprehensive fields and validation.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 

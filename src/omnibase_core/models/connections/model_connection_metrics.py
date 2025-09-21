@@ -2,6 +2,8 @@
 Connection metrics model for network performance tracking.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 

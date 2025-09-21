@@ -4,6 +4,8 @@ Typed field accessor for specific value types.
 Provides type-safe field access with generic type support.
 """
 
+from __future__ import annotations
+
 from typing import Generic, TypeVar, cast
 
 from .model_field_accessor import ModelFieldAccessor

@@ -5,9 +5,13 @@ Individual metric model with universal type support.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from typing import Union
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_metric_data_type import EnumMetricDataType
 
 
 class ModelMetric(BaseModel):
@@ -17,8 +21,8 @@ class ModelMetric(BaseModel):
     value: Union[str, int, float, bool] = Field(
         ..., description="Metric value (string, int, float, or bool)"
     )
-    metric_type: str = Field(
-        ..., description="Type of metric (string, numeric, boolean)"
+    metric_type: EnumMetricDataType = Field(
+        ..., description="Data type of metric (string, numeric, boolean)"
     )
     unit: str | None = Field(
         None, description="Unit of measurement (for numeric metrics)"

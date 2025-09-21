@@ -5,6 +5,8 @@ Type-safe environment variable management with validation and security.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from typing import Any, Iterator
 
 from pydantic import BaseModel, Field, field_validator
@@ -129,7 +131,7 @@ class ModelEnvironmentVariables(BaseModel):
             if name not in self.secure_variables
         }
 
-    def merge(self, other: "ModelEnvironmentVariables", override: bool = True) -> None:
+    def merge(self, other: ModelEnvironmentVariables, override: bool = True) -> None:
         """
         Merge another environment variables model into this one.
 
@@ -172,7 +174,7 @@ class ModelEnvironmentVariables(BaseModel):
     @classmethod
     def from_system(
         cls, prefix: str | None = None, secure_patterns: list[str] | None = None
-    ) -> "ModelEnvironmentVariables":
+    ) -> ModelEnvironmentVariables:
         """
         Create from system environment variables.
 
@@ -225,7 +227,7 @@ class ModelEnvironmentVariables(BaseModel):
         del self.variables[name]
         self.secure_variables.discard(name)
 
-    def __iter__(self) -> "Iterator[str]":
+    def __iter__(self) -> Iterator[str]:
         """Iterate over variable names."""
         return iter(self.variables)
 

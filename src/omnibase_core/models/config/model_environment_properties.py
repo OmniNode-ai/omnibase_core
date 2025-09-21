@@ -5,6 +5,8 @@ Type-safe custom environment properties configuration with support
 for various property types and metadata.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -146,7 +148,7 @@ class ModelEnvironmentProperties(BaseModel):
             if key.startswith(prefix)
         }
 
-    def merge_properties(self, other: "ModelEnvironmentProperties") -> None:
+    def merge_properties(self, other: ModelEnvironmentProperties) -> None:
         """Merge properties from another instance."""
         self.properties.update(other.properties)
         self.property_metadata.update(other.property_metadata)
@@ -171,11 +173,11 @@ class ModelEnvironmentProperties(BaseModel):
             str,
             PropertyValue,
         ],
-    ) -> "ModelEnvironmentProperties":
+    ) -> ModelEnvironmentProperties:
         """Create from a dictionary of properties."""
         return cls(properties=properties)
 
     @classmethod
-    def create_empty(cls) -> "ModelEnvironmentProperties":
+    def create_empty(cls) -> ModelEnvironmentProperties:
         """Create empty properties instance."""
         return cls()

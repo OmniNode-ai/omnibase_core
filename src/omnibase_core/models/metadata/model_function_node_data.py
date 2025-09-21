@@ -5,12 +5,16 @@ Clean, strongly-typed replacement for the horrible FunctionNodeData union type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_function_status import EnumFunctionStatus
+from ...enums.enum_node_type import EnumNodeType
+from ...utils.uuid_helpers import uuid_from_string
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
@@ -26,16 +30,15 @@ class ModelFunctionNodeData(BaseModel):
     With proper structured data using specific field types.
     """
 
-    # Core identification
+    # Core identification - UUID-based entity references
     node_id: UUID = Field(
         default_factory=uuid4, description="Unique identifier for the function node"
     )
-
-    name: str = Field(..., description="Function node name")
+    node_display_name: str | None = Field(None, description="Human-readable function node name")
     description: str | None = Field(None, description="Node description")
 
     # Basic properties
-    node_type: str = Field(default="function", description="Type of node")
+    node_type: EnumNodeType = Field(default=EnumNodeType.FUNCTION, description="Type of node")
     status: EnumFunctionStatus = Field(
         default=EnumFunctionStatus.ACTIVE, description="Node status"
     )
@@ -99,9 +102,34 @@ class ModelFunctionNodeData(BaseModel):
     ) -> None:
         """Add a configuration object."""
         self.configurations.append(
-            ModelNestedConfiguration(
+            ModelNestedConfiguration.create_legacy(
                 config_name=config_name, config_type=config_type, settings=settings
             )
+        )
+
+    @property
+    def name(self) -> str:
+        """Get function node name with fallback to UUID-based name."""
+        return self.node_display_name or f"function_node_{str(self.node_id)[:8]}"
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set function node name (for backward compatibility)."""
+        self.node_display_name = value
+        # Update node_id to be deterministic based on name
+        self.node_id = uuid_from_string(value, "function_node")
+
+    @classmethod
+    def create_legacy(
+        cls,
+        name: str,
+        **kwargs: Any,
+    ) -> "ModelFunctionNodeData":
+        """Create function node data with legacy name parameter for backward compatibility."""
+        return cls(
+            node_id=uuid_from_string(name, "function_node"),
+            node_display_name=name,
+            **kwargs,
         )
 
 

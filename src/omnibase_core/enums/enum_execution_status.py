@@ -5,6 +5,8 @@ Migrated from archived and enhanced with SUCCESS value and utility methods.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -30,7 +32,7 @@ class EnumExecutionStatus(str, Enum):
         return self.value
 
     @classmethod
-    def is_terminal(cls, status: "EnumExecutionStatus") -> bool:
+    def is_terminal(cls, status: EnumExecutionStatus) -> bool:
         """Check if the status represents a terminal state."""
         return status in {
             cls.COMPLETED,
@@ -42,12 +44,12 @@ class EnumExecutionStatus(str, Enum):
         }
 
     @classmethod
-    def is_active(cls, status: "EnumExecutionStatus") -> bool:
+    def is_active(cls, status: EnumExecutionStatus) -> bool:
         """Check if the status represents an active execution."""
         return status in {cls.PENDING, cls.RUNNING}
 
     @classmethod
-    def is_successful(cls, status: "EnumExecutionStatus") -> bool:
+    def is_successful(cls, status: EnumExecutionStatus) -> bool:
         """Check if the status represents successful completion."""
         return status in {cls.COMPLETED, cls.SUCCESS}
 

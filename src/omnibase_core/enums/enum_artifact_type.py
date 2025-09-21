@@ -4,6 +4,8 @@ Artifact Type Enum.
 Strongly typed artifact type values for configuration.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 

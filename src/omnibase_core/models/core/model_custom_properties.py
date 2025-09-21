@@ -6,6 +6,8 @@ found across 15+ models in the codebase. Provides type-safe custom property hand
 with validation and utility methods.
 """
 
+from __future__ import annotations
+
 from typing import Union
 
 from pydantic import BaseModel, Field
@@ -129,7 +131,7 @@ class ModelCustomProperties(BaseModel):
     @classmethod
     def create_with_properties(
         cls, **kwargs: str | int | bool | float
-    ) -> "ModelCustomProperties":
+    ) -> ModelCustomProperties:
         """Create ModelCustomProperties with initial properties."""
         instance = cls()
         instance.update_properties(**kwargs)
@@ -138,7 +140,7 @@ class ModelCustomProperties(BaseModel):
     @classmethod
     def from_metadata(
         cls, metadata: dict[str, str | int | bool | float]
-    ) -> "ModelCustomProperties":
+    ) -> ModelCustomProperties:
         """
         Create ModelCustomProperties from custom_metadata field.
         Uses .model_validate() for proper Pydantic deserialization.

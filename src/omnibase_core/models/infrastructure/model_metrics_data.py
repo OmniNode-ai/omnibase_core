@@ -5,8 +5,13 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
+from uuid import UUID
 from pydantic import BaseModel, Field
 
+from ...enums.enum_metric_data_type import EnumMetricDataType
+from ...enums.enum_metrics_category import EnumMetricsCategory
 from .model_metric import ModelMetric
 
 
@@ -25,11 +30,14 @@ class ModelMetricsData(BaseModel):
     )
 
     # Metadata
-    collection_name: str | None = Field(
-        None, description="Name of the metrics collection"
+    collection_id: UUID | None = Field(None, description="UUID for metrics collection")
+    collection_display_name: str | None = Field(
+        None, description="Human-readable name of the metrics collection"
     )
 
-    category: str = Field(default="general", description="Category of metrics")
+    category: EnumMetricsCategory = Field(
+        default=EnumMetricsCategory.GENERAL, description="Category of metrics"
+    )
 
     tags: list[str] = Field(
         default_factory=list, description="Tags for organizing metrics"
@@ -44,11 +52,11 @@ class ModelMetricsData(BaseModel):
     ) -> None:
         """Add a metric with automatic type detection."""
         if isinstance(value, bool):  # Check bool first since bool is subclass of int
-            metric_type = "boolean"
+            metric_type = EnumMetricDataType.BOOLEAN
         elif isinstance(value, str):
-            metric_type = "string"
+            metric_type = EnumMetricDataType.STRING
         else:  # Must be int or float based on type annotation
-            metric_type = "numeric"
+            metric_type = EnumMetricDataType.NUMERIC
 
         metric = ModelMetric(
             key=key,
@@ -74,9 +82,25 @@ class ModelMetricsData(BaseModel):
         """Clear all metrics."""
         self.metrics.clear()
 
-    def get_metrics_by_type(self, metric_type: str) -> list[ModelMetric]:
+    def get_metrics_by_type(self, metric_type: EnumMetricDataType) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
         return [metric for metric in self.metrics if metric.metric_type == metric_type]
+
+    @property
+    def collection_name(self) -> str | None:
+        """Backward compatibility property for collection_name."""
+        return self.collection_display_name
+
+    @collection_name.setter
+    def collection_name(self, value: str | None) -> None:
+        """Backward compatibility setter for collection_name."""
+        if value:
+            import hashlib
+            collection_hash = hashlib.sha256(value.encode()).hexdigest()
+            self.collection_id = UUID(f"{collection_hash[:8]}-{collection_hash[8:12]}-{collection_hash[12:16]}-{collection_hash[16:20]}-{collection_hash[20:32]}")
+        else:
+            self.collection_id = None
+        self.collection_display_name = value
 
 
 # Export for use

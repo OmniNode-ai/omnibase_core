@@ -5,6 +5,8 @@ Provides strongly typed connection state values for monitoring connection status
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -29,22 +31,22 @@ class EnumConnectionState(str, Enum):
         return self.value
 
     @classmethod
-    def is_stable(cls, state: "EnumConnectionState") -> bool:
+    def is_stable(cls, state: EnumConnectionState) -> bool:
         """Check if the connection state is stable."""
         return state in {cls.CONNECTED, cls.DISCONNECTED}
 
     @classmethod
-    def is_transitional(cls, state: "EnumConnectionState") -> bool:
+    def is_transitional(cls, state: EnumConnectionState) -> bool:
         """Check if the connection state is transitional."""
         return state in {cls.CONNECTING, cls.RECONNECTING, cls.CLOSING}
 
     @classmethod
-    def is_error_state(cls, state: "EnumConnectionState") -> bool:
+    def is_error_state(cls, state: EnumConnectionState) -> bool:
         """Check if the connection state represents an error."""
         return state in {cls.ERROR, cls.TIMEOUT}
 
     @classmethod
-    def can_send_data(cls, state: "EnumConnectionState") -> bool:
+    def can_send_data(cls, state: EnumConnectionState) -> bool:
         """Check if data can be sent in this connection state."""
         return state == cls.CONNECTED
 

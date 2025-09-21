@@ -184,6 +184,17 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: validate-string-typing
+        name: ONEX String Typing Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-string-typing.py
+        args: ['--config', 'scripts/validation/string-typing-config.json', '--dir', 'src/omnibase_core/models/']
+        language: system
+        always_run: true
+        pass_filenames: false
+        files: ^src/omnibase_core/models/.*\.py$
+        exclude: ^(tests/|archive/|archived/|scripts/).*\.py$
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards

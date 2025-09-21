@@ -5,9 +5,14 @@ Clean, strongly-typed replacement for analytics union return types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ...utils.uuid_helpers import uuid_from_string
 
 
 class ModelMetadataAnalyticsSummary(BaseModel):
@@ -19,8 +24,9 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     With proper structured data using specific field types.
     """
 
-    # Core collection info
-    collection_name: str | None = Field(None, description="Name of the collection")
+    # Core collection info - UUID-based entity references
+    collection_id: UUID = Field(default_factory=lambda: uuid_from_string("default", "collection"), description="Unique identifier for the collection")
+    collection_display_name: str | None = Field(None, description="Human-readable collection name")
 
     # Node counts
     total_nodes: int = Field(default=0, description="Total number of nodes")
@@ -72,3 +78,15 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     )
 
     total_invocations: int = Field(default=0, description="Total number of invocations")
+
+    @property
+    def collection_name(self) -> str | None:
+        """Get collection name with fallback for backward compatibility."""
+        return self.collection_display_name
+
+    @collection_name.setter
+    def collection_name(self, value: str | None) -> None:
+        """Set collection name (for backward compatibility)."""
+        self.collection_display_name = value
+        if value:
+            self.collection_id = uuid_from_string(value, "collection")

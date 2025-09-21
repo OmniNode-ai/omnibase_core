@@ -5,6 +5,8 @@ This module provides the ModelPropertyMetadata class for storing metadata
 about individual properties in the environment property system.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_property_type import PropertyTypeEnum

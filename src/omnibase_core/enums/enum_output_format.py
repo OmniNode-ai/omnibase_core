@@ -5,6 +5,7 @@ Migrated from archived with enhanced utility methods.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 from enum import Enum
 
 
@@ -21,6 +22,7 @@ class EnumOutputFormat(str, Enum):
     JSON = "json"  # JSON format for machine consumption
     YAML = "yaml"  # YAML format for machine consumption
     XML = "xml"  # XML format for structured data
+    HTML = "html"  # HTML format for web display
     MARKDOWN = "markdown"  # Markdown format for documentation
     TABLE = "table"  # Tabular format for terminal display
     CSV = "csv"  # CSV format for tabular data
@@ -34,18 +36,19 @@ class EnumOutputFormat(str, Enum):
         return self.value
 
     @classmethod
-    def is_structured(cls, format_type: "EnumOutputFormat") -> bool:
+    def is_structured(cls, format_type: EnumOutputFormat) -> bool:
         """Check if the format is structured data."""
         return format_type in {cls.JSON, cls.YAML, cls.XML, cls.CSV}
 
     @classmethod
-    def is_human_readable(cls, format_type: "EnumOutputFormat") -> bool:
+    def is_human_readable(cls, format_type: EnumOutputFormat) -> bool:
         """Check if the format is human-readable."""
         return format_type in {
             cls.TEXT,
             cls.JSON,
             cls.YAML,
             cls.XML,
+            cls.HTML,
             cls.MARKDOWN,
             cls.TABLE,
             cls.CSV,
@@ -54,7 +57,7 @@ class EnumOutputFormat(str, Enum):
         }
 
     @classmethod
-    def is_machine_readable(cls, format_type: "EnumOutputFormat") -> bool:
+    def is_machine_readable(cls, format_type: EnumOutputFormat) -> bool:
         """Check if the format is optimized for machine consumption."""
         return format_type in {
             cls.JSON,

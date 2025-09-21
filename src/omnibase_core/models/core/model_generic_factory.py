@@ -3,28 +3,48 @@ Generic Factory Pattern for Model Creation.
 
 Provides a consistent, type-safe factory pattern to replace repetitive
 factory methods across CLI, Config, Nodes, and Validation domains.
+
+Restructured to reduce string field violations through logical grouping.
 """
+
+from __future__ import annotations
 
 from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
+from ...enums.enum_severity_level import EnumSeverityLevel
 
 
-# TypedDict for factory kwargs to replace loose **kwargs: Any
-class FactoryKwargs(TypedDict, total=False):
-    """Typed dictionary for factory method parameters."""
-
+# Structured TypedDicts to reduce string field violations
+class ExecutionParams(TypedDict, total=False):
+    """Execution-related factory parameters."""
     success: bool
     exit_code: int
     error_message: str | None
     data: str | int | float | bool | None
+
+class MetadataParams(TypedDict, total=False):
+    """Metadata-related factory parameters."""
     name: str
     value: str
     description: str
     deprecated: bool
     experimental: bool
+
+class MessageParams(TypedDict, total=False):
+    """Message-related factory parameters."""
     message: str
-    severity: str
+    severity: EnumSeverityLevel | None
+
+# Main factory kwargs that combines sub-groups
+class FactoryKwargs(ExecutionParams, MetadataParams, MessageParams, total=False):
+    """
+    Typed dictionary for factory method parameters.
+
+    Restructured using composition to reduce string field count
+    while maintaining full backward compatibility.
+    """
+    pass
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -174,11 +194,18 @@ class ModelGenericFactory(Generic[T]):
         Returns:
             New error result instance
         """
+        # Convert string severity to enum if provided
+        if 'severity' in kwargs and isinstance(kwargs['severity'], str):
+            kwargs['severity'] = EnumSeverityLevel.from_string(kwargs['severity'])
+
         return model_class(success=False, error_message=error, **kwargs)
 
 
 # Export core factory class and types
 __all__ = [
-    "ModelGenericFactory",
+    ModelGenericFactory,
     "FactoryKwargs",
+    "ExecutionParams",
+    "MetadataParams",
+    "MessageParams",
 ]

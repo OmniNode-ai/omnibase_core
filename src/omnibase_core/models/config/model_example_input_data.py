@@ -6,8 +6,12 @@ strongly-typed replacement for dict[str, Any] in example input data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
+from ...enums.enum_data_type import EnumDataType
+from ...enums.enum_io_type import EnumIOType
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -19,8 +23,8 @@ class ModelExampleInputData(BaseModel):
     """
 
     # Core data fields
-    data_type: str = Field(default="input", description="Type of input data")
-    format: str = Field(default="json", description="Data format")
+    data_type: EnumIOType = Field(default=EnumIOType.INPUT, description="Type of input data")
+    format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Input parameters
     parameters: dict[str, str | int | bool | float] = Field(
@@ -37,3 +41,7 @@ class ModelExampleInputData(BaseModel):
         None, description="Schema version for validation"
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")
+
+
+# Export the model
+__all__ = ["ModelExampleInputData"]

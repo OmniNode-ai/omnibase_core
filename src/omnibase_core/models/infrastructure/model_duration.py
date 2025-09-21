@@ -5,6 +5,8 @@ A duration model that delegates to ModelTimeBased for unified time handling.
 Provides convenient methods for working with time durations in various units.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -99,14 +101,14 @@ class ModelDuration(BaseModel):
         return str(self.time_based)
 
     @classmethod
-    def from_milliseconds(cls, ms: int) -> "ModelDuration":
+    def from_milliseconds(cls, ms: int) -> ModelDuration:
         """Create duration from milliseconds."""
         instance = cls()
         instance.time_based = ModelTimeBased(value=ms, unit=EnumTimeUnit.MILLISECONDS)
         return instance
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> "ModelDuration":
+    def from_seconds(cls, seconds: float) -> ModelDuration:
         """Create duration from seconds."""
         instance = cls()
         instance.time_based = ModelTimeBased(
@@ -115,7 +117,7 @@ class ModelDuration(BaseModel):
         return instance
 
     @classmethod
-    def from_minutes(cls, minutes: float) -> "ModelDuration":
+    def from_minutes(cls, minutes: float) -> ModelDuration:
         """Create duration from minutes."""
         instance = cls()
         instance.time_based = ModelTimeBased(
@@ -124,7 +126,7 @@ class ModelDuration(BaseModel):
         return instance
 
     @classmethod
-    def from_hours(cls, hours: float) -> "ModelDuration":
+    def from_hours(cls, hours: float) -> ModelDuration:
         """Create duration from hours."""
         instance = cls()
         instance.time_based = ModelTimeBased(
@@ -133,7 +135,7 @@ class ModelDuration(BaseModel):
         return instance
 
     @classmethod
-    def zero(cls) -> "ModelDuration":
+    def zero(cls) -> ModelDuration:
         """Create zero duration."""
         instance = cls()
         instance.time_based = ModelTimeBased.zero()

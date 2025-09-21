@@ -5,6 +5,8 @@ Universal time-based model replacing ModelDuration, ModelTimeout, and timing
 aspects of ModelProgress with a single generic type-safe implementation.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime, timedelta
 from typing import Any, Generic, TypeVar
 
@@ -243,7 +245,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         value: T,
         unit: EnumTimeUnit = EnumTimeUnit.SECONDS,
         description: str | None = None,
-    ) -> "ModelTimeBased[T]":
+    ) -> ModelTimeBased[T]:
         """Create a duration instance."""
         metadata = {"type": "duration"}
         if description:
@@ -260,7 +262,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         warning_threshold_value: T | None = None,
         allow_extension: bool = False,
         extension_limit_value: T | None = None,
-    ) -> "ModelTimeBased[T]":
+    ) -> ModelTimeBased[T]:
         """Create a timeout instance."""
         metadata = {"type": "timeout"}
         if description:
@@ -276,37 +278,37 @@ class ModelTimeBased(BaseModel, Generic[T]):
         )
 
     @classmethod
-    def from_milliseconds(cls, ms: int) -> "ModelTimeBased[int]":
+    def from_milliseconds(cls, ms: int) -> ModelTimeBased[int]:
         """Create from milliseconds."""
         return cls(value=ms, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> "ModelTimeBased[float]":
+    def from_seconds(cls, seconds: float) -> ModelTimeBased[float]:
         """Create from seconds."""
         return cls(value=seconds, unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
 
     @classmethod
-    def from_minutes(cls, minutes: float) -> "ModelTimeBased[float]":
+    def from_minutes(cls, minutes: float) -> ModelTimeBased[float]:
         """Create from minutes."""
         return cls(value=minutes, unit=EnumTimeUnit.MINUTES)  # type: ignore[return-value,arg-type]
 
     @classmethod
-    def from_hours(cls, hours: float) -> "ModelTimeBased[float]":
+    def from_hours(cls, hours: float) -> ModelTimeBased[float]:
         """Create from hours."""
         return cls(value=hours, unit=EnumTimeUnit.HOURS)  # type: ignore[return-value,arg-type]
 
     @classmethod
-    def from_days(cls, days: float) -> "ModelTimeBased[float]":
+    def from_days(cls, days: float) -> ModelTimeBased[float]:
         """Create from days."""
         return cls(value=days, unit=EnumTimeUnit.DAYS)  # type: ignore[return-value,arg-type]
 
     @classmethod
-    def zero(cls) -> "ModelTimeBased[int]":
+    def zero(cls) -> ModelTimeBased[int]:
         """Create zero duration."""
         return cls(value=0, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
 
     @classmethod
-    def from_timedelta(cls, delta: timedelta) -> "ModelTimeBased[float]":
+    def from_timedelta(cls, delta: timedelta) -> ModelTimeBased[float]:
         """Create from timedelta object."""
         return cls(value=delta.total_seconds(), unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
 
@@ -316,7 +318,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
         category: EnumRuntimeCategory,
         description: str | None = None,
         use_max_estimate: bool = True,
-    ) -> "ModelTimeBased[int]":
+    ) -> ModelTimeBased[int]:
         """Create timeout from runtime category."""
         min_seconds, max_seconds = category.estimated_seconds
         if use_max_estimate and max_seconds is not None:

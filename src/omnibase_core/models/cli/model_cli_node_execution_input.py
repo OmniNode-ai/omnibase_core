@@ -5,10 +5,13 @@ Replaces primitive dict parameters with type-safe Pydantic models
 for CLI node execution operations.
 """
 
+from __future__ import annotations
+
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ...enums.enum_category_filter import EnumCategoryFilter
 from ...enums.enum_cli_action import EnumCliAction
 from ...enums.enum_output_format import EnumOutputFormat
 from .model_cli_advanced_params import ModelCliAdvancedParams
@@ -24,15 +27,23 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     # Core execution parameters
     action: EnumCliAction = Field(..., description="Action to perform with the node")
-    node_name: str | None = Field(
+    node_id: UUID | None = Field(
         None,
-        description="Specific node name for targeted operations",
+        description="Node UUID for precise identification",
+    )
+    node_display_name: str | None = Field(
+        None,
+        description="Node display name for human-readable operations",
     )
 
     # Node-specific parameters
-    target_node: str | None = Field(
+    target_node_id: UUID | None = Field(
         None,
-        description="Target node name for node-info operations",
+        description="Target node UUID for precise node-info operations",
+    )
+    target_node_display_name: str | None = Field(
+        None,
+        description="Target node display name for node-info operations",
     )
 
     # Input/output configuration
@@ -50,7 +61,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         default=True,
         description="Only include healthy nodes in results",
     )
-    category_filter: str | None = Field(None, description="Filter nodes by category")
+    category_filter: EnumCategoryFilter | None = Field(None, description="Filter nodes by category")
 
     # Performance and timeouts
     timeout_seconds: float | None = Field(
@@ -89,12 +100,34 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Request UUID for tracking and correlation",
     )
 
+    @property
+    def node_name(self) -> str | None:
+        """Backward compatibility property for node_name."""
+        return self.node_display_name
+
+    @node_name.setter
+    def node_name(self, value: str | None) -> None:
+        """Backward compatibility setter for node_name."""
+        self.node_display_name = value
+
+    @property
+    def target_node(self) -> str | None:
+        """Backward compatibility property for target_node."""
+        return self.target_node_display_name
+
+    @target_node.setter
+    def target_node(self, value: str | None) -> None:
+        """Backward compatibility setter for target_node."""
+        self.target_node_display_name = value
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "action": "list_nodes",
-                "node_name": None,
-                "target_node": None,
+                "node_id": None,
+                "node_display_name": None,
+                "target_node_id": None,
+                "target_node_display_name": None,
                 "include_metadata": True,
                 "include_health_info": True,
                 "health_filter": True,

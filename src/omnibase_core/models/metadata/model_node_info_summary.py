@@ -5,11 +5,18 @@ Clean, strongly-typed replacement for node info union return types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...enums.enum_node_type import EnumNodeType
+from ...enums.enum_complexity_level import EnumComplexityLevel
+from ...enums.enum_documentation_quality import EnumDocumentationQuality
+from ...utils.uuid_helpers import uuid_from_string
 from .model_semver import ModelSemVer
 
 
@@ -22,14 +29,15 @@ class ModelNodeInfoSummary(BaseModel):
     With proper structured data using specific field types.
     """
 
-    # Core node info
-    name: str = Field(..., description="Node name")
+    # Core node info - UUID-based entity references
+    node_id: UUID = Field(default_factory=lambda: uuid_from_string("default", "node"), description="Unique identifier for the node")
+    node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str | None = Field(None, description="Node description")
-    node_type: str = Field(default="unknown", description="Type of node")
+    node_type: EnumNodeType = Field(default=EnumNodeType.UNKNOWN, description="Type of node")
     status: EnumMetadataNodeStatus = Field(
         default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
     )
-    complexity: str = Field(default="medium", description="Node complexity level")
+    complexity: EnumComplexityLevel = Field(default=EnumComplexityLevel.MEDIUM, description="Node complexity level")
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Node version",
@@ -53,8 +61,8 @@ class ModelNodeInfoSummary(BaseModel):
     # Quality indicators
     has_documentation: bool = Field(default=False, description="Has documentation")
     has_examples: bool = Field(default=False, description="Has examples")
-    documentation_quality: str = Field(
-        default="unknown", description="Documentation quality level"
+    documentation_quality: EnumDocumentationQuality = Field(
+        default=EnumDocumentationQuality.UNKNOWN, description="Documentation quality level"
     )
 
     # Metrics
@@ -73,6 +81,30 @@ class ModelNodeInfoSummary(BaseModel):
     )
 
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
+
+    @property
+    def name(self) -> str:
+        """Get node name with fallback to UUID-based name."""
+        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set node name (for backward compatibility)."""
+        self.node_display_name = value
+        self.node_id = uuid_from_string(value, "node")
+
+    @classmethod
+    def create_legacy(
+        cls,
+        name: str,
+        **kwargs,
+    ) -> "ModelNodeInfoSummary":
+        """Create node info summary with legacy name parameter for backward compatibility."""
+        return cls(
+            node_id=uuid_from_string(name, "node"),
+            node_display_name=name,
+            **kwargs,
+        )
 
 
 # Export the model

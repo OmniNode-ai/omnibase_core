@@ -5,6 +5,8 @@ Configuration base with custom properties support that combines the standard
 configuration base with ModelCustomProperties for extensible custom fields.
 """
 
+from __future__ import annotations
+
 from typing import TypeVar
 
 from .model_configuration_base import ModelConfigurationBase
@@ -21,7 +23,7 @@ class ModelTypedConfiguration(ModelConfigurationBase[T], ModelCustomProperties):
     for configurations that need extensible custom fields.
     """
 
-    def merge_configuration(self, other: "ModelTypedConfiguration[T]") -> None:
+    def merge_configuration(self, other: ModelTypedConfiguration[T]) -> None:
         """Merge another configuration into this one."""
         # Merge core configuration
         if other.name:
@@ -40,7 +42,7 @@ class ModelTypedConfiguration(ModelConfigurationBase[T], ModelCustomProperties):
 
         self.update_timestamp()
 
-    def copy_configuration(self) -> "ModelTypedConfiguration[T]":
+    def copy_configuration(self) -> ModelTypedConfiguration[T]:
         """Create a deep copy of this configuration."""
         # Use model_copy for proper Pydantic copying
         return self.model_copy(deep=True)

@@ -5,6 +5,8 @@ Defines all valid CLI actions that can be processed
 by node_cli, replacing hardcoded string literals.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 

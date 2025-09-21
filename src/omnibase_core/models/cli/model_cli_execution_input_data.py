@@ -5,11 +5,15 @@ Represents input data for CLI execution with proper validation.
 Replaces dict[str, Any] for input data with structured typing.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_data_type import EnumDataType
 
 
 class ModelCliExecutionInputData(BaseModel):
@@ -27,7 +31,7 @@ class ModelCliExecutionInputData(BaseModel):
     )
 
     # Data metadata
-    data_type: str = Field(..., description="Type of input data")
+    data_type: EnumDataType = Field(..., description="Type of input data")
     is_sensitive: bool = Field(default=False, description="Whether data is sensitive")
     is_required: bool = Field(default=False, description="Whether data is required")
 

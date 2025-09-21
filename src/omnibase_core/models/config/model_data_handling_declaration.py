@@ -2,6 +2,8 @@
 Data handling declaration model.
 """
 
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -28,7 +30,7 @@ class ModelDataHandlingDeclaration(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_data_handling_consistency(self) -> "ModelDataHandlingDeclaration":
+    def validate_data_handling_consistency(self) -> ModelDataHandlingDeclaration:
         """Validate consistency between fields."""
         # If processing sensitive data, should have classification or residency requirements
         if self.processes_sensitive_data:

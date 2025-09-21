@@ -5,12 +5,17 @@ Represents custom execution context with proper validation.
 Replaces dict[str, Any] for custom context with structured typing.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
 from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_context_type import EnumContextType
+from ...enums.enum_context_source import EnumContextSource
 
 
 class ModelCliExecutionContext(BaseModel):
@@ -28,7 +33,7 @@ class ModelCliExecutionContext(BaseModel):
     )
 
     # Context metadata
-    context_type: str = Field(..., description="Type of context data")
+    context_type: EnumContextType = Field(..., description="Type of context data")
     is_persistent: bool = Field(default=False, description="Whether context persists")
     priority: int = Field(default=0, description="Context priority", ge=0, le=10)
 
@@ -42,7 +47,7 @@ class ModelCliExecutionContext(BaseModel):
 
     # Validation
     description: str = Field(default="", description="Context description")
-    source: str = Field(default="user", description="Context data source")
+    source: EnumContextSource = Field(default=EnumContextSource.USER, description="Context data source")
 
     def get_string_value(self) -> str:
         """Get value as string representation."""

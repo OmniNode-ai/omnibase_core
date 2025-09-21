@@ -6,6 +6,8 @@ aggregation, and reporting that replaces scattered validation logic across
 the codebase.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -158,7 +160,7 @@ class ModelValidationContainer(BaseModel):
         """Check if validation passed (no errors)."""
         return not self.has_errors()
 
-    def merge_from(self, other: "ModelValidationContainer") -> None:
+    def merge_from(self, other: ModelValidationContainer) -> None:
         """Merge validation results from another container."""
         self.extend_errors(other.errors)
         self.extend_warnings(other.warnings)

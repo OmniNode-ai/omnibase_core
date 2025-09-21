@@ -4,6 +4,8 @@ Semantic Version Model
 Pydantic model for semantic versioning following SemVer specification.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -39,15 +41,15 @@ class ModelSemVer(BaseModel):
         """Check if this is a pre-release version."""
         return False  # No prerelease support in simplified version
 
-    def bump_major(self) -> "ModelSemVer":
+    def bump_major(self) -> ModelSemVer:
         """Bump major version, reset minor and patch to 0."""
         return ModelSemVer(major=self.major + 1, minor=0, patch=0)
 
-    def bump_minor(self) -> "ModelSemVer":
+    def bump_minor(self) -> ModelSemVer:
         """Bump minor version, reset patch to 0."""
         return ModelSemVer(major=self.major, minor=self.minor + 1, patch=0)
 
-    def bump_patch(self) -> "ModelSemVer":
+    def bump_patch(self) -> ModelSemVer:
         """Bump patch version."""
         return ModelSemVer(major=self.major, minor=self.minor, patch=self.patch + 1)
 
@@ -61,7 +63,7 @@ class ModelSemVer(BaseModel):
             and self.patch == other.patch
         )
 
-    def __lt__(self, other: "ModelSemVer") -> bool:
+    def __lt__(self, other: ModelSemVer) -> bool:
         """Check if this version is less than another."""
         if not isinstance(other, ModelSemVer):
             raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
@@ -71,11 +73,11 @@ class ModelSemVer(BaseModel):
             other.patch,
         )
 
-    def __le__(self, other: "ModelSemVer") -> bool:
+    def __le__(self, other: ModelSemVer) -> bool:
         """Check if this version is less than or equal to another."""
         return self == other or self < other
 
-    def __gt__(self, other: "ModelSemVer") -> bool:
+    def __gt__(self, other: ModelSemVer) -> bool:
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
             raise TypeError(f"Cannot compare ModelSemVer with {type(other).__name__}")
@@ -85,7 +87,7 @@ class ModelSemVer(BaseModel):
             other.patch,
         )
 
-    def __ge__(self, other: "ModelSemVer") -> bool:
+    def __ge__(self, other: ModelSemVer) -> bool:
         """Check if this version is greater than or equal to another."""
         return self == other or self > other
 
@@ -136,7 +138,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 def parse_input_state_version(
     input_state: dict[str, str | int | ModelSemVer | dict[str, int]],
-) -> "ModelSemVer":
+) -> ModelSemVer:
     """
     Parse a version from an input state dict, requiring structured dictionary format.
 

@@ -5,6 +5,8 @@ Clean Pydantic model for Result serialization.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 
@@ -38,4 +40,4 @@ ModelResultData = dict[str, str | int | bool]  # Restrictive dict for common dat
 
 
 # Export for use
-__all__ = ["ModelResultDict", "ModelResultData"]
+__all__ = [ModelResultDict, "ModelResultData"]

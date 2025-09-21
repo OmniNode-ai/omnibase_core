@@ -5,10 +5,13 @@ Clean, strongly-typed replacement for the horrible union return type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_data_format import EnumDataFormat
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary
 
@@ -30,7 +33,7 @@ class ModelExamplesCollectionSummary(BaseModel):
         None, description="Collection metadata summary"
     )
 
-    format: str = Field(default="json", description="Collection format")
+    format: EnumDataFormat = Field(default=EnumDataFormat.JSON, description="Collection format")
 
     schema_compliant: bool = Field(
         default=True, description="Whether collection is schema compliant"

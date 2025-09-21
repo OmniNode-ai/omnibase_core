@@ -5,6 +5,8 @@ Standardizes common patterns found across Config domain models,
 eliminating field duplication and providing consistent configuration interfaces.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Generic, Optional, TypeVar
 
@@ -75,22 +77,22 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         return str(self.version) if self.version else "1.0.0"
 
     @model_validator(mode="after")
-    def validate_configuration(self) -> "ModelConfigurationBase[T]":
+    def validate_configuration(self) -> ModelConfigurationBase[T]:
         """Override in subclasses for custom validation."""
         return self
 
     @classmethod
-    def create_empty(cls, name: str) -> "ModelConfigurationBase[T]":
+    def create_empty(cls, name: str) -> ModelConfigurationBase[T]:
         """Create an empty configuration with a name."""
         return cls(name=name, description=f"Empty {name} configuration")
 
     @classmethod
-    def create_with_data(cls, name: str, config_data: T) -> "ModelConfigurationBase[T]":
+    def create_with_data(cls, name: str, config_data: T) -> ModelConfigurationBase[T]:
         """Create configuration with typed data."""
         return cls(name=name, config_data=config_data)
 
     @classmethod
-    def create_disabled(cls, name: str) -> "ModelConfigurationBase[T]":
+    def create_disabled(cls, name: str) -> ModelConfigurationBase[T]:
         """Create a disabled configuration."""
         return cls(
             name=name, enabled=False, description=f"Disabled {name} configuration"

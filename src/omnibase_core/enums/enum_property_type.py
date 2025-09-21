@@ -5,6 +5,8 @@ This module provides the PropertyTypeEnum for defining supported property types
 in environment property storage with proper validation and constraints.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 

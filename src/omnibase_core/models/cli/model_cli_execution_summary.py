@@ -5,6 +5,8 @@ Represents execution summary with proper validation.
 Replaces dict[str, Any] for execution summary with structured typing.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -13,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_execution_status import EnumExecutionStatus
+from ...utils.uuid_helpers import uuid_from_string
 
 
 class ModelCliExecutionSummary(BaseModel):
@@ -23,11 +26,15 @@ class ModelCliExecutionSummary(BaseModel):
     type safety and validation for execution summary data.
     """
 
-    # Core execution information
+    # Core execution information - UUID-based entity references
     execution_id: UUID = Field(..., description="Unique execution identifier")
-    command_name: str = Field(..., description="Name of the CLI command")
-    target_node_name: Optional[str] = Field(
-        default=None, description="Target node name if applicable"
+    command_id: UUID = Field(..., description="UUID identifier for the CLI command")
+    command_display_name: str | None = Field(None, description="Human-readable command name")
+    target_node_id: Optional[UUID] = Field(
+        default=None, description="Target node UUID for precise identification"
+    )
+    target_node_display_name: Optional[str] = Field(
+        default=None, description="Target node display name if applicable"
     )
 
     # Execution state
@@ -79,6 +86,33 @@ class ModelCliExecutionSummary(BaseModel):
     def get_end_time_iso(self) -> Optional[str]:
         """Get end time as ISO string, None if not completed."""
         return self.end_time.isoformat() if self.end_time else None
+
+    @property
+    def command_name(self) -> str:
+        """Get command name with fallback to UUID-based name."""
+        return self.command_display_name or f"command_{str(self.command_id)[:8]}"
+
+    @command_name.setter
+    def command_name(self, value: str) -> None:
+        """Set command name (for backward compatibility)."""
+        self.command_display_name = value
+        # Update command_id to be deterministic based on name
+        self.command_id = uuid_from_string(value, "command")
+
+    @property
+    def target_node_name(self) -> str | None:
+        """Get target node name with fallback to UUID-based name."""
+        if self.target_node_id is None:
+            return None
+        return self.target_node_display_name or f"node_{str(self.target_node_id)[:8]}"
+
+    @target_node_name.setter
+    def target_node_name(self, value: str | None) -> None:
+        """Set target node name (for backward compatibility)."""
+        self.target_node_display_name = value
+        if value:
+            # Update target_node_id to be deterministic based on name
+            self.target_node_id = uuid_from_string(value, "node")
 
 
 # Export for use

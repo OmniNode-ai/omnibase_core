@@ -4,6 +4,8 @@ Custom fields accessor with initialization support.
 Specialized accessor for managing custom fields with automatic initialization.
 """
 
+from __future__ import annotations
+
 from .model_field_accessor import ModelFieldAccessor
 
 

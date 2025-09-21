@@ -5,9 +5,14 @@ Replaces hardcoded EnumNodeCliAction with extensible model that
 enables plugin extensibility and contract-driven action registration.
 """
 
+from __future__ import annotations
+
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_action_category import EnumActionCategory
 
 
 class ModelCliAction(BaseModel):
@@ -18,36 +23,79 @@ class ModelCliAction(BaseModel):
     to register their own actions dynamically.
     """
 
-    action_name: str = Field(
-        ...,
-        description="Action identifier",
-        pattern="^[a-z][a-z0-9_]*$",
-    )
-    node_name: str = Field(..., description="Node that provides this action")
+    action_id: UUID = Field(default_factory=uuid4, description="Globally unique action identifier")
+    action_name_id: UUID = Field(..., description="UUID for action name")
+    action_display_name: str | None = Field(None, description="Human-readable action name")
+    node_id: UUID = Field(..., description="UUID-based node reference")
+    node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
-    category: str | None = Field(None, description="Action category for grouping")
+    category: EnumActionCategory | None = Field(None, description="Action category for grouping")
 
     @classmethod
     def from_contract_action(
         cls,
         action_name: str,
+        node_id: UUID,
         node_name: str,
         description: str | None = None,
         **kwargs: Any,
-    ) -> "ModelCliAction":
+    ) -> ModelCliAction:
         """Factory method for creating actions from contract data."""
+        import hashlib
+
+        # Generate UUIDs from names
+        action_hash = hashlib.sha256(action_name.encode()).hexdigest()
+        action_name_id = UUID(f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}")
+
         return cls(
-            action_name=action_name,
-            node_name=node_name,
+            action_name_id=action_name_id,
+            action_display_name=action_name,
+            node_id=node_id,
+            node_display_name=node_name,
             description=description or f"{action_name} action for {node_name}",
             **kwargs,
         )
 
     def get_qualified_name(self) -> str:
         """Get fully qualified action name."""
-        return f"{self.node_name}:{self.action_name}"
+        return f"{self.node_display_name}:{self.action_display_name}"
+
+    @property
+    def action_name(self) -> str:
+        """Backward compatibility property for action_name."""
+        return self.action_display_name or f"action_{str(self.action_name_id)[:8]}"
+
+    @action_name.setter
+    def action_name(self, value: str) -> None:
+        """Backward compatibility setter for action_name."""
+        import hashlib
+        action_hash = hashlib.sha256(value.encode()).hexdigest()
+        self.action_name_id = UUID(f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}")
+        self.action_display_name = value
+
+    @property
+    def node_name(self) -> str:
+        """Backward compatibility property for node_name."""
+        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
+
+    @node_name.setter
+    def node_name(self, value: str) -> None:
+        """Backward compatibility setter for node_name."""
+        self.node_display_name = value
+
+    def get_globally_unique_id(self) -> str:
+        """Get globally unique identifier combining action_id and node_id."""
+        return f"{self.node_id}:{self.action_id}"
 
     def matches(self, action_name: str) -> bool:
         """Check if this action matches the given action name."""
-        return self.action_name == action_name
+        return self.action_display_name == action_name or self.action_name == action_name
+
+    def matches_node_id(self, node_id: UUID) -> bool:
+        """Check if this action belongs to the specified node ID."""
+        return self.node_id == node_id
+
+    def matches_action_id(self, action_id: UUID) -> bool:
+        """Check if this action has the specified action ID."""
+        return self.action_id == action_id

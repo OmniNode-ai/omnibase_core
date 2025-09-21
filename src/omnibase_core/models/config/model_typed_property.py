@@ -5,6 +5,8 @@ This module provides the ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TypeVar, Union
 from uuid import UUID

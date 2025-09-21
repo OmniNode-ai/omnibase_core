@@ -5,7 +5,10 @@ Unified generic model replacing type-specific metrics variants.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from typing import Any, Generic, TypeVar
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +18,8 @@ T = TypeVar("T", str, int, float, bool)
 class ModelTypedMetrics(BaseModel, Generic[T]):
     """Generic metrics model replacing type-specific variants."""
 
-    name: str = Field(..., description="Metric name")
+    metric_id: UUID = Field(..., description="UUID for metric identifier")
+    metric_display_name: str | None = Field(None, description="Human-readable metric name")
     value: T = Field(..., description="Typed metric value")
     unit: str | None = Field(None, description="Unit of measurement")
     description: str | None = Field(None, description="Metric description")
@@ -28,10 +32,14 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         unit: str | None = None,
         description: str | None = None,
         **kwargs: Any,
-    ) -> "ModelTypedMetrics[str]":
+    ) -> ModelTypedMetrics[str]:
         """Create a string metric."""
+        import hashlib
+        metric_hash = hashlib.sha256(name.encode()).hexdigest()
+        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+
         return ModelTypedMetrics[str](
-            name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
         )
 
     @classmethod
@@ -42,10 +50,14 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         unit: str | None = None,
         description: str | None = None,
         **kwargs: Any,
-    ) -> "ModelTypedMetrics[int]":
+    ) -> ModelTypedMetrics[int]:
         """Create an integer metric."""
+        import hashlib
+        metric_hash = hashlib.sha256(name.encode()).hexdigest()
+        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+
         return ModelTypedMetrics[int](
-            name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
         )
 
     @classmethod
@@ -56,10 +68,14 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         unit: str | None = None,
         description: str | None = None,
         **kwargs: Any,
-    ) -> "ModelTypedMetrics[float]":
+    ) -> ModelTypedMetrics[float]:
         """Create a float metric."""
+        import hashlib
+        metric_hash = hashlib.sha256(name.encode()).hexdigest()
+        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+
         return ModelTypedMetrics[float](
-            name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
         )
 
     @classmethod
@@ -70,11 +86,28 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
         unit: str | None = None,
         description: str | None = None,
         **kwargs: Any,
-    ) -> "ModelTypedMetrics[bool]":
+    ) -> ModelTypedMetrics[bool]:
         """Create a boolean metric."""
+        import hashlib
+        metric_hash = hashlib.sha256(name.encode()).hexdigest()
+        metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+
         return ModelTypedMetrics[bool](
-            name=name, value=value, unit=unit, description=description, **kwargs
+            metric_id=metric_id, metric_display_name=name, value=value, unit=unit, description=description, **kwargs
         )
+
+    @property
+    def name(self) -> str:
+        """Backward compatibility property for name."""
+        return self.metric_display_name or f"metric_{str(self.metric_id)[:8]}"
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Backward compatibility setter for name."""
+        import hashlib
+        metric_hash = hashlib.sha256(value.encode()).hexdigest()
+        self.metric_id = UUID(f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}")
+        self.metric_display_name = value
 
 
 # Export the model

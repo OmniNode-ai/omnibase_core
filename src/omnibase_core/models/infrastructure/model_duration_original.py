@@ -5,6 +5,8 @@ Type-safe duration representation with multiple time units
 and conversion capabilities. Enhanced with archived features.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -110,26 +112,26 @@ class ModelDuration(BaseModel):
         return "".join(parts)
 
     @classmethod
-    def from_milliseconds(cls, ms: int) -> "ModelDuration":
+    def from_milliseconds(cls, ms: int) -> ModelDuration:
         """Create duration from milliseconds."""
         return cls(milliseconds=ms)
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> "ModelDuration":
+    def from_seconds(cls, seconds: float) -> ModelDuration:
         """Create duration from seconds."""
         return cls(milliseconds=int(seconds * 1000))
 
     @classmethod
-    def from_minutes(cls, minutes: float) -> "ModelDuration":
+    def from_minutes(cls, minutes: float) -> ModelDuration:
         """Create duration from minutes."""
         return cls(milliseconds=int(minutes * 60 * 1000))
 
     @classmethod
-    def from_hours(cls, hours: float) -> "ModelDuration":
+    def from_hours(cls, hours: float) -> ModelDuration:
         """Create duration from hours."""
         return cls(milliseconds=int(hours * 60 * 60 * 1000))
 
     @classmethod
-    def zero(cls) -> "ModelDuration":
+    def zero(cls) -> ModelDuration:
         """Create zero duration."""
         return cls(milliseconds=0)

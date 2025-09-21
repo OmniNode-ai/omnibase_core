@@ -4,6 +4,8 @@ Execution Phase Enumeration.
 Defines the various phases of execution for CLI commands and operations.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -60,12 +62,12 @@ class EnumExecutionPhase(Enum):
         return self.value.replace("_", " ").title()
 
     @classmethod
-    def get_all_phases(cls) -> list["EnumExecutionPhase"]:
+    def get_all_phases(cls) -> list[EnumExecutionPhase]:
         """Get all execution phases."""
         return list(cls)
 
     @classmethod
-    def get_core_phases(cls) -> list["EnumExecutionPhase"]:
+    def get_core_phases(cls) -> list[EnumExecutionPhase]:
         """Get core execution phases."""
         return [
             cls.PARSING,
@@ -75,7 +77,7 @@ class EnumExecutionPhase(Enum):
         ]
 
     @classmethod
-    def get_io_phases(cls) -> list["EnumExecutionPhase"]:
+    def get_io_phases(cls) -> list[EnumExecutionPhase]:
         """Get IO-related phases."""
         return [
             cls.READING_INPUT,
@@ -84,7 +86,7 @@ class EnumExecutionPhase(Enum):
         ]
 
     @classmethod
-    def get_network_phases(cls) -> list["EnumExecutionPhase"]:
+    def get_network_phases(cls) -> list[EnumExecutionPhase]:
         """Get network-related phases."""
         return [
             cls.CONNECTING,

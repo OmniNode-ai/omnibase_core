@@ -5,6 +5,8 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import TypeVar
 
@@ -13,6 +15,7 @@ T = TypeVar("T")
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_config_category import EnumConfigCategory
 from ..infrastructure.model_duration import ModelDuration
 from ..validation.model_validation_error import ModelValidationError
 from .model_cli_debug_info import ModelCliDebugInfo
@@ -165,7 +168,7 @@ class ModelCliResult(BaseModel):
         self.validation_errors.append(error)
 
     def add_performance_metric(
-        self, name: str, value: int | float, unit: str = "", category: str = "general"
+        self, name: str, value: int | float, unit: str = "", category: EnumConfigCategory = EnumConfigCategory.GENERAL
     ) -> None:
         """Add a performance metric with proper typing."""
         # Performance metrics are now strongly typed - use proper model
@@ -296,7 +299,7 @@ class ModelCliResult(BaseModel):
         output_data: ModelCliOutputData | None = None,
         output_text: str | None = None,
         execution_time: ModelDuration | None = None,
-    ) -> "ModelCliResult":
+    ) -> ModelCliResult:
         """Create a successful result."""
         if execution_time is None:
             execution_time = ModelDuration(milliseconds=execution.get_elapsed_ms())
@@ -333,7 +336,7 @@ class ModelCliResult(BaseModel):
         error_details: str | None = None,
         validation_errors: list[ModelValidationError] | None = None,
         execution_time: ModelDuration | None = None,
-    ) -> "ModelCliResult":
+    ) -> ModelCliResult:
         """Create a failure result."""
         if execution_time is None:
             execution_time = ModelDuration(milliseconds=execution.get_elapsed_ms())
@@ -362,7 +365,7 @@ class ModelCliResult(BaseModel):
         execution: ModelCliExecution,
         validation_errors: list[ModelValidationError],
         execution_time: ModelDuration | None = None,
-    ) -> "ModelCliResult":
+    ) -> ModelCliResult:
         """Create a result for validation failures."""
         if execution_time is None:
             execution_time = ModelDuration(milliseconds=execution.get_elapsed_ms())

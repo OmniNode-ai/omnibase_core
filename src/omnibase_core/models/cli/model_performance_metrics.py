@@ -5,6 +5,8 @@ Restrictive model for CLI execution performance metrics
 with proper typing and validation.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 

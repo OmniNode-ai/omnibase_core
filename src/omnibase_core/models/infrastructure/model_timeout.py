@@ -5,6 +5,8 @@ Timeout wrapper for ModelTimeout that delegates to ModelTimeBased.
 This provides a convenient timeout interface built on the unified time-based model.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -223,7 +225,7 @@ class ModelTimeout(BaseModel):
         seconds: int,
         description: str | None = None,
         is_strict: bool = True,
-    ) -> "ModelTimeout":
+    ) -> ModelTimeout:
         """Create timeout from seconds."""
         return cls(
             timeout_seconds=seconds,
@@ -237,7 +239,7 @@ class ModelTimeout(BaseModel):
         minutes: float,
         description: str | None = None,
         is_strict: bool = True,
-    ) -> "ModelTimeout":
+    ) -> ModelTimeout:
         """Create timeout from minutes."""
         seconds = int(minutes * 60)
         return cls.from_seconds(seconds, description, is_strict)
@@ -248,7 +250,7 @@ class ModelTimeout(BaseModel):
         hours: float,
         description: str | None = None,
         is_strict: bool = True,
-    ) -> "ModelTimeout":
+    ) -> ModelTimeout:
         """Create timeout from hours."""
         seconds = int(hours * 3600)
         return cls.from_seconds(seconds, description, is_strict)
@@ -259,7 +261,7 @@ class ModelTimeout(BaseModel):
         category: EnumRuntimeCategory,
         description: str | None = None,
         use_max_estimate: bool = True,
-    ) -> "ModelTimeout":
+    ) -> ModelTimeout:
         """Create timeout from runtime category."""
         min_seconds, max_seconds = category.estimated_seconds
         if use_max_estimate and max_seconds is not None:
@@ -312,7 +314,7 @@ class ModelTimeout(BaseModel):
         return result
 
     @classmethod
-    def model_validate_typed(cls, data: ModelTimeoutData) -> "ModelTimeout":
+    def model_validate_typed(cls, data: ModelTimeoutData) -> ModelTimeout:
         """Create ModelTimeout from typed data using Pydantic validation."""
         # Convert ModelTimeoutData to dict for initialization
         init_data = data.model_dump()

@@ -4,6 +4,8 @@ Result Factory Pattern for Model Creation.
 Specialized factory for result-type models with success/error patterns.
 """
 
+from __future__ import annotations
+
 from typing import Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel

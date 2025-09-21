@@ -2,7 +2,10 @@
 Validation error model for tracking validation failures.
 """
 
+from __future__ import annotations
+
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -19,9 +22,13 @@ class ModelValidationError(BaseModel):
         default=EnumValidationSeverity.ERROR,
         description="Error severity level",
     )
-    field_name: str | None = Field(
+    field_id: UUID | None = Field(
         default=None,
-        description="Field name that caused the error",
+        description="UUID for field that caused the error",
+    )
+    field_display_name: str | None = Field(
+        default=None,
+        description="Human-readable field name that caused the error",
         min_length=1,
         max_length=255,
         pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$",
@@ -72,12 +79,19 @@ class ModelValidationError(BaseModel):
         message: str,
         field_name: str | None = None,
         error_code: str | None = None,
-    ) -> "ModelValidationError":
+    ) -> ModelValidationError:
         """Create a standard error."""
+        field_id = None
+        if field_name:
+            import hashlib
+            field_hash = hashlib.sha256(field_name.encode()).hexdigest()
+            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+
         return cls(
             message=message,
             severity=EnumValidationSeverity.ERROR,
-            field_name=field_name,
+            field_id=field_id,
+            field_display_name=field_name,
             error_code=error_code,
         )
 
@@ -87,12 +101,19 @@ class ModelValidationError(BaseModel):
         message: str,
         field_name: str | None = None,
         error_code: str | None = None,
-    ) -> "ModelValidationError":
+    ) -> ModelValidationError:
         """Create a critical error."""
+        field_id = None
+        if field_name:
+            import hashlib
+            field_hash = hashlib.sha256(field_name.encode()).hexdigest()
+            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+
         return cls(
             message=message,
             severity=EnumValidationSeverity.CRITICAL,
-            field_name=field_name,
+            field_id=field_id,
+            field_display_name=field_name,
             error_code=error_code,
         )
 
@@ -102,11 +123,38 @@ class ModelValidationError(BaseModel):
         message: str,
         field_name: str | None = None,
         error_code: str | None = None,
-    ) -> "ModelValidationError":
+    ) -> ModelValidationError:
         """Create a warning."""
+        field_id = None
+        if field_name:
+            import hashlib
+            field_hash = hashlib.sha256(field_name.encode()).hexdigest()
+            field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+
         return cls(
             message=message,
             severity=EnumValidationSeverity.WARNING,
-            field_name=field_name,
+            field_id=field_id,
+            field_display_name=field_name,
             error_code=error_code,
         )
+
+    @property
+    def field_name(self) -> str | None:
+        """Backward compatibility property for field_name."""
+        return self.field_display_name
+
+    @field_name.setter
+    def field_name(self, value: str | None) -> None:
+        """Backward compatibility setter for field_name."""
+        if value:
+            import hashlib
+            field_hash = hashlib.sha256(value.encode()).hexdigest()
+            self.field_id = UUID(f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}")
+        else:
+            self.field_id = None
+        self.field_display_name = value
+
+
+# Export for use
+__all__ = ["ModelValidationError"]

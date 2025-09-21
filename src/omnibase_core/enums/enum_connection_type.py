@@ -5,6 +5,8 @@ Provides strongly typed connection type values for network configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -30,12 +32,12 @@ class EnumConnectionType(str, Enum):
         return self.value
 
     @classmethod
-    def is_secure(cls, connection_type: "EnumConnectionType") -> bool:
+    def is_secure(cls, connection_type: EnumConnectionType) -> bool:
         """Check if the connection type is secure."""
         return connection_type in {cls.HTTPS, cls.WEBSOCKET_SECURE, cls.GRPC}
 
     @classmethod
-    def is_persistent(cls, connection_type: "EnumConnectionType") -> bool:
+    def is_persistent(cls, connection_type: EnumConnectionType) -> bool:
         """Check if the connection type supports persistent connections."""
         return connection_type in {
             cls.TCP,
@@ -46,7 +48,7 @@ class EnumConnectionType(str, Enum):
         }
 
     @classmethod
-    def default_port(cls, connection_type: "EnumConnectionType") -> int | None:
+    def default_port(cls, connection_type: EnumConnectionType) -> int | None:
         """Get the default port for the connection type."""
         port_map = {
             cls.HTTP: 80,

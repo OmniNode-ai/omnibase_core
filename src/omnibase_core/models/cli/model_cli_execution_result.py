@@ -5,7 +5,10 @@ Replaces hand-written result classes with proper Pydantic models
 for CLI tool execution operations.
 """
 
+from __future__ import annotations
+
 from typing import Any, ClassVar
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -38,10 +41,14 @@ class ModelCliExecutionResult(BaseModel):
         description="Tool execution output data",
     )
 
-    # Execution metadata
-    tool_name: str | None = Field(
+    # Execution metadata - Entity reference with UUID
+    tool_id: UUID | None = Field(
         None,
-        description="Name of the tool that was executed",
+        description="Unique identifier of the tool that was executed",
+    )
+    tool_display_name: str | None = Field(
+        None,
+        description="Human-readable name of the tool that was executed",
     )
     execution_time_ms: float | None = Field(
         None,
@@ -59,16 +66,18 @@ class ModelCliExecutionResult(BaseModel):
     def create_success(
         cls,
         output_data: ModelCliOutputData | None = None,
-        tool_name: str | None = None,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
         execution_time_ms: float | None = None,
         **kwargs: Any,
-    ) -> "ModelCliExecutionResult":
+    ) -> ModelCliExecutionResult:
         """
         Create a successful execution result.
 
         Args:
             output_data: Tool execution output
-            tool_name: Name of executed tool
+            tool_id: UUID of executed tool
+            tool_display_name: Human-readable name of executed tool
             execution_time_ms: Execution duration
             **kwargs: Additional fields
 
@@ -81,7 +90,8 @@ class ModelCliExecutionResult(BaseModel):
             or ModelCliOutputData(
                 stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
             ),
-            tool_name=tool_name,
+            tool_id=tool_id,
+            tool_display_name=tool_display_name,
             execution_time_ms=execution_time_ms,
             status_code=0,
             **kwargs,
@@ -91,17 +101,19 @@ class ModelCliExecutionResult(BaseModel):
     def create_error(
         cls,
         error_message: str,
-        tool_name: str | None = None,
+        tool_id: UUID | None = None,
+        tool_display_name: str | None = None,
         status_code: int = 1,
         output_data: ModelCliOutputData | None = None,
         **kwargs: Any,
-    ) -> "ModelCliExecutionResult":
+    ) -> ModelCliExecutionResult:
         """
         Create an error execution result.
 
         Args:
             error_message: Description of the error
-            tool_name: Name of tool that failed
+            tool_id: UUID of tool that failed
+            tool_display_name: Human-readable name of tool that failed
             status_code: Numeric error code
             output_data: Any partial output data
             **kwargs: Additional fields
@@ -112,7 +124,8 @@ class ModelCliExecutionResult(BaseModel):
         return cls(
             success=False,
             error_message=error_message,
-            tool_name=tool_name,
+            tool_id=tool_id,
+            tool_display_name=tool_display_name,
             status_code=status_code,
             output_data=output_data
             or ModelCliOutputData(
@@ -121,13 +134,32 @@ class ModelCliExecutionResult(BaseModel):
             **kwargs,
         )
 
+    @classmethod
+    def create_from_legacy(
+        cls,
+        tool_name: str | None = None,
+        **kwargs: Any,
+    ) -> ModelCliExecutionResult:
+        """
+        Create result from legacy tool_name for backward compatibility.
+
+        Args:
+            tool_name: Legacy tool name (will be used as display_name)
+            **kwargs: Other result parameters
+
+        Returns:
+            Result instance with tool_display_name set
+        """
+        return cls(tool_display_name=tool_name, **kwargs)
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "success": True,
                 "error_message": None,
                 "output_data": {"result": "operation completed"},
-                "tool_name": "tool_discovery",
+                "tool_id": "550e8400-e29b-41d4-a716-446655440000",
+                "tool_display_name": "tool_discovery",
                 "execution_time_ms": 150.5,
                 "status_code": 0,
                 "warning_message": None,

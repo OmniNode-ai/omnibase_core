@@ -5,11 +5,15 @@ Replaces EnumNodeCapability with a proper model that includes metadata,
 descriptions, and dependencies for each capability.
 """
 
+from __future__ import annotations
+
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_performance_impact import EnumPerformanceImpact
+from ...utils.uuid_helpers import uuid_from_string
 from ..metadata.model_semver import ModelSemVer
 
 
@@ -21,11 +25,14 @@ class ModelNodeCapability(BaseModel):
     about each node capability including dependencies and configuration.
     """
 
-    # Core fields (required)
-    name: str = Field(
-        ...,
-        description="Capability identifier (e.g., SUPPORTS_DRY_RUN)",
-        pattern="^[A-Z][A-Z0-9_]*$",
+    # Core fields (required) - UUID-based entity references
+    capability_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique identifier for the capability entity"
+    )
+    capability_display_name: str | None = Field(
+        None,
+        description="Human-readable capability identifier (e.g., SUPPORTS_DRY_RUN)",
     )
 
     value: str = Field(
@@ -76,11 +83,22 @@ class ModelNodeCapability(BaseModel):
     )
 
     # Factory methods for standard capabilities
+    @property
+    def capability_name(self) -> str:
+        """Get capability name with fallback to UUID-based name."""
+        return self.capability_display_name or f"capability_{str(self.capability_id)[:8]}"
+
+    @capability_name.setter
+    def capability_name(self, value: str) -> None:
+        """Set capability name (for backward compatibility)."""
+        self.capability_display_name = value
+
     @classmethod
-    def supports_dry_run(cls) -> "ModelNodeCapability":
+    def supports_dry_run(cls) -> ModelNodeCapability:
         """Dry run support capability."""
         return cls(
-            name="SUPPORTS_DRY_RUN",
+            capability_id=uuid_from_string("SUPPORTS_DRY_RUN", "capability"),
+            capability_display_name="SUPPORTS_DRY_RUN",
             value="supports_dry_run",
             description="Node can simulate execution without side effects",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -89,10 +107,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_batch_processing(cls) -> "ModelNodeCapability":
+    def supports_batch_processing(cls) -> ModelNodeCapability:
         """Batch processing support capability."""
         return cls(
-            name="SUPPORTS_BATCH_PROCESSING",
+            capability_id=uuid_from_string("SUPPORTS_BATCH_PROCESSING", "capability"),
+            capability_display_name="SUPPORTS_BATCH_PROCESSING",
             value="supports_batch_processing",
             description="Node can process multiple items in a single execution",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -102,10 +121,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_custom_handlers(cls) -> "ModelNodeCapability":
+    def supports_custom_handlers(cls) -> ModelNodeCapability:
         """Custom handlers support capability."""
         return cls(
-            name="SUPPORTS_CUSTOM_HANDLERS",
+            capability_id=uuid_from_string("SUPPORTS_CUSTOM_HANDLERS", "capability"),
+            capability_display_name="SUPPORTS_CUSTOM_HANDLERS",
             value="supports_custom_handlers",
             description="Node accepts custom handler implementations",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -115,10 +135,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def telemetry_enabled(cls) -> "ModelNodeCapability":
+    def telemetry_enabled(cls) -> ModelNodeCapability:
         """Telemetry capability."""
         return cls(
-            name="TELEMETRY_ENABLED",
+            capability_id=uuid_from_string("TELEMETRY_ENABLED", "capability"),
+            capability_display_name="TELEMETRY_ENABLED",
             value="telemetry_enabled",
             description="Node emits telemetry data for monitoring",
             version_introduced=ModelSemVer(major=1, minor=1, patch=0),
@@ -128,10 +149,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_correlation_id(cls) -> "ModelNodeCapability":
+    def supports_correlation_id(cls) -> ModelNodeCapability:
         """Correlation ID support capability."""
         return cls(
-            name="SUPPORTS_CORRELATION_ID",
+            capability_id=uuid_from_string("SUPPORTS_CORRELATION_ID", "capability"),
+            capability_display_name="SUPPORTS_CORRELATION_ID",
             value="supports_correlation_id",
             description="Node preserves correlation IDs across executions",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -140,10 +162,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_event_bus(cls) -> "ModelNodeCapability":
+    def supports_event_bus(cls) -> ModelNodeCapability:
         """Event bus support capability."""
         return cls(
-            name="SUPPORTS_EVENT_BUS",
+            capability_id=uuid_from_string("SUPPORTS_EVENT_BUS", "capability"),
+            capability_display_name="SUPPORTS_EVENT_BUS",
             value="supports_event_bus",
             description="Node can publish and consume events via event bus",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -154,10 +177,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_schema_validation(cls) -> "ModelNodeCapability":
+    def supports_schema_validation(cls) -> ModelNodeCapability:
         """Schema validation support capability."""
         return cls(
-            name="SUPPORTS_SCHEMA_VALIDATION",
+            capability_id=uuid_from_string("SUPPORTS_SCHEMA_VALIDATION", "capability"),
+            capability_display_name="SUPPORTS_SCHEMA_VALIDATION",
             value="supports_schema_validation",
             description="Node validates input/output against JSON schemas",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -166,10 +190,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_error_recovery(cls) -> "ModelNodeCapability":
+    def supports_error_recovery(cls) -> ModelNodeCapability:
         """Error recovery support capability."""
         return cls(
-            name="SUPPORTS_ERROR_RECOVERY",
+            capability_id=uuid_from_string("SUPPORTS_ERROR_RECOVERY", "capability"),
+            capability_display_name="SUPPORTS_ERROR_RECOVERY",
             value="supports_error_recovery",
             description="Node can recover from errors with retry logic",
             version_introduced=ModelSemVer(major=1, minor=1, patch=0),
@@ -179,10 +204,11 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def supports_event_discovery(cls) -> "ModelNodeCapability":
+    def supports_event_discovery(cls) -> ModelNodeCapability:
         """Event discovery support capability."""
         return cls(
-            name="SUPPORTS_EVENT_DISCOVERY",
+            capability_id=uuid_from_string("SUPPORTS_EVENT_DISCOVERY", "capability"),
+            capability_display_name="SUPPORTS_EVENT_DISCOVERY",
             value="supports_event_discovery",
             description="Node can discover available events and their schemas",
             version_introduced=ModelSemVer(major=1, minor=2, patch=0),
@@ -192,7 +218,7 @@ class ModelNodeCapability(BaseModel):
         )
 
     @classmethod
-    def from_string(cls, capability: str) -> "ModelNodeCapability":
+    def from_string(cls, capability: str) -> ModelNodeCapability:
         """Create ModelNodeCapability from string for current standards."""
         capability_upper = capability.upper().replace(".", "_")
         factory_map = {
@@ -212,7 +238,8 @@ class ModelNodeCapability(BaseModel):
             return factory()
         # Unknown capability - create generic
         return cls(
-            name=capability_upper,
+            capability_id=uuid_from_string(capability_upper, "capability"),
+            capability_display_name=capability_upper,
             value=capability.lower(),
             description=f"Custom capability: {capability}",
             version_introduced=ModelSemVer(major=1, minor=0, patch=0),
@@ -225,10 +252,32 @@ class ModelNodeCapability(BaseModel):
     def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
-            return self.value == other or self.name == other.upper()
+            return self.value == other or self.capability_name == other.upper()
         if isinstance(other, ModelNodeCapability):
-            return self.name == other.name
+            return self.capability_name == other.capability_name
         return False
+
+    @classmethod
+    def create_legacy(
+        cls,
+        name: str,
+        value: str,
+        description: str,
+        **kwargs: Any,
+    ) -> ModelNodeCapability:
+        """Create capability with legacy name parameter for backward compatibility."""
+        return cls(
+            capability_id=uuid_from_string(name, "capability"),
+            capability_display_name=name,
+            value=value,
+            description=description,
+            **kwargs,
+        )
+
+    @property
+    def name(self) -> str:
+        """Legacy property for backward compatibility."""
+        return self.capability_name
 
     def is_compatible_with_version(self, version: ModelSemVer) -> bool:
         """Check if this capability is available in a given ONEX version."""

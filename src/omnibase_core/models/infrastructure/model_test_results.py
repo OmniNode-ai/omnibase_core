@@ -4,6 +4,8 @@ Test Results Model.
 Strongly typed model for test execution results.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field

@@ -13,6 +13,8 @@ from src.omnibase_core.models.cli.model_cli_result_metadata import (
     ModelCliResultMetadata,
 )
 from src.omnibase_core.models.metadata.model_semver import ModelSemVer
+from src.omnibase_core.enums.enum_result_category import EnumResultCategory
+from src.omnibase_core.enums.enum_result_type import EnumResultType
 
 
 class TestModelCliResultMetadata:
@@ -23,7 +25,7 @@ class TestModelCliResultMetadata:
         metadata = ModelCliResultMetadata()
 
         assert metadata.metadata_version is None
-        assert metadata.result_type == "cli_result"
+        assert metadata.result_type == EnumResultType.INFO
         assert metadata.result_category is None
         assert metadata.source_command is None
         assert metadata.source_node is None
@@ -48,8 +50,8 @@ class TestModelCliResultMetadata:
 
         metadata = ModelCliResultMetadata(
             metadata_version=version,
-            result_type="test_result",
-            result_category="unit_test",
+            result_type=EnumResultType.SUCCESS,
+            result_category=EnumResultCategory.SUCCESS,
             source_command="test_command",
             source_node="test_node",
             processed_at=timestamp,
@@ -63,8 +65,8 @@ class TestModelCliResultMetadata:
         )
 
         assert metadata.metadata_version == version
-        assert metadata.result_type == "test_result"
-        assert metadata.result_category == "unit_test"
+        assert metadata.result_type == EnumResultType.SUCCESS
+        assert metadata.result_category == EnumResultCategory.SUCCESS
         assert metadata.source_command == "test_command"
         assert metadata.source_node == "test_node"
         assert metadata.processed_at == timestamp
@@ -258,8 +260,8 @@ class TestModelCliResultMetadata:
         version = ModelSemVer(major=2, minor=1, patch=0)
         metadata = ModelCliResultMetadata(
             metadata_version=version,
-            result_type="integration_test",
-            result_category="api_test",
+            result_type=EnumResultType.SUCCESS,
+            result_category=EnumResultCategory.SUCCESS,
             source_command="run_integration_tests",
             source_node="test_runner_node",
             processor_version="2.1.0",
@@ -332,7 +334,7 @@ class TestModelCliResultMetadata:
         version = ModelSemVer(major=1, minor=0, patch=0)
         metadata = ModelCliResultMetadata(
             metadata_version=version,
-            result_type="test",
+            result_type=EnumResultType.INFO,
             tags=["unit", "fast"],
             labels={"env": "test"},
             quality_score=0.95,
@@ -341,7 +343,7 @@ class TestModelCliResultMetadata:
         # Test model_dump
         data = metadata.model_dump()
 
-        assert data["result_type"] == "test"
+        assert data["result_type"] == EnumResultType.INFO
         assert data["tags"] == ["unit", "fast"]
         assert data["labels"] == {"env": "test"}
         assert data["quality_score"] == 0.95
@@ -355,8 +357,8 @@ class TestModelCliResultMetadata:
         """Test Pydantic model deserialization."""
         timestamp = datetime.now(UTC)
         data = {
-            "result_type": "deserialize_test",
-            "result_category": "unit",
+            "result_type": EnumResultType.SUCCESS,
+            "result_category": EnumResultCategory.SUCCESS,
             "source_command": "pytest",
             "processed_at": timestamp.isoformat(),
             "quality_score": 0.88,
@@ -373,8 +375,8 @@ class TestModelCliResultMetadata:
 
         metadata = ModelCliResultMetadata.model_validate(data)
 
-        assert metadata.result_type == "deserialize_test"
-        assert metadata.result_category == "unit"
+        assert metadata.result_type == EnumResultType.SUCCESS
+        assert metadata.result_category == EnumResultCategory.SUCCESS
         assert metadata.source_command == "pytest"
         assert metadata.quality_score == 0.88
         assert metadata.confidence_level == 0.76
@@ -392,8 +394,8 @@ class TestModelCliResultMetadata:
         version = ModelSemVer(major=1, minor=2, patch=3)
         original = ModelCliResultMetadata(
             metadata_version=version,
-            result_type="round_trip_test",
-            result_category="validation",
+            result_type=EnumResultType.INFO,
+            result_category=EnumResultCategory.VALIDATION,
             source_command="round_trip_cmd",
             quality_score=0.91,
             confidence_level=0.83,
@@ -430,18 +432,18 @@ class TestModelCliResultMetadata:
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
         metadata = ModelCliResultMetadata(
-            result_type="json_test", tags=["json", "serialization"], quality_score=0.89
+            result_type=EnumResultType.INFO, tags=["json", "serialization"], quality_score=0.89
         )
 
         # Test JSON serialization
         json_str = metadata.model_dump_json()
         assert isinstance(json_str, str)
-        assert '"result_type":"json_test"' in json_str
+        assert '"result_type":"INFO"' in json_str
         assert '"quality_score":0.89' in json_str
 
         # Test JSON deserialization
         restored = ModelCliResultMetadata.model_validate_json(json_str)
-        assert restored.result_type == "json_test"
+        assert restored.result_type == EnumResultType.INFO
         assert restored.quality_score == 0.89
 
     def test_is_compliant_edge_cases(self):

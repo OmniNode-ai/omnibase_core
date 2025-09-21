@@ -5,9 +5,13 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI debug info.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
+
+from ...enums.enum_debug_level import EnumDebugLevel
 
 
 class ModelCliDebugInfo(BaseModel):
@@ -18,7 +22,7 @@ class ModelCliDebugInfo(BaseModel):
     """
 
     # Core debug fields
-    debug_level: str = Field(default="info", description="Debug level")
+    debug_level: EnumDebugLevel = Field(default=EnumDebugLevel.INFO, description="Debug level")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC), description="Debug timestamp"
     )

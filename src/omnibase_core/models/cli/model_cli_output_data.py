@@ -5,9 +5,13 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI execution output.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_cli_status import EnumCliStatus
+from ...enums.enum_output_format import EnumOutputFormat
+from ...enums.enum_output_type import EnumOutputType
 
 
 class ModelCliOutputData(BaseModel):
@@ -18,8 +22,8 @@ class ModelCliOutputData(BaseModel):
     """
 
     # Core output fields
-    output_type: str = Field(default="execution", description="Type of output data")
-    format: str = Field(default="json", description="Output format")
+    output_type: EnumOutputType = Field(default=EnumOutputType.CONSOLE, description="Type of output data")
+    format: EnumOutputFormat = Field(default=EnumOutputFormat.JSON, description="Output format")
 
     # Standard output content
     stdout: str | None = Field(None, description="Standard output content")
@@ -94,7 +98,7 @@ class ModelCliOutputData(BaseModel):
         stdout: str | None = None,
         stderr: str | None = None,
         status: EnumCliStatus = EnumCliStatus.SUCCESS,
-    ) -> "ModelCliOutputData":
+    ) -> ModelCliOutputData:
         """Create simple output data with just stdout/stderr."""
         return cls(
             stdout=stdout,
@@ -109,7 +113,7 @@ class ModelCliOutputData(BaseModel):
         cls,
         results: dict[str, str | int | bool | float],
         status: EnumCliStatus = EnumCliStatus.SUCCESS,
-    ) -> "ModelCliOutputData":
+    ) -> ModelCliOutputData:
         """Create output data with structured results."""
         return cls(
             results=results,
@@ -123,5 +127,5 @@ class ModelCliOutputData(BaseModel):
 
 # Export the model
 __all__ = [
-    "ModelCliOutputData",
+    ModelCliOutputData,
 ]

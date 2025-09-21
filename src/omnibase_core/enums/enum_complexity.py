@@ -5,6 +5,8 @@ Provides strongly typed complexity values for performance estimation.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -26,7 +28,7 @@ class EnumComplexity(str, Enum):
         return self.value
 
     @classmethod
-    def get_estimated_runtime_seconds(cls, complexity: "EnumComplexity") -> float:
+    def get_estimated_runtime_seconds(cls, complexity: EnumComplexity) -> float:
         """Get estimated runtime in seconds based on complexity."""
         runtime_map = {
             cls.SIMPLE: 0.1,
@@ -37,12 +39,12 @@ class EnumComplexity(str, Enum):
         return runtime_map.get(complexity, 1.0)
 
     @classmethod
-    def requires_monitoring(cls, complexity: "EnumComplexity") -> bool:
+    def requires_monitoring(cls, complexity: EnumComplexity) -> bool:
         """Check if complexity level requires enhanced monitoring."""
         return complexity in {cls.COMPLEX, cls.VERY_COMPLEX}
 
     @classmethod
-    def allows_parallel_execution(cls, complexity: "EnumComplexity") -> bool:
+    def allows_parallel_execution(cls, complexity: EnumComplexity) -> bool:
         """Check if complexity allows safe parallel execution."""
         return complexity in {cls.SIMPLE, cls.MODERATE}
 

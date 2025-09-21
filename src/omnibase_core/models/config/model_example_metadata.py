@@ -5,7 +5,11 @@ This module provides the ModelExampleMetadata class for metadata
 about example collections with enhanced structure.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
+
+from ...enums.enum_example_category import EnumExampleCategory
 
 
 class ModelExampleMetadata(BaseModel):
@@ -34,7 +38,7 @@ class ModelExampleMetadata(BaseModel):
         pattern="^(beginner|intermediate|advanced)$",
     )
 
-    category: str | None = Field(
+    category: EnumExampleCategory | None = Field(
         None,
         description="Category this collection belongs to",
     )

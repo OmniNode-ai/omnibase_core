@@ -5,6 +5,8 @@ This module provides the ModelPropertyCollection class for managing
 collections of typed properties with validation and helper methods.
 """
 
+from __future__ import annotations
+
 from typing import TypeVar
 
 from pydantic import BaseModel, Field

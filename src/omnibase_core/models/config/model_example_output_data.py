@@ -6,9 +6,13 @@ strongly-typed replacement for dict[str, Any] in example output data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_cli_status import EnumCliStatus
+from ...enums.enum_data_type import EnumDataType
+from ...enums.enum_io_type import EnumIOType
 
 
 class ModelExampleOutputData(BaseModel):
@@ -19,8 +23,8 @@ class ModelExampleOutputData(BaseModel):
     """
 
     # Core data fields
-    data_type: str = Field(default="output", description="Type of output data")
-    format: str = Field(default="json", description="Data format")
+    data_type: EnumIOType = Field(default=EnumIOType.OUTPUT, description="Type of output data")
+    format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Output results
     results: dict[str, str | int | bool | float] = Field(
@@ -42,3 +46,7 @@ class ModelExampleOutputData(BaseModel):
     is_expected: bool = Field(
         default=True, description="Whether output matches expectations"
     )
+
+
+# Export the model
+__all__ = ["ModelExampleOutputData"]

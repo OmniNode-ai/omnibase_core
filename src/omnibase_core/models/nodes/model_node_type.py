@@ -5,7 +5,16 @@ Replaces EnumNodeType with a proper model that includes metadata,
 descriptions, and categorization for each node type.
 """
 
+from __future__ import annotations
+
+from typing import Any
+from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field
+
+from ...enums.enum_config_category import EnumConfigCategory
+from ...enums.enum_return_type import EnumReturnType
+from ...enums.enum_type_name import EnumTypeName
 
 
 class ModelNodeType(BaseModel):
@@ -16,19 +25,21 @@ class ModelNodeType(BaseModel):
     about each node type.
     """
 
-    # Core fields (required)
-    name: str = Field(
+    # Core fields (required) - Entity reference with UUID
+    type_id: UUID = Field(
+        default_factory=uuid4,
+        description="Unique identifier for the node type entity"
+    )
+    type_name: EnumTypeName = Field(
         ...,
         description="Node type identifier (e.g., CONTRACT_TO_MODEL)",
-        pattern="^[A-Z][A-Z0-9_]*$",
     )
 
     description: str = Field(..., description="Human-readable description of the node")
 
-    category: str = Field(
+    category: EnumConfigCategory = Field(
         ...,
         description="Node category for organization",
-        pattern="^[a-z][a-z0-9_]*$",
     )
 
     # Optional metadata
@@ -64,348 +75,348 @@ class ModelNodeType(BaseModel):
         description="Whether this node requires a contract.yaml",
     )
 
-    output_type: str | None = Field(
+    output_type: EnumReturnType | None = Field(
         default=None,
         description="Type of output produced (models, files, reports, etc.)",
     )
 
     # Factory methods for all node types
     @classmethod
-    def CONTRACT_TO_MODEL(cls) -> "ModelNodeType":
+    def CONTRACT_TO_MODEL(cls) -> ModelNodeType:
         """Generates Pydantic models from contract.yaml."""
         return cls(
-            name="CONTRACT_TO_MODEL",
+            type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Generates Pydantic models from contract.yaml",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             requires_contract=True,
-            output_type="models",
+            output_type=EnumReturnType.MODELS,
         )
 
     @classmethod
-    def MULTI_DOC_MODEL_GENERATOR(cls) -> "ModelNodeType":
+    def MULTI_DOC_MODEL_GENERATOR(cls) -> ModelNodeType:
         """Generates models from multiple YAML documents."""
         return cls(
-            name="MULTI_DOC_MODEL_GENERATOR",
+            type_name=EnumTypeName.MULTI_DOC_MODEL_GENERATOR,
             description="Generates models from multiple YAML documents",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
-            output_type="models",
+            output_type=EnumReturnType.MODELS,
         )
 
     @classmethod
-    def GENERATE_ERROR_CODES(cls) -> "ModelNodeType":
+    def GENERATE_ERROR_CODES(cls) -> ModelNodeType:
         """Generates error code enums from contract."""
         return cls(
-            name="GENERATE_ERROR_CODES",
+            type_name=EnumTypeName.GENERATE_ERROR_CODES,
             description="Generates error code enums from contract",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             requires_contract=True,
-            output_type="enums",
+            output_type=EnumReturnType.ENUMS,
         )
 
     @classmethod
-    def GENERATE_INTROSPECTION(cls) -> "ModelNodeType":
+    def GENERATE_INTROSPECTION(cls) -> ModelNodeType:
         """Generates introspection metadata."""
         return cls(
-            name="GENERATE_INTROSPECTION",
+            type_name=EnumTypeName.GENERATE_INTROSPECTION,
             description="Generates introspection metadata",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
-            output_type="metadata",
+            output_type=EnumReturnType.METADATA,
         )
 
     @classmethod
-    def NODE_GENERATOR(cls) -> "ModelNodeType":
+    def NODE_GENERATOR(cls) -> ModelNodeType:
         """Generates complete node structure from templates."""
         return cls(
-            name="NODE_GENERATOR",
+            type_name=EnumTypeName.NODE_GENERATOR,
             description="Generates complete node structure from templates",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
             execution_priority=90,
-            output_type="node",
+            output_type=EnumReturnType.METADATA,
         )
 
     @classmethod
-    def TEMPLATE_ENGINE(cls) -> "ModelNodeType":
+    def TEMPLATE_ENGINE(cls) -> ModelNodeType:
         """Processes templates with token replacement."""
         return cls(
-            name="TEMPLATE_ENGINE",
+            type_name=EnumTypeName.TEMPLATE_ENGINE,
             description="Processes templates with token replacement",
-            category="template",
+            category=EnumConfigCategory.TEMPLATE,
             is_generator=True,
-            output_type="text",
+            output_type=EnumReturnType.TEXT,
         )
 
     @classmethod
-    def FILE_GENERATOR(cls) -> "ModelNodeType":
+    def FILE_GENERATOR(cls) -> ModelNodeType:
         """Generates files from templates."""
         return cls(
-            name="FILE_GENERATOR",
+            type_name=EnumTypeName.FILE_GENERATOR,
             description="Generates files from templates",
-            category="template",
+            category=EnumConfigCategory.TEMPLATE,
             is_generator=True,
             dependencies=["TEMPLATE_ENGINE"],
-            output_type="files",
+            output_type=EnumReturnType.FILES,
         )
 
     @classmethod
-    def TEMPLATE_VALIDATOR(cls) -> "ModelNodeType":
+    def TEMPLATE_VALIDATOR(cls) -> ModelNodeType:
         """Validates node templates for consistency."""
         return cls(
-            name="TEMPLATE_VALIDATOR",
+            type_name=EnumTypeName.TEMPLATE_VALIDATOR,
             description="Validates node templates for consistency",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def VALIDATION_ENGINE(cls) -> "ModelNodeType":
+    def VALIDATION_ENGINE(cls) -> ModelNodeType:
         """Validates node structure and contracts."""
         return cls(
-            name="VALIDATION_ENGINE",
+            type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Validates node structure and contracts",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
             execution_priority=80,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def STANDARDS_COMPLIANCE_FIXER(cls) -> "ModelNodeType":
+    def STANDARDS_COMPLIANCE_FIXER(cls) -> ModelNodeType:
         """Fixes code to comply with ONEX standards."""
         return cls(
-            name="STANDARDS_COMPLIANCE_FIXER",
+            type_name=EnumTypeName.STANDARDS_COMPLIANCE_FIXER,
             description="Fixes code to comply with ONEX standards",
-            category="maintenance",
+            category=EnumConfigCategory.MAINTENANCE,
             is_generator=True,
             is_validator=True,
-            output_type="fixes",
+            output_type=EnumReturnType.FILES,
         )
 
     @classmethod
-    def PARITY_VALIDATOR_WITH_FIXES(cls) -> "ModelNodeType":
+    def PARITY_VALIDATOR_WITH_FIXES(cls) -> ModelNodeType:
         """Validates and fixes parity issues."""
         return cls(
-            name="PARITY_VALIDATOR_WITH_FIXES",
+            type_name=EnumTypeName.PARITY_VALIDATOR_WITH_FIXES,
             description="Validates and fixes parity issues",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             is_generator=True,
-            output_type="report_and_fixes",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def CONTRACT_COMPLIANCE(cls) -> "ModelNodeType":
+    def CONTRACT_COMPLIANCE(cls) -> ModelNodeType:
         """Validates contract compliance."""
         return cls(
-            name="CONTRACT_COMPLIANCE",
+            type_name=EnumTypeName.CONTRACT_COMPLIANCE,
             description="Validates contract compliance",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def INTROSPECTION_VALIDITY(cls) -> "ModelNodeType":
+    def INTROSPECTION_VALIDITY(cls) -> ModelNodeType:
         """Validates introspection data."""
         return cls(
-            name="INTROSPECTION_VALIDITY",
+            type_name=EnumTypeName.INTROSPECTION_VALIDITY,
             description="Validates introspection data",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def SCHEMA_CONFORMANCE(cls) -> "ModelNodeType":
+    def SCHEMA_CONFORMANCE(cls) -> ModelNodeType:
         """Validates schema conformance."""
         return cls(
-            name="SCHEMA_CONFORMANCE",
+            type_name=EnumTypeName.SCHEMA_CONFORMANCE,
             description="Validates schema conformance",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def ERROR_CODE_USAGE(cls) -> "ModelNodeType":
+    def ERROR_CODE_USAGE(cls) -> ModelNodeType:
         """Validates error code usage."""
         return cls(
-            name="ERROR_CODE_USAGE",
+            type_name=EnumTypeName.ERROR_CODE_USAGE,
             description="Validates error code usage",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def CLI_COMMANDS(cls) -> "ModelNodeType":
+    def CLI_COMMANDS(cls) -> ModelNodeType:
         """Handles CLI command generation."""
         return cls(
-            name="CLI_COMMANDS",
+            type_name=EnumTypeName.CLI_COMMANDS,
             description="Handles CLI command generation",
-            category="cli",
+            category=EnumConfigCategory.CLI,
             is_generator=True,
-            output_type="commands",
+            output_type=EnumReturnType.TEXT,
         )
 
     @classmethod
-    def CLI_NODE_PARITY(cls) -> "ModelNodeType":
+    def CLI_NODE_PARITY(cls) -> ModelNodeType:
         """Validates CLI and node parity."""
         return cls(
-            name="CLI_NODE_PARITY",
+            type_name=EnumTypeName.CLI_NODE_PARITY,
             description="Validates CLI and node parity",
-            category="cli",
+            category=EnumConfigCategory.CLI,
             is_validator=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def NODE_DISCOVERY(cls) -> "ModelNodeType":
+    def NODE_DISCOVERY(cls) -> ModelNodeType:
         """Discovers nodes in the codebase."""
         return cls(
-            name="NODE_DISCOVERY",
+            type_name=EnumTypeName.NODE_DISCOVERY,
             description="Discovers nodes in the codebase",
-            category="discovery",
+            category=EnumConfigCategory.DISCOVERY,
             execution_priority=95,
-            output_type="nodes",
+            output_type=EnumReturnType.METADATA,
         )
 
     @classmethod
-    def NODE_VALIDATION(cls) -> "ModelNodeType":
+    def NODE_VALIDATION(cls) -> ModelNodeType:
         """Validates node implementation."""
         return cls(
-            name="NODE_VALIDATION",
+            type_name=EnumTypeName.NODE_VALIDATION,
             description="Validates node implementation",
-            category="validation",
+            category=EnumConfigCategory.VALIDATION,
             is_validator=True,
             requires_contract=True,
-            output_type="report",
+            output_type=EnumReturnType.REPORTS,
         )
 
     @classmethod
-    def METADATA_LOADER(cls) -> "ModelNodeType":
+    def METADATA_LOADER(cls) -> ModelNodeType:
         """Loads node metadata."""
         return cls(
-            name="METADATA_LOADER",
+            type_name=EnumTypeName.METADATA_LOADER,
             description="Loads node metadata",
-            category="discovery",
-            output_type="metadata",
+            category=EnumConfigCategory.DISCOVERY,
+            output_type=EnumReturnType.METADATA,
         )
 
     @classmethod
-    def SCHEMA_GENERATOR(cls) -> "ModelNodeType":
+    def SCHEMA_GENERATOR(cls) -> ModelNodeType:
         """Generates JSON schemas."""
         return cls(
-            name="SCHEMA_GENERATOR",
+            type_name=EnumTypeName.SCHEMA_GENERATOR,
             description="Generates JSON schemas",
-            category="schema",
+            category=EnumConfigCategory.SCHEMA,
             is_generator=True,
-            output_type="schemas",
+            output_type=EnumReturnType.SCHEMAS,
         )
 
     @classmethod
-    def SCHEMA_DISCOVERY(cls) -> "ModelNodeType":
+    def SCHEMA_DISCOVERY(cls) -> ModelNodeType:
         """Discovers and parses schemas."""
         return cls(
-            name="SCHEMA_DISCOVERY",
+            type_name=EnumTypeName.SCHEMA_DISCOVERY,
             description="Discovers and parses schemas",
-            category="schema",
-            output_type="schemas",
+            category=EnumConfigCategory.SCHEMA,
+            output_type=EnumReturnType.SCHEMAS,
         )
 
     @classmethod
-    def SCHEMA_TO_PYDANTIC(cls) -> "ModelNodeType":
+    def SCHEMA_TO_PYDANTIC(cls) -> ModelNodeType:
         """Converts schemas to Pydantic models."""
         return cls(
-            name="SCHEMA_TO_PYDANTIC",
+            type_name=EnumTypeName.SCHEMA_TO_PYDANTIC,
             description="Converts schemas to Pydantic models",
-            category="schema",
+            category=EnumConfigCategory.SCHEMA,
             is_generator=True,
             dependencies=["SCHEMA_DISCOVERY"],
-            output_type="models",
+            output_type=EnumReturnType.MODELS,
         )
 
     @classmethod
-    def PROTOCOL_GENERATOR(cls) -> "ModelNodeType":
+    def PROTOCOL_GENERATOR(cls) -> ModelNodeType:
         """Generates protocol interfaces."""
         return cls(
-            name="PROTOCOL_GENERATOR",
+            type_name=EnumTypeName.PROTOCOL_GENERATOR,
             description="Generates protocol interfaces",
-            category="generation",
+            category=EnumConfigCategory.GENERATION,
             is_generator=True,
-            output_type="protocols",
+            output_type=EnumReturnType.PROTOCOLS,
         )
 
     @classmethod
-    def BACKEND_SELECTION(cls) -> "ModelNodeType":
+    def BACKEND_SELECTION(cls) -> ModelNodeType:
         """Selects appropriate backend."""
         return cls(
-            name="BACKEND_SELECTION",
+            type_name=EnumTypeName.BACKEND_SELECTION,
             description="Selects appropriate backend",
-            category="runtime",
-            output_type="backend",
+            category=EnumConfigCategory.RUNTIME,
+            output_type=EnumReturnType.BACKEND,
         )
 
     @classmethod
-    def NODE_MANAGER_RUNNER(cls) -> "ModelNodeType":
+    def NODE_MANAGER_RUNNER(cls) -> ModelNodeType:
         """Runs node manager operations."""
         return cls(
-            name="NODE_MANAGER_RUNNER",
+            type_name=EnumTypeName.NODE_MANAGER_RUNNER,
             description="Runs node manager operations",
-            category="runtime",
+            category=EnumConfigCategory.RUNTIME,
             execution_priority=100,
-            output_type="result",
+            output_type=EnumReturnType.RESULT,
         )
 
     @classmethod
-    def MAINTENANCE(cls) -> "ModelNodeType":
+    def MAINTENANCE(cls) -> ModelNodeType:
         """Handles maintenance operations."""
         return cls(
-            name="MAINTENANCE",
+            type_name=EnumTypeName.MAINTENANCE,
             description="Handles maintenance operations",
-            category="maintenance",
-            output_type="status",
+            category=EnumConfigCategory.MAINTENANCE,
+            output_type=EnumReturnType.STATUS,
         )
 
     @classmethod
-    def LOGGER_EMIT_LOG_EVENT(cls) -> "ModelNodeType":
+    def LOGGER_EMIT_LOG_EVENT(cls) -> ModelNodeType:
         """Emits structured log events."""
         return cls(
-            name="node_logger_emit_log_event",  # Keep original name
+            type_name=EnumTypeName.NODE_LOGGER_EMIT_LOG_EVENT,
             description="Emits structured log events",
-            category="logging",
-            output_type="logs",
+            category=EnumConfigCategory.LOGGING,
+            output_type=EnumReturnType.LOGS,
         )
 
     @classmethod
-    def LOGGING_UTILS(cls) -> "ModelNodeType":
+    def LOGGING_UTILS(cls) -> ModelNodeType:
         """Logging utility functions."""
         return cls(
-            name="LOGGING_UTILS",
+            type_name=EnumTypeName.LOGGING_UTILS,
             description="Logging utility functions",
-            category="logging",
-            output_type="logs",
+            category=EnumConfigCategory.LOGGING,
+            output_type=EnumReturnType.LOGS,
         )
 
     @classmethod
-    def SCENARIO_RUNNER(cls) -> "ModelNodeType":
+    def SCENARIO_RUNNER(cls) -> ModelNodeType:
         """Runs test scenarios."""
         return cls(
-            name="scenario_runner",  # Keep original name
+            type_name=EnumTypeName.SCENARIO_RUNNER,
             description="Runs test scenarios",
-            category="testing",
-            output_type="results",
+            category=EnumConfigCategory.TESTING,
+            output_type=EnumReturnType.RESULTS,
         )
 
     @classmethod
-    def from_string(cls, name: str) -> "ModelNodeType":
+    def from_string(cls, name: str) -> ModelNodeType:
         """Create ModelNodeType from string name for current standards."""
         factory_map = {
             "CONTRACT_TO_MODEL": cls.CONTRACT_TO_MODEL,
@@ -444,16 +455,54 @@ class ModelNodeType(BaseModel):
         if factory:
             return factory()
         # Unknown node type - create generic
-        return cls(name=name, description=f"Node: {name}", category="unknown")
+        # Try to create from known enum values, otherwise create generic
+        try:
+            enum_value = EnumTypeName(name)
+            return cls(type_name=enum_value, description=f"Node: {name}", category=EnumConfigCategory.UNKNOWN)
+        except ValueError:
+            # If name is not in enum, we can't create it - this maintains type safety
+            raise ValueError(f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}")
+
+    @classmethod
+    def create_legacy(
+        cls,
+        name: str,
+        description: str,
+        category: str,
+        **kwargs: Any,
+    ) -> ModelNodeType:
+        """Create node type with legacy name parameter for backward compatibility."""
+        # Convert string to enum if needed for type safety
+        if isinstance(name, str):
+            try:
+                type_name_enum = EnumTypeName(name)
+            except ValueError:
+                raise ValueError(f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}")
+        else:
+            type_name_enum = name
+
+        return cls(
+            type_name=type_name_enum,
+            description=description,
+            category=category,
+            **kwargs,
+        )
+
+    @property
+    def name(self) -> str:
+        """Legacy property for backward compatibility."""
+        return self.type_name.value
 
     def __str__(self) -> str:
         """String representation for current standards."""
-        return self.name
+        return self.type_name.value
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
-            return self.name == other
+            return self.type_name.value == other
         if isinstance(other, ModelNodeType):
-            return self.name == other.name
+            return self.type_name == other.type_name
+        if isinstance(other, EnumTypeName):
+            return self.type_name == other
         return False

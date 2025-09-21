@@ -4,6 +4,8 @@ Runtime Category Enumeration.
 Defines categories for estimated runtime durations.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -77,7 +79,7 @@ class EnumRuntimeCategory(Enum):
         return (min_mins, max_mins)
 
     @classmethod
-    def from_seconds(cls, seconds: float) -> "EnumRuntimeCategory":
+    def from_seconds(cls, seconds: float) -> EnumRuntimeCategory:
         """Determine category from duration in seconds."""
         if seconds < 0.1:
             return cls.INSTANT
@@ -105,7 +107,7 @@ class EnumRuntimeCategory(Enum):
             return cls.OVERNIGHT
 
     @classmethod
-    def get_fast_categories(cls) -> list["EnumRuntimeCategory"]:
+    def get_fast_categories(cls) -> list[EnumRuntimeCategory]:
         """Get categories for fast operations."""
         return [
             cls.INSTANT,
@@ -115,7 +117,7 @@ class EnumRuntimeCategory(Enum):
         ]
 
     @classmethod
-    def get_slow_categories(cls) -> list["EnumRuntimeCategory"]:
+    def get_slow_categories(cls) -> list[EnumRuntimeCategory]:
         """Get categories for slow operations."""
         return [
             cls.MARATHON,

@@ -5,6 +5,8 @@ This module provides a reusable, strongly-typed collection base class that
 can replace ad-hoc collection operations found across Config, Data, and other domains.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import (
     Any,
@@ -13,7 +15,7 @@ from typing import (
     Optional,
     TypeVar,
 )
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -42,8 +44,12 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         default_factory=list, description="Collection items with strong typing"
     )
 
-    collection_name: str = Field(
-        default="", description="Optional name for the collection"
+    collection_id: UUID = Field(
+        default_factory=uuid4, description="Unique identifier for the collection"
+    )
+
+    collection_display_name: str = Field(
+        default="", description="Human-readable display name for the collection"
     )
 
     created_at: datetime = Field(
@@ -295,7 +301,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             Strongly-typed summary model with collection statistics
         """
         return ModelGenericCollectionSummary(
-            collection_name=self.collection_name,
+            collection_id=self.collection_id,
+            collection_display_name=self.collection_display_name,
             total_items=self.item_count(),
             enabled_items=self.enabled_item_count(),
             valid_items=self.valid_item_count(),
@@ -361,33 +368,106 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         return True
 
     @classmethod
-    def create_empty(cls, collection_name: str = "") -> "ModelGenericCollection[T]":
+    def create_empty(
+        cls,
+        collection_display_name: str = "",
+        collection_id: UUID | None = None,
+    ) -> ModelGenericCollection[T]:
         """
         Create an empty collection.
 
         Args:
-            collection_name: Optional name for the collection
+            collection_display_name: Human-readable display name for the collection
+            collection_id: Optional UUID for the collection (auto-generated if None)
 
         Returns:
             Empty collection instance
         """
-        return cls(collection_name=collection_name)
+        kwargs: dict[str, Any] = {"collection_display_name": collection_display_name}
+        if collection_id is not None:
+            kwargs["collection_id"] = collection_id
+        return cls(**kwargs)
 
     @classmethod
     def create_from_items(
-        cls, items: list[T], collection_name: str = ""
-    ) -> "ModelGenericCollection[T]":
+        cls,
+        items: list[T],
+        collection_display_name: str = "",
+        collection_id: UUID | None = None,
+    ) -> ModelGenericCollection[T]:
         """
         Create a collection from a list of items.
 
         Args:
             items: Initial items for the collection
-            collection_name: Optional name for the collection
+            collection_display_name: Human-readable display name for the collection
+            collection_id: Optional UUID for the collection (auto-generated if None)
 
         Returns:
             Collection instance with the specified items
         """
-        return cls(items=items, collection_name=collection_name)
+        kwargs: dict[str, Any] = {"items": items, "collection_display_name": collection_display_name}
+        if collection_id is not None:
+            kwargs["collection_id"] = collection_id
+        return cls(**kwargs)
+
+    # Backward compatibility methods
+    @classmethod
+    def create_empty_with_name(cls, collection_name: str) -> ModelGenericCollection[T]:
+        """
+        Create an empty collection with legacy collection_name parameter.
+
+        DEPRECATED: Use create_empty(collection_display_name=name) instead.
+
+        Args:
+            collection_name: Legacy name parameter
+
+        Returns:
+            Empty collection instance
+        """
+        return cls.create_empty(collection_display_name=collection_name)
+
+    @classmethod
+    def create_from_items_with_name(
+        cls, items: list[T], collection_name: str
+    ) -> ModelGenericCollection[T]:
+        """
+        Create a collection from items with legacy collection_name parameter.
+
+        DEPRECATED: Use create_from_items(items, collection_display_name=name) instead.
+
+        Args:
+            items: Initial items for the collection
+            collection_name: Legacy name parameter
+
+        Returns:
+            Collection instance with the specified items
+        """
+        return cls.create_from_items(items, collection_display_name=collection_name)
+
+    @property
+    def collection_name(self) -> str:
+        """
+        Legacy property for backward compatibility.
+
+        DEPRECATED: Use collection_display_name instead.
+
+        Returns:
+            The collection display name
+        """
+        return self.collection_display_name
+
+    @collection_name.setter
+    def collection_name(self, value: str) -> None:
+        """
+        Legacy setter for backward compatibility.
+
+        DEPRECATED: Use collection_display_name instead.
+
+        Args:
+            value: The name to set
+        """
+        self.collection_display_name = value
 
 
 # Export for use

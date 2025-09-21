@@ -5,6 +5,8 @@ This provides a standard validation container and common validation
 methods that can be inherited by any model requiring validation.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from pydantic import BaseModel, Field

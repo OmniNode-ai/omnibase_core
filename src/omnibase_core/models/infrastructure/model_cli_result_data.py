@@ -5,6 +5,8 @@ CLI result data model with typed fields for command execution results.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -27,7 +29,9 @@ class ModelCliResultData(BaseModel):
         | None
     ) = Field(description="Output data if successful")
     error_message: str | None = Field(description="Error message if failed")
-    tool_name: str | None = Field(description="Tool name if available")
+    # Entity reference with UUID
+    tool_id: UUID | None = Field(description="Unique identifier of the tool")
+    tool_display_name: str | None = Field(description="Human-readable tool name if available")
     execution_time_ms: int | None = Field(description="Execution time in milliseconds")
     status_code: int = Field(description="Status code")
     warnings: list[str] = Field(description="Warning messages")

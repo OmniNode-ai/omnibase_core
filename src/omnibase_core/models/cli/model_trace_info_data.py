@@ -4,6 +4,8 @@ Trace info data type definition.
 TypedDict for trace information to replace loose Any typing.
 """
 
+from __future__ import annotations
+
 from typing import TypedDict
 
 

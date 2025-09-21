@@ -40,14 +40,18 @@ class TestModelGenericCollection:
 
         assert collection.item_count() == 0
         assert collection.items == []
-        assert collection.collection_name == ""
+        assert collection.collection_display_name == ""
+        assert isinstance(collection.collection_id, UUID)
         assert isinstance(collection.created_at, datetime)
 
     def test_create_named_collection(self):
         """Test creating a named collection."""
-        collection = ModelGenericCollection[MockItem](collection_name="test_collection")
+        collection = ModelGenericCollection[MockItem](
+            collection_display_name="test_collection"
+        )
 
-        assert collection.collection_name == "test_collection"
+        assert collection.collection_display_name == "test_collection"
+        assert isinstance(collection.collection_id, UUID)
 
     def test_add_item(self):
         """Test adding items to collection."""
@@ -321,7 +325,9 @@ class TestModelGenericCollection:
 
     def test_get_summary(self):
         """Test getting collection summary."""
-        collection = ModelGenericCollection[MockItem](collection_name="test_collection")
+        collection = ModelGenericCollection[MockItem](
+            collection_display_name="test_collection"
+        )
         items = [
             MockItem(name="enabled_valid", enabled=True, is_valid=True),
             MockItem(name="disabled_invalid", enabled=False, is_valid=False),
@@ -330,7 +336,8 @@ class TestModelGenericCollection:
 
         summary = collection.get_summary()
 
-        assert summary.collection_name == "test_collection"
+        assert summary.collection_display_name == "test_collection"
+        assert summary.collection_id == collection.collection_id
         assert summary.total_items == 2
         assert summary.enabled_items == 1
         assert summary.valid_items == 1
@@ -393,14 +400,16 @@ class TestModelGenericCollection:
         """Test class methods for creating collections."""
         # Test create_empty
         empty_collection = ModelGenericCollection.create_empty("empty_test")
-        assert empty_collection.collection_name == "empty_test"
+        assert empty_collection.collection_display_name == "empty_test"
         assert empty_collection.item_count() == 0
+        assert isinstance(empty_collection.collection_id, UUID)
 
         # Test create_from_items
         items = [MockItem(name=f"item{i}") for i in range(3)]
         collection = ModelGenericCollection.create_from_items(items, "test_collection")
-        assert collection.collection_name == "test_collection"
+        assert collection.collection_display_name == "test_collection"
         assert collection.item_count() == 3
+        assert isinstance(collection.collection_id, UUID)
 
     def test_timestamp_updates(self):
         """Test that timestamps are updated on modifications."""
@@ -423,6 +432,65 @@ class TestModelGenericCollection:
         updated_at_after_extend = collection.updated_at
         collection.sort_by_priority()
         assert collection.updated_at > updated_at_after_extend
+
+    def test_backward_compatibility(self):
+        """Test backward compatibility with collection_name."""
+        # Test legacy property access
+        collection = ModelGenericCollection[MockItem](
+            collection_display_name="test_collection"
+        )
+
+        # Legacy getter should work
+        assert collection.collection_name == "test_collection"
+
+        # Legacy setter should work
+        collection.collection_name = "updated_name"
+        assert collection.collection_display_name == "updated_name"
+        assert collection.collection_name == "updated_name"
+
+        # Test legacy class methods
+        empty_collection = ModelGenericCollection.create_empty_with_name("legacy_empty")
+        assert empty_collection.collection_name == "legacy_empty"
+        assert empty_collection.collection_display_name == "legacy_empty"
+
+        items = [MockItem(name=f"item{i}") for i in range(2)]
+        legacy_collection = ModelGenericCollection.create_from_items_with_name(
+            items, "legacy_collection"
+        )
+        assert legacy_collection.collection_name == "legacy_collection"
+        assert legacy_collection.collection_display_name == "legacy_collection"
+        assert legacy_collection.item_count() == 2
+
+        # Test summary backward compatibility
+        summary = legacy_collection.get_summary()
+        assert summary.collection_name == "legacy_collection"
+        assert summary.collection_display_name == "legacy_collection"
+
+        # Test summary setter
+        summary.collection_name = "updated_summary"
+        assert summary.collection_display_name == "updated_summary"
+        assert summary.collection_name == "updated_summary"
+
+    def test_collection_id_uniqueness(self):
+        """Test that collection IDs are unique."""
+        collection1 = ModelGenericCollection[MockItem]()
+        collection2 = ModelGenericCollection[MockItem]()
+
+        # IDs should be different
+        assert collection1.collection_id != collection2.collection_id
+
+        # But we can specify the same ID if needed
+        shared_id = uuid4()
+        collection3 = ModelGenericCollection.create_empty(
+            collection_id=shared_id
+        )
+        collection4 = ModelGenericCollection.create_from_items(
+            [], collection_id=shared_id
+        )
+
+        assert collection3.collection_id == shared_id
+        assert collection4.collection_id == shared_id
+        assert collection3.collection_id == collection4.collection_id
 
 
 class TestModelGenericCollectionEdgeCases:

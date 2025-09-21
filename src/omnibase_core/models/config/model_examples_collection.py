@@ -2,10 +2,13 @@
 Examples collection model.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_data_format import EnumDataFormat
 from .model_example import ModelExample
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
@@ -31,8 +34,8 @@ class ModelExamples(BaseModel):
         description="Metadata about the examples collection",
     )
 
-    format: str = Field(
-        default="json",
+    format: EnumDataFormat = Field(
+        default=EnumDataFormat.JSON,
         description="Format of examples (json/yaml/text)",
     )
 
@@ -145,7 +148,7 @@ class ModelExamples(BaseModel):
         )
 
     @classmethod
-    def create_empty(cls) -> "ModelExamples":
+    def create_empty(cls) -> ModelExamples:
         """Create an empty examples collection."""
         return cls()
 
@@ -155,7 +158,7 @@ class ModelExamples(BaseModel):
         input_data: ModelExampleInputData,
         output_data: ModelExampleOutputData | None = None,
         name: str | None = None,
-    ) -> "ModelExamples":
+    ) -> ModelExamples:
         """Create collection with a single example."""
         example = ModelExample(
             name=name or "Single Example",

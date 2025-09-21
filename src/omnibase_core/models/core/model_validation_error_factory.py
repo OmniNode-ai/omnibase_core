@@ -4,6 +4,8 @@ Validation Error Factory Pattern for Model Creation.
 Specialized factory for validation error models with severity patterns.
 """
 
+from __future__ import annotations
+
 from typing import Type, TypeVar, Unpack
 
 from pydantic import BaseModel

@@ -4,6 +4,8 @@ Performance metric data type definition.
 TypedDict for performance metric values to replace loose Any typing.
 """
 
+from __future__ import annotations
+
 from typing import TypedDict
 
 

@@ -5,6 +5,8 @@ Clean, focused implementation with proper typing and single responsibility.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
 import hashlib
 from datetime import UTC, datetime
 from typing import Any, Union
@@ -40,7 +42,7 @@ class ModelMetadataNodeCollection(
         root: (
             Union[
                 dict[str, ModelFunctionNode | ModelFunctionNodeData],
-                "ModelMetadataNodeCollection",
+                ModelMetadataNodeCollection,
             ]
             | None
         ) = None,

@@ -5,6 +5,8 @@ Unified execution result pattern that extends Result[T, E] with
 timing, metadata, and execution tracking capabilities.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Any, Callable, Generic, TypeVar
 from uuid import UUID, uuid4
@@ -73,7 +75,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
         **kwargs: Any,
-    ) -> "ModelExecutionResult[T, E]":
+    ) -> ModelExecutionResult[T, E]:
         """Create a successful execution result."""
         return cls(
             success=True,
@@ -91,7 +93,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         execution_id: UUID | None = None,
         metadata: ModelCustomProperties | None = None,
         **kwargs: Any,
-    ) -> "ModelExecutionResult[T, E]":
+    ) -> ModelExecutionResult[T, E]:
         """Create an error execution result."""
         return cls(
             success=False,
@@ -109,7 +111,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         execution_id: UUID | None = None,
         tool_name: str | None = None,
         **kwargs: Any,
-    ) -> "ModelExecutionResult[Any, str]":
+    ) -> ModelExecutionResult[Any, str]:
         """
         Create successful CLI execution result.
         """
@@ -139,7 +141,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         tool_name: str | None = None,
         status_code: int = 1,
         **kwargs: Any,
-    ) -> "ModelExecutionResult[Any, str]":
+    ) -> ModelExecutionResult[Any, str]:
         """
         Create failed CLI execution result.
         """
@@ -376,7 +378,7 @@ def try_execution(
 
 # Export for use
 __all__ = [
-    "ModelExecutionResult",
+    ModelExecutionResult,
     "execution_ok",
     "execution_err",
     "try_execution",

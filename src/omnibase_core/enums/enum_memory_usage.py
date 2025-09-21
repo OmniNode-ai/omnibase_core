@@ -4,6 +4,8 @@ Memory Usage Enumeration.
 Defines categories for memory usage levels.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -71,7 +73,7 @@ class EnumMemoryUsage(Enum):
         return (min_gb, max_gb)
 
     @classmethod
-    def from_mb(cls, mb: float) -> "EnumMemoryUsage":
+    def from_mb(cls, mb: float) -> EnumMemoryUsage:
         """Determine category from memory usage in MB."""
         if mb < 10:
             return cls.MINIMAL
@@ -97,12 +99,12 @@ class EnumMemoryUsage(Enum):
             return cls.MASSIVE
 
     @classmethod
-    def from_gb(cls, gb: float) -> "EnumMemoryUsage":
+    def from_gb(cls, gb: float) -> EnumMemoryUsage:
         """Determine category from memory usage in GB."""
         return cls.from_mb(gb * 1024)
 
     @classmethod
-    def get_low_memory_categories(cls) -> list["EnumMemoryUsage"]:
+    def get_low_memory_categories(cls) -> list[EnumMemoryUsage]:
         """Get categories for low memory operations."""
         return [
             cls.MINIMAL,
@@ -112,7 +114,7 @@ class EnumMemoryUsage(Enum):
         ]
 
     @classmethod
-    def get_high_memory_categories(cls) -> list["EnumMemoryUsage"]:
+    def get_high_memory_categories(cls) -> list[EnumMemoryUsage]:
         """Get categories for high memory operations."""
         return [
             cls.VERY_HIGH,

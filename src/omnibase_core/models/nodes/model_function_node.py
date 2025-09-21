@@ -3,20 +3,18 @@ Function Node Model.
 
 Represents a function/method node with metadata and execution information.
 Used for metadata node collections and function documentation.
+
+Restructured to use composition of focused sub-models instead of
+excessive string fields in a single large model.
 """
 
-from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_complexity import EnumComplexity
-from ...enums.enum_function_status import EnumFunctionStatus
-from ...enums.enum_memory_usage import EnumMemoryUsage
-from ...enums.enum_runtime_category import EnumRuntimeCategory
-from ..core.model_custom_properties import ModelCustomProperties
-from ..metadata.model_semver import ModelSemVer
+from .model_function_node_core import ModelFunctionNodeCore
+from .model_function_node_metadata import ModelFunctionNodeMetadata
+from .model_function_node_performance import ModelFunctionNodePerformance
 from .model_function_node_summary import ModelFunctionNodeSummary
 
 
@@ -24,196 +22,122 @@ class ModelFunctionNode(BaseModel):
     """
     Function node model for metadata collections.
 
-    Represents a function or method with its associated metadata,
-    parameters, documentation, and execution context.
+    Restructured to use composition of focused sub-models:
+    - core: Essential function information and signature
+    - metadata: Documentation, tags, and organizational info
+    - performance: Performance metrics and complexity analysis
     """
 
-    # Core function information
-    name: str = Field(..., description="Function name")
-    description: str = Field(default="", description="Function description")
-    function_type: str = Field(
-        default="function",
-        description="Type of function (function, method, property, etc.)",
+    # Composed sub-models for focused concerns
+    core: ModelFunctionNodeCore = Field(
+        ...,
+        description="Core function information",
+    )
+    metadata: ModelFunctionNodeMetadata = Field(
+        default_factory=ModelFunctionNodeMetadata,
+        description="Documentation and metadata",
+    )
+    performance: ModelFunctionNodePerformance = Field(
+        default_factory=ModelFunctionNodePerformance,
+        description="Performance and complexity metrics",
     )
 
-    # Function signature
-    parameters: list[str] = Field(
-        default_factory=list,
-        description="Function parameters",
-    )
-    return_type: str | None = Field(
-        default=None,
-        description="Function return type annotation",
-    )
-    parameter_types: dict[str, str] = Field(
-        default_factory=dict,
-        description="Parameter type annotations",
-    )
+    # Backward compatibility properties
+    @property
+    def name(self) -> str:
+        """Get function name from core."""
+        return self.core.name
 
-    # Documentation
-    docstring: str | None = Field(default=None, description="Function docstring")
-    examples: list[str] = Field(default_factory=list, description="Usage examples")
-    notes: list[str] = Field(default_factory=list, description="Additional notes")
+    @property
+    def description(self) -> str:
+        """Get description from core."""
+        return self.core.description
 
-    # Metadata
-    module: str | None = Field(
-        default=None,
-        description="Module containing the function",
-    )
-    file_path: Path | None = Field(default=None, description="Source file path")
-    line_number: int | None = Field(
-        default=None,
-        description="Line number in source file",
-        ge=1,
-    )
+    @property
+    def status(self):
+        """Get status from core."""
+        return self.core.status
 
-    # Status and versioning
-    status: EnumFunctionStatus = Field(
-        default=EnumFunctionStatus.ACTIVE,
-        description="Function status (active, deprecated, disabled)",
-    )
-    version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Function version",
-    )
-    deprecated_since: str | None = Field(
-        default=None,
-        description="Version when deprecated",
-    )
-    replacement: str | None = Field(
-        default=None,
-        description="Replacement function if deprecated",
-    )
+    @property
+    def parameters(self) -> list[str]:
+        """Get parameters from core."""
+        return self.core.parameters
 
-    # Performance and usage
-    complexity: EnumComplexity = Field(
-        default=EnumComplexity.SIMPLE,
-        description="Function complexity (simple, moderate, complex)",
-    )
-    estimated_runtime: EnumRuntimeCategory | None = Field(
-        default=None,
-        description="Estimated runtime category",
-    )
-    memory_usage: EnumMemoryUsage | None = Field(
-        default=None,
-        description="Memory usage category",
-    )
+    @property
+    def complexity(self):
+        """Get complexity from performance."""
+        return self.performance.complexity
 
-    # Timestamps
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Creation timestamp",
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Last update timestamp",
-    )
-    last_validated: datetime | None = Field(
-        default=None,
-        description="Last validation timestamp",
-    )
+    @property
+    def tags(self) -> list[str]:
+        """Get tags from metadata."""
+        return self.metadata.tags
 
-    # Tags and categorization
-    tags: list[str] = Field(default_factory=list, description="Function tags")
-    categories: list[str] = Field(
-        default_factory=list,
-        description="Function categories",
-    )
-
-    # Custom properties for extensibility
-    custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
-        description="Custom properties with type safety",
-    )
-
-    # Dependencies and relationships
-    dependencies: list[str] = Field(
-        default_factory=list,
-        description="Function dependencies",
-    )
-    related_functions: list[str] = Field(
-        default_factory=list,
-        description="Related functions",
-    )
-
+    # Delegate methods to appropriate sub-models
     def is_active(self) -> bool:
         """Check if function is active."""
-        return self.status == EnumFunctionStatus.ACTIVE
+        return self.core.is_active()
 
     def is_disabled(self) -> bool:
         """Check if function is disabled."""
-        return self.status == EnumFunctionStatus.DISABLED
+        return self.core.is_disabled()
 
     def get_complexity_level(self) -> int:
         """Get numeric complexity level."""
-        complexity_map = {
-            EnumComplexity.SIMPLE: 1,
-            EnumComplexity.MODERATE: 2,
-            EnumComplexity.COMPLEX: 3,
-            EnumComplexity.VERY_COMPLEX: 4,
-        }
-        return complexity_map.get(self.complexity, 1)
+        return self.performance.get_complexity_level()
 
     def has_documentation(self) -> bool:
         """Check if function has adequate documentation."""
-        return bool(self.description and self.docstring)
+        return self.metadata.has_documentation()
 
     def has_examples(self) -> bool:
         """Check if function has usage examples."""
-        return len(self.examples) > 0
+        return self.metadata.has_examples()
 
     def get_parameter_count(self) -> int:
         """Get number of parameters."""
-        return len(self.parameters)
+        return self.core.get_parameter_count()
 
     def has_type_annotations(self) -> bool:
         """Check if function has type annotations."""
-        return bool(self.return_type or self.parameter_types)
+        return self.core.has_type_annotations()
 
     def add_tag(self, tag: str) -> None:
         """Add a tag if not already present."""
-        if tag not in self.tags:
-            self.tags.append(tag)
+        self.metadata.add_tag(tag)
 
     def remove_tag(self, tag: str) -> None:
         """Remove a tag if present."""
-        if tag in self.tags:
-            self.tags.remove(tag)
+        self.metadata.remove_tag(tag)
 
     def add_category(self, category: str) -> None:
         """Add a category if not already present."""
-        if category not in self.categories:
-            self.categories.append(category)
+        self.metadata.add_category(category)
 
     def add_example(self, example: str) -> None:
         """Add a usage example."""
-        if example not in self.examples:
-            self.examples.append(example)
+        self.metadata.add_example(example)
 
     def add_note(self, note: str) -> None:
         """Add a note."""
-        if note not in self.notes:
-            self.notes.append(note)
-
-    def mark_disabled(self) -> None:
-        """Mark function as disabled."""
-        self.status = EnumFunctionStatus.DISABLED
-        self.updated_at = datetime.now(UTC)
-
-    def mark_active(self) -> None:
-        """Mark function as active."""
-        self.status = EnumFunctionStatus.ACTIVE
-        self.deprecated_since = None
-        self.replacement = None
-        self.updated_at = datetime.now(UTC)
+        self.metadata.add_note(note)
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp."""
-        self.updated_at = datetime.now(UTC)
+        self.metadata.update_timestamp()
 
     def validate_function(self) -> None:
         """Mark function as validated."""
-        self.last_validated = datetime.now(UTC)
+        self.metadata.mark_validated()
+
+    def record_execution(
+        self,
+        success: bool,
+        execution_time_ms: float,
+        memory_used_mb: float = 0.0,
+    ) -> None:
+        """Record a function execution."""
+        self.performance.record_execution(success, execution_time_ms, memory_used_mb)
 
     def has_tests(self) -> bool:
         """Check if function has tests (placeholder implementation)."""
@@ -228,33 +152,30 @@ class ModelFunctionNode(BaseModel):
 
     def to_summary(self) -> ModelFunctionNodeSummary:
         """Get function summary with clean typing."""
-        return ModelFunctionNodeSummary(
+        return ModelFunctionNodeSummary.create_from_full_data(
             name=self.name,
             description=self.description,
-            function_type=self.function_type,
             status=self.status,
-            complexity=self.complexity,
-            version=self.version,
+            complexity=str(self.complexity.value),
+            version=self.core.version,
             parameter_count=self.get_parameter_count(),
-            return_type=self.return_type,
+            return_type=self.core.return_type,
             has_documentation=self.has_documentation(),
             has_examples=self.has_examples(),
             has_type_annotations=self.has_type_annotations(),
             has_tests=self.has_tests(),
             tags=self.tags,
-            categories=self.categories,
-            dependencies=self.dependencies,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            last_validated=self.last_validated,
-            execution_count=0,  # Add actual metrics if available
-            success_rate=0.0,  # Add actual metrics if available
-            average_execution_time_ms=0.0,  # Add actual metrics if available
-            memory_usage_mb=0.0,  # Add actual metrics if available
-            cyclomatic_complexity=1,  # Add actual complexity calculation if available
-            lines_of_code=(
-                len(self.implementation.split("\n")) if self.implementation else 0
-            ),
+            categories=self.metadata.categories,
+            dependencies=self.metadata.dependencies,
+            created_at=self.metadata.created_at,
+            updated_at=self.metadata.updated_at,
+            last_validated=self.metadata.last_validated,
+            execution_count=self.performance.execution_count,
+            success_rate=self.performance.success_rate,
+            average_execution_time_ms=self.performance.average_execution_time_ms,
+            memory_usage_mb=self.performance.memory_usage_mb,
+            cyclomatic_complexity=self.performance.cyclomatic_complexity,
+            lines_of_code=self.performance.lines_of_code,
         )
 
     @classmethod
@@ -263,13 +184,10 @@ class ModelFunctionNode(BaseModel):
         name: str,
         description: str = "",
         function_type: str = "function",
-    ) -> "ModelFunctionNode":
+    ) -> ModelFunctionNode:
         """Create a simple function node."""
-        return cls(
-            name=name,
-            description=description,
-            function_type=function_type,
-        )
+        core = ModelFunctionNodeCore.create_simple(name, description, function_type)
+        return cls(core=core)
 
     @classmethod
     def create_from_signature(
@@ -278,13 +196,38 @@ class ModelFunctionNode(BaseModel):
         parameters: list[str],
         return_type: str | None = None,
         description: str = "",
-    ) -> "ModelFunctionNode":
+    ) -> ModelFunctionNode:
         """Create function node from signature information."""
+        core = ModelFunctionNodeCore.create_from_signature(
+            name, parameters, return_type, description
+        )
+        return cls(core=core)
+
+    @classmethod
+    def create_documented(
+        cls,
+        name: str,
+        description: str,
+        docstring: str,
+        examples: list[str] | None = None,
+    ) -> ModelFunctionNode:
+        """Create function node with documentation."""
+        core = ModelFunctionNodeCore.create_simple(name, description)
+        metadata = ModelFunctionNodeMetadata.create_documented(docstring, examples)
+        return cls(core=core, metadata=metadata)
+
+    @classmethod
+    def create_with_performance(
+        cls,
+        name: str,
+        description: str = "",
+        performance: ModelFunctionNodePerformance | None = None,
+    ) -> ModelFunctionNode:
+        """Create function node with performance profile."""
+        core = ModelFunctionNodeCore.create_simple(name, description)
         return cls(
-            name=name,
-            description=description,
-            parameters=parameters,
-            return_type=return_type,
+            core=core,
+            performance=performance or ModelFunctionNodePerformance(),
         )
 
 

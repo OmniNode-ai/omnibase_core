@@ -1,10 +1,14 @@
 """
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
+
+Restructured to use composition of focused sub-models instead of
+excessive string fields in a single large model.
 """
+
+from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -12,25 +16,29 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    SecretStr,
     field_serializer,
-    model_validator,
 )
 
-from ...enums.enum_auth_type import EnumAuthType
 from ...enums.enum_connection_state import EnumConnectionState
-from ...enums.enum_connection_type import EnumConnectionType
+from ..connections.model_connection_auth import ModelConnectionAuth
+from ..connections.model_connection_endpoint import ModelConnectionEndpoint
 from ..connections.model_connection_metrics import ModelConnectionMetrics
+from ..connections.model_connection_pool import ModelConnectionPool
+from ..connections.model_connection_security import ModelConnectionSecurity
 from ..connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
-from ..metadata.model_semver import ModelSemVer
 
 
 class ModelConnectionInfo(BaseModel):
     """
     Connection information with typed fields.
-    Replaces Dict[str, Any] for connection_info fields.
+
+    Restructured to use composition of focused sub-models:
+    - endpoint: Network addressing and protocol details
+    - auth: Authentication configuration
+    - security: SSL/TLS settings
+    - pool: Connection pooling and timeouts
     """
 
     # Connection identification
@@ -38,85 +46,23 @@ class ModelConnectionInfo(BaseModel):
         default_factory=uuid.uuid4,
         description="Unique connection identifier",
     )
-    connection_type: EnumConnectionType = Field(
+
+    # Composed sub-models for focused concerns
+    endpoint: ModelConnectionEndpoint = Field(
         ...,
-        description="Connection type (tcp/http/websocket/grpc)",
+        description="Connection endpoint configuration",
     )
-    protocol_version: ModelSemVer | None = Field(None, description="Protocol version")
-
-    # Endpoint information
-    host: str = Field(
-        ...,
-        description="Host address (IP or hostname)",
-        min_length=1,
-        max_length=255,
-        pattern=r"^[a-zA-Z0-9.-]+$",
+    auth: ModelConnectionAuth = Field(
+        default_factory=ModelConnectionAuth,
+        description="Authentication configuration",
     )
-    port: int = Field(..., description="Port number", ge=1, le=65535)
-    path: str | None = Field(
-        None, description="Connection path/endpoint", max_length=2048, pattern=r"^/.*$"
+    security: ModelConnectionSecurity = Field(
+        default_factory=ModelConnectionSecurity,
+        description="Security and SSL configuration",
     )
-
-    # Authentication
-    auth_type: EnumAuthType | None = Field(None, description="Authentication type")
-    username: str | None = Field(
-        None,
-        description="Username",
-        min_length=1,
-        max_length=255,
-        pattern=r"^[a-zA-Z0-9._@-]+$",
-    )
-    password: SecretStr | None = Field(
-        None, description="Password (encrypted)", min_length=1
-    )
-    api_key: SecretStr | None = Field(
-        None, description="API key (encrypted)", min_length=1
-    )
-    token: SecretStr | None = Field(
-        None, description="Auth token (encrypted)", min_length=1
-    )
-
-    # SSL/TLS
-    use_ssl: bool = Field(default=False, description="Whether to use SSL/TLS")
-    ssl_verify: bool = Field(
-        default=True,
-        description="Whether to verify SSL certificates",
-    )
-    ssl_cert_path: Path | None = Field(None, description="SSL certificate path")
-    ssl_key_path: Path | None = Field(None, description="SSL key path")
-    ssl_ca_path: Path | None = Field(None, description="SSL CA bundle path")
-
-    # Connection parameters
-    timeout_seconds: int = Field(
-        30, description="Connection timeout in seconds", ge=1, le=3600
-    )
-    retry_count: int = Field(3, description="Number of retry attempts", ge=0, le=10)
-    retry_delay_seconds: int = Field(
-        1, description="Delay between retries in seconds", ge=0, le=60
-    )
-    keepalive_interval: int | None = Field(
-        None, description="Keepalive interval in seconds", ge=1, le=300
-    )
-
-    # Connection pooling
-    pool_size: int | None = Field(
-        None, description="Connection pool size", ge=1, le=1000
-    )
-    pool_timeout: int | None = Field(
-        None, description="Pool timeout in seconds", ge=1, le=3600
-    )
-    max_overflow: int | None = Field(
-        None, description="Maximum pool overflow", ge=0, le=100
-    )
-
-    # Headers and metadata
-    headers: dict[str, str] = Field(
-        default_factory=dict,
-        description="Connection headers",
-    )
-    query_params: dict[str, str] = Field(
-        default_factory=dict,
-        description="Query parameters",
+    pool: ModelConnectionPool = Field(
+        default_factory=ModelConnectionPool,
+        description="Connection pooling configuration",
     )
 
     # Connection state
@@ -130,93 +76,141 @@ class ModelConnectionInfo(BaseModel):
         description="Current connection state",
     )
 
-    # Metrics
+    # Metrics and custom properties
     metrics: ModelConnectionMetrics | None = Field(
         None,
         description="Connection metrics",
     )
-
-    # Custom properties
     custom_properties: ModelCustomConnectionProperties = Field(
         default_factory=lambda: ModelCustomConnectionProperties(),
         description="Custom connection properties",
     )
 
+    # Backward compatibility properties
+    @property
+    def host(self) -> str:
+        """Get host from endpoint."""
+        return self.endpoint.host
+
+    @property
+    def port(self) -> int:
+        """Get port from endpoint."""
+        return self.endpoint.port
+
+    @property
+    def connection_type(self):
+        """Get connection type from endpoint."""
+        return self.endpoint.connection_type
+
+    @property
+    def use_ssl(self) -> bool:
+        """Get SSL flag from security."""
+        return self.security.use_ssl
+
     model_config = ConfigDict()
-
-    @model_validator(mode="after")
-    def validate_connection_consistency(self) -> "ModelConnectionInfo":
-        """Validate connection configuration consistency."""
-        # SSL path validation
-        if self.use_ssl:
-            if self.ssl_cert_path and not self.ssl_cert_path.exists():
-                raise ValueError(
-                    f"SSL certificate path does not exist: {self.ssl_cert_path}"
-                )
-            if self.ssl_key_path and not self.ssl_key_path.exists():
-                raise ValueError(f"SSL key path does not exist: {self.ssl_key_path}")
-            if self.ssl_ca_path and not self.ssl_ca_path.exists():
-                raise ValueError(
-                    f"SSL CA bundle path does not exist: {self.ssl_ca_path}"
-                )
-
-        # Authentication validation
-        if self.auth_type == EnumAuthType.BASIC:
-            if not self.username or not self.password:
-                raise ValueError(
-                    "Basic authentication requires both username and password"
-                )
-        elif self.auth_type == EnumAuthType.BEARER:
-            if not self.token:
-                raise ValueError("Bearer authentication requires a token")
-        elif self.auth_type == EnumAuthType.API_KEY:
-            if not self.api_key:
-                raise ValueError("API key authentication requires an api_key")
-
-        # Pool configuration validation
-        if self.pool_size and self.max_overflow:
-            if self.max_overflow > self.pool_size:
-                raise ValueError("max_overflow cannot exceed pool_size")
-
-        # Path validation for connection types
-        if self.connection_type in [
-            EnumConnectionType.HTTP,
-            EnumConnectionType.WEBSOCKET,
-        ]:
-            if self.path and not self.path.startswith("/"):
-                raise ValueError("HTTP/WebSocket path must start with '/'")
-
-        return self
 
     def get_connection_string(self) -> str:
         """Generate connection string."""
-        scheme = "https" if self.use_ssl else "http"
+        auth_header = self.auth.get_auth_header()
         auth = ""
-        if self.username and self.password:
-            auth = f"{self.username}:***@"
+        if self.auth.username and self.auth.password:
+            auth = f"{self.auth.username}:***@"
 
-        base = f"{scheme}://{auth}{self.host}:{self.port}"
-        if self.path:
-            base += self.path
-
-        return base
+        return self.endpoint.get_base_url(self.security.use_ssl) + (auth if auth else "")
 
     def is_secure(self) -> bool:
         """Check if connection uses secure protocols."""
-        return self.use_ssl or self.auth_type in {
-            EnumAuthType.OAUTH2,
-            EnumAuthType.JWT,
-            EnumAuthType.MTLS,
-        }
+        return self.security.is_secure_connection() or self.auth.is_secure_auth()
 
-    @field_serializer("password", "api_key", "token")
-    def serialize_secret(self, value: Any) -> str:
-        if value and hasattr(value, "get_secret_value"):
-            return "***MASKED***"
-        return str(value) if value else ""
+    def validate_configuration(self) -> bool:
+        """Validate the complete connection configuration."""
+        # Validate endpoint path for connection type
+        if not self.endpoint.validate_path_for_type():
+            return False
+
+        # Validate authentication requirements
+        if not self.auth.validate_auth_requirements():
+            return False
+
+        # Validate pool configuration via the pool model's validator
+        try:
+            self.pool.model_validate(self.pool.model_dump())
+        except ValueError:
+            return False
+
+        # Validate security configuration via the security model's validator
+        try:
+            self.security.model_validate(self.security.model_dump())
+        except ValueError:
+            return False
+
+        return True
+
+    def mark_connected(self) -> None:
+        """Mark connection as established."""
+        self.connection_state = EnumConnectionState.CONNECTED
+        self.established_at = datetime.now()
+
+    def mark_disconnected(self) -> None:
+        """Mark connection as disconnected."""
+        self.connection_state = EnumConnectionState.DISCONNECTED
+
+    def mark_used(self) -> None:
+        """Mark connection as recently used."""
+        self.last_used_at = datetime.now()
 
     @field_serializer("established_at", "last_used_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:
         if value and isinstance(value, datetime):
             return value.isoformat()
         return None
+
+    @classmethod
+    def create_http(
+        cls,
+        host: str,
+        port: int = 80,
+        path: str | None = None,
+        use_ssl: bool = False,
+    ) -> ModelConnectionInfo:
+        """Create HTTP connection."""
+        endpoint = ModelConnectionEndpoint.create_http(host, port, path)
+        security = (
+            ModelConnectionSecurity.create_secure()
+            if use_ssl
+            else ModelConnectionSecurity.create_insecure()
+        )
+        return cls(endpoint=endpoint, security=security)
+
+    @classmethod
+    def create_websocket(
+        cls,
+        host: str,
+        port: int = 80,
+        path: str | None = None,
+        use_ssl: bool = False,
+    ) -> ModelConnectionInfo:
+        """Create WebSocket connection."""
+        endpoint = ModelConnectionEndpoint.create_websocket(host, port, path)
+        security = (
+            ModelConnectionSecurity.create_secure()
+            if use_ssl
+            else ModelConnectionSecurity.create_insecure()
+        )
+        return cls(endpoint=endpoint, security=security)
+
+    @classmethod
+    def create_with_auth(
+        cls,
+        endpoint: ModelConnectionEndpoint,
+        auth: ModelConnectionAuth,
+        security: ModelConnectionSecurity | None = None,
+        pool: ModelConnectionPool | None = None,
+    ) -> ModelConnectionInfo:
+        """Create connection with custom authentication."""
+        return cls(
+            endpoint=endpoint,
+            auth=auth,
+            security=security or ModelConnectionSecurity(),
+            pool=pool or ModelConnectionPool(),
+        )

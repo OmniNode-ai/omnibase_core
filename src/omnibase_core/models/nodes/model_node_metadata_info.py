@@ -4,152 +4,289 @@ Node Metadata Info Model.
 Simple model for node metadata information used in CLI output.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...enums.enum_metadata_node_type import EnumMetadataNodeType
+from ...enums.enum_node_health_status import EnumNodeHealthStatus
 from ...protocols.protocol_node_info_like import NodeInfoLike
 from ..metadata.model_semver import ModelSemVer
+from .model_node_core_metadata import ModelNodeCoreMetadata
+from .model_node_organization_metadata import ModelNodeOrganizationMetadata
+from .model_node_performance_metrics import ModelNodePerformanceMetrics
 
 
 class ModelNodeMetadataInfo(BaseModel):
     """
     Node metadata information model.
 
-    Used for capturing metadata about nodes in CLI output and processing.
+    Restructured to use focused sub-models for better organization.
+    Maintains backward compatibility through property delegation.
     """
 
-    # Core metadata
-    node_id: UUID = Field(default_factory=uuid4, description="Node identifier")
-    node_name: str = Field(..., description="Node name")
-    node_type: str = Field(..., description="Node type")
-
-    # Metadata details
-    description: str | None = Field(default=None, description="Node description")
-    version: ModelSemVer | None = Field(default=None, description="Node version")
-    author: str | None = Field(default=None, description="Node author")
-
-    # Status information
-    status: EnumMetadataNodeStatus = Field(
-        default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
+    # Composed sub-models (3 primary components)
+    core: ModelNodeCoreMetadata = Field(
+        default_factory=ModelNodeCoreMetadata,
+        description="Core node metadata",
     )
-    health: str = Field(default="healthy", description="Node health")
-
-    # Timestamps
-    created_at: datetime | None = Field(default=None, description="Creation timestamp")
-    updated_at: datetime | None = Field(
-        default=None,
-        description="Last update timestamp",
+    performance: ModelNodePerformanceMetrics = Field(
+        default_factory=ModelNodePerformanceMetrics,
+        description="Performance metrics",
     )
-    last_accessed: datetime | None = Field(
-        default=None,
-        description="Last access timestamp",
+    organization: ModelNodeOrganizationMetadata = Field(
+        default_factory=ModelNodeOrganizationMetadata,
+        description="Organization metadata",
     )
 
-    # Usage and performance
-    usage_count: int = Field(default=0, description="Usage count", ge=0)
-    error_count: int = Field(default=0, description="Error count", ge=0)
-    success_rate: float = Field(
-        default=100.0,
-        description="Success rate percentage",
-        ge=0.0,
-        le=100.0,
-    )
+    # Backward compatibility properties
+    @property
+    def node_id(self) -> UUID:
+        """Node identifier (delegated to core)."""
+        return self.core.node_id
 
-    # Configuration and capabilities
-    capabilities: list[str] = Field(
-        default_factory=list,
-        description="Node capabilities",
-    )
-    tags: list[str] = Field(default_factory=list, description="Node tags")
-    categories: list[str] = Field(default_factory=list, description="Node categories")
+    @node_id.setter
+    def node_id(self, value: UUID) -> None:
+        """Set node identifier."""
+        self.core.node_id = value
 
-    # Dependencies
-    dependencies: list[str] = Field(
-        default_factory=list,
-        description="Node dependencies",
-    )
-    dependents: list[str] = Field(
-        default_factory=list,
-        description="Nodes that depend on this",
-    )
+    @property
+    def node_name(self) -> str:
+        """Node name (delegated to core)."""
+        return self.core.node_name
 
-    # Custom metadata
-    custom_metadata: dict[str, str | int | bool | float] = Field(
-        default_factory=dict,
-        description="Custom metadata fields",
-    )
+    @node_name.setter
+    def node_name(self, value: str) -> None:
+        """Set node name."""
+        self.core.node_name = value
+
+    @property
+    def node_type(self) -> EnumMetadataNodeType:
+        """Node type (delegated to core)."""
+        return self.core.node_type
+
+    @node_type.setter
+    def node_type(self, value: EnumMetadataNodeType) -> None:
+        """Set node type."""
+        self.core.node_type = value
+
+    @property
+    def status(self) -> EnumMetadataNodeStatus:
+        """Node status (delegated to core)."""
+        return self.core.status
+
+    @status.setter
+    def status(self, value: EnumMetadataNodeStatus) -> None:
+        """Set node status."""
+        self.core.status = value
+
+    @property
+    def health(self) -> str:
+        """Node health (backward compatible string)."""
+        return self.core.health.value
+
+    @health.setter
+    def health(self, value: str) -> None:
+        """Set node health from string."""
+        try:
+            self.core.health = EnumNodeHealthStatus(value)
+        except ValueError:
+            self.core.health = EnumNodeHealthStatus.UNKNOWN
+
+    @property
+    def version(self) -> ModelSemVer | None:
+        """Node version (delegated to core)."""
+        return self.core.version
+
+    @version.setter
+    def version(self, value: ModelSemVer | None) -> None:
+        """Set node version."""
+        self.core.version = value
+
+    @property
+    def description(self) -> str | None:
+        """Node description (delegated to organization)."""
+        return self.organization.description
+
+    @description.setter
+    def description(self, value: str | None) -> None:
+        """Set node description."""
+        self.organization.description = value
+
+    @property
+    def author(self) -> str | None:
+        """Node author (delegated to organization)."""
+        return self.organization.author
+
+    @author.setter
+    def author(self, value: str | None) -> None:
+        """Set node author."""
+        self.organization.author = value
+
+    @property
+    def capabilities(self) -> list[str]:
+        """Node capabilities (delegated to organization)."""
+        return self.organization.capabilities
+
+    @property
+    def tags(self) -> list[str]:
+        """Node tags (delegated to organization)."""
+        return self.organization.tags
+
+    @property
+    def categories(self) -> list[str]:
+        """Node categories (delegated to organization)."""
+        return self.organization.categories
+
+    @property
+    def dependencies(self) -> list[str]:
+        """Node dependencies (delegated to organization)."""
+        return self.organization.dependencies
+
+    @property
+    def dependents(self) -> list[str]:
+        """Node dependents (delegated to organization)."""
+        return self.organization.dependents
+
+    @property
+    def usage_count(self) -> int:
+        """Usage count (delegated to performance)."""
+        return self.performance.usage_count
+
+    @property
+    def error_count(self) -> int:
+        """Error count (delegated to performance)."""
+        return self.performance.error_count
+
+    @property
+    def success_rate(self) -> float:
+        """Success rate (delegated to performance)."""
+        return self.performance.success_rate
+
+    @property
+    def created_at(self) -> datetime | None:
+        """Creation timestamp (delegated to performance)."""
+        return self.performance.created_at
+
+    @created_at.setter
+    def created_at(self, value: datetime | None) -> None:
+        """Set creation timestamp."""
+        self.performance.created_at = value
+
+    @property
+    def updated_at(self) -> datetime | None:
+        """Update timestamp (delegated to performance)."""
+        return self.performance.updated_at
+
+    @updated_at.setter
+    def updated_at(self, value: datetime | None) -> None:
+        """Set update timestamp."""
+        self.performance.updated_at = value
+
+    @property
+    def last_accessed(self) -> datetime | None:
+        """Last access timestamp (delegated to performance)."""
+        return self.performance.last_accessed
+
+    @last_accessed.setter
+    def last_accessed(self, value: datetime | None) -> None:
+        """Set last access timestamp."""
+        self.performance.last_accessed = value
+
+    @property
+    def custom_metadata(self) -> dict[str, str | int | bool | float]:
+        """Custom metadata (backward compatible)."""
+        # Convert from typed custom properties to legacy format
+        result = {}
+        if self.organization.custom_properties.string_properties:
+            result.update(self.organization.custom_properties.string_properties)
+        if self.organization.custom_properties.numeric_properties:
+            result.update(self.organization.custom_properties.numeric_properties)
+        if self.organization.custom_properties.boolean_properties:
+            result.update(self.organization.custom_properties.boolean_properties)
+        return result
+
+    @custom_metadata.setter
+    def custom_metadata(self, value: dict[str, str | int | bool | float]) -> None:
+        """Set custom metadata (convert to typed properties)."""
+        for key, val in value.items():
+            if isinstance(val, str):
+                self.organization.custom_properties.string_properties[key] = val
+            elif isinstance(val, (int, float)):
+                self.organization.custom_properties.numeric_properties[key] = val
+            elif isinstance(val, bool):
+                self.organization.custom_properties.boolean_properties[key] = val
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status == EnumMetadataNodeStatus.ACTIVE
+        return self.core.is_active()
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
-        return self.health == "healthy"
+        return self.core.is_healthy()
 
     def has_errors(self) -> bool:
         """Check if node has errors."""
-        return self.error_count > 0
+        return self.performance.has_errors()
 
     def get_success_rate(self) -> float:
         """Get success rate."""
-        return self.success_rate
+        return self.performance.get_success_rate()
 
     def is_high_usage(self) -> bool:
         """Check if node has high usage (>100 uses)."""
-        return self.usage_count > 100
+        return self.performance.is_high_usage()
 
     def add_tag(self, tag: str) -> None:
         """Add a tag if not already present."""
-        if tag not in self.tags:
-            self.tags.append(tag)
+        self.organization.add_tag(tag)
 
     def remove_tag(self, tag: str) -> None:
         """Remove a tag if present."""
-        if tag in self.tags:
-            self.tags.remove(tag)
+        self.organization.remove_tag(tag)
 
     def add_capability(self, capability: str) -> None:
         """Add a capability if not already present."""
-        if capability not in self.capabilities:
-            self.capabilities.append(capability)
+        self.organization.add_capability(capability)
 
     def has_capability(self, capability: str) -> bool:
         """Check if node has a specific capability."""
-        return capability in self.capabilities
+        return self.organization.has_capability(capability)
 
     def add_category(self, category: str) -> None:
         """Add a category if not already present."""
-        if category not in self.categories:
-            self.categories.append(category)
+        self.organization.add_category(category)
 
     def increment_usage(self) -> None:
         """Increment usage count."""
-        self.usage_count += 1
+        self.performance.increment_usage()
 
     def increment_errors(self) -> None:
         """Increment error count and update success rate."""
-        self.error_count += 1
-        if self.usage_count > 0:
-            success_count = self.usage_count - self.error_count
-            self.success_rate = (success_count / self.usage_count) * 100.0
+        self.performance.increment_errors()
 
     def update_accessed_time(self) -> None:
         """Update last accessed timestamp."""
-        self.last_accessed = datetime.now(UTC)
+        self.performance.update_accessed_time()
 
     def get_summary(self) -> dict[str, str | int | bool | float | list[str] | None]:
         """Get node metadata summary."""
+        # Combine summaries from all sub-models
+        core_summary = self.core.get_status_summary()
+        performance_summary = self.performance.get_performance_summary()
+        org_summary = self.organization.get_organization_summary()
+
         return {
             "node_id": str(self.node_id),
             "node_name": self.node_name,
-            "node_type": self.node_type,
-            "status": self.status,
+            "node_type": self.node_type.value,
+            "status": self.status.value,
             "health": self.health,
-            "version": str(self.version) if self.version else None,
+            "version": core_summary["version"],
             "usage_count": self.usage_count,
             "error_count": self.error_count,
             "success_rate": self.success_rate,
@@ -158,6 +295,9 @@ class ModelNodeMetadataInfo(BaseModel):
             "is_active": self.is_active(),
             "is_healthy": self.is_healthy(),
             "has_errors": self.has_errors(),
+            "capabilities_count": org_summary["capabilities_count"],
+            "tags_count": org_summary["tags_count"],
+            "is_high_usage": performance_summary["is_high_usage"],
         }
 
     @classmethod
@@ -165,27 +305,48 @@ class ModelNodeMetadataInfo(BaseModel):
         cls,
         node_id: UUID,
         node_name: str,
-        node_type: str = "generic",
-    ) -> "ModelNodeMetadataInfo":
+        node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
+    ) -> ModelNodeMetadataInfo:
         """Create a simple node metadata info."""
-        return cls(
+        core = ModelNodeCoreMetadata(
             node_id=node_id,
             node_name=node_name,
             node_type=node_type,
         )
+        return cls(
+            core=core,
+            performance=ModelNodePerformanceMetrics.create_new(),
+            organization=ModelNodeOrganizationMetadata(),
+        )
 
     @classmethod
-    def from_node_info(cls, node_info: NodeInfoLike) -> "ModelNodeMetadataInfo":
+    def from_node_info(cls, node_info: NodeInfoLike) -> ModelNodeMetadataInfo:
         """Create from node info object."""
-        # Extract basic information
-        return cls(
+        # Extract basic information and distribute to sub-models
+        core = ModelNodeCoreMetadata(
             node_id=getattr(node_info, "node_id", uuid4()),
             node_name=getattr(node_info, "node_name", "unknown"),
-            node_type=getattr(node_info, "node_type", "generic"),
-            description=getattr(node_info, "description", None),
+            node_type=getattr(node_info, "node_type", EnumMetadataNodeType.FUNCTION),
             version=getattr(node_info, "version", None),
             status=getattr(node_info, "status", EnumMetadataNodeStatus.ACTIVE),
-            health=getattr(node_info, "health", "healthy"),
+        )
+
+        # Handle health with enum conversion
+        health_str = getattr(node_info, "health", "healthy")
+        try:
+            core.health = EnumNodeHealthStatus(health_str)
+        except ValueError:
+            core.health = EnumNodeHealthStatus.HEALTHY
+
+        organization = ModelNodeOrganizationMetadata(
+            description=getattr(node_info, "description", None),
+            author=getattr(node_info, "author", None),
+        )
+
+        return cls(
+            core=core,
+            performance=ModelNodePerformanceMetrics.create_new(),
+            organization=organization,
         )
 
 

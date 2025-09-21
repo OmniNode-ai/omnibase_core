@@ -5,13 +5,17 @@ Enhanced node information specifically for metadata collections
 with usage metrics and performance tracking.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
+from ...enums.enum_validation_level import EnumValidationLevel
 from ..metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
@@ -36,7 +40,8 @@ class ModelMetadataNodeInfo(BaseModel):
     """
 
     # Core identification
-    name: str = Field(..., description="Node name")
+    node_id: UUID = Field(..., description="UUID for node identifier")
+    node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str = Field(default="", description="Node description")
     node_type: EnumMetadataNodeType = Field(
         default=EnumMetadataNodeType.FUNCTION,
@@ -84,8 +89,8 @@ class ModelMetadataNodeInfo(BaseModel):
         default=False,
         description="Whether node has examples",
     )
-    documentation_quality: str = Field(
-        default="basic",
+    documentation_quality: EnumValidationLevel = Field(
+        default=EnumValidationLevel.BASIC,
         description="Documentation quality level",
     )
 
@@ -137,8 +142,8 @@ class ModelMetadataNodeInfo(BaseModel):
     def has_good_documentation(self) -> bool:
         """Check if node has good documentation."""
         return self.has_documentation and self.documentation_quality in [
-            "good",
-            "excellent",
+            EnumValidationLevel.GOOD,
+            EnumValidationLevel.EXCELLENT,
         ]
 
     def get_success_rate(self) -> float:
@@ -212,9 +217,9 @@ class ModelMetadataNodeInfo(BaseModel):
         )
         self.update_timestamp()
 
-    def set_documentation_quality(self, quality: str) -> None:
+    def set_documentation_quality(self, quality: EnumValidationLevel) -> None:
         """Set documentation quality level."""
-        valid_levels = ["basic", "good", "excellent"]
+        valid_levels = [EnumValidationLevel.BASIC, EnumValidationLevel.GOOD, EnumValidationLevel.EXCELLENT]
         if quality in valid_levels:
             self.documentation_quality = quality
             self.has_documentation = True
@@ -263,10 +268,17 @@ class ModelMetadataNodeInfo(BaseModel):
         name: str,
         description: str = "",
         node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
-    ) -> "ModelMetadataNodeInfo":
+    ) -> ModelMetadataNodeInfo:
         """Create a simple node info."""
+        import hashlib
+
+        # Generate UUID from name
+        node_hash = hashlib.sha256(name.encode()).hexdigest()
+        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+
         return cls(
-            name=name,
+            node_id=node_id,
+            node_display_name=name,
             description=description,
             node_type=node_type,
         )
@@ -277,10 +289,17 @@ class ModelMetadataNodeInfo(BaseModel):
         name: str,
         description: str = "",
         complexity: EnumMetadataNodeComplexity = EnumMetadataNodeComplexity.SIMPLE,
-    ) -> "ModelMetadataNodeInfo":
+    ) -> ModelMetadataNodeInfo:
         """Create function node info."""
+        import hashlib
+
+        # Generate UUID from name
+        node_hash = hashlib.sha256(name.encode()).hexdigest()
+        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+
         return cls(
-            name=name,
+            node_id=node_id,
+            node_display_name=name,
             description=description,
             node_type=EnumMetadataNodeType.FUNCTION,
             complexity=complexity,
@@ -291,21 +310,41 @@ class ModelMetadataNodeInfo(BaseModel):
         cls,
         name: str,
         description: str = "",
-    ) -> "ModelMetadataNodeInfo":
+    ) -> ModelMetadataNodeInfo:
         """Create documentation node info."""
+        import hashlib
+
+        # Generate UUID from name
+        node_hash = hashlib.sha256(name.encode()).hexdigest()
+        node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+
         return cls(
-            name=name,
+            node_id=node_id,
+            node_display_name=name,
             description=description,
             node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
-            documentation_quality="good",
+            documentation_quality=EnumValidationLevel.GOOD,
         )
+
+    @property
+    def name(self) -> str:
+        """Backward compatibility property for name."""
+        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Backward compatibility setter for name."""
+        import hashlib
+        node_hash = hashlib.sha256(value.encode()).hexdigest()
+        self.node_id = UUID(f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}")
+        self.node_display_name = value
 
 
 # Export for use
 __all__ = [
     "ModelMetadataNodeComplexity",
-    "ModelMetadataNodeInfo",
+    ModelMetadataNodeInfo,
     "ModelMetadataNodeStatus",
     "ModelMetadataNodeType",
     "ModelMetadataUsageMetrics",

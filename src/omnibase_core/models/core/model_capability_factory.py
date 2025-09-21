@@ -4,6 +4,8 @@ Capability Factory Pattern for Model Creation.
 Specialized factory for capability-type models with standardized naming and metadata.
 """
 
+from __future__ import annotations
+
 from typing import Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel

@@ -10,6 +10,8 @@ from pydantic import ValidationError
 from src.omnibase_core.models.cli.model_cli_advanced_params import (
     ModelCliAdvancedParams,
 )
+from src.omnibase_core.enums.enum_debug_level import EnumDebugLevel
+from src.omnibase_core.enums.enum_security_level import EnumSecurityLevel
 
 
 class TestModelCliAdvancedParams:
@@ -37,7 +39,7 @@ class TestModelCliAdvancedParams:
         assert params.cache_ttl_seconds is None
 
         # Debug and logging parameters
-        assert params.debug_level == "info"
+        assert params.debug_level == EnumDebugLevel.INFO
         assert params.enable_profiling is False
         assert params.enable_tracing is False
 
@@ -46,7 +48,7 @@ class TestModelCliAdvancedParams:
         assert params.compression_enabled is False
 
         # Security parameters
-        assert params.security_level == "standard"
+        assert params.security_level == EnumSecurityLevel.STANDARD
         assert params.enable_sandbox is False
 
         # Custom environment variables
@@ -70,11 +72,11 @@ class TestModelCliAdvancedParams:
             max_parallel_tasks=4,
             enable_cache=False,
             cache_ttl_seconds=300,
-            debug_level="debug",
+            debug_level=EnumDebugLevel.DEBUG,
             enable_profiling=True,
             enable_tracing=True,
             compression_enabled=True,
-            security_level="strict",
+            security_level=EnumSecurityLevel.STRICT,
             enable_sandbox=True,
         )
 
@@ -87,11 +89,11 @@ class TestModelCliAdvancedParams:
         assert params.max_parallel_tasks == 4
         assert params.enable_cache is False
         assert params.cache_ttl_seconds == 300
-        assert params.debug_level == "debug"
+        assert params.debug_level == EnumDebugLevel.DEBUG
         assert params.enable_profiling is True
         assert params.enable_tracing is True
         assert params.compression_enabled is True
-        assert params.security_level == "strict"
+        assert params.security_level == EnumSecurityLevel.STRICT
         assert params.enable_sandbox is True
 
     def test_timeout_validation_positive(self):
@@ -214,34 +216,34 @@ class TestModelCliAdvancedParams:
             ModelCliAdvancedParams(cache_ttl_seconds=-1)
 
     def test_debug_level_validation(self):
-        """Test debug_level pattern validation."""
+        """Test debug_level enum validation."""
         # Valid debug levels
-        valid_levels = ["debug", "info", "warn", "error"]
+        valid_levels = [EnumDebugLevel.DEBUG, EnumDebugLevel.INFO, EnumDebugLevel.WARN, EnumDebugLevel.ERROR]
         for level in valid_levels:
             params = ModelCliAdvancedParams(debug_level=level)
             assert params.debug_level == level
 
-        # Invalid debug level
+        # Invalid debug level (string instead of enum)
         with pytest.raises(ValidationError):
             ModelCliAdvancedParams(debug_level="invalid")
 
         with pytest.raises(ValidationError):
-            ModelCliAdvancedParams(debug_level="DEBUG")  # Case sensitive
+            ModelCliAdvancedParams(debug_level="DEBUG")  # String not allowed
 
     def test_security_level_validation(self):
-        """Test security_level pattern validation."""
+        """Test security_level enum validation."""
         # Valid security levels
-        valid_levels = ["minimal", "standard", "strict"]
+        valid_levels = [EnumSecurityLevel.MINIMAL, EnumSecurityLevel.STANDARD, EnumSecurityLevel.STRICT]
         for level in valid_levels:
             params = ModelCliAdvancedParams(security_level=level)
             assert params.security_level == level
 
-        # Invalid security level
+        # Invalid security level (string instead of enum)
         with pytest.raises(ValidationError):
             ModelCliAdvancedParams(security_level="invalid")
 
         with pytest.raises(ValidationError):
-            ModelCliAdvancedParams(security_level="STRICT")  # Case sensitive
+            ModelCliAdvancedParams(security_level="STRICT")  # String not allowed
 
     def test_set_timeout_method(self):
         """Test set_timeout method with validation."""
@@ -355,14 +357,14 @@ class TestModelCliAdvancedParams:
         params = ModelCliAdvancedParams()
 
         # Initial state
-        assert params.debug_level == "info"
+        assert params.debug_level == EnumDebugLevel.INFO
         assert params.enable_profiling is False
         assert params.enable_tracing is False
 
         # Enable debug mode
         params.enable_debug_mode()
 
-        assert params.debug_level == "debug"
+        assert params.debug_level == EnumDebugLevel.DEBUG
         assert params.enable_profiling is True
         assert params.enable_tracing is True
 
@@ -387,13 +389,13 @@ class TestModelCliAdvancedParams:
         params = ModelCliAdvancedParams()
 
         # Initial state
-        assert params.security_level == "standard"
+        assert params.security_level == EnumSecurityLevel.STANDARD
         assert params.enable_sandbox is False
 
         # Enable security mode
         params.enable_security_mode()
 
-        assert params.security_level == "strict"
+        assert params.security_level == EnumSecurityLevel.STRICT
         assert params.enable_sandbox is True
 
     def test_complex_configuration_scenario(self):
@@ -408,9 +410,9 @@ class TestModelCliAdvancedParams:
             max_parallel_tasks=8,
             enable_cache=True,
             cache_ttl_seconds=600,
-            debug_level="warn",
+            debug_level=EnumDebugLevel.WARN,
             compression_enabled=True,
-            security_level="strict",
+            security_level=EnumSecurityLevel.STRICT,
             enable_sandbox=True,
         )
 
@@ -434,7 +436,7 @@ class TestModelCliAdvancedParams:
         assert params.max_retries == 5
         assert params.parallel_execution is True
         assert params.max_parallel_tasks == 8
-        assert params.security_level == "strict"
+        assert params.security_level == EnumSecurityLevel.STRICT
         assert len(params.environment_variables) == 2
         assert len(params.node_config_overrides) == 3
         assert len(params.custom_parameters) == 2
@@ -461,9 +463,9 @@ class TestModelCliAdvancedParams:
             timeout_seconds=60.0,
             max_retries=3,
             parallel_execution=True,
-            debug_level="debug",
+            debug_level=EnumDebugLevel.DEBUG,
             enable_profiling=True,
-            security_level="strict",
+            security_level=EnumSecurityLevel.STRICT,
         )
 
         # Add some additional data
@@ -476,9 +478,9 @@ class TestModelCliAdvancedParams:
         assert data["timeout_seconds"] == 60.0
         assert data["max_retries"] == 3
         assert data["parallel_execution"] is True
-        assert data["debug_level"] == "debug"
+        assert data["debug_level"] == EnumDebugLevel.DEBUG
         assert data["enable_profiling"] is True
-        assert data["security_level"] == "strict"
+        assert data["security_level"] == EnumSecurityLevel.STRICT
         assert data["environment_variables"] == {"TEST_ENV": "true"}
         assert data["custom_parameters"] == {"test_param": "value"}
 
@@ -493,9 +495,9 @@ class TestModelCliAdvancedParams:
             "parallel_execution": True,
             "max_parallel_tasks": 6,
             "enable_cache": False,
-            "debug_level": "warn",
+            "debug_level": EnumDebugLevel.WARN,
             "enable_profiling": True,
-            "security_level": "minimal",
+            "security_level": EnumSecurityLevel.MINIMAL,
             "environment_variables": {"APP_ENV": "staging"},
             "node_config_overrides": {"max_workers": 8, "enable_ssl": True},
             "custom_parameters": {"experiment_id": "exp-456", "version": 2},
@@ -511,9 +513,9 @@ class TestModelCliAdvancedParams:
         assert params.parallel_execution is True
         assert params.max_parallel_tasks == 6
         assert params.enable_cache is False
-        assert params.debug_level == "warn"
+        assert params.debug_level == EnumDebugLevel.WARN
         assert params.enable_profiling is True
-        assert params.security_level == "minimal"
+        assert params.security_level == EnumSecurityLevel.MINIMAL
         assert params.environment_variables == {"APP_ENV": "staging"}
         assert params.node_config_overrides == {"max_workers": 8, "enable_ssl": True}
         assert params.custom_parameters == {"experiment_id": "exp-456", "version": 2}
@@ -524,8 +526,8 @@ class TestModelCliAdvancedParams:
             timeout_seconds=180.0,
             max_retries=2,
             parallel_execution=True,
-            debug_level="error",
-            security_level="strict",
+            debug_level=EnumDebugLevel.ERROR,
+            security_level=EnumSecurityLevel.STRICT,
         )
 
         # Add data via methods
@@ -552,7 +554,7 @@ class TestModelCliAdvancedParams:
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
         params = ModelCliAdvancedParams(
-            timeout_seconds=90.0, parallel_execution=True, debug_level="info"
+            timeout_seconds=90.0, parallel_execution=True, debug_level=EnumDebugLevel.INFO
         )
 
         # Test JSON serialization
@@ -565,7 +567,7 @@ class TestModelCliAdvancedParams:
         restored = ModelCliAdvancedParams.model_validate_json(json_str)
         assert restored.timeout_seconds == 90.0
         assert restored.parallel_execution is True
-        assert restored.debug_level == "info"
+        assert restored.debug_level == EnumDebugLevel.INFO
 
     def test_edge_cases_empty_collections(self):
         """Test edge cases with empty collections."""
@@ -610,11 +612,11 @@ class TestModelCliAdvancedParams:
         params.enable_security_mode()
 
         # Verify combined state
-        assert params.debug_level == "debug"
+        assert params.debug_level == EnumDebugLevel.DEBUG
         assert params.enable_profiling is True
         assert params.enable_tracing is True
         assert params.parallel_execution is True
         assert params.enable_cache is True
         assert params.compression_enabled is True
-        assert params.security_level == "strict"
+        assert params.security_level == EnumSecurityLevel.STRICT
         assert params.enable_sandbox is True

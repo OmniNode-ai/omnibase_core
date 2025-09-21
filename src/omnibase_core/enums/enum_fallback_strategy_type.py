@@ -5,6 +5,8 @@ This module provides the FallbackStrategyType enum for defining
 core fallback strategy types in the ONEX Configuration-Driven Registry System.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 
 
