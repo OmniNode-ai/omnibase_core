@@ -12,8 +12,9 @@ from typing import (
     Callable,
     Generic,
     Optional,
-    TypeVar,
     TypedDict,
+    TypeVar,
+    cast,
 )
 from uuid import UUID, uuid4
 
@@ -30,13 +31,15 @@ T = TypeVar(
 
 class CollectionCreateKwargs(TypedDict, total=False):
     """Type-safe dictionary for collection creation parameters."""
+
     collection_display_name: str
     collection_id: UUID
 
 
 class CollectionFromItemsKwargs(TypedDict, total=False):
     """Type-safe dictionary for collection creation from items parameters."""
-    items: list[T]
+
+    items: list[BaseModel]  # Use BaseModel instead of unbound T
     collection_display_name: str
     collection_id: UUID
 
@@ -396,7 +399,9 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             Empty collection instance
         """
-        kwargs: CollectionCreateKwargs = {"collection_display_name": collection_display_name}
+        kwargs: CollectionCreateKwargs = {
+            "collection_display_name": collection_display_name
+        }
         if collection_id is not None:
             kwargs["collection_id"] = collection_id
         return cls(**kwargs)
@@ -419,13 +424,18 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             Collection instance with the specified items
         """
-        kwargs: CollectionFromItemsKwargs = {
-            "items": items,
-            "collection_display_name": collection_display_name,
-        }
+        # Bypass TypedDict due to invariance issues with list[T] vs list[BaseModel]
         if collection_id is not None:
-            kwargs["collection_id"] = collection_id
-        return cls(**kwargs)
+            return cls(
+                items=items,
+                collection_display_name=collection_display_name,
+                collection_id=collection_id,
+            )
+        else:
+            return cls(
+                items=items,
+                collection_display_name=collection_display_name,
+            )
 
     # Backward compatibility methods
     @classmethod

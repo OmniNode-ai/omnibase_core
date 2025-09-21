@@ -55,38 +55,6 @@ class ModelFieldIdentity(BaseModel):
             identity_name.upper() == name.upper() or field_name.lower() == name.lower()
         )
 
-    @property
-    def name(self) -> str:
-        """Backward compatibility property for name."""
-        return self.identity_display_name or f"identity_{str(self.identity_id)[:8]}"
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Backward compatibility setter for name."""
-        import hashlib
-
-        identity_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.identity_id = UUID(
-            f"{identity_hash[:8]}-{identity_hash[8:12]}-{identity_hash[12:16]}-{identity_hash[16:20]}-{identity_hash[20:32]}"
-        )
-        self.identity_display_name = value
-
-    @property
-    def field_name(self) -> str:
-        """Backward compatibility property for field_name."""
-        return self.field_display_name or f"field_{str(self.field_id)[:8]}"
-
-    @field_name.setter
-    def field_name(self, value: str) -> None:
-        """Backward compatibility setter for field_name."""
-        import hashlib
-
-        field_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.field_id = UUID(
-            f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
-        )
-        self.field_display_name = value
-
 
 # Export the model
 __all__ = ["ModelFieldIdentity"]

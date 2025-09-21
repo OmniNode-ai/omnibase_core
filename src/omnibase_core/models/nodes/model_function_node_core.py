@@ -166,7 +166,7 @@ class ModelFunctionNodeCore(BaseModel):
         parameters: list[str] | None = None,
         return_type: EnumReturnType | None = None,
     ) -> ModelFunctionNodeCore:
-        """Create function core with legacy name parameter for backward compatibility."""
+        """Create function core with name parameter."""
         import hashlib
 
         # Generate UUID from function name
@@ -186,24 +186,13 @@ class ModelFunctionNodeCore(BaseModel):
 
     @property
     def name(self) -> str:
-        """Legacy property for backward compatibility."""
+        """Get function name."""
         return self.function_display_name or f"function_{str(self.function_id)[:8]}"
 
     @property
     def function_name(self) -> str:
-        """Backward compatibility property for function_name."""
+        """Get function name."""
         return self.function_display_name or f"function_{str(self.function_id)[:8]}"
-
-    @function_name.setter
-    def function_name(self, value: str) -> None:
-        """Backward compatibility setter for function_name."""
-        import hashlib
-
-        function_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.function_id = UUID(
-            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
-        )
-        self.function_display_name = value
 
 
 # Export for use

@@ -69,41 +69,13 @@ class ModelCliAction(BaseModel):
         """Get fully qualified action name."""
         return f"{self.node_display_name}:{self.action_display_name}"
 
-    @property
-    def action_name(self) -> str:
-        """Backward compatibility property for action_name."""
-        return self.action_display_name or f"action_{str(self.action_name_id)[:8]}"
-
-    @action_name.setter
-    def action_name(self, value: str) -> None:
-        """Backward compatibility setter for action_name."""
-        import hashlib
-
-        action_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.action_name_id = UUID(
-            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
-        )
-        self.action_display_name = value
-
-    @property
-    def node_name(self) -> str:
-        """Backward compatibility property for node_name."""
-        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
-
-    @node_name.setter
-    def node_name(self, value: str) -> None:
-        """Backward compatibility setter for node_name."""
-        self.node_display_name = value
-
     def get_globally_unique_id(self) -> str:
         """Get globally unique identifier combining action_id and node_id."""
         return f"{self.node_id}:{self.action_id}"
 
     def matches(self, action_name: str) -> bool:
         """Check if this action matches the given action name."""
-        return (
-            self.action_display_name == action_name or self.action_name == action_name
-        )
+        return self.action_display_name == action_name
 
     def matches_node_id(self, node_id: UUID) -> bool:
         """Check if this action belongs to the specified node ID."""

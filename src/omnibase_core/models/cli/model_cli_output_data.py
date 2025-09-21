@@ -131,5 +131,5 @@ class ModelCliOutputData(BaseModel):
 
 # Export the model
 __all__ = [
-    ModelCliOutputData,
+    "ModelCliOutputData",
 ]

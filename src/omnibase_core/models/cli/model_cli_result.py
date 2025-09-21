@@ -12,6 +12,11 @@ from typing import TypeVar
 
 # Type variable for generic metadata access
 T = TypeVar("T")
+# Type variable for metadata value types
+MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
+
+# For methods that need to return a specific type from union, we'll use Any with runtime checking
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -170,7 +175,7 @@ class ModelCliResult(BaseModel):
     def add_performance_metric(
         self,
         name: str,
-        value: int | float,
+        value: T,
         unit: str = "",
         category: EnumConfigCategory = EnumConfigCategory.GENERAL,
     ) -> None:
@@ -190,7 +195,7 @@ class ModelCliResult(BaseModel):
         if hasattr(self.performance_metrics, "add_metric"):
             self.performance_metrics.add_metric(name, value, unit, category)
 
-    def add_debug_info(self, key: str, value: str | int | float | bool) -> None:
+    def add_debug_info(self, key: str, value: MetadataValueType) -> None:
         """Add debug information with proper typing."""
         if self.execution.is_debug_enabled:
             if self.debug_info is None:
@@ -198,7 +203,7 @@ class ModelCliResult(BaseModel):
             self.debug_info.set_custom_field(key, value)
 
     def add_trace_data(
-        self, key: str, value: str | int | float | bool, operation: str = ""
+        self, key: str, value: MetadataValueType, operation: str = ""
     ) -> None:
         """Add trace data with proper typing."""
         if self.trace_data is None:
@@ -218,7 +223,7 @@ class ModelCliResult(BaseModel):
         if hasattr(self.trace_data, "add_trace_info"):
             self.trace_data.add_trace_info(key, value, operation)
 
-    def add_metadata(self, key: str, value: str | int | float | bool) -> None:
+    def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add result metadata with proper typing."""
         if self.result_metadata is None:
             self.result_metadata = ModelCliResultMetadata(
@@ -234,17 +239,14 @@ class ModelCliResult(BaseModel):
             )
         self.result_metadata.set_custom_field(key, value)
 
-    def get_metadata(
-        self, key: str, default: str | int | float | bool | None = None
-    ) -> str | int | float | bool | None:
+    def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get result metadata with proper typing."""
         if self.result_metadata is None:
             return default
-        return self.result_metadata.get_custom_field(key, default)
+        value = self.result_metadata.get_custom_field(key, default)
+        return cast(MetadataValueType, value if value is not None else default)
 
-    def get_typed_metadata(
-        self, key: str, field_type: type[T], default: T | None = None
-    ) -> T | None:
+    def get_typed_metadata(self, key: str, field_type: type[T], default: T) -> T:
         """Get result metadata with specific type checking."""
         if self.result_metadata is None:
             return default
@@ -254,12 +256,13 @@ class ModelCliResult(BaseModel):
         return default
 
     def get_output_value(
-        self, key: str, default: str | int | float | bool | None = None
-    ) -> str | int | float | bool | None:
+        self, key: str, default: MetadataValueType
+    ) -> MetadataValueType:
         """Get a specific output value with proper typing."""
-        return self.output_data.get_field_value(key, default)
+        value = self.output_data.get_field_value(key, default)
+        return cast(MetadataValueType, value if value is not None else default)
 
-    def set_output_value(self, key: str, value: str | int | float | bool) -> None:
+    def set_output_value(self, key: str, value: MetadataValueType) -> None:
         """Set a specific output value with proper typing."""
         self.output_data.set_field_value(key, value)
 

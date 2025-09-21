@@ -55,7 +55,7 @@ class ModelCliExecution(BaseModel):
         description="Metadata and custom context",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def execution_id(self) -> UUID:
         """Get execution ID from core."""

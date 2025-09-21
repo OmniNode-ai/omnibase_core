@@ -5,15 +5,18 @@ Comprehensive test coverage for the validation error aggregation system
 that standardizes validation across all domains.
 """
 
-import pytest
 from typing import Optional
 
+import pytest
+
+from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from src.omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
     ValidatedModel,
 )
-from src.omnibase_core.models.validation.model_validation_error import ModelValidationError
-from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from src.omnibase_core.models.validation.model_validation_error import (
+    ModelValidationError,
+)
 
 
 class TestModelValidationContainer:
@@ -41,7 +44,9 @@ class TestModelValidationContainer:
         assert container.get_error_count() == 1
         assert not container.is_valid()
 
-        container.add_error("Another error", field="test_field", error_code="TEST_ERROR")
+        container.add_error(
+            "Another error", field="test_field", error_code="TEST_ERROR"
+        )
         assert container.get_error_count() == 2
 
         error_messages = container.get_all_error_messages()
@@ -235,6 +240,7 @@ class TestValidatedModel:
 
     def test_basic_validated_model(self):
         """Test basic ValidatedModel functionality."""
+
         class TestModel(ValidatedModel):
             name: str
 
@@ -245,6 +251,7 @@ class TestValidatedModel:
 
     def test_validated_model_with_errors(self):
         """Test ValidatedModel with validation errors."""
+
         class TestModel(ValidatedModel):
             name: str
             value: int
@@ -253,7 +260,9 @@ class TestValidatedModel:
                 if not self.name:
                     self.validation.add_error("Name is required", field="name")
                 if self.value < 0:
-                    self.validation.add_critical_error("Value must be positive", field="value")
+                    self.validation.add_critical_error(
+                        "Value must be positive", field="value"
+                    )
 
         # Valid model
         valid_model = TestModel(name="test", value=10)
@@ -269,6 +278,7 @@ class TestValidatedModel:
 
     def test_add_validation_methods(self):
         """Test the convenience methods for adding validation issues."""
+
         class TestModel(ValidatedModel):
             name: str
 
@@ -285,6 +295,7 @@ class TestValidatedModel:
 
     def test_validation_summary(self):
         """Test validation summary functionality."""
+
         class TestModel(ValidatedModel):
             name: str
 
@@ -298,6 +309,7 @@ class TestValidatedModel:
 
     def test_perform_validation_clears_previous(self):
         """Test that perform_validation clears previous results."""
+
         class TestModel(ValidatedModel):
             name: str
             should_error: bool
@@ -323,6 +335,7 @@ class TestValidationContainerIntegration:
 
     def test_complex_validation_scenario(self):
         """Test a complex validation scenario."""
+
         class ComplexModel(ValidatedModel):
             name: str
             email: str
@@ -332,7 +345,9 @@ class TestValidationContainerIntegration:
             def validate_model_data(self) -> None:
                 # Name validation
                 if not self.name.strip():
-                    self.validation.add_critical_error("Name cannot be empty", field="name")
+                    self.validation.add_critical_error(
+                        "Name cannot be empty", field="name"
+                    )
                 elif len(self.name) < 2:
                     self.validation.add_error("Name too short", field="name")
 
@@ -342,7 +357,9 @@ class TestValidationContainerIntegration:
 
                 # Age validation
                 if self.age < 0:
-                    self.validation.add_critical_error("Age cannot be negative", field="age")
+                    self.validation.add_critical_error(
+                        "Age cannot be negative", field="age"
+                    )
                 elif self.age < 18:
                     self.validation.add_warning("User is under 18")
 
@@ -356,7 +373,12 @@ class TestValidationContainerIntegration:
         scenarios = [
             # Valid model
             {
-                "data": {"name": "John Doe", "email": "john@example.com", "age": 25, "tags": ["user"]},
+                "data": {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "age": 25,
+                    "tags": ["user"],
+                },
                 "expected_valid": True,
                 "expected_errors": 0,
                 "expected_warnings": 0,
@@ -370,7 +392,12 @@ class TestValidationContainerIntegration:
             },
             # Critical errors
             {
-                "data": {"name": "", "email": "test@example.com", "age": -1, "tags": ["a"] * 15},
+                "data": {
+                    "name": "",
+                    "email": "test@example.com",
+                    "age": -1,
+                    "tags": ["a"] * 15,
+                },
                 "expected_valid": False,
                 "expected_errors": 3,
                 "expected_critical": 2,
@@ -387,7 +414,10 @@ class TestValidationContainerIntegration:
             assert model.validation.get_warning_count() == scenario["expected_warnings"]
 
             if "expected_critical" in scenario:
-                assert model.validation.get_critical_error_count() == scenario["expected_critical"]
+                assert (
+                    model.validation.get_critical_error_count()
+                    == scenario["expected_critical"]
+                )
 
     def test_validation_container_serialization(self):
         """Test that validation containers serialize properly."""

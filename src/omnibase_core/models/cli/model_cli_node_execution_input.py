@@ -102,26 +102,6 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Request UUID for tracking and correlation",
     )
 
-    @property
-    def node_name(self) -> str | None:
-        """Backward compatibility property for node_name."""
-        return self.node_display_name
-
-    @node_name.setter
-    def node_name(self, value: str | None) -> None:
-        """Backward compatibility setter for node_name."""
-        self.node_display_name = value
-
-    @property
-    def target_node(self) -> str | None:
-        """Backward compatibility property for target_node."""
-        return self.target_node_display_name
-
-    @target_node.setter
-    def target_node(self, value: str | None) -> None:
-        """Backward compatibility setter for target_node."""
-        self.target_node_display_name = value
-
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

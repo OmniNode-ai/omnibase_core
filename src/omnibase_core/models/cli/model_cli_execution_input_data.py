@@ -27,7 +27,8 @@ class ModelCliExecutionInputData(BaseModel):
     # Data identification
     key: str = Field(..., description="Input data key identifier")
     value: Any = Field(
-        ..., description="Input data value - supports str, int, bool, float, Path, UUID, list[str]"
+        ...,
+        description="Input data value - supports str, int, bool, float, Path, UUID, list[str]",
     )
 
     # Data metadata

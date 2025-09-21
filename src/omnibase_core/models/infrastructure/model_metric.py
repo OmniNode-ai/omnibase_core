@@ -19,7 +19,8 @@ class ModelMetric(BaseModel):
 
     key: str = Field(..., description="Metric key")
     value: Any = Field(
-        ..., description="Metric value - supports str, int, float, bool as determined by metric_type"
+        ...,
+        description="Metric value - supports str, int, float, bool as determined by metric_type",
     )
     metric_type: EnumMetricDataType = Field(
         ..., description="Data type of metric (string, numeric, boolean)"

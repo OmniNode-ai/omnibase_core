@@ -12,6 +12,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ...enums.enum_field_type import EnumFieldType
+from ...utils.uuid_utilities import uuid_from_string
 from .model_field_identity import ModelFieldIdentity
 from .model_field_validation_rules import ModelFieldValidationRules
 
@@ -61,37 +62,6 @@ class ModelMetadataFieldInfo(BaseModel):
         default_factory=ModelFieldValidationRules,
         description="Validation rules for the field",
     )
-
-    # Backward compatibility properties
-    @property
-    def name(self) -> str:
-        """Backward compatibility for name."""
-        return self.identity.name
-
-    @property
-    def field_name(self) -> str:
-        """Backward compatibility for field_name."""
-        return self.identity.field_name
-
-    @property
-    def description(self) -> str:
-        """Backward compatibility for description."""
-        return self.identity.description
-
-    @property
-    def validation_pattern(self) -> str | None:
-        """Backward compatibility for validation_pattern."""
-        return self.validation.validation_pattern
-
-    @property
-    def min_length(self) -> int | None:
-        """Backward compatibility for min_length."""
-        return self.validation.min_length
-
-    @property
-    def max_length(self) -> int | None:
-        """Backward compatibility for max_length."""
-        return self.validation.max_length
 
     # Factory methods for all metadata fields
     @classmethod
@@ -178,80 +148,111 @@ class ModelMetadataFieldInfo(BaseModel):
     @classmethod
     def author(cls) -> ModelMetadataFieldInfo:
         """Author field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("AUTHOR", "identity"),
+            identity_display_name="AUTHOR",
+            field_id=uuid_from_string("author", "field"),
+            field_display_name="author",
+            description="Author of the node/tool",
+        )
         return cls(
-            name="AUTHOR",
-            field_name="author",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="str",
-            description="Author of the node/tool",
+            field_type=EnumFieldType.STRING,
         )
 
     @classmethod
     def created_at(cls) -> ModelMetadataFieldInfo:
         """Created at field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("CREATED_AT", "identity"),
+            identity_display_name="CREATED_AT",
+            field_id=uuid_from_string("created_at", "field"),
+            field_display_name="created_at",
+            description="Creation timestamp",
+        )
         return cls(
-            name="CREATED_AT",
-            field_name="created_at",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="datetime",
-            description="Creation timestamp",
+            field_type=EnumFieldType.DATETIME,
         )
 
     @classmethod
     def last_modified_at(cls) -> ModelMetadataFieldInfo:
         """Last modified at field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("LAST_MODIFIED_AT", "identity"),
+            identity_display_name="LAST_MODIFIED_AT",
+            field_id=uuid_from_string("last_modified_at", "field"),
+            field_display_name="last_modified_at",
+            description="Last modification timestamp",
+        )
         return cls(
-            name="LAST_MODIFIED_AT",
-            field_name="last_modified_at",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=True,
-            field_type="datetime",
-            description="Last modification timestamp",
+            field_type=EnumFieldType.DATETIME,
         )
 
     @classmethod
     def hash(cls) -> ModelMetadataFieldInfo:
         """Hash field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("HASH", "identity"),
+            identity_display_name="HASH",
+            field_id=uuid_from_string("hash", "field"),
+            field_display_name="hash",
+            description="Content hash",
+        )
+        validation = ModelFieldValidationRules(validation_pattern=r"^[0-9a-f]{64}$")
         return cls(
-            name="HASH",
-            field_name="hash",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=True,
-            field_type="str",
-            description="Content hash",
-            validation_pattern=r"^[0-9a-f]{64}$",
+            field_type=EnumFieldType.STRING,
+            validation=validation,
         )
 
     @classmethod
     def entrypoint(cls) -> ModelMetadataFieldInfo:
         """Entrypoint field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("ENTRYPOINT", "identity"),
+            identity_display_name="ENTRYPOINT",
+            field_id=uuid_from_string("entrypoint", "field"),
+            field_display_name="entrypoint",
+            description="Entrypoint URI",
+        )
         return cls(
-            name="ENTRYPOINT",
-            field_name="entrypoint",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="str",
-            description="Entrypoint URI",
+            field_type=EnumFieldType.STRING,
         )
 
     @classmethod
     def namespace(cls) -> ModelMetadataFieldInfo:
         """Namespace field info."""
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string("NAMESPACE", "identity"),
+            identity_display_name="NAMESPACE",
+            field_id=uuid_from_string("namespace", "field"),
+            field_display_name="namespace",
+            description="Node namespace",
+        )
         return cls(
-            name="NAMESPACE",
-            field_name="namespace",
+            identity=identity,
             is_required=True,
             is_optional=False,
             is_volatile=False,
-            field_type="str",
-            description="Node namespace",
+            field_type=EnumFieldType.STRING,
         )
 
     @classmethod
@@ -310,24 +311,40 @@ class ModelMetadataFieldInfo(BaseModel):
         if factory:
             return factory()
         # Unknown field - create generic
+        identity = ModelFieldIdentity(
+            identity_id=uuid_from_string(field_name.upper(), "identity"),
+            identity_display_name=field_name.upper(),
+            field_id=uuid_from_string(field_name.lower(), "field"),
+            field_display_name=field_name.lower(),
+            description=f"Field: {field_name}",
+        )
         return cls(
-            name=field_name.upper(),
-            field_name=field_name.lower(),
+            identity=identity,
             is_required=False,
             is_optional=True,
             is_volatile=False,
-            field_type="str",
-            description=f"Field: {field_name}",
+            field_type=EnumFieldType.STRING,
         )
 
     def __str__(self) -> str:
         """String representation for current standards."""
-        return self.field_name
+        return (
+            self.identity.field_display_name
+            or f"field_{str(self.identity.field_id)[:8]}"
+        )
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison for current standards."""
         if isinstance(other, str):
-            return self.field_name == other or self.name == other.upper()
+            field_name = (
+                self.identity.field_display_name
+                or f"field_{str(self.identity.field_id)[:8]}"
+            )
+            identity_name = (
+                self.identity.identity_display_name
+                or f"identity_{str(self.identity.identity_id)[:8]}"
+            )
+            return field_name == other or identity_name == other.upper()
         if isinstance(other, ModelMetadataFieldInfo):
-            return self.name == other.name
+            return self.identity.identity_id == other.identity.identity_id
         return False

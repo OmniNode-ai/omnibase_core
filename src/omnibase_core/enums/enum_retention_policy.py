@@ -134,4 +134,4 @@ class EnumRetentionPolicy(str, Enum):
 
 
 # Export the enum
-__all__ = [EnumRetentionPolicy]
+__all__ = ["EnumRetentionPolicy"]

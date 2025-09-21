@@ -29,7 +29,8 @@ class ModelCliExecutionContext(BaseModel):
     # Context identification
     key: str = Field(..., description="Context key identifier")
     value: Any = Field(
-        ..., description="Context value - supports str, int, bool, float, datetime, Path, UUID, list[str]"
+        ...,
+        description="Context value - supports str, int, bool, float, datetime, Path, UUID, list[str]",
     )
 
     # Context metadata

@@ -148,25 +148,6 @@ class ModelValidationError(BaseModel):
             error_code=error_code,
         )
 
-    @property
-    def field_name(self) -> str | None:
-        """Backward compatibility property for field_name."""
-        return self.field_display_name
-
-    @field_name.setter
-    def field_name(self, value: str | None) -> None:
-        """Backward compatibility setter for field_name."""
-        if value:
-            import hashlib
-
-            field_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.field_id = UUID(
-                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
-            )
-        else:
-            self.field_id = None
-        self.field_display_name = value
-
 
 # Export for use
 __all__ = ["ModelValidationError"]

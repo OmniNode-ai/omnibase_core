@@ -6,6 +6,8 @@ Specialized accessor for managing custom fields with automatic initialization.
 
 from __future__ import annotations
 
+from typing import Any
+
 from .model_field_accessor import ModelFieldAccessor
 
 
@@ -26,7 +28,8 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
         """Set a custom field value, initializing custom_fields if needed."""
         # Initialize custom_fields if it doesn't exist
         if not self.has_field("custom_fields"):
-            self.set_field("custom_fields", {})
+            # Use setattr directly for dict initialization
+            setattr(self, "custom_fields", {})
         return self.set_field(f"custom_fields.{key}", value)
 
     def has_custom_field(self, key: str) -> bool:

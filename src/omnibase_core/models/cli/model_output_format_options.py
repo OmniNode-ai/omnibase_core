@@ -147,10 +147,12 @@ class ModelOutputFormatOptions(BaseModel):
         """Get a custom format option."""
         return self.custom_options.get(key, default)
 
-
     @classmethod
-    def create_from_legacy_data(cls, data: dict[str, str]) -> "ModelOutputFormatOptions":
+    def create_from_legacy_data(
+        cls, data: dict[str, str]
+    ) -> "ModelOutputFormatOptions":
         """Create instance from legacy string-based configuration data."""
+
         # Helper to safely convert string to bool
         def str_to_bool(value: str) -> bool:
             return value.lower() in ("true", "1", "yes", "on")

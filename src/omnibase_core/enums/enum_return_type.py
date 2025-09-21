@@ -35,6 +35,7 @@ class EnumReturnType(str, Enum):
     STATUS = "STATUS"
     LOGS = "LOGS"
     RESULTS = "RESULTS"
+    UNKNOWN = "UNKNOWN"
 
     def __str__(self) -> str:
         """Return the string value for serialization."""

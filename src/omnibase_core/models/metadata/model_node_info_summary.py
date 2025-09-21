@@ -8,6 +8,7 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -105,7 +106,7 @@ class ModelNodeInfoSummary(BaseModel):
     def create_legacy(
         cls,
         name: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> "ModelNodeInfoSummary":
         """Create node info summary with legacy name parameter for backward compatibility."""
         return cls(

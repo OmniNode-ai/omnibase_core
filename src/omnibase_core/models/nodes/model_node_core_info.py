@@ -105,36 +105,21 @@ class ModelNodeCoreInfo(BaseModel):
             node_type=node_type,
             node_version=node_version,
             description=description,
+            author_id=None,
+            author_display_name=None,
+            created_at=None,
+            updated_at=None,
         )
 
     @property
     def node_name(self) -> str:
-        """Backward compatibility property for node_name."""
+        """Get node name."""
         return self.node_display_name or f"node_{str(self.node_id)[:8]}"
-
-    @node_name.setter
-    def node_name(self, value: str) -> None:
-        """Backward compatibility setter for node_name."""
-        self.node_display_name = value
 
     @property
     def author(self) -> str | None:
-        """Backward compatibility property for author."""
+        """Get author name."""
         return self.author_display_name
-
-    @author.setter
-    def author(self, value: str | None) -> None:
-        """Backward compatibility setter for author."""
-        if value:
-            import hashlib
-
-            author_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.author_id = UUID(
-                f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}"
-            )
-        else:
-            self.author_id = None
-        self.author_display_name = value
 
 
 # Export for use

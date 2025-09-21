@@ -14,7 +14,7 @@ src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
 from pydantic import BaseModel, Field
-from omnibase_core.models.validation.model_validation_error import ModelValidationError
+
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
 # Import the validation container directly
@@ -22,6 +22,7 @@ from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
     ValidatedModel,
 )
+from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
 def test_validation_container_basic():
@@ -183,21 +184,20 @@ def demonstrate_usage():
                 self.validation.add_error(
                     "Success flag is True but exit_code is not 0",
                     field="exit_code",
-                    error_code="INCONSISTENT_EXIT_CODE"
+                    error_code="INCONSISTENT_EXIT_CODE",
                 )
 
             if not self.success and self.exit_code == 0:
                 self.validation.add_error(
                     "Success flag is False but exit_code is 0",
                     field="success",
-                    error_code="INCONSISTENT_SUCCESS_FLAG"
+                    error_code="INCONSISTENT_SUCCESS_FLAG",
                 )
 
             # Validate command
             if not self.command.strip():
                 self.validation.add_critical_error(
-                    "Command cannot be empty",
-                    field="command"
+                    "Command cannot be empty", field="command"
                 )
 
     # Test inconsistent CLI result
@@ -226,11 +226,15 @@ def demonstrate_usage():
 
             # Password validation
             if len(self.password) < 8:
-                self.validation.add_critical_error("Password too weak", field="password")
+                self.validation.add_critical_error(
+                    "Password too weak", field="password"
+                )
 
             # Age validation
             if self.age < 13:
-                self.validation.add_critical_error("User must be at least 13", field="age")
+                self.validation.add_critical_error(
+                    "User must be at least 13", field="age"
+                )
             elif self.age < 18:
                 self.validation.add_warning("User is under 18")
 
@@ -245,8 +249,15 @@ def demonstrate_usage():
     print("\n3. Batch Validation:")
 
     users = [
-        UserRegistration(username="alice", email="alice@example.com", password="strongpass123", age=25),
-        UserRegistration(username="bob", email="bob@example.com", password="weak", age=17),
+        UserRegistration(
+            username="alice",
+            email="alice@example.com",
+            password="strongpass123",
+            age=25,
+        ),
+        UserRegistration(
+            username="bob", email="bob@example.com", password="weak", age=17
+        ),
         UserRegistration(username="x", email="invalid", password="123", age=12),
     ]
 
@@ -264,7 +275,11 @@ def demonstrate_usage():
                     ModelValidationError(
                         message=f"User {i}: {error.message}",
                         severity=error.severity,
-                        field_name=f"user_{i}.{error.field_name}" if error.field_name else f"user_{i}",
+                        field_name=(
+                            f"user_{i}.{error.field_name}"
+                            if error.field_name
+                            else f"user_{i}"
+                        ),
                         error_code=error.error_code,
                     )
                 )
@@ -293,6 +308,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Test failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

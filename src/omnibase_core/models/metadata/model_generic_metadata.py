@@ -14,9 +14,11 @@ from .protocols.protocol_supported_metadata_type import ProtocolSupportedMetadat
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)
+# Type variable for metadata value types
+MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
 
 
-class ModelGenericMetadata(BaseModel, Generic[T]):
+class ModelGenericMetadata(BaseModel, Generic[T, MetadataValueType]):
     """Generic metadata storage with flexible fields."""
 
     metadata_id: UUID | None = Field(
@@ -39,20 +41,18 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         default_factory=list,
         description="Metadata tags",
     )
-    custom_fields: dict[str, str | int | bool | float] | None = Field(
+    custom_fields: dict[str, MetadataValueType] | None = Field(
         default=None,
         description="Custom metadata fields",
     )
 
-    def get_field(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
+    def get_field(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get a custom field value with type safety."""
         if self.custom_fields is None:
             return default
         return self.custom_fields.get(key, default)
 
-    def set_field(self, key: str, value: str | int | bool | float) -> None:
+    def set_field(self, key: str, value: MetadataValueType) -> None:
         """Set a custom field value with type validation."""
         if not isinstance(value, (str, int, bool, float)):
             raise TypeError(
@@ -62,11 +62,9 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             self.custom_fields = {}
         self.custom_fields[key] = value
 
-    def get_typed_field(
-        self, key: str, field_type: type[T], default: T | None = None
-    ) -> T | None:
+    def get_typed_field(self, key: str, field_type: type[T], default: T) -> T:
         """Get a custom field value with specific type checking."""
-        value = self.get_field(key)
+        value = self.get_field(key, default)
         if value is not None and isinstance(value, field_type):
             return value
         return default
@@ -99,22 +97,3 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             del self.custom_fields[key]
             return True
         return False
-
-    @property
-    def name(self) -> str | None:
-        """Backward compatibility property for name."""
-        return self.metadata_display_name
-
-    @name.setter
-    def name(self, value: str | None) -> None:
-        """Backward compatibility setter for name."""
-        if value:
-            import hashlib
-
-            metadata_hash = hashlib.sha256(value.encode()).hexdigest()
-            self.metadata_id = UUID(
-                f"{metadata_hash[:8]}-{metadata_hash[8:12]}-{metadata_hash[12:16]}-{metadata_hash[16:20]}-{metadata_hash[20:32]}"
-            )
-        else:
-            self.metadata_id = None
-        self.metadata_display_name = value

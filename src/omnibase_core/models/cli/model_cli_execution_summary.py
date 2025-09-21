@@ -94,27 +94,12 @@ class ModelCliExecutionSummary(BaseModel):
         """Get command name with fallback to UUID-based name."""
         return self.command_display_name or f"command_{str(self.command_id)[:8]}"
 
-    @command_name.setter
-    def command_name(self, value: str) -> None:
-        """Set command name (for backward compatibility)."""
-        self.command_display_name = value
-        # Update command_id to be deterministic based on name
-        self.command_id = uuid_from_string(value, "command")
-
     @property
     def target_node_name(self) -> str | None:
         """Get target node name with fallback to UUID-based name."""
         if self.target_node_id is None:
             return None
         return self.target_node_display_name or f"node_{str(self.target_node_id)[:8]}"
-
-    @target_node_name.setter
-    def target_node_name(self, value: str | None) -> None:
-        """Set target node name (for backward compatibility)."""
-        self.target_node_display_name = value
-        if value:
-            # Update target_node_id to be deterministic based on name
-            self.target_node_id = uuid_from_string(value, "node")
 
 
 # Export for use

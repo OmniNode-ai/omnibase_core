@@ -1,8 +1,7 @@
 """
 Environment Properties Model
 
-Type-safe custom environment properties configuration with support
-for various property types and metadata.
+Type-safe custom environment properties with access methods.
 """
 
 from __future__ import annotations
@@ -11,7 +10,11 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from typing import Any
+from .model_environment_properties_collection import (
+    ModelEnvironmentPropertiesCollection,
+    ModelPropertyValue,
+    PropertyMetadata,
+)
 
 
 class ModelEnvironmentProperties(BaseModel):
@@ -22,64 +25,73 @@ class ModelEnvironmentProperties(BaseModel):
     with type safety and helper methods for property access.
     """
 
-    properties: dict[str, Any] = Field(
+    properties: dict[str, ModelPropertyValue] = Field(
         default_factory=dict,
         description="Custom property values",
     )
 
-    property_metadata: dict[str, dict[str, str]] = Field(
+    property_metadata: dict[str, PropertyMetadata] = Field(
         default_factory=dict,
         description="Metadata about each property (description, source, etc.)",
     )
 
     def get_string(self, key: str, default: str = "") -> str:
         """Get string property value."""
-        value = self.properties.get(key, default)
-        return str(value) if value is not None else default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            return prop_value.as_string()
+        except (ValueError, AttributeError):
+            return default
 
     def get_int(self, key: str, default: int = 0) -> int:
         """Get integer property value."""
-        value = self.properties.get(key, default)
-        if isinstance(value, int | float) or (
-            isinstance(value, str) and value.isdigit()
-        ):
-            return int(value)
-        return default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            return prop_value.as_int()
+        except (ValueError, AttributeError):
+            return default
 
     def get_float(self, key: str, default: float = 0.0) -> float:
         """Get float property value."""
-        value = self.properties.get(key, default)
-        if isinstance(value, int | float):
-            return float(value)
-        if isinstance(value, str):
-            try:
-                return float(value)
-            except ValueError:
-                return default
-        return default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            return prop_value.as_float()
+        except (ValueError, AttributeError):
+            return default
 
     def get_bool(self, key: str, default: bool = False) -> bool:
         """Get boolean property value."""
-        value = self.properties.get(key, default)
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            return value.lower() in ["true", "yes", "1", "on", "enabled"]
-        if isinstance(value, int | float):
-            return bool(value)
-        return default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            return prop_value.as_bool()
+        except (ValueError, AttributeError):
+            return default
 
     def get_list(self, key: str, default: list[str] | None = None) -> list[str]:
         """Get list property value."""
         if default is None:
             default = []
-        value = self.properties.get(key, default)
-        if isinstance(value, list):
-            return [str(item) for item in value]
-        if isinstance(value, str):
-            # Support comma-separated values
-            return [item.strip() for item in value.split(",") if item.strip()]
-        return default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            # ModelPropertyValue doesn't have as_list, use the value directly
+            if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
+                return [str(item) for item in prop_value.value]
+            else:
+                # Try string conversion for comma-separated values
+                str_val = prop_value.as_string()
+                return [item.strip() for item in str_val.split(",") if item.strip()]
+        except (ValueError, AttributeError):
+            return default
 
     def get_datetime(
         self,
@@ -87,20 +99,24 @@ class ModelEnvironmentProperties(BaseModel):
         default: datetime | None = None,
     ) -> datetime | None:
         """Get datetime property value."""
-        value = self.properties.get(key, default)
-        if isinstance(value, datetime):
-            return value
-        if isinstance(value, str):
-            try:
-                return datetime.fromisoformat(value)
-            except ValueError:
-                return default
-        return default
+        prop_value = self.properties.get(key)
+        if prop_value is None:
+            return default
+        try:
+            # Access the datetime value directly
+            if hasattr(prop_value, "value") and isinstance(prop_value.value, datetime):
+                return prop_value.value
+            else:
+                # Try parsing from string
+                str_val = prop_value.as_string()
+                return datetime.fromisoformat(str_val)
+        except (ValueError, AttributeError):
+            return default
 
     def set_property(
         self,
         key: str,
-        value: Any,
+        value: ModelPropertyValue,
         description: str | None = None,
         source: str | None = None,
     ) -> None:
@@ -136,17 +152,31 @@ class ModelEnvironmentProperties(BaseModel):
 
     def get_all_properties(
         self,
-    ) -> dict[str, Any]:
-        """Get all properties."""
-        return self.properties.copy()
+    ) -> ModelEnvironmentPropertiesCollection:
+        """Get all properties as a strongly-typed collection."""
+        return ModelEnvironmentPropertiesCollection(
+            properties=self.properties.copy(),
+            property_metadata=self.property_metadata.copy(),
+        )
 
-    def get_properties_by_prefix(self, prefix: str) -> dict[str, Any]:
-        """Get all properties with keys starting with a prefix."""
-        return {
+    def get_properties_by_prefix(
+        self, prefix: str
+    ) -> ModelEnvironmentPropertiesCollection:
+        """Get all properties with keys starting with a prefix as a strongly-typed collection."""
+        filtered_properties = {
             key: value
             for key, value in self.properties.items()
             if key.startswith(prefix)
         }
+        filtered_metadata = {
+            key: metadata
+            for key, metadata in self.property_metadata.items()
+            if key.startswith(prefix)
+        }
+        return ModelEnvironmentPropertiesCollection(
+            properties=filtered_properties,
+            property_metadata=filtered_metadata,
+        )
 
     def merge_properties(self, other: ModelEnvironmentProperties) -> None:
         """Merge properties from another instance."""
@@ -156,28 +186,29 @@ class ModelEnvironmentProperties(BaseModel):
     def to_environment_variables(self, prefix: str = "ONEX_CUSTOM_") -> dict[str, str]:
         """Convert properties to environment variables with prefix."""
         env_vars = {}
-        for key, value in self.properties.items():
+        for key, prop_value in self.properties.items():
             env_key = f"{prefix}{key.upper()}"
-            if isinstance(value, list):
-                env_vars[env_key] = ",".join(str(item) for item in value)
-            elif isinstance(value, datetime):
-                env_vars[env_key] = value.isoformat()
+            # Use the actual value from ModelPropertyValue
+            if hasattr(prop_value, "value"):
+                actual_value = prop_value.value
+                if isinstance(actual_value, list):
+                    env_vars[env_key] = ",".join(str(item) for item in actual_value)
+                elif isinstance(actual_value, datetime):
+                    env_vars[env_key] = actual_value.isoformat()
+                else:
+                    env_vars[env_key] = str(actual_value)
             else:
-                env_vars[env_key] = str(value)
+                env_vars[env_key] = str(prop_value)
         return env_vars
 
-    @classmethod
-    def create_from_dict(
-        cls,
-        properties: dict[
-            str,
-            Any,
-        ],
-    ) -> ModelEnvironmentProperties:
-        """Create from a dictionary of properties."""
-        return cls(properties=properties)
+    # Removed create_from_dict() method - backward compatibility eliminated
+    # Use direct model construction: ModelEnvironmentProperties(properties=...) instead
 
     @classmethod
     def create_empty(cls) -> ModelEnvironmentProperties:
         """Create empty properties instance."""
         return cls()
+
+
+# Export the model
+__all__ = ["ModelEnvironmentProperties"]

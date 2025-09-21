@@ -20,6 +20,7 @@ from .model_function_relationships import ModelFunctionRelationships
 
 class FunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
+
     documentation: dict[str, str | bool | int | None]
     deprecation: dict[str, str | bool | None]
     relationships: dict[str, int | bool | list[str] | None]

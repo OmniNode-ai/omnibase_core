@@ -127,12 +127,12 @@ class ModelGenericFactory(Generic[T]):
             raise ValueError(f"Unknown factory: {name} for {self.model_class.__name__}")
         return self._factories[name]()
 
-    def build(self, name: str, **kwargs: Unpack[FactoryKwargs]) -> T:
+    def build(self, builder_name: str, **kwargs: Unpack[FactoryKwargs]) -> T:
         """
         Build instance using registered builder method.
 
         Args:
-            name: Builder name to use
+            builder_name: Builder name to use
             **kwargs: Typed arguments to pass to the builder
 
         Returns:
@@ -141,9 +141,11 @@ class ModelGenericFactory(Generic[T]):
         Raises:
             ValueError: If builder name is not registered
         """
-        if name not in self._builders:
-            raise ValueError(f"Unknown builder: {name} for {self.model_class.__name__}")
-        return self._builders[name](**kwargs)
+        if builder_name not in self._builders:
+            raise ValueError(
+                f"Unknown builder: {builder_name} for {self.model_class.__name__}"
+            )
+        return self._builders[builder_name](**kwargs)
 
     def list_factories(self) -> list[str]:
         """Get list of registered factory names."""
@@ -165,7 +167,7 @@ class ModelGenericFactory(Generic[T]):
     def create_success_result(
         cls,
         model_class: Type[T],
-        data: str | int | float | bool | None,
+        result_data: str | int | float | bool | None,
         **kwargs: Unpack[FactoryKwargs],
     ) -> T:
         """
@@ -176,13 +178,13 @@ class ModelGenericFactory(Generic[T]):
 
         Args:
             model_class: Model class to instantiate
-            data: Success data
+            result_data: Success data
             **kwargs: Additional model fields
 
         Returns:
             New success result instance
         """
-        return model_class(success=True, data=data, **kwargs)
+        return model_class(success=True, data=result_data, **kwargs)
 
     @classmethod
     def create_error_result(
@@ -211,7 +213,7 @@ class ModelGenericFactory(Generic[T]):
 
 # Export core factory class and types
 __all__ = [
-    ModelGenericFactory,
+    "ModelGenericFactory",
     "FactoryKwargs",
     "ExecutionParams",
     "MetadataParams",

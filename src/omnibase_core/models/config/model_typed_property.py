@@ -38,11 +38,11 @@ class ModelTypedProperty(BaseModel):
         """Validate that value is of allowed type."""
         return v
 
-    def get_typed_value(self, expected_type: type[T]) -> T | None:
+    def get_typed_value(self, expected_type: type[T], default: T) -> T:
         """Get the value with specific type checking."""
         if isinstance(self.value, expected_type):
             return self.value
-        return None
+        return default
 
     def is_list_type(self) -> bool:
         """Check if this property stores a list value."""

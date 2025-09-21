@@ -75,7 +75,7 @@ class ModelCliResultMetadata(BaseModel):
     )
     label_names: dict[str, UUID] = Field(
         default_factory=dict,
-        description="Label name to UUID mapping for backward compatibility",
+        description="Label name to UUID mapping",
     )
 
     # Performance metrics
@@ -106,22 +106,12 @@ class ModelCliResultMetadata(BaseModel):
 
     @property
     def labels(self) -> dict[str, str]:
-        """Get labels as string-to-string mapping for backward compatibility."""
+        """Get labels as string-to-string mapping."""
         result = {}
         for name, uuid_id in self.label_names.items():
             if uuid_id in self.label_ids:
                 result[name] = self.label_ids[uuid_id]
         return result
-
-    @labels.setter
-    def labels(self, value: dict[str, str]) -> None:
-        """Set labels from string-to-string mapping for backward compatibility."""
-        self.label_ids.clear()
-        self.label_names.clear()
-        for name, label_value in value.items():
-            uuid_id = uuid_from_string(name, "label")
-            self.label_ids[uuid_id] = label_value
-            self.label_names[name] = uuid_id
 
     def add_label(self, key: str, value: str) -> None:
         """Add a label to the result."""

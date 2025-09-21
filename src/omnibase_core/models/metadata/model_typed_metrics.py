@@ -130,22 +130,6 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
             **kwargs,
         )
 
-    @property
-    def name(self) -> str:
-        """Backward compatibility property for name."""
-        return self.metric_display_name or f"metric_{str(self.metric_id)[:8]}"
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Backward compatibility setter for name."""
-        import hashlib
-
-        metric_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.metric_id = UUID(
-            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
-        )
-        self.metric_display_name = value
-
 
 # Export the model
 __all__ = ["ModelTypedMetrics"]

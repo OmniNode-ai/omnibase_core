@@ -7,33 +7,58 @@ Validates that YAML contract files follow ONEX standards.
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 
-import yaml
+# Import the contract model and safe YAML loader
+try:
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
+    from omnibase_core.utils.safe_yaml_loader import (
+        YamlLoadingError,
+        load_and_validate_yaml_model,
+    )
+except ImportError:
+    # Fallback for when running as script directly
+    import os
+
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "archived", "src"))
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
+    from omnibase_core.utils.safe_yaml_loader import (
+        YamlLoadingError,
+        load_and_validate_yaml_model,
+    )
 
 
 def validate_yaml_file(file_path: Path) -> List[str]:
-    """Validate a single YAML file."""
+    """Validate a single YAML file using approved Pydantic model validation."""
     errors = []
 
     try:
-        with open(file_path, "r") as f:
-            content = yaml.safe_load(f)
-
-        if not content:
+        # First check if file is empty
+        if file_path.stat().st_size == 0:
             return []  # Empty files are OK
 
-        # Basic YAML contract validation
-        if isinstance(content, dict):
-            # Check for required contract fields if this looks like a contract
-            if "contract_version" in content or "node_type" in content:
-                if "contract_version" not in content:
-                    errors.append("Missing required field: contract_version")
-                if "node_type" not in content:
-                    errors.append("Missing required field: node_type")
+        # Quick check to see if this looks like a contract file by reading content
+        with open(file_path, "r") as f:
+            content = f.read()
 
-    except yaml.YAMLError as e:
-        errors.append(f"YAML parsing error: {e}")
+        if not content.strip():
+            return []  # Empty or whitespace-only files are OK
+
+        # Check if this looks like a contract (has contract field keywords in content)
+        if "contract_version" in content or "node_type" in content:
+            try:
+                # Use approved load_and_validate_yaml_model instead of manual validation
+                load_and_validate_yaml_model(file_path, ModelYamlContract)
+            except YamlLoadingError as e:
+                # Convert YAML loading errors to readable messages
+                if "validation error" in str(e).lower():
+                    # Extract validation details from the error
+                    error_msg = str(e)
+                    errors.append(f"Validation error: {error_msg}")
+                else:
+                    errors.append(f"YAML validation failed: {e}")
+
     except Exception as e:
         errors.append(f"File reading error: {e}")
 

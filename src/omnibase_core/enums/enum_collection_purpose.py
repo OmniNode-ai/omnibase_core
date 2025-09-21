@@ -123,4 +123,4 @@ class EnumCollectionPurpose(str, Enum):
 
 
 # Export the enum
-__all__ = [EnumCollectionPurpose]
+__all__ = ["EnumCollectionPurpose"]

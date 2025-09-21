@@ -102,12 +102,24 @@ class ModelConnectionPool(BaseModel):
     @classmethod
     def create_single_connection(cls) -> ModelConnectionPool:
         """Create configuration for single connection (no pooling)."""
-        return cls(pool_size=None)
+        return cls(
+            timeout_seconds=30,
+            retry_count=3,
+            retry_delay_seconds=1,
+            keepalive_interval=None,
+            pool_size=None,
+            pool_timeout=None,
+            max_overflow=None,
+        )
 
     @classmethod
     def create_small_pool(cls) -> ModelConnectionPool:
         """Create small connection pool configuration."""
         return cls(
+            timeout_seconds=30,
+            retry_count=3,
+            retry_delay_seconds=1,
+            keepalive_interval=None,
             pool_size=5,
             max_overflow=2,
             pool_timeout=30,
@@ -117,6 +129,10 @@ class ModelConnectionPool(BaseModel):
     def create_large_pool(cls) -> ModelConnectionPool:
         """Create large connection pool configuration."""
         return cls(
+            timeout_seconds=30,
+            retry_count=3,
+            retry_delay_seconds=1,
+            keepalive_interval=None,
             pool_size=20,
             max_overflow=10,
             pool_timeout=60,
@@ -126,9 +142,13 @@ class ModelConnectionPool(BaseModel):
     def create_aggressive_retry(cls) -> ModelConnectionPool:
         """Create configuration with aggressive retry settings."""
         return cls(
+            timeout_seconds=60,
             retry_count=10,
             retry_delay_seconds=2,
-            timeout_seconds=60,
+            keepalive_interval=None,
+            pool_size=None,
+            pool_timeout=None,
+            max_overflow=None,
         )
 
     @classmethod
@@ -138,6 +158,10 @@ class ModelConnectionPool(BaseModel):
             timeout_seconds=5,
             retry_count=1,
             retry_delay_seconds=1,
+            keepalive_interval=None,
+            pool_size=None,
+            pool_timeout=None,
+            max_overflow=None,
         )
 
 

@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_function_status import EnumFunctionStatus
+from ...enums.enum_return_type import EnumReturnType
 from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
 from .model_function_node_performance import ModelFunctionNodePerformance
@@ -54,7 +56,7 @@ class ModelFunctionNode(BaseModel):
         return self.core.description
 
     @property
-    def status(self):
+    def status(self) -> str:
         """Get status from core."""
         return self.core.status
 
@@ -64,7 +66,7 @@ class ModelFunctionNode(BaseModel):
         return self.core.parameters
 
     @property
-    def complexity(self):
+    def complexity(self) -> str:
         """Get complexity from performance."""
         return self.performance.complexity
 
@@ -155,8 +157,8 @@ class ModelFunctionNode(BaseModel):
         return ModelFunctionNodeSummary.create_from_full_data(
             name=self.name,
             description=self.description,
-            status=self.status,
-            complexity=str(self.complexity.value),
+            status=EnumFunctionStatus(self.status),
+            complexity=self.complexity,
             version=self.core.version,
             parameter_count=self.get_parameter_count(),
             return_type=self.core.return_type,
@@ -186,7 +188,18 @@ class ModelFunctionNode(BaseModel):
         function_type: str = "function",
     ) -> ModelFunctionNode:
         """Create a simple function node."""
-        core = ModelFunctionNodeCore.create_simple(name, description, function_type)
+        # Import the enum to convert string to enum
+        from ...enums.enum_function_type import EnumFunctionType
+
+        # Convert string to enum for type safety
+        try:
+            function_type_enum = EnumFunctionType(function_type.upper())
+        except ValueError:
+            function_type_enum = EnumFunctionType.TRANSFORM  # Default fallback
+
+        core = ModelFunctionNodeCore.create_simple(
+            name, description, function_type_enum
+        )
         return cls(core=core)
 
     @classmethod
@@ -198,8 +211,19 @@ class ModelFunctionNode(BaseModel):
         description: str = "",
     ) -> ModelFunctionNode:
         """Create function node from signature information."""
+        # Import the enum to convert string to enum
+        from ...enums.enum_return_type import EnumReturnType
+
+        # Convert string to enum for type safety
+        return_type_enum = None
+        if return_type is not None:
+            try:
+                return_type_enum = EnumReturnType(return_type.upper())
+            except ValueError:
+                return_type_enum = EnumReturnType.UNKNOWN  # Default fallback
+
         core = ModelFunctionNodeCore.create_from_signature(
-            name, parameters, return_type, description
+            name, parameters, return_type_enum, description
         )
         return cls(core=core)
 

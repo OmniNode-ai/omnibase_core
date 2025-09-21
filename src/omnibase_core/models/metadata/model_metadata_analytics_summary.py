@@ -86,12 +86,5 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     @property
     def collection_name(self) -> str | None:
-        """Get collection name with fallback for backward compatibility."""
+        """Get collection name with fallback."""
         return self.collection_display_name
-
-    @collection_name.setter
-    def collection_name(self, value: str | None) -> None:
-        """Set collection name (for backward compatibility)."""
-        self.collection_display_name = value
-        if value:
-            self.collection_id = uuid_from_string(value, "collection")

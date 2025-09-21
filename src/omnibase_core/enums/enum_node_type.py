@@ -37,6 +37,7 @@ class EnumNodeType(str, Enum):
     NODE = "node"
     WORKFLOW = "workflow"
     SERVICE = "service"
+    COMPUTE_LEGACY = "compute"  # Legacy compatibility for existing contracts
     UNKNOWN = "unknown"
 
     def __str__(self) -> str:

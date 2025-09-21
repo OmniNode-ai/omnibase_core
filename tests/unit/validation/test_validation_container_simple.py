@@ -5,20 +5,22 @@ This test file focuses on the core validation container functionality
 without importing complex models that have circular dependencies.
 """
 
-import pytest
-from pydantic import BaseModel, Field
+import os
 
 # Direct imports to avoid circular dependencies
 import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../src'))
 
+import pytest
+from pydantic import BaseModel, Field
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../src"))
+
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
     ValidatedModel,
 )
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
 
 class TestModelValidationContainer:
@@ -46,7 +48,9 @@ class TestModelValidationContainer:
         assert container.get_error_count() == 1
         assert not container.is_valid()
 
-        container.add_error("Another error", field="test_field", error_code="TEST_ERROR")
+        container.add_error(
+            "Another error", field="test_field", error_code="TEST_ERROR"
+        )
         assert container.get_error_count() == 2
 
         error_messages = container.get_all_error_messages()
@@ -147,6 +151,7 @@ class TestValidatedModel:
 
     def test_basic_validated_model(self):
         """Test basic ValidatedModel functionality."""
+
         class TestModel(ValidatedModel):
             name: str
 
@@ -157,6 +162,7 @@ class TestValidatedModel:
 
     def test_validated_model_with_custom_validation(self):
         """Test ValidatedModel with custom validation logic."""
+
         class TestModel(ValidatedModel):
             name: str
             value: int
@@ -165,7 +171,9 @@ class TestValidatedModel:
                 if not self.name:
                     self.validation.add_error("Name is required", field="name")
                 if self.value < 0:
-                    self.validation.add_critical_error("Value must be positive", field="value")
+                    self.validation.add_critical_error(
+                        "Value must be positive", field="value"
+                    )
 
         # Valid model
         valid_model = TestModel(name="test", value=10)
@@ -181,6 +189,7 @@ class TestValidatedModel:
 
     def test_add_validation_methods(self):
         """Test the convenience methods for adding validation issues."""
+
         class TestModel(ValidatedModel):
             name: str
 
@@ -197,6 +206,7 @@ class TestValidatedModel:
 
     def test_perform_validation_clears_previous(self):
         """Test that perform_validation clears previous results."""
+
         class TestModel(ValidatedModel):
             name: str
             should_error: bool
@@ -219,6 +229,7 @@ class TestValidatedModel:
 
 def test_complex_validation_scenario():
     """Test a complex validation scenario."""
+
     class ComplexModel(ValidatedModel):
         name: str
         email: str
@@ -238,7 +249,9 @@ def test_complex_validation_scenario():
 
             # Age validation
             if self.age < 0:
-                self.validation.add_critical_error("Age cannot be negative", field="age")
+                self.validation.add_critical_error(
+                    "Age cannot be negative", field="age"
+                )
             elif self.age < 18:
                 self.validation.add_warning("User is under 18")
 
@@ -249,7 +262,9 @@ def test_complex_validation_scenario():
                 self.validation.add_error("Too many tags", field="tags")
 
     # Test valid model
-    valid_model = ComplexModel(name="John Doe", email="john@example.com", age=25, tags=["user"])
+    valid_model = ComplexModel(
+        name="John Doe", email="john@example.com", age=25, tags=["user"]
+    )
     assert valid_model.perform_validation()
     assert valid_model.is_valid()
 

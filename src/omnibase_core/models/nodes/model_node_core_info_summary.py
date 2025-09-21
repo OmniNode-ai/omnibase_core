@@ -1,0 +1,34 @@
+"""
+Node core information summary model.
+
+Clean, strongly-typed replacement for node core info dict return types.
+Follows ONEX one-model-per-file naming conventions.
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from ...enums.enum_metadata_node_type import EnumMetadataNodeType
+from ...enums.enum_status import EnumStatus
+
+
+class ModelNodeCoreInfoSummary(BaseModel):
+    """Core node information summary with specific types."""
+
+    node_id: UUID = Field(description="Node identifier")
+    node_name: str = Field(description="Node name")
+    node_type: EnumMetadataNodeType = Field(description="Node type value")
+    node_version: str = Field(description="Node version as string")
+    status: EnumStatus = Field(description="Node status value")
+    health: str = Field(description="Node health value")
+    is_active: bool = Field(description="Whether node is active")
+    is_healthy: bool = Field(description="Whether node is healthy")
+    has_description: bool = Field(description="Whether node has description")
+    has_author: bool = Field(description="Whether node has author")
+
+
+# Export the model
+__all__ = ["ModelNodeCoreInfoSummary"]

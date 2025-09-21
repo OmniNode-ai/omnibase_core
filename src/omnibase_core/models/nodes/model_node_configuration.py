@@ -18,6 +18,7 @@ from .model_node_resource_limits import ModelNodeResourceLimits
 
 class NodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
+
     execution: dict[str, str | int | float | bool | None]
     resources: dict[str, str | int | float | bool | None]
     features: dict[str, str | int | float | bool | None]

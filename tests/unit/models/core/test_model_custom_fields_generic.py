@@ -297,9 +297,7 @@ class TestModelCustomFieldsGenericEdgeCases:
     def test_generic_multiple_type_parameters(self):
         """Test behavior when using complex generic type parameters."""
         # Test with union types
-        from typing import Union
-
-        union_fields = ModelCustomFields[Union[str, int]]()
+        union_fields = ModelCustomFields[str | int]()
         union_fields.set_field("mixed", "string_value")
         union_fields.set_field("number", 42)
 

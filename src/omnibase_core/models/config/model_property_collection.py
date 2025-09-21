@@ -7,7 +7,7 @@ collections of typed properties with validation and helper methods.
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,6 @@ from ...protocols.protocol_supported_property_value import (
     ProtocolSupportedPropertyValue,
 )
 from .model_property_metadata import ModelPropertyMetadata
-from typing import Any
 from .model_typed_property import ModelTypedProperty
 
 # Type variable for generic property handling
@@ -57,44 +56,47 @@ class ModelPropertyCollection(BaseModel):
         """Get a property by key."""
         return self.properties.get(key)
 
-    def get_typed_value(
-        self, key: str, expected_type: type[T], default: T | None = None
-    ) -> T | None:
+    def get_typed_value(self, key: str, expected_type: type[T], default: T) -> T:
         """Get a property value with specific type checking."""
         prop = self.get_property(key)
         if prop is None:
             return default
 
-        typed_value = prop.get_typed_value(expected_type)
-        return typed_value if typed_value is not None else default
+        return prop.get_typed_value(expected_type, default)
 
     def get_string(self, key: str, default: str = "") -> str:
         """Get string property value."""
-        return self.get_typed_value(key, str, default) or default
+        return self.get_typed_value(key, str, default)
 
     def get_int(self, key: str, default: int = 0) -> int:
         """Get integer property value."""
-        return self.get_typed_value(key, int, default) or default
+        return self.get_typed_value(key, int, default)
 
     def get_float(self, key: str, default: float = 0.0) -> float:
         """Get float property value."""
         # Try float first, then int (which can be converted to float)
-        value = self.get_typed_value(key, float, default)
-        if value is None:
-            int_value = self.get_typed_value(key, int, default)
-            if int_value is not None:
-                return float(int_value)
-        return float(value) if value is not None else default
+        prop = self.get_property(key)
+        if prop is None:
+            return default
+
+        # Check if value is already a float
+        if isinstance(prop.value, float):
+            return prop.value
+        # Convert int to float if needed
+        elif isinstance(prop.value, int):
+            return float(prop.value)
+
+        return default
 
     def get_bool(self, key: str, default: bool = False) -> bool:
         """Get boolean property value."""
-        return self.get_typed_value(key, bool, default) or default
+        return self.get_typed_value(key, bool, default)
 
     def get_string_list(self, key: str, default: list[str] | None = None) -> list[str]:
         """Get string list property value."""
         if default is None:
             default = []
-        return self.get_typed_value(key, list, default) or default
+        return self.get_typed_value(key, list, default)
 
     def get_required_properties(self) -> list[str]:
         """Get list of required property keys."""

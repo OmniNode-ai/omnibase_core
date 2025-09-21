@@ -8,7 +8,7 @@ timing, metadata, and execution tracking capabilities.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -22,6 +22,8 @@ from .model_result import Result
 # Type variables for execution result pattern
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
+# Type variable for metadata value types
+MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
 
 
 class ModelExecutionResult(Result[T, E], Generic[T, E]):
@@ -174,15 +176,14 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         for warning in warnings:
             self.add_warning(warning)
 
-    def add_metadata(self, key: str, value: str | int | bool | float) -> None:
+    def add_metadata(self, key: str, value: MetadataValueType) -> None:
         """Add metadata entry."""
         self.metadata.set_custom_value(key, value)
 
-    def get_metadata(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
+    def get_metadata(self, key: str, default: MetadataValueType) -> MetadataValueType:
         """Get metadata entry with optional default."""
-        return self.metadata.get_custom_value(key) or default
+        value = self.metadata.get_custom_value(key)
+        return cast(MetadataValueType, value if value is not None else default)
 
     def mark_completed(self) -> None:
         """Mark execution as completed and calculate duration."""
@@ -260,8 +261,8 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
                 str(self.error) if not self.success and self.error is not None else None
             ),
             tool_name=(
-                str(self.get_metadata("tool_name"))
-                if self.get_metadata("tool_name")
+                str(self.get_metadata("tool_name", ""))
+                if self.get_metadata("tool_name", "")
                 else None
             ),
             execution_time_ms=self.get_duration_ms(),

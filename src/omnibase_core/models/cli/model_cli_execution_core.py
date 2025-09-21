@@ -161,32 +161,6 @@ class ModelCliExecutionCore(BaseModel):
         """Set progress percentage."""
         self.progress_percentage = max(0.0, min(100.0, percentage))
 
-    @property
-    def command_name(self) -> str:
-        """Backward compatibility property for command_name."""
-        return self.command_display_name or f"command_{str(self.command_name_id)[:8]}"
-
-    @command_name.setter
-    def command_name(self, value: str) -> None:
-        """Backward compatibility setter for command_name."""
-        import hashlib
-
-        command_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.command_name_id = UUID(
-            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}"
-        )
-        self.command_display_name = value
-
-    @property
-    def target_node_name(self) -> str | None:
-        """Backward compatibility property for target_node_name."""
-        return self.target_node_display_name
-
-    @target_node_name.setter
-    def target_node_name(self, value: str | None) -> None:
-        """Backward compatibility setter for target_node_name."""
-        self.target_node_display_name = value
-
     @classmethod
     def create_simple(
         cls,

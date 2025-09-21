@@ -29,7 +29,8 @@ class ModelCliCommandOption(BaseModel):
         None, description="Human-readable option name (e.g., '--verbose', '-v')"
     )
     value: Any = Field(
-        ..., description="Option value - supports str, int, bool, float, list[str], UUID"
+        ...,
+        description="Option value - supports str, int, bool, float, list[str], UUID",
     )
 
     # Option metadata
@@ -63,28 +64,6 @@ class ModelCliCommandOption(BaseModel):
     def option_name(self) -> str:
         """Get option name with fallback to UUID-based name."""
         return self.option_display_name or f"option_{str(self.option_id)[:8]}"
-
-    @option_name.setter
-    def option_name(self, value: str) -> None:
-        """Set option name (for backward compatibility)."""
-        self.option_display_name = value
-        # Update option_id to be deterministic based on name
-        self.option_id = uuid_from_string(value, "option")
-
-    @classmethod
-    def create_legacy(
-        cls,
-        option_name: str,
-        value: Any,
-        **kwargs,
-    ) -> "ModelCliCommandOption":
-        """Create option with legacy name parameter for backward compatibility."""
-        return cls(
-            option_id=uuid_from_string(option_name, "option"),
-            option_display_name=option_name,
-            value=value,
-            **kwargs,
-        )
 
 
 # Export for use

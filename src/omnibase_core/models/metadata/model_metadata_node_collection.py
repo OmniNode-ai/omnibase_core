@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime
-from typing import Any, Union
+from typing import Any
 
 from pydantic import Field, RootModel, model_validator
 
@@ -40,10 +40,8 @@ class ModelMetadataNodeCollection(
     def __init__(
         self,
         root: (
-            Union[
-                dict[str, ModelFunctionNode | ModelFunctionNodeData],
-                ModelMetadataNodeCollection,
-            ]
+            dict[str, ModelFunctionNode | ModelFunctionNodeData]
+            | ModelMetadataNodeCollection
             | None
         ) = None,
         **kwargs: Any,

@@ -87,6 +87,11 @@ class ModelRetryPolicy(BaseModel):
         """Get success rate as percentage."""
         return self.execution.get_success_rate()
 
+    @property
+    def has_retries_remaining(self) -> bool:
+        """Check if retries are still available."""
+        return self.can_attempt_retry
+
     def calculate_next_delay(self) -> float:
         """Calculate delay for next retry attempt."""
         if self.current_attempt == 0:

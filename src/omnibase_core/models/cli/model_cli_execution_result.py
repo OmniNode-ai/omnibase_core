@@ -134,24 +134,6 @@ class ModelCliExecutionResult(BaseModel):
             **kwargs,
         )
 
-    @classmethod
-    def create_from_legacy(
-        cls,
-        tool_name: str | None = None,
-        **kwargs: Any,
-    ) -> ModelCliExecutionResult:
-        """
-        Create result from legacy tool_name for backward compatibility.
-
-        Args:
-            tool_name: Legacy tool name (will be used as display_name)
-            **kwargs: Other result parameters
-
-        Returns:
-            Result instance with tool_display_name set
-        """
-        return cls(tool_display_name=tool_name, **kwargs)
-
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

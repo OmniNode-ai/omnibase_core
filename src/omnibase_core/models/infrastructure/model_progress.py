@@ -105,7 +105,9 @@ class ModelProgress(BaseModel):
 
     # Metadata
     custom_metrics: ModelMetricsData = Field(
-        default_factory=lambda: ModelMetricsData(collection_name="progress_metrics"),
+        default_factory=lambda: ModelMetricsData(
+            collection_id=None, collection_display_name="progress_metrics"
+        ),
         description="Custom progress metrics with clean typing",
     )
     tags: list[str] = Field(
