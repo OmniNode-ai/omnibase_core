@@ -2,13 +2,16 @@
 Unit tests for ModelGenericCollection - Generic collection management pattern.
 """
 
-import pytest
-from datetime import datetime, UTC
-from uuid import UUID, uuid4
+from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID, uuid4
+
+import pytest
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_generic_collection import ModelGenericCollection
+from src.omnibase_core.models.core.model_generic_collection import (
+    ModelGenericCollection,
+)
 
 
 class MockItem(BaseModel):
@@ -275,6 +278,7 @@ class TestModelGenericCollection:
 
         # Create items with different timestamps
         from datetime import timedelta
+
         base_time = datetime.now(UTC)
         items = [
             MockItem(name="newest", created_at=base_time + timedelta(hours=2)),
@@ -328,13 +332,13 @@ class TestModelGenericCollection:
 
         summary = collection.get_summary()
 
-        assert summary["collection_name"] == "test_collection"
-        assert summary["total_items"] == 2
-        assert summary["enabled_items"] == 1
-        assert summary["valid_items"] == 1
-        assert summary["has_items"] is True
-        assert isinstance(summary["created_at"], datetime)
-        assert isinstance(summary["updated_at"], datetime)
+        assert summary.collection_name == "test_collection"
+        assert summary.total_items == 2
+        assert summary.enabled_items == 1
+        assert summary.valid_items == 1
+        assert summary.has_items is True
+        assert isinstance(summary.created_at, datetime)
+        assert isinstance(summary.updated_at, datetime)
 
     def test_extend_items(self):
         """Test adding multiple items at once."""

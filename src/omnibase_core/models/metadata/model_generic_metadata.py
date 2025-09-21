@@ -12,6 +12,15 @@ from .model_semver import ModelSemVer
 T = TypeVar("T", str, int, bool, float)
 
 
+@runtime_checkable
+class ModelProtocolSupportedMetadataType(Protocol):
+    """Protocol for types that can be stored in metadata."""
+
+    def __str__(self) -> str:
+        """Must be convertible to string."""
+        ...
+
+
 class ModelGenericMetadata(BaseModel, Generic[T]):
     """Generic metadata storage with flexible fields."""
 
@@ -65,13 +74,13 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
 
     def set_typed_field(self, key: str, value: T) -> None:
         """Set a custom field value with runtime type validation."""
-        if isinstance(value, ProtocolSupportedMetadataType):
+        if isinstance(value, ModelProtocolSupportedMetadataType):
             # Convert to a supported primitive type
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation
                 self.set_field(key, str(value))
             else:
-                self.set_field(key, value)  # type: ignore[arg-type]
+                self.set_field(key, value)
         else:
             raise TypeError(
                 f"Value type {type(value)} not supported for metadata storage"

@@ -5,14 +5,14 @@ Replaces primitive dict parameters with type-safe Pydantic models
 for CLI node execution operations.
 """
 
-from typing import Any, ClassVar, TypedDict
+from typing import ClassVar, TypedDict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ...enums.enum_cli_action import EnumCliAction
 from ...enums.enum_output_format import EnumOutputFormat
-from ..data.model_custom_fields import ModelCustomFields
+from .model_cli_advanced_params import ModelCliAdvancedParams
 
 
 class ModelCliInputDict(TypedDict, total=False):
@@ -79,8 +79,16 @@ class ModelCliNodeExecutionInput(BaseModel):
     verbose: bool = Field(default=False, description="Enable verbose output")
 
     # Advanced parameters (typed model for safety)
-    advanced_params: ModelCustomFields[Any] = Field(
-        default_factory=lambda: ModelCustomFields[Any](),
+    advanced_params: ModelCliAdvancedParams = Field(
+        default_factory=lambda: ModelCliAdvancedParams(
+            timeout_seconds=None,
+            max_retries=None,
+            retry_delay_ms=None,
+            memory_limit_mb=None,
+            cpu_limit_percent=None,
+            max_parallel_tasks=None,
+            cache_ttl_seconds=None,
+        ),
         description="Advanced parameters specific to individual nodes",
     )
 

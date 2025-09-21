@@ -48,25 +48,22 @@ from ..metadata.model_metadata_usage_metrics import (
 from ..nodes.model_node_configuration import ModelNodeConfiguration
 
 # Configuration base classes
-from .model_configuration_base import (
-    ModelConfigurationBase,
-    ModelTypedConfiguration,
-)
+from .model_configuration_base import ModelConfigurationBase
+from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 
 # Custom properties pattern
 from .model_custom_properties import ModelCustomProperties
+from .model_environment_accessor import ModelEnvironmentAccessor
 
 # Field accessor patterns
-from .model_field_accessor import (
-    ModelCustomFieldsAccessor,
-    ModelEnvironmentAccessor,
-    ModelFieldAccessor,
-    ModelResultAccessor,
-    ModelTypedAccessor,
-)
+from .model_field_accessor import ModelFieldAccessor
 
 # Generic collection pattern
 from .model_generic_collection import ModelGenericCollection
+from .model_generic_collection_summary import ModelGenericCollectionSummary
+from .model_result_accessor import ModelResultAccessor
+from .model_typed_accessor import ModelTypedAccessor
+from .model_typed_configuration import ModelTypedConfiguration
 
 # Generic factory pattern
 try:
@@ -118,10 +115,10 @@ __all__ = [
     "ModelCustomFieldsAccessor",
     # Generic collection pattern
     "ModelGenericCollection",
+    "ModelGenericCollectionSummary",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",
-    "ModelSimpleConfiguration",
     # Custom properties pattern
     "ModelCustomProperties",
 ]

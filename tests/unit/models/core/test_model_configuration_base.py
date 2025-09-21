@@ -5,20 +5,23 @@ Verifies the generic configuration base classes provide
 standardized configuration patterns and utilities.
 """
 
-import pytest
-from datetime import datetime, UTC
-from pydantic import BaseModel, Field
+from datetime import UTC, datetime
 from typing import Optional
+
+import pytest
+from pydantic import BaseModel, Field
 
 from src.omnibase_core.models.core.model_configuration_base import (
     ModelConfigurationBase,
+)
+from src.omnibase_core.models.core.model_typed_configuration import (
     ModelTypedConfiguration,
-    ModelSimpleConfiguration,
 )
 
 
 class SampleConfigData(BaseModel):
     """Sample typed configuration data for testing."""
+
     endpoint: str = Field(..., description="Service endpoint")
     port: int = Field(default=8080, description="Service port")
     ssl_enabled: bool = Field(default=False, description="Enable SSL")
@@ -59,7 +62,9 @@ class TestModelConfigurationBase:
 
     def test_disabled_configuration(self):
         """Test disabled configuration creation."""
-        config = ModelConfigurationBase[SampleConfigData].create_disabled("disabled_test")
+        config = ModelConfigurationBase[SampleConfigData].create_disabled(
+            "disabled_test"
+        )
 
         assert config.name == "disabled_test"
         assert config.enabled is False
@@ -97,6 +102,7 @@ class TestModelConfigurationBase:
 
         # Small delay to ensure timestamp difference
         import time
+
         time.sleep(0.01)
 
         config.update_timestamp()
@@ -187,83 +193,13 @@ class TestModelTypedConfiguration:
     def test_disable_with_reason(self):
         """Test disabling with reason."""
         config = ModelTypedConfiguration[SampleConfigData](
-            name="test",
-            description="Original description"
+            name="test", description="Original description"
         )
 
         config.disable_with_reason("Service unavailable")
 
         assert config.enabled is False
         assert "Disabled: Service unavailable" in config.description
-
-
-class TestModelSimpleConfiguration:
-    """Test the simple configuration class."""
-
-    def test_basic_functionality(self):
-        """Test basic simple configuration functionality."""
-        config = ModelSimpleConfiguration(name="simple_test")
-
-        assert config.config_data is None
-
-        config.set_config_value("timeout", 30)
-        config.set_config_value("endpoint", "http://localhost")
-        config.set_config_value("ssl", True)
-
-        assert config.get_config_value("timeout") == 30
-        assert config.get_config_value("endpoint") == "http://localhost"
-        assert config.get_config_value("ssl") is True
-        assert config.has_config_value("timeout") is True
-        assert config.has_config_value("nonexistent") is False
-
-    def test_value_removal(self):
-        """Test configuration value removal."""
-        config = ModelSimpleConfiguration(name="test")
-        config.set_config_value("key1", "value1")
-        config.set_config_value("key2", "value2")
-
-        assert config.remove_config_value("key1") is True
-        assert config.has_config_value("key1") is False
-        assert config.has_config_value("key2") is True
-
-        assert config.remove_config_value("nonexistent") is False
-
-    def test_get_all_values(self):
-        """Test getting all configuration values."""
-        config = ModelSimpleConfiguration(name="test")
-        config.set_config_value("key1", "value1")
-        config.set_config_value("key2", 42)
-        config.set_config_value("key3", True)
-
-        all_values = config.get_all_config_values()
-        expected = {"key1": "value1", "key2": 42, "key3": True}
-        assert all_values == expected
-
-    def test_create_from_dict(self):
-        """Test creation from dictionary."""
-        config_dict = {
-            "timeout": 30,
-            "endpoint": "http://localhost",
-            "ssl": True,
-            "retries": 3
-        }
-
-        config = ModelSimpleConfiguration.create_from_dict("dict_test", config_dict)
-
-        assert config.name == "dict_test"
-        assert config.get_config_value("timeout") == 30
-        assert config.get_config_value("endpoint") == "http://localhost"
-        assert config.get_config_value("ssl") is True
-        assert config.get_config_value("retries") == 3
-
-    def test_empty_configuration_handling(self):
-        """Test handling of empty configurations."""
-        config = ModelSimpleConfiguration(name="empty")
-
-        assert config.get_all_config_values() == {}
-        assert config.has_config_value("anything") is False
-        assert config.remove_config_value("anything") is False
-        assert config.get_config_value("anything", "default") == "default"
 
 
 class TestConfigurationIntegration:
@@ -293,13 +229,11 @@ class TestConfigurationIntegration:
                     return "http://localhost:8080"
 
                 protocol = "https" if self.config_data.ssl_enabled else "http"
-                return f"{protocol}://{self.config_data.endpoint}:{self.config_data.port}"
+                return (
+                    f"{protocol}://{self.config_data.endpoint}:{self.config_data.port}"
+                )
 
-        data = SampleConfigData(
-            endpoint="api.example.com",
-            port=443,
-            ssl_enabled=True
-        )
+        data = SampleConfigData(endpoint="api.example.com", port=443, ssl_enabled=True)
         config = CustomConfig.create_with_data("custom", data)
 
         # Test base functionality

@@ -15,9 +15,11 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 
 # Define protocols for collection items to ensure proper constraints
@@ -32,22 +34,6 @@ class CollectionItem(Protocol):
 T = TypeVar(
     "T", bound=BaseModel
 )  # Keep BaseModel bound for now, can be made more specific
-
-
-class ModelGenericCollectionSummary(BaseModel):
-    """
-    Strongly-typed summary for generic collections.
-
-    Replaces Dict[str, Any] anti-pattern with proper type safety.
-    """
-
-    collection_name: str = Field(description="Name of the collection")
-    total_items: int = Field(description="Total number of items in collection")
-    enabled_items: int = Field(description="Number of enabled items")
-    valid_items: int = Field(description="Number of valid items")
-    created_at: datetime = Field(description="When the collection was created")
-    updated_at: datetime = Field(description="When the collection was last modified")
-    has_items: bool = Field(description="Whether the collection contains any items")
 
 
 class ModelGenericCollection(BaseModel, Generic[T]):
@@ -412,3 +398,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             Collection instance with the specified items
         """
         return cls(items=items, collection_name=collection_name)
+
+
+# Export for use
+__all__ = ["CollectionItem", "ModelGenericCollection"]

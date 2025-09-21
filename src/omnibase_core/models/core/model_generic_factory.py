@@ -5,9 +5,11 @@ Provides a consistent, type-safe factory pattern to replace repetitive
 factory methods across CLI, Config, Nodes, and Validation domains.
 """
 
-from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Union, Unpack
+from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
+
+from ...enums.enum_validation_severity import EnumValidationSeverity
 
 
 # TypedDict for factory kwargs to replace loose **kwargs: Any
@@ -338,13 +340,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_error(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a standard error with ERROR severity."""
-        # Import here to avoid circular dependency issues
-        try:
-            from ...enums.enum_validation_severity import EnumValidationSeverity
-
-            severity: Union[EnumValidationSeverity, str] = EnumValidationSeverity.ERROR
-        except ImportError:
-            severity = "error"  # Fallback string value
+        severity: EnumValidationSeverity = EnumValidationSeverity.ERROR
 
         # Remove processed fields to avoid duplication
         filtered_kwargs = {
@@ -359,15 +355,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_warning(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a warning with WARNING severity."""
-        # Import here to avoid circular dependency issues
-        try:
-            from ...enums.enum_validation_severity import EnumValidationSeverity
-
-            severity: Union[EnumValidationSeverity, str] = (
-                EnumValidationSeverity.WARNING
-            )
-        except ImportError:
-            severity = "warning"  # Fallback string value
+        severity: EnumValidationSeverity = EnumValidationSeverity.WARNING
 
         # Remove processed fields to avoid duplication
         filtered_kwargs = {
@@ -382,15 +370,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_critical(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build a critical error with CRITICAL severity."""
-        # Import here to avoid circular dependency issues
-        try:
-            from ...enums.enum_validation_severity import EnumValidationSeverity
-
-            severity: Union[EnumValidationSeverity, str] = (
-                EnumValidationSeverity.CRITICAL
-            )
-        except ImportError:
-            severity = "critical"  # Fallback string value
+        severity: EnumValidationSeverity = EnumValidationSeverity.CRITICAL
 
         # Remove processed fields to avoid duplication
         filtered_kwargs = {
@@ -405,13 +385,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
 
     def _build_info(self, **kwargs: Unpack[FactoryKwargs]) -> T:
         """Build an info message with INFO severity."""
-        # Import here to avoid circular dependency issues
-        try:
-            from ...enums.enum_validation_severity import EnumValidationSeverity
-
-            severity: Union[EnumValidationSeverity, str] = EnumValidationSeverity.INFO
-        except ImportError:
-            severity = "info"  # Fallback string value
+        severity: EnumValidationSeverity = EnumValidationSeverity.INFO
 
         # Remove processed fields to avoid duplication
         filtered_kwargs = {

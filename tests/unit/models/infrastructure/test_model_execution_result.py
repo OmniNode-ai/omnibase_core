@@ -31,13 +31,14 @@ class TestModelExecutionResult:
         assert result.success is True
         assert result.value == "test_value"
         assert result.error is None
-        assert isinstance(result.execution_id, str)
-        assert UUID(result.execution_id)  # Valid UUID
+        assert isinstance(result.execution_id, UUID)
         assert isinstance(result.start_time, datetime)
         assert result.end_time is None
         assert result.duration is None
         assert result.warnings == []
-        assert result.metadata == {}
+        assert len(result.metadata.custom_strings) == 0
+        assert len(result.metadata.custom_numbers) == 0
+        assert len(result.metadata.custom_flags) == 0
 
     def test_error_creation_with_err(self) -> None:
         """Test creating error execution result."""
@@ -47,27 +48,35 @@ class TestModelExecutionResult:
         assert result.success is False
         assert result.value is None
         assert result.error == "test_error"
-        assert isinstance(result.execution_id, str)
-        assert UUID(result.execution_id)  # Valid UUID
+        assert isinstance(result.execution_id, UUID)
         assert isinstance(result.start_time, datetime)
         assert result.end_time is None
         assert result.duration is None
         assert result.warnings == []
-        assert result.metadata == {}
+        assert len(result.metadata.custom_strings) == 0
+        assert len(result.metadata.custom_numbers) == 0
+        assert len(result.metadata.custom_flags) == 0
 
     def test_custom_execution_id(self) -> None:
         """Test creating result with custom execution ID."""
-        custom_id = "custom-execution-123"
+        custom_id = UUID("12345678-1234-5678-9abc-123456789abc")
         result = ModelExecutionResult.ok("value", execution_id=custom_id)
 
         assert result.execution_id == custom_id
 
     def test_metadata_initialization(self) -> None:
         """Test creating result with initial metadata."""
-        metadata = {"tool": "test_tool", "version": "1.0"}
+        from src.omnibase_core.models.core.model_custom_properties import (
+            ModelCustomProperties,
+        )
+
+        metadata = ModelCustomProperties()
+        metadata.set_custom_string("tool", "test_tool")
+        metadata.set_custom_string("version", "1.0")
         result = ModelExecutionResult.ok("value", metadata=metadata)
 
-        assert result.metadata == metadata
+        assert result.get_metadata("tool") == "test_tool"
+        assert result.get_metadata("version") == "1.0"
 
     def test_add_warning(self) -> None:
         """Test adding warnings to execution result."""
@@ -118,7 +127,11 @@ class TestModelExecutionResult:
         assert result.is_completed()
         assert result.end_time is not None
         assert result.duration is not None
-        assert isinstance(result.duration, ModelDuration)
+        from src.omnibase_core.models.infrastructure.model_execution_result import (
+            ModelExecutionDuration,
+        )
+
+        assert isinstance(result.duration, ModelExecutionDuration)
         assert result.duration.total_milliseconds() >= 0
 
     def test_duration_calculations(self) -> None:
@@ -152,32 +165,32 @@ class TestModelExecutionResult:
 
         summary = result.get_execution_summary()
 
-        assert summary["execution_id"] == result.execution_id
-        assert summary["success"] is True
-        assert summary["duration_ms"] is not None
-        assert summary["warning_count"] == 1
-        assert summary["has_metadata"] is True
-        assert summary["completed"] is True
+        assert summary.execution_id == result.execution_id
+        assert summary.success is True
+        assert summary.duration_ms is not None
+        assert summary.warning_count == 1
+        assert summary.has_metadata is True
+        assert summary.completed is True
 
     def test_cli_result_conversion(self) -> None:
-        """Test conversion to CLI result dictionary format."""
+        """Test conversion to CLI result data format."""
         result = ModelExecutionResult.ok("test_output")
         result.add_metadata("tool_name", "test_tool")
         result.add_metadata("status_code", 0)
         result.add_warning("Test warning")
         result.mark_completed()
 
-        cli_dict = result.to_cli_result_dict()
+        cli_result = result.to_cli_result()
 
-        assert cli_dict["success"] is True
-        assert cli_dict["execution_id"] == result.execution_id
-        assert cli_dict["output_data"] == "test_output"
-        assert cli_dict["error_message"] is None
-        assert cli_dict["tool_name"] == "test_tool"
-        assert cli_dict["execution_time_ms"] is not None
-        assert cli_dict["status_code"] == 0
-        assert cli_dict["warnings"] == ["Test warning"]
-        assert cli_dict["metadata"]["tool_name"] == "test_tool"
+        assert cli_result.success is True
+        assert cli_result.execution_id == result.execution_id
+        assert cli_result.output_data == "test_output"
+        assert cli_result.error_message is None
+        assert cli_result.tool_name == "test_tool"
+        assert cli_result.execution_time_ms is not None
+        assert cli_result.status_code == 0
+        assert cli_result.warnings == ["Test warning"]
+        assert cli_result.metadata.get_custom_value("tool_name") == "test_tool"
 
     def test_cli_result_conversion_error(self) -> None:
         """Test CLI result conversion for error case."""
@@ -185,40 +198,42 @@ class TestModelExecutionResult:
         result.add_metadata("tool_name", "test_tool")
         result.add_metadata("status_code", 1)
 
-        cli_dict = result.to_cli_result_dict()
+        cli_result = result.to_cli_result()
 
-        assert cli_dict["success"] is False
-        assert cli_dict["output_data"] is None
-        assert cli_dict["error_message"] == "test_error"
-        assert cli_dict["tool_name"] == "test_tool"
-        assert cli_dict["status_code"] == 1
+        assert cli_result.success is False
+        assert cli_result.output_data is None
+        assert cli_result.error_message == "test_error"
+        assert cli_result.tool_name == "test_tool"
+        assert cli_result.status_code == 1
 
     def test_create_cli_success(self) -> None:
         """Test CLI success factory method."""
         output_data = {"result": "success", "data": [1, 2, 3]}
+        cli_id = UUID("12345678-1234-5678-9abc-123456789abc")
         result = ModelExecutionResult.create_cli_success(
-            output_data, tool_name="test_tool", execution_id="cli-123"
+            output_data, tool_name="test_tool", execution_id=cli_id
         )
 
         assert result.is_ok()
         assert result.value == output_data
-        assert result.execution_id == "cli-123"
+        assert result.execution_id == cli_id
         assert result.get_metadata("tool_name") == "test_tool"
 
     def test_create_cli_failure(self) -> None:
         """Test CLI failure factory method."""
+        failure_id = UUID("87654321-4321-8765-cba9-876543210fed")
         result = ModelExecutionResult.create_cli_failure(
             "Command failed",
             tool_name="test_tool",
             status_code=2,
-            execution_id="cli-456",
+            execution_id=failure_id,
         )
 
         assert result.is_err()
         assert result.error == "Command failed"
-        assert result.execution_id == "cli-456"
+        assert result.execution_id == failure_id
         assert result.get_metadata("tool_name") == "test_tool"
-        assert result.get_metadata("status_code") == 2
+        assert result.get_metadata("status_code") == 2.0
 
     def test_inherited_result_methods(self) -> None:
         """Test that Result[T, E] methods still work correctly."""
@@ -302,7 +317,7 @@ class TestConvenienceFactories:
         assert result.is_err()
         assert result.error == "error"
         assert result.get_metadata("tool_name") == "test_tool"
-        assert result.get_metadata("status_code") == 2
+        assert result.get_metadata("status_code") == 2.0
 
     def test_try_execution_success(self) -> None:
         """Test try_execution with successful function."""
@@ -387,7 +402,7 @@ class TestBackwardsCompatibility:
         )
         assert error_result.is_err()
         assert error_result.get_metadata("tool_name") == "tool1"
-        assert error_result.get_metadata("status_code") == 1
+        assert error_result.get_metadata("status_code") == 1.0
 
     def test_validation_error_handling(self) -> None:
         """Test proper validation error handling."""

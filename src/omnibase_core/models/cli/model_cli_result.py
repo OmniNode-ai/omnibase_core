@@ -6,7 +6,7 @@ outcome of CLI command execution with proper typing.
 """
 
 from datetime import UTC, datetime
-from typing import Any, TypedDict, TypeVar, Union
+from typing import TypedDict, TypeVar
 
 # Type variable for generic metadata access
 T = TypeVar("T")
@@ -19,7 +19,7 @@ class ModelPerformanceMetricData(TypedDict, total=False):
     """Typed dictionary for performance metric values."""
 
     name: str
-    value: Union[int, float]
+    value: float  # All metrics can be represented as float
     unit: str
     category: str
 
@@ -29,7 +29,7 @@ class ModelDebugInfoData(TypedDict, total=False):
     """Typed dictionary for debug information."""
 
     key: str
-    value: Union[str, int, float, bool]
+    value: str  # Debug values are typically displayed as strings
     timestamp: str
     category: str
 
@@ -39,7 +39,7 @@ class ModelTraceInfoData(TypedDict, total=False):
     """Typed dictionary for trace information."""
 
     key: str
-    value: Union[str, int, float, bool]
+    value: str  # Trace values are typically displayed as strings
     timestamp: str
     operation: str
 
@@ -47,8 +47,9 @@ class ModelTraceInfoData(TypedDict, total=False):
 from ..cli.model_cli_execution import ModelCliExecution
 from ..cli.model_cli_output_data import ModelCliOutputData
 from ..infrastructure.model_duration import ModelDuration
-from ..metadata.model_generic_metadata import ModelGenericMetadata
 from ..validation.model_validation_error import ModelValidationError
+from .model_cli_debug_info import ModelCliDebugInfo
+from .model_cli_result_metadata import ModelCliResultMetadata
 from .model_performance_metrics import ModelPerformanceMetrics
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
@@ -114,7 +115,7 @@ class ModelCliResult(BaseModel):
         description="Performance metrics and timing data",
     )
 
-    debug_info: ModelGenericMetadata[Any] | None = Field(
+    debug_info: ModelCliDebugInfo | None = Field(
         None,
         description="Debug information (only included if debug enabled)",
     )
@@ -124,7 +125,7 @@ class ModelCliResult(BaseModel):
         description="Trace data (only included if tracing enabled)",
     )
 
-    result_metadata: ModelGenericMetadata[Any] | None = Field(
+    result_metadata: ModelCliResultMetadata | None = Field(
         None,
         description="Additional result metadata",
     )
@@ -217,8 +218,8 @@ class ModelCliResult(BaseModel):
         """Add debug information with proper typing."""
         if self.execution.is_debug_enabled:
             if self.debug_info is None:
-                self.debug_info = ModelGenericMetadata()
-            self.debug_info.set_field(key, value)
+                self.debug_info = ModelCliDebugInfo()
+            self.debug_info.set_custom_field(key, value)
 
     def add_trace_data(
         self, key: str, value: str | int | float | bool, operation: str = ""
@@ -244,8 +245,18 @@ class ModelCliResult(BaseModel):
     def add_metadata(self, key: str, value: str | int | float | bool) -> None:
         """Add result metadata with proper typing."""
         if self.result_metadata is None:
-            self.result_metadata = ModelGenericMetadata()
-        self.result_metadata.set_typed_field(key, value)
+            self.result_metadata = ModelCliResultMetadata(
+                metadata_version=None,
+                result_category=None,
+                source_command=None,
+                source_node=None,
+                processor_version=None,
+                quality_score=None,
+                confidence_level=None,
+                retention_policy=None,
+                processing_time_ms=None,
+            )
+        self.result_metadata.set_custom_field(key, value)
 
     def get_metadata(
         self, key: str, default: str | int | float | bool | None = None
@@ -253,7 +264,7 @@ class ModelCliResult(BaseModel):
         """Get result metadata with proper typing."""
         if self.result_metadata is None:
             return default
-        return self.result_metadata.get_field(key, default)
+        return self.result_metadata.get_custom_field(key, default)
 
     def get_typed_metadata(
         self, key: str, field_type: type[T], default: T | None = None
@@ -261,7 +272,10 @@ class ModelCliResult(BaseModel):
         """Get result metadata with specific type checking."""
         if self.result_metadata is None:
             return default
-        return self.result_metadata.get_typed_field(key, field_type, default)
+        value = self.result_metadata.get_custom_field(key)
+        if value is not None and isinstance(value, field_type):
+            return value
+        return default
 
     def get_output_value(
         self, key: str, default: str | int | float | bool | None = None

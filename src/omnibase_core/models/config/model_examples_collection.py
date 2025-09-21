@@ -3,12 +3,12 @@ Examples collection model.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ..metadata.model_generic_metadata import ModelGenericMetadata
+from .model_example_context_data import ModelExampleContextData
+from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 from .model_examples_collection_summary import ModelExamplesCollectionSummary
 
 
@@ -37,17 +37,17 @@ class ModelExample(BaseModel):
     )
 
     # Data fields
-    input_data: ModelGenericMetadata[Any] | None = Field(
+    input_data: ModelExampleInputData | None = Field(
         None,
         description="Input data for the example with type safety",
     )
 
-    output_data: ModelGenericMetadata[Any] | None = Field(
+    output_data: ModelExampleOutputData | None = Field(
         None,
         description="Expected output data for the example",
     )
 
-    context: ModelGenericMetadata[Any] | None = Field(
+    context: ModelExampleContextData | None = Field(
         None,
         description="Additional context information for the example",
     )
@@ -113,9 +113,6 @@ class ModelExampleMetadata(BaseModel):
     )
 
 
-from ..metadata.model_generic_metadata import ModelGenericMetadata
-
-
 class ModelExamples(BaseModel):
     """
     Examples collection with typed fields.
@@ -146,12 +143,12 @@ class ModelExamples(BaseModel):
 
     def add_example(
         self,
-        input_data: ModelGenericMetadata[Any],
-        output_data: ModelGenericMetadata[Any] | None = None,
+        input_data: ModelExampleInputData,
+        output_data: ModelExampleOutputData | None = None,
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
-        context: ModelGenericMetadata[Any] | None = None,
+        context: ModelExampleContextData | None = None,
     ) -> None:
         """Add a new example with full type safety."""
         example = ModelExample(
@@ -255,8 +252,8 @@ class ModelExamples(BaseModel):
     @classmethod
     def create_single_example(
         cls,
-        input_data: ModelGenericMetadata[Any],
-        output_data: ModelGenericMetadata[Any] | None = None,
+        input_data: ModelExampleInputData,
+        output_data: ModelExampleOutputData | None = None,
         name: str | None = None,
     ) -> "ModelExamples":
         """Create collection with a single example."""

@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # Import the new field accessor
-from omnibase_core.models.core.model_field_accessor import ModelResultAccessor
+from src.omnibase_core.models.core.model_result_accessor import ModelResultAccessor
 
 
 # ========== BEFORE: Current Implementation ==========

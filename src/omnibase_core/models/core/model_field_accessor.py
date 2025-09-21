@@ -1,15 +1,13 @@
 """
-Generic field accessor pattern for replacing dict-like interfaces.
+Base field accessor pattern for replacing dict-like interfaces.
 
 Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
-from typing import Any, Generic, Optional, TypedDict, TypeVar, Union, cast
+from typing import Any, TypedDict
 
-from pydantic import BaseModel, Field
-
-T = TypeVar("T")
+from pydantic import BaseModel
 
 
 # TypedDict for field values to replace loose Any typing
@@ -147,142 +145,5 @@ class ModelFieldAccessor(BaseModel):
             return False
 
 
-# Typed accessor for specific value types
-class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
-    """Type-safe field accessor for specific types."""
-
-    def get_typed_field(
-        self, path: str, expected_type: type[T], default: T | None = None
-    ) -> T | None:
-        """Get field with type checking."""
-        value = self.get_field(path)
-        if value is not None and isinstance(value, expected_type):
-            return cast(T, value)
-        return default
-
-    def set_typed_field(self, path: str, value: T, expected_type: type[T]) -> bool:
-        """Set field with type validation."""
-        if isinstance(value, expected_type):
-            return self.set_field(path, value)
-        return False
-
-
-# Specialized accessors for common patterns
-class ModelEnvironmentAccessor(ModelFieldAccessor):
-    """Specialized accessor for environment properties with type coercion."""
-
-    def get_string(self, path: str, default: str = "") -> str:
-        """Get string value with type coercion."""
-        value = self.get_field(path, default)
-        return str(value) if value is not None else default
-
-    def get_int(self, path: str, default: int = 0) -> int:
-        """Get integer value with type coercion."""
-        value = self.get_field(path, default)
-        if isinstance(value, (int, float)) or (
-            isinstance(value, str) and value.isdigit()
-        ):
-            return int(value)
-        return default
-
-    def get_float(self, path: str, default: float = 0.0) -> float:
-        """Get float value with type coercion."""
-        value = self.get_field(path, default)
-        if isinstance(value, (int, float)):
-            return float(value)
-        if isinstance(value, str):
-            try:
-                return float(value)
-            except ValueError:
-                return default
-        return default
-
-    def get_bool(self, path: str, default: bool = False) -> bool:
-        """Get boolean value with type coercion."""
-        value = self.get_field(path, default)
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            return value.lower() in ["true", "yes", "1", "on", "enabled"]
-        if isinstance(value, (int, float)):
-            return bool(value)
-        return default
-
-    def get_list(self, path: str, default: list[str] | None = None) -> list[str]:
-        """Get list value with type coercion."""
-        if default is None:
-            default = []
-        value = self.get_field(path, default)
-        if isinstance(value, list):
-            return [str(item) for item in value]
-        if isinstance(value, str):
-            # Support comma-separated values
-            return [item.strip() for item in value.split(",") if item.strip()]
-        return default
-
-
-class ModelResultAccessor(ModelFieldAccessor):
-    """Specialized accessor for CLI results and output data."""
-
-    def get_result_value(
-        self, key: str, default: str | int | bool | float | None = None
-    ) -> str | int | bool | float | None:
-        """Get result value from results or metadata fields."""
-        # Try results first
-        value = self.get_field(f"results.{key}")
-        if value is not None and isinstance(value, (str, int, bool, float)):
-            return cast(Union[str, int, bool, float], value)
-
-        # Try metadata second
-        value = self.get_field(f"metadata.{key}")
-        if value is not None and isinstance(value, (str, int, bool, float)):
-            return cast(Union[str, int, bool, float], value)
-
-        return default
-
-    def set_result_value(self, key: str, value: str | int | bool | float) -> bool:
-        """Set result value in results field."""
-        return self.set_field(f"results.{key}", value)
-
-    def set_metadata_value(self, key: str, value: str | int | bool) -> bool:
-        """Set metadata value in metadata field."""
-        return self.set_field(f"metadata.{key}", value)
-
-
-class ModelCustomFieldsAccessor(ModelFieldAccessor):
-    """Specialized accessor for custom fields with initialization."""
-
-    def get_custom_field(
-        self, key: str, default: str | int | float | bool | list[str] | None = None
-    ) -> str | int | float | bool | list[str] | None:
-        """Get a custom field value, initializing custom_fields if needed."""
-        if not self.has_field("custom_fields"):
-            return default
-        return self.get_field(f"custom_fields.{key}", default)
-
-    def set_custom_field(
-        self, key: str, value: str | int | float | bool | list[str]
-    ) -> bool:
-        """Set a custom field value, initializing custom_fields if needed."""
-        # Initialize custom_fields if it doesn't exist
-        if not self.has_field("custom_fields"):
-            self.set_field("custom_fields", {})
-        return self.set_field(f"custom_fields.{key}", value)
-
-    def has_custom_field(self, key: str) -> bool:
-        """Check if a custom field exists."""
-        return self.has_field(f"custom_fields.{key}")
-
-    def remove_custom_field(self, key: str) -> bool:
-        """Remove a custom field."""
-        return self.remove_field(f"custom_fields.{key}")
-
-
-# Export all accessor classes
-__all__ = [
-    "ModelFieldAccessor",
-    "ModelTypedAccessor",
-    "ModelEnvironmentAccessor",
-    "ModelResultAccessor",
-    "ModelCustomFieldsAccessor",
-]
+# Export for use
+__all__ = ["FieldValue", "ModelFieldAccessor"]

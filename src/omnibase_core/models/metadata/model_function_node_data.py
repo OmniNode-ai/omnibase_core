@@ -5,7 +5,7 @@ Clean, strongly-typed replacement for the horrible FunctionNodeData union type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Any, Union
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -53,9 +53,9 @@ class ModelFunctionNodeData(BaseModel):
         default_factory=list, description="String-based properties and metadata"
     )
 
-    numeric_properties: list[
-        Union[ModelTypedMetrics[int], ModelTypedMetrics[float]]
-    ] = Field(default_factory=list, description="Numeric properties and metrics")
+    numeric_properties: list[ModelTypedMetrics[float]] = Field(
+        default_factory=list, description="Numeric properties and metrics"
+    )
 
     boolean_properties: list[ModelTypedMetrics[bool]] = Field(
         default_factory=list, description="Boolean flags and states"
@@ -76,9 +76,9 @@ class ModelFunctionNodeData(BaseModel):
     ) -> None:
         """Add a numeric property."""
         if isinstance(value, int):
-            # Use int_metric for integer values
-            metric: Union[ModelTypedMetrics[int], ModelTypedMetrics[float]] = (
-                ModelTypedMetrics.int_metric(name=name, value=value, **kwargs)
+            # Convert integer to float for consistent type handling
+            metric: ModelTypedMetrics[float] = ModelTypedMetrics.float_metric(
+                name=name, value=float(value), **kwargs
             )
         else:
             # Use float_metric for float values

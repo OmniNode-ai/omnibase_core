@@ -5,17 +5,21 @@ This demonstrates the replacement of custom field access methods across CLI, Con
 and Data domains with the unified ModelFieldAccessor pattern.
 """
 
-from typing import Any
-from pydantic import Field
 from datetime import datetime
+from typing import Any
 
-# Import the new field accessor patterns
-from src.omnibase_core.models.core.model_field_accessor import (
-    ModelFieldAccessor,
-    ModelEnvironmentAccessor,
-    ModelResultAccessor,
+from pydantic import Field
+
+from src.omnibase_core.models.core.model_custom_fields_accessor import (
     ModelCustomFieldsAccessor,
 )
+from src.omnibase_core.models.core.model_environment_accessor import (
+    ModelEnvironmentAccessor,
+)
+
+# Import the new field accessor patterns
+from src.omnibase_core.models.core.model_field_accessor import ModelFieldAccessor
+from src.omnibase_core.models.core.model_result_accessor import ModelResultAccessor
 
 
 # ========== BEFORE: Original ModelCliOutputData ==========
@@ -123,7 +127,9 @@ class OriginalModelEnvironmentProperties:
     def get_int(self, key: str, default: int = 0) -> int:
         """Get integer property value."""
         value = self.properties.get(key, default)
-        if isinstance(value, (int, float)) or (isinstance(value, str) and value.isdigit()):
+        if isinstance(value, (int, float)) or (
+            isinstance(value, str) and value.isdigit()
+        ):
             return int(value)
         return default
 
@@ -183,7 +189,6 @@ def demonstrate_migration():
 
     print(f"Exit code: {exit_code}, Duration: {duration}ms, Timestamp: {timestamp}")
 
-
     print("\n=== Environment Properties Migration ===")
 
     # Before: Original usage
@@ -208,7 +213,6 @@ def demonstrate_migration():
     debug = migrated_env.get_bool("properties.debug_mode", False)
 
     print(f"Database: {host}:{port}, Debug: {debug}")
-
 
     print("\n=== Generic Metadata Migration ===")
 

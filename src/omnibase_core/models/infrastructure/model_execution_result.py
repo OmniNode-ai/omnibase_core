@@ -207,8 +207,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             metadata = ModelCustomProperties.from_metadata(metadata)
         if tool_name:
             metadata.set_custom_string("tool_name", tool_name)
-        if status_code != 1:
-            metadata.set_custom_number("status_code", float(status_code))
+        metadata.set_custom_number("status_code", float(status_code))
 
         # Create instance with explicit type parameters
         instance = cls(
