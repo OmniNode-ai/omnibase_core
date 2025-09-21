@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from .model_property_value import ModelPropertyValue
 
 
-class PropertyMetadata(TypedDict, total=False):
+class TypedDictPropertyMetadata(TypedDict, total=False):
     """Metadata for environment properties."""
 
     description: str
@@ -33,7 +33,7 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         description="Collection of typed property values",
     )
 
-    property_metadata: dict[str, PropertyMetadata] = Field(
+    property_metadata: dict[str, TypedDictPropertyMetadata] = Field(
         default_factory=dict,
         description="Metadata about each property",
     )
@@ -57,6 +57,6 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
 # Export the model
 __all__ = [
     "ModelEnvironmentPropertiesCollection",
-    "PropertyMetadata",
+    "TypedDictPropertyMetadata",
     "ModelPropertyValue",
 ]

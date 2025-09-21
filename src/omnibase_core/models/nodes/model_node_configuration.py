@@ -16,13 +16,13 @@ from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
 
 
-class NodeConfigurationSummary(TypedDict):
+class TypedDictNodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
 
-    execution: dict[str, str | int | float | bool | None]
-    resources: dict[str, str | int | float | bool | None]
-    features: dict[str, str | int | float | bool | None]
-    connection: dict[str, str | int | float | bool | None]
+    execution: dict[str, int | bool | None]
+    resources: dict[str, int | float | bool | None]
+    features: dict[str, bool | list[str] | int]
+    connection: dict[str, str | int | bool | None]
     is_production_ready: bool
     is_performance_optimized: bool
     has_custom_settings: bool
@@ -33,29 +33,29 @@ class ModelNodeConfiguration(BaseModel):
 
     # Grouped configuration components (4 primary components)
     execution: ModelNodeExecutionSettings = Field(
-        default_factory=ModelNodeExecutionSettings,
+        default_factory=lambda: ModelNodeExecutionSettings(),
         description="Execution configuration settings",
     )
     resources: ModelNodeResourceLimits = Field(
-        default_factory=ModelNodeResourceLimits,
+        default_factory=lambda: ModelNodeResourceLimits(),
         description="Resource limitation settings",
     )
     features: ModelNodeFeatureFlags = Field(
-        default_factory=ModelNodeFeatureFlags,
+        default_factory=lambda: ModelNodeFeatureFlags(),
         description="Feature toggle settings",
     )
     connection: ModelNodeConnectionSettings = Field(
-        default_factory=ModelNodeConnectionSettings,
+        default_factory=lambda: ModelNodeConnectionSettings(),
         description="Connection settings",
     )
 
     # Custom configuration with type safety
     custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Custom configuration properties",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def max_retries(self) -> int | None:
         """Maximum retry attempts (delegated to execution)."""
@@ -188,8 +188,8 @@ class ModelNodeConfiguration(BaseModel):
     def custom_settings(self) -> dict[str, str] | None:
         """Custom string settings (backward compatible)."""
         return (
-            self.custom_properties.string_properties
-            if self.custom_properties.string_properties
+            self.custom_properties.custom_strings
+            if self.custom_properties.custom_strings
             else None
         )
 
@@ -197,16 +197,16 @@ class ModelNodeConfiguration(BaseModel):
     def custom_settings(self, value: dict[str, str] | None) -> None:
         """Set custom string settings."""
         if value:
-            self.custom_properties.string_properties.update(value)
+            self.custom_properties.custom_strings.update(value)
         else:
-            self.custom_properties.string_properties.clear()
+            self.custom_properties.custom_strings.clear()
 
     @property
     def custom_flags(self) -> dict[str, bool] | None:
         """Custom boolean flags (backward compatible)."""
         return (
-            self.custom_properties.boolean_properties
-            if self.custom_properties.boolean_properties
+            self.custom_properties.custom_flags
+            if self.custom_properties.custom_flags
             else None
         )
 
@@ -214,17 +214,17 @@ class ModelNodeConfiguration(BaseModel):
     def custom_flags(self, value: dict[str, bool] | None) -> None:
         """Set custom boolean flags."""
         if value:
-            self.custom_properties.boolean_properties.update(value)
+            self.custom_properties.custom_flags.update(value)
         else:
-            self.custom_properties.boolean_properties.clear()
+            self.custom_properties.custom_flags.clear()
 
     @property
     def custom_limits(self) -> dict[str, int] | None:
         """Custom numeric limits (backward compatible)."""
-        numeric_props = self.custom_properties.numeric_properties
+        numeric_props = self.custom_properties.custom_numbers
         if not numeric_props:
             return None
-        # Convert float values to int for backward compatibility
+        # Convert float values to int
         return {k: int(v) for k, v in numeric_props.items()}
 
     @custom_limits.setter
@@ -233,11 +233,11 @@ class ModelNodeConfiguration(BaseModel):
         if value:
             # Convert int values to float for storage
             float_values = {k: float(v) for k, v in value.items()}
-            self.custom_properties.numeric_properties.update(float_values)
+            self.custom_properties.custom_numbers.update(float_values)
         else:
-            self.custom_properties.numeric_properties.clear()
+            self.custom_properties.custom_numbers.clear()
 
-    def get_configuration_summary(self) -> NodeConfigurationSummary:
+    def get_configuration_summary(self) -> TypedDictNodeConfigurationSummary:
         """Get comprehensive configuration summary."""
         return {
             "execution": self.execution.get_execution_summary(),
@@ -263,9 +263,9 @@ class ModelNodeConfiguration(BaseModel):
     def has_custom_settings(self) -> bool:
         """Check if any custom settings are configured."""
         return bool(
-            self.custom_properties.string_properties
-            or self.custom_properties.boolean_properties
-            or self.custom_properties.numeric_properties
+            self.custom_properties.custom_strings
+            or self.custom_properties.custom_flags
+            or self.custom_properties.custom_numbers
         )
 
     @classmethod

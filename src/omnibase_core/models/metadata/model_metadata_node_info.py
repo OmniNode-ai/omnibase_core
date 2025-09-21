@@ -106,7 +106,7 @@ class ModelMetadataNodeInfo(BaseModel):
 
     # Usage and performance metrics
     usage_metrics: ModelMetadataUsageMetrics = Field(
-        default_factory=ModelMetadataUsageMetrics,
+        default_factory=lambda: ModelMetadataUsageMetrics(),
         description="Usage and performance metrics",
     )
 
@@ -242,12 +242,46 @@ class ModelMetadataNodeInfo(BaseModel):
 
     def to_summary(self) -> ModelNodeInfoSummary:
         """Get node summary with clean typing."""
+        # Convert enum types to match ModelNodeInfoSummary expectations
+        from ...enums.enum_complexity_level import EnumComplexityLevel
+        from ...enums.enum_documentation_quality import EnumDocumentationQuality
+        from ...enums.enum_node_type import EnumNodeType
+
+        # Map node type (use string value)
+        node_type = (
+            EnumNodeType.FUNCTION
+            if self.node_type.value == "function"
+            else EnumNodeType.UNKNOWN
+        )
+
+        # Map complexity (use string value)
+        complexity_map = {
+            "simple": EnumComplexityLevel.SIMPLE,
+            "moderate": EnumComplexityLevel.MEDIUM,
+            "complex": EnumComplexityLevel.HIGH,
+        }
+        complexity = complexity_map.get(
+            self.complexity.value, EnumComplexityLevel.MEDIUM
+        )
+
+        # Map documentation quality (use string value)
+        doc_quality_map = {
+            "basic": EnumDocumentationQuality.BASIC,
+            "standard": EnumDocumentationQuality.COMPREHENSIVE,
+            "comprehensive": EnumDocumentationQuality.COMPREHENSIVE,
+            "excellent": EnumDocumentationQuality.EXCELLENT,
+        }
+        documentation_quality = doc_quality_map.get(
+            self.documentation_quality.value, EnumDocumentationQuality.UNKNOWN
+        )
+
         return ModelNodeInfoSummary(
-            name=self.name,
+            node_id=self.node_id,
+            node_display_name=self.node_display_name,
             description=self.description,
-            node_type=self.node_type.value,
-            status=self.status.value,
-            complexity=self.complexity.value,
+            node_type=node_type,
+            status=self.status,
+            complexity=complexity,
             version=self.version,
             created_at=self.created_at,
             updated_at=self.updated_at,
@@ -258,7 +292,7 @@ class ModelMetadataNodeInfo(BaseModel):
             related_nodes=self.related_nodes,
             has_documentation=self.has_documentation,
             has_examples=self.has_examples,
-            documentation_quality=self.documentation_quality,
+            documentation_quality=documentation_quality,
             usage_count=self.usage_metrics.total_invocations,
             success_rate=self.get_success_rate(),
             error_rate=1.0 - self.get_success_rate(),
@@ -337,27 +371,11 @@ class ModelMetadataNodeInfo(BaseModel):
             documentation_quality=EnumValidationLevel.GOOD,
         )
 
-    @property
-    def name(self) -> str:
-        """Backward compatibility property for name."""
-        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Backward compatibility setter for name."""
-        import hashlib
-
-        node_hash = hashlib.sha256(value.encode()).hexdigest()
-        self.node_id = UUID(
-            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
-        )
-        self.node_display_name = value
-
 
 # Export for use
 __all__ = [
     "ModelMetadataNodeComplexity",
-    ModelMetadataNodeInfo,
+    "ModelMetadataNodeInfo",
     "ModelMetadataNodeStatus",
     "ModelMetadataNodeType",
     "ModelMetadataUsageMetrics",

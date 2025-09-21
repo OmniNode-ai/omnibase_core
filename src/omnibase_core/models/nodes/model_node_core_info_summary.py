@@ -12,7 +12,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
+from ...enums.enum_node_health_status import EnumNodeHealthStatus
 from ...enums.enum_status import EnumStatus
+from ..config.model_semver import ModelSemVer
 
 
 class ModelNodeCoreInfoSummary(BaseModel):
@@ -21,9 +23,9 @@ class ModelNodeCoreInfoSummary(BaseModel):
     node_id: UUID = Field(description="Node identifier")
     node_name: str = Field(description="Node name")
     node_type: EnumMetadataNodeType = Field(description="Node type value")
-    node_version: str = Field(description="Node version as string")
+    node_version: ModelSemVer = Field(description="Node version")
     status: EnumStatus = Field(description="Node status value")
-    health: str = Field(description="Node health value")
+    health: EnumNodeHealthStatus = Field(description="Node health status")
     is_active: bool = Field(description="Whether node is active")
     is_healthy: bool = Field(description="Whether node is healthy")
     has_description: bool = Field(description="Whether node has description")

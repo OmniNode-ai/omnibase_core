@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_data_type import EnumDataType
+from ...enums.enum_property_type import EnumPropertyType
 
 
 class ModelPropertyValue(BaseModel):
@@ -28,7 +28,7 @@ class ModelPropertyValue(BaseModel):
         description="The actual property value",
     )
 
-    value_type: EnumDataType = Field(
+    value_type: EnumPropertyType = Field(
         description="Type of the stored value",
     )
 
@@ -51,17 +51,25 @@ class ModelPropertyValue(BaseModel):
             value_type = info.data["value_type"]
 
             # Type validation based on declared type
-            if value_type == EnumDataType.STRING and not isinstance(v, str):
+            if value_type == EnumPropertyType.STRING and not isinstance(v, str):
                 raise ValueError(f"Value must be string, got {type(v)}")
-            elif value_type == EnumDataType.INTEGER and not isinstance(v, int):
+            elif value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
                 raise ValueError(f"Value must be integer, got {type(v)}")
-            elif value_type == EnumDataType.FLOAT and not isinstance(v, (int, float)):
+            elif value_type == EnumPropertyType.FLOAT and not isinstance(
+                v, (int, float)
+            ):
                 raise ValueError(f"Value must be float, got {type(v)}")
-            elif value_type == EnumDataType.BOOLEAN and not isinstance(v, bool):
+            elif value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
                 raise ValueError(f"Value must be boolean, got {type(v)}")
-            elif value_type == EnumDataType.LIST and not isinstance(v, list):
+            elif value_type in (
+                EnumPropertyType.STRING_LIST,
+                EnumPropertyType.INTEGER_LIST,
+                EnumPropertyType.FLOAT_LIST,
+            ) and not isinstance(v, list):
                 raise ValueError(f"Value must be list, got {type(v)}")
-            elif value_type == EnumDataType.DATETIME and not isinstance(v, datetime):
+            elif value_type == EnumPropertyType.DATETIME and not isinstance(
+                v, datetime
+            ):
                 raise ValueError(f"Value must be datetime, got {type(v)}")
 
         return v
@@ -71,7 +79,7 @@ class ModelPropertyValue(BaseModel):
         """Create property value from string."""
         return cls(
             value=value,
-            value_type=EnumDataType.STRING,
+            value_type=EnumPropertyType.STRING,
             source=source,
             is_validated=True,
         )
@@ -81,7 +89,7 @@ class ModelPropertyValue(BaseModel):
         """Create property value from integer."""
         return cls(
             value=value,
-            value_type=EnumDataType.INTEGER,
+            value_type=EnumPropertyType.INTEGER,
             source=source,
             is_validated=True,
         )
@@ -91,7 +99,7 @@ class ModelPropertyValue(BaseModel):
         """Create property value from float."""
         return cls(
             value=value,
-            value_type=EnumDataType.FLOAT,
+            value_type=EnumPropertyType.FLOAT,
             source=source,
             is_validated=True,
         )
@@ -101,7 +109,7 @@ class ModelPropertyValue(BaseModel):
         """Create property value from boolean."""
         return cls(
             value=value,
-            value_type=EnumDataType.BOOLEAN,
+            value_type=EnumPropertyType.BOOLEAN,
             source=source,
             is_validated=True,
         )
@@ -113,7 +121,7 @@ class ModelPropertyValue(BaseModel):
         """Create property value from string list."""
         return cls(
             value=value,
-            value_type=EnumDataType.LIST,
+            value_type=EnumPropertyType.STRING_LIST,
             source=source,
             is_validated=True,
         )
@@ -125,21 +133,21 @@ class ModelPropertyValue(BaseModel):
         """Create property value from datetime."""
         return cls(
             value=value,
-            value_type=EnumDataType.DATETIME,
+            value_type=EnumPropertyType.DATETIME,
             source=source,
             is_validated=True,
         )
 
     def as_string(self) -> str:
         """Get value as string."""
-        if self.value_type == EnumDataType.STRING:
-            return self.value
+        if self.value_type == EnumPropertyType.STRING:
+            return str(self.value)
         return str(self.value)
 
     def as_int(self) -> int:
         """Get value as integer."""
-        if self.value_type == EnumDataType.INTEGER:
-            return self.value
+        if self.value_type == EnumPropertyType.INTEGER:
+            return int(self.value)
         if isinstance(self.value, (int, float)):
             return int(self.value)
         if isinstance(self.value, str):
@@ -148,7 +156,7 @@ class ModelPropertyValue(BaseModel):
 
     def as_float(self) -> float:
         """Get value as float."""
-        if self.value_type in (EnumDataType.FLOAT, EnumDataType.INTEGER):
+        if self.value_type in (EnumPropertyType.FLOAT, EnumPropertyType.INTEGER):
             return float(self.value)
         if isinstance(self.value, str):
             return float(self.value)
@@ -156,8 +164,8 @@ class ModelPropertyValue(BaseModel):
 
     def as_bool(self) -> bool:
         """Get value as boolean."""
-        if self.value_type == EnumDataType.BOOLEAN:
-            return self.value
+        if self.value_type == EnumPropertyType.BOOLEAN:
+            return bool(self.value)
         if isinstance(self.value, str):
             return self.value.lower() in ("true", "1", "yes", "on")
         return bool(self.value)

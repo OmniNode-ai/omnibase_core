@@ -8,12 +8,13 @@ Author: ONEX Framework Team
 """
 
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import yaml
 from pydantic import BaseModel, ValidationError
 
 from ..models.config.model_schema_example import ModelSchemaExample
+from ..models.core.model_custom_properties import ModelCustomProperties
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
 
@@ -52,10 +53,6 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
         with path.open("r", encoding="utf-8") as f:
             content = f.read()
 
-        # Use the model's from_yaml method if available
-        if hasattr(model_cls, "from_yaml"):
-            return model_cls.from_yaml(content)
-
         # Direct YAML parsing with Pydantic validation - no fallback
         data = yaml.safe_load(content)
         if data is None:
@@ -92,10 +89,6 @@ def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
         YamlLoadingError: If YAML is invalid or validation fails
     """
     try:
-        # Use the model's from_yaml method if available
-        if hasattr(model_cls, "from_yaml"):
-            return model_cls.from_yaml(content)
-
         # Direct YAML parsing with Pydantic validation - no fallback
         data = yaml.safe_load(content)
         if data is None:
@@ -153,7 +146,7 @@ def _dump_yaml_content(
         except UnicodeEncodeError as e:
             raise YamlLoadingError(f"Invalid UTF-8 in YAML output: {e}", e)
 
-        return yaml_str
+        return cast(str, yaml_str)
     except yaml.YAMLError as e:
         raise YamlLoadingError(f"YAML serialization error: {e}", e)
 
@@ -275,11 +268,23 @@ def extract_example_from_schema(
                 f"Example at index {example_index} is not a dict in schema: {schema_path}",
             )
 
+        # Convert example dict to ModelCustomProperties
+        custom_props = ModelCustomProperties()
+        if isinstance(example, dict):
+            for key, value in example.items():
+                if isinstance(value, str):
+                    custom_props.set_custom_string(key, value)
+                elif isinstance(value, (int, float)):
+                    custom_props.set_custom_number(key, float(value))
+                elif isinstance(value, bool):
+                    custom_props.set_custom_flag(key, value)
+
         # Return typed model instead of dict[str, Any]
         return ModelSchemaExample(
-            data=example,
+            example_data=custom_props,
             example_index=example_index,
             schema_path=str(schema_path),
+            schema_version=None,  # Set to None as default since we don't extract version info
             is_validated=True,
         )
 

@@ -7,6 +7,7 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -28,32 +29,32 @@ class ModelCustomConnectionProperties(BaseModel):
 
     # Grouped properties by concern
     database: ModelDatabaseProperties = Field(
-        default_factory=ModelDatabaseProperties,
+        default_factory=lambda: ModelDatabaseProperties(),
         description="Database-specific properties",
     )
 
     message_queue: ModelMessageQueueProperties = Field(
-        default_factory=ModelMessageQueueProperties,
+        default_factory=lambda: ModelMessageQueueProperties(),
         description="Message queue/broker properties",
     )
 
     cloud_service: ModelCloudServiceProperties = Field(
-        default_factory=ModelCloudServiceProperties,
+        default_factory=lambda: ModelCloudServiceProperties(),
         description="Cloud/service-specific properties",
     )
 
     performance: ModelPerformanceProperties = Field(
-        default_factory=ModelPerformanceProperties,
+        default_factory=lambda: ModelPerformanceProperties(),
         description="Performance tuning properties",
     )
 
     # Generic custom properties for extensibility
     custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Additional custom properties with type safety",
     )
 
-    # Backward compatibility factory methods
+    # Factory methods
     @classmethod
     def create_database_connection(
         cls,
@@ -61,9 +62,9 @@ class ModelCustomConnectionProperties(BaseModel):
         schema_name: str | None = None,
         charset: str | None = None,
         collation: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ModelCustomConnectionProperties:
-        """Create database connection properties with backward compatibility."""
+        """Create database connection properties."""
         database_props = ModelDatabaseProperties(
             database_display_name=database_name,
             schema_display_name=schema_name,
@@ -79,9 +80,9 @@ class ModelCustomConnectionProperties(BaseModel):
         exchange_name: str | None = None,
         routing_key: str | None = None,
         durable: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ModelCustomConnectionProperties:
-        """Create message queue connection properties with backward compatibility."""
+        """Create message queue connection properties."""
         queue_props = ModelMessageQueueProperties(
             queue_display_name=queue_name,
             exchange_display_name=exchange_name,
@@ -97,13 +98,15 @@ class ModelCustomConnectionProperties(BaseModel):
         instance_type: str | EnumInstanceType | None = None,
         region: str | None = None,
         availability_zone: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ModelCustomConnectionProperties:
-        """Create service connection properties with backward compatibility."""
-        # Handle string instance types for backward compatibility
+        """Create service connection properties."""
+        # Handle instance type conversion
         enum_instance_type = None
         if instance_type is not None:
-            if isinstance(instance_type, str):
+            if isinstance(instance_type, EnumInstanceType):
+                enum_instance_type = instance_type
+            elif isinstance(instance_type, str):
                 try:
                     enum_instance_type = EnumInstanceType(instance_type)
                 except ValueError:
@@ -118,8 +121,6 @@ class ModelCustomConnectionProperties(BaseModel):
                     enum_instance_type = size_mapping.get(
                         instance_type.lower(), EnumInstanceType.MEDIUM
                     )
-            else:
-                enum_instance_type = instance_type
 
         cloud_props = ModelCloudServiceProperties(
             service_display_name=service_name,
@@ -129,48 +130,48 @@ class ModelCustomConnectionProperties(BaseModel):
         )
         return cls(cloud_service=cloud_props, **kwargs)
 
-    # Backward compatibility property accessors
+    # Property accessors
     @property
     def database_display_name(self) -> str | None:
-        """Backward compatibility for database_display_name."""
+        """Access database display name."""
         return self.database.database_display_name
 
     @database_display_name.setter
     def database_display_name(self, value: str | None) -> None:
-        """Backward compatibility setter for database_display_name."""
+        """Set database display name."""
         self.database.database_display_name = value
 
     @property
     def schema_display_name(self) -> str | None:
-        """Backward compatibility for schema_display_name."""
+        """Access schema display name."""
         return self.database.schema_display_name
 
     @schema_display_name.setter
     def schema_display_name(self, value: str | None) -> None:
-        """Backward compatibility setter for schema_display_name."""
+        """Set schema display name."""
         self.database.schema_display_name = value
 
     @property
     def queue_display_name(self) -> str | None:
-        """Backward compatibility for queue_display_name."""
+        """Access queue display name."""
         return self.message_queue.queue_display_name
 
     @queue_display_name.setter
     def queue_display_name(self, value: str | None) -> None:
-        """Backward compatibility setter for queue_display_name."""
+        """Set queue display name."""
         self.message_queue.queue_display_name = value
 
     @property
     def service_display_name(self) -> str | None:
-        """Backward compatibility for service_display_name."""
+        """Access service display name."""
         return self.cloud_service.service_display_name
 
     @service_display_name.setter
     def service_display_name(self, value: str | None) -> None:
-        """Backward compatibility setter for service_display_name."""
+        """Set service display name."""
         self.cloud_service.service_display_name = value
 
-    # Delegation methods for backward compatibility
+    # Delegation methods
     def get_database_identifier(self) -> str | None:
         """Get database identifier for display purposes."""
         return self.database.get_database_identifier()

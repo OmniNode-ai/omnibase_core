@@ -36,15 +36,15 @@ class ModelFunctionNode(BaseModel):
         description="Core function information",
     )
     metadata: ModelFunctionNodeMetadata = Field(
-        default_factory=ModelFunctionNodeMetadata,
+        default_factory=lambda: ModelFunctionNodeMetadata(),
         description="Documentation and metadata",
     )
     performance: ModelFunctionNodePerformance = Field(
-        default_factory=ModelFunctionNodePerformance,
+        default_factory=lambda: ModelFunctionNodePerformance(),
         description="Performance and complexity metrics",
     )
 
-    # Backward compatibility properties
+    # Direct access properties
     @property
     def name(self) -> str:
         """Get function name from core."""

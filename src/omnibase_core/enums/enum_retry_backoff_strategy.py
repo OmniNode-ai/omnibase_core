@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import Enum
 
 
-class RetryBackoffStrategy(Enum):
+class EnumRetryBackoffStrategy(Enum):
     """Retry backoff strategy enumeration."""
 
     FIXED = "fixed"  # Fixed delay between retries
@@ -20,4 +20,4 @@ class RetryBackoffStrategy(Enum):
 
 
 # Export for use
-__all__ = ["RetryBackoffStrategy"]
+__all__ = ["EnumRetryBackoffStrategy"]

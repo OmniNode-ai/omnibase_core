@@ -7,6 +7,8 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from ...enums.enum_color_scheme import EnumColorScheme
@@ -148,10 +150,10 @@ class ModelOutputFormatOptions(BaseModel):
         return self.custom_options.get(key, default)
 
     @classmethod
-    def create_from_legacy_data(
+    def create_from_string_data(
         cls, data: dict[str, str]
     ) -> "ModelOutputFormatOptions":
-        """Create instance from legacy string-based configuration data."""
+        """Create instance from string-based configuration data."""
 
         # Helper to safely convert string to bool
         def str_to_bool(value: str) -> bool:
@@ -164,9 +166,18 @@ class ModelOutputFormatOptions(BaseModel):
             except (ValueError, TypeError):
                 return default
 
-        # Transform legacy data structure to proper typed fields
-        kwargs = {}
-        custom_options = {}
+        # Transform string data structure to proper typed fields
+        kwargs: dict[
+            str,
+            str
+            | int
+            | bool
+            | EnumColorScheme
+            | EnumTableAlignment
+            | dict[str, str | int | bool]
+            | None,
+        ] = {}
+        custom_options: dict[str, str | int | bool] = {}
 
         # Convert known fields with proper type handling
         field_mappings = {

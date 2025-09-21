@@ -141,7 +141,9 @@ class ModelValidationContainer(BaseModel):
 
     def get_errors_by_field(self, field_name: str) -> list[ModelValidationError]:
         """Get all errors for a specific field."""
-        return [error for error in self.errors if error.field_name == field_name]
+        return [
+            error for error in self.errors if error.field_display_name == field_name
+        ]
 
     def clear_all(self) -> None:
         """Clear all errors and warnings."""

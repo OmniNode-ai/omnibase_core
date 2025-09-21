@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_context_source import EnumContextSource
+from ...enums.enum_context_type import EnumContextType
 from .model_cli_execution_context import ModelCliExecutionContext
 
 
@@ -76,8 +78,8 @@ class ModelCliExecutionMetadata(BaseModel):
         failure_context = ModelCliExecutionContext(
             key="failure_reason",
             value=reason,
-            context_type="error",
-            source="system",
+            context_type=EnumContextType.SYSTEM,
+            source=EnumContextSource.SYSTEM,
             description="Execution failure reason",
         )
         self.custom_context["failure_reason"] = failure_context

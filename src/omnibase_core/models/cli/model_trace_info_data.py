@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 
 
-class ModelTraceInfoData(TypedDict, total=False):
+class TypedDictModelTraceInfoData(TypedDict, total=False):
     """Typed dictionary for trace information."""
 
     key: str
@@ -19,4 +19,4 @@ class ModelTraceInfoData(TypedDict, total=False):
 
 
 # Export for use
-__all__ = ["ModelTraceInfoData"]
+__all__ = ["TypedDictModelTraceInfoData"]

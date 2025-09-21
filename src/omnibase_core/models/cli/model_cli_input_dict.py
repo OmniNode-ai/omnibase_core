@@ -10,7 +10,7 @@ from typing import TypedDict
 from uuid import UUID
 
 
-class ModelCliInputDict(TypedDict, total=False):
+class TypedDictModelCliInputDict(TypedDict, total=False):
     """Type definition for CLI input dictionary."""
 
     action: str
@@ -23,4 +23,4 @@ class ModelCliInputDict(TypedDict, total=False):
 
 
 # Export for use
-__all__ = ["ModelCliInputDict"]
+__all__ = ["TypedDictModelCliInputDict"]

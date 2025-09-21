@@ -27,7 +27,7 @@ from .enum_example_category import EnumExampleCategory
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_phase import EnumExecutionPhase
 from .enum_execution_status import EnumExecutionStatus
-from .enum_fallback_strategy_type import FallbackStrategyType
+from .enum_fallback_strategy_type import EnumFallbackStrategyType
 from .enum_field_type import EnumFieldType
 from .enum_filter_type import EnumFilterType
 from .enum_function_status import EnumFunctionStatus
@@ -49,12 +49,12 @@ from .enum_output_format import EnumOutputFormat
 from .enum_output_type import EnumOutputType
 from .enum_parameter_type import EnumParameterType
 from .enum_performance_impact import EnumPerformanceImpact
-from .enum_property_type import PropertyTypeEnum
+from .enum_property_type import EnumPropertyType
 from .enum_protocol_type import EnumProtocolType
 from .enum_registry_status import EnumRegistryStatus
 from .enum_result_category import EnumResultCategory
 from .enum_result_type import EnumResultType
-from .enum_retry_backoff_strategy import RetryBackoffStrategy
+from .enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from .enum_return_type import EnumReturnType
 from .enum_runtime_category import EnumRuntimeCategory
 from .enum_scenario_status import EnumScenarioStatus
@@ -94,7 +94,7 @@ __all__ = [
     "EnumExecutionMode",
     "EnumExecutionPhase",
     "EnumExecutionStatus",
-    "FallbackStrategyType",
+    "EnumFallbackStrategyType",
     "EnumFieldType",
     "EnumFilterType",
     "EnumFunctionStatus",
@@ -116,13 +116,13 @@ __all__ = [
     "EnumOutputType",
     "EnumParameterType",
     "EnumPerformanceImpact",
-    "PropertyTypeEnum",
+    "EnumPropertyType",
     "EnumProtocolType",
     "EnumRegistryStatus",
     "EnumResultCategory",
     "EnumResultType",
     "EnumReturnType",
-    "RetryBackoffStrategy",
+    "EnumRetryBackoffStrategy",
     "EnumRuntimeCategory",
     "EnumScenarioStatus",
     "EnumSecurityLevel",

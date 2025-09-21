@@ -17,7 +17,7 @@ from ...enums.enum_severity_level import EnumSeverityLevel
 
 
 # Structured TypedDicts to reduce string field violations
-class ExecutionParams(TypedDict, total=False):
+class TypedDictExecutionParams(TypedDict, total=False):
     """Execution-related factory parameters."""
 
     success: bool
@@ -26,7 +26,7 @@ class ExecutionParams(TypedDict, total=False):
     data: str | int | float | bool | None
 
 
-class MetadataParams(TypedDict, total=False):
+class TypedDictMetadataParams(TypedDict, total=False):
     """Metadata-related factory parameters."""
 
     name: str
@@ -36,7 +36,7 @@ class MetadataParams(TypedDict, total=False):
     experimental: bool
 
 
-class MessageParams(TypedDict, total=False):
+class TypedDictMessageParams(TypedDict, total=False):
     """Message-related factory parameters."""
 
     message: str
@@ -44,12 +44,16 @@ class MessageParams(TypedDict, total=False):
 
 
 # Main factory kwargs that combines sub-groups
-class FactoryKwargs(ExecutionParams, MetadataParams, MessageParams, total=False):
+class TypedDictFactoryKwargs(
+    TypedDictExecutionParams,
+    TypedDictMetadataParams,
+    TypedDictMessageParams,
+    total=False,
+):
     """
     Typed dictionary for factory method parameters.
 
-    Restructured using composition to reduce string field count
-    while maintaining full backward compatibility.
+    Restructured using composition to reduce string field count.
     """
 
     pass
@@ -127,7 +131,7 @@ class ModelGenericFactory(Generic[T]):
             raise ValueError(f"Unknown factory: {name} for {self.model_class.__name__}")
         return self._factories[name]()
 
-    def build(self, builder_name: str, **kwargs: Unpack[FactoryKwargs]) -> T:
+    def build(self, builder_name: str, **kwargs: Unpack[TypedDictFactoryKwargs]) -> T:
         """
         Build instance using registered builder method.
 
@@ -168,7 +172,7 @@ class ModelGenericFactory(Generic[T]):
         cls,
         model_class: Type[T],
         result_data: str | int | float | bool | None,
-        **kwargs: Unpack[FactoryKwargs],
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic success result factory.
@@ -188,7 +192,7 @@ class ModelGenericFactory(Generic[T]):
 
     @classmethod
     def create_error_result(
-        cls, model_class: Type[T], error: str, **kwargs: Unpack[FactoryKwargs]
+        cls, model_class: Type[T], error: str, **kwargs: Unpack[TypedDictFactoryKwargs]
     ) -> T:
         """
         Generic error result factory.
@@ -214,8 +218,8 @@ class ModelGenericFactory(Generic[T]):
 # Export core factory class and types
 __all__ = [
     "ModelGenericFactory",
-    "FactoryKwargs",
-    "ExecutionParams",
-    "MetadataParams",
-    "MessageParams",
+    "TypedDictFactoryKwargs",
+    "TypedDictExecutionParams",
+    "TypedDictMetadataParams",
+    "TypedDictMessageParams",
 ]

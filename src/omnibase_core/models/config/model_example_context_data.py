@@ -59,46 +59,6 @@ class ModelExampleContextData(BaseModel):
         None, description="Schema version for validation"
     )
 
-    @property
-    def user_context(self) -> str | None:
-        """Backward compatibility property for user_context."""
-        return self.user_display_name or (
-            f"user_{str(self.user_id)[:8]}" if self.user_id else None
-        )
-
-    @user_context.setter
-    def user_context(self, value: str | None) -> None:
-        """Backward compatibility setter for user_context."""
-        self.user_display_name = value
-
-    @classmethod
-    def create_with_legacy_user(
-        cls,
-        user_name: str,
-        context_type: EnumContextType = EnumContextType.USER,
-        environment: str | None = None,
-        session_id: UUID | None = None,
-        **kwargs: Any,
-    ) -> ModelExampleContextData:
-        """Factory method to create context data with legacy user name."""
-        import hashlib
-        from typing import Any
-
-        # Generate UUID for user
-        user_hash = hashlib.sha256(user_name.encode()).hexdigest()
-        user_id = UUID(
-            f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
-        )
-
-        return cls(
-            context_type=context_type,
-            environment=environment,
-            user_id=user_id,
-            user_display_name=user_name,
-            session_id=session_id,
-            **kwargs,
-        )
-
 
 # Export the model
-__all__ = [ModelExampleContextData]
+__all__ = ["ModelExampleContextData"]

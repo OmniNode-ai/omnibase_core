@@ -109,6 +109,7 @@ class ModelConnectionEndpoint(BaseModel):
         """Create HTTP endpoint."""
         return cls(
             connection_type=EnumConnectionType.HTTP,
+            protocol_version=None,
             host=host,
             port=port,
             path=path,
@@ -124,6 +125,7 @@ class ModelConnectionEndpoint(BaseModel):
         """Create WebSocket endpoint."""
         return cls(
             connection_type=EnumConnectionType.WEBSOCKET,
+            protocol_version=None,
             host=host,
             port=port,
             path=path,
@@ -138,8 +140,10 @@ class ModelConnectionEndpoint(BaseModel):
         """Create TCP endpoint."""
         return cls(
             connection_type=EnumConnectionType.TCP,
+            protocol_version=None,
             host=host,
             port=port,
+            path=None,
         )
 
 

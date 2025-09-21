@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 
 # TypedDict for field values to replace loose Any typing
-class FieldValue(TypedDict, total=False):
+class TypedDictFieldValue(TypedDict, total=False):
     """Typed dictionary for field values."""
 
     string_value: str
@@ -151,4 +151,4 @@ class ModelFieldAccessor(BaseModel):
 
 
 # Export for use
-__all__ = ["FieldValue", "ModelFieldAccessor"]
+__all__ = ["TypedDictFieldValue", "ModelFieldAccessor"]

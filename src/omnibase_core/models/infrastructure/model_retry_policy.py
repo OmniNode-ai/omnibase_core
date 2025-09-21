@@ -14,7 +14,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_retry_backoff_strategy import RetryBackoffStrategy
+from ...enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from .model_retry_advanced import ModelRetryAdvanced
 from .model_retry_conditions import ModelRetryConditions
 from .model_retry_config import ModelRetryConfig
@@ -34,23 +34,23 @@ class ModelRetryPolicy(BaseModel):
 
     # Composed sub-models for focused concerns
     config: ModelRetryConfig = Field(
-        default_factory=ModelRetryConfig,
+        default_factory=lambda: ModelRetryConfig(),
         description="Core retry configuration",
     )
     conditions: ModelRetryConditions = Field(
-        default_factory=ModelRetryConditions,
+        default_factory=lambda: ModelRetryConditions(),
         description="Retry conditions and triggers",
     )
     execution: ModelRetryExecution = Field(
-        default_factory=ModelRetryExecution,
+        default_factory=lambda: ModelRetryExecution(),
         description="Execution tracking and state",
     )
     advanced: ModelRetryAdvanced = Field(
-        default_factory=ModelRetryAdvanced,
+        default_factory=lambda: ModelRetryAdvanced(),
         description="Advanced features and metadata",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def max_retries(self) -> int:
         """Get max retries from config."""
@@ -62,7 +62,7 @@ class ModelRetryPolicy(BaseModel):
         return self.execution.current_attempt
 
     @property
-    def backoff_strategy(self) -> RetryBackoffStrategy:
+    def backoff_strategy(self) -> EnumRetryBackoffStrategy:
         """Get backoff strategy from config."""
         return self.config.backoff_strategy
 
@@ -100,19 +100,19 @@ class ModelRetryPolicy(BaseModel):
         delay = self.config.base_delay_seconds
 
         # Apply backoff strategy
-        if self.config.backoff_strategy == RetryBackoffStrategy.FIXED:
+        if self.config.backoff_strategy == EnumRetryBackoffStrategy.FIXED:
             delay = self.config.base_delay_seconds
-        elif self.config.backoff_strategy == RetryBackoffStrategy.LINEAR:
+        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.LINEAR:
             delay = self.config.base_delay_seconds * (
                 self.current_attempt * self.config.backoff_multiplier
             )
-        elif self.config.backoff_strategy == RetryBackoffStrategy.EXPONENTIAL:
+        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.EXPONENTIAL:
             delay = self.config.base_delay_seconds * (
                 self.config.backoff_multiplier**self.current_attempt
             )
-        elif self.config.backoff_strategy == RetryBackoffStrategy.FIBONACCI:
+        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.FIBONACCI:
             delay = self._calculate_fibonacci_delay()
-        elif self.config.backoff_strategy == RetryBackoffStrategy.RANDOM:
+        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.RANDOM:
             delay = random.uniform(
                 self.config.base_delay_seconds, self.config.max_delay_seconds
             )
@@ -219,7 +219,7 @@ class ModelRetryPolicy(BaseModel):
             max_retries=max_retries,
             base_delay_seconds=base_delay,
             max_delay_seconds=max_delay,
-            backoff_strategy=RetryBackoffStrategy.EXPONENTIAL,
+            backoff_strategy=EnumRetryBackoffStrategy.EXPONENTIAL,
             backoff_multiplier=multiplier,
         )
         return cls(config=config)
@@ -235,7 +235,7 @@ class ModelRetryPolicy(BaseModel):
             max_retries=max_retries,
             base_delay_seconds=delay,
             max_delay_seconds=delay,
-            backoff_strategy=RetryBackoffStrategy.FIXED,
+            backoff_strategy=EnumRetryBackoffStrategy.FIXED,
         )
         return cls(config=config)
 
@@ -250,7 +250,7 @@ class ModelRetryPolicy(BaseModel):
         config = ModelRetryConfig(
             max_retries=max_retries,
             base_delay_seconds=base_delay,
-            backoff_strategy=RetryBackoffStrategy.EXPONENTIAL,
+            backoff_strategy=EnumRetryBackoffStrategy.EXPONENTIAL,
             jitter_enabled=True,
         )
         conditions = ModelRetryConditions.create_http_only()
@@ -268,7 +268,7 @@ class ModelRetryPolicy(BaseModel):
         config = ModelRetryConfig(
             max_retries=max_retries,
             base_delay_seconds=base_delay,
-            backoff_strategy=RetryBackoffStrategy.LINEAR,
+            backoff_strategy=EnumRetryBackoffStrategy.LINEAR,
             jitter_enabled=True,
         )
         conditions = ModelRetryConditions.create_database_only()

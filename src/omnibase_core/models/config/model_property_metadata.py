@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_property_type import PropertyTypeEnum
+from ...enums.enum_property_type import EnumPropertyType
 
 
 class ModelPropertyMetadata(BaseModel):
@@ -17,7 +17,7 @@ class ModelPropertyMetadata(BaseModel):
 
     description: str | None = Field(None, description="Property description")
     source: str | None = Field(None, description="Source of the property")
-    property_type: PropertyTypeEnum = Field(description="Type of the property")
+    property_type: EnumPropertyType = Field(description="Type of the property")
     required: bool = Field(default=False, description="Whether property is required")
     validation_pattern: str | None = Field(
         None, description="Regex pattern for validation"

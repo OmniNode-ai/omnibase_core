@@ -788,13 +788,13 @@ class ModelDeepNested(BaseModel):
         # Create file with complex nested structures
         complex_content = '''
 from pydantic import BaseModel
-from typing import Dict, List, Union, Optional, Any
+from typing import Dict, List, Optional, Any
 from enum import Enum
 
 class ModelComplexAST(BaseModel):
     """Model with complex AST for testing."""
 
-    def complex_method(self, data: Dict[str, Union[List[Dict[str, Any]], Optional[str]]]) -> Dict[str, Any]:
+    def complex_method(self, data: Dict[str, List[Dict[str, Any]] | str | None]) -> Dict[str, Any]:
         """Method with complex type annotations."""
         result = {}
 

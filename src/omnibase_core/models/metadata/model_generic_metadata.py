@@ -14,11 +14,11 @@ from .protocols.protocol_supported_metadata_type import ProtocolSupportedMetadat
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)
-# Type variable for metadata value types
-MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
+# Union type for metadata value types
+MetadataValueType = str | int | float | bool
 
 
-class ModelGenericMetadata(BaseModel, Generic[T, MetadataValueType]):
+class ModelGenericMetadata(BaseModel, Generic[T]):
     """Generic metadata storage with flexible fields."""
 
     metadata_id: UUID | None = Field(
@@ -64,7 +64,9 @@ class ModelGenericMetadata(BaseModel, Generic[T, MetadataValueType]):
 
     def get_typed_field(self, key: str, field_type: type[T], default: T) -> T:
         """Get a custom field value with specific type checking."""
-        value = self.get_field(key, default)
+        if self.custom_fields is None:
+            return default
+        value = self.custom_fields.get(key)
         if value is not None and isinstance(value, field_type):
             return value
         return default
@@ -72,12 +74,21 @@ class ModelGenericMetadata(BaseModel, Generic[T, MetadataValueType]):
     def set_typed_field(self, key: str, value: T) -> None:
         """Set a custom field value with runtime type validation."""
         if isinstance(value, ProtocolSupportedMetadataType):
+            # Initialize custom_fields if needed
+            if self.custom_fields is None:
+                self.custom_fields = {}
+
             # Convert to a supported primitive type
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation
-                self.set_field(key, str(value))
+                self.custom_fields[key] = str(value)
             else:
-                self.set_field(key, value)
+                # For primitive types, store directly if they match MetadataValueType
+                if isinstance(value, (str, int, float, bool)):
+                    # Safe assignment since value is guaranteed to be one of the union types
+                    self.custom_fields[key] = value
+                else:
+                    self.custom_fields[key] = str(value)
         else:
             raise TypeError(
                 f"Value type {type(value)} not supported for metadata storage"

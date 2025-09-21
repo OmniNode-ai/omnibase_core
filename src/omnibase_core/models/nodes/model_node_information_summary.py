@@ -39,9 +39,6 @@ class ModelNodeInformationSummary(BaseModel):
     )
     is_fully_configured: bool = Field(description="Whether node is fully configured")
 
-    # Removed create_from_dict() method - backward compatibility eliminated
-    # Use direct model construction: ModelNodeInformationSummary(...) instead
-
 
 # Export the model
 __all__ = ["ModelNodeInformationSummary"]

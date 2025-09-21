@@ -157,33 +157,6 @@ class ModelFunctionNodeCore(BaseModel):
             return_type=return_type,
         )
 
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        description: str = "",
-        function_type: EnumFunctionType = EnumFunctionType.COMPUTE,
-        parameters: list[str] | None = None,
-        return_type: EnumReturnType | None = None,
-    ) -> ModelFunctionNodeCore:
-        """Create function core with name parameter."""
-        import hashlib
-
-        # Generate UUID from function name
-        function_hash = hashlib.sha256(name.encode()).hexdigest()
-        function_id = UUID(
-            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
-        )
-
-        return cls(
-            function_id=function_id,
-            function_display_name=name,
-            description=description,
-            function_type=function_type,
-            parameters=parameters or [],
-            return_type=return_type,
-        )
-
     @property
     def name(self) -> str:
         """Get function name."""

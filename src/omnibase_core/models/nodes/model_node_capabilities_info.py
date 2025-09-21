@@ -87,7 +87,9 @@ class ModelNodeCapabilitiesInfo(BaseModel):
             return None
         return self.performance_metrics.get(metric_name)
 
-    def get_capabilities_summary(self) -> dict[str, int | bool | list[str] | None]:
+    def get_capabilities_summary(
+        self,
+    ) -> dict[str, int | bool | list[str] | str | None]:
         """Get capabilities information summary."""
         return {
             "capabilities_count": len(self.capabilities),
@@ -113,6 +115,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         return cls(
             capabilities=capabilities,
             supported_operations=operations or [],
+            performance_metrics=None,
         )
 
     @classmethod
@@ -121,7 +124,10 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         dependencies: list[str],
     ) -> ModelNodeCapabilitiesInfo:
         """Create capabilities info with dependencies."""
-        return cls(dependencies=dependencies)
+        return cls(
+            dependencies=dependencies,
+            performance_metrics=None,
+        )
 
 
 # Export for use

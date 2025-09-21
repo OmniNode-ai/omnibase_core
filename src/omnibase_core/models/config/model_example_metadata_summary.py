@@ -29,41 +29,6 @@ class ModelExampleMetadataSummary(BaseModel):
         default_factory=dict, description="Custom metadata fields with basic types only"
     )
 
-    @property
-    def author(self) -> str | None:
-        """Backward compatibility property for author."""
-        return self.author_display_name
 
-    @author.setter
-    def author(self, value: str | None) -> None:
-        """Backward compatibility setter for author."""
-        self.author_display_name = value
-
-    @classmethod
-    def create_with_legacy_author(
-        cls,
-        author_name: str,
-        created_at: str | None = None,
-        updated_at: str | None = None,
-        version: ModelSemVer | None = None,
-        tags: list[str] | None = None,
-        custom_fields: dict[str, str | int | bool | float] | None = None,
-    ) -> ModelExampleMetadataSummary:
-        """Factory method to create metadata summary with legacy author name."""
-        import hashlib
-
-        # Generate UUID for author
-        author_hash = hashlib.sha256(author_name.encode()).hexdigest()
-        author_id = UUID(
-            f"{author_hash[:8]}-{author_hash[8:12]}-{author_hash[12:16]}-{author_hash[16:20]}-{author_hash[20:32]}"
-        )
-
-        return cls(
-            created_at=created_at,
-            updated_at=updated_at,
-            version=version,
-            author_id=author_id,
-            author_display_name=author_name,
-            tags=tags or [],
-            custom_fields=custom_fields or {},
-        )
+# Export the model
+__all__ = ["ModelExampleMetadataSummary"]

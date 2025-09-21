@@ -89,12 +89,12 @@ class ModelMetricsData(BaseModel):
 
     @property
     def collection_name(self) -> str | None:
-        """Backward compatibility property for collection_name."""
+        """Access collection name."""
         return self.collection_display_name
 
     @collection_name.setter
     def collection_name(self, value: str | None) -> None:
-        """Backward compatibility setter for collection_name."""
+        """Set collection name and generate corresponding ID."""
         if value:
             import hashlib
 

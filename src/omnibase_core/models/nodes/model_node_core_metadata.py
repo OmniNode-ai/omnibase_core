@@ -69,7 +69,7 @@ class ModelNodeCoreMetadata(BaseModel):
 
     @node_name.setter
     def node_name(self, value: str) -> None:
-        """Set node name (for backward compatibility)."""
+        """Set node name."""
         self.node_display_name = value
 
     @classmethod
@@ -84,15 +84,6 @@ class ModelNodeCoreMetadata(BaseModel):
             node_display_name=node_name,
             node_type=node_type,
         )
-
-    @classmethod
-    def create_legacy(
-        cls,
-        node_name: str,
-        node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
-    ) -> ModelNodeCoreMetadata:
-        """Create core metadata with legacy name parameter for backward compatibility."""
-        return cls.create_simple(node_name, node_type)
 
 
 # Export for use

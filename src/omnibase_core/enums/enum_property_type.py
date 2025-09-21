@@ -1,7 +1,7 @@
 """
 Property type enum for environment properties.
 
-This module provides the PropertyTypeEnum for defining supported property types
+This module provides the EnumPropertyType for defining supported property types
 in environment property storage with proper validation and constraints.
 """
 
@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import Enum
 
 
-class PropertyTypeEnum(str, Enum):
+class EnumPropertyType(str, Enum):
     """Enum for supported property types."""
 
     STRING = "string"

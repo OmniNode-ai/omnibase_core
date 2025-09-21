@@ -468,51 +468,9 @@ class ModelNodeType(BaseModel):
                 f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}"
             )
 
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str | EnumTypeName,
-        description: str,
-        category: str | EnumConfigCategory,
-        **kwargs: Any,
-    ) -> ModelNodeType:
-        """Create node type with legacy name parameter for backward compatibility."""
-        from ...enums.enum_config_category import EnumConfigCategory
-
-        # Convert string to enum if needed for type safety
-        type_name_enum: EnumTypeName
-        if isinstance(name, str):
-            try:
-                type_name_enum = EnumTypeName(name)
-            except ValueError:
-                raise ValueError(
-                    f"Unknown node type: {name}. Must be one of {list(EnumTypeName)}"
-                )
-        else:
-            type_name_enum = name  # type: ignore[unreachable]
-
-        # Convert category to enum if needed
-        category_enum: EnumConfigCategory
-        if isinstance(category, str):
-            try:
-                category_enum = EnumConfigCategory(category)
-            except ValueError:
-                raise ValueError(
-                    f"Unknown category: {category}. Must be one of {list(EnumConfigCategory)}"
-                )
-        else:
-            category_enum = category  # type: ignore[unreachable]
-
-        return cls(
-            type_name=type_name_enum,
-            description=description,
-            category=category_enum,
-            **kwargs,
-        )
-
     @property
     def name(self) -> str:
-        """Legacy property for backward compatibility."""
+        """Get type name as string."""
         return self.type_name.value
 
     def __str__(self) -> str:

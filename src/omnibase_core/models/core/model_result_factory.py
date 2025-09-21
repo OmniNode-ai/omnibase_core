@@ -14,7 +14,7 @@ from .model_generic_factory import ModelGenericFactory
 
 
 # TypedDict for result factory specific kwargs
-class ResultFactoryKwargs(TypedDict, total=False):
+class TypedDictResultFactoryKwargs(TypedDict, total=False):
     """Typed dictionary for result factory parameters."""
 
     success: bool
@@ -45,7 +45,9 @@ class ResultFactory(ModelGenericFactory[T]):
         self.register_builder("error", self._build_error_result)
         self.register_builder("validation_error", self._build_validation_error_result)
 
-    def _build_success_result(self, **kwargs: Unpack[ResultFactoryKwargs]) -> T:
+    def _build_success_result(
+        self, **kwargs: Unpack[TypedDictResultFactoryKwargs]
+    ) -> T:
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
         filtered_kwargs = {
@@ -58,7 +60,7 @@ class ResultFactory(ModelGenericFactory[T]):
             **filtered_kwargs,
         )
 
-    def _build_error_result(self, **kwargs: Unpack[ResultFactoryKwargs]) -> T:
+    def _build_error_result(self, **kwargs: Unpack[TypedDictResultFactoryKwargs]) -> T:
         """Build an error result with standard fields."""
         # Remove conflicting fields and set standard error values
         filtered_kwargs = {
@@ -74,7 +76,7 @@ class ResultFactory(ModelGenericFactory[T]):
         )
 
     def _build_validation_error_result(
-        self, **kwargs: Unpack[ResultFactoryKwargs]
+        self, **kwargs: Unpack[TypedDictResultFactoryKwargs]
     ) -> T:
         """Build a validation error result with standard fields."""
         # Remove conflicting fields and set standard validation error values
@@ -94,5 +96,5 @@ class ResultFactory(ModelGenericFactory[T]):
 # Export result factory class and types
 __all__ = [
     "ResultFactory",
-    "ResultFactoryKwargs",
+    "TypedDictResultFactoryKwargs",
 ]

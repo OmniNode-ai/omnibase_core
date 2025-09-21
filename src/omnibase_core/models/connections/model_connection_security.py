@@ -114,12 +114,23 @@ class ModelConnectionSecurity(BaseModel):
     @classmethod
     def create_insecure(cls) -> ModelConnectionSecurity:
         """Create insecure (no SSL) configuration."""
-        return cls(use_ssl=False)
+        return cls(
+            use_ssl=False,
+            ssl_cert_path=None,
+            ssl_key_path=None,
+            ssl_ca_path=None,
+        )
 
     @classmethod
     def create_self_signed(cls) -> ModelConnectionSecurity:
         """Create configuration for self-signed certificates."""
-        return cls(use_ssl=True, ssl_verify=False)
+        return cls(
+            use_ssl=True,
+            ssl_verify=False,
+            ssl_cert_path=None,
+            ssl_key_path=None,
+            ssl_ca_path=None,
+        )
 
 
 # Export for use

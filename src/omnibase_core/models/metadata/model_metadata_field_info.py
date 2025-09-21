@@ -59,7 +59,7 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Validation rules (grouped)
     validation: ModelFieldValidationRules = Field(
-        default_factory=ModelFieldValidationRules,
+        default_factory=lambda: ModelFieldValidationRules(),
         description="Validation rules for the field",
     )
 
@@ -68,8 +68,10 @@ class ModelMetadataFieldInfo(BaseModel):
     def metadata_version(cls) -> ModelMetadataFieldInfo:
         """Metadata version field info."""
         identity = ModelFieldIdentity(
-            name="METADATA_VERSION",
-            field_name="metadata_version",
+            identity_id=uuid_from_string("METADATA_VERSION", "identity"),
+            identity_display_name="METADATA_VERSION",
+            field_id=uuid_from_string("metadata_version", "field"),
+            field_display_name="metadata_version",
             description="Version of the metadata schema",
         )
         return cls(
@@ -85,8 +87,10 @@ class ModelMetadataFieldInfo(BaseModel):
     def protocol_version(cls) -> ModelMetadataFieldInfo:
         """Protocol version field info."""
         identity = ModelFieldIdentity(
-            name="PROTOCOL_VERSION",
-            field_name="protocol_version",
+            identity_id=uuid_from_string("PROTOCOL_VERSION", "identity"),
+            identity_display_name="PROTOCOL_VERSION",
+            field_id=uuid_from_string("protocol_version", "field"),
+            field_display_name="protocol_version",
             description="Version of the ONEX protocol",
         )
         return cls(
@@ -102,7 +106,11 @@ class ModelMetadataFieldInfo(BaseModel):
     def name_field(cls) -> ModelMetadataFieldInfo:
         """Name field info."""
         identity = ModelFieldIdentity(
-            name="NAME", field_name="name", description="Name of the node/tool"
+            identity_id=uuid_from_string("NAME", "identity"),
+            identity_display_name="NAME",
+            field_id=uuid_from_string("name", "field"),
+            field_display_name="name",
+            description="Name of the node/tool",
         )
         return cls(
             identity=identity,
@@ -116,7 +124,11 @@ class ModelMetadataFieldInfo(BaseModel):
     def version(cls) -> ModelMetadataFieldInfo:
         """Version field info."""
         identity = ModelFieldIdentity(
-            name="VERSION", field_name="version", description="Version of the node/tool"
+            identity_id=uuid_from_string("VERSION", "identity"),
+            identity_display_name="VERSION",
+            field_id=uuid_from_string("version", "field"),
+            field_display_name="version",
+            description="Version of the node/tool",
         )
         return cls(
             identity=identity,
@@ -131,7 +143,11 @@ class ModelMetadataFieldInfo(BaseModel):
     def uuid(cls) -> ModelMetadataFieldInfo:
         """UUID field info."""
         identity = ModelFieldIdentity(
-            name="UUID", field_name="uuid", description="Unique identifier"
+            identity_id=uuid_from_string("UUID", "identity"),
+            identity_display_name="UUID",
+            field_id=uuid_from_string("uuid", "field"),
+            field_display_name="uuid",
+            description="Unique identifier",
         )
         validation = ModelFieldValidationRules(
             validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

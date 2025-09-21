@@ -117,7 +117,7 @@ class ModelExamples(BaseModel):
             example_summaries.append(
                 ModelExampleSummary(
                     example_id=example.example_id,
-                    name=example.name,
+                    display_name=example.name,
                     description=example.description,
                     is_valid=True,  # You can add validation logic here
                     input_data=None,  # Type mismatch: ModelGenericMetadata vs ModelExampleInputData
@@ -132,7 +132,8 @@ class ModelExamples(BaseModel):
                 created_at=None,  # Not available in current metadata model
                 updated_at=None,  # Not available in current metadata model
                 version=None,  # Not available in current metadata model
-                author=None,  # Not available in current metadata model
+                author_id=None,  # Not available in current metadata model
+                author_display_name=None,  # Not available in current metadata model
                 tags=self.metadata.tags or [],
                 custom_fields={},  # Not available in current metadata model
             )

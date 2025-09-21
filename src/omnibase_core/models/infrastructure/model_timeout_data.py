@@ -38,7 +38,7 @@ class ModelTimeoutData(BaseModel):
     )
     description: str | None = Field(default=None, description="Timeout description")
     custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Typed custom properties instead of dict",
     )
 

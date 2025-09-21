@@ -33,31 +33,6 @@ class ModelGenericCollectionSummary(BaseModel):
     updated_at: datetime = Field(description="When the collection was last modified")
     has_items: bool = Field(description="Whether the collection contains any items")
 
-    # Backward compatibility property
-    @property
-    def collection_name(self) -> str:
-        """
-        Legacy property for backward compatibility.
-
-        DEPRECATED: Use collection_display_name instead.
-
-        Returns:
-            The collection display name
-        """
-        return self.collection_display_name
-
-    @collection_name.setter
-    def collection_name(self, value: str) -> None:
-        """
-        Legacy setter for backward compatibility.
-
-        DEPRECATED: Use collection_display_name instead.
-
-        Args:
-            value: The name to set
-        """
-        self.collection_display_name = value
-
 
 # Export for use
 __all__ = ["ModelGenericCollectionSummary"]

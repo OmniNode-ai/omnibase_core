@@ -49,7 +49,7 @@ class ModelNodeOrganizationMetadata(BaseModel):
 
     # Custom metadata (1 field, but extensible)
     custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Custom properties with type safety",
     )
 

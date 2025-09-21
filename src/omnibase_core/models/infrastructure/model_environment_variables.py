@@ -227,7 +227,7 @@ class ModelEnvironmentVariables(BaseModel):
         del self.variables[name]
         self.secure_variables.discard(name)
 
-    def __iter__(self) -> Iterator[str]:
+    def iter_variable_names(self) -> Iterator[str]:
         """Iterate over variable names."""
         return iter(self.variables)
 

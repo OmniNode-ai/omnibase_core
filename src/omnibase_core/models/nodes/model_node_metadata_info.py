@@ -26,24 +26,26 @@ class ModelNodeMetadataInfo(BaseModel):
     Node metadata information model.
 
     Restructured to use focused sub-models for better organization.
-    Maintains backward compatibility through property delegation.
     """
 
     # Composed sub-models (3 primary components)
     core: ModelNodeCoreMetadata = Field(
-        default_factory=ModelNodeCoreMetadata,
+        default_factory=lambda: ModelNodeCoreMetadata(
+            node_display_name=None,
+            node_type=EnumMetadataNodeType.FUNCTION,
+        ),
         description="Core node metadata",
     )
     performance: ModelNodePerformanceMetrics = Field(
-        default_factory=ModelNodePerformanceMetrics,
+        default_factory=lambda: ModelNodePerformanceMetrics(),
         description="Performance metrics",
     )
     organization: ModelNodeOrganizationMetadata = Field(
-        default_factory=ModelNodeOrganizationMetadata,
+        default_factory=lambda: ModelNodeOrganizationMetadata(),
         description="Organization metadata",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def node_id(self) -> UUID:
         """Node identifier (delegated to core)."""
@@ -86,7 +88,7 @@ class ModelNodeMetadataInfo(BaseModel):
 
     @property
     def health(self) -> str:
-        """Node health (backward compatible string)."""
+        """Node health as string."""
         return self.core.health.value
 
     @health.setter
@@ -199,15 +201,15 @@ class ModelNodeMetadataInfo(BaseModel):
 
     @property
     def custom_metadata(self) -> dict[str, str | int | bool | float]:
-        """Custom metadata (backward compatible)."""
-        # Convert from typed custom properties to legacy format
-        result = {}
-        if self.organization.custom_properties.string_properties:
-            result.update(self.organization.custom_properties.string_properties)
-        if self.organization.custom_properties.numeric_properties:
-            result.update(self.organization.custom_properties.numeric_properties)
-        if self.organization.custom_properties.boolean_properties:
-            result.update(self.organization.custom_properties.boolean_properties)
+        """Custom metadata."""
+        # Convert from typed custom properties to dictionary format
+        result: dict[str, str | int | bool | float] = {}
+        if self.organization.custom_properties.custom_strings:
+            result.update(self.organization.custom_properties.custom_strings)
+        if self.organization.custom_properties.custom_numbers:
+            result.update(self.organization.custom_properties.custom_numbers)
+        if self.organization.custom_properties.custom_flags:
+            result.update(self.organization.custom_properties.custom_flags)
         return result
 
     @custom_metadata.setter
@@ -215,11 +217,13 @@ class ModelNodeMetadataInfo(BaseModel):
         """Set custom metadata (convert to typed properties)."""
         for key, val in value.items():
             if isinstance(val, str):
-                self.organization.custom_properties.string_properties[key] = val
+                self.organization.custom_properties.custom_strings[key] = val
+            elif isinstance(
+                val, bool
+            ):  # Check bool before int since bool is a subclass of int
+                self.organization.custom_properties.custom_flags[key] = val
             elif isinstance(val, (int, float)):
-                self.organization.custom_properties.numeric_properties[key] = val
-            elif isinstance(val, bool):
-                self.organization.custom_properties.boolean_properties[key] = val
+                self.organization.custom_properties.custom_numbers[key] = val
 
     def is_active(self) -> bool:
         """Check if node is active."""
@@ -310,7 +314,7 @@ class ModelNodeMetadataInfo(BaseModel):
         """Create a simple node metadata info."""
         core = ModelNodeCoreMetadata(
             node_id=node_id,
-            node_name=node_name,
+            node_display_name=node_name,
             node_type=node_type,
         )
         return cls(
@@ -325,7 +329,7 @@ class ModelNodeMetadataInfo(BaseModel):
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(
             node_id=getattr(node_info, "node_id", uuid4()),
-            node_name=getattr(node_info, "node_name", "unknown"),
+            node_display_name=getattr(node_info, "node_name", "unknown"),
             node_type=getattr(node_info, "node_type", EnumMetadataNodeType.FUNCTION),
             version=getattr(node_info, "version", None),
             status=getattr(node_info, "status", EnumMetadataNodeStatus.ACTIVE),

@@ -40,4 +40,4 @@ ModelResultData = dict[str, str | int | bool]  # Restrictive dict for common dat
 
 
 # Export for use
-__all__ = [ModelResultDict, "ModelResultData"]
+__all__ = ["ModelResultDict", "ModelResultData"]

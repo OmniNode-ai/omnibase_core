@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_retry_backoff_strategy import RetryBackoffStrategy
+from ...enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 
 
 class ModelRetryConfig(BaseModel):
@@ -37,8 +37,8 @@ class ModelRetryConfig(BaseModel):
     )
 
     # Backoff strategy
-    backoff_strategy: RetryBackoffStrategy = Field(
-        default=RetryBackoffStrategy.EXPONENTIAL,
+    backoff_strategy: EnumRetryBackoffStrategy = Field(
+        default=EnumRetryBackoffStrategy.EXPONENTIAL,
         description="Retry backoff strategy",
     )
     backoff_multiplier: float = Field(
@@ -96,7 +96,7 @@ class ModelRetryConfig(BaseModel):
             max_retries=3,
             base_delay_seconds=0.5,
             max_delay_seconds=5.0,
-            backoff_strategy=RetryBackoffStrategy.LINEAR,
+            backoff_strategy=EnumRetryBackoffStrategy.LINEAR,
         )
 
     @classmethod
@@ -106,7 +106,7 @@ class ModelRetryConfig(BaseModel):
             max_retries=10,
             base_delay_seconds=2.0,
             max_delay_seconds=600.0,
-            backoff_strategy=RetryBackoffStrategy.EXPONENTIAL,
+            backoff_strategy=EnumRetryBackoffStrategy.EXPONENTIAL,
             backoff_multiplier=3.0,
         )
 
@@ -117,7 +117,7 @@ class ModelRetryConfig(BaseModel):
             max_retries=2,
             base_delay_seconds=5.0,
             max_delay_seconds=60.0,
-            backoff_strategy=RetryBackoffStrategy.FIXED,
+            backoff_strategy=EnumRetryBackoffStrategy.FIXED,
         )
 
 

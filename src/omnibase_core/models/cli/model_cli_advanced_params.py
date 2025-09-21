@@ -64,7 +64,10 @@ class ModelCliAdvancedParams(BaseModel):
 
     # Output formatting parameters
     output_format_options: ModelOutputFormatOptions = Field(
-        default_factory=ModelOutputFormatOptions, description="Output format options"
+        default_factory=lambda: ModelOutputFormatOptions(
+            page_size=None, max_items=None
+        ),
+        description="Output format options",
     )
     compression_enabled: bool = Field(
         default=False, description="Enable output compression"

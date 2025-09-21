@@ -7,7 +7,7 @@ success/error handling with proper MyPy compliance.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, TypeVar, Union, cast
+from typing import Any, Callable, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -115,7 +115,7 @@ class Result(BaseModel, Generic[T, E]):
             raise ValueError("Success result has None value")
         return self.value
 
-    def map(self, f: Callable[[T], U]) -> Result[U, Union[E, Exception]]:
+    def map(self, f: Callable[[T], U]) -> Result[U, E | Exception]:
         """
         Map function over the success value.
 
@@ -135,7 +135,7 @@ class Result(BaseModel, Generic[T, E]):
             raise ValueError("Error result has None error")
         return Result.err(self.error)
 
-    def map_err(self, f: Callable[[E], F]) -> Result[T, Union[F, Exception]]:
+    def map_err(self, f: Callable[[E], F]) -> Result[T, F | Exception]:
         """
         Map function over the error value.
 
@@ -154,9 +154,7 @@ class Result(BaseModel, Generic[T, E]):
         except Exception as e:
             return Result.err(e)
 
-    def and_then(
-        self, f: Callable[[T], "Result[U, E]"]
-    ) -> Result[U, Union[E, Exception]]:
+    def and_then(self, f: Callable[[T], "Result[U, E]"]) -> Result[U, E | Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
@@ -169,16 +167,14 @@ class Result(BaseModel, Generic[T, E]):
                     raise ValueError("Success result has None value")
                 result = f(self.value)
                 # Cast the result to the expected type since we know it's compatible
-                return cast(Result[U, Union[E, Exception]], result)
+                return cast(Result[U, E | Exception], result)
             except Exception as e:
                 return Result.err(e)
         if self.error is None:
             raise ValueError("Error result has None error")
         return Result.err(self.error)
 
-    def or_else(
-        self, f: Callable[[E], "Result[T, F]"]
-    ) -> Result[T, Union[F, Exception]]:
+    def or_else(self, f: Callable[[E], "Result[T, F]"]) -> Result[T, F | Exception]:
         """
         Alternative operation for error recovery.
 
@@ -193,7 +189,7 @@ class Result(BaseModel, Generic[T, E]):
             if self.error is None:
                 raise ValueError("Error result has None error")
             result = f(self.error)
-            return cast(Result[T, Union[F, Exception]], result)
+            return cast(Result[T, F | Exception], result)
         except Exception as e:
             return Result.err(e)
 

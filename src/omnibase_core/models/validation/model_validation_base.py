@@ -23,7 +23,7 @@ class ModelValidationBase(BaseModel):
     """
 
     validation: ModelValidationContainer = Field(
-        default_factory=ModelValidationContainer,
+        default_factory=lambda: ModelValidationContainer(),
         description="Validation results container",
     )
 

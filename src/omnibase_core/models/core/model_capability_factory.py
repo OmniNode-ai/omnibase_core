@@ -14,7 +14,7 @@ from .model_generic_factory import ModelGenericFactory
 
 
 # TypedDict for capability factory specific kwargs
-class CapabilityFactoryKwargs(TypedDict, total=False):
+class TypedDictCapabilityFactoryKwargs(TypedDict, total=False):
     """Typed dictionary for capability factory parameters."""
 
     name: str
@@ -46,7 +46,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
         self.register_builder("experimental", self._build_experimental_capability)
 
     def _build_standard_capability(
-        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
     ) -> T:
         """Build a standard capability with consistent naming."""
         name = kwargs.get("name", "UNKNOWN")
@@ -65,7 +65,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
         )
 
     def _build_deprecated_capability(
-        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
     ) -> T:
         """Build a deprecated capability with warning metadata."""
         # Ensure deprecated flag is set
@@ -73,7 +73,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
         return self._build_standard_capability(**kwargs)
 
     def _build_experimental_capability(
-        self, **kwargs: Unpack[CapabilityFactoryKwargs]
+        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
     ) -> T:
         """Build an experimental capability with appropriate metadata."""
         # Set experimental flag if the model supports it
@@ -85,5 +85,5 @@ class CapabilityFactory(ModelGenericFactory[T]):
 # Export capability factory class and types
 __all__ = [
     "CapabilityFactory",
-    "CapabilityFactoryKwargs",
+    "TypedDictCapabilityFactoryKwargs",
 ]

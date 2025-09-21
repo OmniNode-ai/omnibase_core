@@ -105,7 +105,7 @@ class ModelFunctionNodeSummary(BaseModel):
 
     @function_name.setter
     def function_name(self, value: str) -> None:
-        """Set function name (for backward compatibility)."""
+        """Set function name."""
         self.function_display_name = value
 
     @classmethod
@@ -135,7 +135,7 @@ class ModelFunctionNodeSummary(BaseModel):
         cyclomatic_complexity: int,
         lines_of_code: int,
     ) -> ModelFunctionNodeSummary:
-        """Create summary from full function data (backward compatibility)."""
+        """Create summary from full function data."""
         # Calculate quality score from available indicators
         quality_score = 0.0
         if has_documentation:
@@ -156,12 +156,21 @@ class ModelFunctionNodeSummary(BaseModel):
         if memory_usage_mb < 10:
             performance_score += 0.2
 
+        # Convert string complexity to enum
+        from ...enums.enum_complexity_level import EnumComplexityLevel
+
+        complexity_enum = (
+            EnumComplexityLevel(complexity)
+            if complexity in EnumComplexityLevel
+            else EnumComplexityLevel.SIMPLE
+        )
+
         return cls(
             function_id=uuid_from_string(name, "function"),
             function_display_name=name,
             description=description,
             status=status,
-            complexity=complexity,
+            complexity=complexity_enum,
             version=version,
             parameter_count=parameter_count,
             return_type=return_type,
@@ -178,26 +187,6 @@ class ModelFunctionNodeSummary(BaseModel):
             ),
             tag_count=len(tags),
         )
-
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        description: str | None = None,
-        **kwargs: Any,
-    ) -> ModelFunctionNodeSummary:
-        """Create function summary with legacy name parameter for backward compatibility."""
-        return cls(
-            function_id=uuid_from_string(name, "function"),
-            function_display_name=name,
-            description=description,
-            **kwargs,
-        )
-
-    @property
-    def name(self) -> str:
-        """Legacy property for backward compatibility."""
-        return self.function_name
 
 
 # Export the model

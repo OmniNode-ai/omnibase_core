@@ -26,7 +26,7 @@ class NodeInfoLike(Protocol):
     name: str
     description: str
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> object:
         """Allow attribute access for additional node info properties."""
         ...
 

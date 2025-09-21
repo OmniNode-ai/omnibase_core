@@ -18,12 +18,12 @@ from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_relationships import ModelFunctionRelationships
 
 
-class FunctionMetadataSummary(TypedDict):
+class TypedDictFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
-    documentation: dict[str, str | bool | int | None]
+    documentation: dict[str, bool | int | float]
     deprecation: dict[str, str | bool | None]
-    relationships: dict[str, int | bool | list[str] | None]
+    relationships: dict[str, int | list[str] | bool | str | None]
     documentation_quality_score: float
     is_fully_documented: bool
     deprecation_status: str
@@ -34,20 +34,19 @@ class ModelFunctionNodeMetadata(BaseModel):
     Function node metadata and documentation.
 
     Restructured to use focused sub-models for better organization.
-    Maintains backward compatibility through property delegation.
     """
 
     # Composed sub-models (3 primary components)
     documentation: ModelFunctionDocumentation = Field(
-        default_factory=ModelFunctionDocumentation,
+        default_factory=lambda: ModelFunctionDocumentation(),
         description="Documentation and examples",
     )
     deprecation: ModelFunctionDeprecationInfo = Field(
-        default_factory=ModelFunctionDeprecationInfo,
+        default_factory=lambda: ModelFunctionDeprecationInfo(),
         description="Deprecation information",
     )
     relationships: ModelFunctionRelationships = Field(
-        default_factory=ModelFunctionRelationships,
+        default_factory=lambda: ModelFunctionRelationships(),
         description="Dependencies and relationships",
     )
 
@@ -67,11 +66,11 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     # Custom properties for extensibility
     custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Custom properties with type safety",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def docstring(self) -> str | None:
         """Function docstring (delegated to documentation)."""
@@ -94,7 +93,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     @property
     def deprecated_since(self) -> str | None:
-        """Deprecated since version (backward compatible string)."""
+        """Deprecated since version as string."""
         return (
             str(self.deprecation.deprecated_since)
             if self.deprecation.deprecated_since
@@ -228,7 +227,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> FunctionMetadataSummary:
+    def get_metadata_summary(self) -> TypedDictFunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
@@ -238,9 +237,11 @@ class ModelFunctionNodeMetadata(BaseModel):
             "documentation": doc_summary,
             "deprecation": dep_summary,
             "relationships": rel_summary,
-            "quality_score": self.get_documentation_quality_score(),
-            "is_recently_updated": self.is_recently_updated(),
-            "is_validated": self.last_validated is not None,
+            "documentation_quality_score": self.get_documentation_quality_score(),
+            "is_fully_documented": self.is_recently_updated(),  # Map to boolean field
+            "deprecation_status": (
+                "validated" if self.last_validated is not None else "unvalidated"
+            ),
         }
 
     @classmethod
@@ -269,7 +270,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         deprecated_since: str,
         replacement: str | None = None,
     ) -> ModelFunctionNodeMetadata:
-        """Create metadata for deprecated function."""
+        """Create metadata for function with deprecation info."""
         from ..metadata.model_semver import ModelSemVer
 
         # Parse version string
@@ -287,4 +288,4 @@ class ModelFunctionNodeMetadata(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelFunctionNodeMetadata"]
+__all__ = ["ModelFunctionNodeMetadata", "TypedDictFunctionMetadataSummary"]

@@ -91,30 +91,6 @@ class ModelNodeInfoSummary(BaseModel):
 
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
 
-    @property
-    def name(self) -> str:
-        """Get node name with fallback to UUID-based name."""
-        return self.node_display_name or f"node_{str(self.node_id)[:8]}"
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Set node name (for backward compatibility)."""
-        self.node_display_name = value
-        self.node_id = uuid_from_string(value, "node")
-
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        **kwargs: Any,
-    ) -> "ModelNodeInfoSummary":
-        """Create node info summary with legacy name parameter for backward compatibility."""
-        return cls(
-            node_id=uuid_from_string(name, "node"),
-            node_display_name=name,
-            **kwargs,
-        )
-
 
 # Export the model
 __all__ = ["ModelNodeInfoSummary"]

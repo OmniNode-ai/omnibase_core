@@ -166,9 +166,9 @@ class BackwardCompatibilityDetector:
                     )
 
         # Pattern 2: Method/function names suggesting compatibility
+        # Exclude legitimate business domain methods for deprecation handling
         compatibility_method_patterns = [
             r"def\s+.*_legacy\s*\(",
-            r"def\s+.*_deprecated\s*\(",
             r"def\s+.*_compat\s*\(",
             r"def\s+.*_backward\s*\(",
             r"def\s+.*_backwards\s*\(",
@@ -176,11 +176,39 @@ class BackwardCompatibilityDetector:
             r"def\s+to_dict\s*\([^)]*\)\s*:\s*\n\s*[\"']{3}.*legacy.*support",
         ]
 
+        # Separate pattern for _deprecated methods with explicit exclusions
+        deprecated_method_pattern = r"def\s+.*_deprecated\s*\("
+        legitimate_deprecated_methods = [
+            "is_deprecated",
+            "create_deprecated",
+            "get_deprecated",
+            "mark_deprecated",
+            "check_deprecated",
+        ]
+
         for pattern in compatibility_method_patterns:
             matches = re.finditer(
                 pattern, content, re.MULTILINE | re.IGNORECASE | re.DOTALL
             )
             for match in matches:
+                line_num = content[: match.start()].count("\n") + 1
+                errors.append(
+                    f"Line {line_num}: Backward compatibility method detected - "
+                    f"remove legacy support methods"
+                )
+
+        # Check _deprecated methods separately with exclusions
+        deprecated_matches = re.finditer(
+            deprecated_method_pattern, content, re.MULTILINE | re.IGNORECASE
+        )
+        for match in deprecated_matches:
+            # Extract the method name to check if it's legitimate
+            method_def = match.group(0)
+            method_name = re.search(r"def\s+(\w+)", method_def)
+            if (
+                method_name
+                and method_name.group(1) not in legitimate_deprecated_methods
+            ):
                 line_num = content[: match.start()].count("\n") + 1
                 errors.append(
                     f"Line {line_num}: Backward compatibility method detected - "
@@ -316,7 +344,25 @@ class BackwardCompatibilityDetector:
 
             def visit_FunctionDef(self, node):
                 """Check function definitions for compatibility patterns."""
-                # Check function names
+                # Check function names - but exclude legitimate business domain methods and Python dunder methods
+                legitimate_deprecation_methods = [
+                    "is_deprecated",
+                    "create_deprecated",
+                    "get_deprecated",
+                    "mark_deprecated",
+                    "check_deprecated",
+                ]
+
+                # Skip Python dunder methods (they're legitimate Python features, not backward compatibility)
+                if node.name.startswith("__") and node.name.endswith("__"):
+                    self.generic_visit(node)
+                    return
+
+                # Skip legitimate deprecation business logic methods
+                if node.name in legitimate_deprecation_methods:
+                    self.generic_visit(node)
+                    return
+
                 compatibility_suffixes = [
                     "_legacy",
                     "_deprecated",

@@ -74,7 +74,7 @@ class Configurable(Protocol):
 class Executable(Protocol):
     """Protocol for objects that can be executed."""
 
-    def execute(self) -> Any:
+    def execute(self) -> object:
         """Execute the object."""
         ...
 
@@ -154,7 +154,7 @@ class BaseFactory(ABC, BaseModel):
     """Abstract base class for typed factories."""
 
     @abstractmethod
-    def create(self, **kwargs: Any) -> Any:
+    def create(self, **kwargs: Any) -> object:
         """Create an object."""
         ...
 
@@ -168,7 +168,7 @@ class BaseProcessor(ABC, BaseModel):
     """Abstract base class for typed processors."""
 
     @abstractmethod
-    def process(self, input_data: Any) -> Any:
+    def process(self, input_data: Any) -> object:
         """Process input data."""
         ...
 

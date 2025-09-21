@@ -32,16 +32,16 @@ class ModelTestResult(BaseModel):
     details: str | None = Field(default=None, description="Additional test details")
 
     @classmethod
-    def create_from_legacy(
+    def create_from_name(
         cls,
         test_name: str,
         **kwargs: Any,
     ) -> ModelTestResult:
         """
-        Create test result from legacy test_name for backward compatibility.
+        Create test result from test name.
 
         Args:
-            test_name: Legacy test name (will be used as display_name)
+            test_name: Test name (will be used as display_name)
             **kwargs: Other test parameters
 
         Returns:

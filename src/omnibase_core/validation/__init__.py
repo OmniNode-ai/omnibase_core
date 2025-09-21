@@ -29,7 +29,11 @@ from .exceptions import (
     ValidationFrameworkError,
 )
 from .protocol_auditor import AuditResult, DuplicationReport, ProtocolAuditor
-from .protocol_migrator import MigrationPlan, MigrationResult, ProtocolMigrator
+from .protocol_migrator import (
+    ModelMigrationPlan,
+    ModelMigrationResult,
+    ProtocolMigrator,
+)
 from .validation_utils import ProtocolInfo, ValidationResult
 
 
@@ -52,7 +56,7 @@ def check_against_spi(
 def create_migration_plan(
     source_path: str = ".",
     spi_path: str = "../omnibase_spi",
-) -> MigrationPlan:
+) -> ModelMigrationPlan:
     """Create migration plan for moving protocols to SPI."""
     migrator = ProtocolMigrator(source_path, spi_path)
     return migrator.create_migration_plan()

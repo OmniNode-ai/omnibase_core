@@ -28,7 +28,7 @@ class ModelSchemaExample(BaseModel):
 
     # Core example data - using existing typed properties pattern
     example_data: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Type-safe example data from schema",
     )
 

@@ -122,7 +122,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     # Custom analytics for extensibility
     custom_metrics: ModelMetricsData = Field(
-        default_factory=lambda: ModelMetricsData(collection_name="custom_analytics"),
+        default_factory=lambda: ModelMetricsData(
+            collection_id=None, collection_display_name="custom_analytics"
+        ),
         description="Custom analytics metrics with clean typing",
     )
 
@@ -243,19 +245,6 @@ class ModelMetadataNodeAnalytics(BaseModel):
             critical_error_count=self.critical_error_count,
         )
 
-    @property
-    def collection_name(self) -> str:
-        """Get collection name with fallback for backward compatibility."""
-        return (
-            self.collection_display_name or f"collection_{str(self.collection_id)[:8]}"
-        )
-
-    @collection_name.setter
-    def collection_name(self, value: str) -> None:
-        """Set collection name (for backward compatibility)."""
-        self.collection_display_name = value
-        self.collection_id = uuid_from_string(value, "collection")
-
     @classmethod
     def create_default(cls, collection_name: str = "") -> ModelMetadataNodeAnalytics:
         """Create default analytics instance."""
@@ -274,7 +263,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         return cls(
             collection_id=uuid_from_string(collection_name, "collection"),
             collection_display_name=collection_name,
-            collection_purpose=EnumCollectionPurpose.DOCUMENTATION,
+            collection_purpose=EnumCollectionPurpose.METADATA,
             documentation_coverage=0.0,
         )
 

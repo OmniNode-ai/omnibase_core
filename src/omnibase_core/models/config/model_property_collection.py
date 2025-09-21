@@ -11,7 +11,7 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_property_type import PropertyTypeEnum
+from ...enums.enum_property_type import EnumPropertyType
 from ...protocols.protocol_supported_property_value import (
     ProtocolSupportedPropertyValue,
 )
@@ -33,7 +33,7 @@ class ModelPropertyCollection(BaseModel):
         self,
         key: str,
         value: Any,
-        property_type: PropertyTypeEnum,
+        property_type: EnumPropertyType,
         description: str | None = None,
         required: bool = False,
     ) -> None:
@@ -107,7 +107,7 @@ class ModelPropertyCollection(BaseModel):
         required = self.get_required_properties()
         return [key for key in required if key not in self.properties]
 
-    def get_properties_by_type(self, property_type: PropertyTypeEnum) -> list[str]:
+    def get_properties_by_type(self, property_type: EnumPropertyType) -> list[str]:
         """Get property keys filtered by type."""
         return [
             key

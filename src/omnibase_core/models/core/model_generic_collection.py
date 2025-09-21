@@ -29,14 +29,14 @@ T = TypeVar(
 )  # Keep BaseModel bound for now, can be made more specific
 
 
-class CollectionCreateKwargs(TypedDict, total=False):
+class TypedDictCollectionCreateKwargs(TypedDict, total=False):
     """Type-safe dictionary for collection creation parameters."""
 
     collection_display_name: str
     collection_id: UUID
 
 
-class CollectionFromItemsKwargs(TypedDict, total=False):
+class TypedDictCollectionFromItemsKwargs(TypedDict, total=False):
     """Type-safe dictionary for collection creation from items parameters."""
 
     items: list[BaseModel]  # Use BaseModel instead of unbound T
@@ -399,7 +399,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         Returns:
             Empty collection instance
         """
-        kwargs: CollectionCreateKwargs = {
+        kwargs: TypedDictCollectionCreateKwargs = {
             "collection_display_name": collection_display_name
         }
         if collection_id is not None:
@@ -436,64 +436,6 @@ class ModelGenericCollection(BaseModel, Generic[T]):
                 items=items,
                 collection_display_name=collection_display_name,
             )
-
-    # Backward compatibility methods
-    @classmethod
-    def create_empty_with_name(cls, collection_name: str) -> ModelGenericCollection[T]:
-        """
-        Create an empty collection with legacy collection_name parameter.
-
-        DEPRECATED: Use create_empty(collection_display_name=name) instead.
-
-        Args:
-            collection_name: Legacy name parameter
-
-        Returns:
-            Empty collection instance
-        """
-        return cls.create_empty(collection_display_name=collection_name)
-
-    @classmethod
-    def create_from_items_with_name(
-        cls, items: list[T], collection_name: str
-    ) -> ModelGenericCollection[T]:
-        """
-        Create a collection from items with legacy collection_name parameter.
-
-        DEPRECATED: Use create_from_items(items, collection_display_name=name) instead.
-
-        Args:
-            items: Initial items for the collection
-            collection_name: Legacy name parameter
-
-        Returns:
-            Collection instance with the specified items
-        """
-        return cls.create_from_items(items, collection_display_name=collection_name)
-
-    @property
-    def collection_name(self) -> str:
-        """
-        Legacy property for backward compatibility.
-
-        DEPRECATED: Use collection_display_name instead.
-
-        Returns:
-            The collection display name
-        """
-        return self.collection_display_name
-
-    @collection_name.setter
-    def collection_name(self, value: str) -> None:
-        """
-        Legacy setter for backward compatibility.
-
-        DEPRECATED: Use collection_display_name instead.
-
-        Args:
-            value: The name to set
-        """
-        self.collection_display_name = value
 
 
 # Export for use

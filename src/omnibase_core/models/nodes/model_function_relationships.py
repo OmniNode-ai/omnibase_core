@@ -77,7 +77,9 @@ class ModelFunctionRelationships(BaseModel):
         """Check if function has categories."""
         return len(self.categories) > 0
 
-    def get_relationships_summary(self) -> dict[str, int | list[str] | bool]:
+    def get_relationships_summary(
+        self,
+    ) -> dict[str, int | list[str] | bool | str | None]:
         """Get relationships summary."""
         return {
             "dependencies_count": len(self.dependencies),

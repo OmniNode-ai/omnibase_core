@@ -8,8 +8,6 @@ with validation and utility methods.
 
 from __future__ import annotations
 
-from typing import Union
-
 from pydantic import BaseModel, Field
 
 

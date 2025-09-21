@@ -12,9 +12,9 @@ from pydantic import BaseModel, Field
 
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
-    ModelPropertyValue,
-    PropertyMetadata,
+    TypedDictPropertyMetadata,
 )
+from .model_property_value import ModelPropertyValue
 
 
 class ModelEnvironmentProperties(BaseModel):
@@ -30,7 +30,7 @@ class ModelEnvironmentProperties(BaseModel):
         description="Custom property values",
     )
 
-    property_metadata: dict[str, PropertyMetadata] = Field(
+    property_metadata: dict[str, TypedDictPropertyMetadata] = Field(
         default_factory=dict,
         description="Metadata about each property (description, source, etc.)",
     )
@@ -200,9 +200,6 @@ class ModelEnvironmentProperties(BaseModel):
             else:
                 env_vars[env_key] = str(prop_value)
         return env_vars
-
-    # Removed create_from_dict() method - backward compatibility eliminated
-    # Use direct model construction: ModelEnvironmentProperties(properties=...) instead
 
     @classmethod
     def create_empty(cls) -> ModelEnvironmentProperties:

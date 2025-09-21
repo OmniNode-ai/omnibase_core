@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from ...enums.enum_config_type import EnumConfigType
 from ...enums.enum_function_status import EnumFunctionStatus
 from ...enums.enum_node_type import EnumNodeType
 from ...utils.uuid_utilities import uuid_from_string
@@ -100,40 +101,19 @@ class ModelFunctionNodeData(BaseModel):
 
     def add_configuration(
         self,
-        config_name: str,
-        config_type: str,
+        config_id: UUID,
+        config_display_name: str,
+        config_type: EnumConfigType,
         settings: dict[str, str | int | bool | float],
     ) -> None:
         """Add a configuration object."""
         self.configurations.append(
-            ModelNestedConfiguration.create_legacy(
-                config_name=config_name, config_type=config_type, settings=settings
+            ModelNestedConfiguration(
+                config_id=config_id,
+                config_display_name=config_display_name,
+                config_type=config_type,
+                settings=settings,
             )
-        )
-
-    @property
-    def name(self) -> str:
-        """Get function node name with fallback to UUID-based name."""
-        return self.node_display_name or f"function_node_{str(self.node_id)[:8]}"
-
-    @name.setter
-    def name(self, value: str) -> None:
-        """Set function node name (for backward compatibility)."""
-        self.node_display_name = value
-        # Update node_id to be deterministic based on name
-        self.node_id = uuid_from_string(value, "function_node")
-
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        **kwargs: Any,
-    ) -> "ModelFunctionNodeData":
-        """Create function node data with legacy name parameter for backward compatibility."""
-        return cls(
-            node_id=uuid_from_string(name, "function_node"),
-            node_display_name=name,
-            **kwargs,
         )
 
 

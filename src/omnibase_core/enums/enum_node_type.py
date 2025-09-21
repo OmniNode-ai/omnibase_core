@@ -27,7 +27,7 @@ class EnumNodeType(str, Enum):
     TRANSFORMER = "TRANSFORMER"
     AGGREGATOR = "AGGREGATOR"
 
-    # Generic node types (lowercase for legacy compatibility)
+    # Generic node types
     FUNCTION = "function"
     TOOL = "tool"
     AGENT = "agent"
@@ -37,7 +37,7 @@ class EnumNodeType(str, Enum):
     NODE = "node"
     WORKFLOW = "workflow"
     SERVICE = "service"
-    COMPUTE_LEGACY = "compute"  # Legacy compatibility for existing contracts
+    COMPUTE_GENERIC = "compute"  # Generic compute node type
     UNKNOWN = "unknown"
 
     def __str__(self) -> str:

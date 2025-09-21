@@ -91,7 +91,7 @@ class ModelNodeCapability(BaseModel):
 
     @capability_name.setter
     def capability_name(self, value: str) -> None:
-        """Set capability name (for backward compatibility)."""
+        """Set capability name."""
         self.capability_display_name = value
 
     @classmethod
@@ -257,28 +257,6 @@ class ModelNodeCapability(BaseModel):
         if isinstance(other, ModelNodeCapability):
             return self.capability_name == other.capability_name
         return False
-
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        value: str,
-        description: str,
-        **kwargs: Any,
-    ) -> ModelNodeCapability:
-        """Create capability with legacy name parameter for backward compatibility."""
-        return cls(
-            capability_id=uuid_from_string(name, "capability"),
-            capability_display_name=name,
-            value=value,
-            description=description,
-            **kwargs,
-        )
-
-    @property
-    def name(self) -> str:
-        """Legacy property for backward compatibility."""
-        return self.capability_name
 
     def is_compatible_with_version(self, version: ModelSemVer) -> bool:
         """Check if this capability is available in a given ONEX version."""

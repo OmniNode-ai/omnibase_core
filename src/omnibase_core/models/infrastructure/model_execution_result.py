@@ -56,7 +56,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     )
 
     metadata: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
+        default_factory=lambda: ModelCustomProperties(),
         description="Execution metadata and context",
     )
 
@@ -260,7 +260,8 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             error_message=(
                 str(self.error) if not self.success and self.error is not None else None
             ),
-            tool_name=(
+            tool_id=None,  # Default to None if no tool_id metadata available
+            tool_display_name=(
                 str(self.get_metadata("tool_name", ""))
                 if self.get_metadata("tool_name", "")
                 else None
@@ -379,7 +380,7 @@ def try_execution(
 
 # Export for use
 __all__ = [
-    ModelExecutionResult,
+    "ModelExecutionResult",
     "execution_ok",
     "execution_err",
     "try_execution",

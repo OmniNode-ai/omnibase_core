@@ -53,15 +53,15 @@ class ModelConnectionInfo(BaseModel):
         description="Connection endpoint configuration",
     )
     auth: ModelConnectionAuth = Field(
-        default_factory=ModelConnectionAuth,
+        default_factory=lambda: ModelConnectionAuth.create_no_auth(),
         description="Authentication configuration",
     )
     security: ModelConnectionSecurity = Field(
-        default_factory=ModelConnectionSecurity,
+        default_factory=lambda: ModelConnectionSecurity.create_insecure(),
         description="Security and SSL configuration",
     )
     pool: ModelConnectionPool = Field(
-        default_factory=ModelConnectionPool,
+        default_factory=lambda: ModelConnectionPool.create_single_connection(),
         description="Connection pooling configuration",
     )
 
@@ -86,7 +86,7 @@ class ModelConnectionInfo(BaseModel):
         description="Custom connection properties",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def host(self) -> str:
         """Get host from endpoint."""
@@ -98,7 +98,7 @@ class ModelConnectionInfo(BaseModel):
         return self.endpoint.port
 
     @property
-    def connection_type(self):
+    def connection_type(self) -> str:
         """Get connection type from endpoint."""
         return self.endpoint.connection_type
 
@@ -182,7 +182,13 @@ class ModelConnectionInfo(BaseModel):
             if use_ssl
             else ModelConnectionSecurity.create_insecure()
         )
-        return cls(endpoint=endpoint, security=security)
+        return cls(
+            endpoint=endpoint,
+            security=security,
+            established_at=None,
+            last_used_at=None,
+            metrics=None,
+        )
 
     @classmethod
     def create_websocket(
@@ -199,7 +205,13 @@ class ModelConnectionInfo(BaseModel):
             if use_ssl
             else ModelConnectionSecurity.create_insecure()
         )
-        return cls(endpoint=endpoint, security=security)
+        return cls(
+            endpoint=endpoint,
+            security=security,
+            established_at=None,
+            last_used_at=None,
+            metrics=None,
+        )
 
     @classmethod
     def create_with_auth(
@@ -213,6 +225,9 @@ class ModelConnectionInfo(BaseModel):
         return cls(
             endpoint=endpoint,
             auth=auth,
-            security=security or ModelConnectionSecurity(),
-            pool=pool or ModelConnectionPool(),
+            security=security or ModelConnectionSecurity.create_insecure(),
+            pool=pool or ModelConnectionPool.create_single_connection(),
+            established_at=None,
+            last_used_at=None,
+            metrics=None,
         )

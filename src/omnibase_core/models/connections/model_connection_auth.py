@@ -92,12 +92,12 @@ class ModelConnectionAuth(BaseModel):
 
     @property
     def username(self) -> str | None:
-        """Backward compatibility property for username."""
+        """Access username."""
         return self.user_display_name
 
     @username.setter
     def username(self, value: str | None) -> None:
-        """Backward compatibility setter for username."""
+        """Set username and generate corresponding user ID."""
         if value:
             import hashlib
 
@@ -136,6 +136,8 @@ class ModelConnectionAuth(BaseModel):
             user_id=user_id,
             user_display_name=username,
             password=SecretStr(password),
+            api_key=None,
+            token=None,
         )
 
     @classmethod
@@ -146,6 +148,10 @@ class ModelConnectionAuth(BaseModel):
         """Create bearer token authentication."""
         return cls(
             auth_type=EnumAuthType.BEARER,
+            user_id=None,
+            user_display_name=None,
+            password=None,
+            api_key=None,
             token=SecretStr(token),
         )
 
@@ -157,13 +163,24 @@ class ModelConnectionAuth(BaseModel):
         """Create API key authentication."""
         return cls(
             auth_type=EnumAuthType.API_KEY,
+            user_id=None,
+            user_display_name=None,
+            password=None,
             api_key=SecretStr(api_key),
+            token=None,
         )
 
     @classmethod
     def create_no_auth(cls) -> ModelConnectionAuth:
         """Create no authentication."""
-        return cls()
+        return cls(
+            auth_type=None,
+            user_id=None,
+            user_display_name=None,
+            password=None,
+            api_key=None,
+            token=None,
+        )
 
 
 # Export for use

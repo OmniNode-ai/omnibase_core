@@ -10,6 +10,7 @@ excessive string fields in a single large model.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -39,19 +40,22 @@ class ModelCliExecution(BaseModel):
 
     # Composed sub-models for focused concerns
     core: ModelCliExecutionCore = Field(
-        default_factory=ModelCliExecutionCore,
+        default_factory=lambda: ModelCliExecutionCore(
+            command_name_id=uuid.uuid4(),
+            command_display_name=None,
+        ),
         description="Core execution information",
     )
     config: ModelCliExecutionConfig = Field(
-        default_factory=ModelCliExecutionConfig,
+        default_factory=lambda: ModelCliExecutionConfig(),
         description="Execution configuration",
     )
     resources: ModelCliExecutionResources = Field(
-        default_factory=ModelCliExecutionResources,
+        default_factory=lambda: ModelCliExecutionResources(),
         description="Resource limits and constraints",
     )
     metadata: ModelCliExecutionMetadata = Field(
-        default_factory=ModelCliExecutionMetadata,
+        default_factory=lambda: ModelCliExecutionMetadata(),
         description="Metadata and custom context",
     )
 
@@ -64,7 +68,7 @@ class ModelCliExecution(BaseModel):
     @property
     def command_name(self) -> str:
         """Get command name from core."""
-        return self.core.command_name
+        return self.core.get_command_name()
 
     @property
     def status(self) -> EnumExecutionStatus:
@@ -189,9 +193,10 @@ class ModelCliExecution(BaseModel):
         """Get execution summary."""
         return ModelCliExecutionSummary(
             execution_id=self.execution_id,
-            command_name=self.command_name,
+            command_id=self.core.command_name_id,
+            command_display_name=self.command_name,
             target_node_id=self.get_target_node_id(),
-            target_node_name=self.get_target_node_name(),
+            target_node_display_name=self.get_target_node_name(),
             status=self.status,
             start_time=self.start_time,
             end_time=self.end_time,

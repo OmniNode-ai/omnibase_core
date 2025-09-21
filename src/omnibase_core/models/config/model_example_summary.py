@@ -30,25 +30,6 @@ class ModelExampleSummary(BaseModel):
     input_data: ModelExampleInputData | None = Field(None, description="Input data")
     output_data: ModelExampleOutputData | None = Field(None, description="Output data")
 
-    @classmethod
-    def create_legacy(
-        cls,
-        name: str,
-        description: str | None = None,
-        is_valid: bool = True,
-        input_data: ModelExampleInputData | None = None,
-        output_data: ModelExampleOutputData | None = None,
-    ) -> ModelExampleSummary:
-        """Create example summary with legacy name parameter for backward compatibility."""
-        return cls(
-            display_name=name,
-            description=description,
-            is_valid=is_valid,
-            input_data=input_data,
-            output_data=output_data,
-        )
 
-    @property
-    def name(self) -> str:
-        """Legacy property for backward compatibility."""
-        return self.display_name
+# Export the model
+__all__ = ["ModelExampleSummary"]

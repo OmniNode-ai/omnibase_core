@@ -12,14 +12,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ...enums.enum_fallback_strategy_type import FallbackStrategyType
+from ...enums.enum_fallback_strategy_type import EnumFallbackStrategyType
 from .model_fallback_metadata import ModelFallbackMetadata
 
 
 class ModelFallbackStrategy(BaseModel):
     """Scalable fallback strategy configuration model."""
 
-    strategy_type: FallbackStrategyType = Field(
+    strategy_type: EnumFallbackStrategyType = Field(
         ...,
         description="The type of fallback strategy to use",
     )
@@ -56,8 +56,8 @@ class ModelFallbackStrategy(BaseModel):
     def is_degraded_mode(self) -> bool:
         """Check if this strategy operates in degraded mode."""
         return self.strategy_type in [
-            FallbackStrategyType.DEGRADED,
-            FallbackStrategyType.LOCAL,
+            EnumFallbackStrategyType.DEGRADED,
+            EnumFallbackStrategyType.LOCAL,
         ]
 
     def get_effective_timeout(self) -> int:

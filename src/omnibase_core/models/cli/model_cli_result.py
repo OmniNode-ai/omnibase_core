@@ -197,7 +197,7 @@ class ModelCliResult(BaseModel):
 
     def add_debug_info(self, key: str, value: MetadataValueType) -> None:
         """Add debug information with proper typing."""
-        if self.execution.is_debug_enabled:
+        if self.execution.config.is_debug_enabled:
             if self.debug_info is None:
                 self.debug_info = ModelCliDebugInfo()
             self.debug_info.set_custom_field(key, value)

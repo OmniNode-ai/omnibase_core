@@ -18,7 +18,7 @@ from .validation_utils import (
 )
 
 
-class MigrationConflictBaseDict(TypedDict):
+class TypedDictMigrationConflictBaseDict(TypedDict):
     """Base type definition for migration conflict information."""
 
     type: str
@@ -28,20 +28,20 @@ class MigrationConflictBaseDict(TypedDict):
     recommendation: str
 
 
-class MigrationNameConflictDict(MigrationConflictBaseDict):
+class TypedDictMigrationNameConflictDict(TypedDictMigrationConflictBaseDict):
     """Type definition for name conflict information."""
 
     source_signature: str
     spi_signature: str
 
 
-class MigrationDuplicateConflictDict(MigrationConflictBaseDict):
+class TypedDictMigrationDuplicateConflictDict(TypedDictMigrationConflictBaseDict):
     """Type definition for exact duplicate conflict information."""
 
     signature_hash: str
 
 
-class MigrationStepDict(TypedDict, total=False):
+class TypedDictMigrationStepDict(TypedDict, total=False):
     """Type definition for migration step information."""
 
     phase: str  # "preparation", "migration", "finalization"
@@ -63,8 +63,10 @@ class ModelMigrationPlan:
     source_repository: str
     target_repository: str
     protocols_to_migrate: list[ProtocolInfo]
-    conflicts_detected: list[MigrationNameConflictDict | MigrationDuplicateConflictDict]
-    migration_steps: list[MigrationStepDict]
+    conflicts_detected: list[
+        TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
+    ]
+    migration_steps: list[TypedDictMigrationStepDict]
     estimated_time_minutes: int
     recommendations: list[str]
 
@@ -248,9 +250,13 @@ class ProtocolMigrator:
         self,
         source_protocols: list[ProtocolInfo],
         spi_protocols: list[ProtocolInfo],
-    ) -> list[MigrationNameConflictDict | MigrationDuplicateConflictDict]:
+    ) -> list[
+        TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
+    ]:
         """Detect conflicts between source protocols and existing SPI protocols."""
-        conflicts = []
+        conflicts: list[
+            TypedDictMigrationNameConflictDict | TypedDictMigrationDuplicateConflictDict
+        ] = []
 
         # Create lookup tables
         spi_by_name = {p.name: p for p in spi_protocols}
@@ -263,7 +269,7 @@ class ProtocolMigrator:
                 if source_protocol.signature_hash != spi_protocol.signature_hash:
                     conflicts.append(
                         cast(
-                            MigrationNameConflictDict,
+                            TypedDictMigrationNameConflictDict,
                             {
                                 "type": "name_conflict",
                                 "protocol_name": source_protocol.name,
@@ -281,7 +287,7 @@ class ProtocolMigrator:
                 spi_protocol = spi_by_signature[source_protocol.signature_hash]
                 conflicts.append(
                     cast(
-                        MigrationDuplicateConflictDict,
+                        TypedDictMigrationDuplicateConflictDict,
                         {
                             "type": "exact_duplicate",
                             "protocol_name": source_protocol.name,
@@ -298,14 +304,14 @@ class ProtocolMigrator:
     def _generate_migration_steps(
         self,
         protocols: list[ProtocolInfo],
-    ) -> list[MigrationStepDict]:
+    ) -> list[TypedDictMigrationStepDict]:
         """Generate detailed migration steps."""
         steps = []
 
         # Pre-migration steps
         steps.append(
             cast(
-                MigrationStepDict,
+                TypedDictMigrationStepDict,
                 {
                     "phase": "preparation",
                     "action": "backup_source",
@@ -317,7 +323,7 @@ class ProtocolMigrator:
 
         steps.append(
             cast(
-                MigrationStepDict,
+                TypedDictMigrationStepDict,
                 {
                     "phase": "preparation",
                     "action": "validate_spi_structure",
@@ -333,7 +339,7 @@ class ProtocolMigrator:
 
             steps.append(
                 cast(
-                    MigrationStepDict,
+                    TypedDictMigrationStepDict,
                     {
                         "phase": "migration",
                         "action": "migrate_protocol",
@@ -350,7 +356,7 @@ class ProtocolMigrator:
         # Post-migration steps
         steps.append(
             cast(
-                MigrationStepDict,
+                TypedDictMigrationStepDict,
                 {
                     "phase": "finalization",
                     "action": "update_imports",
@@ -362,7 +368,7 @@ class ProtocolMigrator:
 
         steps.append(
             cast(
-                MigrationStepDict,
+                TypedDictMigrationStepDict,
                 {
                     "phase": "finalization",
                     "action": "run_tests",

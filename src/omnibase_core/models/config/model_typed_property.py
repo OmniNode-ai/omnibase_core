@@ -7,11 +7,11 @@ typed property with validation in the environment property system.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...enums.enum_property_type import PropertyTypeEnum
+from ...enums.enum_property_type import EnumPropertyType
 from ...protocols.protocol_supported_property_value import (
     ProtocolSupportedPropertyValue,
 )
@@ -34,9 +34,12 @@ class ModelTypedProperty(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any) -> Any:
+    def validate_value_type(cls, v: Any) -> ProtocolSupportedPropertyValue:
         """Validate that value is of allowed type."""
-        return v
+        if isinstance(v, ProtocolSupportedPropertyValue):
+            return v
+        # For basic types, return as-is since they implement the protocol implicitly
+        return cast(ProtocolSupportedPropertyValue, v)
 
     def get_typed_value(self, expected_type: type[T], default: T) -> T:
         """Get the value with specific type checking."""
@@ -47,14 +50,14 @@ class ModelTypedProperty(BaseModel):
     def is_list_type(self) -> bool:
         """Check if this property stores a list value."""
         return self.metadata.property_type in [
-            PropertyTypeEnum.STRING_LIST,
-            PropertyTypeEnum.INTEGER_LIST,
-            PropertyTypeEnum.FLOAT_LIST,
+            EnumPropertyType.STRING_LIST,
+            EnumPropertyType.INTEGER_LIST,
+            EnumPropertyType.FLOAT_LIST,
         ]
 
     def is_numeric_type(self) -> bool:
         """Check if this property stores a numeric value."""
         return self.metadata.property_type in [
-            PropertyTypeEnum.INTEGER,
-            PropertyTypeEnum.FLOAT,
+            EnumPropertyType.INTEGER,
+            EnumPropertyType.FLOAT,
         ]

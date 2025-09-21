@@ -14,7 +14,9 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from ...enums.enum_metadata_node_type import EnumMetadataNodeType
+from ...enums.enum_node_health_status import EnumNodeHealthStatus
 from ...enums.enum_registry_status import EnumRegistryStatus
+from ...enums.enum_status import EnumStatus
 from ..metadata.model_semver import ModelSemVer
 from .model_node_capabilities_info import ModelNodeCapabilitiesInfo
 from .model_node_configuration import ModelNodeConfiguration
@@ -27,7 +29,6 @@ class ModelNodeInformation(BaseModel):
     Node information with typed fields.
 
     Restructured to use focused sub-models for better organization.
-    Maintains backward compatibility through property delegation.
     """
 
     # Composed sub-models (3 primary components)
@@ -44,7 +45,7 @@ class ModelNodeInformation(BaseModel):
         description="Node configuration",
     )
 
-    # Backward compatibility properties
+    # Delegation properties
     @property
     def node_id(self) -> UUID:
         """Node identifier (delegated to core_info)."""
@@ -195,7 +196,6 @@ class ModelNodeInformation(BaseModel):
 
     def get_information_summary(self) -> ModelNodeInformationSummary:
         """Get comprehensive node information summary."""
-        from ...enums.enum_status import EnumStatus
         from .model_node_capabilities_summary import ModelNodeCapabilitiesSummary
         from .model_node_configuration_summary import ModelNodeConfigurationSummary
         from .model_node_core_info_summary import ModelNodeCoreInfoSummary
@@ -207,7 +207,7 @@ class ModelNodeInformation(BaseModel):
             node_type=self.core_info.node_type,
             node_version=str(self.core_info.node_version),
             status=EnumStatus.ACTIVE,  # Convert from metadata status
-            health="healthy",  # Default value
+            health=EnumNodeHealthStatus.HEALTHY,  # Default value
             is_active=(self.core_info.status == self.core_info.status.ACTIVE),
             is_healthy=True,  # Default value
             has_description=self.core_info.has_description(),
