@@ -6,49 +6,18 @@ outcome of CLI command execution with proper typing.
 """
 
 from datetime import UTC, datetime
-from typing import TypedDict, TypeVar
+from typing import TypeVar
 
 # Type variable for generic metadata access
 T = TypeVar("T")
 
 from pydantic import BaseModel, Field
 
-
-# TypedDict for performance metrics to replace loose Any typing
-class ModelPerformanceMetricData(TypedDict, total=False):
-    """Typed dictionary for performance metric values."""
-
-    name: str
-    value: float  # All metrics can be represented as float
-    unit: str
-    category: str
-
-
-# TypedDict for debug info to replace loose Any typing
-class ModelDebugInfoData(TypedDict, total=False):
-    """Typed dictionary for debug information."""
-
-    key: str
-    value: str  # Debug values are typically displayed as strings
-    timestamp: str
-    category: str
-
-
-# TypedDict for trace data to replace loose Any typing
-class ModelTraceInfoData(TypedDict, total=False):
-    """Typed dictionary for trace information."""
-
-    key: str
-    value: str  # Trace values are typically displayed as strings
-    timestamp: str
-    operation: str
-
-
-from ..cli.model_cli_execution import ModelCliExecution
-from ..cli.model_cli_output_data import ModelCliOutputData
 from ..infrastructure.model_duration import ModelDuration
 from ..validation.model_validation_error import ModelValidationError
 from .model_cli_debug_info import ModelCliDebugInfo
+from .model_cli_execution import ModelCliExecution
+from .model_cli_output_data import ModelCliOutputData
 from .model_cli_result_metadata import ModelCliResultMetadata
 from .model_performance_metrics import ModelPerformanceMetrics
 from .model_result_summary import ModelResultSummary

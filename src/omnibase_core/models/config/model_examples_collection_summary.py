@@ -6,36 +6,11 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 from typing import Any
-from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ..metadata.model_semver import ModelSemVer
-from .model_example_data import ModelExampleInputData, ModelExampleOutputData
-
-
-class ModelExampleSummary(BaseModel):
-    """Clean model for individual example summary data."""
-
-    example_id: UUID = Field(default_factory=uuid4, description="Example identifier")
-    name: str = Field(..., description="Example name")
-    description: str | None = Field(None, description="Example description")
-    is_valid: bool = Field(default=True, description="Whether example is valid")
-    input_data: ModelExampleInputData | None = Field(None, description="Input data")
-    output_data: ModelExampleOutputData | None = Field(None, description="Output data")
-
-
-class ModelExampleMetadataSummary(BaseModel):
-    """Clean model for metadata summary."""
-
-    created_at: str | None = Field(None, description="Creation timestamp")
-    updated_at: str | None = Field(None, description="Update timestamp")
-    version: ModelSemVer | None = Field(None, description="Metadata version")
-    author: str | None = Field(None, description="Author information")
-    tags: list[str] = Field(default_factory=list, description="Associated tags")
-    custom_fields: dict[str, str | int | bool | float] = Field(
-        default_factory=dict, description="Custom metadata fields with basic types only"
-    )
+from .model_example_metadata_summary import ModelExampleMetadataSummary
+from .model_example_summary import ModelExampleSummary
 
 
 class ModelExamplesCollectionSummary(BaseModel):

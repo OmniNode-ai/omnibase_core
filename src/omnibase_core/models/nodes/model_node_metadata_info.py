@@ -5,23 +5,13 @@ Simple model for node metadata information used in CLI output.
 """
 
 from datetime import UTC, datetime
-from typing import Protocol
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from ...enums.enum_metadata_node_status import EnumMetadataNodeStatus
+from ...protocols.protocol_node_info_like import NodeInfoLike
 from ..metadata.model_semver import ModelSemVer
-
-
-class NodeInfoLike(Protocol):
-    """Protocol for objects that can be converted to ModelNodeMetadataInfo."""
-
-    def __getattr__(
-        self, name: str
-    ) -> str | UUID | EnumMetadataNodeStatus | ModelSemVer | None:
-        """Allow attribute access for node info properties."""
-        ...
 
 
 class ModelNodeMetadataInfo(BaseModel):

@@ -1,107 +1,26 @@
 """
-Property type definitions for environment properties.
+Property collection model for environment properties.
 
-This module provides strongly typed alternatives to overly broad Union types
-for environment property storage with proper validation and constraints.
+This module provides the ModelPropertyCollection class for managing
+collections of typed properties with validation and helper methods.
 """
 
-from datetime import datetime
-from enum import Enum
-from typing import Any, Protocol, Type, TypeVar, Union, runtime_checkable
-from uuid import UUID
+from typing import TypeVar
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
-
-class PropertyTypeEnum(str, Enum):
-    """Enum for supported property types."""
-
-    STRING = "string"
-    INTEGER = "integer"
-    BOOLEAN = "boolean"
-    FLOAT = "float"
-    STRING_LIST = "string_list"
-    INTEGER_LIST = "integer_list"
-    FLOAT_LIST = "float_list"
-    DATETIME = "datetime"
-    UUID = "uuid"
-
-
-@runtime_checkable
-class ProtocolSupportedPropertyValue(Protocol):
-    """Protocol for values that can be stored as environment properties."""
-
-    def __str__(self) -> str:
-        """Must be convertible to string."""
-        ...
-
-
-# Define the specific union type for property values with constraints
-PropertyValue = Union[
-    str,
-    int,
-    bool,
-    float,
-    list[str],
-    list[int],
-    list[float],
-    datetime,
-    UUID,
-]
+from ...enums.enum_property_type import PropertyTypeEnum
+from ...protocols.protocol_supported_property_value import (
+    ProtocolSupportedPropertyValue,
+)
+from .model_property_metadata import ModelPropertyMetadata
+from .model_typed_property import (
+    ModelTypedProperty,
+    PropertyValue,
+)
 
 # Type variable for generic property handling
 T = TypeVar("T", bound=ProtocolSupportedPropertyValue)
-
-
-class ModelPropertyMetadata(BaseModel):
-    """Metadata for individual properties."""
-
-    description: str | None = Field(None, description="Property description")
-    source: str | None = Field(None, description="Source of the property")
-    property_type: PropertyTypeEnum = Field(description="Type of the property")
-    required: bool = Field(default=False, description="Whether property is required")
-    validation_pattern: str | None = Field(
-        None, description="Regex pattern for validation"
-    )
-    min_value: float | None = Field(None, description="Minimum value for numeric types")
-    max_value: float | None = Field(None, description="Maximum value for numeric types")
-    allowed_values: list[str] | None = Field(
-        None, description="Allowed values for enum-like properties"
-    )
-
-
-class ModelTypedProperty(BaseModel):
-    """A single typed property with validation."""
-
-    key: str = Field(description="Property key")
-    value: PropertyValue = Field(description="Property value")
-    metadata: ModelPropertyMetadata = Field(description="Property metadata")
-
-    @validator("value")
-    def validate_value_type(cls, v: PropertyValue) -> PropertyValue:
-        """Validate that value is of allowed PropertyValue type."""
-        return v
-
-    def get_typed_value(self, expected_type: type[T]) -> T | None:
-        """Get the value with specific type checking."""
-        if isinstance(self.value, expected_type):
-            return self.value
-        return None
-
-    def is_list_type(self) -> bool:
-        """Check if this property stores a list value."""
-        return self.metadata.property_type in [
-            PropertyTypeEnum.STRING_LIST,
-            PropertyTypeEnum.INTEGER_LIST,
-            PropertyTypeEnum.FLOAT_LIST,
-        ]
-
-    def is_numeric_type(self) -> bool:
-        """Check if this property stores a numeric value."""
-        return self.metadata.property_type in [
-            PropertyTypeEnum.INTEGER,
-            PropertyTypeEnum.FLOAT,
-        ]
 
 
 class ModelPropertyCollection(BaseModel):
@@ -193,14 +112,3 @@ class ModelPropertyCollection(BaseModel):
             for key, prop in self.properties.items()
             if prop.metadata.property_type == property_type
         ]
-
-
-# Export types for use
-__all__ = [
-    "PropertyValue",
-    "PropertyTypeEnum",
-    "ProtocolSupportedPropertyValue",
-    "ModelPropertyMetadata",
-    "ModelTypedProperty",
-    "ModelPropertyCollection",
-]

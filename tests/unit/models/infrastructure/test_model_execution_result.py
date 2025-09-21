@@ -66,9 +66,7 @@ class TestModelExecutionResult:
 
     def test_metadata_initialization(self) -> None:
         """Test creating result with initial metadata."""
-        from src.omnibase_core.models.core.model_custom_properties import (
-            ModelCustomProperties,
-        )
+        from src.omnibase_core.models.core import ModelCustomProperties
 
         metadata = ModelCustomProperties()
         metadata.set_custom_string("tool", "test_tool")

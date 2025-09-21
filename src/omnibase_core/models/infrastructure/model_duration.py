@@ -9,7 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .model_time_based import ModelTimeBased, TimeUnit
+from ...enums.enum_time_unit import EnumTimeUnit
+from .model_time_based import ModelTimeBased
 
 
 class ModelDuration(BaseModel):
@@ -21,7 +22,7 @@ class ModelDuration(BaseModel):
     """
 
     time_based: ModelTimeBased[int] = Field(
-        default_factory=lambda: ModelTimeBased(value=0, unit=TimeUnit.MILLISECONDS),
+        default_factory=lambda: ModelTimeBased(value=0, unit=EnumTimeUnit.MILLISECONDS),
         exclude=True,
         description="Internal time-based model",
     )
@@ -32,30 +33,30 @@ class ModelDuration(BaseModel):
         if "milliseconds" in data:
             ms = data.pop("milliseconds")
             super().__init__()
-            self.time_based = ModelTimeBased(value=ms, unit=TimeUnit.MILLISECONDS)
+            self.time_based = ModelTimeBased(value=ms, unit=EnumTimeUnit.MILLISECONDS)
         elif "seconds" in data:
             seconds = data.pop("seconds")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(seconds * 1000), unit=TimeUnit.MILLISECONDS
+                value=int(seconds * 1000), unit=EnumTimeUnit.MILLISECONDS
             )
         elif "minutes" in data:
             minutes = data.pop("minutes")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(minutes * 60 * 1000), unit=TimeUnit.MILLISECONDS
+                value=int(minutes * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
             )
         elif "hours" in data:
             hours = data.pop("hours")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(hours * 60 * 60 * 1000), unit=TimeUnit.MILLISECONDS
+                value=int(hours * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
             )
         elif "days" in data:
             days = data.pop("days")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(days * 24 * 60 * 60 * 1000), unit=TimeUnit.MILLISECONDS
+                value=int(days * 24 * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
             )
         else:
             super().__init__(**data)
@@ -101,7 +102,7 @@ class ModelDuration(BaseModel):
     def from_milliseconds(cls, ms: int) -> "ModelDuration":
         """Create duration from milliseconds."""
         instance = cls()
-        instance.time_based = ModelTimeBased(value=ms, unit=TimeUnit.MILLISECONDS)
+        instance.time_based = ModelTimeBased(value=ms, unit=EnumTimeUnit.MILLISECONDS)
         return instance
 
     @classmethod
@@ -109,7 +110,7 @@ class ModelDuration(BaseModel):
         """Create duration from seconds."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(seconds * 1000), unit=TimeUnit.MILLISECONDS
+            value=int(seconds * 1000), unit=EnumTimeUnit.MILLISECONDS
         )
         return instance
 
@@ -118,7 +119,7 @@ class ModelDuration(BaseModel):
         """Create duration from minutes."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(minutes * 60 * 1000), unit=TimeUnit.MILLISECONDS
+            value=int(minutes * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
         )
         return instance
 
@@ -127,7 +128,7 @@ class ModelDuration(BaseModel):
         """Create duration from hours."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(hours * 60 * 60 * 1000), unit=TimeUnit.MILLISECONDS
+            value=int(hours * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
         )
         return instance
 

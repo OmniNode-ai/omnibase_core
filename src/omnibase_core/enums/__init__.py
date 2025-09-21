@@ -13,6 +13,7 @@ from .enum_connection_state import EnumConnectionState
 from .enum_connection_type import EnumConnectionType
 from .enum_execution_phase import EnumExecutionPhase
 from .enum_execution_status import EnumExecutionStatus
+from .enum_fallback_strategy_type import FallbackStrategyType
 from .enum_filter_type import EnumFilterType
 from .enum_function_status import EnumFunctionStatus
 from .enum_memory_usage import EnumMemoryUsage
@@ -21,9 +22,12 @@ from .enum_metadata_node_status import EnumMetadataNodeStatus
 from .enum_metadata_node_type import EnumMetadataNodeType
 from .enum_output_format import EnumOutputFormat
 from .enum_performance_impact import EnumPerformanceImpact
+from .enum_property_type import PropertyTypeEnum
 from .enum_registry_status import EnumRegistryStatus
+from .enum_retry_backoff_strategy import RetryBackoffStrategy
 from .enum_runtime_category import EnumRuntimeCategory
 from .enum_scenario_status import EnumScenarioStatus
+from .enum_time_unit import EnumTimeUnit
 from .enum_validation_severity import EnumValidationSeverity
 
 __all__ = [
@@ -36,6 +40,7 @@ __all__ = [
     "EnumConnectionType",
     "EnumExecutionPhase",
     "EnumExecutionStatus",
+    "FallbackStrategyType",
     "EnumFilterType",
     "EnumFunctionStatus",
     "EnumMemoryUsage",
@@ -44,8 +49,11 @@ __all__ = [
     "EnumMetadataNodeType",
     "EnumOutputFormat",
     "EnumPerformanceImpact",
+    "PropertyTypeEnum",
     "EnumRegistryStatus",
+    "RetryBackoffStrategy",
     "EnumRuntimeCategory",
     "EnumScenarioStatus",
+    "EnumTimeUnit",
     "EnumValidationSeverity",
 ]

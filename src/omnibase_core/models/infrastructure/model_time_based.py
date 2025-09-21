@@ -6,50 +6,12 @@ aspects of ModelProgress with a single generic type-safe implementation.
 """
 
 from datetime import UTC, datetime, timedelta
-from enum import Enum
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_runtime_category import EnumRuntimeCategory
-
-
-class TimeUnit(Enum):
-    """Time unit enumeration for flexible time representation."""
-
-    MILLISECONDS = "ms"
-    SECONDS = "s"
-    MINUTES = "m"
-    HOURS = "h"
-    DAYS = "d"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
-
-    @property
-    def display_name(self) -> str:
-        """Get human-readable display name."""
-        names = {
-            self.MILLISECONDS: "Milliseconds",
-            self.SECONDS: "Seconds",
-            self.MINUTES: "Minutes",
-            self.HOURS: "Hours",
-            self.DAYS: "Days",
-        }
-        return names[self]
-
-    def to_milliseconds_multiplier(self) -> int:
-        """Get multiplier to convert this unit to milliseconds."""
-        multipliers = {
-            self.MILLISECONDS: 1,
-            self.SECONDS: 1000,
-            self.MINUTES: 60 * 1000,
-            self.HOURS: 60 * 60 * 1000,
-            self.DAYS: 24 * 60 * 60 * 1000,
-        }
-        return multipliers[self]
-
+from ...enums.enum_time_unit import EnumTimeUnit
 
 T = TypeVar("T", int, float)
 
@@ -63,7 +25,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
     """
 
     value: T = Field(..., description="The time-based value")
-    unit: TimeUnit = Field(default=TimeUnit.SECONDS, description="Time unit")
+    unit: EnumTimeUnit = Field(default=EnumTimeUnit.SECONDS, description="Time unit")
     metadata: dict[str, str] = Field(
         default_factory=dict, description="Additional metadata for context"
     )
@@ -277,7 +239,10 @@ class ModelTimeBased(BaseModel, Generic[T]):
     # Class methods for creating instances
     @classmethod
     def duration(
-        cls, value: T, unit: TimeUnit = TimeUnit.SECONDS, description: str | None = None
+        cls,
+        value: T,
+        unit: EnumTimeUnit = EnumTimeUnit.SECONDS,
+        description: str | None = None,
     ) -> "ModelTimeBased[T]":
         """Create a duration instance."""
         metadata = {"type": "duration"}
@@ -289,7 +254,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
     def timeout(
         cls,
         value: T,
-        unit: TimeUnit = TimeUnit.SECONDS,
+        unit: EnumTimeUnit = EnumTimeUnit.SECONDS,
         description: str | None = None,
         is_strict: bool = True,
         warning_threshold_value: T | None = None,
@@ -313,37 +278,37 @@ class ModelTimeBased(BaseModel, Generic[T]):
     @classmethod
     def from_milliseconds(cls, ms: int) -> "ModelTimeBased[int]":
         """Create from milliseconds."""
-        return cls(value=ms, unit=TimeUnit.MILLISECONDS)  # type: ignore[return-value]
+        return cls(value=ms, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
 
     @classmethod
     def from_seconds(cls, seconds: float) -> "ModelTimeBased[float]":
         """Create from seconds."""
-        return cls(value=seconds, unit=TimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
+        return cls(value=seconds, unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
 
     @classmethod
     def from_minutes(cls, minutes: float) -> "ModelTimeBased[float]":
         """Create from minutes."""
-        return cls(value=minutes, unit=TimeUnit.MINUTES)  # type: ignore[return-value,arg-type]
+        return cls(value=minutes, unit=EnumTimeUnit.MINUTES)  # type: ignore[return-value,arg-type]
 
     @classmethod
     def from_hours(cls, hours: float) -> "ModelTimeBased[float]":
         """Create from hours."""
-        return cls(value=hours, unit=TimeUnit.HOURS)  # type: ignore[return-value,arg-type]
+        return cls(value=hours, unit=EnumTimeUnit.HOURS)  # type: ignore[return-value,arg-type]
 
     @classmethod
     def from_days(cls, days: float) -> "ModelTimeBased[float]":
         """Create from days."""
-        return cls(value=days, unit=TimeUnit.DAYS)  # type: ignore[return-value,arg-type]
+        return cls(value=days, unit=EnumTimeUnit.DAYS)  # type: ignore[return-value,arg-type]
 
     @classmethod
     def zero(cls) -> "ModelTimeBased[int]":
         """Create zero duration."""
-        return cls(value=0, unit=TimeUnit.MILLISECONDS)  # type: ignore[return-value]
+        return cls(value=0, unit=EnumTimeUnit.MILLISECONDS)  # type: ignore[return-value]
 
     @classmethod
     def from_timedelta(cls, delta: timedelta) -> "ModelTimeBased[float]":
         """Create from timedelta object."""
-        return cls(value=delta.total_seconds(), unit=TimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
+        return cls(value=delta.total_seconds(), unit=EnumTimeUnit.SECONDS)  # type: ignore[return-value,arg-type]
 
     @classmethod
     def from_runtime_category(
@@ -366,11 +331,11 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
         return cls(
             value=timeout_seconds,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             runtime_category=category,
             metadata=metadata,
         )  # type: ignore[return-value]
 
 
 # Export for use
-__all__ = ["ModelTimeBased", "TimeUnit"]
+__all__ = ["ModelTimeBased"]

@@ -10,15 +10,13 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core.model_custom_fields_accessor import (
+from src.omnibase_core.models.core import (
     ModelCustomFieldsAccessor,
-)
-from src.omnibase_core.models.core.model_environment_accessor import (
     ModelEnvironmentAccessor,
+    ModelFieldAccessor,
+    ModelResultAccessor,
+    ModelTypedAccessor,
 )
-from src.omnibase_core.models.core.model_field_accessor import ModelFieldAccessor
-from src.omnibase_core.models.core.model_result_accessor import ModelResultAccessor
-from src.omnibase_core.models.core.model_typed_accessor import ModelTypedAccessor
 
 
 class TestModelFieldAccessor:

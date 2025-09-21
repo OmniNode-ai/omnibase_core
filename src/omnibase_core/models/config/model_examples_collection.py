@@ -3,114 +3,14 @@ Examples collection model.
 """
 
 from datetime import UTC, datetime
-from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from .model_example import ModelExample
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
+from .model_example_metadata import ModelExampleMetadata
 from .model_examples_collection_summary import ModelExamplesCollectionSummary
-
-
-class ModelExample(BaseModel):
-    """
-    Strongly typed example model with comprehensive fields.
-
-    Replaces placeholder implementation with proper validation and structure.
-    """
-
-    # Core identification
-    example_id: UUID = Field(
-        default_factory=uuid4,
-        description="Unique identifier for this example",
-    )
-
-    name: str = Field(
-        ...,
-        description="Name/title of the example",
-        min_length=1,
-    )
-
-    description: str | None = Field(
-        None,
-        description="Detailed description of what this example demonstrates",
-    )
-
-    # Data fields
-    input_data: ModelExampleInputData | None = Field(
-        None,
-        description="Input data for the example with type safety",
-    )
-
-    output_data: ModelExampleOutputData | None = Field(
-        None,
-        description="Expected output data for the example",
-    )
-
-    context: ModelExampleContextData | None = Field(
-        None,
-        description="Additional context information for the example",
-    )
-
-    # Metadata
-    tags: list[str] = Field(
-        default_factory=list,
-        description="Tags for categorizing and searching examples",
-    )
-
-    # Validation
-    is_valid: bool = Field(
-        default=True,
-        description="Whether this example passes validation",
-    )
-
-    validation_notes: str | None = Field(
-        None,
-        description="Notes about validation status or issues",
-    )
-
-    # Timestamps
-    created_at: datetime | None = Field(
-        None,
-        description="When this example was created",
-    )
-
-    updated_at: datetime | None = Field(
-        None,
-        description="When this example was last updated",
-    )
-
-
-class ModelExampleMetadata(BaseModel):
-    """
-    Metadata for example collections with enhanced structure.
-    """
-
-    title: str = Field(
-        default="",
-        description="Title for the examples collection",
-    )
-
-    description: str | None = Field(
-        None,
-        description="Description of the examples collection",
-    )
-
-    tags: list[str] = Field(
-        default_factory=list,
-        description="Tags for the entire collection",
-    )
-
-    difficulty: str = Field(
-        default="beginner",
-        description="Difficulty level (beginner, intermediate, advanced)",
-        pattern="^(beginner|intermediate|advanced)$",
-    )
-
-    category: str | None = Field(
-        None,
-        description="Category this collection belongs to",
-    )
 
 
 class ModelExamples(BaseModel):

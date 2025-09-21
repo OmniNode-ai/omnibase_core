@@ -11,24 +11,14 @@ from typing import (
     Callable,
     Generic,
     Optional,
-    Protocol,
     TypeVar,
-    runtime_checkable,
 )
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from ...protocols.protocol_collection_item import CollectionItem
 from .model_generic_collection_summary import ModelGenericCollectionSummary
-
-
-# Define protocols for collection items to ensure proper constraints
-@runtime_checkable
-class CollectionItem(Protocol):
-    """Protocol for items that can be stored in collections."""
-
-    def model_dump(self) -> dict[str, str | int | bool | float]: ...
-
 
 # More constrained TypeVar for collection items
 T = TypeVar(
@@ -401,4 +391,4 @@ class ModelGenericCollection(BaseModel, Generic[T]):
 
 
 # Export for use
-__all__ = ["CollectionItem", "ModelGenericCollection"]
+__all__ = ["ModelGenericCollection"]

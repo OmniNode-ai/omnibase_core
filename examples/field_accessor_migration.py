@@ -10,16 +10,13 @@ from typing import Any
 
 from pydantic import Field
 
-from src.omnibase_core.models.core.model_custom_fields_accessor import (
-    ModelCustomFieldsAccessor,
-)
-from src.omnibase_core.models.core.model_environment_accessor import (
-    ModelEnvironmentAccessor,
-)
-
 # Import the new field accessor patterns
-from src.omnibase_core.models.core.model_field_accessor import ModelFieldAccessor
-from src.omnibase_core.models.core.model_result_accessor import ModelResultAccessor
+from src.omnibase_core.models.core import (
+    ModelCustomFieldsAccessor,
+    ModelEnvironmentAccessor,
+    ModelFieldAccessor,
+    ModelResultAccessor,
+)
 
 
 # ========== BEFORE: Original ModelCliOutputData ==========

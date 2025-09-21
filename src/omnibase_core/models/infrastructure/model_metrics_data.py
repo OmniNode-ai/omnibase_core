@@ -5,25 +5,9 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Union
-
 from pydantic import BaseModel, Field
 
-
-class ModelMetric(BaseModel):
-    """Universal metric model for any supported type."""
-
-    key: str = Field(..., description="Metric key")
-    value: Union[str, int, float, bool] = Field(
-        ..., description="Metric value (string, int, float, or bool)"
-    )
-    metric_type: str = Field(
-        ..., description="Type of metric (string, numeric, boolean)"
-    )
-    unit: str | None = Field(
-        None, description="Unit of measurement (for numeric metrics)"
-    )
-    description: str | None = Field(None, description="Metric description")
+from .model_metric import ModelMetric
 
 
 class ModelMetricsData(BaseModel):
@@ -93,3 +77,7 @@ class ModelMetricsData(BaseModel):
     def get_metrics_by_type(self, metric_type: str) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
         return [metric for metric in self.metrics if metric.metric_type == metric_type]
+
+
+# Export for use
+__all__ = ["ModelMetricsData"]

@@ -11,10 +11,8 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core.model_configuration_base import (
+from src.omnibase_core.models.core import (
     ModelConfigurationBase,
-)
-from src.omnibase_core.models.core.model_typed_configuration import (
     ModelTypedConfiguration,
 )
 

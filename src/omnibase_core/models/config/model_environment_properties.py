@@ -9,7 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from ..config.model_property_types import PropertyValue
+from .model_typed_property import PropertyValue
 
 
 class ModelEnvironmentProperties(BaseModel):

@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from src.omnibase_core.models.core.model_result_accessor import ModelResultAccessor
+from src.omnibase_core.models.core import ModelResultAccessor
 
 
 class TestResultModel(ModelResultAccessor):

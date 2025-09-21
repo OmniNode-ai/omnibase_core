@@ -9,9 +9,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from src.omnibase_core.models.core.model_custom_fields_accessor import (
-    ModelCustomFieldsAccessor,
-)
+from src.omnibase_core.models.core import ModelCustomFieldsAccessor
 
 
 class TestCustomFieldsModel(ModelCustomFieldsAccessor):

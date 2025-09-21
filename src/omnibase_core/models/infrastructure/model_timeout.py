@@ -11,38 +11,10 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ...enums.enum_runtime_category import EnumRuntimeCategory
+from ...enums.enum_time_unit import EnumTimeUnit
 from ..core.model_custom_properties import ModelCustomProperties
-from .model_time_based import ModelTimeBased, TimeUnit
-
-
-class ModelTimeoutData(BaseModel):
-    """
-    Typed data model for ModelTimeout serialization.
-
-    Replaces Dict[str, Any] with proper strong typing for timeout serialization.
-    """
-
-    timeout_seconds: int = Field(..., description="Timeout duration in seconds")
-    warning_threshold_seconds: int | None = Field(
-        default=None, description="Warning threshold in seconds"
-    )
-    is_strict: bool = Field(
-        default=True, description="Whether timeout is strictly enforced"
-    )
-    allow_extension: bool = Field(
-        default=False, description="Whether timeout can be extended"
-    )
-    extension_limit_seconds: int | None = Field(
-        default=None, description="Maximum extension time in seconds"
-    )
-    runtime_category: EnumRuntimeCategory | None = Field(
-        default=None, description="Runtime category for this timeout"
-    )
-    description: str | None = Field(default=None, description="Timeout description")
-    custom_properties: ModelCustomProperties = Field(
-        default_factory=ModelCustomProperties,
-        description="Typed custom properties instead of dict",
-    )
+from .model_time_based import ModelTimeBased
+from .model_timeout_data import ModelTimeoutData
 
 
 class ModelTimeout(BaseModel):
@@ -55,7 +27,7 @@ class ModelTimeout(BaseModel):
 
     time_based: ModelTimeBased[int] = Field(
         default_factory=lambda: ModelTimeBased.timeout(
-            value=30, unit=TimeUnit.SECONDS, description="Default timeout"
+            value=30, unit=EnumTimeUnit.SECONDS, description="Default timeout"
         ),
         exclude=True,
         description="Internal time-based model",
@@ -84,7 +56,7 @@ class ModelTimeout(BaseModel):
 
         self.time_based = ModelTimeBased.timeout(
             value=timeout_seconds,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             description=description,
             is_strict=is_strict,
             warning_threshold_value=warning_threshold_seconds,
@@ -358,4 +330,4 @@ class ModelTimeout(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelTimeout", "ModelTimeoutData"]
+__all__ = ["ModelTimeout"]

@@ -99,6 +99,15 @@ repos:
         exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
+      - id: validate-one-model-per-file
+        name: ONEX One-Model-Per-File Architecture Validation
+        entry: poetry run python scripts/validation/validate-one-model-per-file.py
+        args: [src/omnibase_core/models/, --max-violations, "0"]
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
       # ONEX Python Pattern Validation (SHARED HOOKS)
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation

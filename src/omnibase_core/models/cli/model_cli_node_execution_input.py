@@ -5,7 +5,6 @@ Replaces primitive dict parameters with type-safe Pydantic models
 for CLI node execution operations.
 """
 
-from typing import ClassVar, TypedDict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,18 +12,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from ...enums.enum_cli_action import EnumCliAction
 from ...enums.enum_output_format import EnumOutputFormat
 from .model_cli_advanced_params import ModelCliAdvancedParams
-
-
-class ModelCliInputDict(TypedDict, total=False):
-    """Type definition for CLI input dictionary."""
-
-    action: str
-    output_format: str
-    verbose: bool
-    request_id: UUID
-    execution_context: str | None
-    target_node: str | None
-    category_filter: str | None
 
 
 class ModelCliNodeExecutionInput(BaseModel):
@@ -121,3 +108,7 @@ class ModelCliNodeExecutionInput(BaseModel):
             },
         }
     )
+
+
+# Export for use
+__all__ = ["ModelCliNodeExecutionInput"]

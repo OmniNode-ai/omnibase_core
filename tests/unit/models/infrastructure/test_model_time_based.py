@@ -11,38 +11,36 @@ from typing import Any
 import pytest
 
 from src.omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
-from src.omnibase_core.models.infrastructure.model_time_based import (
-    ModelTimeBased,
-    TimeUnit,
-)
+from src.omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from src.omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
 
 
-class TestTimeUnit:
-    """Test TimeUnit enum."""
+class TestEnumTimeUnit:
+    """Test EnumTimeUnit enum."""
 
     def test_string_representation(self) -> None:
         """Test string representation of time units."""
-        assert str(TimeUnit.MILLISECONDS) == "ms"
-        assert str(TimeUnit.SECONDS) == "s"
-        assert str(TimeUnit.MINUTES) == "m"
-        assert str(TimeUnit.HOURS) == "h"
-        assert str(TimeUnit.DAYS) == "d"
+        assert str(EnumTimeUnit.MILLISECONDS) == "ms"
+        assert str(EnumTimeUnit.SECONDS) == "s"
+        assert str(EnumTimeUnit.MINUTES) == "m"
+        assert str(EnumTimeUnit.HOURS) == "h"
+        assert str(EnumTimeUnit.DAYS) == "d"
 
     def test_display_names(self) -> None:
         """Test display names of time units."""
-        assert TimeUnit.MILLISECONDS.display_name == "Milliseconds"
-        assert TimeUnit.SECONDS.display_name == "Seconds"
-        assert TimeUnit.MINUTES.display_name == "Minutes"
-        assert TimeUnit.HOURS.display_name == "Hours"
-        assert TimeUnit.DAYS.display_name == "Days"
+        assert EnumTimeUnit.MILLISECONDS.display_name == "Milliseconds"
+        assert EnumTimeUnit.SECONDS.display_name == "Seconds"
+        assert EnumTimeUnit.MINUTES.display_name == "Minutes"
+        assert EnumTimeUnit.HOURS.display_name == "Hours"
+        assert EnumTimeUnit.DAYS.display_name == "Days"
 
     def test_milliseconds_multipliers(self) -> None:
         """Test conversion multipliers to milliseconds."""
-        assert TimeUnit.MILLISECONDS.to_milliseconds_multiplier() == 1
-        assert TimeUnit.SECONDS.to_milliseconds_multiplier() == 1000
-        assert TimeUnit.MINUTES.to_milliseconds_multiplier() == 60 * 1000
-        assert TimeUnit.HOURS.to_milliseconds_multiplier() == 60 * 60 * 1000
-        assert TimeUnit.DAYS.to_milliseconds_multiplier() == 24 * 60 * 60 * 1000
+        assert EnumTimeUnit.MILLISECONDS.to_milliseconds_multiplier() == 1
+        assert EnumTimeUnit.SECONDS.to_milliseconds_multiplier() == 1000
+        assert EnumTimeUnit.MINUTES.to_milliseconds_multiplier() == 60 * 1000
+        assert EnumTimeUnit.HOURS.to_milliseconds_multiplier() == 60 * 60 * 1000
+        assert EnumTimeUnit.DAYS.to_milliseconds_multiplier() == 24 * 60 * 60 * 1000
 
 
 class TestModelTimeBasedBasic:
@@ -50,24 +48,24 @@ class TestModelTimeBasedBasic:
 
     def test_creation_with_int(self) -> None:
         """Test creation with integer value."""
-        time_based = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        time_based = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         assert time_based.value == 30
-        assert time_based.unit == TimeUnit.SECONDS
+        assert time_based.unit == EnumTimeUnit.SECONDS
         assert time_based.to_seconds() == 30.0
         assert time_based.to_milliseconds() == 30000
 
     def test_creation_with_float(self) -> None:
         """Test creation with float value."""
-        time_based = ModelTimeBased(value=30.5, unit=TimeUnit.SECONDS)
+        time_based = ModelTimeBased(value=30.5, unit=EnumTimeUnit.SECONDS)
         assert time_based.value == 30.5
-        assert time_based.unit == TimeUnit.SECONDS
+        assert time_based.unit == EnumTimeUnit.SECONDS
         assert time_based.to_seconds() == 30.5
         assert time_based.to_milliseconds() == 30500
 
     def test_default_unit(self) -> None:
         """Test default unit is seconds."""
         time_based = ModelTimeBased(value=30)
-        assert time_based.unit == TimeUnit.SECONDS
+        assert time_based.unit == EnumTimeUnit.SECONDS
 
     def test_metadata(self) -> None:
         """Test metadata handling."""
@@ -77,7 +75,7 @@ class TestModelTimeBasedBasic:
 
     def test_runtime_category_auto_assignment(self) -> None:
         """Test automatic runtime category assignment."""
-        time_based = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        time_based = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         assert time_based.runtime_category == EnumRuntimeCategory.MODERATE
 
 
@@ -87,11 +85,11 @@ class TestModelTimeBasedConversions:
     def test_milliseconds_conversion(self) -> None:
         """Test conversion to milliseconds."""
         test_cases = [
-            (1500, TimeUnit.MILLISECONDS, 1500),
-            (1.5, TimeUnit.SECONDS, 1500),
-            (0.5, TimeUnit.MINUTES, 30000),
-            (1, TimeUnit.HOURS, 3600000),
-            (0.5, TimeUnit.DAYS, 43200000),
+            (1500, EnumTimeUnit.MILLISECONDS, 1500),
+            (1.5, EnumTimeUnit.SECONDS, 1500),
+            (0.5, EnumTimeUnit.MINUTES, 30000),
+            (1, EnumTimeUnit.HOURS, 3600000),
+            (0.5, EnumTimeUnit.DAYS, 43200000),
         ]
 
         for value, unit, expected_ms in test_cases:
@@ -101,11 +99,11 @@ class TestModelTimeBasedConversions:
     def test_seconds_conversion(self) -> None:
         """Test conversion to seconds."""
         test_cases = [
-            (1500, TimeUnit.MILLISECONDS, 1.5),
-            (30, TimeUnit.SECONDS, 30.0),
-            (2, TimeUnit.MINUTES, 120.0),
-            (1, TimeUnit.HOURS, 3600.0),
-            (1, TimeUnit.DAYS, 86400.0),
+            (1500, EnumTimeUnit.MILLISECONDS, 1.5),
+            (30, EnumTimeUnit.SECONDS, 30.0),
+            (2, EnumTimeUnit.MINUTES, 120.0),
+            (1, EnumTimeUnit.HOURS, 3600.0),
+            (1, EnumTimeUnit.DAYS, 86400.0),
         ]
 
         for value, unit, expected_seconds in test_cases:
@@ -114,28 +112,28 @@ class TestModelTimeBasedConversions:
 
     def test_minutes_conversion(self) -> None:
         """Test conversion to minutes."""
-        time_based = ModelTimeBased(value=90, unit=TimeUnit.SECONDS)
+        time_based = ModelTimeBased(value=90, unit=EnumTimeUnit.SECONDS)
         assert time_based.to_minutes() == 1.5
 
-        time_based = ModelTimeBased(value=2, unit=TimeUnit.HOURS)
+        time_based = ModelTimeBased(value=2, unit=EnumTimeUnit.HOURS)
         assert time_based.to_minutes() == 120.0
 
     def test_hours_conversion(self) -> None:
         """Test conversion to hours."""
-        time_based = ModelTimeBased(value=90, unit=TimeUnit.MINUTES)
+        time_based = ModelTimeBased(value=90, unit=EnumTimeUnit.MINUTES)
         assert time_based.to_hours() == 1.5
 
-        time_based = ModelTimeBased(value=2, unit=TimeUnit.DAYS)
+        time_based = ModelTimeBased(value=2, unit=EnumTimeUnit.DAYS)
         assert time_based.to_hours() == 48.0
 
     def test_days_conversion(self) -> None:
         """Test conversion to days."""
-        time_based = ModelTimeBased(value=36, unit=TimeUnit.HOURS)
+        time_based = ModelTimeBased(value=36, unit=EnumTimeUnit.HOURS)
         assert time_based.to_days() == 1.5
 
     def test_timedelta_conversion(self) -> None:
         """Test conversion to timedelta."""
-        time_based = ModelTimeBased(value=90, unit=TimeUnit.SECONDS)
+        time_based = ModelTimeBased(value=90, unit=EnumTimeUnit.SECONDS)
         delta = time_based.to_timedelta()
         assert isinstance(delta, timedelta)
         assert delta.total_seconds() == 90.0
@@ -148,7 +146,7 @@ class TestModelTimeBasedValidation:
         """Test warning threshold validation."""
         # Valid warning threshold
         time_based = ModelTimeBased(
-            value=60, unit=TimeUnit.SECONDS, warning_threshold_value=45
+            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
         )
         assert time_based.warning_threshold_value == 45
 
@@ -156,14 +154,16 @@ class TestModelTimeBasedValidation:
         with pytest.raises(
             ValueError, match="Warning threshold must be less than main value"
         ):
-            ModelTimeBased(value=60, unit=TimeUnit.SECONDS, warning_threshold_value=70)
+            ModelTimeBased(
+                value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=70
+            )
 
     def test_extension_limit_validation(self) -> None:
         """Test extension limit validation."""
         # Valid extension limit with extension allowed
         time_based = ModelTimeBased(
             value=60,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             allow_extension=True,
             extension_limit_value=30,
         )
@@ -175,7 +175,7 @@ class TestModelTimeBasedValidation:
         ):
             ModelTimeBased(
                 value=60,
-                unit=TimeUnit.SECONDS,
+                unit=EnumTimeUnit.SECONDS,
                 allow_extension=False,
                 extension_limit_value=30,
             )
@@ -186,36 +186,36 @@ class TestModelTimeBasedProperties:
 
     def test_is_zero(self) -> None:
         """Test is_zero property."""
-        zero_time = ModelTimeBased(value=0, unit=TimeUnit.SECONDS)
+        zero_time = ModelTimeBased(value=0, unit=EnumTimeUnit.SECONDS)
         assert zero_time.is_zero() is True
 
-        non_zero_time = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        non_zero_time = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         assert non_zero_time.is_zero() is False
 
     def test_is_positive(self) -> None:
         """Test is_positive property."""
-        zero_time = ModelTimeBased(value=0, unit=TimeUnit.SECONDS)
+        zero_time = ModelTimeBased(value=0, unit=EnumTimeUnit.SECONDS)
         assert zero_time.is_positive() is False
 
-        positive_time = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        positive_time = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         assert positive_time.is_positive() is True
 
     def test_string_representation(self) -> None:
         """Test string representation."""
         # Zero time
-        zero_time = ModelTimeBased(value=0, unit=TimeUnit.SECONDS)
+        zero_time = ModelTimeBased(value=0, unit=EnumTimeUnit.SECONDS)
         assert str(zero_time) == "0s"
 
         # Simple seconds
-        simple_time = ModelTimeBased(value=45, unit=TimeUnit.SECONDS)
+        simple_time = ModelTimeBased(value=45, unit=EnumTimeUnit.SECONDS)
         assert str(simple_time) == "45s"
 
         # Complex time (1 hour, 30 minutes, 45 seconds)
-        complex_time = ModelTimeBased(value=5445, unit=TimeUnit.SECONDS)
+        complex_time = ModelTimeBased(value=5445, unit=EnumTimeUnit.SECONDS)
         assert str(complex_time) == "1h30m45s"
 
         # With milliseconds
-        ms_time = ModelTimeBased(value=1500, unit=TimeUnit.MILLISECONDS)
+        ms_time = ModelTimeBased(value=1500, unit=EnumTimeUnit.MILLISECONDS)
         assert str(ms_time) == "1s500ms"
 
 
@@ -224,7 +224,7 @@ class TestModelTimeBasedTimeout:
 
     def test_get_deadline(self) -> None:
         """Test deadline calculation."""
-        timeout = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         expected_deadline = datetime(2024, 1, 1, 12, 0, 30, tzinfo=UTC)
 
@@ -234,7 +234,7 @@ class TestModelTimeBasedTimeout:
     def test_get_warning_time(self) -> None:
         """Test warning time calculation."""
         timeout = ModelTimeBased(
-            value=60, unit=TimeUnit.SECONDS, warning_threshold_value=45
+            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
         )
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         expected_warning = datetime(2024, 1, 1, 12, 0, 45, tzinfo=UTC)
@@ -244,7 +244,7 @@ class TestModelTimeBasedTimeout:
 
     def test_get_warning_time_none(self) -> None:
         """Test warning time when no threshold set."""
-        timeout = ModelTimeBased(value=60, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=60, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         warning_time = timeout.get_warning_time(start_time)
@@ -252,7 +252,7 @@ class TestModelTimeBasedTimeout:
 
     def test_is_expired(self) -> None:
         """Test expiration checking."""
-        timeout = ModelTimeBased(value=30, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=30, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         # Not expired
@@ -266,7 +266,7 @@ class TestModelTimeBasedTimeout:
     def test_is_warning_triggered(self) -> None:
         """Test warning trigger checking."""
         timeout = ModelTimeBased(
-            value=60, unit=TimeUnit.SECONDS, warning_threshold_value=45
+            value=60, unit=EnumTimeUnit.SECONDS, warning_threshold_value=45
         )
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -280,7 +280,7 @@ class TestModelTimeBasedTimeout:
 
     def test_get_remaining_seconds(self) -> None:
         """Test remaining seconds calculation."""
-        timeout = ModelTimeBased(value=60, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=60, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         # 20 seconds remaining
@@ -295,7 +295,7 @@ class TestModelTimeBasedTimeout:
 
     def test_get_elapsed_seconds(self) -> None:
         """Test elapsed seconds calculation."""
-        timeout = ModelTimeBased(value=60, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=60, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         current_time = datetime(2024, 1, 1, 12, 0, 35, tzinfo=UTC)
 
@@ -304,7 +304,7 @@ class TestModelTimeBasedTimeout:
 
     def test_get_progress_percentage(self) -> None:
         """Test progress percentage calculation."""
-        timeout = ModelTimeBased(value=60, unit=TimeUnit.SECONDS)
+        timeout = ModelTimeBased(value=60, unit=EnumTimeUnit.SECONDS)
         start_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         # 50% progress
@@ -322,7 +322,7 @@ class TestModelTimeBasedTimeout:
         # Extension allowed
         timeout = ModelTimeBased(
             value=60,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             allow_extension=True,
             extension_limit_value=30,
         )
@@ -344,7 +344,7 @@ class TestModelTimeBasedTimeout:
 
         # Extension not allowed
         timeout_no_ext = ModelTimeBased(
-            value=60, unit=TimeUnit.SECONDS, allow_extension=False
+            value=60, unit=EnumTimeUnit.SECONDS, allow_extension=False
         )
         result = timeout_no_ext.extend_time(10)
         assert result is False
@@ -355,9 +355,9 @@ class TestModelTimeBasedFactoryMethods:
 
     def test_duration_factory(self) -> None:
         """Test duration factory method."""
-        duration = ModelTimeBased.duration(30, TimeUnit.SECONDS, "Test duration")
+        duration = ModelTimeBased.duration(30, EnumTimeUnit.SECONDS, "Test duration")
         assert duration.value == 30
-        assert duration.unit == TimeUnit.SECONDS
+        assert duration.unit == EnumTimeUnit.SECONDS
         assert duration.metadata["type"] == "duration"
         assert duration.metadata["description"] == "Test duration"
 
@@ -365,7 +365,7 @@ class TestModelTimeBasedFactoryMethods:
         """Test timeout factory method."""
         timeout = ModelTimeBased.timeout(
             value=60,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             description="Test timeout",
             is_strict=False,
             warning_threshold_value=45,
@@ -373,7 +373,7 @@ class TestModelTimeBasedFactoryMethods:
             extension_limit_value=30,
         )
         assert timeout.value == 60
-        assert timeout.unit == TimeUnit.SECONDS
+        assert timeout.unit == EnumTimeUnit.SECONDS
         assert timeout.metadata["type"] == "timeout"
         assert timeout.metadata["description"] == "Test timeout"
         assert timeout.is_strict is False
@@ -385,49 +385,49 @@ class TestModelTimeBasedFactoryMethods:
         """Test creation from milliseconds."""
         time_based = ModelTimeBased.from_milliseconds(1500)
         assert time_based.value == 1500
-        assert time_based.unit == TimeUnit.MILLISECONDS
+        assert time_based.unit == EnumTimeUnit.MILLISECONDS
         assert time_based.to_seconds() == 1.5
 
     def test_from_seconds(self) -> None:
         """Test creation from seconds."""
         time_based = ModelTimeBased.from_seconds(30.5)
         assert time_based.value == 30.5
-        assert time_based.unit == TimeUnit.SECONDS
+        assert time_based.unit == EnumTimeUnit.SECONDS
         assert time_based.to_seconds() == 30.5
 
     def test_from_minutes(self) -> None:
         """Test creation from minutes."""
         time_based = ModelTimeBased.from_minutes(2.5)
         assert time_based.value == 2.5
-        assert time_based.unit == TimeUnit.MINUTES
+        assert time_based.unit == EnumTimeUnit.MINUTES
         assert time_based.to_seconds() == 150.0
 
     def test_from_hours(self) -> None:
         """Test creation from hours."""
         time_based = ModelTimeBased.from_hours(1.5)
         assert time_based.value == 1.5
-        assert time_based.unit == TimeUnit.HOURS
+        assert time_based.unit == EnumTimeUnit.HOURS
         assert time_based.to_seconds() == 5400.0
 
     def test_from_days(self) -> None:
         """Test creation from days."""
         time_based = ModelTimeBased.from_days(2.5)
         assert time_based.value == 2.5
-        assert time_based.unit == TimeUnit.DAYS
+        assert time_based.unit == EnumTimeUnit.DAYS
         assert time_based.to_seconds() == 216000.0
 
     def test_zero(self) -> None:
         """Test zero factory method."""
         zero_time = ModelTimeBased.zero()
         assert zero_time.value == 0
-        assert zero_time.unit == TimeUnit.MILLISECONDS
+        assert zero_time.unit == EnumTimeUnit.MILLISECONDS
         assert zero_time.is_zero() is True
 
     def test_from_timedelta(self) -> None:
         """Test creation from timedelta."""
         delta = timedelta(seconds=90, milliseconds=500)
         time_based = ModelTimeBased.from_timedelta(delta)
-        assert time_based.unit == TimeUnit.SECONDS
+        assert time_based.unit == EnumTimeUnit.SECONDS
         assert time_based.to_seconds() == 90.5
 
     def test_from_runtime_category(self) -> None:
@@ -467,19 +467,19 @@ class TestModelTimeBasedEdgeCases:
 
     def test_very_large_values(self) -> None:
         """Test handling of very large values."""
-        large_time = ModelTimeBased(value=1000000, unit=TimeUnit.SECONDS)
+        large_time = ModelTimeBased(value=1000000, unit=EnumTimeUnit.SECONDS)
         assert large_time.to_days() > 11  # Over 11 days
 
     def test_very_small_values(self) -> None:
         """Test handling of very small values."""
-        small_time = ModelTimeBased(value=0.001, unit=TimeUnit.SECONDS)
+        small_time = ModelTimeBased(value=0.001, unit=EnumTimeUnit.SECONDS)
         assert small_time.to_milliseconds() == 1
 
     def test_runtime_category_update_on_extension(self) -> None:
         """Test runtime category updates when time is extended."""
         timeout = ModelTimeBased(
             value=1,  # FAST category
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             allow_extension=True,
             extension_limit_value=300,
         )
@@ -509,7 +509,7 @@ class TestModelTimeBasedIntegration:
         """Test serialization works correctly."""
         timeout = ModelTimeBased.timeout(
             value=60,
-            unit=TimeUnit.SECONDS,
+            unit=EnumTimeUnit.SECONDS,
             description="Test timeout",
             warning_threshold_value=45,
         )
@@ -525,9 +525,9 @@ class TestModelTimeBasedIntegration:
     def test_multiple_time_units_consistency(self) -> None:
         """Test consistency across different time units."""
         # Same duration in different units should convert to same values
-        one_hour_seconds = ModelTimeBased(value=3600, unit=TimeUnit.SECONDS)
-        one_hour_minutes = ModelTimeBased(value=60, unit=TimeUnit.MINUTES)
-        one_hour_hours = ModelTimeBased(value=1, unit=TimeUnit.HOURS)
+        one_hour_seconds = ModelTimeBased(value=3600, unit=EnumTimeUnit.SECONDS)
+        one_hour_minutes = ModelTimeBased(value=60, unit=EnumTimeUnit.MINUTES)
+        one_hour_hours = ModelTimeBased(value=1, unit=EnumTimeUnit.HOURS)
 
         assert one_hour_seconds.to_seconds() == one_hour_minutes.to_seconds()
         assert one_hour_minutes.to_seconds() == one_hour_hours.to_seconds()

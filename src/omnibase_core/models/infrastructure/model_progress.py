@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from .model_metrics_data import ModelMetricsData
-from .model_time_based import ModelTimeBased, TimeUnit
+from .model_time_based import ModelTimeBased
 
 
 class ModelProgress(BaseModel):

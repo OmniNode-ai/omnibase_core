@@ -1,21 +1,23 @@
 """Tests for the generic factory pattern."""
 
-import pytest
 from typing import Any
+
+import pytest
 from pydantic import BaseModel, Field
 
-from src.omnibase_core.models.core.model_generic_factory import (
+from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from src.omnibase_core.models.core import (
+    CapabilityFactory,
     ModelGenericFactory,
     ResultFactory,
-    CapabilityFactory,
     ValidationErrorFactory,
 )
-from src.omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
 
 # Test models for factory testing
 class TestResultModel(BaseModel):
     """Test model for result factory testing."""
+
     success: bool
     exit_code: int = 0
     error_message: str | None = None
@@ -24,6 +26,7 @@ class TestResultModel(BaseModel):
 
 class TestCapabilityModel(BaseModel):
     """Test model for capability factory testing."""
+
     name: str
     value: str
     description: str
@@ -33,6 +36,7 @@ class TestCapabilityModel(BaseModel):
 
 class TestValidationModel(BaseModel):
     """Test model for validation factory testing."""
+
     message: str
     severity: EnumValidationSeverity
     field_name: str | None = None
@@ -114,9 +118,7 @@ class TestModelGenericFactory:
     def test_create_success_result_utility(self):
         """Test the generic success result utility method."""
         result = ModelGenericFactory.create_success_result(
-            TestResultModel,
-            data="test_data",
-            exit_code=0
+            TestResultModel, data="test_data", exit_code=0
         )
 
         assert result.success is True
@@ -126,9 +128,7 @@ class TestModelGenericFactory:
     def test_create_error_result_utility(self):
         """Test the generic error result utility method."""
         result = ModelGenericFactory.create_error_result(
-            TestResultModel,
-            error="test error",
-            exit_code=1
+            TestResultModel, error="test error", exit_code=1
         )
 
         assert result.success is False
@@ -190,9 +190,8 @@ class TestCapabilityFactory:
     def test_build_standard_capability(self):
         """Test building standard capability."""
         factory = CapabilityFactory(TestCapabilityModel)
-        result = factory.build("standard",
-            name="TEST_CAPABILITY",
-            description="Test capability"
+        result = factory.build(
+            "standard", name="TEST_CAPABILITY", description="Test capability"
         )
 
         assert result.name == "TEST_CAPABILITY"
@@ -204,9 +203,8 @@ class TestCapabilityFactory:
     def test_build_deprecated_capability(self):
         """Test building deprecated capability."""
         factory = CapabilityFactory(TestCapabilityModel)
-        result = factory.build("deprecated",
-            name="OLD_CAPABILITY",
-            description="Old capability"
+        result = factory.build(
+            "deprecated", name="OLD_CAPABILITY", description="Old capability"
         )
 
         assert result.name == "OLD_CAPABILITY"
@@ -215,9 +213,8 @@ class TestCapabilityFactory:
     def test_build_experimental_capability(self):
         """Test building experimental capability."""
         factory = CapabilityFactory(TestCapabilityModel)
-        result = factory.build("experimental",
-            name="NEW_CAPABILITY",
-            description="New capability"
+        result = factory.build(
+            "experimental", name="NEW_CAPABILITY", description="New capability"
         )
 
         assert result.name == "NEW_CAPABILITY"
@@ -239,10 +236,7 @@ class TestValidationErrorFactory:
     def test_build_error(self):
         """Test building error validation."""
         factory = ValidationErrorFactory(TestValidationModel)
-        result = factory.build("error",
-            message="Test error",
-            field_name="test_field"
-        )
+        result = factory.build("error", message="Test error", field_name="test_field")
 
         assert result.message == "Test error"
         assert result.severity == EnumValidationSeverity.ERROR

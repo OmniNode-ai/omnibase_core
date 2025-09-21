@@ -2,23 +2,15 @@
 Generic metadata model for flexible data storage.
 """
 
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
 from .model_semver import ModelSemVer
+from .protocols.protocol_supported_metadata_type import ProtocolSupportedMetadataType
 
 # Simple TypeVar constraint for metadata types
 T = TypeVar("T", str, int, bool, float)
-
-
-@runtime_checkable
-class ModelProtocolSupportedMetadataType(Protocol):
-    """Protocol for types that can be stored in metadata."""
-
-    def __str__(self) -> str:
-        """Must be convertible to string."""
-        ...
 
 
 class ModelGenericMetadata(BaseModel, Generic[T]):
@@ -74,7 +66,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
 
     def set_typed_field(self, key: str, value: T) -> None:
         """Set a custom field value with runtime type validation."""
-        if isinstance(value, ModelProtocolSupportedMetadataType):
+        if isinstance(value, ProtocolSupportedMetadataType):
             # Convert to a supported primitive type
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation

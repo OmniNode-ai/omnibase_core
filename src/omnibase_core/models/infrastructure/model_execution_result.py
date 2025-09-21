@@ -12,72 +12,14 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from ..core.model_custom_properties import ModelCustomProperties
+from .model_cli_result_data import ModelCliResultData
+from .model_execution_duration import ModelExecutionDuration
+from .model_execution_summary import ModelExecutionSummary
 from .model_result import Result
-
-
-class ModelExecutionSummary(BaseModel):
-    """Execution summary model with typed fields."""
-
-    execution_id: UUID = Field(description="Execution identifier")
-    success: bool = Field(description="Whether execution was successful")
-    duration_ms: int | None = Field(description="Duration in milliseconds")
-    warning_count: int = Field(description="Number of warnings")
-    has_metadata: bool = Field(description="Whether metadata exists")
-    completed: bool = Field(description="Whether execution is completed")
-
-
-class ModelCliResultData(BaseModel):
-    """CLI result data model with typed fields."""
-
-    success: bool = Field(description="Whether execution was successful")
-    execution_id: UUID = Field(description="Execution identifier")
-    output_data: (
-        str
-        | int
-        | float
-        | bool
-        | dict[str, str | int | float | bool]
-        | list[str | int | float | bool]
-        | None
-    ) = Field(description="Output data if successful")
-    error_message: str | None = Field(description="Error message if failed")
-    tool_name: str | None = Field(description="Tool name if available")
-    execution_time_ms: int | None = Field(description="Execution time in milliseconds")
-    status_code: int = Field(description="Status code")
-    warnings: list[str] = Field(description="Warning messages")
-    metadata: ModelCustomProperties = Field(description="Execution metadata")
-
 
 # Type variables for execution result pattern
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
-
-
-class ModelExecutionDuration(BaseModel):
-    """Duration model for execution tracking without complex dependencies."""
-
-    milliseconds: int = Field(default=0, ge=0, description="Duration in milliseconds")
-
-    def total_milliseconds(self) -> int:
-        """Get total duration in milliseconds."""
-        return self.milliseconds
-
-    def total_seconds(self) -> float:
-        """Get total duration in seconds."""
-        return self.milliseconds / 1000.0
-
-    def __str__(self) -> str:
-        """Return human-readable duration string."""
-        if self.milliseconds == 0:
-            return "0ms"
-        elif self.milliseconds < 1000:
-            return f"{self.milliseconds}ms"
-        elif self.milliseconds < 60000:
-            return f"{self.milliseconds / 1000:.1f}s"
-        else:
-            minutes = self.milliseconds // 60000
-            seconds = (self.milliseconds % 60000) / 1000
-            return f"{minutes}m{seconds:.1f}s"
 
 
 class ModelExecutionResult(Result[T, E], Generic[T, E]):
@@ -435,9 +377,6 @@ def try_execution(
 # Export for use
 __all__ = [
     "ModelExecutionResult",
-    "ModelExecutionDuration",
-    "ModelExecutionSummary",
-    "ModelCliResultData",
     "execution_ok",
     "execution_err",
     "try_execution",

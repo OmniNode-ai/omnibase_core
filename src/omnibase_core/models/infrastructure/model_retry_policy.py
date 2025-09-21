@@ -6,20 +6,11 @@ Specialized model for handling retry logic with backoff strategies and condition
 
 import random
 from datetime import UTC, datetime, timedelta
-from enum import Enum
 from typing import Any, Callable
 
 from pydantic import BaseModel, Field, field_validator
 
-
-class RetryBackoffStrategy(Enum):
-    """Retry backoff strategy enumeration."""
-
-    FIXED = "fixed"  # Fixed delay between retries
-    LINEAR = "linear"  # Linearly increasing delay
-    EXPONENTIAL = "exponential"  # Exponentially increasing delay
-    RANDOM = "random"  # Random delay within range
-    FIBONACCI = "fibonacci"  # Fibonacci sequence delays
+from ...enums.enum_retry_backoff_strategy import RetryBackoffStrategy
 
 
 class ModelRetryPolicy(BaseModel):
@@ -387,4 +378,4 @@ class ModelRetryPolicy(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelRetryPolicy", "RetryBackoffStrategy"]
+__all__ = ["ModelRetryPolicy"]

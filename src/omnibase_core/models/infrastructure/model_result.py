@@ -9,40 +9,13 @@ from typing import Any, Callable, Generic, TypeVar, Union, cast
 
 from pydantic import BaseModel, Field
 
+from .model_result_dict import ModelResultData, ModelResultDict
+
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type
 U = TypeVar("U")  # Mapped type for transformations
 F = TypeVar("F")  # Mapped error type for transformations
-
-
-class ModelResultDict(BaseModel):
-    """
-    Clean Pydantic model for Result serialization.
-
-    Represents the dictionary structure when converting Results
-    to/from dictionary format with proper type safety.
-    """
-
-    success: bool = Field(..., description="Whether the operation succeeded")
-    value: (
-        str
-        | int
-        | float
-        | bool
-        | dict[str, str | int | float | bool]
-        | list[str | int | float | bool]
-        | None
-    ) = Field(None, description="Success value (if success=True)")
-    error: str | Exception | None = Field(
-        None, description="Error value (if success=False)"
-    )
-
-    model_config = {"arbitrary_types_allowed": True}
-
-
-# Type alias for dictionary-based data structures
-ModelResultData = dict[str, str | int | bool]  # Restrictive dict for common data
 
 
 class Result(BaseModel, Generic[T, E]):
@@ -299,8 +272,6 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
 # Export for use
 __all__ = [
     "Result",
-    "ModelResultDict",
-    "ModelResultData",
     "ok",
     "err",
     "try_result",

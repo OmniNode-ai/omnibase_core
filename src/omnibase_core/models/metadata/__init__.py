@@ -15,6 +15,7 @@ from .model_metadata_node_info import (
 from .model_metadata_usage_metrics import ModelMetadataUsageMetrics
 from .model_semver import ModelSemVer
 from .model_typed_metrics import ModelTypedMetrics
+from .protocols.protocol_supported_metadata_type import ProtocolSupportedMetadataType
 
 __all__ = [
     "ModelGenericMetadata",
@@ -26,4 +27,5 @@ __all__ = [
     "ModelMetadataUsageMetrics",
     "ModelSemVer",
     "ModelTypedMetrics",
+    "ProtocolSupportedMetadataType",
 ]
