@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from .model_numeric_value import ModelNumericValue, NumericInput
+from .model_numeric_value import ModelNumericValue
 
 
 class ModelFieldValidationRules(BaseModel):
@@ -78,13 +78,10 @@ class ModelFieldValidationRules(BaseModel):
 
         return True
 
-    def is_valid_numeric(self, value: NumericInput) -> bool:
+    def is_valid_numeric(self, value: ModelNumericValue) -> bool:
         """Validate a numeric value against the rules."""
-        # Convert to comparable value
-        if isinstance(value, ModelNumericValue):
-            comparison_value = value.to_python_value()
-        else:
-            comparison_value = value
+        # Value is ModelNumericValue type
+        comparison_value = value.to_python_value()
 
         if (
             self.min_value is not None
@@ -100,19 +97,15 @@ class ModelFieldValidationRules(BaseModel):
 
         return True
 
-    def set_min_value(self, value: NumericInput) -> None:
+    def set_min_value(self, value: ModelNumericValue) -> None:
         """Set minimum value validation rule."""
-        if isinstance(value, ModelNumericValue):
-            self.min_value = value
-        else:
-            self.min_value = ModelNumericValue.from_numeric(value)
+        # Value is ModelNumericValue type
+        self.min_value = value
 
-    def set_max_value(self, value: NumericInput) -> None:
+    def set_max_value(self, value: ModelNumericValue) -> None:
         """Set maximum value validation rule."""
-        if isinstance(value, ModelNumericValue):
-            self.max_value = value
-        else:
-            self.max_value = ModelNumericValue.from_numeric(value)
+        # Value is ModelNumericValue type
+        self.max_value = value
 
     def get_min_value(self) -> ModelNumericValue | None:
         """Get minimum value as ModelNumericValue."""

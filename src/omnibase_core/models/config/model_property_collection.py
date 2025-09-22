@@ -27,7 +27,8 @@ class ModelPropertyCollection(BaseModel):
     """Collection of typed properties with validation and helper methods."""
 
     properties: dict[str, ModelTypedProperty] = Field(
-        default_factory=dict, description="Collection of typed properties"
+        default_factory=dict,
+        description="Collection of typed properties",
     )
 
     def add_property(

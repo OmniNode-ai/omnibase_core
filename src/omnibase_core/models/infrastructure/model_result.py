@@ -7,14 +7,13 @@ success/error handling with proper MyPy compliance.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.exceptions.onex_error import OnexError
-
-from .model_result_dict import ModelResultData, ModelResultDict
 
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type
@@ -38,7 +37,11 @@ class Result(BaseModel, Generic[T, E]):
     error: E | None = Field(None, description="Error value (if success=False)")
 
     def __init__(
-        self, success: bool, value: T | None = None, error: E | None = None, **data: Any
+        self,
+        success: bool,
+        value: T | None = None,
+        error: E | None = None,
+        **data: Any,
     ) -> None:
         """Initialize Result with type validation."""
         super().__init__(success=success, value=value, error=error, **data)
@@ -46,11 +49,13 @@ class Result(BaseModel, Generic[T, E]):
         # Validate that exactly one of value or error is set
         if success and value is None:
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR, "Success result must have a value"
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                "Success result must have a value",
             )
         if not success and error is None:
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR, "Error result must have an error"
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                "Error result must have an error",
             )
         if success and error is not None:
             raise OnexError(
@@ -59,7 +64,8 @@ class Result(BaseModel, Generic[T, E]):
             )
         if not success and value is not None:
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR, "Error result cannot have a value"
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                "Error result cannot have a value",
             )
 
     @classmethod
@@ -94,7 +100,8 @@ class Result(BaseModel, Generic[T, E]):
             )
         if self.value is None:
             raise OnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR, "Success result has None value"
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                "Success result has None value",
             )
         return self.value
 
@@ -137,7 +144,8 @@ class Result(BaseModel, Generic[T, E]):
         """
         if not self.success:
             raise OnexError(
-                code=EnumCoreErrorCode.OPERATION_FAILED, message=f"{msg}: {self.error}"
+                code=EnumCoreErrorCode.OPERATION_FAILED,
+                message=f"{msg}: {self.error}",
             )
         if self.value is None:
             raise OnexError(
@@ -197,7 +205,7 @@ class Result(BaseModel, Generic[T, E]):
         except Exception as e:
             return Result.err(e)
 
-    def and_then(self, f: Callable[[T], "Result[U, E]"]) -> Result[U, E | Exception]:
+    def and_then(self, f: Callable[[T], Result[U, E]]) -> Result[U, E | Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
@@ -223,7 +231,7 @@ class Result(BaseModel, Generic[T, E]):
             )
         return Result.err(self.error)
 
-    def or_else(self, f: Callable[[E], "Result[T, F]"]) -> Result[T, F | Exception]:
+    def or_else(self, f: Callable[[E], Result[T, F]]) -> Result[T, F | Exception]:
         """
         Alternative operation for error recovery.
 
@@ -252,15 +260,13 @@ class Result(BaseModel, Generic[T, E]):
         """String representation."""
         if self.success:
             return f"Result.ok({self.value!r})"
-        else:
-            return f"Result.err({self.error!r})"
+        return f"Result.err({self.error!r})"
 
     def __str__(self) -> str:
         """Human-readable string."""
         if self.success:
             return f"Success: {self.value}"
-        else:
-            return f"Error: {self.error}"
+        return f"Error: {self.error}"
 
     def __bool__(self) -> bool:
         """Boolean conversion - True if success, False if error."""
@@ -321,15 +327,14 @@ def collect_results(results: list[Result[T, E]]) -> Result[list[T], list[E]]:
 
     if errors:
         return Result.err(errors)
-    else:
-        return Result.ok(values)
+    return Result.ok(values)
 
 
 # Export for use
 __all__ = [
     "Result",
-    "ok",
-    "err",
-    "try_result",
     "collect_results",
+    "err",
+    "ok",
+    "try_result",
 ]

@@ -25,7 +25,7 @@ class ModelValidationValue(BaseModel):
     """
 
     value_type: EnumValidationValueType = Field(
-        description="Type of the validation value"
+        description="Type of the validation value",
     )
     raw_value: Any = Field(description="Raw value data")
 
@@ -43,17 +43,17 @@ class ModelValidationValue(BaseModel):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String validation value must contain str data",
             )
-        elif value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
+        if value_type == EnumValidationValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Integer validation value must contain int data",
             )
-        elif value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
+        if value_type == EnumValidationValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean validation value must contain bool data",
             )
-        elif value_type == EnumValidationValueType.NULL and v is not None:
+        if value_type == EnumValidationValueType.NULL and v is not None:
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Null validation value must contain None",
@@ -86,15 +86,14 @@ class ModelValidationValue(BaseModel):
         """Create validation value from any Python value with automatic type detection."""
         if value is None:
             return cls.from_null()
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return cls.from_string(value)
-        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+        if isinstance(value, bool):  # Check bool before int (bool is subclass of int)
             return cls.from_boolean(value)
-        elif isinstance(value, int):
+        if isinstance(value, int):
             return cls.from_integer(value)
-        else:
-            # Convert unknown types to string representation
-            return cls.from_string(str(value))
+        # Convert unknown types to string representation
+        return cls.from_string(str(value))
 
     def to_python_value(self) -> Any:
         """Convert back to Python native value."""

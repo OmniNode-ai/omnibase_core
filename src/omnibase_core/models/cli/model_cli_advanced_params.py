@@ -26,33 +26,49 @@ class ModelCliAdvancedParams(BaseModel):
 
     # Timeout and performance parameters
     timeout_seconds: float = Field(
-        default=30.0, description="Custom timeout in seconds", gt=0
+        default=30.0,
+        description="Custom timeout in seconds",
+        gt=0,
     )
     max_retries: int = Field(
-        default=3, description="Maximum number of retries", ge=0, le=10
+        default=3,
+        description="Maximum number of retries",
+        ge=0,
+        le=10,
     )
     retry_delay_ms: int = Field(
-        default=1000, description="Delay between retries in milliseconds", ge=0
+        default=1000,
+        description="Delay between retries in milliseconds",
+        ge=0,
     )
 
     # Memory and resource limits
     memory_limit_mb: int = Field(default=512, description="Memory limit in MB", gt=0)
     cpu_limit_percent: float = Field(
-        default=100.0, description="CPU usage limit as percentage", ge=0.0, le=100.0
+        default=100.0,
+        description="CPU usage limit as percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     # Execution parameters
     parallel_execution: bool = Field(
-        default=False, description="Enable parallel execution"
+        default=False,
+        description="Enable parallel execution",
     )
     max_parallel_tasks: int = Field(
-        default=4, description="Maximum parallel tasks", ge=1, le=100
+        default=4,
+        description="Maximum parallel tasks",
+        ge=1,
+        le=100,
     )
 
     # Cache parameters
     enable_cache: bool = Field(default=True, description="Enable result caching")
     cache_ttl_seconds: int = Field(
-        default=300, description="Cache TTL in seconds", ge=0
+        default=300,
+        description="Cache TTL in seconds",
+        ge=0,
     )
 
     # Debug and logging parameters
@@ -61,19 +77,22 @@ class ModelCliAdvancedParams(BaseModel):
         description="Debug level",
     )
     enable_profiling: bool = Field(
-        default=False, description="Enable performance profiling"
+        default=False,
+        description="Enable performance profiling",
     )
     enable_tracing: bool = Field(default=False, description="Enable execution tracing")
 
     # Output formatting parameters
     output_format_options: ModelOutputFormatOptions = Field(
         default_factory=lambda: ModelOutputFormatOptions(
-            page_size=None, max_items=None
+            page_size=None,
+            max_items=None,
         ),
         description="Output format options",
     )
     compression_enabled: bool = Field(
-        default=False, description="Enable output compression"
+        default=False,
+        description="Enable output compression",
     )
 
     # Security parameters
@@ -82,22 +101,26 @@ class ModelCliAdvancedParams(BaseModel):
         description="Security level",
     )
     enable_sandbox: bool = Field(
-        default=False, description="Enable sandboxed execution"
+        default=False,
+        description="Enable sandboxed execution",
     )
 
     # Custom environment variables
     environment_variables: dict[str, str] = Field(
-        default_factory=dict, description="Custom environment variables"
+        default_factory=dict,
+        description="Custom environment variables",
     )
 
     # Node-specific configuration
     node_config_overrides: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Node-specific configuration overrides"
+        default_factory=dict,
+        description="Node-specific configuration overrides",
     )
 
     # Extensibility for specific node types
     custom_parameters: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Custom parameters for specific node types"
+        default_factory=dict,
+        description="Custom parameters for specific node types",
     )
 
     def set_timeout(self, seconds: float) -> None:

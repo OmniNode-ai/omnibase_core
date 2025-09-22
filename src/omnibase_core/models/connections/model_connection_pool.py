@@ -23,25 +23,43 @@ class ModelConnectionPool(BaseModel):
 
     # Connection parameters
     timeout_seconds: int = Field(
-        30, description="Connection timeout in seconds", ge=1, le=3600
+        30,
+        description="Connection timeout in seconds",
+        ge=1,
+        le=3600,
     )
     retry_count: int = Field(3, description="Number of retry attempts", ge=0, le=10)
     retry_delay_seconds: int = Field(
-        1, description="Delay between retries in seconds", ge=0, le=60
+        1,
+        description="Delay between retries in seconds",
+        ge=0,
+        le=60,
     )
     keepalive_interval: int | None = Field(
-        None, description="Keepalive interval in seconds", ge=1, le=300
+        None,
+        description="Keepalive interval in seconds",
+        ge=1,
+        le=300,
     )
 
     # Connection pooling
     pool_size: int | None = Field(
-        None, description="Connection pool size", ge=1, le=1000
+        None,
+        description="Connection pool size",
+        ge=1,
+        le=1000,
     )
     pool_timeout: int | None = Field(
-        None, description="Pool timeout in seconds", ge=1, le=3600
+        None,
+        description="Pool timeout in seconds",
+        ge=1,
+        le=3600,
     )
     max_overflow: int | None = Field(
-        None, description="Maximum pool overflow", ge=0, le=100
+        None,
+        description="Maximum pool overflow",
+        ge=0,
+        le=100,
     )
 
     @model_validator(mode="after")

@@ -15,10 +15,9 @@ from pydantic import BaseModel, Field
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
 
-# Semantic type alias for values that can be automatically converted to ModelValidationValue
-# Since ModelValidationValue.from_any() handles any type safely via type detection,
-# we use Any to represent the semantic concept of "validation-convertible data"
-ValidationConvertibleValue = Any
+# Note: Previously had type alias (ValidationConvertibleValue = Any)
+# Removed to comply with ONEX strong typing standards.
+# Using explicit type: Any
 
 
 class ModelValidationContainer(BaseModel):
@@ -61,7 +60,7 @@ class ModelValidationContainer(BaseModel):
         message: str,
         field: str | None = None,
         error_code: str | None = None,
-        raw_details: dict[str, ValidationConvertibleValue] | None = None,
+        raw_details: dict[str, Any] | None = None,
     ) -> None:
         """Add a standard validation error with automatic conversion of raw details."""
         converted_details = None
@@ -100,7 +99,7 @@ class ModelValidationContainer(BaseModel):
         message: str,
         field: str | None = None,
         error_code: str | None = None,
-        raw_details: dict[str, ValidationConvertibleValue] | None = None,
+        raw_details: dict[str, Any] | None = None,
     ) -> None:
         """Add a critical validation error with automatic conversion of raw details."""
         converted_details = None

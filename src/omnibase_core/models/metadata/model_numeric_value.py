@@ -17,8 +17,7 @@ from ...exceptions.onex_error import OnexError
 from ...models.common.model_error_context import ModelErrorContext
 from ...models.common.model_schema_value import ModelSchemaValue
 
-# Type alias for numeric input parameters - only accepts structured type for inputs
-NumericInput = "ModelNumericValue"
+# Forward reference for type alias - will be properly defined after the class
 
 
 class ModelNumericValue(BaseModel):
@@ -62,7 +61,7 @@ class ModelNumericValue(BaseModel):
                         "expected_type": ModelSchemaValue.from_value("int or float"),
                         "actual_type": ModelSchemaValue.from_value(str(type(v))),
                         "value": ModelSchemaValue.from_value(str(v)),
-                    }
+                    },
                 ),
             )
         return float(v)  # Always store as float for compatibility
@@ -89,25 +88,13 @@ class ModelNumericValue(BaseModel):
 
     @classmethod
     def from_numeric(
-        cls, value: int | float, source: str | None = None
+        cls,
+        value: float,
+        source: str | None = None,
     ) -> ModelNumericValue:
-        """Create numeric value from int or float."""
-        if isinstance(value, int):
-            return cls.from_int(value, source)
-        elif isinstance(value, float):
-            return cls.from_float(value, source)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Value must be int or float, got {type(value)}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "expected_type": ModelSchemaValue.from_value("int or float"),
-                        "actual_type": ModelSchemaValue.from_value(str(type(value))),
-                        "value": ModelSchemaValue.from_value(str(value)),
-                    }
-                ),
-            )
+        """Create numeric value from float (supports both int and float as input)."""
+        # Since we store all as float internally, just use float creation
+        return cls.from_float(value, source)
 
     def as_int(self) -> int:
         """Get value as integer."""
@@ -117,17 +104,35 @@ class ModelNumericValue(BaseModel):
         """Get value as float."""
         return self.value
 
-    def to_python_value(self) -> int | float:
-        """Get the underlying Python value with original type."""
-        if self.value_type == EnumNumericType.INTEGER:
-            return int(self.value)
+    @property
+    def integer_value(self) -> int:
+        """Get value as integer (property access)."""
+        return int(self.value)
+
+    @property
+    def float_value(self) -> float:
+        """Get value as float (property access)."""
         return self.value
 
-    def compare_value(self, other: "ModelNumericValue | int | float") -> bool:
+    def to_python_value(self) -> float:
+        """Get the underlying Python value as float."""
+        return self.value
+
+    def to_original_type(self) -> float:
+        """Get the value respecting the original type flag."""
+        if self.value_type == EnumNumericType.INTEGER:
+            return float(
+                int(self.value)
+            )  # Ensure integer precision but return as float
+        return self.value
+
+    def compare_value(self, other: ModelNumericValue) -> bool:
         """Compare with another numeric value."""
-        if isinstance(other, ModelNumericValue):
-            return self.value == other.value
-        return self.value == float(other)
+        return self.value == other.value
+
+    def compare_with_float(self, other: float) -> bool:
+        """Compare with a float value."""
+        return self.value == other
 
     def __eq__(self, other: object) -> bool:
         """Equality comparison."""
@@ -137,30 +142,26 @@ class ModelNumericValue(BaseModel):
             return self.value == float(other)
         return False
 
-    def __lt__(self, other: "ModelNumericValue | int | float") -> bool:
+    def __lt__(self, other: ModelNumericValue) -> bool:
         """Less than comparison."""
-        if isinstance(other, ModelNumericValue):
-            return self.value < other.value
-        return self.value < float(other)
+        return self.value < other.value
 
-    def __le__(self, other: "ModelNumericValue | int | float") -> bool:
+    def __le__(self, other: ModelNumericValue) -> bool:
         """Less than or equal comparison."""
-        if isinstance(other, ModelNumericValue):
-            return self.value <= other.value
-        return self.value <= float(other)
+        return self.value <= other.value
 
-    def __gt__(self, other: "ModelNumericValue | int | float") -> bool:
+    def __gt__(self, other: ModelNumericValue) -> bool:
         """Greater than comparison."""
-        if isinstance(other, ModelNumericValue):
-            return self.value > other.value
-        return self.value > float(other)
+        return self.value > other.value
 
-    def __ge__(self, other: "ModelNumericValue | int | float") -> bool:
+    def __ge__(self, other: ModelNumericValue) -> bool:
         """Greater than or equal comparison."""
-        if isinstance(other, ModelNumericValue):
-            return self.value >= other.value
-        return self.value >= float(other)
+        return self.value >= other.value
 
+
+# Note: Previously had type alias (NumericInput = ModelNumericValue)
+# Removed to comply with ONEX strong typing standards.
+# Use explicit type: ModelNumericValue
 
 # Export the model and type alias
-__all__ = ["ModelNumericValue", "NumericInput"]
+__all__ = ["ModelNumericValue"]

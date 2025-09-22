@@ -20,10 +20,12 @@ class ModelPropertyMetadata(BaseModel):
     property_type: EnumPropertyType = Field(description="Type of the property")
     required: bool = Field(default=False, description="Whether property is required")
     validation_pattern: str = Field(
-        default="", description="Regex pattern for validation"
+        default="",
+        description="Regex pattern for validation",
     )
     min_value: float | None = Field(None, description="Minimum value for numeric types")
     max_value: float | None = Field(None, description="Maximum value for numeric types")
     allowed_values: list[str] = Field(
-        default_factory=list, description="Allowed values for enum-like properties"
+        default_factory=list,
+        description="Allowed values for enum-like properties",
     )

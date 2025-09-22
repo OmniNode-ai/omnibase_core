@@ -21,7 +21,8 @@ class ModelExampleSummary(BaseModel):
 
     # Entity reference - UUID-based with display name
     entity_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the example entity"
+        default_factory=uuid4,
+        description="Unique identifier for the example entity",
     )
     display_name: str = Field(..., description="Example display name")
 

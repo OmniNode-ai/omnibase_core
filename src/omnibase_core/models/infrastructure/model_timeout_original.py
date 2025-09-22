@@ -7,7 +7,20 @@ Specialized model for handling timeout configurations with validation and utilit
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, TypedDict
+
+
+class TimeoutMetadataType(TypedDict, total=False):
+    """Type-safe timeout metadata structure."""
+
+    source: str
+    priority: int
+    context: str
+    retry_count: int
+    max_retries: int
+    escalation_policy: str
+    tags: list[str]
+
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -56,7 +69,7 @@ class ModelTimeout(BaseModel):
 
     # Runtime categorization
     runtime_category: EnumRuntimeCategory = Field(
-        default=EnumRuntimeCategory.SHORT,
+        default=EnumRuntimeCategory.FAST,
         description="Runtime category for this timeout",
     )
 
@@ -65,8 +78,8 @@ class ModelTimeout(BaseModel):
         default="",
         description="Human-readable timeout description",
     )
-    custom_metadata: dict[str, Any] = Field(
-        default_factory=dict,
+    custom_metadata: TimeoutMetadataType = Field(
+        default_factory=lambda: TimeoutMetadataType(),
         description="Custom timeout metadata",
     )
 
@@ -92,9 +105,9 @@ class ModelTimeout(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization to set runtime category if not provided."""
-        if self.runtime_category == EnumRuntimeCategory.SHORT:
+        if self.runtime_category == EnumRuntimeCategory.FAST:
             self.runtime_category = EnumRuntimeCategory.from_seconds(
-                self.timeout_seconds
+                self.timeout_seconds,
             )
 
     @property
@@ -143,7 +156,9 @@ class ModelTimeout(BaseModel):
         return start_time + timedelta(seconds=self.warning_threshold_seconds)
 
     def is_expired(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if timeout has expired."""
         if current_time is None:
@@ -152,7 +167,9 @@ class ModelTimeout(BaseModel):
         return current_time >= deadline
 
     def is_warning_triggered(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if warning threshold has been reached."""
         if self.warning_threshold_seconds == 0:
@@ -163,7 +180,9 @@ class ModelTimeout(BaseModel):
         return current_time >= warning_time
 
     def get_remaining_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get remaining seconds until timeout."""
         if current_time is None:
@@ -173,7 +192,9 @@ class ModelTimeout(BaseModel):
         return max(0.0, remaining.total_seconds())
 
     def get_elapsed_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get elapsed seconds since start."""
         if current_time is None:
@@ -182,7 +203,9 @@ class ModelTimeout(BaseModel):
         return elapsed.total_seconds()
 
     def get_progress_percentage(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get timeout progress as percentage (0-100)."""
         elapsed = self.get_elapsed_seconds(start_time, current_time)

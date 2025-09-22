@@ -77,26 +77,25 @@ class EnumMemoryUsage(Enum):
         """Determine category from memory usage in MB."""
         if mb < 10:
             return cls.MINIMAL
-        elif mb < 50:
+        if mb < 50:
             return cls.TINY
-        elif mb < 100:
+        if mb < 100:
             return cls.SMALL
-        elif mb < 250:
+        if mb < 250:
             return cls.LOW
-        elif mb < 500:
+        if mb < 500:
             return cls.MODERATE
-        elif mb < 1024:
+        if mb < 1024:
             return cls.MEDIUM
-        elif mb < 2048:
+        if mb < 2048:
             return cls.HIGH
-        elif mb < 4096:
+        if mb < 4096:
             return cls.LARGE
-        elif mb < 8192:
+        if mb < 8192:
             return cls.VERY_HIGH
-        elif mb < 16384:
+        if mb < 16384:
             return cls.EXTREME
-        else:
-            return cls.MASSIVE
+        return cls.MASSIVE
 
     @classmethod
     def from_gb(cls, gb: float) -> EnumMemoryUsage:

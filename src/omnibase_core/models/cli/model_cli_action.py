@@ -24,18 +24,21 @@ class ModelCliAction(BaseModel):
     """
 
     action_id: UUID = Field(
-        default_factory=uuid4, description="Globally unique action identifier"
+        default_factory=uuid4,
+        description="Globally unique action identifier",
     )
     action_name_id: UUID = Field(..., description="UUID for action name")
     action_display_name: str | None = Field(
-        None, description="Human-readable action name"
+        None,
+        description="Human-readable action name",
     )
     node_id: UUID = Field(..., description="UUID-based node reference")
     node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str = Field(..., description="Human-readable description")
     deprecated: bool = Field(default=False, description="Whether action is deprecated")
     category: EnumActionCategory | None = Field(
-        None, description="Action category for grouping"
+        None,
+        description="Action category for grouping",
     )
 
     @classmethod
@@ -53,7 +56,7 @@ class ModelCliAction(BaseModel):
         # Generate UUIDs from names
         action_hash = hashlib.sha256(action_name.encode()).hexdigest()
         action_name_id = UUID(
-            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}"
+            f"{action_hash[:8]}-{action_hash[8:12]}-{action_hash[12:16]}-{action_hash[16:20]}-{action_hash[20:32]}",
         )
 
         return cls(

@@ -24,10 +24,12 @@ class ModelCliOutputData(BaseModel):
 
     # Core output fields
     output_type: EnumOutputType = Field(
-        default=EnumOutputType.CONSOLE, description="Type of output data"
+        default=EnumOutputType.CONSOLE,
+        description="Type of output data",
     )
     format: EnumOutputFormat = Field(
-        default=EnumOutputFormat.JSON, description="Output format"
+        default=EnumOutputFormat.JSON,
+        description="Output format",
     )
 
     # Standard output content
@@ -36,33 +38,39 @@ class ModelCliOutputData(BaseModel):
 
     # Structured results
     results: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Execution results with typed values"
+        default_factory=dict,
+        description="Execution results with typed values",
     )
 
     # Metadata
     metadata: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Output metadata with typed values"
+        default_factory=dict,
+        description="Output metadata with typed values",
     )
 
     # Status and validation
     status: EnumCliStatus = Field(
-        default=EnumCliStatus.SUCCESS, description="Output status"
+        default=EnumCliStatus.SUCCESS,
+        description="Output status",
     )
     is_valid: bool = Field(default=True, description="Whether output is valid")
 
     # Performance metrics
     execution_time_ms: float = Field(
-        default=0.0, description="Execution time in milliseconds"
+        default=0.0,
+        description="Execution time in milliseconds",
     )
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")
 
     # File output information
     files_created: list[str] = Field(
-        default_factory=list, description="List of files created during execution"
+        default_factory=list,
+        description="List of files created during execution",
     )
 
     files_modified: list[str] = Field(
-        default_factory=list, description="List of files modified during execution"
+        default_factory=list,
+        description="List of files modified during execution",
     )
 
     def add_result(self, key: str, value: str) -> None:

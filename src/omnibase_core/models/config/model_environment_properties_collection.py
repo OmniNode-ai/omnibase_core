@@ -57,6 +57,6 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
 # Export the model
 __all__ = [
     "ModelEnvironmentPropertiesCollection",
-    "TypedDictPropertyMetadata",
     "ModelPropertyValue",
+    "TypedDictPropertyMetadata",
 ]

@@ -24,40 +24,48 @@ class ModelCliDebugInfo(BaseModel):
 
     # Core debug fields
     debug_level: EnumDebugLevel = Field(
-        default=EnumDebugLevel.INFO, description="Debug level"
+        default=EnumDebugLevel.INFO,
+        description="Debug level",
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Debug timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Debug timestamp",
     )
 
     # Debug data
     debug_messages: list[str] = Field(
-        default_factory=list, description="Debug messages"
+        default_factory=list,
+        description="Debug messages",
     )
 
     # Performance debug info
     timing_info: dict[str, float] = Field(
-        default_factory=dict, description="Timing information in milliseconds"
+        default_factory=dict,
+        description="Timing information in milliseconds",
     )
 
     # Memory debug info
     memory_info: dict[str, int] = Field(
-        default_factory=dict, description="Memory information in bytes"
+        default_factory=dict,
+        description="Memory information in bytes",
     )
 
     # System debug info
     system_info: dict[str, str] = Field(
-        default_factory=dict, description="System information"
+        default_factory=dict,
+        description="System information",
     )
 
     # Error debug info
     error_details: dict[str, str] = Field(
-        default_factory=dict, description="Detailed error information"
+        default_factory=dict,
+        description="Detailed error information",
     )
 
     # Stack traces and call info
     stack_traces: list[str] = Field(
-        default_factory=list, description="Stack traces for debugging"
+        default_factory=list,
+        description="Stack traces for debugging",
     )
 
     # Additional debug flags
@@ -66,7 +74,8 @@ class ModelCliDebugInfo(BaseModel):
 
     # Custom debug fields for extensibility
     custom_debug_fields: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Custom debug fields"
+        default_factory=dict,
+        description="Custom debug fields",
     )
 
     def add_debug_message(self, message: str) -> None:

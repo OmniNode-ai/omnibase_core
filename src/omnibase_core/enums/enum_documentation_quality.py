@@ -115,22 +115,21 @@ class EnumDocumentationQuality(str, Enum):
         """Convert numeric score (0-10) to quality level."""
         if score <= 0:
             return cls.NONE
-        elif score <= 1:
+        if score <= 1:
             return cls.POOR
-        elif score <= 2:
+        if score <= 2:
             return cls.MINIMAL
-        elif score <= 3:
+        if score <= 3:
             return cls.BASIC
-        elif score <= 4:
+        if score <= 4:
             return cls.ADEQUATE
-        elif score <= 6:
+        if score <= 6:
             return cls.GOOD
-        elif score <= 8:
+        if score <= 8:
             return cls.COMPREHENSIVE
-        elif score <= 9:
+        if score <= 9:
             return cls.EXCELLENT
-        else:
-            return cls.OUTSTANDING
+        return cls.OUTSTANDING
 
 
 # Export the enum

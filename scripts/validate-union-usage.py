@@ -28,11 +28,11 @@ class UnionUsageChecker(ast.NodeVisitor):
                 for elt in node.slice.elts:
                     if isinstance(elt, ast.Constant) and elt.value is None:
                         self.issues.append(
-                            f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
+                            f"Line {node.lineno}: Use Optional[T] or T | None instead of T | None"
                         )
                     elif isinstance(elt, ast.Name) and elt.id == "None":
                         self.issues.append(
-                            f"Line {node.lineno}: Use Optional[T] or T | None instead of Union[T, None]"
+                            f"Line {node.lineno}: Use Optional[T] or T | None instead of T | None"
                         )
 
         self.generic_visit(node)

@@ -65,7 +65,6 @@ class ModelValidationBase(BaseModel):
         This method should populate the validation container with
         any errors or warnings found during validation.
         """
-        pass
 
     def perform_validation(self) -> bool:
         """

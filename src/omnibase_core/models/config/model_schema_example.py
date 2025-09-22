@@ -7,7 +7,7 @@ replacing dict[str, Any] return types with structured models.
 
 from __future__ import annotations
 
-from typing import TypeVar, overload
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 

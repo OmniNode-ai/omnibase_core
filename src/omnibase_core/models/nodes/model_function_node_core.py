@@ -29,10 +29,12 @@ class ModelFunctionNodeCore(BaseModel):
 
     # Core function information - Entity reference with UUID
     function_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the function entity"
+        default_factory=uuid4,
+        description="Unique identifier for the function entity",
     )
     function_display_name: str | None = Field(
-        None, description="Human-readable function name"
+        None,
+        description="Human-readable function name",
     )
     description: str = Field(default="", description="Function description")
     function_type: EnumFunctionType = Field(
@@ -122,7 +124,7 @@ class ModelFunctionNodeCore(BaseModel):
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()
         function_id = UUID(
-            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}",
         )
 
         return cls(
@@ -146,7 +148,7 @@ class ModelFunctionNodeCore(BaseModel):
         # Generate UUID from function name
         function_hash = hashlib.sha256(name.encode()).hexdigest()
         function_id = UUID(
-            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}"
+            f"{function_hash[:8]}-{function_hash[8:12]}-{function_hash[12:16]}-{function_hash[16:20]}-{function_hash[20:32]}",
         )
 
         return cls(

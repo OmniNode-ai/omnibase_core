@@ -10,12 +10,11 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_cli_option_value_type import EnumCliOptionValueType
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
-from ...utils.uuid_utilities import uuid_from_string
 
 
 class ModelCliCommandOption(BaseModel):
@@ -29,7 +28,8 @@ class ModelCliCommandOption(BaseModel):
     # Option identification - UUID-based entity references
     option_id: UUID = Field(..., description="Unique identifier for the option")
     option_display_name: str | None = Field(
-        None, description="Human-readable option name (e.g., '--verbose', '-v')"
+        None,
+        description="Human-readable option name (e.g., '--verbose', '-v')",
     )
     value: Any = Field(
         ...,
@@ -44,18 +44,20 @@ class ModelCliCommandOption(BaseModel):
     is_flag: bool = Field(default=False, description="Whether this is a boolean flag")
     is_required: bool = Field(default=False, description="Whether option is required")
     is_multiple: bool = Field(
-        default=False, description="Whether option accepts multiple values"
+        default=False,
+        description="Whether option accepts multiple values",
     )
 
     # Validation
     description: str = Field(default="", description="Option description")
     valid_choices: list[str] = Field(
-        default_factory=list, description="Valid choices for option value"
+        default_factory=list,
+        description="Valid choices for option value",
     )
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info) -> Any:
+    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -65,35 +67,38 @@ class ModelCliCommandOption(BaseModel):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"String value type must contain str data, got {type(v)}",
                 )
-            elif value_type == EnumCliOptionValueType.INTEGER and not isinstance(
-                v, int
+            if value_type == EnumCliOptionValueType.INTEGER and not isinstance(
+                v,
+                int,
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Integer value type must contain int data, got {type(v)}",
                 )
-            elif value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
-                v, bool
+            if value_type == EnumCliOptionValueType.BOOLEAN and not isinstance(
+                v,
+                bool,
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Boolean value type must contain bool data, got {type(v)}",
                 )
-            elif value_type == EnumCliOptionValueType.FLOAT and not isinstance(
-                v, (int, float)
+            if value_type == EnumCliOptionValueType.FLOAT and not isinstance(
+                v,
+                (int, float),
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Float value type must contain float data, got {type(v)}",
                 )
-            elif value_type == EnumCliOptionValueType.STRING_LIST and not (
+            if value_type == EnumCliOptionValueType.STRING_LIST and not (
                 isinstance(v, list) and all(isinstance(item, str) for item in v)
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"StringList value type must contain list[str] data, got {type(v)}",
                 )
-            elif value_type == EnumCliOptionValueType.UUID and not isinstance(v, UUID):
+            if value_type == EnumCliOptionValueType.UUID and not isinstance(v, UUID):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"UUID value type must contain UUID data, got {type(v)}",
@@ -122,7 +127,10 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_string(
-        cls, option_id: UUID, value: str, **kwargs
+        cls,
+        option_id: UUID,
+        value: str,
+        **kwargs: Any,
     ) -> ModelCliCommandOption:
         """Create command option from string value."""
         return cls(
@@ -134,7 +142,10 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_integer(
-        cls, option_id: UUID, value: int, **kwargs
+        cls,
+        option_id: UUID,
+        value: int,
+        **kwargs: Any,
     ) -> ModelCliCommandOption:
         """Create command option from integer value."""
         return cls(
@@ -146,7 +157,10 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_float(
-        cls, option_id: UUID, value: float, **kwargs
+        cls,
+        option_id: UUID,
+        value: float,
+        **kwargs: Any,
     ) -> ModelCliCommandOption:
         """Create command option from float value."""
         return cls(
@@ -158,7 +172,10 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_boolean(
-        cls, option_id: UUID, value: bool, **kwargs
+        cls,
+        option_id: UUID,
+        value: bool,
+        **kwargs: Any,
     ) -> ModelCliCommandOption:
         """Create command option from boolean value."""
         return cls(
@@ -169,7 +186,9 @@ class ModelCliCommandOption(BaseModel):
         )
 
     @classmethod
-    def from_uuid(cls, option_id: UUID, value: UUID, **kwargs) -> ModelCliCommandOption:
+    def from_uuid(
+        cls, option_id: UUID, value: UUID, **kwargs: Any
+    ) -> ModelCliCommandOption:
         """Create command option from UUID value."""
         return cls(
             option_id=option_id,
@@ -180,7 +199,10 @@ class ModelCliCommandOption(BaseModel):
 
     @classmethod
     def from_string_list(
-        cls, option_id: UUID, value: list[str], **kwargs
+        cls,
+        option_id: UUID,
+        value: list[str],
+        **kwargs: Any,
     ) -> ModelCliCommandOption:
         """Create command option from string list value."""
         return cls(

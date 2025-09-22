@@ -123,14 +123,13 @@ class EnumRetentionPolicy(str, Enum):
         """Get compliance level for policy."""
         if cls.is_permanent(policy):
             return "low_compliance"
-        elif cls.is_time_based(policy):
+        if cls.is_time_based(policy):
             return "high_compliance"
-        elif cls.is_event_based(policy):
+        if cls.is_event_based(policy):
             return "medium_compliance"
-        elif cls.requires_immediate_action(policy):
+        if cls.requires_immediate_action(policy):
             return "high_compliance"
-        else:
-            return "unknown_compliance"
+        return "unknown_compliance"
 
 
 # Export the enum

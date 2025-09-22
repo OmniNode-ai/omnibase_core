@@ -25,29 +25,34 @@ class ModelExampleOutputData(BaseModel):
 
     # Core data fields
     data_type: EnumIOType = Field(
-        default=EnumIOType.OUTPUT, description="Type of output data"
+        default=EnumIOType.OUTPUT,
+        description="Type of output data",
     )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Output results using strongly-typed values
     results: dict[str, ModelMetadataValue] = Field(
-        default_factory=dict, description="Output results with type-safe values"
+        default_factory=dict,
+        description="Output results with type-safe values",
     )
 
     # Status information
     status: EnumCliStatus = Field(
-        default=EnumCliStatus.SUCCESS, description="Output status"
+        default=EnumCliStatus.SUCCESS,
+        description="Output status",
     )
 
     # Metrics
     processing_time_ms: float | None = Field(
-        None, description="Processing time in milliseconds"
+        None,
+        description="Processing time in milliseconds",
     )
     memory_usage_mb: float | None = Field(None, description="Memory usage in MB")
 
     # Validation info
     is_expected: bool = Field(
-        default=True, description="Whether output matches expectations"
+        default=True,
+        description="Whether output matches expectations",
     )
 
 

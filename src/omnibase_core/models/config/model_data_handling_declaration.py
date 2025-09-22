@@ -29,7 +29,8 @@ class ModelDataHandlingDeclaration(BaseModel):
     data_classification: (
         Literal["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"] | None
     ) = Field(
-        None, description="Data classification level following security standards"
+        None,
+        description="Data classification level following security standards",
     )
 
     @model_validator(mode="after")

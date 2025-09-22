@@ -5,7 +5,7 @@ Restructured to use focused sub-models for better organization.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -14,15 +14,19 @@ from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
+from .types_node_connection_summary import NodeConnectionSummaryType
+from .types_node_execution_summary import NodeExecutionSummaryType
+from .types_node_feature_summary import NodeFeatureSummaryType
+from .types_node_resource_summary import NodeResourceSummaryType
 
 
 class TypedDictNodeConfigurationSummary(TypedDict):
     """Type-safe dictionary for node configuration summary."""
 
-    execution: dict[str, Any]
-    resources: dict[str, Any]
-    features: dict[str, Any]
-    connection: dict[str, Any]
+    execution: NodeExecutionSummaryType
+    resources: NodeResourceSummaryType
+    features: NodeFeatureSummaryType
+    connection: NodeConnectionSummaryType
     is_production_ready: bool
     is_performance_optimized: bool
     has_custom_settings: bool
@@ -64,7 +68,7 @@ class ModelNodeConfiguration(BaseModel):
     @max_retries.setter
     def max_retries(self, value: int | None) -> None:
         """Set maximum retry attempts."""
-        self.execution.max_retries = value
+        self.execution.max_retries = value if value is not None else 3
 
     @property
     def timeout_seconds(self) -> int | None:
@@ -74,7 +78,7 @@ class ModelNodeConfiguration(BaseModel):
     @timeout_seconds.setter
     def timeout_seconds(self, value: int | None) -> None:
         """Set execution timeout."""
-        self.execution.timeout_seconds = value
+        self.execution.timeout_seconds = value if value is not None else 30
 
     @property
     def batch_size(self) -> int | None:
@@ -84,7 +88,7 @@ class ModelNodeConfiguration(BaseModel):
     @batch_size.setter
     def batch_size(self, value: int | None) -> None:
         """Set batch processing size."""
-        self.execution.batch_size = value
+        self.execution.batch_size = value if value is not None else 1
 
     @property
     def parallel_execution(self) -> bool:
@@ -104,7 +108,7 @@ class ModelNodeConfiguration(BaseModel):
     @max_memory_mb.setter
     def max_memory_mb(self, value: int | None) -> None:
         """Set maximum memory usage."""
-        self.resources.max_memory_mb = value
+        self.resources.max_memory_mb = value if value is not None else 1024
 
     @property
     def max_cpu_percent(self) -> float | None:
@@ -114,7 +118,7 @@ class ModelNodeConfiguration(BaseModel):
     @max_cpu_percent.setter
     def max_cpu_percent(self, value: float | None) -> None:
         """Set maximum CPU usage."""
-        self.resources.max_cpu_percent = value
+        self.resources.max_cpu_percent = value if value is not None else 100.0
 
     @property
     def enable_caching(self) -> bool:
@@ -265,7 +269,7 @@ class ModelNodeConfiguration(BaseModel):
         return bool(
             self.custom_properties.custom_strings
             or self.custom_properties.custom_flags
-            or self.custom_properties.custom_numbers
+            or self.custom_properties.custom_numbers,
         )
 
     @classmethod

@@ -13,9 +13,7 @@ from __future__ import annotations
 import argparse
 import ast
 import sys
-from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 from .validation_utils import ValidationResult
 
@@ -23,16 +21,16 @@ from .validation_utils import ValidationResult
 class UnionPattern:
     """Represents a Union pattern for analysis."""
 
-    def __init__(self, types: List[str], line: int, file_path: str):
+    def __init__(self, types: list[str], line: int, file_path: str):
         self.types = sorted(types)  # Sort for consistent comparison
         self.line = line
         self.file_path = file_path
         self.type_count = len(types)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(tuple(self.types))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, UnionPattern) and self.types == other.types
 
     def get_signature(self) -> str:
@@ -45,14 +43,14 @@ class UnionUsageChecker(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.union_count = 0
-        self.issues = []
+        self.issues: list[str] = []
         self.file_path = file_path
-        self.union_patterns: List[UnionPattern] = []
+        self.union_patterns: list[UnionPattern] = []
 
         # Track problematic patterns
-        self.complex_unions: List[UnionPattern] = []
-        self.primitive_heavy_unions: List[UnionPattern] = []
-        self.generic_unions: List[UnionPattern] = []
+        self.complex_unions: list[UnionPattern] = []
+        self.primitive_heavy_unions: list[UnionPattern] = []
+        self.generic_unions: list[UnionPattern] = []
 
         # Common problematic type combinations
         self.problematic_combinations = {
@@ -67,11 +65,11 @@ class UnionUsageChecker(ast.NodeVisitor):
         """Extract type name from AST node."""
         if isinstance(node, ast.Name):
             return node.id
-        elif isinstance(node, ast.Constant):
+        if isinstance(node, ast.Constant):
             if node.value is None:
                 return "None"
             return type(node.value).__name__
-        elif isinstance(node, ast.Subscript):
+        if isinstance(node, ast.Subscript):
             # Handle List[str], Dict[str, int], etc.
             if isinstance(node.value, ast.Name):
                 return node.value.id
@@ -94,17 +92,17 @@ class UnionUsageChecker(ast.NodeVisitor):
                     if problem_type == "primitive_overload":
                         self.issues.append(
                             f"Line {union_pattern.line}: Union with 4+ primitive types "
-                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model",
                         )
                     elif problem_type == "mixed_primitive_complex":
                         self.issues.append(
                             f"Line {union_pattern.line}: Mixed primitive/complex Union "
-                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or strongly-typed model",
                         )
                     elif problem_type == "everything_union":
                         self.issues.append(
                             f"Line {union_pattern.line}: Overly broad Union "
-                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
+                            f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model",
                         )
 
         # Check for redundant None patterns
@@ -113,16 +111,16 @@ class UnionUsageChecker(ast.NodeVisitor):
             if len(non_none_types) == 1:
                 self.issues.append(
                     f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
-                    f"instead of {union_pattern.get_signature()}"
+                    f"instead of {union_pattern.get_signature()}",
                 )
 
-    def visit_Subscript(self, node):
+    def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes (e.g., Union[str, int])."""
         if isinstance(node.value, ast.Name) and node.value.id == "Union":
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 
-    def visit_BinOp(self, node):
+    def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes (e.g., str | int | float)."""
         if isinstance(node.op, ast.BitOr):
             # Modern union syntax: str | int | float
@@ -139,11 +137,11 @@ class UnionUsageChecker(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _extract_union_from_binop(self, node: ast.BinOp) -> List[str]:
+    def _extract_union_from_binop(self, node: ast.BinOp) -> list[str]:
         """Extract union types from modern union syntax (A | B | C)."""
         types = []
 
-        def collect_types(n):
+        def collect_types(n: ast.AST) -> None:
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
                 collect_types(n.left)
                 collect_types(n.right)
@@ -155,7 +153,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         collect_types(node)
         return types
 
-    def _process_union_types(self, node, slice_node, line_no):
+    def _process_union_types(
+        self, node: ast.AST, slice_node: ast.AST, line_no: int
+    ) -> None:
         """Process union types from Union[...] syntax."""
         # Extract union types
         union_types = []
@@ -180,16 +180,16 @@ class UnionUsageChecker(ast.NodeVisitor):
         # Check for Union with None
         if len(union_types) == 2 and "None" in union_types:
             self.issues.append(
-                f"Line {line_no}: Use Optional[T] or T | None instead of Union[T, None]"
+                f"Line {line_no}: Use Optional[T] or T | None instead of T | None",
             )
 
 
 def validate_union_usage_file(
     file_path: Path,
-) -> Tuple[int, List[str], List[UnionPattern]]:
+) -> tuple[int, list[str], list[UnionPattern]]:
     """Validate Union usage in a Python file."""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content, filename=str(file_path))
@@ -203,7 +203,9 @@ def validate_union_usage_file(
 
 
 def validate_union_usage_directory(
-    directory: Path, max_unions: int = 100, strict: bool = False
+    directory: Path,
+    max_unions: int = 100,
+    strict: bool = False,
 ) -> ValidationResult:
     """Validate Union usage in a directory."""
     python_files = []
@@ -282,10 +284,15 @@ Examples of problematic patterns:
         """,
     )
     parser.add_argument(
-        "--max-unions", type=int, default=100, help="Maximum allowed Union types"
+        "--max-unions",
+        type=int,
+        default=100,
+        help="Maximum allowed Union types",
     )
     parser.add_argument(
-        "--strict", action="store_true", help="Enable strict validation mode"
+        "--strict",
+        action="store_true",
+        help="Enable strict validation mode",
     )
     parser.add_argument("path", nargs="?", default=".", help="Path to validate")
     args = parser.parse_args()
@@ -302,31 +309,34 @@ Examples of problematic patterns:
             return 1
 
         print(
-            f"✅ Union validation: {union_count} unions in {base_path} (limit: {args.max_unions})"
+            f"✅ Union validation: {union_count} unions in {base_path} (limit: {args.max_unions})",
         )
         return 0
-    else:
-        # Directory validation
-        result = validate_union_usage_directory(base_path, args.max_unions, args.strict)
+    # Directory validation
+    result = validate_union_usage_directory(base_path, args.max_unions, args.strict)
 
-        if result.errors:
-            print(f"❌ Union validation issues found:")
-            for error in result.errors:
-                print(f"   {error}")
+    if result.errors:
+        print("❌ Union validation issues found:")
+        for error in result.errors:
+            print(f"   {error}")
 
-        if result.metadata.get("total_unions", 0) > args.max_unions:
-            print(
-                f"❌ Union count exceeded: {result.metadata['total_unions']} > {args.max_unions}"
-            )
-            return 1
-
-        if result.errors:
-            return 1
-
+    total_unions = result.metadata.get("total_unions", 0) if result.metadata else 0
+    if total_unions > args.max_unions:
         print(
-            f"✅ Union validation: {result.metadata.get('total_unions', 0)} unions in {result.files_checked} files"
+            f"❌ Union count exceeded: {total_unions} > {args.max_unions}",
         )
-        return 0
+        return 1
+
+    if result.errors:
+        return 1
+
+    total_unions_final = (
+        result.metadata.get("total_unions", 0) if result.metadata else 0
+    )
+    print(
+        f"✅ Union validation: {total_unions_final} unions in {result.files_checked} files",
+    )
+    return 0
 
 
 if __name__ == "__main__":

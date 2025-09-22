@@ -38,10 +38,12 @@ class ModelCliResultMetadata(BaseModel):
 
     # Result identification
     result_type: EnumResultType = Field(
-        default=EnumResultType.INFO, description="Type of result"
+        default=EnumResultType.INFO,
+        description="Type of result",
     )
     result_category: EnumResultCategory | None = Field(
-        None, description="Result category"
+        None,
+        description="Result category",
     )
 
     # Source information
@@ -57,24 +59,33 @@ class ModelCliResultMetadata(BaseModel):
 
     # Quality metrics
     quality_score: float | None = Field(
-        None, description="Quality score (0.0 to 1.0)", ge=0.0, le=1.0
+        None,
+        description="Quality score (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
     confidence_level: float | None = Field(
-        None, description="Confidence level (0.0 to 1.0)", ge=0.0, le=1.0
+        None,
+        description="Confidence level (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     # Data classification
     data_classification: EnumDataClassification = Field(
-        default=EnumDataClassification.INTERNAL, description="Data classification level"
+        default=EnumDataClassification.INTERNAL,
+        description="Data classification level",
     )
     retention_policy: EnumRetentionPolicy | None = Field(
-        None, description="Data retention policy"
+        None,
+        description="Data retention policy",
     )
 
     # Tags and labels - UUID-based entity references
     tags: list[str] = Field(default_factory=list, description="Result tags")
     label_ids: dict[UUID, str] = Field(
-        default_factory=dict, description="Label UUID to value mapping"
+        default_factory=dict,
+        description="Label UUID to value mapping",
     )
     label_names: dict[str, UUID] = Field(
         default_factory=dict,
@@ -83,23 +94,28 @@ class ModelCliResultMetadata(BaseModel):
 
     # Performance metrics
     processing_time_ms: float | None = Field(
-        None, description="Processing time in milliseconds"
+        None,
+        description="Processing time in milliseconds",
     )
     resource_usage: dict[str, float] = Field(
-        default_factory=dict, description="Resource usage metrics"
+        default_factory=dict,
+        description="Resource usage metrics",
     )
 
     # Compliance and audit
     compliance_flags: dict[str, bool] = Field(
-        default_factory=dict, description="Compliance flags"
+        default_factory=dict,
+        description="Compliance flags",
     )
     audit_trail: list[str] = Field(
-        default_factory=list, description="Audit trail entries"
+        default_factory=list,
+        description="Audit trail entries",
     )
 
     # Custom metadata fields for extensibility
     custom_metadata: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Custom metadata fields"
+        default_factory=dict,
+        description="Custom metadata fields",
     )
 
     def add_tag(self, tag: str) -> None:

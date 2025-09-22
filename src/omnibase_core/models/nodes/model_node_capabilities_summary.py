@@ -20,7 +20,7 @@ class ModelNodeCapabilitiesSummary(BaseModel):
     has_operations: bool = Field(description="Whether node has operations")
     has_dependencies: bool = Field(description="Whether node has dependencies")
     has_performance_metrics: bool = Field(
-        description="Whether node has performance metrics"
+        description="Whether node has performance metrics",
     )
     primary_capability: str | None = Field(description="Primary capability if any")
     metrics_count: int = Field(description="Number of metrics")

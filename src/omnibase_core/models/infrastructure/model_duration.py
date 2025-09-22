@@ -40,25 +40,29 @@ class ModelDuration(BaseModel):
             seconds = data.pop("seconds")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(seconds * 1000), unit=EnumTimeUnit.MILLISECONDS
+                value=int(seconds * 1000),
+                unit=EnumTimeUnit.MILLISECONDS,
             )
         elif "minutes" in data:
             minutes = data.pop("minutes")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(minutes * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
+                value=int(minutes * 60 * 1000),
+                unit=EnumTimeUnit.MILLISECONDS,
             )
         elif "hours" in data:
             hours = data.pop("hours")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(hours * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
+                value=int(hours * 60 * 60 * 1000),
+                unit=EnumTimeUnit.MILLISECONDS,
             )
         elif "days" in data:
             days = data.pop("days")
             super().__init__()
             self.time_based = ModelTimeBased(
-                value=int(days * 24 * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
+                value=int(days * 24 * 60 * 60 * 1000),
+                unit=EnumTimeUnit.MILLISECONDS,
             )
         else:
             super().__init__(**data)
@@ -112,7 +116,8 @@ class ModelDuration(BaseModel):
         """Create duration from seconds."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(seconds * 1000), unit=EnumTimeUnit.MILLISECONDS
+            value=int(seconds * 1000),
+            unit=EnumTimeUnit.MILLISECONDS,
         )
         return instance
 
@@ -121,7 +126,8 @@ class ModelDuration(BaseModel):
         """Create duration from minutes."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(minutes * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
+            value=int(minutes * 60 * 1000),
+            unit=EnumTimeUnit.MILLISECONDS,
         )
         return instance
 
@@ -130,7 +136,8 @@ class ModelDuration(BaseModel):
         """Create duration from hours."""
         instance = cls()
         instance.time_based = ModelTimeBased(
-            value=int(hours * 60 * 60 * 1000), unit=EnumTimeUnit.MILLISECONDS
+            value=int(hours * 60 * 60 * 1000),
+            unit=EnumTimeUnit.MILLISECONDS,
         )
         return instance
 

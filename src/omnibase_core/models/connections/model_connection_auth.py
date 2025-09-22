@@ -36,40 +36,46 @@ class ModelConnectionAuth(BaseModel):
         pattern=r"^[a-zA-Z0-9._@-]+$",
     )
     password: SecretStr | None = Field(
-        None, description="Password (encrypted)", min_length=1
+        None,
+        description="Password (encrypted)",
+        min_length=1,
     )
 
     # Token-based authentication
     api_key: SecretStr | None = Field(
-        None, description="API key (encrypted)", min_length=1
+        None,
+        description="API key (encrypted)",
+        min_length=1,
     )
     token: SecretStr | None = Field(
-        None, description="Auth token (encrypted)", min_length=1
+        None,
+        description="Auth token (encrypted)",
+        min_length=1,
     )
 
     def validate_auth_requirements(self) -> bool:
         """Validate authentication configuration is complete."""
         if self.auth_type == EnumAuthType.BASIC:
             return bool(self.user_display_name and self.password)
-        elif self.auth_type == EnumAuthType.BEARER:
+        if self.auth_type == EnumAuthType.BEARER:
             return bool(self.token)
-        elif self.auth_type == EnumAuthType.API_KEY:
+        if self.auth_type == EnumAuthType.API_KEY:
             return bool(self.api_key)
-        elif self.auth_type is None:
+        if self.auth_type is None:
             return True  # No authentication required
         return False
 
     def has_credentials(self) -> bool:
         """Check if any credentials are configured."""
         return bool(
-            self.user_display_name or self.password or self.api_key or self.token
+            self.user_display_name or self.password or self.api_key or self.token,
         )
 
     def get_auth_header(self) -> dict[str, str] | None:
         """Generate authentication header."""
         if self.auth_type == EnumAuthType.BEARER and self.token:
             return {"Authorization": f"Bearer {self.token.get_secret_value()}"}
-        elif self.auth_type == EnumAuthType.API_KEY and self.api_key:
+        if self.auth_type == EnumAuthType.API_KEY and self.api_key:
             return {"X-API-Key": self.api_key.get_secret_value()}
         return None
 
@@ -103,7 +109,7 @@ class ModelConnectionAuth(BaseModel):
 
             user_hash = hashlib.sha256(value.encode()).hexdigest()
             self.user_id = UUID(
-                f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
+                f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}",
             )
         else:
             self.user_id = None
@@ -128,7 +134,7 @@ class ModelConnectionAuth(BaseModel):
         # Generate UUID from username
         user_hash = hashlib.sha256(username.encode()).hexdigest()
         user_id = UUID(
-            f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}"
+            f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}",
         )
 
         return cls(

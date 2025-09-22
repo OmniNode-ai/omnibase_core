@@ -58,7 +58,8 @@ class ModelCliExecutionConfig(BaseModel):
         description="Input data for execution",
     )
     output_format: EnumOutputFormat = Field(
-        default=EnumOutputFormat.TEXT, description="Expected output format"
+        default=EnumOutputFormat.TEXT,
+        description="Expected output format",
     )
     capture_output: bool = Field(default=True, description="Whether to capture output")
 
@@ -67,7 +68,9 @@ class ModelCliExecutionConfig(BaseModel):
         self.input_data[key] = input_data
 
     def get_input_data(
-        self, key: str, default: ModelCliExecutionInputData | None = None
+        self,
+        key: str,
+        default: ModelCliExecutionInputData | None = None,
     ) -> ModelCliExecutionInputData | None:
         """Get input data."""
         return self.input_data.get(key, default)

@@ -23,7 +23,8 @@ class ModelNodeInfoContainer(BaseModel):
     """
 
     nodes: dict[UUID, ModelNodeInfoSummary] = Field(
-        default_factory=dict, description="Collection of node information by node ID"
+        default_factory=dict,
+        description="Collection of node information by node ID",
     )
 
     def add_node(self, node_id: UUID, node_info: ModelNodeInfoSummary) -> None:

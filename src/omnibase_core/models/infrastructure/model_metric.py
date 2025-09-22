@@ -7,44 +7,47 @@ Follows ONEX one-model-per-file naming conventions and strong typing standards.
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-# Bounded TypeVar for metric values
-MetricValueType = TypeVar("MetricValueType", str, bool, bound=None)
+# Import metadata value for type-safe metric handling
+from ..metadata.model_metadata_value import ModelMetadataValue
+from ..metadata.model_numeric_value import ModelNumericValue
 
-from ..metadata.model_numeric_value import ModelNumericValue, NumericInput
 
-
-class ModelMetric(BaseModel, Generic[MetricValueType]):
+class ModelMetric(BaseModel):
     """
-    Strongly-typed metric model using TypeVar generics.
+    Strongly-typed metric model with Union-based value typing.
 
-    Eliminates Any usage and discriminated union patterns in favor of
-    proper generic typing following ONEX strong typing standards.
+    Eliminates Any usage and uses Union types for supported metric values
+    following ONEX strong typing standards.
     """
 
     key: str = Field(..., description="Metric key")
-    value: MetricValueType = Field(..., description="Strongly-typed metric value")
+    value: ModelMetadataValue = Field(..., description="Strongly-typed metric value")
     unit: str | None = Field(
-        None, description="Unit of measurement (for numeric metrics)"
+        None,
+        description="Unit of measurement (for numeric metrics)",
     )
     description: str | None = Field(None, description="Metric description")
 
     @property
-    def typed_value(self) -> MetricValueType:
+    def typed_value(self) -> ModelMetadataValue:
         """Get the strongly-typed metric value."""
         return self.value
 
     @classmethod
     def create_string_metric(
-        cls, key: str, value: str, description: str | None = None
-    ) -> ModelMetric[str]:
+        cls,
+        key: str,
+        value: str,
+        description: str | None = None,
+    ) -> ModelMetric:
         """Create a string metric with strong typing."""
-        return cls[str](
+        return cls(
             key=key,
-            value=value,
+            value=ModelMetadataValue.from_string(value),
             unit=None,
             description=description,
         )
@@ -56,23 +59,37 @@ class ModelMetric(BaseModel, Generic[MetricValueType]):
         value: ModelNumericValue,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric[ModelNumericValue]:
+    ) -> ModelMetric:
         """Create a numeric metric with ModelNumericValue."""
-        return cls[ModelNumericValue](
+        # Convert ModelNumericValue to basic numeric type for ModelMetadataValue
+        if value.value_type == "integer":
+            metadata_value = ModelMetadataValue.from_int(value.integer_value)
+        elif value.value_type == "float":
+            metadata_value = ModelMetadataValue.from_float(value.float_value)
+        else:
+            # Default to float conversion for unsupported numeric types
+            metadata_value = ModelMetadataValue.from_float(
+                float(value.to_python_value())
+            )
+
+        return cls(
             key=key,
-            value=value,
+            value=metadata_value,
             unit=unit,
             description=description,
         )
 
     @classmethod
     def create_boolean_metric(
-        cls, key: str, value: bool, description: str | None = None
-    ) -> ModelMetric[bool]:
+        cls,
+        key: str,
+        value: bool,
+        description: str | None = None,
+    ) -> ModelMetric:
         """Create a boolean metric with strong typing."""
-        return cls[bool](
+        return cls(
             key=key,
-            value=value,
+            value=ModelMetadataValue.from_bool(value),
             unit=None,
             description=description,
         )
@@ -81,16 +98,12 @@ class ModelMetric(BaseModel, Generic[MetricValueType]):
     def from_numeric_value(
         cls,
         key: str,
-        value: NumericInput,
+        value: ModelNumericValue,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric[ModelNumericValue]:
-        """Create numeric metric from ModelNumericValue, int, or float value."""
-        if isinstance(value, ModelNumericValue):
-            numeric_value = value
-        else:
-            numeric_value = ModelNumericValue.from_numeric(value)
-        return cls.create_numeric_metric(key, numeric_value, unit, description)
+    ) -> ModelMetric:
+        """Create numeric metric from ModelNumericValue."""
+        return cls.create_numeric_metric(key, value, unit, description)
 
     @classmethod
     def from_any_value(
@@ -99,17 +112,19 @@ class ModelMetric(BaseModel, Generic[MetricValueType]):
         value: Any,
         unit: str | None = None,
         description: str | None = None,
-    ) -> ModelMetric[Any]:
+    ) -> ModelMetric:
         """Create metric from any supported type with automatic type detection."""
         if isinstance(value, str):
             return cls.create_string_metric(key, value, description)
-        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+        if isinstance(value, bool):  # Check bool before int (bool is subclass of int)
             return cls.create_boolean_metric(key, value, description)
-        elif isinstance(value, (int, float)):
-            return cls.from_numeric_value(key, value, unit, description)
-        else:
-            # For unsupported types, convert to string representation
-            return cls.create_string_metric(key, str(value), description)
+        if isinstance(value, ModelNumericValue):
+            return cls.create_numeric_metric(key, value, unit, description)
+        if isinstance(value, (int, float)):
+            numeric_value = ModelNumericValue.from_numeric(value)
+            return cls.create_numeric_metric(key, numeric_value, unit, description)
+        # Convert unsupported types to string representation
+        return cls.create_string_metric(key, str(value), description)
 
 
 # Export for use

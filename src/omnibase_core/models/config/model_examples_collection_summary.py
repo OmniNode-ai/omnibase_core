@@ -26,19 +26,23 @@ class ModelExamplesCollectionSummary(BaseModel):
     """
 
     examples: list[ModelExampleSummary] = Field(
-        default_factory=list, description="List of example summaries"
+        default_factory=list,
+        description="List of example summaries",
     )
 
     metadata: ModelExampleMetadataSummary | None = Field(
-        None, description="Collection metadata summary"
+        None,
+        description="Collection metadata summary",
     )
 
     format: EnumDataFormat = Field(
-        default=EnumDataFormat.JSON, description="Collection format"
+        default=EnumDataFormat.JSON,
+        description="Collection format",
     )
 
     schema_compliant: bool = Field(
-        default=True, description="Whether collection is schema compliant"
+        default=True,
+        description="Whether collection is schema compliant",
     )
 
     example_count: int = Field(default=0, description="Total number of examples")
@@ -47,7 +51,8 @@ class ModelExamplesCollectionSummary(BaseModel):
 
     # Statistics
     completion_rate: float = Field(
-        default=0.0, description="Percentage of valid examples"
+        default=0.0,
+        description="Percentage of valid examples",
     )
 
     last_updated: str | None = Field(None, description="Last update timestamp")
@@ -62,7 +67,7 @@ class ModelExamplesCollectionSummary(BaseModel):
 
 # Export the models
 __all__ = [
-    "ModelExamplesCollectionSummary",
     "ModelExampleMetadataSummary",
     "ModelExampleSummary",
+    "ModelExamplesCollectionSummary",
 ]

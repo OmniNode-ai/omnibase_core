@@ -76,16 +76,15 @@ class EnumDataClassification(str, Enum):
         """Get default retention policy for classification level."""
         if classification in {cls.PUBLIC, cls.OPEN}:
             return "indefinite"
-        elif classification in {cls.INTERNAL, cls.PRIVATE}:
+        if classification in {cls.INTERNAL, cls.PRIVATE}:
             return "7_years"
-        elif classification in {cls.CONFIDENTIAL, cls.SENSITIVE}:
+        if classification in {cls.CONFIDENTIAL, cls.SENSITIVE}:
             return "5_years"
-        elif classification in {cls.RESTRICTED, cls.CLASSIFIED}:
+        if classification in {cls.RESTRICTED, cls.CLASSIFIED}:
             return "3_years"
-        elif classification in {cls.SECRET, cls.TOP_SECRET}:
+        if classification in {cls.SECRET, cls.TOP_SECRET}:
             return "1_year"
-        else:
-            return "default"
+        return "default"
 
 
 # Export the enum

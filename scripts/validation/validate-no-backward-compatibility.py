@@ -26,6 +26,9 @@ import re
 import sys
 from pathlib import Path
 
+# Regex flag constants to avoid union type violations
+MULTILINE_IGNORECASE_DOTALL = re.MULTILINE | re.IGNORECASE | re.DOTALL
+
 # Constants
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent memory issues
 
@@ -187,9 +190,7 @@ class BackwardCompatibilityDetector:
         ]
 
         for pattern in compatibility_method_patterns:
-            matches = re.finditer(
-                pattern, content, re.MULTILINE | re.IGNORECASE | re.DOTALL
-            )
+            matches = re.finditer(pattern, content, MULTILINE_IGNORECASE_DOTALL)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
                 errors.append(
@@ -222,9 +223,7 @@ class BackwardCompatibilityDetector:
         ]
 
         for pattern in extra_allow_patterns:
-            matches = re.finditer(
-                pattern, content, re.MULTILINE | re.IGNORECASE | re.DOTALL
-            )
+            matches = re.finditer(pattern, content, MULTILINE_IGNORECASE_DOTALL)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
                 errors.append(

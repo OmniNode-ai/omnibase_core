@@ -17,13 +17,16 @@ class ModelMessageQueueProperties(BaseModel):
     # Entity references with UUID + display name pattern
     queue_id: UUID | None = Field(default=None, description="Queue UUID reference")
     queue_display_name: str | None = Field(
-        default=None, description="Queue display name"
+        default=None,
+        description="Queue display name",
     )
     exchange_id: UUID | None = Field(
-        default=None, description="Exchange UUID reference"
+        default=None,
+        description="Exchange UUID reference",
     )
     exchange_display_name: str | None = Field(
-        default=None, description="Exchange display name"
+        default=None,
+        description="Exchange display name",
     )
 
     # Queue configuration
@@ -34,7 +37,7 @@ class ModelMessageQueueProperties(BaseModel):
         """Get queue identifier for display purposes."""
         if self.queue_display_name:
             return self.queue_display_name
-        elif self.queue_id:
+        if self.queue_id:
             return str(self.queue_id)
         return None
 
@@ -42,7 +45,7 @@ class ModelMessageQueueProperties(BaseModel):
         """Get exchange identifier for display purposes."""
         if self.exchange_display_name:
             return self.exchange_display_name
-        elif self.exchange_id:
+        if self.exchange_id:
             return str(self.exchange_id)
         return None
 

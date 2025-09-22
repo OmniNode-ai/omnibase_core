@@ -198,7 +198,9 @@ class ModelFunctionNode(BaseModel):
             function_type_enum = EnumFunctionType.TRANSFORM  # Default fallback
 
         core = ModelFunctionNodeCore.create_simple(
-            name, description, function_type_enum
+            name,
+            description,
+            function_type_enum,
         )
         return cls(core=core)
 
@@ -212,7 +214,6 @@ class ModelFunctionNode(BaseModel):
     ) -> ModelFunctionNode:
         """Create function node from signature information."""
         # Import the enum to convert string to enum
-        from ...enums.enum_return_type import EnumReturnType
 
         # Convert string to enum for type safety
         return_type_enum = None
@@ -223,7 +224,10 @@ class ModelFunctionNode(BaseModel):
                 return_type_enum = EnumReturnType.UNKNOWN  # Default fallback
 
         core = ModelFunctionNodeCore.create_from_signature(
-            name, parameters, return_type_enum, description
+            name,
+            parameters,
+            return_type_enum,
+            description,
         )
         return cls(core=core)
 

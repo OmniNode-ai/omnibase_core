@@ -21,13 +21,14 @@ class ModelCliResultData(BaseModel):
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
     output_data: ModelCliValue | None = Field(
-        None, description="Output data if successful"
+        None,
+        description="Output data if successful",
     )
     error_message: str | None = Field(description="Error message if failed")
     # Entity reference with UUID
     tool_id: UUID | None = Field(description="Unique identifier of the tool")
     tool_display_name: str | None = Field(
-        description="Human-readable tool name if available"
+        description="Human-readable tool name if available",
     )
     execution_time_ms: int | None = Field(description="Execution time in milliseconds")
     status_code: int = Field(description="Status code")

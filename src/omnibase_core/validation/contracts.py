@@ -14,7 +14,6 @@ import os
 import signal
 import sys
 from pathlib import Path
-from typing import Any, List
 
 import yaml
 
@@ -28,15 +27,13 @@ VALIDATION_TIMEOUT = 300  # 5 minutes
 class TimeoutError(Exception):
     """Raised when validation times out."""
 
-    pass
 
-
-def timeout_handler(signum, frame):
+def timeout_handler(signum: int, frame: object) -> None:
     """Handle timeout signal."""
     raise TimeoutError("Validation timed out")
 
 
-def validate_yaml_file(file_path: Path) -> List[str]:
+def validate_yaml_file(file_path: Path) -> list[str]:
     """Validate a single YAML file."""
     errors = []
 
@@ -54,7 +51,7 @@ def validate_yaml_file(file_path: Path) -> List[str]:
         file_size = file_path.stat().st_size
         if file_size > MAX_FILE_SIZE:
             errors.append(
-                f"File too large ({file_size} bytes), max allowed: {MAX_FILE_SIZE}"
+                f"File too large ({file_size} bytes), max allowed: {MAX_FILE_SIZE}",
             )
             return errors
     except OSError as e:
@@ -68,7 +65,7 @@ def validate_yaml_file(file_path: Path) -> List[str]:
 
     # Validate YAML syntax and structure
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         # Parse YAML
@@ -105,7 +102,7 @@ def validate_yaml_file(file_path: Path) -> List[str]:
                     ]
                     if missing_metadata:
                         errors.append(
-                            f"Missing required metadata fields: {', '.join(missing_metadata)}"
+                            f"Missing required metadata fields: {', '.join(missing_metadata)}",
                         )
 
             # Validate specification section
@@ -120,7 +117,7 @@ def validate_yaml_file(file_path: Path) -> List[str]:
     return errors
 
 
-def validate_no_manual_yaml(directory: Path) -> List[str]:
+def validate_no_manual_yaml(directory: Path) -> list[str]:
     """Validate that there are no manually created YAML files in restricted areas."""
     errors = []
 
@@ -136,7 +133,7 @@ def validate_no_manual_yaml(directory: Path) -> List[str]:
         for yaml_file in directory.glob(pattern):
             # Check if file appears to be manually created
             try:
-                with open(yaml_file, "r", encoding="utf-8") as f:
+                with open(yaml_file, encoding="utf-8") as f:
                     content = f.read()
 
                 # Look for manual creation indicators
@@ -151,7 +148,7 @@ def validate_no_manual_yaml(directory: Path) -> List[str]:
                 for indicator in manual_indicators:
                     if indicator.lower() in content.lower():
                         errors.append(
-                            f"Manual YAML detected in restricted area: {yaml_file}"
+                            f"Manual YAML detected in restricted area: {yaml_file}",
                         )
                         break
 
@@ -163,7 +160,7 @@ def validate_no_manual_yaml(directory: Path) -> List[str]:
 
 def validate_contracts_directory(directory: Path) -> ValidationResult:
     """Validate all contract files in a directory."""
-    yaml_files = []
+    yaml_files: list[Path] = []
 
     # Find YAML files
     for ext in ["*.yaml", "*.yml"]:
@@ -209,10 +206,13 @@ def validate_contracts_directory(directory: Path) -> ValidationResult:
 def validate_contracts_cli() -> int:
     """CLI interface for contract validation."""
     parser = argparse.ArgumentParser(
-        description="Generic YAML contract validation for omni* repositories"
+        description="Generic YAML contract validation for omni* repositories",
     )
     parser.add_argument(
-        "directories", nargs="*", default=["."], help="Directories to validate"
+        "directories",
+        nargs="*",
+        default=["."],
+        help="Directories to validate",
     )
     parser.add_argument(
         "--timeout",
@@ -252,16 +252,15 @@ def validate_contracts_cli() -> int:
                 for error in result.errors:
                     print(f"   {error}")
 
-        print(f"\n📊 Contract Validation Summary:")
+        print("\n📊 Contract Validation Summary:")
         print(f"   • Files checked: {overall_result.files_checked}")
         print(f"   • Issues found: {len(overall_result.errors)}")
 
         if overall_result.success:
             print("✅ Contract validation PASSED")
             return 0
-        else:
-            print("❌ Contract validation FAILED")
-            return 1
+        print("❌ Contract validation FAILED")
+        return 1
 
     except TimeoutError:
         print(f"❌ Validation timed out after {args.timeout} seconds")

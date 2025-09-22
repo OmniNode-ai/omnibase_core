@@ -16,14 +16,17 @@ class ModelDatabaseProperties(BaseModel):
 
     # Entity references with UUID + display name pattern
     database_id: UUID | None = Field(
-        default=None, description="Database UUID reference"
+        default=None,
+        description="Database UUID reference",
     )
     database_display_name: str | None = Field(
-        default=None, description="Database display name"
+        default=None,
+        description="Database display name",
     )
     schema_id: UUID | None = Field(default=None, description="Schema UUID reference")
     schema_display_name: str | None = Field(
-        default=None, description="Schema display name"
+        default=None,
+        description="Schema display name",
     )
 
     # Database configuration (non-string)
@@ -34,7 +37,7 @@ class ModelDatabaseProperties(BaseModel):
         """Get database identifier for display purposes."""
         if self.database_display_name:
             return self.database_display_name
-        elif self.database_id:
+        if self.database_id:
             return str(self.database_id)
         return None
 
@@ -42,7 +45,7 @@ class ModelDatabaseProperties(BaseModel):
         """Get schema identifier for display purposes."""
         if self.schema_display_name:
             return self.schema_display_name
-        elif self.schema_id:
+        if self.schema_id:
             return str(self.schema_id)
         return None
 

@@ -44,10 +44,12 @@ class ModelOnexUri(BaseModel):
 
     # Entity reference - UUID-based with display name
     namespace_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the namespace entity"
+        default_factory=uuid4,
+        description="Unique identifier for the namespace entity",
     )
     namespace_display_name: str | None = Field(
-        None, description="Human-readable namespace component of the URI"
+        None,
+        description="Human-readable namespace component of the URI",
     )
 
     version_spec: str = Field(

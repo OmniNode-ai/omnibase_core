@@ -7,7 +7,6 @@ descriptions, and dependencies for each capability.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -28,7 +27,8 @@ class ModelNodeCapability(BaseModel):
 
     # Core fields (required) - UUID-based entity references
     capability_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the capability entity"
+        default_factory=uuid4,
+        description="Unique identifier for the capability entity",
     )
     capability_display_name: str | None = Field(
         None,
@@ -152,7 +152,7 @@ class ModelNodeCapability(BaseModel):
             performance_impact=EnumPerformanceImpact.LOW,
             example_config={
                 "telemetry_endpoint": ModelNodeConfigurationValue.from_string(
-                    "http://telemetry.example.com"
+                    "http://telemetry.example.com",
                 ),
             },
         )
@@ -215,7 +215,7 @@ class ModelNodeCapability(BaseModel):
             example_config={
                 "max_retries": ModelNodeConfigurationValue.from_int(3),
                 "backoff_strategy": ModelNodeConfigurationValue.from_string(
-                    "exponential"
+                    "exponential",
                 ),
             },
         )

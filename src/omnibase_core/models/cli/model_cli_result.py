@@ -16,7 +16,7 @@ T = TypeVar("T")
 MetadataValueType = TypeVar("MetadataValueType", str, int, float, bool)
 
 # For methods that need to return a specific type from union, we'll use Any with runtime checking
-from typing import Any, cast
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,10 @@ class ModelCliResult(BaseModel):
 
     output_data: ModelCliOutputData = Field(
         default_factory=lambda: ModelCliOutputData(
-            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+            stdout=None,
+            stderr=None,
+            execution_time_ms=None,
+            memory_usage_mb=None,
         ),
         description="Structured output data from execution",
     )
@@ -203,7 +206,10 @@ class ModelCliResult(BaseModel):
             self.debug_info.set_custom_field(key, value)
 
     def add_trace_data(
-        self, key: str, value: MetadataValueType, operation: str = ""
+        self,
+        key: str,
+        value: MetadataValueType,
+        operation: str = "",
     ) -> None:
         """Add trace data with proper typing."""
         if self.trace_data is None:
@@ -244,7 +250,7 @@ class ModelCliResult(BaseModel):
         if self.result_metadata is None:
             return default
         value = self.result_metadata.get_custom_field(key, default)
-        return cast(MetadataValueType, value if value is not None else default)
+        return value if value is not None else default
 
     def get_typed_metadata(self, key: str, field_type: type[T], default: T) -> T:
         """Get result metadata with specific type checking."""
@@ -256,11 +262,13 @@ class ModelCliResult(BaseModel):
         return default
 
     def get_output_value(
-        self, key: str, default: MetadataValueType
+        self,
+        key: str,
+        default: MetadataValueType,
     ) -> MetadataValueType:
         """Get a specific output value with proper typing."""
         value = self.output_data.get_field_value(key, default)
-        return cast(MetadataValueType, value if value is not None else default)
+        return value if value is not None else default
 
     def set_output_value(self, key: str, value: MetadataValueType) -> None:
         """Set a specific output value with proper typing."""
@@ -316,7 +324,10 @@ class ModelCliResult(BaseModel):
 
         # Use provided output data or create empty one
         output_data_obj = output_data or ModelCliOutputData(
-            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+            stdout=None,
+            stderr=None,
+            execution_time_ms=None,
+            memory_usage_mb=None,
         )
 
         return cls(

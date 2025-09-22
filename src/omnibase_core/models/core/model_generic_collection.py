@@ -7,25 +7,24 @@ can replace ad-hoc collection operations found across Config, Data, and other do
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import (
-    Callable,
     Generic,
     TypedDict,
     TypeVar,
-    cast,
 )
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from ...protocols_local.collection_item_protocol import CollectionItem
 from ..common.model_schema_value import ModelSchemaValue
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # More constrained TypeVar for collection items
 T = TypeVar(
-    "T", bound=BaseModel
+    "T",
+    bound=BaseModel,
 )  # Keep BaseModel bound for now, can be made more specific
 
 
@@ -57,15 +56,18 @@ class ModelGenericCollection(BaseModel, Generic[T]):
     """
 
     items: list[T] = Field(
-        default_factory=list, description="Collection items with strong typing"
+        default_factory=list,
+        description="Collection items with strong typing",
     )
 
     collection_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the collection"
+        default_factory=uuid4,
+        description="Unique identifier for the collection",
     )
 
     collection_display_name: str = Field(
-        default="", description="Human-readable display name for the collection"
+        default="",
+        description="Human-readable display name for the collection",
     )
 
     created_at: datetime = Field(
@@ -195,7 +197,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
         """
         return self.filter_items(
             lambda item: getattr(item, "is_valid", True)
-            and getattr(item, "valid", True)
+            and getattr(item, "valid", True),
         )
 
     def get_items_by_tag(self, tag: str) -> list[T]:
@@ -209,7 +211,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             List of items that have the specified tag
         """
         return self.filter_items(
-            lambda item: hasattr(item, "tags") and tag in getattr(item, "tags", [])
+            lambda item: hasattr(item, "tags") and tag in getattr(item, "tags", []),
         )
 
     def item_count(self) -> int:
@@ -272,7 +274,8 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             reverse: If True, sort newest first
         """
         self.items.sort(
-            key=lambda item: getattr(item, "created_at", datetime.min), reverse=reverse
+            key=lambda item: getattr(item, "created_at", datetime.min),
+            reverse=reverse,
         )
         self.updated_at = datetime.now(UTC)
 
@@ -402,7 +405,7 @@ class ModelGenericCollection(BaseModel, Generic[T]):
             Empty collection instance
         """
         kwargs: TypedDictCollectionCreateKwargs = {
-            "collection_display_name": collection_display_name
+            "collection_display_name": collection_display_name,
         }
         if collection_id is not None:
             kwargs["collection_id"] = collection_id
@@ -433,11 +436,10 @@ class ModelGenericCollection(BaseModel, Generic[T]):
                 collection_display_name=collection_display_name,
                 collection_id=collection_id,
             )
-        else:
-            return cls(
-                items=items,
-                collection_display_name=collection_display_name,
-            )
+        return cls(
+            items=items,
+            collection_display_name=collection_display_name,
+        )
 
 
 # Export for use

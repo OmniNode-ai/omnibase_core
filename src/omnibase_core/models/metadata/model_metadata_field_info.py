@@ -7,8 +7,6 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from ...enums.enum_field_type import EnumFieldType
@@ -28,7 +26,8 @@ class ModelMetadataFieldInfo(BaseModel):
 
     # Grouped properties by concern
     identity: ModelFieldIdentity = Field(
-        ..., description="Field identity and naming information"
+        ...,
+        description="Field identity and naming information",
     )
 
     # Field properties (non-string)
@@ -151,7 +150,7 @@ class ModelMetadataFieldInfo(BaseModel):
             description="Unique identifier",
         )
         validation = ModelFieldValidationRules(
-            validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            validation_pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
         )
         return cls(
             identity=identity,

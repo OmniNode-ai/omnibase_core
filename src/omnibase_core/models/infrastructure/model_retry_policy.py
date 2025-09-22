@@ -118,7 +118,8 @@ class ModelRetryPolicy(BaseModel):
             delay = self._calculate_fibonacci_delay()
         elif self.config.backoff_strategy == EnumRetryBackoffStrategy.RANDOM:
             delay = random.uniform(
-                self.config.base_delay_seconds, self.config.max_delay_seconds
+                self.config.base_delay_seconds,
+                self.config.max_delay_seconds,
             )
 
         # Cap at maximum delay
@@ -127,7 +128,8 @@ class ModelRetryPolicy(BaseModel):
         # Add jitter if enabled
         if self.config.jitter_enabled:
             jitter = random.uniform(
-                -self.config.jitter_max_seconds, self.config.jitter_max_seconds
+                -self.config.jitter_max_seconds,
+                self.config.jitter_max_seconds,
             )
             delay = max(0.1, delay + jitter)
 
@@ -145,7 +147,9 @@ class ModelRetryPolicy(BaseModel):
         return self.config.base_delay_seconds * fib_multiplier
 
     def should_retry(
-        self, error: Exception | None = None, status_code: int | None = None
+        self,
+        error: Exception | None = None,
+        status_code: int | None = None,
     ) -> bool:
         """Determine if retry should be attempted."""
         # Check if retries exhausted
@@ -158,7 +162,7 @@ class ModelRetryPolicy(BaseModel):
 
         # Check status code conditions
         if status_code is not None and not self.conditions.should_retry_status_code(
-            status_code
+            status_code,
         ):
             return False
 
@@ -173,7 +177,10 @@ class ModelRetryPolicy(BaseModel):
     ) -> None:
         """Record the result of an attempt."""
         self.execution.record_attempt(
-            success, error, status_code, execution_time_seconds
+            success,
+            error,
+            status_code,
+            execution_time_seconds,
         )
 
     def get_next_attempt_time(self) -> datetime:
@@ -288,7 +295,8 @@ class ModelRetryPolicy(BaseModel):
         """Create retry policy with circuit breaker."""
         config = ModelRetryConfig(max_retries=max_retries)
         advanced = ModelRetryAdvanced.create_with_circuit_breaker(
-            circuit_threshold, reset_timeout
+            circuit_threshold,
+            reset_timeout,
         )
         return cls(config=config, advanced=advanced)
 

@@ -8,7 +8,6 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -38,13 +37,16 @@ class ModelNodeInfoSummary(BaseModel):
     node_display_name: str | None = Field(None, description="Human-readable node name")
     description: str | None = Field(None, description="Node description")
     node_type: EnumNodeType = Field(
-        default=EnumNodeType.UNKNOWN, description="Type of node"
+        default=EnumNodeType.UNKNOWN,
+        description="Type of node",
     )
     status: EnumMetadataNodeStatus = Field(
-        default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
+        default=EnumMetadataNodeStatus.ACTIVE,
+        description="Node status",
     )
     complexity: EnumComplexityLevel = Field(
-        default=EnumComplexityLevel.MEDIUM, description="Node complexity level"
+        default=EnumComplexityLevel.MEDIUM,
+        description="Node complexity level",
     )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -55,14 +57,16 @@ class ModelNodeInfoSummary(BaseModel):
     created_at: datetime | None = Field(None, description="Creation timestamp")
     updated_at: datetime | None = Field(None, description="Update timestamp")
     last_validated: datetime | None = Field(
-        None, description="Last validation timestamp"
+        None,
+        description="Last validation timestamp",
     )
 
     # Categories and organization
     tags: list[str] = Field(default_factory=list, description="Node tags")
     categories: list[str] = Field(default_factory=list, description="Node categories")
     dependencies: list[str] = Field(
-        default_factory=list, description="Node dependencies"
+        default_factory=list,
+        description="Node dependencies",
     )
     related_nodes: list[str] = Field(default_factory=list, description="Related nodes")
 
@@ -77,16 +81,23 @@ class ModelNodeInfoSummary(BaseModel):
     # Metrics
     usage_count: int = Field(default=0, description="Usage count")
     success_rate: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Success rate (0-1)"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Success rate (0-1)",
     )
 
     error_rate: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Error rate (0-1)"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Error rate (0-1)",
     )
 
     # Performance
     average_execution_time_ms: float = Field(
-        default=0.0, description="Average execution time in milliseconds"
+        default=0.0,
+        description="Average execution time in milliseconds",
     )
 
     memory_usage_mb: float = Field(default=0.0, description="Memory usage in MB")

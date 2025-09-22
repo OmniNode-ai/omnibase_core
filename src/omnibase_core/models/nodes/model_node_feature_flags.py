@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from .types_node_feature_summary import NodeFeatureSummaryType
+
 
 class ModelNodeFeatureFlags(BaseModel):
     """
@@ -46,7 +48,7 @@ class ModelNodeFeatureFlags(BaseModel):
             features.append("tracing")
         return features
 
-    def get_feature_summary(self) -> dict[str, str]:
+    def get_feature_summary(self) -> NodeFeatureSummaryType:
         """Get feature flags summary as string values for type safety."""
         enabled = self.get_enabled_features()
         return {

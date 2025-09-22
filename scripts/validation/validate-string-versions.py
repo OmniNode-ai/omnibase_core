@@ -194,7 +194,7 @@ class PythonASTValidator(ast.NodeVisitor):
             return True
 
         # Optional string types
-        if annotation_str in ["str | None", "Optional[str]", "Union[str, None]"]:
+        if annotation_str in ["str | None", "Optional[str]", "str | None"]:
             return True
 
         # String unions (but not including UUID or ModelSemVer)

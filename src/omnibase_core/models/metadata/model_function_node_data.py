@@ -15,7 +15,6 @@ from pydantic import BaseModel, Field
 from ...enums.enum_config_type import EnumConfigType
 from ...enums.enum_function_status import EnumFunctionStatus
 from ...enums.enum_node_type import EnumNodeType
-from ...utils.uuid_utilities import uuid_from_string
 from ..infrastructure.model_cli_value import ModelCliValue
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_semver import ModelSemVer
@@ -34,19 +33,23 @@ class ModelFunctionNodeData(BaseModel):
 
     # Core identification - UUID-based entity references
     node_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the function node"
+        default_factory=uuid4,
+        description="Unique identifier for the function node",
     )
     node_display_name: str | None = Field(
-        None, description="Human-readable function node name"
+        None,
+        description="Human-readable function node name",
     )
     description: str | None = Field(None, description="Node description")
 
     # Basic properties
     node_type: EnumNodeType = Field(
-        default=EnumNodeType.FUNCTION, description="Type of node"
+        default=EnumNodeType.FUNCTION,
+        description="Type of node",
     )
     status: EnumFunctionStatus = Field(
-        default=EnumFunctionStatus.ACTIVE, description="Node status"
+        default=EnumFunctionStatus.ACTIVE,
+        description="Node status",
     )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -55,29 +58,34 @@ class ModelFunctionNodeData(BaseModel):
 
     # Structured data instead of horrible unions
     tags: list[str] = Field(
-        default_factory=list, description="Tags associated with the node"
+        default_factory=list,
+        description="Tags associated with the node",
     )
 
     string_properties: list[ModelTypedMetrics[str]] = Field(
-        default_factory=list, description="String-based properties and metadata"
+        default_factory=list,
+        description="String-based properties and metadata",
     )
 
     numeric_properties: list[ModelTypedMetrics[float]] = Field(
-        default_factory=list, description="Numeric properties and metrics"
+        default_factory=list,
+        description="Numeric properties and metrics",
     )
 
     boolean_properties: list[ModelTypedMetrics[bool]] = Field(
-        default_factory=list, description="Boolean flags and states"
+        default_factory=list,
+        description="Boolean flags and states",
     )
 
     configurations: list[ModelNestedConfiguration] = Field(
-        default_factory=list, description="Nested configuration objects"
+        default_factory=list,
+        description="Nested configuration objects",
     )
 
     def add_string_property(self, name: str, value: str, **kwargs: Any) -> None:
         """Add a string property."""
         self.string_properties.append(
-            ModelTypedMetrics.string_metric(name=name, value=value, **kwargs)
+            ModelTypedMetrics.string_metric(name=name, value=value, **kwargs),
         )
 
     def add_numeric_property(self, name: str, value: float, **kwargs: Any) -> None:
@@ -89,7 +97,7 @@ class ModelFunctionNodeData(BaseModel):
     def add_boolean_property(self, name: str, value: bool, **kwargs: Any) -> None:
         """Add a boolean property."""
         self.boolean_properties.append(
-            ModelTypedMetrics.boolean_metric(name=name, value=value, **kwargs)
+            ModelTypedMetrics.boolean_metric(name=name, value=value, **kwargs),
         )
 
     def add_configuration(
@@ -106,7 +114,7 @@ class ModelFunctionNodeData(BaseModel):
                 config_display_name=config_display_name,
                 config_type=config_type,
                 settings=settings,
-            )
+            ),
         )
 
 

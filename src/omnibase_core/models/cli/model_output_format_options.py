@@ -7,7 +7,8 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar, cast
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -48,28 +49,38 @@ class ModelOutputFormatOptions(BaseModel):
 
     # Common format options
     indent_size: int = Field(
-        default=4, description="Indentation size for formatted output", ge=0, le=8
+        default=4,
+        description="Indentation size for formatted output",
+        ge=0,
+        le=8,
     )
     line_width: int = Field(
-        default=80, description="Maximum line width for output", ge=40, le=200
+        default=80,
+        description="Maximum line width for output",
+        ge=40,
+        le=200,
     )
 
     # Content formatting
     include_headers: bool = Field(default=True, description="Include headers in output")
     include_timestamps: bool = Field(
-        default=True, description="Include timestamps in output"
+        default=True,
+        description="Include timestamps in output",
     )
     include_line_numbers: bool = Field(
-        default=False, description="Include line numbers in output"
+        default=False,
+        description="Include line numbers in output",
     )
 
     # Color and styling
     color_enabled: bool = Field(default=True, description="Enable colored output")
     color_scheme: EnumColorScheme = Field(
-        default=EnumColorScheme.DEFAULT, description="Color scheme name"
+        default=EnumColorScheme.DEFAULT,
+        description="Color scheme name",
     )
     highlight_errors: bool = Field(
-        default=True, description="Highlight errors in output"
+        default=True,
+        description="Highlight errors in output",
     )
 
     # Data presentation
@@ -81,35 +92,45 @@ class ModelOutputFormatOptions(BaseModel):
     table_borders: bool = Field(default=True, description="Show table borders")
     table_headers: bool = Field(default=True, description="Show table headers")
     table_alignment: EnumTableAlignment = Field(
-        default=EnumTableAlignment.LEFT, description="Table column alignment"
+        default=EnumTableAlignment.LEFT,
+        description="Table column alignment",
     )
 
     # JSON/YAML specific options
     pretty_print: bool = Field(
-        default=True, description="Pretty print JSON/YAML output"
+        default=True,
+        description="Pretty print JSON/YAML output",
     )
     sort_keys: bool = Field(default=False, description="Sort keys in JSON/YAML output")
     escape_unicode: bool = Field(default=False, description="Escape unicode characters")
 
     # Pagination options
     page_size: int | None = Field(
-        None, description="Number of items per page", ge=1, le=1000
+        None,
+        description="Number of items per page",
+        ge=1,
+        le=1000,
     )
     max_items: int | None = Field(
-        None, description="Maximum number of items to display", ge=1
+        None,
+        description="Maximum number of items to display",
+        ge=1,
     )
 
     # File output options
     append_mode: bool = Field(
-        default=False, description="Append to existing file instead of overwriting"
+        default=False,
+        description="Append to existing file instead of overwriting",
     )
     create_backup: bool = Field(
-        default=False, description="Create backup of existing file"
+        default=False,
+        description="Create backup of existing file",
     )
 
     # Custom format options (extensibility)
     custom_options: dict[str, ModelCliValue] = Field(
-        default_factory=dict, description="Custom format options for specific use cases"
+        default_factory=dict,
+        description="Custom format options for specific use cases",
     )
 
     def set_compact_mode(self) -> None:
@@ -151,7 +172,10 @@ class ModelOutputFormatOptions(BaseModel):
         self.table_alignment = alignment
 
     def set_json_style(
-        self, pretty: bool = True, sort: bool = False, escape: bool = False
+        self,
+        pretty: bool = True,
+        sort: bool = False,
+        escape: bool = False,
     ) -> None:
         """Configure JSON formatting options."""
         self.pretty_print = pretty
@@ -174,8 +198,9 @@ class ModelOutputFormatOptions(BaseModel):
     @classmethod
     @allow_dict_any
     def create_from_string_data(
-        cls, data: dict[str, str]
-    ) -> "ModelOutputFormatOptions":
+        cls,
+        data: dict[str, str],
+    ) -> ModelOutputFormatOptions:
         """Create instance from string-based configuration data."""
 
         # Helper to safely convert string to bool

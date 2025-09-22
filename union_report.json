@@ -1,17 +1,50 @@
 {
   "metadata": {
-    "generated_at": "2025-09-22T11:51:57.606413",
-    "total_files_scanned": 363,
-    "total_unions_found": 811,
+    "generated_at": "2025-09-22T16:23:43.280391",
+    "total_files_scanned": 386,
+    "total_unions_found": 756,
     "min_complexity_threshold": 3,
-    "total_issues": 0
+    "total_issues": 32
   },
   "summary": {
-    "complex_unions": 22,
+    "complex_unions": 16,
     "primitive_heavy": 0,
-    "repeated_patterns": 47
+    "repeated_patterns": 43
   },
-  "issues": [],
+  "issues": [
+    "Repeated pattern 'Union[re.DOTALL, re.IGNORECASE, re.MULTILINE]' found 4 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[re.IGNORECASE, re.MULTILINE]' found 8 times across 3 files - consider creating a reusable model",
+    "Repeated pattern 'Union[re.DOTALL, re.MULTILINE]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, int]' found 58 times across 25 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, float]' found 25 times across 14 files - consider creating a reusable model",
+    "Repeated pattern 'Union[Exception, None]' found 6 times across 5 files - consider creating a reusable model",
+    "Repeated pattern 'Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]' found 3 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, list]' found 20 times across 17 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelSchemaValue, None]' found 12 times across 7 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, str]' found 296 times across 87 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelSemVer, None]' found 13 times across 11 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, T]' found 14 times across 4 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, datetime]' found 67 times across 25 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, UUID]' found 44 times across 22 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelExampleOutputData, None]' found 4 times across 3 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, Path]' found 16 times across 5 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, dict]' found 22 times across 11 files - consider creating a reusable model",
+    "Repeated pattern 'Union[EnumRuntimeCategory, None]' found 3 times across 3 files - consider creating a reusable model",
+    "Repeated pattern 'Union[EnumReturnType, None]' found 5 times across 3 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelNumericValue, None]' found 7 times across 4 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelCliExecutionContext, None]' found 4 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[EnumExecutionPhase, None]' found 3 times across 3 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelCliExecutionInputData, None]' found 4 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelCliOutputData, None]' found 3 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelDuration, None]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, bool]' found 6 times across 5 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, SecretStr]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelCliValue, None]' found 8 times across 6 files - consider creating a reusable model",
+    "Repeated pattern 'Union[None, timedelta]' found 4 times across 2 files - consider creating a reusable model",
+    "Repeated pattern 'Union[E, Exception]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[Exception, F]' found 3 times across 1 files - consider creating a reusable model",
+    "Repeated pattern 'Union[ModelFunctionNode, ModelFunctionNodeData]' found 3 times across 1 files - consider creating a reusable model"
+  ],
   "patterns": [
     {
       "signature": "Union[re.DOTALL, re.IGNORECASE, re.MULTILINE]",
@@ -222,18 +255,18 @@
         "list"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/validation/validation_utils.py",
-      "line": 41
+      "file": "src/omnibase_core/validation/__init__.py",
+      "line": 68
     },
     {
-      "signature": "Union[None, list]",
+      "signature": "Union[None, ValidationMetadataType]",
       "types": [
         "None",
-        "list"
+        "ValidationMetadataType"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/validation/validation_utils.py",
-      "line": 42
+      "line": 47
     },
     {
       "signature": "Union[None, ProtocolInfo]",
@@ -243,7 +276,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/validation/validation_utils.py",
-      "line": 109
+      "line": 141
     },
     {
       "signature": "Union[None, list]",
@@ -373,7 +406,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_custom_fields_accessor.py",
-      "line": 19
+      "line": 17
     },
     {
       "signature": "Union[ModelSchemaValue, None]",
@@ -383,27 +416,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_custom_fields_accessor.py",
-      "line": 20
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/core/model_item_summary.py",
-      "line": 33
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/core/model_item_summary.py",
-      "line": 37
+      "line": 18
     },
     {
       "signature": "Union[None, datetime]",
@@ -442,8 +455,128 @@
         "str"
       ],
       "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 43
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 53
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 63
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 65
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 93
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 94
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 123
+    },
+    {
+      "signature": "Union[ModelContainer, T]",
+      "types": [
+        "ModelContainer",
+        "T"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 217
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 265
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 279
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 293
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/core/model_container.py",
+      "line": 307
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_factory.py",
-      "line": 29
+      "line": 30
     },
     {
       "signature": "Union[ModelSchemaValue, None]",
@@ -453,7 +586,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_factory.py",
-      "line": 30
+      "line": 31
     },
     {
       "signature": "Union[EnumSeverityLevel, None]",
@@ -463,7 +596,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_factory.py",
-      "line": 47
+      "line": 48
     },
     {
       "signature": "Union[ModelSchemaValue, None]",
@@ -513,7 +646,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_collection.py",
-      "line": 124
+      "line": 122
     },
     {
       "signature": "Union[None, T]",
@@ -523,7 +656,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_collection.py",
-      "line": 139
+      "line": 137
     },
     {
       "signature": "Union[None, T]",
@@ -533,7 +666,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_collection.py",
-      "line": 154
+      "line": 152
     },
     {
       "signature": "Union[None, UUID]",
@@ -543,7 +676,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_collection.py",
-      "line": 392
+      "line": 390
     },
     {
       "signature": "Union[None, UUID]",
@@ -553,7 +686,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_generic_collection.py",
-      "line": 416
+      "line": 414
     },
     {
       "signature": "Union[ModelSchemaValue, None]",
@@ -573,7 +706,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_result_accessor.py",
-      "line": 19
+      "line": 17
     },
     {
       "signature": "Union[ModelSchemaValue, None]",
@@ -583,7 +716,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_result_accessor.py",
-      "line": 20
+      "line": 18
     },
     {
       "signature": "Union[None, list]",
@@ -594,16 +727,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/core/model_environment_accessor.py",
       "line": 66
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example.py",
-      "line": 38
     },
     {
       "signature": "Union[ModelExampleInputData, None]",
@@ -636,36 +759,6 @@
       "line": 54
     },
     {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example.py",
-      "line": 71
-    },
-    {
-      "signature": "Union[None, datetime]",
-      "types": [
-        "None",
-        "datetime"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example.py",
-      "line": 77
-    },
-    {
-      "signature": "Union[None, datetime]",
-      "types": [
-        "None",
-        "datetime"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example.py",
-      "line": 82
-    },
-    {
       "signature": "Union[None, Path]",
       "types": [
         "None",
@@ -684,36 +777,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_artifact_type_config.py",
       "line": 27
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_property_metadata.py",
-      "line": 18
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_property_metadata.py",
-      "line": 19
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_property_metadata.py",
-      "line": 22
     },
     {
       "signature": "Union[None, float]",
@@ -736,36 +799,6 @@
       "line": 26
     },
     {
-      "signature": "Union[None, list]",
-      "types": [
-        "None",
-        "list"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_property_metadata.py",
-      "line": 27
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_strategy.py",
-      "line": 27
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_strategy.py",
-      "line": 34
-    },
-    {
       "signature": "Union[None, str]",
       "types": [
         "None",
@@ -774,26 +807,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_fallback_strategy.py",
       "line": 41
-    },
-    {
-      "signature": "Union[None, dict]",
-      "types": [
-        "None",
-        "dict"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_strategy.py",
-      "line": 46
-    },
-    {
-      "signature": "Union[ModelFallbackMetadata, None]",
-      "types": [
-        "ModelFallbackMetadata",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_strategy.py",
-      "line": 51
     },
     {
       "signature": "Union[ModelExampleMetadata, None]",
@@ -926,26 +939,6 @@
       "line": 50
     },
     {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example_context_data.py",
-      "line": 30
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example_context_data.py",
-      "line": 36
-    },
-    {
       "signature": "Union[None, UUID]",
       "types": [
         "None",
@@ -956,16 +949,6 @@
       "line": 49
     },
     {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example_context_data.py",
-      "line": 50
-    },
-    {
       "signature": "Union[None, UUID]",
       "types": [
         "None",
@@ -974,16 +957,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_example_context_data.py",
       "line": 51
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_example_context_data.py",
-      "line": 55
     },
     {
       "signature": "Union[ModelSemVer, None]",
@@ -1054,56 +1027,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_example_metadata_summary.py",
       "line": 25
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_metadata.py",
-      "line": 16
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_metadata.py",
-      "line": 23
-    },
-    {
-      "signature": "Union[None, dict]",
-      "types": [
-        "None",
-        "dict"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_metadata.py",
-      "line": 30
-    },
-    {
-      "signature": "Union[None, dict]",
-      "types": [
-        "None",
-        "dict"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_metadata.py",
-      "line": 35
-    },
-    {
-      "signature": "Union[None, dict]",
-      "types": [
-        "None",
-        "dict"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/config/model_fallback_metadata.py",
-      "line": 40
     },
     {
       "signature": "Union[None, str]",
@@ -1243,7 +1166,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 45
+      "line": 46
     },
     {
       "signature": "Union[None, str]",
@@ -1253,7 +1176,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 142
+      "line": 155
     },
     {
       "signature": "Union[None, str]",
@@ -1263,7 +1186,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 152
+      "line": 165
     },
     {
       "signature": "Union[None, str]",
@@ -1273,7 +1196,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 162
+      "line": 175
     },
     {
       "signature": "Union[None, str]",
@@ -1283,7 +1206,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 172
+      "line": 185
     },
     {
       "signature": "Union[None, str]",
@@ -1293,7 +1216,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 183
+      "line": 196
     },
     {
       "signature": "Union[None, str]",
@@ -1303,7 +1226,57 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_property_value.py",
-      "line": 195
+      "line": 208
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/config/model_property_value.py",
+      "line": 220
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/config/model_property_value.py",
+      "line": 232
+    },
+    {
+      "signature": "Union[UUID, str]",
+      "types": [
+        "UUID",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/config/model_property_value.py",
+      "line": 244
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/config/model_property_value.py",
+      "line": 244
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/config/model_property_value.py",
+      "line": 256
     },
     {
       "signature": "Union[None, str]",
@@ -1353,7 +1326,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 99
+      "line": 98
     },
     {
       "signature": "Union[None, datetime]",
@@ -1363,7 +1336,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 100
+      "line": 99
     },
     {
       "signature": "Union[None, str]",
@@ -1373,7 +1346,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 120
+      "line": 118
     },
     {
       "signature": "Union[None, str]",
@@ -1383,7 +1356,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 121
+      "line": 119
     },
     {
       "signature": "Union[None, str]",
@@ -1393,7 +1366,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 143
+      "line": 141
     },
     {
       "signature": "Union[None, str]",
@@ -1403,7 +1376,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/config/model_environment_properties.py",
-      "line": 148
+      "line": 146
     },
     {
       "signature": "Union[None, str]",
@@ -1482,8 +1455,8 @@
         "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
-      "line": 27
+      "file": "src/omnibase_core/models/nodes/types_node_connection_summary.py",
+      "line": 20
     },
     {
       "signature": "Union[None, int]",
@@ -1492,18 +1465,28 @@
         "int"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
-      "line": 28
+      "file": "src/omnibase_core/models/nodes/types_node_connection_summary.py",
+      "line": 21
     },
     {
-      "signature": "Union[EnumProtocolType, None]",
+      "signature": "Union[None, str]",
       "types": [
-        "EnumProtocolType",
-        "None"
+        "None",
+        "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
-      "line": 34
+      "file": "src/omnibase_core/models/nodes/types_node_connection_summary.py",
+      "line": 22
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/types_node_connection_summary.py",
+      "line": 28
     },
     {
       "signature": "Union[None, str]",
@@ -1513,7 +1496,47 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
-      "line": 64
+      "line": 26
+    },
+    {
+      "signature": "Union[None, int]",
+      "types": [
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
+      "line": 27
+    },
+    {
+      "signature": "Union[EnumProtocolType, None]",
+      "types": [
+        "EnumProtocolType",
+        "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
+      "line": 33
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_node_connection_settings.py",
+      "line": 63
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/types_node_metadata_summary.py",
+      "line": 25
     },
     {
       "signature": "Union[None, dict]",
@@ -1686,16 +1709,6 @@
       "line": 200
     },
     {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_core_metadata.py",
-      "line": 35
-    },
-    {
       "signature": "Union[ModelSemVer, None]",
       "types": [
         "ModelSemVer",
@@ -1713,7 +1726,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 91
+      "line": 89
     },
     {
       "signature": "Union[None, str]",
@@ -1723,7 +1736,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 96
+      "line": 94
     },
     {
       "signature": "Union[None, str]",
@@ -1733,7 +1746,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 101
+      "line": 99
     },
     {
       "signature": "Union[None, str]",
@@ -1743,7 +1756,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 106
+      "line": 104
     },
     {
       "signature": "Union[None, datetime]",
@@ -1753,7 +1766,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 114
+      "line": 112
     },
     {
       "signature": "Union[None, datetime]",
@@ -1763,7 +1776,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 119
+      "line": 117
     },
     {
       "signature": "Union[None, datetime]",
@@ -1773,7 +1786,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 124
+      "line": 122
     },
     {
       "signature": "Union[None, datetime]",
@@ -1783,7 +1796,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 129
+      "line": 127
     },
     {
       "signature": "Union[None, dict]",
@@ -1793,7 +1806,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 164
+      "line": 162
     },
     {
       "signature": "Union[None, dict]",
@@ -1803,7 +1816,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 169
+      "line": 167
     },
     {
       "signature": "Union[None, str]",
@@ -1813,7 +1826,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 270
+      "line": 268
     },
     {
       "signature": "Union[None, list]",
@@ -1823,7 +1836,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_information.py",
-      "line": 288
+      "line": 286
     },
     {
       "signature": "Union[None, int]",
@@ -1833,7 +1846,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_resource_limits.py",
-      "line": 25
+      "line": 75
     },
     {
       "signature": "Union[None, float]",
@@ -1843,7 +1856,17 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_resource_limits.py",
-      "line": 30
+      "line": 76
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/types_node_capabilities_summary.py",
+      "line": 27
     },
     {
       "signature": "Union[None, int]",
@@ -1852,8 +1875,8 @@
         "int"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_resource_limits.py",
-      "line": 78
+      "file": "src/omnibase_core/models/nodes/types_node_resource_summary.py",
+      "line": 20
     },
     {
       "signature": "Union[None, float]",
@@ -1862,8 +1885,8 @@
         "float"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_resource_limits.py",
-      "line": 79
+      "file": "src/omnibase_core/models/nodes/types_node_resource_summary.py",
+      "line": 21
     },
     {
       "signature": "Union[None, str]",
@@ -1883,7 +1906,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 60
+      "line": 64
     },
     {
       "signature": "Union[None, int]",
@@ -1893,7 +1916,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 65
+      "line": 69
     },
     {
       "signature": "Union[None, int]",
@@ -1903,7 +1926,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 70
+      "line": 74
     },
     {
       "signature": "Union[None, int]",
@@ -1913,7 +1936,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 75
+      "line": 79
     },
     {
       "signature": "Union[None, int]",
@@ -1923,7 +1946,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 80
+      "line": 84
     },
     {
       "signature": "Union[None, int]",
@@ -1933,7 +1956,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 85
+      "line": 89
     },
     {
       "signature": "Union[None, int]",
@@ -1943,7 +1966,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 100
+      "line": 104
     },
     {
       "signature": "Union[None, int]",
@@ -1953,7 +1976,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 105
+      "line": 109
     },
     {
       "signature": "Union[None, float]",
@@ -1963,7 +1986,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 110
+      "line": 114
     },
     {
       "signature": "Union[None, float]",
@@ -1973,7 +1996,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 115
+      "line": 119
     },
     {
       "signature": "Union[None, str]",
@@ -1983,7 +2006,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 150
+      "line": 154
     },
     {
       "signature": "Union[None, str]",
@@ -1993,7 +2016,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 155
+      "line": 159
     },
     {
       "signature": "Union[None, int]",
@@ -2003,7 +2026,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 160
+      "line": 164
     },
     {
       "signature": "Union[None, int]",
@@ -2013,7 +2036,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 165
+      "line": 169
     },
     {
       "signature": "Union[None, str]",
@@ -2023,7 +2046,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 170
+      "line": 174
     },
     {
       "signature": "Union[None, str]",
@@ -2033,7 +2056,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 175
+      "line": 179
     },
     {
       "signature": "Union[None, dict]",
@@ -2043,7 +2066,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 188
+      "line": 192
     },
     {
       "signature": "Union[None, dict]",
@@ -2053,7 +2076,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 197
+      "line": 201
     },
     {
       "signature": "Union[None, dict]",
@@ -2063,7 +2086,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 205
+      "line": 209
     },
     {
       "signature": "Union[None, dict]",
@@ -2073,7 +2096,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 214
+      "line": 218
     },
     {
       "signature": "Union[None, dict]",
@@ -2083,7 +2106,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 222
+      "line": 226
     },
     {
       "signature": "Union[None, dict]",
@@ -2093,7 +2116,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 231
+      "line": 235
     },
     {
       "signature": "Union[None, str]",
@@ -2103,7 +2126,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 279
+      "line": 283
     },
     {
       "signature": "Union[None, int]",
@@ -2113,7 +2136,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_configuration.py",
-      "line": 280
+      "line": 284
     },
     {
       "signature": "Union[None, str]",
@@ -2183,7 +2206,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_performance_metrics.py",
-      "line": 38
+      "line": 49
     },
     {
       "signature": "Union[None, datetime]",
@@ -2193,7 +2216,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_performance_metrics.py",
-      "line": 39
+      "line": 50
     },
     {
       "signature": "Union[None, datetime]",
@@ -2203,17 +2226,37 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_performance_metrics.py",
-      "line": 43
+      "line": 54
     },
     {
-      "signature": "Union[float, int]",
+      "signature": "Union[None, int]",
       "types": [
-        "float",
+        "None",
         "int"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_performance_metrics.py",
-      "line": 75
+      "file": "src/omnibase_core/models/nodes/types_node_execution_summary.py",
+      "line": 20
+    },
+    {
+      "signature": "Union[None, int]",
+      "types": [
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/types_node_execution_summary.py",
+      "line": 21
+    },
+    {
+      "signature": "Union[None, int]",
+      "types": [
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/types_node_execution_summary.py",
+      "line": 22
     },
     {
       "signature": "Union[None, str]",
@@ -2286,6 +2329,26 @@
       "line": 122
     },
     {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_node_configuration_value.py",
+      "line": 26
+    },
+    {
+      "signature": "Union[ModelNumericValue, None]",
+      "types": [
+        "ModelNumericValue",
+        "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_node_configuration_value.py",
+      "line": 27
+    },
+    {
       "signature": "Union[EnumReturnType, None]",
       "types": [
         "EnumReturnType",
@@ -2293,7 +2356,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_type.py",
-      "line": 79
+      "line": 78
     },
     {
       "signature": "Union[None, str]",
@@ -2483,7 +2546,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 36
+      "line": 35
     },
     {
       "signature": "Union[None, str]",
@@ -2493,7 +2556,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 39
+      "line": 38
     },
     {
       "signature": "Union[EnumReturnType, None]",
@@ -2503,7 +2566,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 53
+      "line": 52
     },
     {
       "signature": "Union[None, datetime]",
@@ -2513,7 +2576,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 77
+      "line": 76
     },
     {
       "signature": "Union[EnumActionCategory, None]",
@@ -2523,7 +2586,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 80
+      "line": 79
     },
     {
       "signature": "Union[None, str]",
@@ -2533,7 +2596,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 115
+      "line": 114
     },
     {
       "signature": "Union[EnumReturnType, None]",
@@ -2543,7 +2606,17 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 120
+      "line": 119
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
+      "line": 127
     },
     {
       "signature": "Union[None, datetime]",
@@ -2564,16 +2637,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
       "line": 129
-    },
-    {
-      "signature": "Union[None, datetime]",
-      "types": [
-        "None",
-        "datetime"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_function_node_summary.py",
-      "line": 130
     },
     {
       "signature": "Union[None, str]",
@@ -2600,16 +2663,6 @@
       "types": [
         "None",
         "dict"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_capability.py",
-      "line": 79
-    },
-    {
-      "signature": "Union[int, str]",
-      "types": [
-        "int",
-        "str"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_node_capability.py",
@@ -2726,57 +2779,6 @@
       "line": 281
     },
     {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_execution_settings.py",
-      "line": 24
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_execution_settings.py",
-      "line": 25
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_execution_settings.py",
-      "line": 26
-    },
-    {
-      "signature": "Union[None, bool, int]",
-      "types": [
-        "None",
-        "bool",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/nodes/model_node_execution_settings.py",
-      "line": 34
-    },
-    {
-      "signature": "Union[bool, int]",
-      "types": [
-        "bool",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/nodes/model_node_execution_settings.py",
-      "line": 34
-    },
-    {
       "signature": "Union[None, str]",
       "types": [
         "None",
@@ -2794,7 +2796,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node.py",
-      "line": 236
+      "line": 235
     },
     {
       "signature": "Union[ModelFunctionNodePerformance, None]",
@@ -2804,7 +2806,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/nodes/model_function_node.py",
-      "line": 248
+      "line": 247
     },
     {
       "signature": "Union[None, str]",
@@ -2814,7 +2816,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/contracts/model_yaml_contract.py",
-      "line": 32
+      "line": 35
     },
     {
       "signature": "Union[ModelCliExecutionContext, None]",
@@ -2854,7 +2856,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_output_format_options.py",
-      "line": 95
+      "line": 96
     },
     {
       "signature": "Union[None, int]",
@@ -2864,97 +2866,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_output_format_options.py",
-      "line": 98
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 28
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 31
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 34
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 39
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 40
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 48
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 54
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 142
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_advanced_params.py",
-      "line": 142
+      "line": 99
     },
     {
       "signature": "Union[None, UUID]",
@@ -3357,126 +3269,6 @@
       "line": 260
     },
     {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_performance_metrics.py",
-      "line": 17
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_performance_metrics.py",
-      "line": 18
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_performance_metrics.py",
-      "line": 19
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_performance_metrics.py",
-      "line": 20
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 34
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 35
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 54
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 57
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 86
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 86
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 101
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_output_data.py",
-      "line": 102
-    },
-    {
       "signature": "Union[ModelSemVer, None]",
       "types": [
         "ModelSemVer",
@@ -3583,28 +3375,8 @@
         "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_result_metadata.py",
-      "line": 178
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_result_metadata.py",
-      "line": 178
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 31
+      "line": 30
     },
     {
       "signature": "Union[None, UUID]",
@@ -3614,7 +3386,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 34
+      "line": 33
     },
     {
       "signature": "Union[None, str]",
@@ -3624,7 +3396,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 37
+      "line": 36
     },
     {
       "signature": "Union[EnumExecutionPhase, None]",
@@ -3634,7 +3406,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 43
+      "line": 42
     },
     {
       "signature": "Union[None, datetime]",
@@ -3644,7 +3416,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 52
+      "line": 51
     },
     {
       "signature": "Union[None, str]",
@@ -3654,7 +3426,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 87
+      "line": 86
     },
     {
       "signature": "Union[None, str]",
@@ -3664,7 +3436,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_execution_summary.py",
-      "line": 97
+      "line": 96
     },
     {
       "signature": "Union[None, str]",
@@ -3733,26 +3505,6 @@
         "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_execution_config.py",
-      "line": 79
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_execution_config.py",
-      "line": 79
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_result_summary.py",
       "line": 20
     },
@@ -3764,27 +3516,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_result.py",
-      "line": 65
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_result.py",
       "line": 67
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_result.py",
-      "line": 72
     },
     {
       "signature": "Union[ModelPerformanceMetrics, None]",
@@ -4084,7 +3816,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_cli_command_option.py",
-      "line": 28
+      "line": 30
     },
     {
       "signature": "Union[None, UUID]",
@@ -4095,26 +3827,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/cli/model_trace_data.py",
       "line": 20
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_debug_info.py",
-      "line": 100
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/cli/model_cli_debug_info.py",
-      "line": 100
     },
     {
       "signature": "Union[None, UUID]",
@@ -4204,7 +3916,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_endpoint.py",
-      "line": 31
+      "line": 29
     },
     {
       "signature": "Union[None, str]",
@@ -4214,7 +3926,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_endpoint.py",
-      "line": 42
+      "line": 40
     },
     {
       "signature": "Union[None, str]",
@@ -4224,7 +3936,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_endpoint.py",
-      "line": 107
+      "line": 105
     },
     {
       "signature": "Union[None, str]",
@@ -4234,67 +3946,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_endpoint.py",
-      "line": 123
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 16
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 17
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 18
-    },
-    {
-      "signature": "Union[None, bool]",
-      "types": [
-        "None",
-        "bool"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 21
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 25
-    },
-    {
-      "signature": "Union[None, bool]",
-      "types": [
-        "None",
-        "bool"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_performance_properties.py",
-      "line": 26
+      "line": 121
     },
     {
       "signature": "Union[None, UUID]",
@@ -4454,7 +4106,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 69
+      "line": 68
     },
     {
       "signature": "Union[None, datetime]",
@@ -4464,7 +4116,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 73
+      "line": 72
     },
     {
       "signature": "Union[ModelConnectionMetrics, None]",
@@ -4474,7 +4126,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 80
+      "line": 79
     },
     {
       "signature": "Union[None, datetime]",
@@ -4484,7 +4136,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 165
+      "line": 164
     },
     {
       "signature": "Union[None, str]",
@@ -4494,7 +4146,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 165
+      "line": 164
     },
     {
       "signature": "Union[None, str]",
@@ -4504,7 +4156,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 175
+      "line": 174
     },
     {
       "signature": "Union[None, str]",
@@ -4514,7 +4166,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 198
+      "line": 197
     },
     {
       "signature": "Union[ModelConnectionSecurity, None]",
@@ -4524,7 +4176,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 221
+      "line": 220
     },
     {
       "signature": "Union[ModelConnectionPool, None]",
@@ -4534,107 +4186,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_connection_info.py",
-      "line": 222
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 13
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 17
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 21
-    },
-    {
-      "signature": "Union[None, float]",
-      "types": [
-        "None",
-        "float"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 25
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 29
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 33
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 37
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 41
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 45
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_connection_metrics.py",
-      "line": 49
+      "line": 221
     },
     {
       "signature": "Union[EnumAuthType, None]",
@@ -4734,6 +4286,16 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
+      "line": 60
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
       "line": 61
     },
     {
@@ -4764,7 +4326,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 64
+      "line": 78
     },
     {
       "signature": "Union[None, str]",
@@ -4787,16 +4349,6 @@
       "line": 80
     },
     {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 81
-    },
-    {
       "signature": "Union[None, bool]",
       "types": [
         "None",
@@ -4804,7 +4356,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 82
+      "line": 81
     },
     {
       "signature": "Union[None, str]",
@@ -4814,13 +4366,23 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 97
+      "line": 96
     },
     {
       "signature": "Union[EnumInstanceType, None]",
       "types": [
         "EnumInstanceType",
         "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
+      "line": 97
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
@@ -4844,7 +4406,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 100
+      "line": 114
     },
     {
       "signature": "Union[None, str]",
@@ -4854,7 +4416,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 115
+      "line": 119
     },
     {
       "signature": "Union[None, str]",
@@ -4864,7 +4426,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 120
+      "line": 124
     },
     {
       "signature": "Union[None, str]",
@@ -4874,7 +4436,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 125
+      "line": 129
     },
     {
       "signature": "Union[None, str]",
@@ -4884,7 +4446,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 130
+      "line": 134
     },
     {
       "signature": "Union[None, str]",
@@ -4894,7 +4456,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 135
+      "line": 139
     },
     {
       "signature": "Union[None, str]",
@@ -4904,7 +4466,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 140
+      "line": 144
     },
     {
       "signature": "Union[None, str]",
@@ -4914,7 +4476,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 145
+      "line": 149
     },
     {
       "signature": "Union[None, str]",
@@ -4924,7 +4486,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 150
+      "line": 154
     },
     {
       "signature": "Union[None, str]",
@@ -4934,7 +4496,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 155
+      "line": 158
     },
     {
       "signature": "Union[None, str]",
@@ -4944,7 +4506,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 159
+      "line": 162
     },
     {
       "signature": "Union[None, str]",
@@ -4954,7 +4516,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 163
+      "line": 166
     },
     {
       "signature": "Union[None, str]",
@@ -4964,17 +4526,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 167
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/connections/model_custom_connection_properties.py",
-      "line": 171
+      "line": 170
     },
     {
       "signature": "Union[None, UUID]",
@@ -5263,6 +4815,196 @@
         "str"
       ],
       "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 41
+    },
+    {
+      "signature": "Union[None, int]",
+      "types": [
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 42
+    },
+    {
+      "signature": "Union[None, float]",
+      "types": [
+        "None",
+        "float"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 43
+    },
+    {
+      "signature": "Union[None, bool]",
+      "types": [
+        "None",
+        "bool"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 44
+    },
+    {
+      "signature": "Union[FlexibleDictType, None]",
+      "types": [
+        "FlexibleDictType",
+        "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 45
+    },
+    {
+      "signature": "Union[FlexibleListType, None]",
+      "types": [
+        "FlexibleListType",
+        "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 46
+    },
+    {
+      "signature": "Union[None, UUID]",
+      "types": [
+        "None",
+        "UUID"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 47
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 50
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 109
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 119
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 129
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 139
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 149
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 159
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 169
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 179
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 188
+    },
+    {
+      "signature": "Union[FlexibleValueType, UUID]",
+      "types": [
+        "FlexibleValueType",
+        "UUID"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 209
+    },
+    {
+      "signature": "Union[Any, ModelFlexibleValue]",
+      "types": [
+        "Any",
+        "ModelFlexibleValue"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/common/model_flexible_value.py",
+      "line": 269
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
       "file": "src/omnibase_core/models/common/model_schema_value.py",
       "line": 25
     },
@@ -5317,14 +5059,14 @@
       "line": 33
     },
     {
-      "signature": "Union[float, int]",
+      "signature": "Union[None, str]",
       "types": [
-        "float",
-        "int"
+        "None",
+        "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/common/model_schema_value.py",
-      "line": 85
+      "file": "src/omnibase_core/models/infrastructure/model_retry_failure_info.py",
+      "line": 22
     },
     {
       "signature": "Union[None, int]",
@@ -5333,28 +5075,8 @@
         "int"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_data.py",
-      "line": 24
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_data.py",
-      "line": 33
-    },
-    {
-      "signature": "Union[EnumRuntimeCategory, None]",
-      "types": [
-        "EnumRuntimeCategory",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_data.py",
-      "line": 36
+      "file": "src/omnibase_core/models/infrastructure/model_retry_failure_info.py",
+      "line": 27
     },
     {
       "signature": "Union[None, str]",
@@ -5363,8 +5085,18 @@
         "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_data.py",
-      "line": 39
+      "file": "src/omnibase_core/models/infrastructure/model_retry_failure_info.py",
+      "line": 40
+    },
+    {
+      "signature": "Union[None, int]",
+      "types": [
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_retry_failure_info.py",
+      "line": 41
     },
     {
       "signature": "Union[None, UUID]",
@@ -5684,7 +5416,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 49
+      "line": 47
     },
     {
       "signature": "Union[EnumExecutionPhase, None]",
@@ -5694,7 +5426,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 56
+      "line": 54
     },
     {
       "signature": "Union[EnumStatusMessage, None]",
@@ -5704,7 +5436,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 68
+      "line": 66
     },
     {
       "signature": "Union[None, str]",
@@ -5714,7 +5446,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 72
+      "line": 70
     },
     {
       "signature": "Union[None, datetime]",
@@ -5724,7 +5456,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 87
+      "line": 85
     },
     {
       "signature": "Union[None, timedelta]",
@@ -5734,7 +5466,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 186
+      "line": 184
     },
     {
       "signature": "Union[None, timedelta]",
@@ -5744,7 +5476,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 196
+      "line": 194
     },
     {
       "signature": "Union[None, str]",
@@ -5754,7 +5486,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 249
+      "line": 247
     },
     {
       "signature": "Union[None, tuple]",
@@ -5764,7 +5496,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress_original.py",
-      "line": 273
+      "line": 271
     },
     {
       "signature": "Union[None, int]",
@@ -5804,7 +5536,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_execution_result.py",
-      "line": 51
+      "line": 52
     },
     {
       "signature": "Union[ModelExecutionDuration, None]",
@@ -5814,7 +5546,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_execution_result.py",
-      "line": 53
+      "line": 54
     },
     {
       "signature": "Union[None, UUID]",
@@ -6047,46 +5779,6 @@
       "line": 20
     },
     {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 51
-    },
-    {
-      "signature": "Union[EnumExecutionPhase, None]",
-      "types": [
-        "EnumExecutionPhase",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 58
-    },
-    {
-      "signature": "Union[EnumStatusMessage, None]",
-      "types": [
-        "EnumStatusMessage",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 70
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 74
-    },
-    {
       "signature": "Union[None, datetime]",
       "types": [
         "None",
@@ -6094,7 +5786,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 89
+      "line": 86
     },
     {
       "signature": "Union[ModelTimeBased, None]",
@@ -6104,7 +5796,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 95
+      "line": 92
     },
     {
       "signature": "Union[ModelTimeBased, None]",
@@ -6114,17 +5806,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 99
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 273
+      "line": 96
     },
     {
       "signature": "Union[None, tuple]",
@@ -6134,7 +5816,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 297
+      "line": 292
     },
     {
       "signature": "Union[None, int]",
@@ -6144,7 +5826,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 387
+      "line": 382
     },
     {
       "signature": "Union[None, int]",
@@ -6154,7 +5836,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 395
+      "line": 390
     },
     {
       "signature": "Union[None, int]",
@@ -6164,27 +5846,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_progress.py",
-      "line": 407
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_environment_variables.py",
-      "line": 81
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_environment_variables.py",
-      "line": 81
+      "line": 402
     },
     {
       "signature": "Union[None, str]",
@@ -6264,17 +5926,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_metric.py",
-      "line": 70
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_metric.py",
-      "line": 84
+      "line": 79
     },
     {
       "signature": "Union[None, str]",
@@ -6284,7 +5936,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_metric.py",
-      "line": 85
+      "line": 94
     },
     {
       "signature": "Union[None, str]",
@@ -6294,29 +5946,49 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_metric.py",
-      "line": 86
+      "line": 95
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_metric.py",
+      "line": 105
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_metric.py",
+      "line": 106
     },
     {
       "signature": "Union[None, T]",
       "types": [
         "None",
         "T"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_result.py",
+      "line": 36
+    },
+    {
+      "signature": "Union[E, None]",
+      "types": [
+        "E",
+        "None"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
       "line": 37
     },
     {
-      "signature": "Union[E, None]",
-      "types": [
-        "E",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 38
-    },
-    {
       "signature": "Union[None, T]",
       "types": [
         "None",
@@ -6324,7 +5996,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 41
+      "line": 40
     },
     {
       "signature": "Union[E, None]",
@@ -6334,7 +6006,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 41
+      "line": 40
     },
     {
       "signature": "Union[E, Exception]",
@@ -6344,7 +6016,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 149
+      "line": 148
     },
     {
       "signature": "Union[Exception, F]",
@@ -6354,7 +6026,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 175
+      "line": 174
     },
     {
       "signature": "Union[E, Exception]",
@@ -6364,7 +6036,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 216
+      "line": 215
     },
     {
       "signature": "Union[E, Exception]",
@@ -6374,7 +6046,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 200
+      "line": 199
     },
     {
       "signature": "Union[Exception, F]",
@@ -6384,7 +6056,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 247
+      "line": 246
     },
     {
       "signature": "Union[Exception, F]",
@@ -6394,7 +6066,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_result.py",
-      "line": 226
+      "line": 225
     },
     {
       "signature": "Union[None, str]",
@@ -6455,7 +6127,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_advanced.py",
-      "line": 40
+      "line": 42
     },
     {
       "signature": "Union[None, str]",
@@ -6465,7 +6137,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_advanced.py",
-      "line": 103
+      "line": 109
     },
     {
       "signature": "Union[None, str]",
@@ -6475,107 +6147,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_advanced.py",
-      "line": 116
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 36
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 51
-    },
-    {
-      "signature": "Union[EnumRuntimeCategory, None]",
-      "types": [
-        "EnumRuntimeCategory",
-        "None"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 58
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 64
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 75
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 75
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 86
-    },
-    {
-      "signature": "Union[None, int]",
-      "types": [
-        "None",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 86
-    },
-    {
-      "signature": "Union[None, timedelta]",
-      "types": [
-        "None",
-        "timedelta"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 116
-    },
-    {
-      "signature": "Union[None, timedelta]",
-      "types": [
-        "None",
-        "timedelta"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 123
+      "line": 122
     },
     {
       "signature": "Union[None, datetime]",
@@ -6585,7 +6157,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 137
+      "line": 136
     },
     {
       "signature": "Union[None, datetime]",
@@ -6595,7 +6167,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 143
+      "line": 142
     },
     {
       "signature": "Union[None, datetime]",
@@ -6605,7 +6177,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 143
+      "line": 149
     },
     {
       "signature": "Union[None, datetime]",
@@ -6615,7 +6187,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 152
+      "line": 158
     },
     {
       "signature": "Union[None, datetime]",
@@ -6625,7 +6197,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 161
+      "line": 169
     },
     {
       "signature": "Union[None, datetime]",
@@ -6635,7 +6207,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 172
+      "line": 179
     },
     {
       "signature": "Union[None, datetime]",
@@ -6645,57 +6217,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 182
-    },
-    {
-      "signature": "Union[None, datetime]",
-      "types": [
-        "None",
-        "datetime"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 191
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 216
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 230
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 241
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_timeout_original.py",
-      "line": 252
+      "line": 188
     },
     {
       "signature": "Union[None, datetime]",
@@ -6705,7 +6227,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 29
+      "line": 31
     },
     {
       "signature": "Union[None, str]",
@@ -6715,7 +6237,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 33
+      "line": 35
     },
     {
       "signature": "Union[None, int]",
@@ -6725,7 +6247,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 37
+      "line": 39
     },
     {
       "signature": "Union[None, int]",
@@ -6735,7 +6257,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 48
+      "line": 50
     },
     {
       "signature": "Union[Exception, None]",
@@ -6745,7 +6267,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 76
+      "line": 78
     },
     {
       "signature": "Union[None, int]",
@@ -6755,28 +6277,187 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 77
+      "line": 79
     },
     {
-      "signature": "Union[None, int, str]",
+      "signature": "Union[None, int]",
       "types": [
         "None",
-        "int",
-        "str"
+        "int"
       ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 116
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 83
     },
     {
-      "signature": "Union[int, str]",
+      "signature": "Union[None, int]",
       "types": [
-        "int",
+        "None",
+        "int"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 103
+    },
+    {
+      "signature": "Union[EnumRuntimeCategory, None]",
+      "types": [
+        "EnumRuntimeCategory",
+        "None"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 113
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
         "str"
       ],
       "type_count": 2,
-      "file": "src/omnibase_core/models/infrastructure/model_retry_execution.py",
-      "line": 116
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 118
+    },
+    {
+      "signature": "Union[None, timedelta]",
+      "types": [
+        "None",
+        "timedelta"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 164
+    },
+    {
+      "signature": "Union[None, timedelta]",
+      "types": [
+        "None",
+        "timedelta"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 171
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 185
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 189
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 189
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 194
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 200
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 206
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 212
+    },
+    {
+      "signature": "Union[None, datetime]",
+      "types": [
+        "None",
+        "datetime"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 218
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 231
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 245
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 256
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/infrastructure/model_timeout.py",
+      "line": 267
     },
     {
       "signature": "Union[ModelFunctionNode, ModelFunctionNodeData]",
@@ -6786,7 +6467,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_node_collection.py",
-      "line": 27
+      "line": 21
     },
     {
       "signature": "Union[ModelFunctionNode, ModelFunctionNodeData]",
@@ -6796,7 +6477,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_node_collection.py",
-      "line": 35
+      "line": 29
     },
     {
       "signature": "Union[ModelMetadataNodeCollection, None, dict]",
@@ -6807,7 +6488,7 @@
       ],
       "type_count": 3,
       "file": "src/omnibase_core/models/metadata/model_metadata_node_collection.py",
-      "line": 43
+      "line": 37
     },
     {
       "signature": "Union[ModelMetadataNodeCollection, dict]",
@@ -6817,7 +6498,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_node_collection.py",
-      "line": 43
+      "line": 37
     },
     {
       "signature": "Union[ModelFunctionNode, ModelFunctionNodeData]",
@@ -6827,7 +6508,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_node_collection.py",
-      "line": 43
+      "line": 37
     },
     {
       "signature": "Union[None, str]",
@@ -6837,7 +6518,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 44
+      "line": 46
     },
     {
       "signature": "Union[None, str]",
@@ -6847,7 +6528,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 68
+      "line": 70
     },
     {
       "signature": "Union[None, str]",
@@ -6857,17 +6538,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 78
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 89
+      "line": 80
     },
     {
       "signature": "Union[None, str]",
@@ -6877,111 +6548,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 89
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 117
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 123
-    },
-    {
-      "signature": "Union[ModelNumericValue, float, int]",
-      "types": [
-        "ModelNumericValue",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 135
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 135
-    },
-    {
-      "signature": "Union[ModelNumericValue, float, int]",
-      "types": [
-        "ModelNumericValue",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 141
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 141
-    },
-    {
-      "signature": "Union[ModelNumericValue, float, int]",
-      "types": [
-        "ModelNumericValue",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 147
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 147
-    },
-    {
-      "signature": "Union[ModelNumericValue, float, int]",
-      "types": [
-        "ModelNumericValue",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 153
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_numeric_value.py",
-      "line": 153
+      "line": 91
     },
     {
       "signature": "Union[None, UUID]",
@@ -7084,76 +6651,44 @@
       "line": 38
     },
     {
-      "signature": "Union[float, int]",
+      "signature": "Union[ModelNumericValue, None]",
       "types": [
-        "float",
-        "int"
+        "ModelNumericValue",
+        "None"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 81
+      "line": 117
     },
     {
-      "signature": "Union[float, int]",
+      "signature": "Union[ModelNumericValue, None]",
       "types": [
-        "float",
-        "int"
+        "ModelNumericValue",
+        "None"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 91
+      "line": 121
     },
     {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 95
-    },
-    {
-      "signature": "Union[None, float, int]",
+      "signature": "Union[None, float]",
       "types": [
         "None",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 99
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
+        "float"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 99
+      "line": 125
     },
     {
-      "signature": "Union[None, float, int]",
+      "signature": "Union[None, float]",
       "types": [
         "None",
-        "float",
-        "int"
-      ],
-      "type_count": 3,
-      "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 103
-    },
-    {
-      "signature": "Union[float, int]",
-      "types": [
-        "float",
-        "int"
+        "float"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_field_validation_rules.py",
-      "line": 103
+      "line": 129
     },
     {
       "signature": "Union[None, str]",
@@ -7203,7 +6738,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 44
+      "line": 47
     },
     {
       "signature": "Union[None, str]",
@@ -7213,7 +6748,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 111
+      "line": 114
     },
     {
       "signature": "Union[None, str]",
@@ -7223,7 +6758,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 121
+      "line": 124
     },
     {
       "signature": "Union[None, str]",
@@ -7233,7 +6768,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 131
+      "line": 134
     },
     {
       "signature": "Union[None, str]",
@@ -7243,7 +6778,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 141
+      "line": 144
     },
     {
       "signature": "Union[None, str]",
@@ -7253,140 +6788,30 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_value.py",
-      "line": 152
+      "line": 154
     },
     {
-      "signature": "Union[None, str]",
+      "signature": "Union[None, dict, int, str]",
       "types": [
         "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 22
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 26
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 27
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 34
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 35
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 60
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 61
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 86
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 87
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 112
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_typed_metrics.py",
-      "line": 113
-    },
-    {
-      "signature": "Union[ModelSemVer, dict, int, str]",
-      "types": [
-        "ModelSemVer",
         "dict",
         "int",
         "str"
       ],
       "type_count": 4,
       "file": "src/omnibase_core/models/metadata/model_semver.py",
-      "line": 143
+      "line": 10
     },
     {
-      "signature": "Union[ModelSemVer, int, str]",
+      "signature": "Union[dict, int, str]",
       "types": [
-        "ModelSemVer",
+        "dict",
         "int",
         "str"
       ],
       "type_count": 3,
       "file": "src/omnibase_core/models/metadata/model_semver.py",
-      "line": 143
+      "line": 10
     },
     {
       "signature": "Union[int, str]",
@@ -7396,7 +6821,59 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_semver.py",
-      "line": 143
+      "line": 10
+    },
+    {
+      "signature": "Union[InputStateDictType, ModelInputState]",
+      "types": [
+        "InputStateDictType",
+        "ModelInputState"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/metadata/model_semver.py",
+      "line": 145
+    },
+    {
+      "signature": "Union[ModelSemVer, None, dict]",
+      "types": [
+        "ModelSemVer",
+        "None",
+        "dict"
+      ],
+      "type_count": 3,
+      "file": "src/omnibase_core/models/metadata/model_input_state.py",
+      "line": 30
+    },
+    {
+      "signature": "Union[ModelSemVer, dict]",
+      "types": [
+        "ModelSemVer",
+        "dict"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/metadata/model_input_state.py",
+      "line": 30
+    },
+    {
+      "signature": "Union[ModelSemVer, None, dict]",
+      "types": [
+        "ModelSemVer",
+        "None",
+        "dict"
+      ],
+      "type_count": 3,
+      "file": "src/omnibase_core/models/metadata/model_input_state.py",
+      "line": 54
+    },
+    {
+      "signature": "Union[ModelSemVer, dict]",
+      "types": [
+        "ModelSemVer",
+        "dict"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/metadata/model_input_state.py",
+      "line": 54
     },
     {
       "signature": "Union[None, datetime]",
@@ -7416,7 +6893,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_metadata_field_info.py",
-      "line": 56
+      "line": 54
     },
     {
       "signature": "Union[None, str]",
@@ -7496,7 +6973,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_nested_configuration.py",
-      "line": 24
+      "line": 23
     },
     {
       "signature": "Union[ModelNodeInfoSummary, None]",
@@ -7516,7 +6993,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_function_node_data.py",
-      "line": 39
+      "line": 38
     },
     {
       "signature": "Union[None, str]",
@@ -7526,7 +7003,17 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_function_node_data.py",
-      "line": 42
+      "line": 41
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/metadata/model_node_info_summary.py",
+      "line": 37
     },
     {
       "signature": "Union[None, str]",
@@ -7539,14 +7026,14 @@
       "line": 38
     },
     {
-      "signature": "Union[None, str]",
+      "signature": "Union[None, datetime]",
       "types": [
         "None",
-        "str"
+        "datetime"
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_node_info_summary.py",
-      "line": 39
+      "line": 54
     },
     {
       "signature": "Union[None, datetime]",
@@ -7567,16 +7054,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/metadata/model_node_info_summary.py",
       "line": 56
-    },
-    {
-      "signature": "Union[None, datetime]",
-      "types": [
-        "None",
-        "datetime"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/metadata/model_node_info_summary.py",
-      "line": 57
     },
     {
       "signature": "Union[None, str]",
@@ -7606,7 +7083,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 26
+      "line": 25
     },
     {
       "signature": "Union[None, str]",
@@ -7616,7 +7093,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 30
+      "line": 29
     },
     {
       "signature": "Union[None, str]",
@@ -7626,7 +7103,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 37
+      "line": 36
     },
     {
       "signature": "Union[None, dict]",
@@ -7636,7 +7113,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 44
+      "line": 43
     },
     {
       "signature": "Union[None, int]",
@@ -7646,7 +7123,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 48
+      "line": 47
     },
     {
       "signature": "Union[None, int]",
@@ -7656,7 +7133,17 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 51
+      "line": 50
+    },
+    {
+      "signature": "Union[None, str]",
+      "types": [
+        "None",
+        "str"
+      ],
+      "type_count": 2,
+      "file": "src/omnibase_core/models/validation/model_validation_error.py",
+      "line": 80
     },
     {
       "signature": "Union[None, str]",
@@ -7676,7 +7163,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 82
+      "line": 105
     },
     {
       "signature": "Union[None, str]",
@@ -7696,7 +7183,7 @@
       ],
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 107
+      "line": 130
     },
     {
       "signature": "Union[None, str]",
@@ -7707,16 +7194,6 @@
       "type_count": 2,
       "file": "src/omnibase_core/models/validation/model_validation_error.py",
       "line": 131
-    },
-    {
-      "signature": "Union[None, str]",
-      "types": [
-        "None",
-        "str"
-      ],
-      "type_count": 2,
-      "file": "src/omnibase_core/models/validation/model_validation_error.py",
-      "line": 132
     },
     {
       "signature": "Union[None, str]",
@@ -8149,5 +7626,18 @@
       "line": 18
     }
   ],
-  "suggestions": []
+  "suggestions": [
+    "Replace Union[re.DOTALL, re.IGNORECASE, re.MULTILINE]:\n  \u2022 class ModelRe.DotallUnion(BaseModel):\n    - value: re.DOTALL | re.IGNORECASE | re.MULTILINE\n    - discriminator: str\n  \u2022 Found in 4 locations:\n    - scripts/validate-no-backward-compatibility.py:110\n    - scripts/validate-no-backward-compatibility.py:127\n    - scripts/validation/validate-no-backward-compatibility.py:191\n    - ... and 1 more\n  \u2022 Example implementation pattern:",
+    "Replace Union[Exception, None, str]:\n  \u2022 class ModelExceptionUnion(BaseModel):\n    - value: Exception | None | str\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - src/omnibase_core/models/infrastructure/model_result_dict.py:27",
+    "Replace Union[ModelMetadataNodeCollection, None, dict]:\n  \u2022 class ModelFlexibleData(BaseModel):\n    - data_type: Literal['primitive', 'collection', 'mapping']\n    - value: str | int | bool | float  # Use specific types instead of Any\n  \u2022 Found in 1 locations:\n    - src/omnibase_core/models/metadata/model_metadata_node_collection.py:37",
+    "Replace Union[None, dict, int, str]:\n  \u2022 class ModelFlexibleData(BaseModel):\n    - data_type: Literal['primitive', 'collection', 'mapping']\n    - value: str | int | bool | float  # Use specific types instead of Any\n  \u2022 Found in 1 locations:\n    - src/omnibase_core/models/metadata/model_semver.py:10",
+    "Replace Union[dict, int, str]:\n  \u2022 class ModelFlexibleData(BaseModel):\n    - data_type: Literal['primitive', 'collection', 'mapping']\n    - value: str | int | bool | float  # Use specific types instead of Any\n  \u2022 Found in 1 locations:\n    - src/omnibase_core/models/metadata/model_semver.py:10",
+    "Replace Union[ModelSemVer, None, dict]:\n  \u2022 class ModelFlexibleData(BaseModel):\n    - data_type: Literal['primitive', 'collection', 'mapping']\n    - value: str | int | bool | float  # Use specific types instead of Any\n  \u2022 Found in 2 locations:\n    - src/omnibase_core/models/metadata/model_input_state.py:30\n    - src/omnibase_core/models/metadata/model_input_state.py:54\n  \u2022 Example implementation pattern:",
+    "Replace Union[critical_statuses, good_statuses, warning_statuses]:\n  \u2022 class ModelCritical_StatusesUnion(BaseModel):\n    - value: critical_statuses | good_statuses | warning_statuses\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_registry_status.py:185",
+    "Replace Union[active_states, final_states, initial_states, pending_states]:\n  \u2022 class ModelActive_StatesUnion(BaseModel):\n    - value: active_states | final_states | initial_states | pending_states\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_scenario_status.py:171",
+    "Replace Union[active_states, initial_states, pending_states]:\n  \u2022 class ModelActive_StatesUnion(BaseModel):\n    - value: active_states | initial_states | pending_states\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_scenario_status.py:171",
+    "Replace Union[failure_outcomes, neutral_outcomes, non_final_states, success_outcomes]:\n  \u2022 class ModelFailure_OutcomesUnion(BaseModel):\n    - value: failure_outcomes | neutral_outcomes | non_final_states | success_outcomes\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_scenario_status.py:197",
+    "Replace Union[failure_outcomes, neutral_outcomes, success_outcomes]:\n  \u2022 class ModelFailure_OutcomesUnion(BaseModel):\n    - value: failure_outcomes | neutral_outcomes | success_outcomes\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_scenario_status.py:197",
+    "Replace Union[collection_filters, data_type_filters, operational_filters]:\n  \u2022 class ModelCollection_FiltersUnion(BaseModel):\n    - value: collection_filters | data_type_filters | operational_filters\n    - discriminator: str\n  \u2022 Found in 1 locations:\n    - tests/unit/enums/test_enum_filter_type.py:167"
+  ]
 }

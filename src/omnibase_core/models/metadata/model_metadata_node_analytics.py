@@ -38,10 +38,12 @@ class ModelMetadataNodeAnalytics(BaseModel):
         description="Unique identifier for the collection",
     )
     collection_display_name: str = Field(
-        default="", description="Human-readable collection name"
+        default="",
+        description="Human-readable collection name",
     )
     collection_purpose: EnumCollectionPurpose = Field(
-        default=EnumCollectionPurpose.GENERAL, description="Collection purpose"
+        default=EnumCollectionPurpose.GENERAL,
+        description="Collection purpose",
     )
     collection_created: str = Field(
         default_factory=lambda: datetime.now(UTC).isoformat(),
@@ -125,7 +127,8 @@ class ModelMetadataNodeAnalytics(BaseModel):
     # Custom analytics for extensibility
     custom_metrics: ModelMetricsData = Field(
         default_factory=lambda: ModelMetricsData(
-            collection_id=None, collection_display_name="custom_analytics"
+            collection_id=None,
+            collection_display_name="custom_analytics",
         ),
         description="Custom analytics metrics with clean typing",
     )
@@ -187,7 +190,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
         self.custom_metrics.add_metric(name, cli_value.to_python_value())
 
     def get_custom_metric(
-        self, name: str, default: ModelCliValue | None = None
+        self,
+        name: str,
+        default: ModelCliValue | None = None,
     ) -> ModelCliValue | None:
         """Get a custom metric value."""
         value = self.custom_metrics.get_metric_by_key(name)

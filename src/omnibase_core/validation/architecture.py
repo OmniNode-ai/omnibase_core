@@ -13,7 +13,6 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from .validation_utils import ValidationResult
 
@@ -21,11 +20,11 @@ from .validation_utils import ValidationResult
 class ModelCounter(ast.NodeVisitor):
     """Count models, enums, and protocols in a Python file."""
 
-    def __init__(self):
-        self.models = []
-        self.enums = []
-        self.protocols = []
-        self.type_aliases = []
+    def __init__(self) -> None:
+        self.models: list[str] = []
+        self.enums: list[str] = []
+        self.protocols: list[str] = []
+        self.type_aliases: list[str] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit class definitions and categorize them."""
@@ -38,10 +37,10 @@ class ModelCounter(ast.NodeVisitor):
                 if base_name == "BaseModel":
                     self.models.append(class_name)
                     break
-                elif base_name == "Enum":
+                if base_name == "Enum":
                     self.enums.append(class_name)
                     break
-                elif base_name == "Protocol":
+                if base_name == "Protocol":
                     self.protocols.append(class_name)
                     break
             elif isinstance(base, ast.Attribute):
@@ -76,12 +75,12 @@ class ModelCounter(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def validate_one_model_per_file(file_path: Path) -> List[str]:
+def validate_one_model_per_file(file_path: Path) -> list[str]:
     """Validate a single Python file for one-model-per-file compliance."""
     errors = []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -91,19 +90,19 @@ def validate_one_model_per_file(file_path: Path) -> List[str]:
         # Check for multiple models
         if len(counter.models) > 1:
             errors.append(
-                f"❌ {len(counter.models)} models in one file: {', '.join(counter.models)}"
+                f"❌ {len(counter.models)} models in one file: {', '.join(counter.models)}",
             )
 
         # Check for multiple enums
         if len(counter.enums) > 1:
             errors.append(
-                f"❌ {len(counter.enums)} enums in one file: {', '.join(counter.enums)}"
+                f"❌ {len(counter.enums)} enums in one file: {', '.join(counter.enums)}",
             )
 
         # Check for multiple protocols
         if len(counter.protocols) > 1:
             errors.append(
-                f"❌ {len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}"
+                f"❌ {len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}",
             )
 
         # Check for mixed types (models + enums + protocols)
@@ -132,7 +131,8 @@ def validate_one_model_per_file(file_path: Path) -> List[str]:
 
 
 def validate_architecture_directory(
-    directory: Path, max_violations: int = 0
+    directory: Path,
+    max_violations: int = 0,
 ) -> ValidationResult:
     """Validate ONEX architecture for a directory."""
     python_files = []
@@ -184,10 +184,13 @@ def validate_architecture_directory(
 def validate_architecture_cli() -> int:
     """CLI interface for architecture validation."""
     parser = argparse.ArgumentParser(
-        description="Validate ONEX one-model-per-file architecture"
+        description="Validate ONEX one-model-per-file architecture",
     )
     parser.add_argument(
-        "directories", nargs="*", default=["src/"], help="Directories to validate"
+        "directories",
+        nargs="*",
+        default=["src/"],
+        help="Directories to validate",
     )
     parser.add_argument(
         "--max-violations",
@@ -223,7 +226,7 @@ def validate_architecture_cli() -> int:
             for error in result.errors:
                 print(f"   {error}")
 
-    print(f"\n📊 One-Model-Per-File Validation Summary:")
+    print("\n📊 One-Model-Per-File Validation Summary:")
     print(f"   • Files checked: {overall_result.files_checked}")
     print(f"   • Total violations: {len(overall_result.errors)}")
     print(f"   • Max allowed: {args.max_violations}")
@@ -231,24 +234,23 @@ def validate_architecture_cli() -> int:
     if overall_result.success:
         print("✅ One-model-per-file validation PASSED")
         return 0
-    else:
-        print("\n🚨 ARCHITECTURAL VIOLATIONS DETECTED!")
-        print("=" * 50)
-        print("The ONEX one-model-per-file principle ensures:")
-        print("• Clean separation of concerns")
-        print("• Easy navigation and discovery")
-        print("• Reduced merge conflicts")
-        print("• Better code organization")
-        print("\n💡 How to fix:")
-        print("• Split files with multiple models into separate files")
-        print("• Follow pattern: model_user_auth.py → ModelUserAuth")
-        print("• Use __init__.py for convenient imports")
-        print("• Keep related TypedDict with their model")
+    print("\n🚨 ARCHITECTURAL VIOLATIONS DETECTED!")
+    print("=" * 50)
+    print("The ONEX one-model-per-file principle ensures:")
+    print("• Clean separation of concerns")
+    print("• Easy navigation and discovery")
+    print("• Reduced merge conflicts")
+    print("• Better code organization")
+    print("\n💡 How to fix:")
+    print("• Split files with multiple models into separate files")
+    print("• Follow pattern: model_user_auth.py → ModelUserAuth")
+    print("• Use __init__.py for convenient imports")
+    print("• Keep related TypedDict with their model")
 
-        print(
-            f"\n❌ FAILURE: {len(overall_result.errors)} violations exceed limit of {args.max_violations}"
-        )
-        return 1
+    print(
+        f"\n❌ FAILURE: {len(overall_result.errors)} violations exceed limit of {args.max_violations}",
+    )
+    return 1
 
 
 if __name__ == "__main__":

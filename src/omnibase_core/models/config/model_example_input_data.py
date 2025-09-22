@@ -25,13 +25,15 @@ class ModelExampleInputData(BaseModel):
 
     # Core data fields
     data_type: EnumIOType = Field(
-        default=EnumIOType.INPUT, description="Type of input data"
+        default=EnumIOType.INPUT,
+        description="Type of input data",
     )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")
 
     # Input parameters using strongly-typed metadata values
     parameters: dict[str, ModelMetadataValue] = Field(
-        default_factory=dict, description="Input parameters with type-safe values"
+        default_factory=dict,
+        description="Input parameters with type-safe values",
     )
 
     # Configuration settings using string values for simplicity
@@ -42,7 +44,8 @@ class ModelExampleInputData(BaseModel):
 
     # Validation info
     schema_version: ModelSemVer | None = Field(
-        None, description="Schema version for validation"
+        None,
+        description="Schema version for validation",
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")
 

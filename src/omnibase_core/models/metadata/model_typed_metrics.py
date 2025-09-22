@@ -20,7 +20,8 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
 
     metric_id: UUID = Field(..., description="UUID for metric identifier")
     metric_display_name: str = Field(
-        default="", description="Human-readable metric name"
+        default="",
+        description="Human-readable metric name",
     )
     value: T = Field(..., description="Typed metric value")
     unit: str = Field(default="", description="Unit of measurement")
@@ -40,7 +41,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
-            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}",
         )
 
         return ModelTypedMetrics[str](
@@ -66,7 +67,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
-            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}",
         )
 
         return ModelTypedMetrics[int](
@@ -92,7 +93,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
-            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}",
         )
 
         return ModelTypedMetrics[float](
@@ -118,7 +119,7 @@ class ModelTypedMetrics(BaseModel, Generic[T]):
 
         metric_hash = hashlib.sha256(name.encode()).hexdigest()
         metric_id = UUID(
-            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}"
+            f"{metric_hash[:8]}-{metric_hash[8:12]}-{metric_hash[12:16]}-{metric_hash[16:20]}-{metric_hash[20:32]}",
         )
 
         return ModelTypedMetrics[bool](

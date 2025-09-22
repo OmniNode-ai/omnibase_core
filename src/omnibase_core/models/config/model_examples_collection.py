@@ -122,7 +122,7 @@ class ModelExamples(BaseModel):
                     is_valid=True,  # You can add validation logic here
                     input_data=None,  # Type mismatch: ModelGenericMetadata vs ModelExampleInputData
                     output_data=None,  # Type mismatch: ModelGenericMetadata vs ModelExampleOutputData
-                )
+                ),
             )
 
         # Convert metadata

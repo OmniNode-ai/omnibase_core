@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Callable, cast
 
 from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
@@ -28,7 +28,7 @@ from .validation_utils import ValidationResult
 class ValidationSuite:
     """Unified validation suite for ONEX compliance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.validators = {
             "architecture": {
                 "func": validate_architecture_directory,
@@ -53,7 +53,10 @@ class ValidationSuite:
         }
 
     def run_validation(
-        self, validation_type: str, directory: Path, **kwargs
+        self,
+        validation_type: str,
+        directory: Path,
+        **kwargs: Any,
     ) -> ValidationResult:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
@@ -66,11 +69,15 @@ class ValidationSuite:
         relevant_args = validator_info["args"]
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in relevant_args}
 
-        return validator_func(directory, **filtered_kwargs)
+        # Cast to proper type since we know all validators return ValidationResult
+        validator_callable = cast(Callable[..., ValidationResult], validator_func)
+        return validator_callable(directory, **filtered_kwargs)
 
     def run_all_validations(
-        self, directory: Path, **kwargs
-    ) -> Dict[str, ValidationResult]:
+        self,
+        directory: Path,
+        **kwargs: Any,
+    ) -> dict[str, ValidationResult]:
         """Run all validations on a directory."""
         results = {}
 
@@ -139,7 +146,9 @@ Examples:
 
     # Common arguments
     parser.add_argument(
-        "--strict", action="store_true", help="Enable strict validation mode"
+        "--strict",
+        action="store_true",
+        help="Enable strict validation mode",
     )
 
     # Architecture-specific arguments
@@ -162,7 +171,10 @@ Examples:
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Quiet output (errors only)"
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Quiet output (errors only)",
     )
 
     parser.add_argument(
@@ -175,7 +187,9 @@ Examples:
 
 
 def format_result(
-    validation_type: str, result: ValidationResult, verbose: bool = False
+    validation_type: str,
+    result: ValidationResult,
+    verbose: bool = False,
 ) -> None:
     """Format and print validation results."""
     status = "✅ PASSED" if result.success else "❌ FAILED"
@@ -200,7 +214,7 @@ def format_result(
                 print(f"     ... and {len(result.errors) - 10} more issues")
 
 
-def main() -> int:
+def run_validation_cli() -> int:
     """Main CLI entry point."""
     parser = create_parser()
     args = parser.parse_args()
@@ -256,7 +270,9 @@ def main() -> int:
         else:
             # Run specific validation
             result = suite.run_validation(
-                args.validation_type, directory, **validation_kwargs
+                args.validation_type,
+                directory,
+                **validation_kwargs,
             )
             overall_success = overall_success and result.success
 
@@ -280,4 +296,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run_validation_cli())

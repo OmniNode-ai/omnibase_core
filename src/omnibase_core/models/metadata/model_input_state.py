@@ -7,7 +7,31 @@ with structured validation for version parsing operations.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
+
+
+class InputStateFieldsType(TypedDict, total=False):
+    """Type-safe input state fields structure."""
+
+    name: str
+    description: str
+    tags: list[str]
+    priority: int
+    metadata: dict[str, str]
+    context: str
+
+
+class InputStateSourceType(TypedDict, total=False):
+    """Type-safe input state source structure."""
+
+    version: dict[str, int] | str
+    name: str
+    description: str
+    tags: list[str]
+    priority: int
+    metadata: dict[str, str]
+    context: str
+
 
 from pydantic import BaseModel, Field
 
@@ -22,32 +46,20 @@ class ModelInputState(BaseModel):
     structured input state that handles version parsing requirements.
     """
 
-    # Version field (required for parsing)
-    version: ModelSemVer | dict[str, int] | None = Field(
+    # Version field (required for parsing) - use Any for internal storage
+    version: Any = Field(
         None,
         description="Version information as ModelSemVer or dict with major/minor/patch",
     )
 
     # Additional fields that might be present in input state
-    additional_fields: dict[str, Any] = Field(
-        default_factory=dict,
+    additional_fields: InputStateFieldsType = Field(
+        default_factory=lambda: InputStateFieldsType(),
         description="Additional fields in the input state",
     )
 
-    @classmethod
-    def from_dict(cls, input_dict: dict[str, Any]) -> ModelInputState:
-        """Create input state from a dictionary."""
-        version_data = input_dict.get("version")
 
-        # Extract version and other fields
-        additional_fields = {k: v for k, v in input_dict.items() if k != "version"}
-
-        return cls(
-            version=version_data,
-            additional_fields=additional_fields,
-        )
-
-    def get_version_data(self) -> ModelSemVer | dict[str, int] | None:
+    def get_version_data(self) -> Any:
         """Get the version data for parsing."""
         return self.version
 

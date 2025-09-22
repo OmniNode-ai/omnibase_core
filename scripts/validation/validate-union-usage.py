@@ -166,17 +166,20 @@ class UnionUsageChecker(ast.NodeVisitor):
             # Modern union syntax: str | int | float
             union_types = self._extract_union_from_binop(node)
             if len(union_types) >= 2:  # Only process if we have multiple types
-                self.union_count += 1
+                # Modern T | None syntax is correct and should NOT be counted as violation
+                # Only count complex unions (3+ types) or problematic patterns
+                is_simple_optional = (len(union_types) == 2 and "None" in union_types)
+
+                if not is_simple_optional:
+                    self.union_count += 1
 
                 # Create union pattern for analysis
                 union_pattern = UnionPattern(union_types, node.lineno, self.file_path)
                 self.union_patterns.append(union_pattern)
 
-                # Analyze the pattern
-                self._analyze_union_pattern(union_pattern)
-
-                # Note: Modern T | None syntax is correct and should not be flagged as violation
-                # Only Union[T, None] (handled in visit_Subscript) should be flagged
+                # Analyze the pattern (but don't count simple T | None as violations)
+                if not is_simple_optional:
+                    self._analyze_union_pattern(union_pattern)
         self.generic_visit(node)
 
     def _extract_union_from_binop(self, node: ast.BinOp) -> List[str]:
@@ -217,10 +220,11 @@ class UnionUsageChecker(ast.NodeVisitor):
         # Analyze the pattern
         self._analyze_union_pattern(union_pattern)
 
-        # Existing check for Union with None
+        # Check for old-style Union syntax that should be converted to modern T | None
         if len(union_types) == 2 and "None" in union_types:
+            non_none_type = [t for t in union_types if t != "None"][0]
             self.issues.append(
-                f"Line {line_no}: Use Optional[T] or T | None instead of Union[T, None]"
+                f"Line {line_no}: Convert Union[{', '.join(union_types)}] to {non_none_type} | None"
             )
 
 
@@ -246,6 +250,11 @@ def analyze_repeated_patterns(all_patterns: List[UnionPattern]) -> List[str]:
     pattern_files = defaultdict(set)
 
     for pattern in all_patterns:
+        # Skip simple optional patterns (T | None) - these are correct modern syntax
+        is_simple_optional = (pattern.type_count == 2 and "None" in pattern.types)
+        if is_simple_optional:
+            continue
+
         signature = pattern.get_signature()
         pattern_counts[signature] += 1
         pattern_files[signature].add(pattern.file_path)

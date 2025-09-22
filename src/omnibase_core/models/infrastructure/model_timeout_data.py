@@ -22,19 +22,23 @@ class ModelTimeoutData(BaseModel):
 
     timeout_seconds: int = Field(..., description="Timeout duration in seconds")
     warning_threshold_seconds: int = Field(
-        default=0, description="Warning threshold in seconds"
+        default=0,
+        description="Warning threshold in seconds",
     )
     is_strict: bool = Field(
-        default=True, description="Whether timeout is strictly enforced"
+        default=True,
+        description="Whether timeout is strictly enforced",
     )
     allow_extension: bool = Field(
-        default=False, description="Whether timeout can be extended"
+        default=False,
+        description="Whether timeout can be extended",
     )
     extension_limit_seconds: int = Field(
-        default=0, description="Maximum extension time in seconds"
+        default=0,
+        description="Maximum extension time in seconds",
     )
     runtime_category: EnumRuntimeCategory = Field(
-        default=EnumRuntimeCategory.SHORT,
+        default=EnumRuntimeCategory.FAST,
         description="Runtime category for this timeout",
     )
     description: str = Field(default="", description="Timeout description")

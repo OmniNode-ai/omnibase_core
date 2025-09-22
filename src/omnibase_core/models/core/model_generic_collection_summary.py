@@ -21,10 +21,12 @@ class ModelGenericCollectionSummary(BaseModel):
     """
 
     collection_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the collection"
+        default_factory=uuid4,
+        description="Unique identifier for the collection",
     )
     collection_display_name: str = Field(
-        default="", description="Human-readable display name for the collection"
+        default="",
+        description="Human-readable display name for the collection",
     )
     total_items: int = Field(description="Total number of items in collection")
     enabled_items: int = Field(description="Number of enabled items")

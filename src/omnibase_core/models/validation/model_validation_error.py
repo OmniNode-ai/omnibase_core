@@ -4,7 +4,6 @@ Validation error model for tracking validation failures.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -17,7 +16,10 @@ class ModelValidationError(BaseModel):
     """Validation error information."""
 
     message: str = Field(
-        ..., description="Error message", min_length=1, max_length=1000
+        ...,
+        description="Error message",
+        min_length=1,
+        max_length=1000,
     )
     severity: EnumValidationSeverity = Field(
         default=EnumValidationSeverity.ERROR,
@@ -46,10 +48,16 @@ class ModelValidationError(BaseModel):
         description="Additional error details",
     )
     line_number: int | None = Field(
-        default=None, description="Line number where error occurred", ge=1, le=1000000
+        default=None,
+        description="Line number where error occurred",
+        ge=1,
+        le=1000000,
     )
     column_number: int | None = Field(
-        default=None, description="Column number where error occurred", ge=1, le=10000
+        default=None,
+        description="Column number where error occurred",
+        ge=1,
+        le=10000,
     )
 
     def is_critical(self) -> bool:
@@ -63,7 +71,7 @@ class ModelValidationError(BaseModel):
             in [
                 EnumValidationSeverity.ERROR,
                 EnumValidationSeverity.CRITICAL,
-            ]
+            ],
         )
 
     def is_warning(self) -> bool:
@@ -88,7 +96,7 @@ class ModelValidationError(BaseModel):
 
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
-                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
             )
 
         return cls(
@@ -113,7 +121,7 @@ class ModelValidationError(BaseModel):
 
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
-                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
             )
 
         return cls(
@@ -138,7 +146,7 @@ class ModelValidationError(BaseModel):
 
             field_hash = hashlib.sha256(field_name.encode()).hexdigest()
             field_id = UUID(
-                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}"
+                f"{field_hash[:8]}-{field_hash[8:12]}-{field_hash[12:16]}-{field_hash[16:20]}-{field_hash[20:32]}",
             )
 
         return cls(

@@ -7,7 +7,6 @@ descriptions, and categorization for each node type.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -29,7 +28,8 @@ class ModelNodeType(BaseModel):
 
     # Core fields (required) - Entity reference with UUID
     type_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the node type entity"
+        default_factory=uuid4,
+        description="Unique identifier for the node type entity",
     )
     type_name: EnumTypeName = Field(
         ...,

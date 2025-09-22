@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TypeVar, cast
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_property_type import EnumPropertyType
 from ...protocols_local.supported_property_value_protocol import (
@@ -36,7 +36,9 @@ class ModelTypedProperty(BaseModel):
     @field_validator("value")
     @classmethod
     def validate_value_consistency(
-        cls, v: ModelPropertyValue, info
+        cls,
+        v: ModelPropertyValue,
+        info: ValidationInfo,
     ) -> ModelPropertyValue:
         """Validate that value type matches metadata type."""
         if hasattr(info, "data") and "metadata" in info.data:
@@ -57,14 +59,14 @@ class ModelTypedProperty(BaseModel):
             # Use ModelPropertyValue's type-safe accessors
             if expected_type == str:
                 return cast(T, self.value.as_string())
-            elif expected_type == int:
+            if expected_type == int:
                 return cast(T, self.value.as_int())
-            elif expected_type == float:
+            if expected_type == float:
                 return cast(T, self.value.as_float())
-            elif expected_type == bool:
+            if expected_type == bool:
                 return cast(T, self.value.as_bool())
-            elif isinstance(self.value.value, expected_type):
-                return cast(T, self.value.value)
+            if isinstance(self.value.value, expected_type):
+                return self.value.value  # type: ignore[return-value]
         except Exception:
             pass
         return default

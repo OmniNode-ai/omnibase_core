@@ -7,8 +7,34 @@ This provides a convenient timeout interface built on the unified time-based mod
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, TypedDict
+
+
+class TimeoutMetadataType(TypedDict, total=False):
+    """Type-safe timeout metadata structure."""
+
+    source: str
+    priority: int | float
+    context: str
+    retry_count: int
+    max_retries: int
+    escalation_policy: str
+    tags: list[str]
+
+
+class TimeoutDumpType(TypedDict, total=False):
+    """Type-safe timeout dump structure."""
+
+    timeout_seconds: int
+    warning_threshold_seconds: int | None
+    is_strict: bool
+    allow_extension: bool
+    extension_limit_seconds: int | None
+    runtime_category: str | None
+    description: str | None
+    custom_metadata: dict[str, Any]  # Use Any for internal storage, validated by model
+
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +56,9 @@ class ModelTimeout(BaseModel):
 
     time_based: ModelTimeBased[int] = Field(
         default_factory=lambda: ModelTimeBased.timeout(
-            value=30, unit=EnumTimeUnit.SECONDS, description="Default timeout"
+            value=30,
+            unit=EnumTimeUnit.SECONDS,
+            description="Default timeout",
         ),
         exclude=True,
         description="Internal time-based model",
@@ -81,7 +109,8 @@ class ModelTimeout(BaseModel):
         if self.time_based.warning_threshold_value is None:
             return None
         warning_time_based = ModelTimeBased(
-            value=self.time_based.warning_threshold_value, unit=self.time_based.unit
+            value=self.time_based.warning_threshold_value,
+            unit=self.time_based.unit,
         )
         return int(warning_time_based.to_seconds())
 
@@ -101,7 +130,8 @@ class ModelTimeout(BaseModel):
         if self.time_based.extension_limit_value is None:
             return None
         extension_time_based = ModelTimeBased(
-            value=self.time_based.extension_limit_value, unit=self.time_based.unit
+            value=self.time_based.extension_limit_value,
+            unit=self.time_based.unit,
         )
         return int(extension_time_based.to_seconds())
 
@@ -118,7 +148,7 @@ class ModelTimeout(BaseModel):
     @property
     def custom_properties(self) -> ModelCustomProperties:
         """Custom timeout properties using typed model."""
-        metadata: dict[str, Any] = {}
+        metadata: TimeoutMetadataType = {}
         for key, value in self.time_based.metadata.items():
             if key.startswith("custom_"):
                 custom_key = key[7:]  # Remove "custom_" prefix
@@ -187,31 +217,41 @@ class ModelTimeout(BaseModel):
         return self.time_based.get_warning_time(start_time)
 
     def is_expired(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if timeout has expired."""
         return self.time_based.is_expired(start_time, current_time)
 
     def is_warning_triggered(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if warning threshold has been reached."""
         return self.time_based.is_warning_triggered(start_time, current_time)
 
     def get_remaining_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get remaining seconds until timeout."""
         return self.time_based.get_remaining_seconds(start_time, current_time)
 
     def get_elapsed_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get elapsed seconds since start."""
         return self.time_based.get_elapsed_seconds(start_time, current_time)
 
     def get_progress_percentage(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get timeout progress as percentage (0-100)."""
         return self.time_based.get_progress_percentage(start_time, current_time)
@@ -294,7 +334,7 @@ class ModelTimeout(BaseModel):
             custom_properties=self.custom_properties,
         )
 
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> TimeoutDumpType:
         """Override Pydantic model_dump to use typed serialization."""
         # Get typed data first
         typed_data = self.to_typed_data()

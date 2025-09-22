@@ -11,7 +11,7 @@ excessive string fields in a single large model.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -174,7 +174,9 @@ class ModelCliExecution(BaseModel):
         self.metadata.add_context(key, context)
 
     def get_context(
-        self, key: str, default: ModelCliExecutionContext | None = None
+        self,
+        key: str,
+        default: ModelCliExecutionContext | None = None,
     ) -> ModelCliExecutionContext | None:
         """Get custom context data."""
         return self.metadata.get_context(key, default)
@@ -184,7 +186,9 @@ class ModelCliExecution(BaseModel):
         self.config.add_input_data(key, input_data)
 
     def get_input_data(
-        self, key: str, default: ModelCliExecutionInputData | None = None
+        self,
+        key: str,
+        default: ModelCliExecutionInputData | None = None,
     ) -> ModelCliExecutionInputData | None:
         """Get input data."""
         return self.config.get_input_data(key, default)
@@ -217,7 +221,9 @@ class ModelCliExecution(BaseModel):
     ) -> ModelCliExecution:
         """Create a simple execution context."""
         core = ModelCliExecutionCore.create_simple(
-            command_name, target_node_id, target_node_name
+            command_name,
+            target_node_id,
+            target_node_name,
         )
         return cls(core=core)
 
@@ -230,7 +236,9 @@ class ModelCliExecution(BaseModel):
     ) -> ModelCliExecution:
         """Create a dry run execution context."""
         core = ModelCliExecutionCore.create_simple(
-            command_name, target_node_id, target_node_name
+            command_name,
+            target_node_id,
+            target_node_name,
         )
         config = ModelCliExecutionConfig(is_dry_run=True)
         return cls(core=core, config=config)
@@ -244,7 +252,9 @@ class ModelCliExecution(BaseModel):
     ) -> ModelCliExecution:
         """Create a test execution context."""
         core = ModelCliExecutionCore.create_simple(
-            command_name, target_node_id, target_node_name
+            command_name,
+            target_node_id,
+            target_node_name,
         )
         config = ModelCliExecutionConfig.create_test()
         return cls(core=core, config=config)
@@ -261,7 +271,9 @@ class ModelCliExecution(BaseModel):
     ) -> ModelCliExecution:
         """Create execution with custom configuration."""
         core = ModelCliExecutionCore.create_simple(
-            command_name, target_node_id, target_node_name
+            command_name,
+            target_node_id,
+            target_node_name,
         )
         return cls(
             core=core,

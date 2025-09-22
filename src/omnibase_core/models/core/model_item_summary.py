@@ -32,7 +32,8 @@ class ModelItemSummary(BaseModel):
     )
     item_display_name: str = Field(default="", description="Human-readable item name")
     item_type: EnumItemType = Field(
-        default=EnumItemType.UNKNOWN, description="Type of item"
+        default=EnumItemType.UNKNOWN,
+        description="Type of item",
     )
     description: str = Field(default="", description="Item description")
 
@@ -52,13 +53,16 @@ class ModelItemSummary(BaseModel):
 
     # Custom properties with type safety
     string_properties: dict[str, str] = Field(
-        default_factory=dict, description="String properties"
+        default_factory=dict,
+        description="String properties",
     )
     numeric_properties: dict[str, float] = Field(
-        default_factory=dict, description="Numeric properties"
+        default_factory=dict,
+        description="Numeric properties",
     )
     boolean_properties: dict[str, bool] = Field(
-        default_factory=dict, description="Boolean properties"
+        default_factory=dict,
+        description="Boolean properties",
     )
 
     @property
@@ -69,7 +73,9 @@ class ModelItemSummary(BaseModel):
     def has_properties(self) -> bool:
         """Check if item has custom properties."""
         return bool(
-            self.string_properties or self.numeric_properties or self.boolean_properties
+            self.string_properties
+            or self.numeric_properties
+            or self.boolean_properties,
         )
 
 

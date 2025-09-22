@@ -9,7 +9,8 @@ Restructured to reduce string field violations through logical grouping.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Type, TypedDict, TypeVar, Unpack
+from collections.abc import Callable
+from typing import Generic, TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
@@ -60,8 +61,6 @@ class TypedDictFactoryKwargs(
     Restructured using composition to reduce string field count.
     """
 
-    pass
-
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -87,7 +86,7 @@ class ModelGenericFactory(Generic[T]):
         custom_result = cli_factory.build("custom", execution=execution, success=True)
     """
 
-    def __init__(self, model_class: Type[T]) -> None:
+    def __init__(self, model_class: type[T]) -> None:
         """
         Initialize the factory for a specific model class.
 
@@ -139,9 +138,9 @@ class ModelGenericFactory(Generic[T]):
                     {
                         "factory_name": ModelSchemaValue.from_value(name),
                         "model_class": ModelSchemaValue.from_value(
-                            self.model_class.__name__
+                            self.model_class.__name__,
                         ),
-                    }
+                    },
                 ),
             )
         return self._factories[name]()
@@ -168,9 +167,9 @@ class ModelGenericFactory(Generic[T]):
                     {
                         "builder_name": ModelSchemaValue.from_value(builder_name),
                         "model_class": ModelSchemaValue.from_value(
-                            self.model_class.__name__
+                            self.model_class.__name__,
                         ),
-                    }
+                    },
                 ),
             )
         return self._builders[builder_name](**kwargs)
@@ -194,7 +193,7 @@ class ModelGenericFactory(Generic[T]):
     @classmethod
     def create_success_result(
         cls,
-        model_class: Type[T],
+        model_class: type[T],
         result_data: ModelSchemaValue | None,
         **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
@@ -216,7 +215,10 @@ class ModelGenericFactory(Generic[T]):
 
     @classmethod
     def create_error_result(
-        cls, model_class: Type[T], error: str, **kwargs: Unpack[TypedDictFactoryKwargs]
+        cls,
+        model_class: type[T],
+        error: str,
+        **kwargs: Unpack[TypedDictFactoryKwargs],
     ) -> T:
         """
         Generic error result factory.
@@ -242,8 +244,8 @@ class ModelGenericFactory(Generic[T]):
 # Export core factory class and types
 __all__ = [
     "ModelGenericFactory",
-    "TypedDictFactoryKwargs",
     "TypedDictExecutionParams",
-    "TypedDictMetadataParams",
+    "TypedDictFactoryKwargs",
     "TypedDictMessageParams",
+    "TypedDictMetadataParams",
 ]

@@ -208,7 +208,7 @@ class ProtocolMigrator:
                                 "spi_signature": spi_protocol.signature_hash,
                                 "recommendation": "Rename one of the protocols or merge if appropriate",
                             },
-                        )
+                        ),
                     )
 
             # Check for exact signature duplicates
@@ -225,7 +225,7 @@ class ProtocolMigrator:
                             "signature_hash": source_protocol.signature_hash,
                             "recommendation": f"Skip migration - use existing SPI version: {spi_protocol.name}",
                         },
-                    )
+                    ),
                 )
 
         return conflicts
@@ -247,7 +247,7 @@ class ProtocolMigrator:
                     "description": "Create backup of source repository",
                     "estimated_minutes": 2,
                 },
-            )
+            ),
         )
 
         steps.append(
@@ -259,7 +259,7 @@ class ProtocolMigrator:
                     "description": "Ensure SPI directory structure exists",
                     "estimated_minutes": 1,
                 },
-            )
+            ),
         )
 
         # Protocol migration steps
@@ -279,7 +279,7 @@ class ProtocolMigrator:
                         "description": f"Migrate {protocol.name} to SPI {spi_category} category",
                         "estimated_minutes": 3,
                     },
-                )
+                ),
             )
 
         # Post-migration steps
@@ -292,7 +292,7 @@ class ProtocolMigrator:
                     "description": "Update import statements in dependent files",
                     "estimated_minutes": 5,
                 },
-            )
+            ),
         )
 
         steps.append(
@@ -304,7 +304,7 @@ class ProtocolMigrator:
                     "description": "Execute tests to verify migration success",
                     "estimated_minutes": 3,
                 },
-            )
+            ),
         )
 
         return steps
@@ -385,7 +385,9 @@ class ProtocolMigrator:
         if not result.rollback_available:
             return ValidationResult(
                 success=False,
-                message="Rollback not available - migration was not executed or was a dry run",
+                errors=[
+                    "Rollback not available - migration was not executed or was a dry run"
+                ],
             )
 
         try:
@@ -398,11 +400,11 @@ class ProtocolMigrator:
 
             return ValidationResult(
                 success=True,
-                message=f"Successfully rolled back migration of {result.protocols_migrated} protocols",
+                errors=[],
             )
 
         except Exception as e:
-            return ValidationResult(success=False, message=f"Rollback failed: {e}")
+            return ValidationResult(success=False, errors=[f"Rollback failed: {e}"])
 
     def print_migration_plan(self, plan: ModelMigrationPlan) -> None:
         """Print human-readable migration plan."""

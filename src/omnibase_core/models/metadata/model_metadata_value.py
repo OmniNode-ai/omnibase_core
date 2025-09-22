@@ -66,10 +66,10 @@ class ModelMetadataValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("string"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
+            if value_type == EnumCliValueType.INTEGER and not isinstance(v, int):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
@@ -78,11 +78,12 @@ class ModelMetadataValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("integer"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumCliValueType.FLOAT and not isinstance(
-                v, (int, float)
+            if value_type == EnumCliValueType.FLOAT and not isinstance(
+                v,
+                (int, float),
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -92,10 +93,10 @@ class ModelMetadataValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("float"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
+            if value_type == EnumCliValueType.BOOLEAN and not isinstance(v, bool):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
@@ -104,7 +105,7 @@ class ModelMetadataValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("boolean"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
 
@@ -155,26 +156,25 @@ class ModelMetadataValue(BaseModel):
         """Create metadata value from any supported type."""
         if isinstance(value, str):
             return cls.from_string(value, source)
-        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+        if isinstance(value, bool):  # Check bool before int (bool is subclass of int)
             return cls.from_bool(value, source)
-        elif isinstance(value, int):
+        if isinstance(value, int):
             return cls.from_int(value, source)
-        elif isinstance(value, float):
+        if isinstance(value, float):
             return cls.from_float(value, source)
-        else:
-            raise OnexError(
-                code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Unsupported value type: {type(value)}",
-                details=ModelErrorContext.with_context(
-                    {
-                        "supported_types": ModelSchemaValue.from_value(
-                            "str, int, float, bool"
-                        ),
-                        "actual_type": ModelSchemaValue.from_value(str(type(value))),
-                        "value": ModelSchemaValue.from_value(str(value)),
-                    }
-                ),
-            )
+        raise OnexError(
+            code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported value type: {type(value)}",
+            details=ModelErrorContext.with_context(
+                {
+                    "supported_types": ModelSchemaValue.from_value(
+                        "str, int, float, bool",
+                    ),
+                    "actual_type": ModelSchemaValue.from_value(str(type(value))),
+                    "value": ModelSchemaValue.from_value(str(value)),
+                },
+            ),
+        )
 
     def as_string(self) -> str:
         """Get value as string."""
@@ -198,7 +198,7 @@ class ModelMetadataValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("int"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 
@@ -216,7 +216,7 @@ class ModelMetadataValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("float"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 

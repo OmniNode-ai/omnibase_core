@@ -8,7 +8,6 @@ Reduced from excessive fields to essential summary information.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -31,17 +30,21 @@ class ModelFunctionNodeSummary(BaseModel):
 
     # Essential function info - UUID-based entity references
     function_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the function entity"
+        default_factory=uuid4,
+        description="Unique identifier for the function entity",
     )
     function_display_name: str | None = Field(
-        None, description="Human-readable function name"
+        None,
+        description="Human-readable function name",
     )
     description: str | None = Field(None, description="Function description")
     status: EnumFunctionStatus = Field(
-        default=EnumFunctionStatus.ACTIVE, description="Function status"
+        default=EnumFunctionStatus.ACTIVE,
+        description="Function status",
     )
     complexity: EnumComplexityLevel = Field(
-        default=EnumComplexityLevel.SIMPLE, description="Function complexity level"
+        default=EnumComplexityLevel.SIMPLE,
+        description="Function complexity level",
     )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
@@ -51,7 +54,8 @@ class ModelFunctionNodeSummary(BaseModel):
     # Function signature summary
     parameter_count: int = Field(default=0, description="Number of parameters")
     return_type: EnumReturnType | None = Field(
-        None, description="Return type annotation"
+        None,
+        description="Return type annotation",
     )
 
     # Quality indicators (condensed)
@@ -78,7 +82,8 @@ class ModelFunctionNodeSummary(BaseModel):
 
     # Organization (condensed)
     primary_category: EnumActionCategory | None = Field(
-        None, description="Primary function category"
+        None,
+        description="Primary function category",
     )
     tag_count: int = Field(default=0, description="Number of tags")
 

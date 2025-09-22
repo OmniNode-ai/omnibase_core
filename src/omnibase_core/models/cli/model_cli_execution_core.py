@@ -36,7 +36,8 @@ class ModelCliExecutionCore(BaseModel):
     # Command information
     command_name_id: UUID = Field(..., description="UUID for command name")
     command_display_name: str | None = Field(
-        None, description="Human-readable command name"
+        None,
+        description="Human-readable command name",
     )
     command_args: list[str] = Field(
         default_factory=list,
@@ -63,7 +64,8 @@ class ModelCliExecutionCore(BaseModel):
 
     # Execution state
     status: EnumExecutionStatus = Field(
-        default=EnumExecutionStatus.PENDING, description="Execution status"
+        default=EnumExecutionStatus.PENDING,
+        description="Execution status",
     )
     current_phase: EnumExecutionPhase | None = Field(
         default=None,
@@ -174,7 +176,7 @@ class ModelCliExecutionCore(BaseModel):
         # Generate UUID from command name
         command_hash = hashlib.sha256(command_name.encode()).hexdigest()
         command_name_id = UUID(
-            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}"
+            f"{command_hash[:8]}-{command_hash[8:12]}-{command_hash[12:16]}-{command_hash[16:20]}-{command_hash[20:32]}",
         )
 
         return cls(

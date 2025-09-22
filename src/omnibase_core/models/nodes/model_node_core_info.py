@@ -59,7 +59,8 @@ class ModelNodeCoreInfo(BaseModel):
     description: str | None = Field(None, description="Node description")
     author_id: UUID | None = Field(None, description="UUID for node author")
     author_display_name: str | None = Field(
-        None, description="Human-readable node author"
+        None,
+        description="Human-readable node author",
     )
 
     # Status information (2 fields)

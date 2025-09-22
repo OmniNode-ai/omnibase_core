@@ -238,7 +238,9 @@ class ModelMetadataNodeInfo(BaseModel):
         self.update_timestamp()
 
     def get_custom_metadata(
-        self, key: str, default: ModelCliValue | None = None
+        self,
+        key: str,
+        default: ModelCliValue | None = None,
     ) -> ModelCliValue | None:
         """Get custom metadata value."""
         return self.custom_metadata.get(key, default)
@@ -264,7 +266,8 @@ class ModelMetadataNodeInfo(BaseModel):
             "complex": EnumComplexityLevel.HIGH,
         }
         complexity = complexity_map.get(
-            self.complexity.value, EnumComplexityLevel.MEDIUM
+            self.complexity.value,
+            EnumComplexityLevel.MEDIUM,
         )
 
         # Map documentation quality (use string value)
@@ -275,7 +278,8 @@ class ModelMetadataNodeInfo(BaseModel):
             "excellent": EnumDocumentationQuality.EXCELLENT,
         }
         documentation_quality = doc_quality_map.get(
-            self.documentation_quality.value, EnumDocumentationQuality.UNKNOWN
+            self.documentation_quality.value,
+            EnumDocumentationQuality.UNKNOWN,
         )
 
         return ModelNodeInfoSummary(
@@ -316,7 +320,7 @@ class ModelMetadataNodeInfo(BaseModel):
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
         node_id = UUID(
-            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
         return cls(
@@ -339,7 +343,7 @@ class ModelMetadataNodeInfo(BaseModel):
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
         node_id = UUID(
-            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
         return cls(
@@ -362,7 +366,7 @@ class ModelMetadataNodeInfo(BaseModel):
         # Generate UUID from name
         node_hash = hashlib.sha256(name.encode()).hexdigest()
         node_id = UUID(
-            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+            f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}",
         )
 
         return cls(

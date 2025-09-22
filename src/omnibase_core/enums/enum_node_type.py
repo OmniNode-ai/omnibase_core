@@ -76,12 +76,11 @@ class EnumNodeType(str, Enum):
         """Get the functional category of a node type."""
         if cls.is_processing_node(node_type):
             return "processing"
-        elif cls.is_control_node(node_type):
+        if cls.is_control_node(node_type):
             return "control"
-        elif cls.is_output_node(node_type):
+        if cls.is_output_node(node_type):
             return "output"
-        else:
-            return "unknown"
+        return "unknown"
 
 
 # Export for use

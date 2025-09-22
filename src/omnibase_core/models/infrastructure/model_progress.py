@@ -12,16 +12,13 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-# Bounded TypeVar for metric values - reusing infrastructure pattern
-MetricValueType = TypeVar("MetricValueType", str, int, float, bool)
-
-# Bounded TypeVar for progress summary values - includes None for optional fields
-ProgressValueType = TypeVar("ProgressValueType", str, int, float, bool, None)
-
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_status_message import EnumStatusMessage
 from ...exceptions.onex_error import OnexError
+
+# Import numeric and metadata value types
+from ..metadata.model_metadata_value import ModelMetadataValue
 from .model_metrics_data import ModelMetricsData
 from .model_time_based import ModelTimeBased
 
@@ -114,7 +111,8 @@ class ModelProgress(BaseModel):
     # Metadata
     custom_metrics: ModelMetricsData = Field(
         default_factory=lambda: ModelMetricsData(
-            collection_id=None, collection_display_name="progress_metrics"
+            collection_id=None,
+            collection_display_name="progress_metrics",
         ),
         description="Custom progress metrics with clean typing",
     )
@@ -181,7 +179,7 @@ class ModelProgress(BaseModel):
         estimated_total_seconds = (elapsed_seconds / self.percentage) * 100.0
 
         self.estimated_total_duration = ModelTimeBased.from_seconds(
-            estimated_total_seconds
+            estimated_total_seconds,
         )
 
         if self.is_completed:
@@ -189,7 +187,7 @@ class ModelProgress(BaseModel):
         else:
             remaining_seconds = estimated_total_seconds - elapsed_seconds
             self.estimated_remaining_duration = ModelTimeBased.from_seconds(
-                max(0.0, remaining_seconds)
+                max(0.0, remaining_seconds),
             )
 
         # Update estimated completion time
@@ -257,7 +255,9 @@ class ModelProgress(BaseModel):
         self.update_step(self.current_step + steps)
 
     def set_phase(
-        self, phase: EnumExecutionPhase, phase_percentage: float = 0.0
+        self,
+        phase: EnumExecutionPhase,
+        phase_percentage: float = 0.0,
     ) -> None:
         """Set current execution phase."""
         self.current_phase = phase
@@ -305,7 +305,7 @@ class ModelProgress(BaseModel):
         next_name = min(uncompleted, key=lambda name: uncompleted[name])
         return (next_name, uncompleted[next_name])
 
-    def add_custom_metric(self, key: str, value: MetricValueType) -> None:
+    def add_custom_metric(self, key: str, value: ModelMetadataValue) -> None:
         """Add custom progress metric with proper typing."""
         self.custom_metrics.add_metric(key, value)
         self.last_update_time = datetime.now(UTC)
@@ -357,28 +357,40 @@ class ModelProgress(BaseModel):
             return "Unknown"
         return str(self.estimated_total_duration)
 
-    def get_summary(self) -> dict[str, ProgressValueType]:
+    def get_summary(self) -> dict[str, ModelMetadataValue]:
         """Get progress summary."""
         return {
-            "percentage": self.percentage,
-            "current_step": self.current_step,
-            "total_steps": self.total_steps,
-            "current_phase": self.current_phase.value if self.current_phase else None,
-            "phase_percentage": self.phase_percentage,
-            "status_message": self.status_message,
-            "is_completed": self.is_completed,
-            "elapsed_seconds": self.elapsed_seconds,
-            "estimated_remaining_seconds": (
+            "percentage": ModelMetadataValue.from_float(self.percentage),
+            "current_step": ModelMetadataValue.from_int(self.current_step),
+            "total_steps": ModelMetadataValue.from_int(self.total_steps),
+            "current_phase": ModelMetadataValue.from_string(
+                self.current_phase.value if self.current_phase else "None"
+            ),
+            "phase_percentage": ModelMetadataValue.from_float(self.phase_percentage),
+            "status_message": ModelMetadataValue.from_string(str(self.status_message)),
+            "is_completed": ModelMetadataValue.from_bool(self.is_completed),
+            "elapsed_seconds": ModelMetadataValue.from_float(self.elapsed_seconds),
+            "estimated_remaining_seconds": ModelMetadataValue.from_float(
                 self.estimated_remaining_duration.to_seconds()
                 if self.estimated_remaining_duration
-                else None
+                else 0.0
             ),
-            "completed_milestones": len(self.completed_milestones),
-            "total_milestones": len(self.milestones),
-            "completion_rate_per_minute": self.completion_rate_per_minute,
-            "elapsed_formatted": self.get_elapsed_formatted(),
-            "remaining_formatted": self.get_time_remaining_formatted(),
-            "total_formatted": self.get_estimated_total_formatted(),
+            "completed_milestones": ModelMetadataValue.from_int(
+                len(self.completed_milestones)
+            ),
+            "total_milestones": ModelMetadataValue.from_int(len(self.milestones)),
+            "completion_rate_per_minute": ModelMetadataValue.from_float(
+                self.completion_rate_per_minute
+            ),
+            "elapsed_formatted": ModelMetadataValue.from_string(
+                self.get_elapsed_formatted()
+            ),
+            "remaining_formatted": ModelMetadataValue.from_string(
+                self.get_time_remaining_formatted()
+            ),
+            "total_formatted": ModelMetadataValue.from_string(
+                self.get_estimated_total_formatted()
+            ),
         }
 
     @classmethod

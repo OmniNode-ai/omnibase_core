@@ -40,9 +40,9 @@ __all__ = [
     "ModelFallbackMetadata",
     "ModelFallbackStrategy",
     "ModelNamespaceConfig",
+    "ModelOnexUri",
     "ModelPropertyCollection",
     "ModelPropertyMetadata",
     "ModelPropertyValue",
     "ModelTypedProperty",
-    "ModelOnexUri",
 ]

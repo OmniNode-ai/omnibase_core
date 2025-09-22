@@ -88,12 +88,12 @@ class ModelCustomProperties(BaseModel):
     def get_all_custom_fields(self) -> dict[str, ModelSchemaValue]:
         """Get all custom fields as a unified dictionary."""
         result: dict[str, ModelSchemaValue] = {}
-        for k, v in self.custom_strings.items():
-            result[k] = ModelSchemaValue.from_value(v)
-        for k, v in self.custom_numbers.items():
-            result[k] = ModelSchemaValue.from_value(v)
-        for k, v in self.custom_flags.items():
-            result[k] = ModelSchemaValue.from_value(v)
+        for key, string_value in self.custom_strings.items():
+            result[key] = ModelSchemaValue.from_value(string_value)
+        for key, numeric_value in self.custom_numbers.items():
+            result[key] = ModelSchemaValue.from_value(numeric_value)
+        for key, flag_value in self.custom_flags.items():
+            result[key] = ModelSchemaValue.from_value(flag_value)
         return result
 
     def set_custom_value(self, key: str, value: ModelSchemaValue) -> None:
@@ -135,7 +135,8 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def create_with_properties(
-        cls, **kwargs: ModelSchemaValue
+        cls,
+        **kwargs: ModelSchemaValue,
     ) -> ModelCustomProperties:
         """Create ModelCustomProperties with initial properties."""
         instance = cls()
@@ -144,7 +145,8 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def from_metadata(
-        cls, metadata: dict[str, ModelSchemaValue]
+        cls,
+        metadata: dict[str, ModelSchemaValue],
     ) -> ModelCustomProperties:
         """
         Create ModelCustomProperties from custom_metadata field.
@@ -169,7 +171,7 @@ class ModelCustomProperties(BaseModel):
                 "custom_strings": custom_strings,
                 "custom_numbers": custom_numbers,
                 "custom_flags": custom_flags,
-            }
+            },
         )
 
     def to_metadata(self) -> dict[str, ModelSchemaValue]:
@@ -180,12 +182,12 @@ class ModelCustomProperties(BaseModel):
         dumped = self.model_dump()
         result: dict[str, ModelSchemaValue] = {}
 
-        for k, v in dumped["custom_strings"].items():
-            result[k] = ModelSchemaValue.from_value(v)
-        for k, v in dumped["custom_numbers"].items():
-            result[k] = ModelSchemaValue.from_value(v)
-        for k, v in dumped["custom_flags"].items():
-            result[k] = ModelSchemaValue.from_value(v)
+        for key, string_value in dumped["custom_strings"].items():
+            result[key] = ModelSchemaValue.from_value(string_value)
+        for key, numeric_value in dumped["custom_numbers"].items():
+            result[key] = ModelSchemaValue.from_value(numeric_value)
+        for key, flag_value in dumped["custom_flags"].items():
+            result[key] = ModelSchemaValue.from_value(flag_value)
 
         return result
 

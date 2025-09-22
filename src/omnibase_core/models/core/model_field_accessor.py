@@ -29,7 +29,9 @@ class ModelFieldAccessor(BaseModel):
     """Generic field accessor with dot notation support and type safety."""
 
     def get_field(
-        self, path: str, default: ModelSchemaValue | None = None
+        self,
+        path: str,
+        default: ModelSchemaValue | None = None,
     ) -> ModelSchemaValue | None:
         """Get field using dot notation: 'metadata.custom_fields.key'"""
         try:
@@ -154,4 +156,4 @@ class ModelFieldAccessor(BaseModel):
 
 
 # Export for use
-__all__ = ["TypedDictFieldValue", "ModelFieldAccessor"]
+__all__ = ["ModelFieldAccessor", "TypedDictFieldValue"]

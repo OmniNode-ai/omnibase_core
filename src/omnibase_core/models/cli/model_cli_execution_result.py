@@ -7,7 +7,7 @@ for CLI tool execution operations.
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -36,7 +36,10 @@ class ModelCliExecutionResult(BaseModel):
     # Output data
     output_data: ModelCliOutputData = Field(
         default_factory=lambda: ModelCliOutputData(
-            stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+            stdout=None,
+            stderr=None,
+            execution_time_ms=None,
+            memory_usage_mb=None,
         ),
         description="Tool execution output data",
     )
@@ -88,7 +91,10 @@ class ModelCliExecutionResult(BaseModel):
             success=True,
             output_data=output_data
             or ModelCliOutputData(
-                stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+                stdout=None,
+                stderr=None,
+                execution_time_ms=None,
+                memory_usage_mb=None,
             ),
             tool_id=tool_id,
             tool_display_name=tool_display_name,
@@ -129,7 +135,10 @@ class ModelCliExecutionResult(BaseModel):
             status_code=status_code,
             output_data=output_data
             or ModelCliOutputData(
-                stdout=None, stderr=None, execution_time_ms=None, memory_usage_mb=None
+                stdout=None,
+                stderr=None,
+                execution_time_ms=None,
+                memory_usage_mb=None,
             ),
             **kwargs,
         )
@@ -146,5 +155,5 @@ class ModelCliExecutionResult(BaseModel):
                 "status_code": 0,
                 "warning_message": None,
             },
-        }
+        },
     )

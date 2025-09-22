@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_property_type import EnumPropertyType
@@ -50,7 +50,7 @@ class ModelPropertyValue(BaseModel):
 
     @field_validator("value")
     @classmethod
-    def validate_value_type(cls, v: Any, info) -> Any:
+    def validate_value_type(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate that value matches its declared type."""
         if hasattr(info, "data") and "value_type" in info.data:
             value_type = info.data["value_type"]
@@ -65,10 +65,10 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("string"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
+            if value_type == EnumPropertyType.INTEGER and not isinstance(v, int):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be integer, got {type(v)}",
@@ -77,11 +77,12 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("integer"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumPropertyType.FLOAT and not isinstance(
-                v, (int, float)
+            if value_type == EnumPropertyType.FLOAT and not isinstance(
+                v,
+                (int, float),
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -91,10 +92,10 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("float"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
+            if value_type == EnumPropertyType.BOOLEAN and not isinstance(v, bool):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be boolean, got {type(v)}",
@@ -103,10 +104,10 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("boolean"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type in (
+            if value_type in (
                 EnumPropertyType.STRING_LIST,
                 EnumPropertyType.INTEGER_LIST,
                 EnumPropertyType.FLOAT_LIST,
@@ -119,11 +120,12 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("list"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumPropertyType.DATETIME and not isinstance(
-                v, datetime
+            if value_type == EnumPropertyType.DATETIME and not isinstance(
+                v,
+                datetime,
             ):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -133,10 +135,10 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("datetime"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
-            elif value_type == EnumPropertyType.UUID and not isinstance(v, (UUID, str)):
+            if value_type == EnumPropertyType.UUID and not isinstance(v, (UUID, str)):
                 raise OnexError(
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Value must be UUID or string, got {type(v)}",
@@ -145,7 +147,7 @@ class ModelPropertyValue(BaseModel):
                             "expected_type": ModelSchemaValue.from_value("uuid"),
                             "actual_type": ModelSchemaValue.from_value(str(type(v))),
                             "value": ModelSchemaValue.from_value(str(v)),
-                        }
+                        },
                     ),
                 )
 
@@ -193,7 +195,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_string_list(
-        cls, value: list[str], source: str | None = None
+        cls,
+        value: list[str],
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from string list."""
         return cls(
@@ -205,7 +209,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_int_list(
-        cls, value: list[int], source: str | None = None
+        cls,
+        value: list[int],
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from integer list."""
         return cls(
@@ -217,7 +223,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_float_list(
-        cls, value: list[float], source: str | None = None
+        cls,
+        value: list[float],
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from float list."""
         return cls(
@@ -229,7 +237,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_datetime(
-        cls, value: datetime, source: str | None = None
+        cls,
+        value: datetime,
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from datetime."""
         return cls(
@@ -241,7 +251,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_uuid(
-        cls, value: UUID | str, source: str | None = None
+        cls,
+        value: UUID | str,
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from UUID."""
         return cls(
@@ -253,7 +265,9 @@ class ModelPropertyValue(BaseModel):
 
     @classmethod
     def from_list(
-        cls, value: list[str], source: str | None = None
+        cls,
+        value: list[str],
+        source: str | None = None,
     ) -> ModelPropertyValue:
         """Create property value from string list (backward compatibility alias)."""
         return cls.from_string_list(value, source)
@@ -280,7 +294,7 @@ class ModelPropertyValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("int"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 
@@ -298,7 +312,7 @@ class ModelPropertyValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("float"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 
@@ -326,7 +340,7 @@ class ModelPropertyValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("list"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 
@@ -344,7 +358,7 @@ class ModelPropertyValue(BaseModel):
                     "source_type": ModelSchemaValue.from_value(str(self.value_type)),
                     "target_type": ModelSchemaValue.from_value("UUID"),
                     "value": ModelSchemaValue.from_value(str(self.value)),
-                }
+                },
             ),
         )
 

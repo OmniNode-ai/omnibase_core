@@ -33,7 +33,8 @@ class ModelCliExecutionInputData(BaseModel):
     # Data identification
     key: str = Field(..., description="Input data key identifier")
     value_type: EnumCliInputValueType = Field(
-        ..., description="Type discriminator for the input value"
+        ...,
+        description="Type discriminator for the input value",
     )
     value: Any = Field(
         ...,
@@ -48,7 +49,8 @@ class ModelCliExecutionInputData(BaseModel):
     # Validation
     description: str = Field(default="", description="Data description")
     validation_pattern: str = Field(
-        default="", description="Regex pattern for validation"
+        default="",
+        description="Regex pattern for validation",
     )
 
     @field_validator("value")
@@ -65,32 +67,32 @@ class ModelCliExecutionInputData(BaseModel):
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="String value type must contain str data",
             )
-        elif value_type == EnumCliInputValueType.INTEGER and not isinstance(v, int):
+        if value_type == EnumCliInputValueType.INTEGER and not isinstance(v, int):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Integer value type must contain int data",
             )
-        elif value_type == EnumCliInputValueType.FLOAT and not isinstance(v, float):
+        if value_type == EnumCliInputValueType.FLOAT and not isinstance(v, float):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Float value type must contain float data",
             )
-        elif value_type == EnumCliInputValueType.BOOLEAN and not isinstance(v, bool):
+        if value_type == EnumCliInputValueType.BOOLEAN and not isinstance(v, bool):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Boolean value type must contain bool data",
             )
-        elif value_type == EnumCliInputValueType.PATH and not isinstance(v, Path):
+        if value_type == EnumCliInputValueType.PATH and not isinstance(v, Path):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Path value type must contain Path data",
             )
-        elif value_type == EnumCliInputValueType.UUID and not isinstance(v, UUID):
+        if value_type == EnumCliInputValueType.UUID and not isinstance(v, UUID):
             raise OnexError(
                 code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="UUID value type must contain UUID data",
             )
-        elif value_type == EnumCliInputValueType.STRING_LIST and not (
+        if value_type == EnumCliInputValueType.STRING_LIST and not (
             isinstance(v, list) and all(isinstance(item, str) for item in v)
         ):
             raise OnexError(
@@ -121,56 +123,93 @@ class ModelCliExecutionInputData(BaseModel):
         return isinstance(self.value, UUID)
 
     @classmethod
-    def from_string(cls, key: str, value: str, **kwargs) -> ModelCliExecutionInputData:
+    def from_string(
+        cls, key: str, value: str, **kwargs: Any
+    ) -> ModelCliExecutionInputData:
         """Create input data from string value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.STRING, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.STRING,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
-    def from_integer(cls, key: str, value: int, **kwargs) -> ModelCliExecutionInputData:
+    def from_integer(
+        cls, key: str, value: int, **kwargs: Any
+    ) -> ModelCliExecutionInputData:
         """Create input data from integer value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.INTEGER, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.INTEGER,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
-    def from_float(cls, key: str, value: float, **kwargs) -> ModelCliExecutionInputData:
+    def from_float(
+        cls, key: str, value: float, **kwargs: Any
+    ) -> ModelCliExecutionInputData:
         """Create input data from float value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.FLOAT, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.FLOAT,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
     def from_boolean(
-        cls, key: str, value: bool, **kwargs
+        cls,
+        key: str,
+        value: bool,
+        **kwargs: Any,
     ) -> ModelCliExecutionInputData:
         """Create input data from boolean value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.BOOLEAN, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.BOOLEAN,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
-    def from_path(cls, key: str, value: Path, **kwargs) -> ModelCliExecutionInputData:
+    def from_path(
+        cls, key: str, value: Path, **kwargs: Any
+    ) -> ModelCliExecutionInputData:
         """Create input data from Path value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.PATH, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.PATH,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
-    def from_uuid(cls, key: str, value: UUID, **kwargs) -> ModelCliExecutionInputData:
+    def from_uuid(
+        cls, key: str, value: UUID, **kwargs: Any
+    ) -> ModelCliExecutionInputData:
         """Create input data from UUID value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.UUID, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.UUID,
+            value=value,
+            **kwargs,
         )
 
     @classmethod
     def from_string_list(
-        cls, key: str, value: list[str], **kwargs
+        cls,
+        key: str,
+        value: list[str],
+        **kwargs: Any,
     ) -> ModelCliExecutionInputData:
         """Create input data from string list value."""
         return cls(
-            key=key, value_type=EnumCliInputValueType.STRING_LIST, value=value, **kwargs
+            key=key,
+            value_type=EnumCliInputValueType.STRING_LIST,
+            value=value,
+            **kwargs,
         )
 
 

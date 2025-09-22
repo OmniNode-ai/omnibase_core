@@ -30,7 +30,8 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         description="Unique identifier for the collection",
     )
     collection_display_name: str | None = Field(
-        None, description="Human-readable collection name"
+        None,
+        description="Human-readable collection name",
     )
 
     # Node counts
@@ -44,15 +45,24 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     # Quality metrics
     health_score: float = Field(
-        default=0.0, ge=0.0, le=100.0, description="Overall health score (0-100)"
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Overall health score (0-100)",
     )
 
     success_rate: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Overall success rate (0-1)"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Overall success rate (0-1)",
     )
 
     documentation_coverage: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Documentation coverage (0-1)"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Documentation coverage (0-1)",
     )
 
     # Error tracking
@@ -61,25 +71,30 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     warning_count: int = Field(default=0, description="Number of warnings")
 
     critical_error_count: int = Field(
-        default=0, description="Number of critical errors"
+        default=0,
+        description="Number of critical errors",
     )
 
     # Timestamps
     last_modified: datetime | None = Field(
-        None, description="Last modification timestamp"
+        None,
+        description="Last modification timestamp",
     )
 
     last_validated: datetime | None = Field(
-        None, description="Last validation timestamp"
+        None,
+        description="Last validation timestamp",
     )
 
     # Performance metrics
     average_execution_time_ms: float = Field(
-        default=0.0, description="Average execution time in milliseconds"
+        default=0.0,
+        description="Average execution time in milliseconds",
     )
 
     peak_memory_usage_mb: float = Field(
-        default=0.0, description="Peak memory usage in MB"
+        default=0.0,
+        description="Peak memory usage in MB",
     )
 
     total_invocations: int = Field(default=0, description="Total number of invocations")

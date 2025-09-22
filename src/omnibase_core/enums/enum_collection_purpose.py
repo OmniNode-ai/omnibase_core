@@ -112,14 +112,11 @@ class EnumCollectionPurpose(str, Enum):
         """Get suggested retention policy for purpose."""
         if cls.is_compliance_purpose(purpose):
             return "long_term"
-        elif cls.is_temporary_purpose(purpose):
+        if cls.is_temporary_purpose(purpose):
             return "short_term"
-        elif cls.is_analytical_purpose(purpose):
+        if cls.is_analytical_purpose(purpose) or cls.is_operational_purpose(purpose):
             return "medium_term"
-        elif cls.is_operational_purpose(purpose):
-            return "medium_term"
-        else:
-            return "default"
+        return "default"
 
 
 # Export the enum

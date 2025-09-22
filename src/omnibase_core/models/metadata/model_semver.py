@@ -136,7 +136,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
             "major": int(match.group("major")),
             "minor": int(match.group("minor")),
             "patch": int(match.group("patch")),
-        }
+        },
     )
 
 
@@ -159,7 +159,7 @@ def parse_input_state_version(
     if isinstance(input_state, ModelInputState):
         structured_state = input_state
     else:
-        structured_state = ModelInputState.from_dict(input_state)
+        structured_state = ModelInputState.model_validate(input_state)
     v = structured_state.get_version_data()
 
     if v is None:

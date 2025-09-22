@@ -6,8 +6,6 @@ Specialized accessor for managing custom fields with automatic initialization.
 
 from __future__ import annotations
 
-from typing import Any
-
 from ..common.model_schema_value import ModelSchemaValue
 from .model_field_accessor import ModelFieldAccessor
 
@@ -16,7 +14,9 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
     """Specialized accessor for custom fields with initialization."""
 
     def get_custom_field(
-        self, key: str, default: ModelSchemaValue | None = None
+        self,
+        key: str,
+        default: ModelSchemaValue | None = None,
     ) -> ModelSchemaValue | None:
         """Get a custom field value, initializing custom_fields if needed."""
         if not self.has_field("custom_fields"):
@@ -28,7 +28,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor):
         # Initialize custom_fields if it doesn't exist
         if not self.has_field("custom_fields"):
             # Use setattr directly for dict initialization
-            setattr(self, "custom_fields", {})
+            self.custom_fields = {}
         return self.set_field(f"custom_fields.{key}", value)
 
     def has_custom_field(self, key: str) -> bool:

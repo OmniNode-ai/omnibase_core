@@ -86,10 +86,9 @@ class ModelEnvironmentProperties(BaseModel):
             # ModelPropertyValue doesn't have as_list, use the value directly
             if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
                 return [str(item) for item in prop_value.value]
-            else:
-                # Try string conversion for comma-separated values
-                str_val = prop_value.as_string()
-                return [item.strip() for item in str_val.split(",") if item.strip()]
+            # Try string conversion for comma-separated values
+            str_val = prop_value.as_string()
+            return [item.strip() for item in str_val.split(",") if item.strip()]
         except (ValueError, AttributeError):
             return default
 
@@ -106,10 +105,9 @@ class ModelEnvironmentProperties(BaseModel):
             # Access the datetime value directly
             if hasattr(prop_value, "value") and isinstance(prop_value.value, datetime):
                 return prop_value.value
-            else:
-                # Try parsing from string
-                str_val = prop_value.as_string()
-                return datetime.fromisoformat(str_val)
+            # Try parsing from string
+            str_val = prop_value.as_string()
+            return datetime.fromisoformat(str_val)
         except (ValueError, AttributeError):
             return default
 
@@ -160,7 +158,8 @@ class ModelEnvironmentProperties(BaseModel):
         )
 
     def get_properties_by_prefix(
-        self, prefix: str
+        self,
+        prefix: str,
     ) -> ModelEnvironmentPropertiesCollection:
         """Get all properties with keys starting with a prefix as a strongly-typed collection."""
         filtered_properties = {

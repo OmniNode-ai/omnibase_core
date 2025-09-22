@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, Iterator
+from collections.abc import Iterator
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -24,7 +24,8 @@ class ModelEnvironmentVariables(BaseModel):
     """
 
     variables: dict[str, str] = Field(
-        default_factory=dict, description="Environment variables as key-value pairs"
+        default_factory=dict,
+        description="Environment variables as key-value pairs",
     )
 
     secure_variables: set[str] = Field(
@@ -33,14 +34,15 @@ class ModelEnvironmentVariables(BaseModel):
     )
 
     inherit_system: bool = Field(
-        default=True, description="Whether to inherit system environment variables"
+        default=True,
+        description="Whether to inherit system environment variables",
     )
 
     @field_validator("variables")
     @classmethod
     def validate_variable_names(cls, v: dict[str, str]) -> dict[str, str]:
         """Validate environment variable names."""
-        for name in v.keys():
+        for name in v:
             if not name.isidentifier() and not name.replace("_", "").isalnum():
                 msg = f"Invalid environment variable name: {name}"
                 raise OnexError(code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
@@ -176,7 +178,9 @@ class ModelEnvironmentVariables(BaseModel):
 
     @classmethod
     def from_system(
-        cls, prefix: str | None = None, secure_patterns: list[str] | None = None
+        cls,
+        prefix: str | None = None,
+        secure_patterns: list[str] | None = None,
     ) -> ModelEnvironmentVariables:
         """
         Create from system environment variables.

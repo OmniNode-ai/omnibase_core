@@ -15,9 +15,17 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Protocol
 
 from .validation_utils import ValidationResult
+
+
+class PatternChecker(Protocol):
+    """Protocol for pattern checker classes."""
+
+    issues: list[str]
+
+    def visit(self, node: ast.AST) -> None: ...
 
 
 class PydanticPatternChecker(ast.NodeVisitor):
@@ -25,10 +33,10 @@ class PydanticPatternChecker(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.issues = []
+        self.issues: list[str] = []
         self.classes_checked = 0
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit class definitions to check Pydantic patterns."""
         # Check if this is a Pydantic model
         is_pydantic = False
@@ -36,7 +44,7 @@ class PydanticPatternChecker(ast.NodeVisitor):
             if isinstance(base, ast.Name) and base.id == "BaseModel":
                 is_pydantic = True
                 break
-            elif isinstance(base, ast.Attribute):
+            if isinstance(base, ast.Attribute):
                 if (
                     isinstance(base.value, ast.Name)
                     and base.value.id == "pydantic"
@@ -51,14 +59,14 @@ class PydanticPatternChecker(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _check_pydantic_class(self, node: ast.ClassDef):
+    def _check_pydantic_class(self, node: ast.ClassDef) -> None:
         """Check a Pydantic class for pattern violations."""
         class_name = node.name
 
         # Check naming convention
         if not class_name.startswith("Model"):
             self.issues.append(
-                f"Line {node.lineno}: Pydantic model '{class_name}' should start with 'Model'"
+                f"Line {node.lineno}: Pydantic model '{class_name}' should start with 'Model'",
             )
 
         # Check field patterns
@@ -70,7 +78,7 @@ class PydanticPatternChecker(ast.NodeVisitor):
                 # Check for string ID fields that should be UUID
                 if field_name.endswith("_id") and self._is_str_annotation(annotation):
                     self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' should use UUID type instead of str"
+                        f"Line {item.lineno}: Field '{field_name}' should use UUID type instead of str",
                     )
 
                 # Check for category/type/status fields that should be enums
@@ -80,20 +88,20 @@ class PydanticPatternChecker(ast.NodeVisitor):
                     "status",
                 ] and self._is_str_annotation(annotation):
                     self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' should use Enum instead of str"
+                        f"Line {item.lineno}: Field '{field_name}' should use Enum instead of str",
                     )
 
                 # Check for name fields that reference entities
                 if field_name.endswith("_name") and self._is_str_annotation(annotation):
                     self.issues.append(
-                        f"Line {item.lineno}: Field '{field_name}' might reference an entity - consider using ID + display_name pattern"
+                        f"Line {item.lineno}: Field '{field_name}' might reference an entity - consider using ID + display_name pattern",
                     )
 
     def _is_str_annotation(self, annotation: ast.AST) -> bool:
         """Check if annotation is str type."""
         if isinstance(annotation, ast.Name):
             return annotation.id == "str"
-        elif isinstance(annotation, ast.Constant):
+        if isinstance(annotation, ast.Constant):
             return annotation.value == "str"
         return False
 
@@ -103,9 +111,9 @@ class NamingConventionChecker(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.issues = []
+        self.issues: list[str] = []
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Check class naming conventions."""
         class_name = node.name
 
@@ -125,18 +133,18 @@ class NamingConventionChecker(ast.NodeVisitor):
         for pattern in anti_patterns:
             if pattern.lower() in class_name.lower():
                 self.issues.append(
-                    f"Line {node.lineno}: Class name '{class_name}' contains anti-pattern '{pattern}' - use specific domain terminology"
+                    f"Line {node.lineno}: Class name '{class_name}' contains anti-pattern '{pattern}' - use specific domain terminology",
                 )
 
         # Check naming style
         if not re.match(r"^[A-Z][a-zA-Z0-9]*$", class_name):
             self.issues.append(
-                f"Line {node.lineno}: Class name '{class_name}' should use PascalCase"
+                f"Line {node.lineno}: Class name '{class_name}' should use PascalCase",
             )
 
         self.generic_visit(node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check function naming conventions."""
         func_name = node.name
 
@@ -147,7 +155,7 @@ class NamingConventionChecker(ast.NodeVisitor):
         # Check naming style
         if not re.match(r"^[a-z_][a-z0-9_]*$", func_name):
             self.issues.append(
-                f"Line {node.lineno}: Function name '{func_name}' should use snake_case"
+                f"Line {node.lineno}: Function name '{func_name}' should use snake_case",
             )
 
         self.generic_visit(node)
@@ -158,9 +166,9 @@ class GenericPatternChecker(ast.NodeVisitor):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.issues = []
+        self.issues: list[str] = []
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check function patterns."""
         func_name = node.name
 
@@ -181,18 +189,18 @@ class GenericPatternChecker(ast.NodeVisitor):
 
         if func_name.lower() in generic_names:
             self.issues.append(
-                f"Line {node.lineno}: Function name '{func_name}' is too generic - use specific domain terminology"
+                f"Line {node.lineno}: Function name '{func_name}' is too generic - use specific domain terminology",
             )
 
         # Check for functions with too many parameters
         if len(node.args.args) > 5:
             self.issues.append(
-                f"Line {node.lineno}: Function '{func_name}' has {len(node.args.args)} parameters - consider using a model or breaking into smaller functions"
+                f"Line {node.lineno}: Function '{func_name}' has {len(node.args.args)} parameters - consider using a model or breaking into smaller functions",
             )
 
         self.generic_visit(node)
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Check class patterns."""
         class_name = node.name
 
@@ -201,24 +209,24 @@ class GenericPatternChecker(ast.NodeVisitor):
 
         if method_count > 10:
             self.issues.append(
-                f"Line {node.lineno}: Class '{class_name}' has {method_count} methods - consider breaking into smaller classes"
+                f"Line {node.lineno}: Class '{class_name}' has {method_count} methods - consider breaking into smaller classes",
             )
 
         self.generic_visit(node)
 
 
-def validate_patterns_file(file_path: Path) -> List[str]:
+def validate_patterns_file(file_path: Path) -> list[str]:
     """Validate patterns in a Python file."""
     all_issues = []
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content, filename=str(file_path))
 
         # Run all pattern checkers
-        checkers = [
+        checkers: list[PatternChecker] = [
             PydanticPatternChecker(str(file_path)),
             NamingConventionChecker(str(file_path)),
             GenericPatternChecker(str(file_path)),
@@ -235,7 +243,8 @@ def validate_patterns_file(file_path: Path) -> List[str]:
 
 
 def validate_patterns_directory(
-    directory: Path, strict: bool = False
+    directory: Path,
+    strict: bool = False,
 ) -> ValidationResult:
     """Validate patterns in a directory."""
     python_files = []
@@ -282,13 +291,18 @@ def validate_patterns_directory(
 def validate_patterns_cli() -> int:
     """CLI interface for pattern validation."""
     parser = argparse.ArgumentParser(
-        description="Validate code patterns for ONEX compliance"
+        description="Validate code patterns for ONEX compliance",
     )
     parser.add_argument(
-        "directories", nargs="*", default=["src/"], help="Directories to validate"
+        "directories",
+        nargs="*",
+        default=["src/"],
+        help="Directories to validate",
     )
     parser.add_argument(
-        "--strict", action="store_true", help="Enable strict validation mode"
+        "--strict",
+        action="store_true",
+        help="Enable strict validation mode",
     )
 
     args = parser.parse_args()
@@ -317,16 +331,15 @@ def validate_patterns_cli() -> int:
             for error in result.errors:
                 print(f"   {error}")
 
-    print(f"\n📊 Pattern Validation Summary:")
+    print("\n📊 Pattern Validation Summary:")
     print(f"   • Files checked: {overall_result.files_checked}")
     print(f"   • Issues found: {len(overall_result.errors)}")
 
     if overall_result.success:
         print("✅ Pattern validation PASSED")
         return 0
-    else:
-        print("❌ Pattern validation FAILED")
-        return 1
+    print("❌ Pattern validation FAILED")
+    return 1
 
 
 if __name__ == "__main__":

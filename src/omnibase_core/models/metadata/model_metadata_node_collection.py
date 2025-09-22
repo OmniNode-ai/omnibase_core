@@ -1,30 +1,22 @@
 """
-Metadata node collection core model.
+Metadata Node Collection Model.
 
-Clean, focused implementation with proper typing and single responsibility.
-Follows ONEX one-model-per-file naming conventions.
+Clean, focused implementation with proper typing and single responsibility following ONEX one-model-per-file architecture.
 """
 
 from __future__ import annotations
 
-import hashlib
-from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import Field, RootModel, model_validator
+from pydantic import Field, RootModel
 
-from ..nodes.model_function_node import ModelFunctionNode
-from .model_function_node_data import ModelFunctionNodeData
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
-from .model_metadata_node_info import (
-    ModelMetadataNodeInfo,
-    ModelMetadataNodeType,
-)
 from .model_node_info_container import ModelNodeInfoContainer
+from .model_node_union import ModelNodeUnion
 
 
 class ModelMetadataNodeCollection(
-    RootModel[dict[str, ModelFunctionNode | ModelFunctionNodeData]],
+    RootModel[dict[str, ModelNodeUnion]],
 ):
     """
     Enterprise-grade collection of metadata/documentation nodes for ONEX metadata blocks.
@@ -32,18 +24,14 @@ class ModelMetadataNodeCollection(
     Clean implementation with proper typing, focused responsibilities, and ONEX compliance.
     """
 
-    root: dict[str, ModelFunctionNode | ModelFunctionNodeData] = Field(
+    root: dict[str, ModelNodeUnion] = Field(
         default_factory=dict,
         description="Root dictionary containing metadata nodes",
     )
 
     def __init__(
         self,
-        root: (
-            dict[str, ModelFunctionNode | ModelFunctionNodeData]
-            | ModelMetadataNodeCollection
-            | None
-        ) = None,
+        root: Any = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with enhanced enterprise features."""

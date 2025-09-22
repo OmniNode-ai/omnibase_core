@@ -1,8 +1,7 @@
 """
-Result dictionary model.
+Result Dictionary Model.
 
-Clean Pydantic model for Result serialization.
-Follows ONEX one-model-per-file naming conventions.
+Clean Pydantic model for Result serialization following ONEX one-model-per-file architecture.
 """
 
 from __future__ import annotations
@@ -10,6 +9,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from .model_cli_value import ModelCliValue
+from .model_error_value import ModelErrorValue
 
 
 class ModelResultDict(BaseModel):
@@ -22,10 +22,12 @@ class ModelResultDict(BaseModel):
 
     success: bool = Field(..., description="Whether the operation succeeded")
     value: ModelCliValue | None = Field(
-        None, description="Success value (if success=True)"
+        None,
+        description="Success value (if success=True)",
     )
-    error: str | Exception | None = Field(
-        None, description="Error value (if success=False)"
+    error: ModelErrorValue | None = Field(
+        None,
+        description="Error value (if success=False)",
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -36,4 +38,4 @@ ModelResultData = dict[str, ModelCliValue]  # Strongly-typed dict for common dat
 
 
 # Export for use
-__all__ = ["ModelResultDict", "ModelResultData"]
+__all__ = ["ModelResultData", "ModelResultDict"]

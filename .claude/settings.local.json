@@ -63,7 +63,9 @@
       "Bash(python3:*)",
       "Bash(for file in src/omnibase_core/enums/enum_numeric_type.py src/omnibase_core/models/metadata/model_numeric_value.py src/omnibase_core/models/metadata/model_input_state.py)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(/dev/null)",
+      "Bash(/Users/jonah/Library/Python/3.11/bin/mypy src/omnibase_core/ --no-error-summary)"
     ],
     "deny": [],
     "ask": []

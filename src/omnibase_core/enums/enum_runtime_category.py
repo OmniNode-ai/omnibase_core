@@ -83,28 +83,27 @@ class EnumRuntimeCategory(Enum):
         """Determine category from duration in seconds."""
         if seconds < 0.1:
             return cls.INSTANT
-        elif seconds < 1:
+        if seconds < 1:
             return cls.VERY_FAST
-        elif seconds < 5:
+        if seconds < 5:
             return cls.FAST
-        elif seconds < 15:
+        if seconds < 15:
             return cls.QUICK
-        elif seconds < 60:
+        if seconds < 60:
             return cls.MODERATE
-        elif seconds < 300:
+        if seconds < 300:
             return cls.STANDARD
-        elif seconds < 900:
+        if seconds < 900:
             return cls.LONG
-        elif seconds < 1800:
+        if seconds < 1800:
             return cls.EXTENDED
-        elif seconds < 3600:
+        if seconds < 3600:
             return cls.VERY_LONG
-        elif seconds < 10800:
+        if seconds < 10800:
             return cls.BATCH
-        elif seconds < 28800:
+        if seconds < 28800:
             return cls.MARATHON
-        else:
-            return cls.OVERNIGHT
+        return cls.OVERNIGHT
 
     @classmethod
     def get_fast_categories(cls) -> list[EnumRuntimeCategory]:

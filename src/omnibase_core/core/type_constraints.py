@@ -57,55 +57,10 @@ CollectionItemType = TypeVar("CollectionItemType", bound=BaseModel)
 DictValueType = TypeVar("DictValueType", str, int, bool, float, list[Any])
 
 
-# Abstract base classes for common patterns
-
-
-class BaseCollection(ABC, BaseModel):
-    """Abstract base class for typed collections."""
-
-    @abstractmethod
-    def add_item(self, item: Any) -> None:
-        """Add an item to the collection."""
-        ...
-
-    @abstractmethod
-    def remove_item(self, item: Any) -> bool:
-        """Remove an item from the collection."""
-        ...
-
-    @abstractmethod
-    def get_item_count(self) -> int:
-        """Get the number of items in the collection."""
-        ...
-
-
-class BaseFactory(ABC, BaseModel):
-    """Abstract base class for typed factories."""
-
-    @abstractmethod
-    def create(self, **kwargs: Any) -> object:
-        """Create an object."""
-        ...
-
-    @abstractmethod
-    def can_create(self, type_name: str) -> bool:
-        """Check if the factory can create the given type."""
-        ...
-
-
-class BaseProcessor(ABC, BaseModel):
-    """Abstract base class for typed processors."""
-
-    @abstractmethod
-    def process(self, input_data: Any) -> object:
-        """Process input data."""
-        ...
-
-    @abstractmethod
-    def can_process(self, input_data: Any) -> bool:
-        """Check if the processor can handle the input data."""
-        ...
-
+# Import abstract base classes from separate files (ONEX one-model-per-file)
+from .model_base_collection import BaseCollection
+from .model_base_factory import BaseFactory
+from .model_base_processor import BaseProcessor
 
 # Type guards for runtime checking
 

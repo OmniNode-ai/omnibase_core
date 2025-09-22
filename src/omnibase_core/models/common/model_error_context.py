@@ -43,7 +43,8 @@ class ModelErrorContext(BaseModel):
 
     @classmethod
     def with_context(
-        cls, additional_context: dict[str, ModelSchemaValue]
+        cls,
+        additional_context: dict[str, ModelSchemaValue],
     ) -> "ModelErrorContext":
         """
         Create ModelErrorContext with only additional context.

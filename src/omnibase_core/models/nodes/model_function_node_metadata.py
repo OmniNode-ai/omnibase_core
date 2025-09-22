@@ -28,11 +28,13 @@ class TypedDictFunctionMetadataSummary(TypedDict):
     """Type-safe dictionary for function metadata summary."""
 
     documentation: dict[
-        str, bool | int
+        str,
+        bool | int,
     ]  # has_* (bool) and *_count (int) and quality_score moved out
     deprecation: TypedDictDeprecationSummary  # Properly typed deprecation summary
     relationships: dict[
-        str, RelationshipValue
+        str,
+        RelationshipValue,
     ]  # *_count (int), has_* (bool), primary_category (str, "None" for missing)
     documentation_quality_score: float
     is_fully_documented: bool
@@ -126,16 +128,22 @@ class ModelFunctionNodeMetadata(BaseModel):
                     minor = int(parts[1])
                     patch = int(parts[2]) if len(parts) > 2 else 0
                     self.deprecation.deprecated_since = ModelSemVer(
-                        major=major, minor=minor, patch=patch
+                        major=major,
+                        minor=minor,
+                        patch=patch,
                     )
                 else:
                     # Fallback for simple version strings
                     self.deprecation.deprecated_since = ModelSemVer(
-                        major=1, minor=0, patch=0
+                        major=1,
+                        minor=0,
+                        patch=0,
                     )
             except (ValueError, IndexError):
                 self.deprecation.deprecated_since = ModelSemVer(
-                    major=1, minor=0, patch=0
+                    major=1,
+                    minor=0,
+                    patch=0,
                 )
 
     @property

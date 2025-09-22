@@ -48,6 +48,12 @@ from ..nodes.model_node_configuration import ModelNodeConfiguration
 
 # Configuration base classes
 from .model_configuration_base import ModelConfigurationBase
+
+# Generic container pattern
+from .model_container import (
+    ModelContainer,
+
+)
 from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 
 # Custom properties pattern
@@ -111,6 +117,10 @@ __all__ = [
     # Generic collection pattern
     "ModelGenericCollection",
     "ModelGenericCollectionSummary",
+    # Generic container pattern
+    "ModelContainer",
+
+
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",
@@ -122,9 +132,9 @@ __all__ = [
 if _FACTORY_AVAILABLE:
     __all__.extend(
         [
+            "CapabilityFactory",
             "ModelGenericFactory",
             "ResultFactory",
-            "CapabilityFactory",
             "ValidationErrorFactory",
-        ]
+        ],
     )

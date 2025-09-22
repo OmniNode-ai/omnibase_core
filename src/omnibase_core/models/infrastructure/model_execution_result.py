@@ -7,11 +7,12 @@ timing, metadata, and execution tracking capabilities.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...exceptions.onex_error import OnexError
@@ -41,21 +42,25 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
     """
 
     execution_id: UUID = Field(
-        default_factory=uuid4, description="Unique execution identifier"
+        default_factory=uuid4,
+        description="Unique execution identifier",
     )
 
     start_time: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Execution start time"
+        default_factory=lambda: datetime.now(UTC),
+        description="Execution start time",
     )
 
     end_time: datetime | None = Field(None, description="Execution end time")
 
     duration: ModelExecutionDuration | None = Field(
-        None, description="Execution duration"
+        None,
+        description="Execution duration",
     )
 
     warnings: list[str] = Field(
-        default_factory=list, description="Warning messages collected during execution"
+        default_factory=list,
+        description="Warning messages collected during execution",
     )
 
     metadata: ModelCustomProperties = Field(
@@ -71,11 +76,10 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
                     code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result must have a value",
                 )
-            else:
-                raise OnexError(
-                    code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Error result must have an error",
-                )
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Error result must have an error",
+            )
 
         super().__init__(**data)
 
@@ -202,7 +206,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
         if self.duration is None:
             elapsed = self.end_time - self.start_time
             self.duration = ModelExecutionDuration(
-                milliseconds=int(elapsed.total_seconds() * 1000)
+                milliseconds=int(elapsed.total_seconds() * 1000),
             )
 
     def get_duration_ms(self) -> int | None:
@@ -266,7 +270,7 @@ class ModelExecutionResult(Result[T, E], Generic[T, E]):
             execution_time_ms=self.get_duration_ms(),
             status_code=int(
                 self.get_metadata("status_code", 0 if self.success else 1)
-                or (0 if self.success else 1)
+                or (0 if self.success else 1),
             ),
             warnings=self.warnings,
             metadata=self.metadata,
@@ -299,7 +303,10 @@ def execution_ok(
         metadata.set_custom_string("tool_name", tool_name)
 
     return ModelExecutionResult.ok(
-        value, execution_id=execution_id, metadata=metadata, **kwargs
+        value,
+        execution_id=execution_id,
+        metadata=metadata,
+        **kwargs,
     )
 
 
@@ -321,7 +328,10 @@ def execution_err(
         metadata.set_custom_number("status_code", float(status_code))
 
     return ModelExecutionResult.err(
-        error, execution_id=execution_id, metadata=metadata, **kwargs
+        error,
+        execution_id=execution_id,
+        metadata=metadata,
+        **kwargs,
     )
 
 
@@ -378,7 +388,7 @@ def try_execution(
 # Export for use
 __all__ = [
     "ModelExecutionResult",
-    "execution_ok",
     "execution_err",
+    "execution_ok",
     "try_execution",
 ]

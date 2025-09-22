@@ -62,7 +62,8 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Only include healthy nodes in results",
     )
     category_filter: EnumCategoryFilter | None = Field(
-        None, description="Filter nodes by category"
+        None,
+        description="Filter nodes by category",
     )
 
     # Performance and timeouts
@@ -121,7 +122,7 @@ class ModelCliNodeExecutionInput(BaseModel):
                 "execution_context": "550e8400-e29b-41d4-a716-446655440000",
                 "request_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
             },
-        }
+        },
     )
 
 

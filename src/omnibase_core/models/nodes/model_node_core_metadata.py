@@ -30,17 +30,20 @@ class ModelNodeCoreMetadata(BaseModel):
 
     # Core identification - UUID-based entity references
     node_id: UUID = Field(
-        default_factory=uuid4, description="Unique identifier for the node entity"
+        default_factory=uuid4,
+        description="Unique identifier for the node entity",
     )
     node_display_name: str = Field(default="", description="Human-readable node name")
     node_type: EnumMetadataNodeType = Field(..., description="Node type")
 
     # Status information (2 fields)
     status: EnumMetadataNodeStatus = Field(
-        default=EnumMetadataNodeStatus.ACTIVE, description="Node status"
+        default=EnumMetadataNodeStatus.ACTIVE,
+        description="Node status",
     )
     health: EnumNodeHealthStatus = Field(
-        default=EnumNodeHealthStatus.HEALTHY, description="Node health"
+        default=EnumNodeHealthStatus.HEALTHY,
+        description="Node health",
     )
 
     # Version (1 field, but structured)

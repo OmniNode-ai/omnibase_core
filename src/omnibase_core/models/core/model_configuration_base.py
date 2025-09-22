@@ -32,10 +32,12 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     # Core metadata
     name: str | None = Field(default=None, description="Configuration name")
     description: str | None = Field(
-        default=None, description="Configuration description"
+        default=None,
+        description="Configuration description",
     )
     version: ModelSemVer | None = Field(
-        default=None, description="Configuration version"
+        default=None,
+        description="Configuration version",
     )
 
     # Lifecycle control
@@ -51,7 +53,9 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
         self.updated_at = datetime.now(UTC)
 
     def get_config_value(
-        self, key: str, default: ModelSchemaValue | None = None
+        self,
+        key: str,
+        default: ModelSchemaValue | None = None,
     ) -> ModelSchemaValue | None:
         """Get configuration value by key from config_data."""
         if self.config_data and hasattr(self.config_data, key):
@@ -96,7 +100,9 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     def create_disabled(cls, name: str) -> ModelConfigurationBase[T]:
         """Create a disabled configuration."""
         return cls(
-            name=name, enabled=False, description=f"Disabled {name} configuration"
+            name=name,
+            enabled=False,
+            description=f"Disabled {name} configuration",
         )
 
 

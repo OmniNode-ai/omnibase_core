@@ -7,7 +7,18 @@ Replaces manual YAML validation with proper type-safe validation.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
+
+
+class YamlContentType(TypedDict, total=False):
+    """Type-safe YAML contract content structure."""
+
+    contract_version: str
+    node_type: str
+    description: str
+    # Allow any additional string keys with various value types for YAML flexibility
+    # This preserves YAML flexibility while providing basic type safety
+
 
 from pydantic import BaseModel, Field
 
@@ -24,13 +35,14 @@ class ModelYamlContract(BaseModel):
     """
 
     contract_version: ModelSemVer = Field(
-        description="Contract version using semantic versioning"
+        description="Contract version using semantic versioning",
     )
     node_type: EnumNodeType = Field(description="ONEX node type classification")
 
     # Optional fields that may appear in contract files
     description: str | None = Field(
-        default=None, description="Optional contract description"
+        default=None,
+        description="Optional contract description",
     )
 
     # Allow additional fields for flexibility
@@ -39,7 +51,7 @@ class ModelYamlContract(BaseModel):
     @classmethod
     def validate_yaml_content(
         cls,
-        yaml_data: dict[str, Any],
+        yaml_data: YamlContentType,
     ) -> ModelYamlContract:
         """
         Validate YAML content using Pydantic model validation.

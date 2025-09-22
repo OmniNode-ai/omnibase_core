@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field
 
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_execution_status import EnumExecutionStatus
-from ...utils.uuid_utilities import uuid_from_string
 
 
 class ModelCliExecutionSummary(BaseModel):
@@ -29,22 +28,29 @@ class ModelCliExecutionSummary(BaseModel):
     execution_id: UUID = Field(..., description="Unique execution identifier")
     command_id: UUID = Field(..., description="UUID identifier for the CLI command")
     command_display_name: str | None = Field(
-        None, description="Human-readable command name"
+        None,
+        description="Human-readable command name",
     )
     target_node_id: UUID | None = Field(
-        default=None, description="Target node UUID for precise identification"
+        default=None,
+        description="Target node UUID for precise identification",
     )
     target_node_display_name: str | None = Field(
-        default=None, description="Target node display name if applicable"
+        default=None,
+        description="Target node display name if applicable",
     )
 
     # Execution state
     status: EnumExecutionStatus = Field(..., description="Execution status")
     current_phase: EnumExecutionPhase | None = Field(
-        default=None, description="Current execution phase"
+        default=None,
+        description="Current execution phase",
     )
     progress_percentage: float = Field(
-        ..., description="Progress percentage", ge=0.0, le=100.0
+        ...,
+        description="Progress percentage",
+        ge=0.0,
+        le=100.0,
     )
 
     # Timing information

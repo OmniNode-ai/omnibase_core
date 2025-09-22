@@ -47,7 +47,7 @@ class TypedDictMigrationStepDict(TypedDict, total=False):
 # Export all types
 __all__ = [
     "TypedDictMigrationConflictBaseDict",
-    "TypedDictMigrationNameConflictDict",
     "TypedDictMigrationDuplicateConflictDict",
+    "TypedDictMigrationNameConflictDict",
     "TypedDictMigrationStepDict",
 ]

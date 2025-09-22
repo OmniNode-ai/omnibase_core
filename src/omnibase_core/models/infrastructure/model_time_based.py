@@ -31,24 +31,30 @@ class ModelTimeBased(BaseModel, Generic[T]):
     value: T = Field(..., description="The time-based value")
     unit: EnumTimeUnit = Field(default=EnumTimeUnit.SECONDS, description="Time unit")
     metadata: dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata for context"
+        default_factory=dict,
+        description="Additional metadata for context",
     )
 
     # Timeout-specific fields (optional)
     warning_threshold_value: T | None = Field(
-        default=None, description="Warning threshold value (in same unit)"
+        default=None,
+        description="Warning threshold value (in same unit)",
     )
     is_strict: bool = Field(
-        default=True, description="Whether this is strictly enforced (for timeouts)"
+        default=True,
+        description="Whether this is strictly enforced (for timeouts)",
     )
     allow_extension: bool = Field(
-        default=False, description="Whether this can be extended (for timeouts)"
+        default=False,
+        description="Whether this can be extended (for timeouts)",
     )
     extension_limit_value: T | None = Field(
-        default=None, description="Maximum extension value (in same unit)"
+        default=None,
+        description="Maximum extension value (in same unit)",
     )
     runtime_category: EnumRuntimeCategory | None = Field(
-        default=None, description="Runtime category for this time value"
+        default=None,
+        description="Runtime category for this time value",
     )
 
     @field_validator("warning_threshold_value")
@@ -170,12 +176,15 @@ class ModelTimeBased(BaseModel, Generic[T]):
             start_time = datetime.now(UTC)
 
         warning_time_based = ModelTimeBased(
-            value=self.warning_threshold_value, unit=self.unit
+            value=self.warning_threshold_value,
+            unit=self.unit,
         )
         return start_time + warning_time_based.to_timedelta()
 
     def is_expired(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if timeout has expired."""
         if current_time is None:
@@ -184,7 +193,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         return current_time >= deadline
 
     def is_warning_triggered(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> bool:
         """Check if warning threshold has been reached."""
         warning_time = self.get_warning_time(start_time)
@@ -195,7 +206,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         return current_time >= warning_time
 
     def get_remaining_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get remaining seconds until timeout."""
         if current_time is None:
@@ -205,7 +218,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         return max(0.0, remaining.total_seconds())
 
     def get_elapsed_seconds(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get elapsed seconds since start."""
         if current_time is None:
@@ -214,7 +229,9 @@ class ModelTimeBased(BaseModel, Generic[T]):
         return elapsed.total_seconds()
 
     def get_progress_percentage(
-        self, start_time: datetime, current_time: datetime | None = None
+        self,
+        start_time: datetime,
+        current_time: datetime | None = None,
     ) -> float:
         """Get timeout progress as percentage (0-100)."""
         elapsed = self.get_elapsed_seconds(start_time, current_time)
@@ -232,7 +249,8 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
         # Extend the value
         if isinstance(self.value, (int, float)) and isinstance(
-            additional_value, (int, float)
+            additional_value,
+            (int, float),
         ):
             self.value = self.value + additional_value
             # Update runtime category based on new timeout

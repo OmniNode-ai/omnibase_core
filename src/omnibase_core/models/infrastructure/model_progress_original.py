@@ -11,16 +11,14 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field, field_validator
 
-# Bounded TypeVar for metric values - reusing infrastructure pattern
-MetricValueType = TypeVar("MetricValueType", str, int, float, bool)
-
-# Bounded TypeVar for progress summary values - includes None for optional fields
-ProgressValueType = TypeVar("ProgressValueType", str, int, float, bool, None)
-
 from ...enums.enum_core_error_code import EnumCoreErrorCode
 from ...enums.enum_execution_phase import EnumExecutionPhase
 from ...enums.enum_status_message import EnumStatusMessage
 from ...exceptions.onex_error import OnexError
+
+# Import proper discriminated union models to replace complex unions
+from ..common.model_flexible_value import ModelFlexibleValue
+from ..metadata.model_metadata_value import ModelMetadataValue
 from .model_metrics_data import ModelMetricsData
 
 
@@ -102,7 +100,8 @@ class ModelProgress(BaseModel):
     # Metadata
     custom_metrics: ModelMetricsData = Field(
         default_factory=lambda: ModelMetricsData(
-            collection_id=None, collection_display_name="progress_metrics"
+            collection_id=None,
+            collection_display_name="progress_metrics",
         ),
         description="Custom progress metrics with clean typing",
     )
@@ -233,7 +232,9 @@ class ModelProgress(BaseModel):
         self.update_step(self.current_step + steps)
 
     def set_phase(
-        self, phase: EnumExecutionPhase, phase_percentage: float = 0.0
+        self,
+        phase: EnumExecutionPhase,
+        phase_percentage: float = 0.0,
     ) -> None:
         """Set current execution phase."""
         self.current_phase = phase
@@ -246,7 +247,9 @@ class ModelProgress(BaseModel):
         self.last_update_time = datetime.now(UTC)
 
     def set_status(
-        self, status: EnumStatusMessage, detailed_info: str | None = None
+        self,
+        status: EnumStatusMessage,
+        detailed_info: str | None = None,
     ) -> None:
         """Set status and optional detailed info."""
         self.status_message = status
@@ -283,9 +286,11 @@ class ModelProgress(BaseModel):
         next_name = min(uncompleted, key=lambda name: uncompleted[name])
         return (next_name, uncompleted[next_name])
 
-    def add_custom_metric(self, key: str, value: MetricValueType) -> None:
+    def add_custom_metric(self, key: str, value: Any) -> None:
         """Add custom progress metric with proper typing."""
-        self.custom_metrics.add_metric(key, value)
+        # Convert to ModelMetadataValue for type safety - handles str, int, float, bool
+        metadata_value = ModelMetadataValue.from_any(value, source="progress_tracking")
+        self.custom_metrics.add_metric(key, metadata_value.to_python_value())
         self.last_update_time = datetime.now(UTC)
 
     def add_tag(self, tag: str) -> None:
@@ -321,25 +326,43 @@ class ModelProgress(BaseModel):
         self.completed_milestones.clear()
         self.custom_metrics.clear_all_metrics()
 
-    def get_summary(self) -> dict[str, ProgressValueType]:
-        """Get progress summary."""
+    def get_summary(self) -> dict[str, ModelFlexibleValue]:
+        """Get progress summary with type-safe values."""
         return {
-            "percentage": self.percentage,
-            "current_step": self.current_step,
-            "total_steps": self.total_steps,
-            "current_phase": self.current_phase.value if self.current_phase else None,
-            "phase_percentage": self.phase_percentage,
-            "status_message": self.status_message,
-            "is_completed": self.is_completed,
-            "elapsed_seconds": self.elapsed_seconds,
-            "estimated_remaining_seconds": (
-                self.estimated_remaining_duration.total_seconds()
-                if self.estimated_remaining_duration
-                else None
+            "percentage": ModelFlexibleValue.from_float(self.percentage),
+            "current_step": ModelFlexibleValue.from_integer(self.current_step),
+            "total_steps": (
+                ModelFlexibleValue.from_integer(self.total_steps)
+                if self.total_steps is not None
+                else ModelFlexibleValue.from_none()
             ),
-            "completed_milestones": len(self.completed_milestones),
-            "total_milestones": len(self.milestones),
-            "completion_rate_per_minute": self.completion_rate_per_minute,
+            "current_phase": (
+                ModelFlexibleValue.from_string(self.current_phase.value)
+                if self.current_phase
+                else ModelFlexibleValue.from_none()
+            ),
+            "phase_percentage": ModelFlexibleValue.from_float(self.phase_percentage),
+            "status_message": (
+                ModelFlexibleValue.from_string(self.status_message.value)
+                if self.status_message
+                else ModelFlexibleValue.from_none()
+            ),
+            "is_completed": ModelFlexibleValue.from_boolean(self.is_completed),
+            "elapsed_seconds": ModelFlexibleValue.from_float(self.elapsed_seconds),
+            "estimated_remaining_seconds": (
+                ModelFlexibleValue.from_float(
+                    self.estimated_remaining_duration.total_seconds()
+                )
+                if self.estimated_remaining_duration
+                else ModelFlexibleValue.from_none()
+            ),
+            "completed_milestones": ModelFlexibleValue.from_integer(
+                len(self.completed_milestones)
+            ),
+            "total_milestones": ModelFlexibleValue.from_integer(len(self.milestones)),
+            "completion_rate_per_minute": ModelFlexibleValue.from_float(
+                self.completion_rate_per_minute
+            ),
         }
 
     @classmethod

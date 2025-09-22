@@ -7,8 +7,6 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from pydantic import BaseModel, Field
 
 from ...enums.enum_connection_type import EnumConnectionType
@@ -40,7 +38,10 @@ class ModelConnectionEndpoint(BaseModel):
     )
     port: int = Field(..., description="Port number", ge=1, le=65535)
     path: str | None = Field(
-        None, description="Connection path/endpoint", max_length=2048, pattern=r"^/.*$"
+        None,
+        description="Connection path/endpoint",
+        max_length=2048,
+        pattern=r"^/.*$",
     )
 
     # Headers and metadata

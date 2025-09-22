@@ -7,6 +7,8 @@ Part of the ModelNodeConfiguration restructuring.
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from pydantic import BaseModel, Field
 
 from .types_node_resource_summary import NodeResourceSummaryType
@@ -76,10 +78,12 @@ class ModelNodeResourceLimits(BaseModel):
         cpu_percent: float | None = None,
     ) -> ModelNodeResourceLimits:
         """Create constrained resource configuration."""
-        return cls(
-            max_memory_mb=memory_mb,
-            max_cpu_percent=cpu_percent,
-        )
+        kwargs: dict[str, Any] = {}
+        if memory_mb is not None:
+            kwargs["max_memory_mb"] = memory_mb
+        if cpu_percent is not None:
+            kwargs["max_cpu_percent"] = cpu_percent
+        return cls(**kwargs)
 
 
 # Export for use

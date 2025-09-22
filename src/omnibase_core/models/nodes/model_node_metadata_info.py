@@ -6,7 +6,7 @@ Simple model for node metadata information used in CLI output.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -225,7 +225,8 @@ class ModelNodeMetadataInfo(BaseModel):
             if isinstance(python_val, str):
                 self.organization.custom_properties.custom_strings[key] = python_val
             elif isinstance(
-                python_val, bool
+                python_val,
+                bool,
             ):  # Check bool before int since bool is a subclass of int
                 self.organization.custom_properties.custom_flags[key] = python_val
             elif isinstance(python_val, (int, float)):

@@ -9,26 +9,40 @@ import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, TypedDict
+
+
+class ValidationMetadataType(TypedDict, total=False):
+    """Type-safe validation metadata structure."""
+
+    protocols_found: int
+    recommendations: list[str]
+    signature_hashes: list[str]
+    file_count: int
+    duplication_count: int
+    suggestions: list[str]
+    total_unions: int
+    violations_found: int
+    message: str
+    validation_type: str
+    yaml_files_found: int
+    manual_yaml_violations: int
+    max_violations: int
+    files_with_violations: list[str]
+    strict_mode: bool
+    error: str
+    max_unions: int
+    complex_patterns: int
+
 
 from .exceptions import (
     InputValidationError,
 )
+from .model_protocol_info import ProtocolInfo
+from .model_protocol_signature_extractor import ProtocolSignatureExtractor
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class ProtocolInfo:
-    """Information about a discovered protocol."""
-
-    name: str
-    file_path: str
-    repository: str
-    methods: list[str]
-    signature_hash: str
-    line_count: int
-    imports: list[str]
 
 
 @dataclass
@@ -40,7 +54,7 @@ class ValidationResult:
     files_checked: int = 0
     violations_found: int = 0
     files_with_violations: int = 0
-    metadata: dict | None = None
+    metadata: ValidationMetadataType | None = None
 
     def __post_init__(self) -> None:
         if self.metadata is None:
@@ -52,8 +66,7 @@ class ValidationResult:
         """Legacy message property for backward compatibility."""
         if self.success:
             return f"Validation passed: {self.files_checked} files checked"
-        else:
-            return f"Validation failed: {len(self.errors)} errors found"
+        return f"Validation failed: {len(self.errors)} errors found"
 
     @property
     def violations(self) -> list[str]:
@@ -63,12 +76,18 @@ class ValidationResult:
     @property
     def protocols_found(self) -> int:
         """Legacy protocols_found property for backward compatibility."""
-        return self.metadata.get("protocols_found", 0)
+        if not self.metadata:
+            return 0
+        value = self.metadata.get("protocols_found", 0)
+        return int(value) if isinstance(value, (int, float)) else 0
 
     @property
     def recommendations(self) -> list[str]:
         """Legacy recommendations property for backward compatibility."""
-        return self.metadata.get("recommendations", [])
+        if not self.metadata:
+            return []
+        value = self.metadata.get("recommendations", [])
+        return list(value) if isinstance(value, list) else []
 
 
 @dataclass
@@ -79,54 +98,6 @@ class DuplicationInfo:
     protocols: list[ProtocolInfo]
     duplication_type: str  # "exact", "name_conflict", "signature_match"
     recommendation: str
-
-
-class ProtocolSignatureExtractor(ast.NodeVisitor):
-    """Extracts protocol signature for comparison."""
-
-    def __init__(self) -> None:
-        self.methods: list[str] = []
-        self.imports: list[str] = []
-        self.class_name = ""
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Extract class definition."""
-        # Check if this class actually inherits from Protocol or typing.Protocol
-        is_protocol = False
-        for base in node.bases:
-            if (isinstance(base, ast.Name) and base.id == "Protocol") or (
-                isinstance(base, ast.Attribute) and base.attr == "Protocol"
-            ):
-                is_protocol = True
-                break
-
-        if is_protocol:
-            self.class_name = node.name
-            for item in node.body:
-                if isinstance(item, ast.FunctionDef):
-                    # Extract method signature
-                    args = [arg.arg for arg in item.args.args if arg.arg != "self"]
-                    returns = ast.unparse(item.returns) if item.returns else "None"
-                    signature = f"{item.name}({', '.join(args)}) -> {returns}"
-                    self.methods.append(signature)
-                elif isinstance(item, ast.Expr) and isinstance(
-                    item.value,
-                    ast.Constant,
-                ):
-                    # Skip docstrings and ellipsis
-                    continue
-        self.generic_visit(node)
-
-    def visit_Import(self, node: ast.Import) -> None:
-        """Extract imports."""
-        for alias in node.names:
-            self.imports.append(alias.name)
-
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Extract from imports."""
-        if node.module:
-            for alias in node.names:
-                self.imports.append(f"{node.module}.{alias.name}")
 
 
 def extract_protocol_signature(file_path: Path) -> ProtocolInfo | None:

@@ -23,11 +23,13 @@ class ModelExampleMetadataSummary(BaseModel):
     version: ModelSemVer | None = Field(None, description="Metadata version")
     author_id: UUID | None = Field(None, description="UUID of the author")
     author_display_name: str | None = Field(
-        None, description="Human-readable author name"
+        None,
+        description="Human-readable author name",
     )
     tags: list[str] = Field(default_factory=list, description="Associated tags")
     custom_fields: dict[str, ModelMetadataValue] = Field(
-        default_factory=dict, description="Custom metadata fields with type-safe values"
+        default_factory=dict,
+        description="Custom metadata fields with type-safe values",
     )
 
 

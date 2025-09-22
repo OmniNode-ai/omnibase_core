@@ -6,7 +6,7 @@ Specialized factory for capability-type models with standardized naming and meta
 
 from __future__ import annotations
 
-from typing import Type, TypedDict, TypeVar, Unpack
+from typing import TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
@@ -36,7 +36,7 @@ class CapabilityFactory(ModelGenericFactory[T]):
     standardized naming and metadata.
     """
 
-    def __init__(self, model_class: Type[T]) -> None:
+    def __init__(self, model_class: type[T]) -> None:
         """Initialize capability factory with common patterns."""
         super().__init__(model_class)
 
@@ -46,7 +46,8 @@ class CapabilityFactory(ModelGenericFactory[T]):
         self.register_builder("experimental", self._build_experimental_capability)
 
     def _build_standard_capability(
-        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
+        self,
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build a standard capability with consistent naming."""
         name = kwargs.get("name", "UNKNOWN")
@@ -65,7 +66,8 @@ class CapabilityFactory(ModelGenericFactory[T]):
         )
 
     def _build_deprecated_capability(
-        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
+        self,
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build a deprecated capability with warning metadata."""
         # Ensure deprecated flag is set
@@ -73,7 +75,8 @@ class CapabilityFactory(ModelGenericFactory[T]):
         return self._build_standard_capability(**kwargs)
 
     def _build_experimental_capability(
-        self, **kwargs: Unpack[TypedDictCapabilityFactoryKwargs]
+        self,
+        **kwargs: Unpack[TypedDictCapabilityFactoryKwargs],
     ) -> T:
         """Build an experimental capability with appropriate metadata."""
         # Set experimental flag if the model supports it

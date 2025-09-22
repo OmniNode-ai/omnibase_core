@@ -55,7 +55,9 @@ class ModelCliExecutionMetadata(BaseModel):
         self.custom_context[key] = context
 
     def get_context(
-        self, key: str, default: ModelCliExecutionContext | None = None
+        self,
+        key: str,
+        default: ModelCliExecutionContext | None = None,
     ) -> ModelCliExecutionContext | None:
         """Get custom context data."""
         return self.custom_context.get(key, default)
@@ -96,7 +98,8 @@ class ModelCliExecutionMetadata(BaseModel):
 
     @classmethod
     def create_with_context(
-        cls, context: dict[str, ModelCliExecutionContext]
+        cls,
+        context: dict[str, ModelCliExecutionContext],
     ) -> ModelCliExecutionMetadata:
         """Create metadata with custom context."""
         return cls(custom_context=context)

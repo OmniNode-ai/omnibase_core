@@ -58,7 +58,7 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
         """Set a custom field value with type validation."""
         if not isinstance(value, (str, int, bool, float)):
             raise TypeError(
-                f"Value must be str, int, bool, or float, got {type(value)}"
+                f"Value must be str, int, bool, or float, got {type(value)}",
             )
         if self.custom_fields is None:
             self.custom_fields = {}
@@ -87,15 +87,14 @@ class ModelGenericMetadata(BaseModel, Generic[T]):
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation
                 self.custom_fields[key] = ModelCliValue.from_string(str(value))
+            # For primitive types, use ModelCliValue.from_any() for type-safe storage
+            elif isinstance(value, (str, int, float, bool)):
+                self.custom_fields[key] = ModelCliValue.from_any(value)
             else:
-                # For primitive types, use ModelCliValue.from_any() for type-safe storage
-                if isinstance(value, (str, int, float, bool)):
-                    self.custom_fields[key] = ModelCliValue.from_any(value)
-                else:
-                    self.custom_fields[key] = ModelCliValue.from_string(str(value))
+                self.custom_fields[key] = ModelCliValue.from_string(str(value))
         else:
             raise TypeError(
-                f"Value type {type(value)} not supported for metadata storage"
+                f"Value type {type(value)} not supported for metadata storage",
             )
 
     def has_field(self, key: str) -> bool:

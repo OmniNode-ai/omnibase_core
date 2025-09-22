@@ -6,7 +6,7 @@ Specialized factory for validation error models with severity patterns.
 
 from __future__ import annotations
 
-from typing import Type, TypeVar, Unpack
+from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class ValidationErrorFactory(ModelGenericFactory[T]):
     appropriate severity levels and error codes.
     """
 
-    def __init__(self, model_class: Type[T]) -> None:
+    def __init__(self, model_class: type[T]) -> None:
         """Initialize validation error factory with severity patterns."""
         super().__init__(model_class)
 

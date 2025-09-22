@@ -5,9 +5,7 @@ Restructured to use focused sub-models for better organization.
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -107,7 +105,7 @@ class ModelNodeInformation(BaseModel):
         """Set node author."""
         # Update the underlying author_display_name instead
         self.core_info = self.core_info.model_copy(
-            update={"author_display_name": value}
+            update={"author_display_name": value},
         )
 
     @property

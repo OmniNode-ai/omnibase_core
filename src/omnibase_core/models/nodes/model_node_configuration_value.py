@@ -7,11 +7,11 @@ with structured validation and proper type handling for node configurations.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
-from ..metadata.model_numeric_value import ModelNumericValue, NumericInput
+from ..metadata.model_numeric_value import ModelNumericValue
 
 
 class ModelNodeConfigurationValue(BaseModel):
@@ -25,7 +25,8 @@ class ModelNodeConfigurationValue(BaseModel):
     # Value storage (one will be set)
     string_value: str | None = Field(None, description="String configuration value")
     numeric_value: ModelNumericValue | None = Field(
-        None, description="Numeric configuration value"
+        None,
+        description="Numeric configuration value",
     )
 
     # Type indicator
@@ -39,6 +40,7 @@ class ModelNodeConfigurationValue(BaseModel):
         """Create configuration value from string."""
         return cls(
             string_value=value,
+            numeric_value=None,
             value_type="string",
         )
 
@@ -46,19 +48,18 @@ class ModelNodeConfigurationValue(BaseModel):
     def from_int(cls, value: int) -> ModelNodeConfigurationValue:
         """Create configuration value from integer."""
         return cls(
+            string_value=None,
             numeric_value=ModelNumericValue.from_int(value),
             value_type="numeric",
         )
 
     @classmethod
-    def from_numeric(cls, value: NumericInput) -> ModelNodeConfigurationValue:
+    def from_numeric(cls, value: ModelNumericValue) -> ModelNodeConfigurationValue:
         """Create configuration value from numeric value."""
-        if isinstance(value, ModelNumericValue):
-            numeric_value = value
-        else:
-            numeric_value = ModelNumericValue.from_numeric(value)
+        # Value is already ModelNumericValue type
         return cls(
-            numeric_value=numeric_value,
+            string_value=None,
+            numeric_value=value,
             value_type="numeric",
         )
 
@@ -74,11 +75,12 @@ class ModelNodeConfigurationValue(BaseModel):
         """
         if isinstance(value, str):
             return cls.from_string(value)
-        elif isinstance(value, (int, float)):
-            return cls.from_numeric(value)
-        else:
-            # Fallback to string representation for bool and other types
-            return cls.from_string(str(value))
+        if isinstance(value, int):
+            return cls.from_int(value)
+        if isinstance(value, float):
+            return cls.from_numeric(ModelNumericValue.from_float(value))
+        # Fallback to string representation for bool and other types
+        return cls.from_string(str(value))
 
     def to_python_value(self) -> Any:
         """Get the underlying Python value as the original type.
@@ -88,10 +90,9 @@ class ModelNodeConfigurationValue(BaseModel):
         """
         if self.value_type == "string" and self.string_value is not None:
             return self.string_value
-        elif self.value_type == "numeric" and self.numeric_value is not None:
+        if self.value_type == "numeric" and self.numeric_value is not None:
             return self.numeric_value.to_python_value()
-        else:
-            raise ValueError(f"Invalid configuration value state: {self.value_type}")
+        raise ValueError(f"Invalid configuration value state: {self.value_type}")
 
     def as_numeric(self) -> Any:
         """Get value as numeric type.
@@ -101,28 +102,26 @@ class ModelNodeConfigurationValue(BaseModel):
         """
         if self.value_type == "numeric" and self.numeric_value is not None:
             return self.numeric_value.to_python_value()
-        else:
-            raise ValueError("Configuration value is not numeric")
+        raise ValueError("Configuration value is not numeric")
 
     def as_string(self) -> str:
         """Get configuration value as string."""
         if self.string_value is not None:
             return self.string_value
-        elif self.numeric_value is not None:
+        if self.numeric_value is not None:
             return str(self.numeric_value.to_python_value())
-        else:
-            raise ValueError("No value set in configuration")
+        raise ValueError("No value set in configuration")
 
     def as_int(self) -> int:
         """Get configuration value as integer (if numeric)."""
         if self.numeric_value is not None:
             return self.numeric_value.as_int()
-        elif self.string_value is not None:
+        if self.string_value is not None:
             try:
                 return int(self.string_value)
             except ValueError as e:
                 raise ValueError(
-                    f"Cannot convert string '{self.string_value}' to int"
+                    f"Cannot convert string '{self.string_value}' to int",
                 ) from e
         else:
             raise ValueError("No value set in configuration")
@@ -136,7 +135,7 @@ class ModelNodeConfigurationValue(BaseModel):
             )
         # Allow comparison with raw values
         try:
-            return self.to_python_value() == other
+            return cast(bool, self.to_python_value() == other)
         except (ValueError, TypeError):
             return False
 

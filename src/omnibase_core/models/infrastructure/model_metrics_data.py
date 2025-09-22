@@ -30,21 +30,25 @@ class ModelMetricsData(BaseModel):
 
     # Single list of universal metrics using discriminated union pattern
     metrics: list[ModelMetric] = Field(
-        default_factory=list, description="Collection of typed metrics"
+        default_factory=list,
+        description="Collection of typed metrics",
     )
 
     # Metadata
     collection_id: UUID | None = Field(None, description="UUID for metrics collection")
     collection_display_name: str | None = Field(
-        None, description="Human-readable name of the metrics collection"
+        None,
+        description="Human-readable name of the metrics collection",
     )
 
     category: EnumMetricsCategory = Field(
-        default=EnumMetricsCategory.GENERAL, description="Category of metrics"
+        default=EnumMetricsCategory.GENERAL,
+        description="Category of metrics",
     )
 
     tags: list[str] = Field(
-        default_factory=list, description="Tags for organizing metrics"
+        default_factory=list,
+        description="Tags for organizing metrics",
     )
 
     def add_metric(
@@ -56,7 +60,10 @@ class ModelMetricsData(BaseModel):
     ) -> None:
         """Add a metric with automatic type detection using factory methods."""
         metric = ModelMetric.from_any_value(
-            key=key, value=value, unit=unit, description=description
+            key=key,
+            value=value,
+            unit=unit,
+            description=description,
         )
         self.metrics.append(metric)
 
@@ -92,7 +99,7 @@ class ModelMetricsData(BaseModel):
 
             collection_hash = hashlib.sha256(value.encode()).hexdigest()
             self.collection_id = UUID(
-                f"{collection_hash[:8]}-{collection_hash[8:12]}-{collection_hash[12:16]}-{collection_hash[16:20]}-{collection_hash[20:32]}"
+                f"{collection_hash[:8]}-{collection_hash[8:12]}-{collection_hash[12:16]}-{collection_hash[16:20]}-{collection_hash[20:32]}",
             )
         else:
             self.collection_id = None

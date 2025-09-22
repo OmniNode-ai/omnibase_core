@@ -165,14 +165,13 @@ class EnumInstanceType(str, Enum):
 
         if instance_type in micro_instances:
             return "micro"
-        elif instance_type in small_instances:
+        if instance_type in small_instances:
             return "small"
-        elif instance_type in medium_instances:
+        if instance_type in medium_instances:
             return "medium"
-        elif "xlarge" in instance_type.value.lower():
+        if "xlarge" in instance_type.value.lower():
             return "xlarge"
-        else:
-            return "large"
+        return "large"
 
 
 # Export for use

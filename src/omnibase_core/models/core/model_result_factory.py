@@ -6,7 +6,7 @@ Specialized factory for result-type models with success/error patterns.
 
 from __future__ import annotations
 
-from typing import Type, TypedDict, TypeVar, Unpack
+from typing import TypedDict, TypeVar, Unpack
 
 from pydantic import BaseModel
 
@@ -37,7 +37,7 @@ class ResultFactory(ModelGenericFactory[T]):
     standardized field names and behavior.
     """
 
-    def __init__(self, model_class: Type[T]) -> None:
+    def __init__(self, model_class: type[T]) -> None:
         """Initialize result factory with common patterns."""
         super().__init__(model_class)
 
@@ -47,7 +47,8 @@ class ResultFactory(ModelGenericFactory[T]):
         self.register_builder("validation_error", self._build_validation_error_result)
 
     def _build_success_result(
-        self, **kwargs: Unpack[TypedDictResultFactoryKwargs]
+        self,
+        **kwargs: Unpack[TypedDictResultFactoryKwargs],
     ) -> T:
         """Build a success result with standard fields."""
         # Remove conflicting fields and set standard success values
@@ -77,7 +78,8 @@ class ResultFactory(ModelGenericFactory[T]):
         )
 
     def _build_validation_error_result(
-        self, **kwargs: Unpack[TypedDictResultFactoryKwargs]
+        self,
+        **kwargs: Unpack[TypedDictResultFactoryKwargs],
     ) -> T:
         """Build a validation error result with standard fields."""
         # Remove conflicting fields and set standard validation error values
